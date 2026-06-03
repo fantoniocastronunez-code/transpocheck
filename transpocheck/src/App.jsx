@@ -315,7 +315,12 @@ function JobsList({ jobs, isAdmin, onStartChecklist, db, currentUserEmail }) {
   };
 
   const handleCopyWhatsApp = (job) => {
-    const text = `*FECHA:* ${new Date().toLocaleDateString()}\n*CLIENTE:* ${job.client || 'N/A'}\n*MARCA - MODELO:* ${job.brand} - ${job.model}\n*DESDE - HASTA:* ${job.origin} - ${job.destination}\n*PATENTE/VIN:* ${job.plate || job.vin}`;
+    const date = new Date();
+    const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
+    
+    // Formato limpio sin títulos
+    const text = `${formattedDate}\n${job.client || 'Sin Cliente'}\n${job.brand} ${job.model}\n${job.plate || job.vin}\n${job.origin} - ${job.destination}`;
+    
     navigator.clipboard.writeText(text).then(() => {
       alert("✅ Formato copiado al portapapeles. Listo para pegar en WhatsApp.");
       setMenuOpenId(null);
@@ -324,7 +329,6 @@ function JobsList({ jobs, isAdmin, onStartChecklist, db, currentUserEmail }) {
 
   const generatePDF = async (job) => {
     try {
-      // Cargar jsPDF dinámicamente si no está en el bundle principal
       if (!window.jspdf) {
         await new Promise((resolve, reject) => {
           const script = document.createElement('script');
@@ -336,17 +340,85 @@ function JobsList({ jobs, isAdmin, onStartChecklist, db, currentUserEmail }) {
       }
       const { jsPDF } = window.jspdf;
       const docPDF = new jsPDF();
+      
+      // --- PÁGINA 1: DATOS PRINCIPALES ---
       docPDF.setFontSize(18); docPDF.text(`Checklist de Traslado`, 105, 20, null, null, "center");
       docPDF.setFontSize(12); 
       docPDF.text(`Vehiculo: ${job.brand} ${job.model}`, 20, 40);
       docPDF.text(`Patente/VIN: ${job.plate || job.vin}`, 20, 50);
       docPDF.text(`Ruta: ${job.origin} -> ${job.destination}`, 20, 60);
-      docPDF.text(`Receptor: ${job.checklist?.receiverName || 'N/A'}`, 20, 70);
-      docPDF.text(`RUT: ${job.checklist?.receiverRut || 'N/A'}`, 20, 80);
-      docPDF.text(`Observaciones: ${job.checklist?.observations || 'Ninguna'}`, 20, 90);
-      if(job.checklist?.signatureData) docPDF.addImage(job.checklist.signatureData, 'PNG', 20, 100, 80, 40);
+      docPDF.text(`Nivel de Combustible: ${job.checklist?.fuelLevel || '0'}%`, 20, 70);
+      docPDF.text(`Receptor: ${job.checklist?.receiverName || 'N/A'}`, 20, 80);
+      docPDF.text(`RUT Receptor: ${job.checklist?.receiverRut || 'N/A'}`, 20, 90);
+      docPDF.text(`Observaciones: ${job.checklist?.observations || 'Ninguna'}`, 20, 100);
+
+      // Enlace a Google Maps
+      if (job.checklist?.location) {
+        const { lat, lng } = job.checklist.location;
+        const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+        docPDF.text(`Ubicación GPS:`, 20, 110);
+        docPDF.setTextColor(0, 0, 255); // Color azul para el link
+        docPDF.textWithLink('Ver en Google Maps', 55, 110, { url: mapsUrl });
+        docPDF.setTextColor(0, 0, 0); // Restaurar a negro
+      } else {
+        docPDF.text(`Ubicación GPS: No registrada`, 20, 110);
+      }
+
+      // Firma
+      if(job.checklist?.signatureData) {
+        docPDF.text(`Firma:`, 20, 130);
+        docPDF.addImage(job.checklist.signatureData, 'PNG', 20, 135, 80, 40);
+      }
+
+      // --- PÁGINA 2: FOTOS ADJUNTAS ---
+      if (job.checklist?.photos) {
+        const photos = job.checklist.photos;
+        const labels = {
+          front: 'Frente', driver: 'Lateral Piloto', passenger: 'Lateral Copiloto', back: 'Atrás',
+          tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4'
+        };
+        
+        let currentY = 30;
+        let currentX = 20;
+        let addedPage = false;
+
+        for (const key in photos) {
+          if (photos[key]) {
+            // Añadir página nueva solo la primera vez que se detecte una foto
+            if (!addedPage) {
+              docPDF.addPage();
+              docPDF.setFontSize(16);
+              docPDF.text(`Registro Fotográfico Adjunto`, 105, 20, null, null, "center");
+              addedPage = true;
+            }
+
+            docPDF.setFontSize(10);
+            docPDF.text(labels[key], currentX, currentY - 3);
+            docPDF.addImage(photos[key], 'JPEG', currentX, currentY, 75, 55);
+            
+            // Lógica de cuadrícula: Alternar entre la columna izquierda y derecha
+            if (currentX === 20) {
+               currentX = 110; // Mover a la derecha
+            } else {
+               currentX = 20; // Volver a la izquierda
+               currentY += 65; // Bajar a la siguiente fila
+            }
+
+            // Si la página se llena (llegamos muy abajo), crear otra página nueva
+            if (currentY > 250) {
+               docPDF.addPage();
+               currentY = 30;
+               currentX = 20;
+            }
+          }
+        }
+      }
+
       docPDF.save(`Checklist_${job.plate || job.vin}.pdf`);
-    } catch(e) { alert("Error al generar PDF. Verifica tu conexión a internet."); }
+    } catch(e) { 
+      console.error(e);
+      alert("Hubo un error al generar PDF. Verifica tu conexión a internet."); 
+    }
   };
 
   if (filteredJobs.length === 0) return <div className="text-center py-12 bg-white rounded-xl border"><p className="text-gray-500">No hay trabajos disponibles.</p></div>;
