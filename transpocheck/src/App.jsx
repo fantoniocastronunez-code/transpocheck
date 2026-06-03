@@ -659,6 +659,26 @@ function JobsList({ jobs, drivers, role, onStartChecklist, db, currentUserEmail 
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Patente/VIN</span>
               <span className="font-extrabold text-slate-700 uppercase bg-white px-3 py-1 rounded-lg shadow-sm">{job.plate || job.vin}</span>
             </div>
+
+            {isAdminView && (
+              <div className="mt-4 bg-blue-50/50 p-3 rounded-xl border border-blue-100 flex items-center gap-3">
+                <div className="bg-blue-100 p-1.5 rounded-lg"><User className="w-4 h-4 text-blue-600"/></div>
+                <div>
+                  <span className="text-[10px] font-extrabold text-blue-400 uppercase tracking-wider block mb-0.5">
+                    {job.status === 'pending' ? 'Conductores Notificados' : 'Realizado por'}
+                  </span>
+                  <span className="text-sm font-extrabold text-blue-800 leading-none block">
+                    {job.status === 'pending' 
+                      ? (job.assignedDrivers?.map(d => d.name).join(', ') || 'N/A')
+                      : (() => {
+                          const driverObj = drivers.find(drv => drv.email === job.acceptedByEmail);
+                          return driverObj ? driverObj.name : (job.acceptedByEmail || 'N/A');
+                        })()
+                    }
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
           
           <div className="p-4 bg-slate-50 border-t border-slate-100 rounded-b-3xl">
