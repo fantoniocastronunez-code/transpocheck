@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { jsPDF } from "jspdf";
 import { 
   Car, MapPin, Camera, Fuel, CheckCircle, FileText, Download, 
-  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap
+  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight
 } from 'lucide-react';
 
 // ==========================================
@@ -79,26 +80,83 @@ export default function App() {
   const [adminTab, setAdminTab] = useState('dashboard');
   const [selectedJob, setSelectedJob] = useState(null);
   const [currentView, setCurrentView] = useState('main');
+  const [activeRole, setActiveRole] = useState('driver'); // 'admin' o 'driver'
+  
+  const isFirstLoad = useRef(true);
 
-  // Listeners de Firebase
+  // Función para disparar notificaciones en el celular/PC
+  const triggerNotification = (title, body) => {
+    if (!("Notification" in window)) return;
+    if (Notification.permission === "granted") {
+      new Notification(title, { body });
+    } else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then(permission => {
+        if (permission === "granted") new Notification(title, { body });
+      });
+    }
+  };
+
+  // Listeners de Firebase y Autenticación
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, setUser);
+    const unsub = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      // Pedimos permiso de notificaciones al iniciar sesión
+      if (currentUser && "Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+      }
+    });
     return () => unsub();
   }, []);
 
+  // Verificar si es Admin real
+  const currentUserEmail = user?.email;
+  const adminEmails = ['fcastro@logisticats.cl', 'hcastro@logisticats.cl'];
+  const isRealAdmin = adminEmails.includes(currentUserEmail);
+
+  // Auto-activar rol de admin si el correo coincide
+  useEffect(() => {
+    if (isRealAdmin) setActiveRole('admin');
+    else setActiveRole('driver');
+  }, [isRealAdmin]);
+
   useEffect(() => {
     if (!user) return;
+    
+    // Listener de Trabajos
     const unsubJobs = onSnapshot(collection(db, 'transport_jobs'), (snapshot) => {
+      
+      // Lógica de Notificaciones (Ignoramos la primera carga masiva)
+      if (!isFirstLoad.current) {
+        snapshot.docChanges().forEach((change) => {
+          const jobData = change.doc.data();
+          
+          // Notificación para Conductor: Se agregó un trabajo nuevo y estoy asignado
+          if (change.type === 'added' && jobData.status === 'pending' && jobData.assignedEmails?.includes(currentUserEmail)) {
+            triggerNotification('📍 ¡Nuevo Traslado Asignado!', `Tienes que mover un ${jobData.brand} ${jobData.model} desde ${jobData.origin}`);
+          }
+          
+          // Notificación para Admin: Un conductor aceptó un trabajo
+          if (change.type === 'modified' && jobData.status === 'accepted' && isRealAdmin && activeRole === 'admin') {
+            triggerNotification('✅ Trabajo Aceptado', `El conductor ${jobData.acceptedByEmail} aceptó el traslado del ${jobData.brand} ${jobData.model}`);
+          }
+        });
+      }
+
       const jobsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       jobsData.sort((a, b) => b.createdAt - a.createdAt);
       setJobs(jobsData);
+      isFirstLoad.current = false; // Marcamos que ya cargó la primera vez
     });
+
+    // Listener de Conductores
     const unsubDrivers = onSnapshot(collection(db, 'drivers'), (snapshot) => {
       setDrivers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
-    return () => { unsubJobs(); unsubDrivers(); };
-  }, [user]);
 
+    return () => { unsubJobs(); unsubDrivers(); };
+  }, [user, activeRole]);
+
+  // Pantalla de Login
   if (!user) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
@@ -114,11 +172,6 @@ export default function App() {
     );
   }
 
-  const currentUserEmail = user.email;
-  const adminEmails = ['fcastro@logisticats.cl', 'hcastro@logisticats.cl'];
-  const isAdmin = adminEmails.includes(currentUserEmail);
-
-  // --- FUNCIONES ---
   const handleCreateDriver = async (e) => {
     e.preventDefault();
     try {
@@ -128,41 +181,27 @@ export default function App() {
   };
 
   const handleQuickChecklist = () => {
-    // Creamos un trabajo temporal "vacío" con ID especial para saber que es desde 0
     setSelectedJob({ id: 'NEW_QUICK_JOB', client: '', brand: '', model: '', plate: '', vin: '', origin: '', destination: '' });
     setCurrentView('checklist');
   };
 
-  // Función Exportar Mejorada para EXCEL
   const exportToExcel = () => {
     const headers = ['ID', 'Cliente', 'Marca', 'Modelo', 'VIN/Patente', 'Desde', 'Hasta', 'Conductores', 'Estado', 'Fecha'];
     const rows = jobs.map(j => [
-      j.id, 
-      `"${j.client || ''}"`, 
-      `"${j.brand || ''}"`, 
-      `"${j.model || ''}"`, 
-      `"${j.plate || j.vin || ''}"`, 
-      `"${j.origin || ''}"`, 
-      `"${j.destination || ''}"`, 
-      `"${j.assignedDrivers?.map(d=>d.name).join(' - ') || ''}"`, 
-      `"${j.status || ''}"`, 
-      `"${new Date(j.createdAt).toLocaleString()}"`
+      j.id, `"${j.client || ''}"`, `"${j.brand || ''}"`, `"${j.model || ''}"`, `"${j.plate || j.vin || ''}"`, 
+      `"${j.origin || ''}"`, `"${j.destination || ''}"`, `"${j.assignedDrivers?.map(d=>d.name).join(' - ') || ''}"`, 
+      `"${j.status || ''}"`, `"${new Date(j.createdAt).toLocaleString()}"`
     ]);
 
-    // Usamos BOM (\uFEFF) para que Excel lea los acentos (ñ, á) y separador de punto y coma (;) para las columnas
     const csvContent = "\uFEFF" + [headers.join(';'), ...rows.map(e => e.join(';'))].join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    
     const link = document.createElement("a"); 
     link.setAttribute("href", url); 
     link.setAttribute("download", "Reporte_Trabajos.csv");
-    document.body.appendChild(link); 
-    link.click(); 
-    document.body.removeChild(link);
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
   };
 
-  // --- SUB-COMPONENTE: CREAR TRABAJO ADMIN ---
   const NewJobForm = () => {
     const [selectedClient, setSelectedClient] = useState('');
     const [manualClient, setManualClient] = useState('');
@@ -243,21 +282,37 @@ export default function App() {
       <header className="bg-slate-900 text-white p-4 flex justify-between items-center sticky top-0 z-50">
         <div className="flex items-center gap-2"><Car className="w-6 h-6 text-blue-400" /><h1 className="font-bold text-xl">TranspoCheck</h1></div>
         <div className="flex items-center gap-4">
-          <div className="hidden sm:block text-right"><p className="text-xs text-slate-400">Sesión iniciada</p><p className="text-sm font-medium">{currentUserEmail}</p></div>
+          
+          {/* INTERRUPTOR DE PERFIL (Solo visible para admins reales) */}
+          {isRealAdmin && (
+            <button 
+              onClick={() => setActiveRole(activeRole === 'admin' ? 'driver' : 'admin')}
+              className="flex items-center gap-1 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-full text-xs font-bold transition-colors border border-slate-600"
+              title="Cambiar Vista"
+            >
+              {activeRole === 'admin' ? <ToggleRight className="w-5 h-5 text-green-400"/> : <ToggleLeft className="w-5 h-5 text-gray-400"/>}
+              {activeRole === 'admin' ? 'Modo Admin' : 'Modo Conductor'}
+            </button>
+          )}
+
+          <div className="hidden sm:block text-right">
+            <p className="text-xs text-slate-400">Sesión iniciada</p>
+            <p className="text-sm font-medium">{currentUserEmail}</p>
+          </div>
           <button onClick={() => signOut(auth)} className="bg-slate-800 hover:bg-slate-700 p-2 rounded-lg text-slate-300"><LogOut className="w-5 h-5" /></button>
         </div>
       </header>
 
       {currentView === 'main' && (
         <main className="max-w-5xl mx-auto p-4">
-          {/* Botón de Checklist Rápido Global */}
           <div className="mb-6">
             <button onClick={handleQuickChecklist} className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-sm transition-colors">
               <Zap className="w-5 h-5"/> Checklist Rápido (Desde 0)
             </button>
           </div>
 
-          {isAdmin ? (
+          {/* RENDERIZADO BASADO EN EL ROL ACTIVO (No en el rol real) */}
+          {activeRole === 'admin' ? (
             <>
               <div className="flex flex-wrap gap-2 mb-6 bg-white p-2 rounded-xl shadow-sm border">
                 <button onClick={() => setAdminTab('dashboard')} className={`flex-1 flex justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${adminTab==='dashboard'?'bg-blue-100 text-blue-700':'text-gray-600'}`}><ClipboardList className="w-4 h-4"/> Trabajos</button>
@@ -267,7 +322,8 @@ export default function App() {
               {adminTab === 'dashboard' && (
                 <div className="space-y-4">
                   <div className="flex justify-between items-center"><h2 className="text-xl font-bold">Monitor Administrativo</h2><button onClick={exportToExcel} className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm flex items-center gap-2"><Download className="w-4 h-4"/> Exportar a Excel</button></div>
-                  <JobsList jobs={jobs} isAdmin={isAdmin} onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} db={db} currentUserEmail={currentUserEmail} />
+                  {/* Pasamos 'admin' como rol para que la tarjeta muestre botones de admin */}
+                  <JobsList jobs={jobs} role="admin" onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} db={db} currentUserEmail={currentUserEmail} />
                 </div>
               )}
               {adminTab === 'newJob' && <NewJobForm />}
@@ -281,7 +337,7 @@ export default function App() {
           ) : (
             <div className="space-y-4">
               <h2 className="text-xl font-bold text-blue-900">Mis Trabajos Asignados</h2>
-              <JobsList jobs={jobs} isAdmin={isAdmin} onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} db={db} currentUserEmail={currentUserEmail} />
+              <JobsList jobs={jobs} role="driver" onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} db={db} currentUserEmail={currentUserEmail} />
             </div>
           )}
         </main>
@@ -305,15 +361,18 @@ export default function App() {
 // ==========================================
 // 4. COMPONENTE: LISTA DE TRABAJOS
 // ==========================================
-function JobsList({ jobs, isAdmin, onStartChecklist, db, currentUserEmail }) {
+function JobsList({ jobs, role, onStartChecklist, db, currentUserEmail }) {
   const [menuOpenId, setMenuOpenId] = useState(null);
   const now = new Date();
+  const isAdminView = role === 'admin';
   
   const filteredJobs = jobs.filter(job => {
-    if (!isAdmin && (!job.assignedEmails?.includes(currentUserEmail) && job.acceptedByEmail !== currentUserEmail)) return false;
+    // Si la vista actual es Conductor, solo vemos los trabajos asignados/aceptados por mí
+    if (!isAdminView && (!job.assignedEmails?.includes(currentUserEmail) && job.acceptedByEmail !== currentUserEmail)) return false;
     if (!job.createdAt) return true;
 
-    if (!isAdmin) {
+    // Regla de los 7 días y fin de mes
+    if (!isAdminView) {
       const sevenDays = 7 * 24 * 60 * 60 * 1000;
       if ((now.getTime() - job.createdAt) > sevenDays) return false;
     } else {
@@ -336,12 +395,7 @@ function JobsList({ jobs, isAdmin, onStartChecklist, db, currentUserEmail }) {
   };
 
   const handleCopyWhatsApp = (job) => {
-    const date = new Date();
-    const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
-    
-    // Formato limpio sin títulos
-    const text = `${formattedDate}\n${job.client || 'Sin Cliente'}\n${job.brand} ${job.model}\n${job.plate || job.vin}\n${job.origin} - ${job.destination}`;
-    
+    const text = `${job.client || 'Sin Cliente'}\n${job.brand} ${job.model}\n${job.plate || job.vin}\n${job.origin} - ${job.destination}`;
     navigator.clipboard.writeText(text).then(() => {
       alert("✅ Formato copiado al portapapeles. Listo para pegar en WhatsApp.");
       setMenuOpenId(null);
@@ -373,37 +427,31 @@ function JobsList({ jobs, isAdmin, onStartChecklist, db, currentUserEmail }) {
       docPDF.text(`RUT Receptor: ${job.checklist?.receiverRut || 'N/A'}`, 20, 90);
       docPDF.text(`Observaciones: ${job.checklist?.observations || 'Ninguna'}`, 20, 100);
 
-      // Enlace a Google Maps
       if (job.checklist?.location) {
         const { lat, lng } = job.checklist.location;
         const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
         docPDF.text(`Ubicación GPS:`, 20, 110);
-        docPDF.setTextColor(0, 0, 255); // Color azul para el link
+        docPDF.setTextColor(0, 0, 255); 
         docPDF.textWithLink('Ver en Google Maps', 55, 110, { url: mapsUrl });
-        docPDF.setTextColor(0, 0, 0); // Restaurar a negro
+        docPDF.setTextColor(0, 0, 0); 
       } else {
         docPDF.text(`Ubicación GPS: No registrada`, 20, 110);
       }
 
-      // Firma
       if(job.checklist?.signatureData) {
         docPDF.text(`Firma:`, 20, 130);
         docPDF.addImage(job.checklist.signatureData, 'PNG', 20, 135, 80, 40);
       }
 
-      // --- PÁGINA 2: FOTOS ADJUNTAS (CON PROPORCIONES REALES) ---
+      // --- PÁGINA 2: FOTOS ADJUNTAS ---
       if (job.checklist?.photos) {
         const photos = job.checklist.photos;
-        const labels = {
-          front: 'Frente', driver: 'Lateral Piloto', passenger: 'Lateral Copiloto', back: 'Atrás',
-          tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4'
-        };
+        const labels = { front: 'Frente', driver: 'Lateral Piloto', passenger: 'Lateral Copiloto', back: 'Atrás', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
         
         let currentY = 30;
-        let currentCol = 1; // 1 = Izquierda, 2 = Derecha
+        let currentCol = 1; 
         let addedPage = false;
 
-        // Función auxiliar para obtener las dimensiones reales de la foto asíncronamente
         const getImageDims = (src) => new Promise(resolve => {
           const img = new Image();
           img.onload = () => resolve({ w: img.width, h: img.height });
@@ -412,7 +460,6 @@ function JobsList({ jobs, isAdmin, onStartChecklist, db, currentUserEmail }) {
 
         for (const key in photos) {
           if (photos[key]) {
-            // Añadir página nueva solo la primera vez que se detecte una foto
             if (!addedPage) {
               docPDF.addPage();
               docPDF.setFontSize(16);
@@ -420,24 +467,16 @@ function JobsList({ jobs, isAdmin, onStartChecklist, db, currentUserEmail }) {
               addedPage = true;
             }
 
-            // Calculamos el ratio real (vertical u horizontal) para no deformarla
             const dims = await getImageDims(photos[key]);
             const ratio = dims.h / dims.w;
+            let imgW = 80; 
+            let imgH = imgW * ratio; 
             
-            let imgW = 80; // Ancho máximo permitido por columna
-            let imgH = imgW * ratio; // Alto proporcional
-            
-            // Si la foto es extremadamente vertical, la limitamos para que no se salga de la hoja
-            if (imgH > 110) {
-                imgH = 110;
-                imgW = imgH / ratio;
-            }
+            if (imgH > 110) { imgH = 110; imgW = imgH / ratio; }
 
-            // Calculamos el centro de la columna para alinear la imagen perfecto
-            const slotCenter = currentCol === 1 ? 60 : 150; // Centro X de la Columna 1 o 2
+            const slotCenter = currentCol === 1 ? 60 : 150; 
             const finalX = slotCenter - (imgW / 2);
 
-            // Verificamos si la imagen chocará con el final de la página ANTES de dibujarla
             if (currentY + imgH > 280) {
                docPDF.addPage();
                currentY = 30;
@@ -445,23 +484,16 @@ function JobsList({ jobs, isAdmin, onStartChecklist, db, currentUserEmail }) {
                docPDF.text(`Registro Fotográfico Adjunto (Cont.)`, 105, 20, null, null, "center");
             }
 
-            // Escribimos el título de la foto centrado y dibujamos la imagen
             docPDF.setFontSize(10);
             docPDF.text(labels[key], slotCenter, currentY - 3, { align: "center" });
             docPDF.addImage(photos[key], 'JPEG', finalX, currentY, imgW, imgH);
             
-            // Alternamos lógicas de columnas para el layout de cuadrícula
-            if (currentCol === 1) {
-               currentCol = 2; // Siguiente foto va a la derecha
-            } else {
-               currentCol = 1; // Vuelve a la izquierda y baja de línea
-               currentY += (imgH > 90 ? imgH : 90) + 15; // Bajamos el eje Y dinámicamente
-            }
+            if (currentCol === 1) { currentCol = 2; } 
+            else { currentCol = 1; currentY += (imgH > 90 ? imgH : 90) + 15; }
           }
         }
       }
 
-      // --- NUEVA LÓGICA DE NOMBRE DEL ARCHIVO ---
       const d = new Date();
       const day = String(d.getDate()).padStart(2, '0');
       const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -497,7 +529,7 @@ function JobsList({ jobs, isAdmin, onStartChecklist, db, currentUserEmail }) {
                   <button onClick={() => handleCopyWhatsApp(job)} className="w-full text-left px-4 py-3 text-sm flex items-center gap-2 hover:bg-gray-50 text-gray-700">
                     <Copy className="w-4 h-4"/> Copiar para WhatsApp
                   </button>
-                  {isAdmin && (
+                  {isAdminView && (
                     <button onClick={() => handleDeleteJob(job.id)} className="w-full text-left px-4 py-3 text-sm flex items-center gap-2 hover:bg-red-50 text-red-600 border-t">
                       <Trash2 className="w-4 h-4"/> Eliminar Trabajo
                     </button>
@@ -518,10 +550,10 @@ function JobsList({ jobs, isAdmin, onStartChecklist, db, currentUserEmail }) {
           </div>
           
           <div className="p-3 bg-gray-50 border-t space-y-2">
-            {job.status === 'pending' && (!isAdmin || job.assignedEmails?.includes(currentUserEmail)) && (
+            {job.status === 'pending' && (!isAdminView || job.assignedEmails?.includes(currentUserEmail)) && (
               <button onClick={() => handleAcceptJob(job)} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 rounded transition-colors">Reclamar Traslado</button>
             )}
-            {((job.status === 'accepted' && (isAdmin || job.acceptedByEmail === currentUserEmail)) || (job.status !== 'completed' && isAdmin)) && (
+            {((job.status === 'accepted' && (isAdminView || job.acceptedByEmail === currentUserEmail)) || (job.status !== 'completed' && isAdminView)) && (
               <button onClick={() => onStartChecklist(job)} className="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 rounded flex justify-center items-center gap-2 transition-colors"><FileText className="w-4 h-4" /> Llenar Checklist</button>
             )}
             {job.status === 'completed' && (
@@ -556,24 +588,17 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
     if (!file) return;
 
     try {
-      const bmp = await window.createImageBitmap(file, {
-        resizeWidth: 800,
-        resizeQuality: 'medium'
-      });
-
+      const bmp = await window.createImageBitmap(file, { resizeWidth: 800, resizeQuality: 'medium' });
       const canvas = document.createElement('canvas');
-      canvas.width = bmp.width;
-      canvas.height = bmp.height;
+      canvas.width = bmp.width; canvas.height = bmp.height;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(bmp, 0, 0);
-
       const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
       updateForm('photos', { ...formData.photos, [photoId]: dataUrl });
-
       bmp.close();
     } catch (error) {
-      console.error("Error al procesar foto:", error);
-      alert("La foto es demasiado pesada. Toma las fotos con tu cámara normal y luego súbelas desde la galería.");
+      console.error(error);
+      alert("La foto es demasiado pesada para procesarla en memoria.");
     }
   };
 
@@ -593,8 +618,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
     
     const finalData = {
       client: formData.client, brand: formData.brand, model: formData.model, 
-      vin: formData.plateOrVin, plate: formData.plateOrVin,
-      origin: formData.origin, destination: formData.destination,
+      vin: formData.plateOrVin, plate: formData.plateOrVin, origin: formData.origin, destination: formData.destination,
       status: 'completed', completedAt: Date.now(), checklist: formData
     };
 
@@ -609,10 +633,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
       }
       alert("✅ Checklist guardado correctamente.");
       onComplete();
-    } catch (error) {
-      console.error(error);
-      alert("Hubo un error al guardar.");
-    }
+    } catch (error) { console.error(error); alert("Hubo un error al guardar."); }
   };
 
   return (
@@ -639,7 +660,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
               <input value={formData.destination} onChange={e=>updateForm('destination', e.target.value)} className="col-span-2 border p-2 rounded outline-none focus:border-blue-500" placeholder="Hasta" required/>
             </div>
             
-            <h3 className="font-bold border-b pb-2 mt-4 text-blue-700">Fotografías (Tocar para abrir cámara)</h3>
+            <h3 className="font-bold border-b pb-2 mt-4 text-blue-700">Fotografías</h3>
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
               {[
                 {id:'front', l:'Frente'}, {id:'driver', l:'Piloto'}, {id:'passenger', l:'Copiloto'}, {id:'back', l:'Atrás'}, 
@@ -667,11 +688,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
             <input type="range" min="0" max="100" step="5" value={formData.fuelLevel} onChange={(e) => updateForm('fuelLevel', e.target.value)} className="w-full accent-blue-600" />
             
             <textarea rows="3" value={formData.observations} onChange={(e) => updateForm('observations', e.target.value)} placeholder="Observaciones de daños o detalles..." className="w-full border p-2 text-sm outline-none focus:border-blue-500 rounded mt-2"></textarea>
-            
-            <button onClick={() => {
-              if(!formData.brand || !formData.model || !formData.plateOrVin) return alert("Completa los datos del vehículo");
-              setStep(2);
-            }} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold transition-colors shadow-md text-lg">Continuar</button>
+            <button onClick={() => { if(!formData.brand || !formData.model || !formData.plateOrVin) return alert("Completa los datos del vehículo"); setStep(2); }} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold transition-colors shadow-md text-lg">Continuar</button>
           </div>
         )}
         
@@ -683,14 +700,11 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
               <input required value={formData.receiverRut} onChange={e=>updateForm('receiverRut', e.target.value)} className="border p-3 rounded outline-none focus:border-blue-500" placeholder="RUT" />
               <input required type="email" value={formData.receiverEmail} onChange={e=>updateForm('receiverEmail', e.target.value)} className="border p-3 rounded col-span-1 sm:col-span-2 outline-none focus:border-blue-500" placeholder="Correo electrónico del receptor" />
             </div>
-            
             <button type="button" onClick={handleGetLocation} className={`px-3 py-3 rounded-lg text-sm w-full font-bold transition-colors ${formData.location ? 'bg-green-100 text-green-800 border border-green-300' : 'bg-slate-200 hover:bg-slate-300 text-slate-800'}`}>
               {formData.location ? "📍 GPS Capturado Exitosamente" : "📍 Tocar para Capturar GPS Actual"}
             </button>
-            
             <h3 className="font-bold border-b pb-2 mt-4">Firma del Receptor</h3>
             <SignaturePad onSave={(data) => updateForm('signatureData', data)} onClear={() => updateForm('signatureData', null)} />
-            
             <div className="flex gap-3 pt-6 border-t mt-6">
               <button type="button" onClick={() => setStep(1)} className="flex-1 bg-gray-200 hover:bg-gray-300 py-4 rounded-xl font-bold transition-colors text-gray-800">Atrás</button>
               <button type="submit" className="flex-1 bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl font-bold transition-colors shadow-lg text-lg">Guardar y Finalizar</button>
