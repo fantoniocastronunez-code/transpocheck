@@ -5,7 +5,7 @@ import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc
 import { jsPDF } from "jspdf";
 import { 
   Car, MapPin, Camera, Fuel, CheckCircle, FileText, Download, 
-  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight
+  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2
 } from 'lucide-react';
 
 // ==========================================
@@ -37,7 +37,7 @@ const SignaturePad = ({ onSave, onClear }) => {
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   }, []);
 
   const drawEvent = (e, type) => {
@@ -58,14 +58,14 @@ const SignaturePad = ({ onSave, onClear }) => {
   };
 
   return (
-    <div className="border-2 border-dashed border-gray-300 rounded-lg p-2 bg-white">
-      <canvas ref={canvasRef} width={300} height={150} className="w-full h-[150px] touch-none cursor-crosshair bg-white"
+    <div className="border-2 border-dashed border-blue-200 rounded-2xl p-2 bg-white">
+      <canvas ref={canvasRef} width={300} height={150} className="w-full h-[150px] touch-none cursor-crosshair bg-white rounded-xl"
         onPointerDown={(e) => drawEvent(e, 'start')} onPointerMove={(e) => drawEvent(e, 'draw')}
         onPointerUp={(e) => drawEvent(e, 'stop')} onPointerOut={(e) => drawEvent(e, 'stop')}
         onTouchStart={(e) => drawEvent(e, 'start')} onTouchMove={(e) => drawEvent(e, 'draw')}
         onTouchEnd={(e) => drawEvent(e, 'stop')}
       />
-      <button type="button" onClick={() => { canvasRef.current.getContext('2d').clearRect(0,0,300,150); if(onClear) onClear(); }} className="mt-2 text-sm text-red-600 font-medium">Limpiar firma</button>
+      <button type="button" onClick={() => { canvasRef.current.getContext('2d').clearRect(0,0,300,150); if(onClear) onClear(); }} className="mt-2 text-sm text-red-500 hover:text-red-600 font-bold px-2 py-1 bg-red-50 rounded-lg">Limpiar firma</button>
     </div>
   );
 };
@@ -77,14 +77,14 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [drivers, setDrivers] = useState([]);
+  const [editingDriver, setEditingDriver] = useState(null);
   const [adminTab, setAdminTab] = useState('dashboard');
   const [selectedJob, setSelectedJob] = useState(null);
   const [currentView, setCurrentView] = useState('main');
-  const [activeRole, setActiveRole] = useState('driver'); // 'admin' o 'driver'
+  const [activeRole, setActiveRole] = useState('driver');
   
   const isFirstLoad = useRef(true);
 
-  // Función para disparar notificaciones en el celular/PC
   const triggerNotification = (title, body) => {
     if (!("Notification" in window)) return;
     if (Notification.permission === "granted") {
@@ -96,11 +96,9 @@ export default function App() {
     }
   };
 
-  // Listeners de Firebase y Autenticación
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      // Pedimos permiso de notificaciones al iniciar sesión
       if (currentUser && "Notification" in window && Notification.permission === "default") {
         Notification.requestPermission();
       }
@@ -108,12 +106,10 @@ export default function App() {
     return () => unsub();
   }, []);
 
-  // Verificar si es Admin real
   const currentUserEmail = user?.email;
   const adminEmails = ['fcastro@logisticats.cl', 'hcastro@logisticats.cl'];
   const isRealAdmin = adminEmails.includes(currentUserEmail);
 
-  // Auto-activar rol de admin si el correo coincide
   useEffect(() => {
     if (isRealAdmin) setActiveRole('admin');
     else setActiveRole('driver');
@@ -121,34 +117,24 @@ export default function App() {
 
   useEffect(() => {
     if (!user) return;
-    
-    // Listener de Trabajos
     const unsubJobs = onSnapshot(collection(db, 'transport_jobs'), (snapshot) => {
-      
-      // Lógica de Notificaciones (Ignoramos la primera carga masiva)
       if (!isFirstLoad.current) {
         snapshot.docChanges().forEach((change) => {
           const jobData = change.doc.data();
-          
-          // Notificación para Conductor: Se agregó un trabajo nuevo y estoy asignado
           if (change.type === 'added' && jobData.status === 'pending' && jobData.assignedEmails?.includes(currentUserEmail)) {
             triggerNotification('📍 ¡Nuevo Traslado Asignado!', `Tienes que mover un ${jobData.brand} ${jobData.model} desde ${jobData.origin}`);
           }
-          
-          // Notificación para Admin: Un conductor aceptó un trabajo
           if (change.type === 'modified' && jobData.status === 'accepted' && isRealAdmin && activeRole === 'admin') {
             triggerNotification('✅ Trabajo Aceptado', `El conductor ${jobData.acceptedByEmail} aceptó el traslado del ${jobData.brand} ${jobData.model}`);
           }
         });
       }
-
       const jobsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       jobsData.sort((a, b) => b.createdAt - a.createdAt);
       setJobs(jobsData);
-      isFirstLoad.current = false; // Marcamos que ya cargó la primera vez
+      isFirstLoad.current = false;
     });
 
-    // Listener de Conductores
     const unsubDrivers = onSnapshot(collection(db, 'drivers'), (snapshot) => {
       setDrivers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
@@ -156,16 +142,27 @@ export default function App() {
     return () => { unsubJobs(); unsubDrivers(); };
   }, [user, activeRole]);
 
+  // FUENTE AMIGABLE GLOBAL
+  const globalStyles = (
+    <style>{`
+      @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+      body { font-family: 'Nunito', sans-serif; }
+    `}</style>
+  );
+
   // Pantalla de Login
   if (!user) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md text-center">
-          <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"><Car className="w-8 h-8 text-blue-600" /></div>
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">TranspoCheck</h1>
-          <p className="text-gray-500 mb-8">Gestión logística de traslados</p>
-          <button onClick={() => signInWithPopup(auth, googleProvider).catch(e => console.error(e))} className="w-full bg-white border border-gray-300 text-gray-700 font-medium py-3 px-4 rounded-xl shadow-sm hover:bg-gray-50 flex items-center justify-center gap-3 transition-colors">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" /> Ingresar con Google
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 flex flex-col items-center justify-center p-4">
+        {globalStyles}
+        <div className="bg-white p-10 rounded-3xl shadow-xl w-full max-w-md text-center border border-blue-50">
+          <div className="bg-blue-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-200 transform rotate-3 hover:rotate-0 transition-transform">
+            <Car className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-4xl font-extrabold text-slate-900 mb-2 tracking-tight">LogisticAPP</h1>
+          <p className="text-slate-500 mb-10 text-lg">Gestión de traslados inteligente</p>
+          <button onClick={() => signInWithPopup(auth, googleProvider).catch(e => console.error(e))} className="w-full bg-white border-2 border-gray-200 text-slate-700 font-bold py-4 px-4 rounded-2xl shadow-sm hover:bg-gray-50 hover:border-blue-200 flex items-center justify-center gap-3 transition-all text-lg">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-6 h-6" /> Ingresar con Google
           </button>
         </div>
       </div>
@@ -176,7 +173,19 @@ export default function App() {
     e.preventDefault();
     try {
       await addDoc(collection(db, 'drivers'), { name: e.target.driverName.value, email: e.target.driverEmail.value.toLowerCase(), createdAt: Date.now() });
-      e.target.reset(); alert("Conductor creado.");
+      e.target.reset(); alert("Conductor creado exitosamente.");
+    } catch (error) { console.error(error); }
+  };
+
+  const handleUpdateDriver = async (e) => {
+    e.preventDefault();
+    try {
+      await updateDoc(doc(db, 'drivers', editingDriver.id), { 
+        name: e.target.driverName.value, 
+        email: e.target.driverEmail.value.toLowerCase() 
+      });
+      setEditingDriver(null);
+      alert("Conductor actualizado exitosamente.");
     } catch (error) { console.error(error); }
   };
 
@@ -196,9 +205,7 @@ export default function App() {
     const csvContent = "\uFEFF" + [headers.join(';'), ...rows.map(e => e.join(';'))].join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a"); 
-    link.setAttribute("href", url); 
-    link.setAttribute("download", "Reporte_Trabajos.csv");
+    const link = document.createElement("a"); link.setAttribute("href", url); link.setAttribute("download", "Reporte_Trabajos.csv");
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
   };
 
@@ -231,112 +238,143 @@ export default function App() {
     };
 
     return (
-      <div className="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <h2 className="text-xl font-bold mb-6 border-b pb-2">Crear Nuevo Traslado</h2>
+      <div className="max-w-2xl mx-auto bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+        <h2 className="text-2xl font-extrabold mb-6 border-b pb-4 text-slate-800">Crear Nuevo Traslado</h2>
         <form onSubmit={handleCreateJobSubmit} className="space-y-6">
-          <div className="bg-gray-50 p-4 rounded-lg space-y-4 border border-gray-100">
-            <h3 className="text-sm font-bold text-gray-700">1. Cliente y Ruta</h3>
+          <div className="bg-slate-50 p-6 rounded-2xl space-y-4">
+            <h3 className="text-base font-bold text-slate-700">1. Cliente y Ruta</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <select required value={selectedClient} onChange={(e) => setSelectedClient(e.target.value)} className="w-full border p-2 text-sm rounded outline-none">
+                <select required value={selectedClient} onChange={(e) => setSelectedClient(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold text-slate-700 bg-white">
                   <option value="">Seleccione Cliente...</option>
                   {CLIENTES.map(c => <option key={c} value={c}>{c}</option>)}
                   <option value="OTRO">Otro (Ingreso manual)</option>
                 </select>
                 {selectedClient === 'OTRO' && (
-                  <input type="text" required value={manualClient} onChange={(e) => setManualClient(e.target.value)} placeholder="Escribe el nombre del cliente" className="w-full border p-2 text-sm rounded outline-none focus:border-blue-500" />
+                  <input type="text" required value={manualClient} onChange={(e) => setManualClient(e.target.value)} placeholder="Escribe el nombre del cliente" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
                 )}
               </div>
               <div className="hidden md:block"></div>
-              <input name="origin" required type="text" placeholder="Desde (Origen)" className="border p-2 text-sm rounded outline-none" />
-              <input name="destination" required type="text" placeholder="Hasta (Destino)" className="border p-2 text-sm rounded outline-none" />
+              <input name="origin" required type="text" placeholder="Desde (Origen)" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+              <input name="destination" required type="text" placeholder="Hasta (Destino)" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
             </div>
           </div>
-          <div className="bg-gray-50 p-4 rounded-lg space-y-4 border border-gray-100">
-             <h3 className="text-sm font-bold text-gray-700">2. Vehículo</h3>
+          <div className="bg-slate-50 p-6 rounded-2xl space-y-4">
+             <h3 className="text-base font-bold text-slate-700">2. Vehículo</h3>
              <div className="grid grid-cols-2 gap-4">
-               <input name="brand" type="text" placeholder="Marca" required className="border p-2 text-sm rounded outline-none" />
-               <input name="model" type="text" placeholder="Modelo" required className="border p-2 text-sm rounded outline-none" />
-               <input name="plateOrVin" type="text" placeholder="Patente o VIN" required className="border p-2 text-sm rounded col-span-2 uppercase outline-none" />
+               <input name="brand" type="text" placeholder="Marca" required className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+               <input name="model" type="text" placeholder="Modelo" required className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+               <input name="plateOrVin" type="text" placeholder="Patente o VIN" required className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl col-span-2 uppercase outline-none focus:border-blue-500 font-semibold bg-white" />
              </div>
           </div>
-          <div className="bg-gray-50 p-4 rounded-lg space-y-4 border border-gray-100">
-             <h3 className="text-sm font-bold text-gray-700">3. Conductores</h3>
-             <div className="max-h-40 overflow-y-auto border bg-white rounded">
-                {drivers.length === 0 ? <p className="text-sm text-gray-500 p-3">No hay conductores.</p> : drivers.map(d => (
-                  <label key={d.id} className="flex items-center p-3 border-b hover:bg-blue-50 cursor-pointer">
-                    <input type="checkbox" name="assignedDriverId" value={d.id} className="w-4 h-4 cursor-pointer" />
-                    <div className="ml-3"><span className="block text-sm">{d.name}</span><span className="block text-xs text-gray-500">{d.email}</span></div>
+          <div className="bg-slate-50 p-6 rounded-2xl space-y-4">
+             <h3 className="text-base font-bold text-slate-700">3. Conductores</h3>
+             <div className="max-h-48 overflow-y-auto border-2 border-slate-200 bg-white rounded-xl">
+                {drivers.length === 0 ? <p className="text-sm text-slate-400 p-4 font-semibold">No hay conductores.</p> : drivers.map(d => (
+                  <label key={d.id} className="flex items-center p-4 border-b border-slate-100 hover:bg-blue-50 cursor-pointer transition-colors">
+                    <input type="checkbox" name="assignedDriverId" value={d.id} className="w-5 h-5 cursor-pointer rounded text-blue-600 focus:ring-blue-500" />
+                    <div className="ml-4"><span className="block text-base font-bold text-slate-800">{d.name}</span><span className="block text-sm font-semibold text-slate-400">{d.email}</span></div>
                   </label>
                 ))}
              </div>
           </div>
-          <div className="flex justify-end"><button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium">Guardar y Asignar</button></div>
+          <div className="flex justify-end pt-2"><button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-extrabold text-lg transition-colors shadow-lg shadow-blue-200">Guardar y Asignar</button></div>
         </form>
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800 pb-20">
-      <header className="bg-slate-900 text-white p-4 flex justify-between items-center sticky top-0 z-50">
-        <div className="flex items-center gap-2"><Car className="w-6 h-6 text-blue-400" /><h1 className="font-bold text-xl">TranspoCheck</h1></div>
+    <div className="min-h-screen bg-slate-50 text-slate-800 pb-20 font-sans">
+      {globalStyles}
+      <header className="bg-blue-600 text-white p-4 shadow-lg flex justify-between items-center sticky top-0 z-50">
+        <div className="flex items-center gap-3">
+          <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm"><Car className="w-6 h-6 text-white" /></div>
+          <h1 className="font-extrabold text-2xl tracking-tight">LogisticAPP</h1>
+        </div>
         <div className="flex items-center gap-4">
-          
-          {/* INTERRUPTOR DE PERFIL (Solo visible para admins reales) */}
           {isRealAdmin && (
             <button 
               onClick={() => setActiveRole(activeRole === 'admin' ? 'driver' : 'admin')}
-              className="flex items-center gap-1 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-full text-xs font-bold transition-colors border border-slate-600"
+              className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl text-sm font-bold transition-all border border-white/10 backdrop-blur-sm"
               title="Cambiar Vista"
             >
-              {activeRole === 'admin' ? <ToggleRight className="w-5 h-5 text-green-400"/> : <ToggleLeft className="w-5 h-5 text-gray-400"/>}
-              {activeRole === 'admin' ? 'Modo Admin' : 'Modo Conductor'}
+              {activeRole === 'admin' ? <ToggleRight className="w-6 h-6 text-green-300"/> : <ToggleLeft className="w-6 h-6 text-slate-300"/>}
+              <span className="hidden sm:inline">{activeRole === 'admin' ? 'Modo Admin' : 'Modo Conductor'}</span>
             </button>
           )}
 
           <div className="hidden sm:block text-right">
-            <p className="text-xs text-slate-400">Sesión iniciada</p>
-            <p className="text-sm font-medium">{currentUserEmail}</p>
+            <p className="text-xs text-blue-200 font-bold uppercase tracking-wider">Sesión iniciada</p>
+            <p className="text-sm font-extrabold">{currentUserEmail}</p>
           </div>
-          <button onClick={() => signOut(auth)} className="bg-slate-800 hover:bg-slate-700 p-2 rounded-lg text-slate-300"><LogOut className="w-5 h-5" /></button>
+          <button onClick={() => signOut(auth)} className="bg-white/10 hover:bg-white/20 p-2.5 rounded-xl text-white transition-colors"><LogOut className="w-5 h-5" /></button>
         </div>
       </header>
 
       {currentView === 'main' && (
-        <main className="max-w-5xl mx-auto p-4">
-          <div className="mb-6">
-            <button onClick={handleQuickChecklist} className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-sm transition-colors">
-              <Zap className="w-5 h-5"/> Checklist Rápido (Desde 0)
+        <main className="max-w-5xl mx-auto p-4 pt-6">
+          <div className="mb-8">
+            <button onClick={handleQuickChecklist} className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-8 py-4 rounded-2xl font-extrabold text-lg flex items-center justify-center gap-2 shadow-xl shadow-indigo-200 transition-all transform hover:scale-[1.02]">
+              <Zap className="w-6 h-6 fill-current"/> Checklist Rápido (Desde 0)
             </button>
           </div>
 
-          {/* RENDERIZADO BASADO EN EL ROL ACTIVO (No en el rol real) */}
           {activeRole === 'admin' ? (
             <>
-              <div className="flex flex-wrap gap-2 mb-6 bg-white p-2 rounded-xl shadow-sm border">
-                <button onClick={() => setAdminTab('dashboard')} className={`flex-1 flex justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${adminTab==='dashboard'?'bg-blue-100 text-blue-700':'text-gray-600'}`}><ClipboardList className="w-4 h-4"/> Trabajos</button>
-                <button onClick={() => setAdminTab('newJob')} className={`flex-1 flex justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${adminTab==='newJob'?'bg-blue-100 text-blue-700':'text-gray-600'}`}><Plus className="w-4 h-4"/> Crear</button>
-                <button onClick={() => setAdminTab('drivers')} className={`flex-1 flex justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${adminTab==='drivers'?'bg-blue-100 text-blue-700':'text-gray-600'}`}><Users className="w-4 h-4"/> Conductores</button>
+              <div className="flex flex-wrap gap-2 mb-8 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
+                <button onClick={() => setAdminTab('dashboard')} className={`flex-1 flex justify-center gap-2 px-4 py-3 rounded-xl text-base font-extrabold transition-colors ${adminTab==='dashboard'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><ClipboardList className="w-5 h-5"/> Trabajos</button>
+                <button onClick={() => setAdminTab('newJob')} className={`flex-1 flex justify-center gap-2 px-4 py-3 rounded-xl text-base font-extrabold transition-colors ${adminTab==='newJob'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Plus className="w-5 h-5"/> Crear</button>
+                <button onClick={() => setAdminTab('drivers')} className={`flex-1 flex justify-center gap-2 px-4 py-3 rounded-xl text-base font-extrabold transition-colors ${adminTab==='drivers'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Users className="w-5 h-5"/> Conductores</button>
               </div>
               {adminTab === 'dashboard' && (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center"><h2 className="text-xl font-bold">Monitor Administrativo</h2><button onClick={exportToExcel} className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm flex items-center gap-2"><Download className="w-4 h-4"/> Exportar a Excel</button></div>
-                  {/* Pasamos 'admin' como rol para que la tarjeta muestre botones de admin */}
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center"><h2 className="text-2xl font-extrabold text-slate-800">Monitor Administrativo</h2><button onClick={exportToExcel} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-green-200 transition-colors"><Download className="w-4 h-4"/> Exportar a Excel</button></div>
                   <JobsList jobs={jobs} role="admin" onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} db={db} currentUserEmail={currentUserEmail} />
                 </div>
               )}
               {adminTab === 'newJob' && <NewJobForm />}
               {adminTab === 'drivers' && (
                 <div className="grid md:grid-cols-2 gap-6">
-                  <form onSubmit={handleCreateDriver} className="bg-white p-6 rounded-xl shadow-sm border space-y-4"><h3 className="font-bold flex gap-2"><User/> Nuevo Conductor</h3><input name="driverName" placeholder="Nombre completo" required className="w-full border p-2 rounded text-sm outline-none"/><input name="driverEmail" placeholder="Correo Gmail del conductor" required type="email" className="w-full border p-2 rounded text-sm outline-none"/><button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-medium">Crear</button></form>
-                  <div className="bg-white p-6 rounded-xl shadow-sm border"><h3 className="font-bold mb-4">Directorio</h3><div className="space-y-2">{drivers.length === 0 ? <p className="text-sm text-gray-500">Vacío</p> : drivers.map(d=><div key={d.id} className="p-2 bg-gray-50 border rounded text-sm font-medium">{d.name} <span className="text-xs font-normal text-gray-500 block">{d.email}</span></div>)}</div></div>
+                  <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={editingDriver ? handleUpdateDriver : handleCreateDriver} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-5">
+                    <h3 className="text-xl font-extrabold text-slate-800 flex items-center gap-2">
+                      <User className="text-blue-600"/> {editingDriver ? 'Editar Conductor' : 'Nuevo Conductor'}
+                    </h3>
+                    <input name="driverName" defaultValue={editingDriver ? editingDriver.name : ''} placeholder="Nombre completo" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+                    <input name="driverEmail" defaultValue={editingDriver ? editingDriver.email : ''} placeholder="Correo Gmail del conductor" required type="email" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+                    
+                    <div className="flex gap-3">
+                      {editingDriver && (
+                        <button type="button" onClick={() => setEditingDriver(null)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-extrabold text-lg transition-colors">Cancelar</button>
+                      )}
+                      <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-lg transition-colors shadow-lg shadow-blue-200">
+                        {editingDriver ? 'Guardar Cambios' : 'Crear Conductor'}
+                      </button>
+                    </div>
+                  </form>
+
+                  <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                    <h3 className="text-xl font-extrabold text-slate-800 mb-6">Directorio</h3>
+                    <div className="space-y-3">
+                      {drivers.length === 0 ? <p className="text-sm font-semibold text-slate-400">Directorio vacío</p> : drivers.map(d=>(
+                        <div key={d.id} className="flex justify-between items-center p-4 bg-slate-50 border border-slate-100 rounded-2xl group transition-all">
+                          <div>
+                            <p className="text-base font-extrabold text-slate-800">{d.name}</p>
+                            <p className="text-sm font-bold text-slate-400">{d.email}</p>
+                          </div>
+                          <button onClick={() => setEditingDriver(d)} className="p-2.5 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-xl transition-colors shadow-sm" title="Editar Conductor">
+                            <Edit2 className="w-5 h-5"/>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </>
           ) : (
-            <div className="space-y-4">
-              <h2 className="text-xl font-bold text-blue-900">Mis Trabajos Asignados</h2>
+            <div className="space-y-6">
+              <h2 className="text-2xl font-extrabold text-slate-800">Mis Trabajos Asignados</h2>
               <JobsList jobs={jobs} role="driver" onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} db={db} currentUserEmail={currentUserEmail} />
             </div>
           )}
@@ -344,14 +382,8 @@ export default function App() {
       )}
 
       {currentView === 'checklist' && selectedJob && (
-        <main className="max-w-2xl mx-auto p-4">
-          <ChecklistForm 
-            job={selectedJob} 
-            db={db}
-            currentUserEmail={currentUserEmail}
-            onCancel={() => setCurrentView('main')} 
-            onComplete={() => { setSelectedJob(null); setCurrentView('main'); }} 
-          />
+        <main className="max-w-2xl mx-auto p-4 pt-6">
+          <ChecklistForm job={selectedJob} db={db} currentUserEmail={currentUserEmail} onCancel={() => setCurrentView('main')} onComplete={() => { setSelectedJob(null); setCurrentView('main'); }} />
         </main>
       )}
     </div>
@@ -367,11 +399,8 @@ function JobsList({ jobs, role, onStartChecklist, db, currentUserEmail }) {
   const isAdminView = role === 'admin';
   
   const filteredJobs = jobs.filter(job => {
-    // Si la vista actual es Conductor, solo vemos los trabajos asignados/aceptados por mí
     if (!isAdminView && (!job.assignedEmails?.includes(currentUserEmail) && job.acceptedByEmail !== currentUserEmail)) return false;
     if (!job.createdAt) return true;
-
-    // Regla de los 7 días y fin de mes
     if (!isAdminView) {
       const sevenDays = 7 * 24 * 60 * 60 * 1000;
       if ((now.getTime() - job.createdAt) > sevenDays) return false;
@@ -395,7 +424,9 @@ function JobsList({ jobs, role, onStartChecklist, db, currentUserEmail }) {
   };
 
   const handleCopyWhatsApp = (job) => {
-    const text = `${job.client || 'Sin Cliente'}\n${job.brand} ${job.model}\n${job.plate || job.vin}\n${job.origin} - ${job.destination}`;
+    const date = new Date();
+    const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
+    const text = `${formattedDate}\n${job.client || 'Sin Cliente'}\n${job.brand} ${job.model}\n${job.plate || job.vin}\n${job.origin} - ${job.destination}`;
     navigator.clipboard.writeText(text).then(() => {
       alert("✅ Formato copiado al portapapeles. Listo para pegar en WhatsApp.");
       setMenuOpenId(null);
@@ -416,7 +447,6 @@ function JobsList({ jobs, role, onStartChecklist, db, currentUserEmail }) {
       const { jsPDF } = window.jspdf;
       const docPDF = new jsPDF();
       
-      // --- PÁGINA 1: DATOS PRINCIPALES ---
       docPDF.setFontSize(18); docPDF.text(`Checklist de Traslado`, 105, 20, null, null, "center");
       docPDF.setFontSize(12); 
       docPDF.text(`Vehiculo: ${job.brand} ${job.model}`, 20, 40);
@@ -434,56 +464,37 @@ function JobsList({ jobs, role, onStartChecklist, db, currentUserEmail }) {
         docPDF.setTextColor(0, 0, 255); 
         docPDF.textWithLink('Ver en Google Maps', 55, 110, { url: mapsUrl });
         docPDF.setTextColor(0, 0, 0); 
-      } else {
-        docPDF.text(`Ubicación GPS: No registrada`, 20, 110);
-      }
+      } else { docPDF.text(`Ubicación GPS: No registrada`, 20, 110); }
 
       if(job.checklist?.signatureData) {
         docPDF.text(`Firma:`, 20, 130);
         docPDF.addImage(job.checklist.signatureData, 'PNG', 20, 135, 80, 40);
       }
 
-      // --- PÁGINA 2: FOTOS ADJUNTAS ---
       if (job.checklist?.photos) {
         const photos = job.checklist.photos;
         const labels = { front: 'Frente', driver: 'Lateral Piloto', passenger: 'Lateral Copiloto', back: 'Atrás', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
         
-        let currentY = 30;
-        let currentCol = 1; 
-        let addedPage = false;
-
+        let currentY = 30; let currentCol = 1; let addedPage = false;
         const getImageDims = (src) => new Promise(resolve => {
-          const img = new Image();
-          img.onload = () => resolve({ w: img.width, h: img.height });
-          img.src = src;
+          const img = new Image(); img.onload = () => resolve({ w: img.width, h: img.height }); img.src = src;
         });
 
         for (const key in photos) {
           if (photos[key]) {
             if (!addedPage) {
-              docPDF.addPage();
-              docPDF.setFontSize(16);
-              docPDF.text(`Registro Fotográfico Adjunto`, 105, 20, null, null, "center");
-              addedPage = true;
+              docPDF.addPage(); docPDF.setFontSize(16); docPDF.text(`Registro Fotográfico Adjunto`, 105, 20, null, null, "center"); addedPage = true;
             }
-
             const dims = await getImageDims(photos[key]);
             const ratio = dims.h / dims.w;
-            let imgW = 80; 
-            let imgH = imgW * ratio; 
-            
+            let imgW = 80; let imgH = imgW * ratio; 
             if (imgH > 110) { imgH = 110; imgW = imgH / ratio; }
-
             const slotCenter = currentCol === 1 ? 60 : 150; 
             const finalX = slotCenter - (imgW / 2);
 
             if (currentY + imgH > 280) {
-               docPDF.addPage();
-               currentY = 30;
-               docPDF.setFontSize(16);
-               docPDF.text(`Registro Fotográfico Adjunto (Cont.)`, 105, 20, null, null, "center");
+               docPDF.addPage(); currentY = 30; docPDF.setFontSize(16); docPDF.text(`Registro Fotográfico Adjunto (Cont.)`, 105, 20, null, null, "center");
             }
-
             docPDF.setFontSize(10);
             docPDF.text(labels[key], slotCenter, currentY - 3, { align: "center" });
             docPDF.addImage(photos[key], 'JPEG', finalX, currentY, imgW, imgH);
@@ -498,40 +509,35 @@ function JobsList({ jobs, role, onStartChecklist, db, currentUserEmail }) {
       const day = String(d.getDate()).padStart(2, '0');
       const month = String(d.getMonth() + 1).padStart(2, '0');
       const fileName = `Check.${day}-${month}.${job.client || 'SinCliente'}.${job.plate || job.vin || 'SN'}.pdf`;
-
       docPDF.save(fileName);
       
-    } catch(e) { 
-      console.error(e);
-      alert("Hubo un error al generar PDF. Verifica tu conexión a internet."); 
-    }
+    } catch(e) { console.error(e); alert("Hubo un error al generar PDF. Verifica tu conexión a internet."); }
   };
 
-  if (filteredJobs.length === 0) return <div className="text-center py-12 bg-white rounded-xl border"><p className="text-gray-500">No hay trabajos disponibles.</p></div>;
+  if (filteredJobs.length === 0) return <div className="text-center py-16 bg-white rounded-3xl border border-slate-100 shadow-sm"><p className="text-slate-400 font-extrabold text-lg">No hay trabajos disponibles.</p></div>;
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 pb-20">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 pb-20">
       {filteredJobs.map(job => (
-        <div key={job.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-visible flex flex-col relative">
+        <div key={job.id} className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-visible flex flex-col relative transform hover:-translate-y-1 transition-transform duration-200">
           
-          <div className="bg-gray-50 px-4 py-2 border-b flex justify-between items-center">
-            <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${job.status==='pending'?'bg-yellow-200 text-yellow-800':job.status==='accepted'?'bg-blue-200 text-blue-800':'bg-green-200 text-green-800'}`}>
+          <div className="px-6 py-4 border-b border-slate-50 flex justify-between items-center">
+            <span className={`px-3 py-1.5 rounded-lg text-xs font-extrabold uppercase tracking-wider ${job.status==='pending'?'bg-amber-100 text-amber-700':job.status==='accepted'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}`}>
               {job.status === 'pending' ? 'Pendiente' : job.status === 'accepted' ? 'En Curso' : 'Completado'}
             </span>
             
-            {/* Menú 3 Puntos */}
             <div className="relative">
-              <button onClick={() => setMenuOpenId(menuOpenId === job.id ? null : job.id)} className="p-1 text-gray-500 hover:bg-gray-200 rounded">
+              <button onClick={() => setMenuOpenId(menuOpenId === job.id ? null : job.id)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors">
                 <MoreVertical className="w-5 h-5"/>
               </button>
               {menuOpenId === job.id && (
-                <div className="absolute right-0 top-8 bg-white border shadow-xl rounded-lg w-48 z-10 overflow-hidden">
-                  <button onClick={() => handleCopyWhatsApp(job)} className="w-full text-left px-4 py-3 text-sm flex items-center gap-2 hover:bg-gray-50 text-gray-700">
-                    <Copy className="w-4 h-4"/> Copiar para WhatsApp
+                <div className="absolute right-0 top-10 bg-white border border-slate-100 shadow-2xl rounded-2xl w-56 z-10 overflow-hidden">
+                  <button onClick={() => handleCopyWhatsApp(job)} className="w-full text-left px-5 py-4 text-sm font-bold flex items-center gap-3 hover:bg-slate-50 text-slate-700 transition-colors">
+                    <Copy className="w-5 h-5 text-blue-500"/> Copiar para WhatsApp
                   </button>
                   {isAdminView && (
-                    <button onClick={() => handleDeleteJob(job.id)} className="w-full text-left px-4 py-3 text-sm flex items-center gap-2 hover:bg-red-50 text-red-600 border-t">
-                      <Trash2 className="w-4 h-4"/> Eliminar Trabajo
+                    <button onClick={() => handleDeleteJob(job.id)} className="w-full text-left px-5 py-4 text-sm font-bold flex items-center gap-3 hover:bg-red-50 text-red-600 border-t border-slate-50 transition-colors">
+                      <Trash2 className="w-5 h-5"/> Eliminar Trabajo
                     </button>
                   )}
                 </div>
@@ -539,25 +545,30 @@ function JobsList({ jobs, role, onStartChecklist, db, currentUserEmail }) {
             </div>
           </div>
 
-          <div className="p-4 flex-1">
-            <h3 className="font-bold text-lg leading-tight">{job.brand} {job.model}</h3>
-            <p className="text-xs font-bold text-blue-600 mt-1">{job.client}</p>
-            <div className="mt-2 text-xs text-gray-600 space-y-1 mb-3">
-              <div className="flex items-center gap-1"><MapPin className="w-3 h-3 text-gray-400"/> <span>Desde: {job.origin}</span></div>
-              <div className="flex items-center gap-1"><Navigation className="w-3 h-3 text-gray-400"/> <span>Hasta: {job.destination}</span></div>
+          <div className="p-6 flex-1">
+            <h3 className="font-extrabold text-xl text-slate-800 leading-tight mb-1">{job.brand} {job.model}</h3>
+            <p className="text-sm font-extrabold text-blue-600 uppercase tracking-wider mb-4">{job.client}</p>
+            
+            <div className="space-y-3 mb-6">
+              <div className="flex items-start gap-3"><MapPin className="w-5 h-5 text-slate-300 shrink-0"/> <span className="text-sm font-bold text-slate-600">{job.origin}</span></div>
+              <div className="flex items-start gap-3"><Navigation className="w-5 h-5 text-slate-300 shrink-0"/> <span className="text-sm font-bold text-slate-600">{job.destination}</span></div>
             </div>
-            <div className="text-sm bg-gray-50 p-2 rounded flex justify-between"><span className="text-gray-500">Patente/VIN:</span><span className="font-medium uppercase">{job.plate || job.vin}</span></div>
+            
+            <div className="bg-slate-50 p-3 rounded-xl flex justify-between items-center border border-slate-100">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Patente/VIN</span>
+              <span className="font-extrabold text-slate-700 uppercase bg-white px-3 py-1 rounded-lg shadow-sm">{job.plate || job.vin}</span>
+            </div>
           </div>
           
-          <div className="p-3 bg-gray-50 border-t space-y-2">
+          <div className="p-4 bg-slate-50 border-t border-slate-100 rounded-b-3xl">
             {job.status === 'pending' && (!isAdminView || job.assignedEmails?.includes(currentUserEmail)) && (
-              <button onClick={() => handleAcceptJob(job)} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 rounded transition-colors">Reclamar Traslado</button>
+              <button onClick={() => handleAcceptJob(job)} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-base font-extrabold py-3.5 rounded-xl transition-colors shadow-lg shadow-blue-200">Reclamar Traslado</button>
             )}
             {((job.status === 'accepted' && (isAdminView || job.acceptedByEmail === currentUserEmail)) || (job.status !== 'completed' && isAdminView)) && (
-              <button onClick={() => onStartChecklist(job)} className="w-full bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 rounded flex justify-center items-center gap-2 transition-colors"><FileText className="w-4 h-4" /> Llenar Checklist</button>
+              <button onClick={() => onStartChecklist(job)} className="w-full bg-green-600 hover:bg-green-700 text-white text-base font-extrabold py-3.5 rounded-xl flex justify-center items-center gap-2 transition-colors shadow-lg shadow-green-200"><FileText className="w-5 h-5" /> Llenar Checklist</button>
             )}
             {job.status === 'completed' && (
-              <button onClick={() => generatePDF(job)} className="w-full bg-gray-800 hover:bg-gray-900 text-white text-sm font-medium py-2 rounded flex justify-center items-center gap-2 transition-colors"><FileDown className="w-4 h-4"/> Descargar PDF</button>
+              <button onClick={() => generatePDF(job)} className="w-full bg-slate-800 hover:bg-slate-900 text-white text-base font-extrabold py-3.5 rounded-xl flex justify-center items-center gap-2 transition-colors shadow-lg shadow-slate-200"><FileDown className="w-5 h-5"/> Descargar PDF</button>
             )}
           </div>
         </div>
@@ -586,7 +597,6 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
   const handleImageUpload = async (e, photoId) => {
     const file = e.target.files[0];
     if (!file) return;
-
     try {
       const bmp = await window.createImageBitmap(file, { resizeWidth: 800, resizeQuality: 'medium' });
       const canvas = document.createElement('canvas');
@@ -596,10 +606,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
       const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
       updateForm('photos', { ...formData.photos, [photoId]: dataUrl });
       bmp.close();
-    } catch (error) {
-      console.error(error);
-      alert("La foto es demasiado pesada para procesarla en memoria.");
-    }
+    } catch (error) { console.error(error); alert("La foto es demasiado pesada para procesarla en memoria."); }
   };
 
   const handleGetLocation = () => {
@@ -615,99 +622,101 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
   const submitForm = async (e) => { 
     e.preventDefault(); 
     if (!formData.signatureData) return alert("Firma obligatoria."); 
-    
     const finalData = {
-      client: formData.client, brand: formData.brand, model: formData.model, 
-      vin: formData.plateOrVin, plate: formData.plateOrVin, origin: formData.origin, destination: formData.destination,
+      client: formData.client, brand: formData.brand, model: formData.model, vin: formData.plateOrVin, plate: formData.plateOrVin, origin: formData.origin, destination: formData.destination,
       status: 'completed', completedAt: Date.now(), checklist: formData
     };
-
     try {
       if (isQuickJob) {
-        finalData.createdAt = Date.now();
-        finalData.assignedDriverName = "Auto-creado";
-        finalData.acceptedByEmail = currentUserEmail;
+        finalData.createdAt = Date.now(); finalData.assignedDriverName = "Auto-creado"; finalData.acceptedByEmail = currentUserEmail;
         await addDoc(collection(db, 'transport_jobs'), finalData);
-      } else {
-        await updateDoc(doc(db, 'transport_jobs', job.id), finalData);
-      }
-      alert("✅ Checklist guardado correctamente.");
-      onComplete();
+      } else { await updateDoc(doc(db, 'transport_jobs', job.id), finalData); }
+      alert("✅ Checklist guardado correctamente."); onComplete();
     } catch (error) { console.error(error); alert("Hubo un error al guardar."); }
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden pb-10">
-      <div className="bg-slate-900 text-white p-4 flex justify-between items-center">
-        <h2 className="font-bold flex items-center gap-2">
-          {isQuickJob ? <Zap className="w-5 h-5 text-purple-400" /> : <FileText className="w-5 h-5 text-blue-400" />} 
+    <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden pb-10">
+      <div className="bg-blue-600 text-white p-6 flex justify-between items-center">
+        <h2 className="text-xl font-extrabold flex items-center gap-3">
+          <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
+            {isQuickJob ? <Zap className="w-5 h-5 text-white" /> : <FileText className="w-5 h-5 text-white" />} 
+          </div>
           {isQuickJob ? "Checklist Rápido" : "Checklist Asignado"}
         </h2>
-        <button onClick={onCancel} className="text-slate-300 text-sm hover:text-white bg-slate-800 px-3 py-1 rounded">Cancelar</button>
+        <button onClick={onCancel} className="text-blue-100 text-sm font-bold hover:text-white bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-xl transition-colors">Cancelar</button>
       </div>
-      <div className="flex bg-slate-100 h-1"><div className={`bg-blue-500 transition-all ${step === 1 ? 'w-1/2' : 'w-full'}`}></div></div>
+      <div className="flex bg-slate-100 h-1.5"><div className={`bg-green-500 transition-all duration-500 ${step === 1 ? 'w-1/2' : 'w-full'}`}></div></div>
       
-      <div className="p-4 sm:p-6">
+      <div className="p-6 sm:p-8">
         {step === 1 && (
-          <div className="space-y-4">
-            <h3 className="font-bold border-b pb-2">Datos Principales</h3>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <input value={formData.client} onChange={e=>updateForm('client', e.target.value)} className="col-span-2 border p-2 rounded outline-none focus:border-blue-500" placeholder="Cliente Empresa o Particular" required/>
-              <input value={formData.brand} onChange={e=>updateForm('brand', e.target.value)} className="border p-2 rounded outline-none focus:border-blue-500" placeholder="Marca" required/>
-              <input value={formData.model} onChange={e=>updateForm('model', e.target.value)} className="border p-2 rounded outline-none focus:border-blue-500" placeholder="Modelo" required/>
-              <input value={formData.plateOrVin} onChange={e=>updateForm('plateOrVin', e.target.value)} className="col-span-2 border p-2 rounded uppercase outline-none focus:border-blue-500" placeholder="Patente/VIN" required/>
-              <input value={formData.origin} onChange={e=>updateForm('origin', e.target.value)} className="col-span-2 border p-2 rounded outline-none focus:border-blue-500" placeholder="Desde" required/>
-              <input value={formData.destination} onChange={e=>updateForm('destination', e.target.value)} className="col-span-2 border p-2 rounded outline-none focus:border-blue-500" placeholder="Hasta" required/>
+          <div className="space-y-6">
+            <h3 className="text-lg font-extrabold text-slate-800 border-b-2 border-slate-100 pb-2">Datos Principales</h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <input value={formData.client} onChange={e=>updateForm('client', e.target.value)} className="col-span-2 border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Cliente Empresa o Particular" required/>
+              <input value={formData.brand} onChange={e=>updateForm('brand', e.target.value)} className="border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Marca" required/>
+              <input value={formData.model} onChange={e=>updateForm('model', e.target.value)} className="border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Modelo" required/>
+              <input value={formData.plateOrVin} onChange={e=>updateForm('plateOrVin', e.target.value)} className="col-span-2 border-2 border-slate-200 p-4 rounded-xl uppercase outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Patente/VIN" required/>
+              <input value={formData.origin} onChange={e=>updateForm('origin', e.target.value)} className="col-span-2 border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Desde" required/>
+              <input value={formData.destination} onChange={e=>updateForm('destination', e.target.value)} className="col-span-2 border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Hasta" required/>
             </div>
             
-            <h3 className="font-bold border-b pb-2 mt-4 text-blue-700">Fotografías</h3>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+            <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-blue-600">Fotografías</h3>
+            <p className="text-xs font-bold text-slate-400 -mt-2 mb-4">Toca un cuadro para elegir cámara o galería</p>
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
               {[
                 {id:'front', l:'Frente'}, {id:'driver', l:'Piloto'}, {id:'passenger', l:'Copiloto'}, {id:'back', l:'Atrás'}, 
                 {id:'tire', l:'Repuesto'}, {id:'dashboard', l:'Tablero'}, {id:'det1', l:'Detalle 1'}, {id:'det2', l:'Detalle 2'}, {id:'det3', l:'Detalle 3'}, {id:'det4', l:'Detalle 4'}
               ].map(p => (
-                <label key={p.id} className={`p-1 border rounded flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer relative overflow-hidden h-24 ${formData.photos[p.id] ? 'bg-green-50 border-green-500' : 'border-dashed border-gray-400 hover:bg-gray-50'}`}>
+                <label key={p.id} className={`p-1 border-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all cursor-pointer relative overflow-hidden h-28 ${formData.photos[p.id] ? 'bg-green-50 border-green-400 shadow-md shadow-green-100' : 'border-dashed border-slate-300 hover:bg-slate-50 hover:border-slate-400'}`}>
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, p.id)} />
                   {formData.photos[p.id] ? (
                     <>
-                      <img src={formData.photos[p.id]} alt={p.l} className="absolute inset-0 w-full h-full object-cover opacity-40" />
-                      <CheckCircle className="text-green-700 w-6 h-6 relative z-10 bg-white rounded-full"/>
-                      <span className="text-[10px] font-bold text-slate-900 text-center relative z-10 bg-white/80 px-1 rounded">{p.l}</span>
+                      <img src={formData.photos[p.id]} alt={p.l} className="absolute inset-0 w-full h-full object-cover opacity-50" />
+                      <CheckCircle className="text-green-600 w-8 h-8 relative z-10 bg-white rounded-full shadow-sm"/>
+                      <span className="text-[10px] font-extrabold text-slate-800 text-center relative z-10 bg-white/90 px-2 py-0.5 rounded-full shadow-sm mt-1">{p.l}</span>
                     </>
                   ) : (
                     <>
-                      <Camera className="text-gray-500 w-6 h-6"/>
-                      <span className="text-[10px] font-bold text-gray-600 text-center">{p.l}</span>
+                      <div className="bg-slate-100 p-2 rounded-full mb-1"><Camera className="text-slate-400 w-5 h-5"/></div>
+                      <span className="text-[10px] font-extrabold text-slate-500 text-center uppercase tracking-wider">{p.l}</span>
                     </>
                   )}
                 </label>
               ))}
             </div>
 
-            <h3 className="font-bold border-b pb-2 mt-4">Combustible: {formData.fuelLevel}%</h3>
-            <input type="range" min="0" max="100" step="5" value={formData.fuelLevel} onChange={(e) => updateForm('fuelLevel', e.target.value)} className="w-full accent-blue-600" />
+            <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-slate-800">Combustible: <span className="text-blue-600">{formData.fuelLevel}%</span></h3>
+            <input type="range" min="0" max="100" step="5" value={formData.fuelLevel} onChange={(e) => updateForm('fuelLevel', e.target.value)} className="w-full accent-blue-600 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer mt-2" />
             
-            <textarea rows="3" value={formData.observations} onChange={(e) => updateForm('observations', e.target.value)} placeholder="Observaciones de daños o detalles..." className="w-full border p-2 text-sm outline-none focus:border-blue-500 rounded mt-2"></textarea>
-            <button onClick={() => { if(!formData.brand || !formData.model || !formData.plateOrVin) return alert("Completa los datos del vehículo"); setStep(2); }} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold transition-colors shadow-md text-lg">Continuar</button>
+            <textarea rows="3" value={formData.observations} onChange={(e) => updateForm('observations', e.target.value)} placeholder="Observaciones de daños o detalles..." className="w-full border-2 border-slate-200 p-4 text-sm outline-none focus:border-blue-500 rounded-xl mt-6 font-bold text-slate-700"></textarea>
+            
+            <button onClick={() => {
+              if(!formData.brand || !formData.model || !formData.plateOrVin) return alert("Completa los datos del vehículo");
+              setStep(2);
+            }} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-extrabold transition-all shadow-xl shadow-blue-200 text-lg mt-8">Continuar a Recepción</button>
           </div>
         )}
         
         {step === 2 && (
-          <form onSubmit={submitForm} className="space-y-5">
-            <h3 className="font-bold border-b pb-2">Datos de Recepción</h3>
+          <form onSubmit={submitForm} className="space-y-6">
+            <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 text-slate-800">Datos de Recepción</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <input required value={formData.receiverName} onChange={e=>updateForm('receiverName', e.target.value)} className="border p-3 rounded outline-none focus:border-blue-500" placeholder="Nombre completo del receptor" />
-              <input required value={formData.receiverRut} onChange={e=>updateForm('receiverRut', e.target.value)} className="border p-3 rounded outline-none focus:border-blue-500" placeholder="RUT" />
-              <input required type="email" value={formData.receiverEmail} onChange={e=>updateForm('receiverEmail', e.target.value)} className="border p-3 rounded col-span-1 sm:col-span-2 outline-none focus:border-blue-500" placeholder="Correo electrónico del receptor" />
+              <input required value={formData.receiverName} onChange={e=>updateForm('receiverName', e.target.value)} className="border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Nombre completo del receptor" />
+              <input required value={formData.receiverRut} onChange={e=>updateForm('receiverRut', e.target.value)} className="border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="RUT" />
+              <input required type="email" value={formData.receiverEmail} onChange={e=>updateForm('receiverEmail', e.target.value)} className="border-2 border-slate-200 p-4 rounded-xl col-span-1 sm:col-span-2 outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Correo electrónico del receptor" />
             </div>
-            <button type="button" onClick={handleGetLocation} className={`px-3 py-3 rounded-lg text-sm w-full font-bold transition-colors ${formData.location ? 'bg-green-100 text-green-800 border border-green-300' : 'bg-slate-200 hover:bg-slate-300 text-slate-800'}`}>
+            
+            <button type="button" onClick={handleGetLocation} className={`px-4 py-4 rounded-2xl text-base w-full font-extrabold transition-all shadow-sm ${formData.location ? 'bg-green-100 text-green-700 border-2 border-green-200' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-2 border-transparent'}`}>
               {formData.location ? "📍 GPS Capturado Exitosamente" : "📍 Tocar para Capturar GPS Actual"}
             </button>
-            <h3 className="font-bold border-b pb-2 mt-4">Firma del Receptor</h3>
+            
+            <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-slate-800">Firma del Receptor</h3>
             <SignaturePad onSave={(data) => updateForm('signatureData', data)} onClear={() => updateForm('signatureData', null)} />
-            <div className="flex gap-3 pt-6 border-t mt-6">
-              <button type="button" onClick={() => setStep(1)} className="flex-1 bg-gray-200 hover:bg-gray-300 py-4 rounded-xl font-bold transition-colors text-gray-800">Atrás</button>
-              <button type="submit" className="flex-1 bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl font-bold transition-colors shadow-lg text-lg">Guardar y Finalizar</button>
+            
+            <div className="flex gap-4 pt-8 border-t-2 border-slate-100 mt-8">
+              <button type="button" onClick={() => setStep(1)} className="flex-1 bg-slate-100 hover:bg-slate-200 py-4 rounded-2xl font-extrabold transition-colors text-slate-600">Atrás</button>
+              <button type="submit" className="flex-[2] bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-extrabold transition-all shadow-xl shadow-green-200 text-lg">Guardar y Finalizar</button>
             </div>
           </form>
         )}
