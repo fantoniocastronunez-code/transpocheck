@@ -25,7 +25,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 
-const CLIENTES = ["Grandleasing", "Kovacs", "Salfa", "Enex"];
+const CLIENTES = ["Grandleasing", "Kovacs", "Salfa", "Enex", "CIPP", "Mutual Capacitación", "Simumak"];
 
 // ==========================================
 // 2. COMPONENTE: FIRMA DIGITAL
