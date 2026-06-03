@@ -25,7 +25,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 
-const CLIENTES = ["Grandleasing", "Kovacs", "Salfa", "Enex", "Mutual Capacitación", "Simumak"];
+const CLIENTES = ["Grandleasing", "Kovacs", "Salfa", "Enex"];
 
 // ==========================================
 // 2. COMPONENTE: FIRMA DIGITAL
@@ -621,6 +621,10 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
   };
 
   const handleDeleteExpense = async (expense) => {
+    if (!isAdminView && expense.type === 'assignment') {
+      return alert("No puedes eliminar una asignación de fondos. Pide al administrador que lo haga.");
+    }
+
     if (window.confirm("¿Seguro que deseas eliminar este registro? El saldo del conductor se ajustará automáticamente.")) {
       try {
         const driverSnapshot = drivers.find(d => d.id === expense.driverId);
@@ -644,6 +648,12 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
   const EditExpenseModal = ({ expense, onClose }) => {
     const handleUpdateSubmit = async (e) => {
       e.preventDefault();
+      
+      if (!isAdminView && expense.type === 'assignment') {
+        alert("No puedes modificar una asignación de fondos. Pide al administrador que lo haga.");
+        return onClose();
+      }
+
       const newAmount = Number(e.target.amount.value);
       const newDetail = e.target.detail.value;
       const amountDiff = newAmount - expense.amount;
@@ -775,10 +785,17 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
               </div>
               <div className="flex items-center gap-2">
                 <span className={`font-extrabold ${exp.type === 'expense' ? 'text-red-500' : 'text-green-600'}`}>{exp.type === 'expense' ? '-' : '+'}{formatMoney(exp.amount)}</span>
-                <div className="flex gap-1 border-l border-slate-200 pl-2 ml-1">
-                  <button onClick={() => setEditingExpense(exp)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors" title="Editar"><Edit2 className="w-4 h-4"/></button>
-                  <button onClick={() => handleDeleteExpense(exp)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Eliminar"><Trash2 className="w-4 h-4"/></button>
-                </div>
+                
+                {exp.type !== 'assignment' ? (
+                  <div className="flex gap-1 border-l border-slate-200 pl-2 ml-1">
+                    <button onClick={() => setEditingExpense(exp)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors" title="Editar"><Edit2 className="w-4 h-4"/></button>
+                    <button onClick={() => handleDeleteExpense(exp)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Eliminar"><Trash2 className="w-4 h-4"/></button>
+                  </div>
+                ) : (
+                  <div className="pl-2 ml-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Fondo</span>
+                  </div>
+                )}
               </div>
             </div>
           ))}
