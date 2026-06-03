@@ -4,7 +4,7 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signO
 import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { 
   Car, MapPin, Camera, Fuel, CheckCircle, FileText, Download, 
-  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt
+  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck
 } from 'lucide-react';
 
 // ==========================================
@@ -38,7 +38,6 @@ const SignaturePad = ({ onSave, onClear, initialData }) => {
     const ctx = canvas.getContext('2d');
     ctx.strokeStyle = '#000'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     
-    // Restaurar firma si había un borrador guardado
     if (initialData) {
       const img = new Image();
       img.onload = () => ctx.drawImage(img, 0, 0);
@@ -92,6 +91,8 @@ export default function App() {
   const [jobs, setJobs] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [expenses, setExpenses] = useState([]);
+  const [vehicles, setVehicles] = useState([]); // NUEVO: Base de datos de vehículos
+  
   const [editingDriver, setEditingDriver] = useState(null);
   const [adminTab, setAdminTab] = useState('dashboard');
   const [selectedJob, setSelectedJob] = useState(null);
@@ -103,19 +104,28 @@ export default function App() {
   
   const isFirstLoad = useRef(true);
 
+  // Sistema de Notificaciones MEJORADO (Forzando ServiceWorker en Android)
   const requestNotificationPermission = () => {
     if (!("Notification" in window)) { alert("Tu navegador no soporta notificaciones."); return; }
     Notification.requestPermission().then(permission => {
       if (permission === "granted") {
         setNotificationsEnabled(true);
-        new Notification("¡Notificaciones Activadas!", { body: "Recibirás alertas de nuevos trabajos aquí." });
+        triggerNotification("¡Notificaciones Activadas!", "Recibirás alertas de nuevos trabajos aquí.");
       }
     });
   };
 
   const triggerNotification = (title, body) => {
     if (!("Notification" in window)) return;
-    if (Notification.permission === "granted") new Notification(title, { body });
+    if (Notification.permission === "granted") {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(registration => {
+          registration.showNotification(title, { body: body, icon: '/logo.png', vibrate: [200, 100, 200] });
+        }).catch(() => new Notification(title, { body }));
+      } else {
+        new Notification(title, { body });
+      }
+    }
   };
 
   useEffect(() => {
@@ -137,6 +147,7 @@ export default function App() {
 
   useEffect(() => {
     if (!user) return;
+    
     const unsubJobs = onSnapshot(collection(db, 'transport_jobs'), (snapshot) => {
       if (!isFirstLoad.current) {
         snapshot.docChanges().forEach((change) => {
@@ -165,7 +176,12 @@ export default function App() {
       setExpenses(expData);
     });
 
-    return () => { unsubJobs(); unsubDrivers(); unsubExpenses(); };
+    // NUEVO: Suscripción a la colección de Vehículos
+    const unsubVehicles = onSnapshot(collection(db, 'vehicles'), (snapshot) => {
+      setVehicles(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
+    return () => { unsubJobs(); unsubDrivers(); unsubExpenses(); unsubVehicles(); };
   }, [user, activeRole]);
 
   const globalStyles = (
@@ -193,6 +209,7 @@ export default function App() {
     );
   }
 
+  // --- MÉTODOS CONDUCTORES ---
   const handleCreateDriver = async (e) => {
     e.preventDefault();
     try {
@@ -207,6 +224,30 @@ export default function App() {
       await updateDoc(doc(db, 'drivers', editingDriver.id), { name: e.target.driverName.value, email: e.target.driverEmail.value.toLowerCase() });
       setEditingDriver(null); alert("Conductor actualizado exitosamente.");
     } catch (error) { console.error(error); }
+  };
+
+  // --- NUEVO: MÉTODOS VEHÍCULOS ---
+  const handleCreateVehicle = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const client = formData.get('client') === 'OTRO' ? formData.get('manualClient') : formData.get('client');
+    
+    try {
+      await addDoc(collection(db, 'vehicles'), { 
+        client: client,
+        brand: formData.get('brand'), 
+        model: formData.get('model'), 
+        plate: formData.get('plate').toUpperCase(),
+        createdAt: Date.now() 
+      });
+      e.target.reset(); alert("Vehículo guardado exitosamente en la base de datos.");
+    } catch (error) { console.error(error); }
+  };
+
+  const handleDeleteVehicle = async (vehicleId) => {
+    if(window.confirm("¿Eliminar este vehículo de la base de datos?")) {
+      try { await deleteDoc(doc(db, 'vehicles', vehicleId)); } catch (e) { console.error(e); }
+    }
   };
 
   const handleQuickChecklist = () => {
@@ -238,10 +279,31 @@ export default function App() {
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
   };
 
+  // --- SUB-COMPONENTE: CREAR TRABAJO ADMIN (AHORA CON AUTOCOMPLETADO) ---
   const NewJobForm = () => {
     const [selectedClient, setSelectedClient] = useState('');
     const [manualClient, setManualClient] = useState('');
+    const [brand, setBrand] = useState('');
+    const [model, setModel] = useState('');
+    const [plate, setPlate] = useState('');
     const todayStr = new Date().toISOString().split('T')[0];
+
+    // LÓGICA DE AUTOCOMPLETADO
+    const handlePlateChange = (e) => {
+      const val = e.target.value.toUpperCase();
+      setPlate(val);
+      const foundVehicle = vehicles.find(v => v.plate === val);
+      if (foundVehicle) {
+        setBrand(foundVehicle.brand);
+        setModel(foundVehicle.model);
+        if (CLIENTES.includes(foundVehicle.client)) {
+          setSelectedClient(foundVehicle.client);
+        } else {
+          setSelectedClient('OTRO');
+          setManualClient(foundVehicle.client);
+        }
+      }
+    };
 
     const handleCreateJobSubmit = async (e) => {
       e.preventDefault();
@@ -253,8 +315,8 @@ export default function App() {
       const finalClient = selectedClient === 'OTRO' ? manualClient : selectedClient;
       
       const newJob = {
-        scheduledDate: formData.get('scheduledDate'), client: finalClient, brand: formData.get('brand'), model: formData.get('model'),
-        vin: formData.get('plateOrVin'), plate: formData.get('plateOrVin'), origin: formData.get('origin'), destination: formData.get('destination'),
+        scheduledDate: formData.get('scheduledDate'), client: finalClient, brand: brand, model: model,
+        vin: plate, plate: plate, origin: formData.get('origin'), destination: formData.get('destination'),
         assignedDrivers: assignedDriversList.map(d => ({id: d.id, name: d.name, email: d.email})), assignedEmails: assignedDriversList.map(d => d.email),
         status: 'pending', createdAt: Date.now(), checklist: null
       };
@@ -266,7 +328,16 @@ export default function App() {
         <h2 className="text-2xl font-extrabold mb-6 border-b pb-4 text-slate-800">Crear Nuevo Traslado</h2>
         <form onSubmit={handleCreateJobSubmit} className="space-y-6">
           <div className="bg-slate-50 p-6 rounded-2xl space-y-4">
-            <h3 className="text-base font-bold text-slate-700">1. Programación y Cliente <span className="text-xs text-slate-400 font-normal">(Opcional)</span></h3>
+             <h3 className="text-base font-bold text-slate-700">1. Vehículo <span className="text-xs text-blue-500 font-bold">(Escribe la patente para autocompletar)</span></h3>
+             <div className="grid grid-cols-2 gap-4">
+               <input value={plate} onChange={handlePlateChange} type="text" placeholder="Patente o VIN" className="w-full border-2 border-blue-200 p-3 text-sm rounded-xl col-span-2 uppercase outline-none focus:border-blue-500 font-bold bg-white text-blue-900 shadow-sm" />
+               <input value={brand} onChange={e=>setBrand(e.target.value)} type="text" placeholder="Marca" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+               <input value={model} onChange={e=>setModel(e.target.value)} type="text" placeholder="Modelo" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+             </div>
+          </div>
+          
+          <div className="bg-slate-50 p-6 rounded-2xl space-y-4">
+            <h3 className="text-base font-bold text-slate-700">2. Programación y Ruta</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                  <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider ml-1">Fecha de Traslado</label>
@@ -287,14 +358,7 @@ export default function App() {
               <input name="destination" type="text" placeholder="Hasta (Destino)" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
             </div>
           </div>
-          <div className="bg-slate-50 p-6 rounded-2xl space-y-4">
-             <h3 className="text-base font-bold text-slate-700">2. Vehículo <span className="text-xs text-slate-400 font-normal">(Opcional)</span></h3>
-             <div className="grid grid-cols-2 gap-4">
-               <input name="brand" type="text" placeholder="Marca" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
-               <input name="model" type="text" placeholder="Modelo" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
-               <input name="plateOrVin" type="text" placeholder="Patente o VIN" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl col-span-2 uppercase outline-none focus:border-blue-500 font-semibold bg-white" />
-             </div>
-          </div>
+          
           <div className="bg-slate-50 p-6 rounded-2xl space-y-4">
              <h3 className="text-base font-bold text-slate-700">3. Conductores <span className="text-xs text-red-500 font-normal">(Obligatorio seleccionar al menos 1)</span></h3>
              <div className="max-h-48 overflow-y-auto border-2 border-slate-200 bg-white rounded-xl">
@@ -308,64 +372,6 @@ export default function App() {
           </div>
           <div className="flex justify-end pt-2"><button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-extrabold text-lg transition-colors shadow-lg shadow-blue-200">Guardar y Asignar</button></div>
         </form>
-      </div>
-    );
-  };
-
-  const EditJobModal = ({ job, onClose }) => {
-    const [selectedClient, setSelectedClient] = useState(CLIENTES.includes(job.client) ? job.client : (job.client ? 'OTRO' : ''));
-    const [manualClient, setManualClient] = useState(!CLIENTES.includes(job.client) ? job.client : '');
-    const defaultDate = job.scheduledDate || new Date().toISOString().split('T')[0];
-
-    const handleUpdateJobSubmit = async (e) => {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-      const selectedDriverIds = formData.getAll('assignedDriverId');
-      const assignedDriversList = drivers.filter(d => selectedDriverIds.includes(d.id));
-      const finalClient = selectedClient === 'OTRO' ? manualClient : selectedClient;
-      const updatedData = {
-        scheduledDate: formData.get('scheduledDate'), client: finalClient, brand: formData.get('brand'), model: formData.get('model'),
-        vin: formData.get('plateOrVin'), plate: formData.get('plateOrVin'), origin: formData.get('origin'), destination: formData.get('destination'),
-      };
-      if (assignedDriversList.length > 0) {
-        updatedData.assignedDrivers = assignedDriversList.map(d => ({id: d.id, name: d.name, email: d.email}));
-        updatedData.assignedEmails = assignedDriversList.map(d => d.email);
-      }
-      try { await updateDoc(doc(db, 'transport_jobs', job.id), updatedData); alert("Trabajo actualizado."); onClose(); } catch (error) { console.error(error); }
-    };
-
-    return (
-      <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-          <div className="p-6 border-b flex justify-between items-center sticky top-0 bg-white z-10">
-            <h2 className="text-xl font-extrabold text-slate-800">Modificar Trabajo</h2><button onClick={onClose} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button>
-          </div>
-          <form onSubmit={handleUpdateJobSubmit} className="p-6 space-y-6">
-            <div className="space-y-4">
-              <h3 className="text-sm font-bold text-slate-700">Programación, Cliente y Ruta</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1"><label className="text-xs font-bold text-slate-500 uppercase ml-1">Fecha Programada</label><input name="scheduledDate" type="date" defaultValue={defaultDate} required className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold text-slate-700" /></div>
-                <div className="space-y-1"><label className="text-xs font-bold text-slate-500 uppercase ml-1">Cliente</label><select value={selectedClient} onChange={(e) => setSelectedClient(e.target.value)} className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold"><option value="">Seleccione Cliente...</option>{CLIENTES.map(c => <option key={c} value={c}>{c}</option>)}<option value="OTRO">Otro (Ingreso manual)</option></select>{selectedClient === 'OTRO' && <input type="text" value={manualClient} onChange={(e) => setManualClient(e.target.value)} placeholder="Nombre del cliente" className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold mt-2" />}</div>
-                <input name="origin" defaultValue={job.origin} type="text" placeholder="Desde" className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold" />
-                <input name="destination" defaultValue={job.destination} type="text" placeholder="Hasta" className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold" />
-              </div>
-              <h3 className="text-sm font-bold text-slate-700 mt-6">Vehículo</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <input name="brand" defaultValue={job.brand} type="text" placeholder="Marca" className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold" />
-                <input name="model" defaultValue={job.model} type="text" placeholder="Modelo" className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold" />
-                <input name="plateOrVin" defaultValue={job.plate || job.vin} type="text" placeholder="Patente o VIN" className="w-full border-2 p-3 text-sm rounded-xl col-span-2 uppercase outline-none focus:border-blue-500 font-semibold" />
-              </div>
-              <h3 className="text-sm font-bold text-slate-700 mt-6">Conductores <span className="text-xs font-normal text-slate-400">(Dejar igual si no quieres cambiarlos)</span></h3>
-              <div className="max-h-40 overflow-y-auto border-2 rounded-xl">
-                  {drivers.map(d => {
-                    const isPreselected = job.assignedEmails?.includes(d.email);
-                    return (<label key={d.id} className="flex items-center p-3 border-b hover:bg-blue-50 cursor-pointer"><input type="checkbox" name="assignedDriverId" value={d.id} defaultChecked={isPreselected} className="w-5 h-5 cursor-pointer rounded text-blue-600" /><div className="ml-3"><span className="block text-sm font-bold text-slate-800">{d.name}</span></div></label>)
-                  })}
-              </div>
-            </div>
-            <div className="flex gap-4 pt-4 border-t"><button type="button" onClick={onClose} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold">Cancelar</button><button type="submit" className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold">Guardar Cambios</button></div>
-          </form>
-        </div>
       </div>
     );
   };
@@ -391,27 +397,68 @@ export default function App() {
         </div>
       </header>
 
-      {editingJob && <EditJobModal job={editingJob} onClose={() => setEditingJob(null)} />}
-
       {currentView === 'main' && mainTab === 'jobs' && (
         <main className="max-w-5xl mx-auto p-4 pt-6">
           {activeRole === 'admin' ? (
             <>
               <div className="flex flex-wrap gap-2 mb-8 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
-                <button onClick={() => setAdminTab('dashboard')} className={`flex-1 flex justify-center gap-2 px-4 py-3 rounded-xl text-base font-extrabold transition-colors ${adminTab==='dashboard'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><ClipboardList className="w-5 h-5"/> Trabajos</button>
-                <button onClick={() => setAdminTab('newJob')} className={`flex-1 flex justify-center gap-2 px-4 py-3 rounded-xl text-base font-extrabold transition-colors ${adminTab==='newJob'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Plus className="w-5 h-5"/> Crear</button>
-                <button onClick={() => setAdminTab('drivers')} className={`flex-1 flex justify-center gap-2 px-4 py-3 rounded-xl text-base font-extrabold transition-colors ${adminTab==='drivers'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Users className="w-5 h-5"/> Conductores</button>
+                <button onClick={() => setAdminTab('dashboard')} className={`flex-1 flex justify-center gap-2 px-4 py-3 rounded-xl text-sm sm:text-base font-extrabold transition-colors ${adminTab==='dashboard'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><ClipboardList className="w-5 h-5"/> Trabajos</button>
+                <button onClick={() => setAdminTab('newJob')} className={`flex-1 flex justify-center gap-2 px-4 py-3 rounded-xl text-sm sm:text-base font-extrabold transition-colors ${adminTab==='newJob'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Plus className="w-5 h-5"/> Crear</button>
+                <button onClick={() => setAdminTab('vehicles')} className={`flex-1 flex justify-center gap-2 px-4 py-3 rounded-xl text-sm sm:text-base font-extrabold transition-colors ${adminTab==='vehicles'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Truck className="w-5 h-5"/> Vehículos</button>
+                <button onClick={() => setAdminTab('drivers')} className={`flex-1 flex justify-center gap-2 px-4 py-3 rounded-xl text-sm sm:text-base font-extrabold transition-colors ${adminTab==='drivers'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Users className="w-5 h-5"/> Conductores</button>
               </div>
+              
               {adminTab === 'dashboard' && (
                 <div className="space-y-6">
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                     <h2 className="text-2xl font-extrabold text-slate-800">Monitor Administrativo</h2>
                     <button onClick={exportToExcel} className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex justify-center items-center gap-2 shadow-lg shadow-green-200 transition-colors"><Download className="w-5 h-5"/> Exportar Excel</button>
                   </div>
-                  <JobsList jobs={jobs} drivers={drivers} role="admin" onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} onEditJob={setEditingJob} db={db} currentUserEmail={currentUserEmail} />
+                  <JobsList jobs={jobs} drivers={drivers} role="admin" onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} db={db} currentUserEmail={currentUserEmail} />
                 </div>
               )}
+              
               {adminTab === 'newJob' && <NewJobForm />}
+              
+              {/* PESTAÑA VEHÍCULOS */}
+              {adminTab === 'vehicles' && (
+                <div className="grid md:grid-cols-2 gap-6">
+                  <form onSubmit={handleCreateVehicle} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-5">
+                    <h3 className="text-xl font-extrabold text-slate-800 flex items-center gap-2"><Truck className="text-blue-600"/> Guardar Nuevo Vehículo</h3>
+                    <p className="text-xs font-bold text-slate-500 mb-2">Agrega vehículos frecuentes a tu base de datos para autocompletar al crear un trabajo.</p>
+                    
+                    <select name="client" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold text-slate-700">
+                      <option value="">Seleccione Cliente al que pertenece...</option>
+                      {CLIENTES.map(c => <option key={c} value={c}>{c}</option>)}
+                      <option value="OTRO">Otro (Se debe escribir manualmente)</option>
+                    </select>
+                    <input name="manualClient" placeholder="Si es OTRO, escribe el cliente aquí" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+                    
+                    <input name="brand" placeholder="Marca (Ej. Chevrolet)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+                    <input name="model" placeholder="Modelo (Ej. NPR 816)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+                    <input name="plate" placeholder="Patente" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm uppercase outline-none focus:border-blue-500 font-bold text-slate-800"/>
+                    <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-lg transition-colors shadow-lg shadow-blue-200">Guardar Vehículo</button>
+                  </form>
+
+                  <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                    <h3 className="text-xl font-extrabold text-slate-800 mb-6">Base de Datos Flota</h3>
+                    <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+                      {vehicles.length === 0 ? <p className="text-sm font-semibold text-slate-400">No hay vehículos registrados</p> : vehicles.map(v=>(
+                        <div key={v.id} className="flex justify-between items-center p-4 bg-slate-50 border border-slate-100 rounded-2xl group transition-all">
+                          <div>
+                            <p className="text-base font-extrabold text-slate-800">{v.brand} {v.model}</p>
+                            <p className="text-sm font-bold text-blue-600">{v.plate}</p>
+                            <p className="text-xs font-bold text-slate-400 mt-1">{v.client || 'Sin cliente'}</p>
+                          </div>
+                          <button onClick={() => handleDeleteVehicle(v.id)} className="p-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors shadow-sm"><Trash2 className="w-5 h-5"/></button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* PESTAÑA CONDUCTORES */}
               {adminTab === 'drivers' && (
                 <div className="grid md:grid-cols-2 gap-6">
                   <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={editingDriver ? handleUpdateDriver : handleCreateDriver} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-5">
@@ -456,6 +503,7 @@ export default function App() {
         </main>
       )}
 
+      {/* BOTTOM NAV BAR */}
       {currentView === 'main' && (
         <nav className="fixed bottom-0 w-full bg-white border-t border-slate-200 flex justify-around items-center p-3 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] pb-[env(safe-area-inset-bottom)]">
           <button onClick={handleQuickChecklist} className="flex flex-col items-center text-slate-400 hover:text-blue-600 transition-colors w-24">
@@ -611,9 +659,9 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
 }
 
 // ==========================================
-// 4. COMPONENTE: LISTA DE TRABAJOS
+// 4. COMPONENTE: LISTA DE TRABAJOS (ORDEN INTELIGENTE)
 // ==========================================
-function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, currentUserEmail }) {
+function JobsList({ jobs, drivers, role, onStartChecklist, db, currentUserEmail }) {
   const [menuOpenId, setMenuOpenId] = useState(null);
   const now = new Date();
   const isAdminView = role === 'admin';
@@ -629,6 +677,18 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       if (job.createdAt < firstOfCurrentMonth) return false;
     }
     return true;
+  });
+
+  const sortedJobs = [...filteredJobs].sort((a, b) => {
+    const adminOrder = { pending: 1, accepted: 2, completed: 3 };
+    const driverOrder = { accepted: 1, pending: 2, completed: 3 };
+    const order = isAdminView ? adminOrder : driverOrder;
+    
+    if (order[a.status] !== order[b.status]) return order[a.status] - order[b.status];
+    if (a.status === 'completed') return (b.completedAt || b.createdAt) - (a.completedAt || a.createdAt);
+    const dateA = a.scheduledDate ? new Date(a.scheduledDate).getTime() : a.createdAt;
+    const dateB = b.scheduledDate ? new Date(b.scheduledDate).getTime() : b.createdAt;
+    return dateA - dateB; 
   });
 
   const handleAcceptJob = async (job) => {
@@ -750,11 +810,9 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     } catch (e) { console.error(e); }
   };
 
-  if (filteredJobs.length === 0) return <div className="text-center py-16 bg-white rounded-3xl border border-slate-100 shadow-sm"><p className="text-slate-400 font-extrabold text-lg">No hay trabajos disponibles.</p></div>;
-
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {filteredJobs.map(job => {
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 pb-20">
+      {sortedJobs.map(job => {
         let realizedByName = '';
         if (job.status === 'completed' || job.status === 'accepted') {
           if (job.acceptedByEmail) { const foundD = drivers?.find(d => d.email === job.acceptedByEmail); realizedByName = foundD ? foundD.name : job.acceptedByEmail; } 
@@ -774,7 +832,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
               {menuOpenId === job.id && (
                 <div className="absolute right-0 top-10 bg-white border border-slate-100 shadow-2xl rounded-2xl w-56 z-10 overflow-hidden">
                   <button onClick={() => handleCopyWhatsApp(job)} className="w-full text-left px-5 py-4 text-sm font-bold flex items-center gap-3 hover:bg-slate-50 text-slate-700 transition-colors"><Copy className="w-5 h-5 text-slate-400"/> Copiar formato texto</button>
-                  {isAdminView && <button onClick={() => { onEditJob(job); setMenuOpenId(null); }} className="w-full text-left px-5 py-4 text-sm font-bold flex items-center gap-3 hover:bg-blue-50 text-blue-700 border-t border-slate-50 transition-colors"><Edit2 className="w-5 h-5"/> Editar Trabajo</button>}
                   {isAdminView && <button onClick={() => handleDeleteJob(job.id)} className="w-full text-left px-5 py-4 text-sm font-bold flex items-center gap-3 hover:bg-red-50 text-red-600 border-t border-slate-50 transition-colors"><Trash2 className="w-5 h-5"/> Eliminar Trabajo</button>}
                 </div>
               )}
@@ -826,18 +883,12 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
   const isQuickJob = job.id === 'NEW_QUICK_JOB';
   const DRAFT_KEY = `checklist_draft_${job.id}`;
 
-  const [step, setStep] = useState(() => {
-    const savedStep = localStorage.getItem(`${DRAFT_KEY}_step`);
-    return savedStep ? parseInt(savedStep, 10) : 1;
-  });
-  
+  const [step, setStep] = useState(() => { const savedStep = localStorage.getItem(`${DRAFT_KEY}_step`); return savedStep ? parseInt(savedStep, 10) : 1; });
   const [loadingLoc, setLoadingLoc] = useState(false);
 
   const [formData, setFormData] = useState(() => {
     const saved = localStorage.getItem(DRAFT_KEY);
-    if (saved) {
-      try { return JSON.parse(saved); } catch(e) { console.error("Error cargando borrador"); }
-    }
+    if (saved) { try { return JSON.parse(saved); } catch(e) { console.error("Error cargando borrador"); } }
     return {
       scheduledDate: job.scheduledDate || new Date().toISOString().split('T')[0],
       client: job.client || '', brand: job.brand || '', model: job.model || '', plateOrVin: job.plate || job.vin || '',
@@ -848,11 +899,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
     };
   });
 
-  // Efecto de Autoguardado
-  useEffect(() => {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(formData));
-    localStorage.setItem(`${DRAFT_KEY}_step`, step);
-  }, [formData, step, DRAFT_KEY]);
+  useEffect(() => { localStorage.setItem(DRAFT_KEY, JSON.stringify(formData)); localStorage.setItem(`${DRAFT_KEY}_step`, step); }, [formData, step, DRAFT_KEY]);
 
   const updateForm = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
 
@@ -881,24 +928,14 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
       status: 'completed', completedAt: Date.now(), checklist: formData
     };
     try {
-      if (isQuickJob) {
-        finalData.createdAt = Date.now(); finalData.assignedDriverName = "Auto-creado"; finalData.acceptedByEmail = currentUserEmail;
-        await addDoc(collection(db, 'transport_jobs'), finalData);
-      } else { await updateDoc(doc(db, 'transport_jobs', job.id), finalData); }
-      
-      // Borramos el borrador al finalizar con éxito
-      localStorage.removeItem(DRAFT_KEY);
-      localStorage.removeItem(`${DRAFT_KEY}_step`);
-      
+      if (isQuickJob) { finalData.createdAt = Date.now(); finalData.assignedDriverName = "Auto-creado"; finalData.acceptedByEmail = currentUserEmail; await addDoc(collection(db, 'transport_jobs'), finalData); } 
+      else { await updateDoc(doc(db, 'transport_jobs', job.id), finalData); }
+      localStorage.removeItem(DRAFT_KEY); localStorage.removeItem(`${DRAFT_KEY}_step`);
       alert("✅ Checklist guardado correctamente."); onComplete();
     } catch (error) { console.error(error); alert("Hubo un error al guardar."); }
   };
 
-  const handleCancelClick = () => {
-    if (window.confirm("El progreso de este checklist ha sido autoguardado en tu teléfono. ¿Deseas pausar y salir por ahora?")) {
-      onCancel();
-    }
-  };
+  const handleCancelClick = () => { if (window.confirm("El progreso de este checklist ha sido autoguardado en tu teléfono. ¿Deseas pausar y salir por ahora?")) { onCancel(); } };
 
   return (
     <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden pb-10">
