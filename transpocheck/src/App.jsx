@@ -5,7 +5,7 @@ import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc
 import { jsPDF } from "jspdf";
 import { 
   Car, MapPin, Camera, Fuel, CheckCircle, FileText, Download, 
-  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2
+  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell
 } from 'lucide-react';
 
 // ==========================================
@@ -82,27 +82,38 @@ export default function App() {
   const [selectedJob, setSelectedJob] = useState(null);
   const [currentView, setCurrentView] = useState('main');
   const [activeRole, setActiveRole] = useState('driver');
+  const [notifPermission, setNotifPermission] = useState('default');
   
   const isFirstLoad = useRef(true);
 
-  const triggerNotification = (title, body) => {
-    if (!("Notification" in window)) return;
-    if (Notification.permission === "granted") {
-      new Notification(title, { body });
-    } else if (Notification.permission !== "denied") {
-      Notification.requestPermission().then(permission => {
-        if (permission === "granted") new Notification(title, { body });
-      });
+  // Registro de Service Worker para notificaciones en Android
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(err => console.error("Error SW:", err));
+    }
+    if ("Notification" in window) setNotifPermission(Notification.permission);
+  }, []);
+
+  const requestNotificationPermission = () => {
+    if ("Notification" in window) {
+      Notification.requestPermission().then(perm => setNotifPermission(perm));
+    }
+  };
+
+  const triggerNotification = async (title, body) => {
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    
+    // Usamos el ServiceWorker para que Android Chrome muestre la alerta correctamente
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (reg && 'showNotification' in reg) {
+      reg.showNotification(title, { body, icon: '/logo.png', vibrate: [200, 100, 200] });
+    } else {
+      new Notification(title, { body, icon: '/logo.png' });
     }
   };
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if (currentUser && "Notification" in window && Notification.permission === "default") {
-        Notification.requestPermission();
-      }
-    });
+    const unsub = onAuthStateChanged(auth, setUser);
     return () => unsub();
   }, []);
 
@@ -122,10 +133,10 @@ export default function App() {
         snapshot.docChanges().forEach((change) => {
           const jobData = change.doc.data();
           if (change.type === 'added' && jobData.status === 'pending' && jobData.assignedEmails?.includes(currentUserEmail)) {
-            triggerNotification('📍 ¡Nuevo Traslado Asignado!', `Tienes que mover un ${jobData.brand} ${jobData.model} desde ${jobData.origin}`);
+            triggerNotification('📍 ¡Nuevo Traslado Asignado!', `Mover: ${jobData.brand} ${jobData.model} desde ${jobData.origin}`);
           }
           if (change.type === 'modified' && jobData.status === 'accepted' && isRealAdmin && activeRole === 'admin') {
-            triggerNotification('✅ Trabajo Aceptado', `El conductor ${jobData.acceptedByEmail} aceptó el traslado del ${jobData.brand} ${jobData.model}`);
+            triggerNotification('✅ Trabajo Aceptado', `Conductor ${jobData.acceptedByEmail} aceptó traslado del ${jobData.brand}`);
           }
         });
       }
@@ -150,7 +161,6 @@ export default function App() {
     `}</style>
   );
 
-  // Pantalla de Login
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 flex flex-col items-center justify-center p-4">
@@ -181,11 +191,9 @@ export default function App() {
     e.preventDefault();
     try {
       await updateDoc(doc(db, 'drivers', editingDriver.id), { 
-        name: e.target.driverName.value, 
-        email: e.target.driverEmail.value.toLowerCase() 
+        name: e.target.driverName.value, email: e.target.driverEmail.value.toLowerCase() 
       });
-      setEditingDriver(null);
-      alert("Conductor actualizado exitosamente.");
+      setEditingDriver(null); alert("Conductor actualizado exitosamente.");
     } catch (error) { console.error(error); }
   };
 
@@ -287,28 +295,35 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 pb-20 font-sans">
       {globalStyles}
-      <header className="bg-blue-600 text-white p-4 shadow-lg flex justify-between items-center sticky top-0 z-50">
+      <header className="bg-blue-600 text-white p-4 shadow-lg flex flex-wrap justify-between items-center sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm"><Car className="w-6 h-6 text-white" /></div>
           <h1 className="font-extrabold text-2xl tracking-tight">LogisticAPP</h1>
         </div>
-        <div className="flex items-center gap-4">
-          {isRealAdmin && (
-            <button 
-              onClick={() => setActiveRole(activeRole === 'admin' ? 'driver' : 'admin')}
-              className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl text-sm font-bold transition-all border border-white/10 backdrop-blur-sm"
-              title="Cambiar Vista"
-            >
-              {activeRole === 'admin' ? <ToggleRight className="w-6 h-6 text-green-300"/> : <ToggleLeft className="w-6 h-6 text-slate-300"/>}
-              <span className="hidden sm:inline">{activeRole === 'admin' ? 'Modo Admin' : 'Modo Conductor'}</span>
+        
+        <div className="flex items-center gap-2 mt-2 sm:mt-0">
+          {notifPermission === 'default' && (
+            <button onClick={requestNotificationPermission} className="bg-yellow-400 hover:bg-yellow-500 text-slate-900 p-2 rounded-xl flex items-center gap-1 text-xs font-bold transition-colors" title="Activar Notificaciones">
+              <Bell className="w-4 h-4"/> Notificar
             </button>
           )}
 
-          <div className="hidden sm:block text-right">
-            <p className="text-xs text-blue-200 font-bold uppercase tracking-wider">Sesión iniciada</p>
-            <p className="text-sm font-extrabold">{currentUserEmail}</p>
+          {isRealAdmin && (
+            <button 
+              onClick={() => setActiveRole(activeRole === 'admin' ? 'driver' : 'admin')}
+              className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-3 py-2 rounded-xl text-sm font-bold transition-all border border-white/10 backdrop-blur-sm"
+              title="Cambiar Vista"
+            >
+              {activeRole === 'admin' ? <ToggleRight className="w-5 h-5 text-green-300"/> : <ToggleLeft className="w-5 h-5 text-slate-300"/>}
+              <span className="hidden md:inline">{activeRole === 'admin' ? 'Admin' : 'Conductor'}</span>
+            </button>
+          )}
+
+          <div className="hidden sm:block text-right border-l border-white/20 pl-3 ml-1">
+            <p className="text-[10px] text-blue-200 font-bold uppercase tracking-wider">Sesión iniciada</p>
+            <p className="text-xs font-extrabold">{currentUserEmail}</p>
           </div>
-          <button onClick={() => signOut(auth)} className="bg-white/10 hover:bg-white/20 p-2.5 rounded-xl text-white transition-colors"><LogOut className="w-5 h-5" /></button>
+          <button onClick={() => signOut(auth)} className="bg-white/10 hover:bg-white/20 p-2 rounded-xl text-white transition-colors ml-1"><LogOut className="w-5 h-5" /></button>
         </div>
       </header>
 
@@ -330,7 +345,7 @@ export default function App() {
               {adminTab === 'dashboard' && (
                 <div className="space-y-6">
                   <div className="flex justify-between items-center"><h2 className="text-2xl font-extrabold text-slate-800">Monitor Administrativo</h2><button onClick={exportToExcel} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-green-200 transition-colors"><Download className="w-4 h-4"/> Exportar a Excel</button></div>
-                  <JobsList jobs={jobs} role="admin" onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} db={db} currentUserEmail={currentUserEmail} />
+                  <JobsList jobs={jobs} drivers={drivers} role="admin" onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} db={db} currentUserEmail={currentUserEmail} />
                 </div>
               )}
               {adminTab === 'newJob' && <NewJobForm />}
@@ -342,17 +357,13 @@ export default function App() {
                     </h3>
                     <input name="driverName" defaultValue={editingDriver ? editingDriver.name : ''} placeholder="Nombre completo" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
                     <input name="driverEmail" defaultValue={editingDriver ? editingDriver.email : ''} placeholder="Correo Gmail del conductor" required type="email" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
-                    
                     <div className="flex gap-3">
-                      {editingDriver && (
-                        <button type="button" onClick={() => setEditingDriver(null)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-extrabold text-lg transition-colors">Cancelar</button>
-                      )}
+                      {editingDriver && <button type="button" onClick={() => setEditingDriver(null)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-extrabold text-lg transition-colors">Cancelar</button>}
                       <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-lg transition-colors shadow-lg shadow-blue-200">
                         {editingDriver ? 'Guardar Cambios' : 'Crear Conductor'}
                       </button>
                     </div>
                   </form>
-
                   <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
                     <h3 className="text-xl font-extrabold text-slate-800 mb-6">Directorio</h3>
                     <div className="space-y-3">
@@ -362,9 +373,7 @@ export default function App() {
                             <p className="text-base font-extrabold text-slate-800">{d.name}</p>
                             <p className="text-sm font-bold text-slate-400">{d.email}</p>
                           </div>
-                          <button onClick={() => setEditingDriver(d)} className="p-2.5 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-xl transition-colors shadow-sm" title="Editar Conductor">
-                            <Edit2 className="w-5 h-5"/>
-                          </button>
+                          <button onClick={() => setEditingDriver(d)} className="p-2.5 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-xl transition-colors shadow-sm" title="Editar Conductor"><Edit2 className="w-5 h-5"/></button>
                         </div>
                       ))}
                     </div>
@@ -375,7 +384,7 @@ export default function App() {
           ) : (
             <div className="space-y-6">
               <h2 className="text-2xl font-extrabold text-slate-800">Mis Trabajos Asignados</h2>
-              <JobsList jobs={jobs} role="driver" onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} db={db} currentUserEmail={currentUserEmail} />
+              <JobsList jobs={jobs} drivers={drivers} role="driver" onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} db={db} currentUserEmail={currentUserEmail} />
             </div>
           )}
         </main>
@@ -393,7 +402,7 @@ export default function App() {
 // ==========================================
 // 4. COMPONENTE: LISTA DE TRABAJOS
 // ==========================================
-function JobsList({ jobs, role, onStartChecklist, db, currentUserEmail }) {
+function JobsList({ jobs, drivers, role, onStartChecklist, db, currentUserEmail }) {
   const [menuOpenId, setMenuOpenId] = useState(null);
   const now = new Date();
   const isAdminView = role === 'admin';
@@ -433,6 +442,7 @@ function JobsList({ jobs, role, onStartChecklist, db, currentUserEmail }) {
     });
   };
 
+  // --- REDISEÑO DEL PDF ---
   const generatePDF = async (job) => {
     try {
       if (!window.jspdf) {
@@ -446,36 +456,113 @@ function JobsList({ jobs, role, onStartChecklist, db, currentUserEmail }) {
       }
       const { jsPDF } = window.jspdf;
       const docPDF = new jsPDF();
-      
-      docPDF.setFontSize(18); docPDF.text(`Checklist de Traslado`, 105, 20, null, null, "center");
-      docPDF.setFontSize(12); 
-      docPDF.text(`Vehiculo: ${job.brand} ${job.model}`, 20, 40);
-      docPDF.text(`Patente/VIN: ${job.plate || job.vin}`, 20, 50);
-      docPDF.text(`Ruta: ${job.origin} -> ${job.destination}`, 20, 60);
-      docPDF.text(`Nivel de Combustible: ${job.checklist?.fuelLevel || '0'}%`, 20, 70);
-      docPDF.text(`Receptor: ${job.checklist?.receiverName || 'N/A'}`, 20, 80);
-      docPDF.text(`RUT Receptor: ${job.checklist?.receiverRut || 'N/A'}`, 20, 90);
-      docPDF.text(`Observaciones: ${job.checklist?.observations || 'Ninguna'}`, 20, 100);
 
+      // Encontrar el nombre real del conductor
+      const driverObj = drivers.find(d => d.email === job.acceptedByEmail);
+      const driverName = driverObj ? driverObj.name : (job.acceptedByEmail || 'No asignado');
+      
+      // 1. Encabezado Azul Moderno
+      docPDF.setFillColor(37, 99, 235); 
+      docPDF.rect(0, 0, 210, 30, 'F');
+      docPDF.setTextColor(255, 255, 255);
+      docPDF.setFont("helvetica", "bold");
+      docPDF.setFontSize(22);
+      docPDF.text(`LOGISTICAPP`, 105, 15, null, null, "center");
+      docPDF.setFontSize(12);
+      docPDF.setFont("helvetica", "normal");
+      docPDF.text(`Checklist de Traslado`, 105, 24, null, null, "center");
+
+      // Restaurar color de texto
+      docPDF.setTextColor(0, 0, 0);
+
+      // 2. Sección: Datos del Vehículo
+      let startY = 40;
+      docPDF.setFillColor(241, 245, 249); // Fondo gris muy claro
+      docPDF.rect(15, startY, 180, 10, 'F');
+      docPDF.setFontSize(12);
+      docPDF.setFont("helvetica", "bold");
+      docPDF.text(`DATOS DEL VEHÍCULO`, 20, startY + 7);
+
+      startY += 18;
+      docPDF.setFontSize(11);
+      docPDF.setFont("helvetica", "bold"); docPDF.text(`Marca / Modelo:`, 20, startY);
+      docPDF.setFont("helvetica", "normal"); docPDF.text(`${job.brand} ${job.model}`, 55, startY);
+
+      docPDF.setFont("helvetica", "bold"); docPDF.text(`Patente / VIN:`, 110, startY);
+      docPDF.setFont("helvetica", "normal"); docPDF.text(`${job.plate || job.vin}`, 145, startY);
+
+      // 3. Sección: Ruta y Conductor
+      startY += 15;
+      docPDF.setFillColor(241, 245, 249);
+      docPDF.rect(15, startY, 180, 10, 'F');
+      docPDF.setFontSize(12);
+      docPDF.setFont("helvetica", "bold");
+      docPDF.text(`RUTA Y CONDUCTOR`, 20, startY + 7);
+
+      startY += 18;
+      docPDF.setFontSize(11);
+      docPDF.setFont("helvetica", "bold"); docPDF.text(`Desde:`, 20, startY);
+      docPDF.setFont("helvetica", "normal"); docPDF.text(`${job.origin}`, 35, startY);
+
+      docPDF.setFont("helvetica", "bold"); docPDF.text(`Hasta:`, 110, startY);
+      docPDF.setFont("helvetica", "normal"); docPDF.text(`${job.destination}`, 125, startY);
+
+      startY += 10;
+      docPDF.setFont("helvetica", "bold"); docPDF.text(`Conductor:`, 20, startY);
+      docPDF.setFont("helvetica", "normal"); docPDF.text(driverName, 45, startY);
+
+      // 4. Sección: Detalles de Recepción
+      startY += 15;
+      docPDF.setFillColor(241, 245, 249);
+      docPDF.rect(15, startY, 180, 10, 'F');
+      docPDF.setFontSize(12);
+      docPDF.setFont("helvetica", "bold");
+      docPDF.text(`DETALLES DE RECEPCIÓN`, 20, startY + 7);
+
+      startY += 18;
+      docPDF.setFontSize(11);
+      docPDF.setFont("helvetica", "bold"); docPDF.text(`Receptor:`, 20, startY);
+      docPDF.setFont("helvetica", "normal"); docPDF.text(`${job.checklist?.receiverName || 'N/A'}`, 42, startY);
+
+      docPDF.setFont("helvetica", "bold"); docPDF.text(`RUT:`, 110, startY);
+      docPDF.setFont("helvetica", "normal"); docPDF.text(`${job.checklist?.receiverRut || 'N/A'}`, 122, startY);
+
+      startY += 10;
+      docPDF.setFont("helvetica", "bold"); docPDF.text(`Combustible:`, 20, startY);
+      docPDF.setFont("helvetica", "normal"); docPDF.text(`${job.checklist?.fuelLevel || '0'}%`, 48, startY);
+
+      docPDF.setFont("helvetica", "bold"); docPDF.text(`Ubicación GPS:`, 110, startY);
       if (job.checklist?.location) {
         const { lat, lng } = job.checklist.location;
-        const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
-        docPDF.text(`Ubicación GPS:`, 20, 110);
-        docPDF.setTextColor(0, 0, 255); 
-        docPDF.textWithLink('Ver en Google Maps', 55, 110, { url: mapsUrl });
+        docPDF.setTextColor(37, 99, 235); // Link Azul
+        docPDF.textWithLink('Clic para ver en Google Maps', 145, startY, { url: `https://www.google.com/maps?q=${lat},${lng}` });
         docPDF.setTextColor(0, 0, 0); 
-      } else { docPDF.text(`Ubicación GPS: No registrada`, 20, 110); }
-
-      if(job.checklist?.signatureData) {
-        docPDF.text(`Firma:`, 20, 130);
-        docPDF.addImage(job.checklist.signatureData, 'PNG', 20, 135, 80, 40);
+      } else { 
+        docPDF.setFont("helvetica", "normal"); docPDF.text(`No registrada`, 145, startY); 
       }
 
+      startY += 15;
+      docPDF.setFont("helvetica", "bold"); docPDF.text(`Observaciones:`, 20, startY);
+      docPDF.setFont("helvetica", "normal");
+      const obsSplit = docPDF.splitTextToSize(job.checklist?.observations || 'Sin observaciones registradas.', 170);
+      docPDF.text(obsSplit, 20, startY + 7);
+
+      startY += 15 + (obsSplit.length * 6);
+
+      // 5. Firma
+      if(job.checklist?.signatureData) {
+        docPDF.setFont("helvetica", "bold"); docPDF.text(`Firma de Conformidad:`, 20, startY);
+        docPDF.setDrawColor(200, 200, 200);
+        docPDF.rect(20, startY + 5, 80, 40); // Borde de firma
+        docPDF.addImage(job.checklist.signatureData, 'PNG', 20, startY + 5, 80, 40);
+      }
+
+      // --- PÁGINA 2: FOTOS ADJUNTAS ---
       if (job.checklist?.photos) {
         const photos = job.checklist.photos;
         const labels = { front: 'Frente', driver: 'Lateral Piloto', passenger: 'Lateral Copiloto', back: 'Atrás', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
         
-        let currentY = 30; let currentCol = 1; let addedPage = false;
+        let currentY = 35; let currentCol = 1; let addedPage = false;
         const getImageDims = (src) => new Promise(resolve => {
           const img = new Image(); img.onload = () => resolve({ w: img.width, h: img.height }); img.src = src;
         });
@@ -483,24 +570,38 @@ function JobsList({ jobs, role, onStartChecklist, db, currentUserEmail }) {
         for (const key in photos) {
           if (photos[key]) {
             if (!addedPage) {
-              docPDF.addPage(); docPDF.setFontSize(16); docPDF.text(`Registro Fotográfico Adjunto`, 105, 20, null, null, "center"); addedPage = true;
+              docPDF.addPage(); 
+              docPDF.setFillColor(37, 99, 235); docPDF.rect(0, 0, 210, 20, 'F');
+              docPDF.setTextColor(255, 255, 255); docPDF.setFont("helvetica", "bold"); docPDF.setFontSize(16);
+              docPDF.text(`REGISTRO FOTOGRÁFICO`, 105, 14, null, null, "center");
+              docPDF.setTextColor(0, 0, 0);
+              addedPage = true;
             }
+
             const dims = await getImageDims(photos[key]);
             const ratio = dims.h / dims.w;
             let imgW = 80; let imgH = imgW * ratio; 
             if (imgH > 110) { imgH = 110; imgW = imgH / ratio; }
-            const slotCenter = currentCol === 1 ? 60 : 150; 
+            const slotCenter = currentCol === 1 ? 55 : 155; 
             const finalX = slotCenter - (imgW / 2);
 
             if (currentY + imgH > 280) {
-               docPDF.addPage(); currentY = 30; docPDF.setFontSize(16); docPDF.text(`Registro Fotográfico Adjunto (Cont.)`, 105, 20, null, null, "center");
+               docPDF.addPage(); currentY = 35; 
+               docPDF.setFillColor(37, 99, 235); docPDF.rect(0, 0, 210, 20, 'F');
+               docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(16);
+               docPDF.text(`REGISTRO FOTOGRÁFICO (Cont.)`, 105, 14, null, null, "center");
+               docPDF.setTextColor(0, 0, 0);
             }
-            docPDF.setFontSize(10);
-            docPDF.text(labels[key], slotCenter, currentY - 3, { align: "center" });
+            
+            docPDF.setFontSize(11);
+            docPDF.setFont("helvetica", "bold");
+            docPDF.text(labels[key], slotCenter, currentY - 4, { align: "center" });
+            docPDF.setDrawColor(200, 200, 200);
+            docPDF.rect(finalX, currentY, imgW, imgH); // Borde de foto
             docPDF.addImage(photos[key], 'JPEG', finalX, currentY, imgW, imgH);
             
             if (currentCol === 1) { currentCol = 2; } 
-            else { currentCol = 1; currentY += (imgH > 90 ? imgH : 90) + 15; }
+            else { currentCol = 1; currentY += (imgH > 90 ? imgH : 90) + 20; }
           }
         }
       }
