@@ -19,7 +19,7 @@ const ADMIN_EMAILS = [
 ];
 
 // --- DATOS MAESTROS INICIALES ---
-const INICIAL_CLIENTES = ["AutoMundo S.A.", "RentACar Pacific", "Logística Express", "Particular"];
+const INICIAL_CLIENTES = ["Grandleasing", "Kovacs", "Salfa", "Particular"];
 const INICIAL_MARCAS = ["Toyota", "Chevrolet", "Ford", "Nissan", "Hyundai", "Kia", "Suzuki"];
 const INICIAL_MODELOS = {
   "Toyota": ["Yaris", "Corolla", "Hilux", "RAV4"],
@@ -200,7 +200,7 @@ export default function App() {
     const assignedDriver = drivers.find(d => d.id === selectedDriverId);
     const newJob = {
       client: formData.get('client'), brand: formData.get('brand'), model: formData.get('model'),
-      vin: formData.get('vin'), plate: formData.get('plate'), origin: formData.get('origin'),
+      vin: formData.get('plateOrVin'), plate: formData.get('plateOrVin'), origin: formData.get('origin'),
       destination: formData.get('destination'), assignedDriverId: assignedDriver.id,
       assignedDriverName: assignedDriver.name, assignedEmail: assignedDriver.email, 
       status: 'pending', createdAt: Date.now(), checklist: null
@@ -240,9 +240,7 @@ export default function App() {
   };
 
   const NewJobForm = () => {
-    const [selectedBrand, setSelectedBrand] = useState('');
     const [selectedDriver, setSelectedDriver] = useState('');
-    const availableModels = selectedBrand && modelsDict[selectedBrand] ? modelsDict[selectedBrand] : [];
 
     return (
       <div className="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -278,28 +276,18 @@ export default function App() {
 
           <div className="bg-gray-50 p-4 rounded-lg space-y-4 border border-gray-100">
              <h3 className="text-sm font-bold text-gray-700">2. Vehículo</h3>
-             <div className="grid grid-cols-2 gap-4">
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Marca</label>
-                  <select name="brand" required value={selectedBrand} onChange={(e) => setSelectedBrand(e.target.value)} className="w-full border p-2 text-sm rounded">
-                    <option value="">Seleccione...</option>
-                    {brands.map(b => <option key={b} value={b}>{b}</option>)}
-                  </select>
+                  <input name="brand" required type="text" placeholder="Ej: Toyota" className="w-full border p-2 text-sm rounded" />
                </div>
                <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Modelo</label>
-                  <select name="model" required className="w-full border p-2 text-sm rounded">
-                    <option value="">Seleccione...</option>
-                    {availableModels.map(m => <option key={m} value={m}>{m}</option>)}
-                  </select>
+                  <input name="model" required type="text" placeholder="Ej: Yaris" className="w-full border p-2 text-sm rounded" />
                </div>
                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Patente</label>
-                  <input name="plate" type="text" className="w-full border p-2 text-sm rounded uppercase" />
-               </div>
-               <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">VIN</label>
-                  <input name="vin" required type="text" className="w-full border p-2 text-sm rounded uppercase" />
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Patente o VIN</label>
+                  <input name="plateOrVin" required type="text" placeholder="Ej: ABCD12 o Chasis" className="w-full border p-2 text-sm rounded uppercase" />
                </div>
              </div>
           </div>
@@ -426,8 +414,10 @@ function JobsList({ jobs, role, onStartChecklist, db, currentUserEmail }) {
             <h3 className="font-bold text-lg leading-tight">{job.brand} {job.model}</h3>
             <p className="text-xs text-gray-500 mb-2">{job.client}</p>
             <div className="text-sm bg-gray-50 p-2 rounded">
-              <div className="flex justify-between"><span>Patente:</span> <span className="font-medium">{job.plate || 'S/N'}</span></div>
-              <div className="flex justify-between"><span>VIN:</span> <span className="text-xs font-mono">{job.vin}</span></div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">Patente/VIN:</span> 
+                <span className="font-medium bg-white px-2 py-0.5 border rounded uppercase">{job.plate || job.vin || 'S/N'}</span>
+              </div>
             </div>
             {role === 'admin' && <div className="mt-2 text-xs"><span>Conductor: </span><span className="font-medium text-blue-700">{job.assignedDriverName}</span></div>}
           </div>
