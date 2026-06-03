@@ -25,7 +25,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 
-const CLIENTES = ["Grandleasing", "Kovacs", "Salfa", "Enex"];
+const CLIENTES = ["Grandleasing", "Kovacs", "Salfa", "Enex", "Mutual Capacitación", "Simumak"];
 
 // ==========================================
 // 2. COMPONENTE: FIRMA DIGITAL
@@ -583,6 +583,7 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
   const isAdminView = role === 'admin';
   const myDriver = drivers.find(d => d.email === currentUserEmail);
   const [selectedDriverId, setSelectedDriverId] = useState(null);
+  const [editingExpense, setEditingExpense] = useState(null);
 
   const handleAssignFunds = async (e, driver) => {
     e.preventDefault();
@@ -619,15 +620,77 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
     }
   };
 
+  const handleDeleteExpense = async (expense) => {
+    if (window.confirm("¿Seguro que deseas eliminar este registro? El saldo del conductor se ajustará automáticamente.")) {
+      try {
+        const driverSnapshot = drivers.find(d => d.id === expense.driverId);
+        if (driverSnapshot) {
+          let newBalance = driverSnapshot.balance || 0;
+          if (expense.type === 'assignment') newBalance -= expense.amount;
+          if (expense.type === 'expense' || expense.type === 'return') newBalance += expense.amount;
+          await updateDoc(doc(db, 'drivers', expense.driverId), { balance: newBalance });
+        }
+        await deleteDoc(doc(db, 'expenses', expense.id));
+      } catch(error) { console.error(error); }
+    }
+  };
+
   const TransactionIcon = ({ type }) => {
     if (type === 'assignment') return <ArrowUpCircle className="w-5 h-5 text-green-500"/>;
     if (type === 'expense') return <ArrowDownCircle className="w-5 h-5 text-red-500"/>;
     return <CheckCircle className="w-5 h-5 text-blue-500"/>;
   };
 
+  const EditExpenseModal = ({ expense, onClose }) => {
+    const handleUpdateSubmit = async (e) => {
+      e.preventDefault();
+      const newAmount = Number(e.target.amount.value);
+      const newDetail = e.target.detail.value;
+      const amountDiff = newAmount - expense.amount;
+
+      try {
+        const driverSnapshot = drivers.find(d => d.id === expense.driverId);
+        if (driverSnapshot) {
+          let newBalance = driverSnapshot.balance || 0;
+          if (expense.type === 'assignment') newBalance += amountDiff;
+          if (expense.type === 'expense' || expense.type === 'return') newBalance -= amountDiff;
+          await updateDoc(doc(db, 'drivers', expense.driverId), { balance: newBalance });
+        }
+        await updateDoc(doc(db, 'expenses', expense.id), { amount: newAmount, detail: newDetail });
+        alert("Registro actualizado correctamente."); onClose();
+      } catch (error) { console.error(error); alert("Error actualizando."); }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+        <form onSubmit={handleUpdateSubmit} className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-extrabold text-slate-800">Editar Registro</h3>
+            <button type="button" onClick={onClose} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-bold text-slate-500 uppercase">Detalle</label>
+              <input name="detail" defaultValue={expense.detail} required className="w-full border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-slate-500 uppercase">Monto ($)</label>
+              <input name="amount" type="number" defaultValue={expense.amount} required className="w-full border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" />
+            </div>
+          </div>
+          <div className="flex gap-4 mt-6">
+            <button type="button" onClick={onClose} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-600">Cancelar</button>
+            <button type="submit" className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold">Guardar Cambios</button>
+          </div>
+        </form>
+      </div>
+    );
+  };
+
   if (isAdminView) {
     return (
       <main className="max-w-5xl mx-auto p-4 pt-6 pb-24">
+        {editingExpense && <EditExpenseModal expense={editingExpense} onClose={() => setEditingExpense(null)} />}
         <h2 className="text-2xl font-extrabold text-slate-800 mb-6 flex items-center gap-2"><Wallet className="text-blue-600"/> Control de Viáticos</h2>
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-4">
@@ -657,7 +720,13 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
                     <p className="text-sm font-extrabold text-slate-800">{exp.detail}</p>
                     <p className="text-xs font-bold text-slate-400">{!selectedDriverId && <span className="text-blue-600">{exp.driverName} • </span>}{new Date(exp.createdAt).toLocaleDateString()}</p>
                   </div>
-                  <span className={`font-extrabold ${exp.type === 'expense' ? 'text-red-500' : 'text-green-600'}`}>{exp.type === 'expense' ? '-' : '+'}{formatMoney(exp.amount)}</span>
+                  <div className="flex items-center gap-2">
+                    <span className={`font-extrabold ${exp.type === 'expense' ? 'text-red-500' : 'text-green-600'}`}>{exp.type === 'expense' ? '-' : '+'}{formatMoney(exp.amount)}</span>
+                    <div className="flex gap-1 border-l border-slate-200 pl-2 ml-1">
+                      <button onClick={() => setEditingExpense(exp)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors" title="Editar"><Edit2 className="w-4 h-4"/></button>
+                      <button onClick={() => handleDeleteExpense(exp)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Eliminar"><Trash2 className="w-4 h-4"/></button>
+                    </div>
+                  </div>
                 </div>
               ))}
               {expenses.length === 0 && <p className="text-slate-400 font-bold text-sm text-center py-4">No hay movimientos registrados.</p>}
@@ -691,6 +760,9 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
           <CheckCircle className="w-6 h-6"/> Rendir Vuelto ($0)
         </button>
       )}
+
+      {editingExpense && <EditExpenseModal expense={editingExpense} onClose={() => setEditingExpense(null)} />}
+
       <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
         <h3 className="text-lg font-extrabold text-slate-800 mb-4">Mis Movimientos</h3>
         <div className="space-y-3">
@@ -701,7 +773,13 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
                 <p className="text-sm font-extrabold text-slate-800">{exp.detail}</p>
                 <p className="text-[10px] font-bold text-slate-400">{new Date(exp.createdAt).toLocaleString()}</p>
               </div>
-              <span className={`font-extrabold ${exp.type === 'expense' ? 'text-red-500' : 'text-green-600'}`}>{exp.type === 'expense' ? '-' : '+'}{formatMoney(exp.amount)}</span>
+              <div className="flex items-center gap-2">
+                <span className={`font-extrabold ${exp.type === 'expense' ? 'text-red-500' : 'text-green-600'}`}>{exp.type === 'expense' ? '-' : '+'}{formatMoney(exp.amount)}</span>
+                <div className="flex gap-1 border-l border-slate-200 pl-2 ml-1">
+                  <button onClick={() => setEditingExpense(exp)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors" title="Editar"><Edit2 className="w-4 h-4"/></button>
+                  <button onClick={() => handleDeleteExpense(exp)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Eliminar"><Trash2 className="w-4 h-4"/></button>
+                </div>
+              </div>
             </div>
           ))}
         </div>
