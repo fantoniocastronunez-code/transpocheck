@@ -332,12 +332,14 @@ export default function App() {
         </div>
         <div className="flex items-center gap-4 bg-slate-800 p-1.5 px-3 rounded-lg">
           <div className="flex flex-col items-end">
-            <span className="text-sm font-medium">{user.displayName || user.email.split('@')[0]}</span>
+            <span className="text-sm font-medium">
+              {user?.displayName || (user?.email ? user.email.split('@')[0] : 'Usuario')}
+            </span>
             <span className={`text-[10px] font-bold uppercase ${isAdmin ? 'text-purple-400' : 'text-blue-400'}`}>
               {isAdmin ? 'Administrador' : 'Conductor'}
             </span>
           </div>
-          <img src={user.photoURL || 'https://via.placeholder.com/150'} alt="Perfil" className="w-8 h-8 rounded-full border border-slate-600" />
+          <img src={user?.photoURL || 'https://via.placeholder.com/150'} alt="Perfil" className="w-8 h-8 rounded-full border border-slate-600" />
           <button onClick={logout} className="ml-2 p-2 hover:bg-slate-700 rounded transition text-red-400" title="Cerrar sesión">
             <LogOut className="w-5 h-5" />
           </button>
