@@ -5,7 +5,7 @@ import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc
 import { jsPDF } from "jspdf";
 import { 
   Car, MapPin, Camera, Fuel, CheckCircle, FileText, Download, 
-  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle
+  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye
 } from 'lucide-react';
 
 // ==========================================
@@ -25,7 +25,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 
-const CLIENTES = ["Grandleasing", "Kovacs", "Salfa", "Enex", "CIPP", "Mutual Capacitación", "Simumak"];
+const CLIENTES = ["Grandleasing", "Kovacs", "Salfa", "Enex", "CIPP", "Simumak", "Mutual Capacitación"];
 
 // ==========================================
 // 2. COMPONENTE: FIRMA DIGITAL
@@ -95,6 +95,9 @@ export default function App() {
   const [vehicles, setVehicles] = useState([]);
   
   const [editingDriver, setEditingDriver] = useState(null);
+  const [editingVehicle, setEditingVehicle] = useState(null);
+  const [fleetFilter, setFleetFilter] = useState('');
+  
   const [adminTab, setAdminTab] = useState('dashboard');
   const [selectedJob, setSelectedJob] = useState(null);
   const [editingJob, setEditingJob] = useState(null);
@@ -232,7 +235,19 @@ export default function App() {
       await addDoc(collection(db, 'vehicles'), { 
         client: client, brand: formData.get('brand'), model: formData.get('model'), plate: formData.get('plate').toUpperCase(), createdAt: Date.now() 
       });
-      e.target.reset(); alert("Vehículo guardado exitosamente en la base de datos.");
+      e.target.reset(); alert("Vehículo guardado exitosamente.");
+    } catch (error) { console.error(error); }
+  };
+
+  const handleUpdateVehicle = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const client = formData.get('client') === 'OTRO' ? formData.get('manualClient') : formData.get('client');
+    try {
+      await updateDoc(doc(db, 'vehicles', editingVehicle.id), { 
+        client: client, brand: formData.get('brand'), model: formData.get('model'), plate: formData.get('plate').toUpperCase() 
+      });
+      setEditingVehicle(null); alert("Vehículo actualizado exitosamente.");
     } catch (error) { console.error(error); }
   };
 
@@ -472,39 +487,59 @@ export default function App() {
               
               {adminTab === 'newJob' && <NewJobForm />}
               
-              {/* PESTAÑA VEHÍCULOS */}
+              {/* PESTAÑA VEHÍCULOS MEJORADA (Filtro y Edición) */}
               {adminTab === 'vehicles' && (
                 <div className="grid md:grid-cols-2 gap-6">
-                  <form onSubmit={handleCreateVehicle} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-5">
-                    <h3 className="text-xl font-extrabold text-slate-800 flex items-center gap-2"><Truck className="text-blue-600"/> Guardar Nuevo Vehículo</h3>
+                  <form key={editingVehicle ? editingVehicle.id : 'new'} onSubmit={editingVehicle ? handleUpdateVehicle : handleCreateVehicle} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-5">
+                    <h3 className="text-xl font-extrabold text-slate-800 flex items-center gap-2"><Truck className="text-blue-600"/> {editingVehicle ? 'Editar Vehículo' : 'Guardar Nuevo Vehículo'}</h3>
                     <p className="text-xs font-bold text-slate-500 mb-2">Agrega vehículos frecuentes a tu base de datos para autocompletar al crear un trabajo.</p>
                     
-                    <select name="client" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold text-slate-700">
+                    <select name="client" defaultValue={editingVehicle && CLIENTES.includes(editingVehicle.client) ? editingVehicle.client : (editingVehicle ? 'OTRO' : '')} className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold text-slate-700">
                       <option value="">Seleccione Cliente al que pertenece...</option>
                       {CLIENTES.map(c => <option key={c} value={c}>{c}</option>)}
                       <option value="OTRO">Otro (Se debe escribir manualmente)</option>
                     </select>
-                    <input name="manualClient" placeholder="Si es OTRO, escribe el cliente aquí" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+                    <input name="manualClient" defaultValue={editingVehicle && !CLIENTES.includes(editingVehicle.client) ? editingVehicle.client : ''} placeholder="Si seleccionaste Otro, escribe el cliente aquí" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
                     
-                    <input name="brand" placeholder="Marca (Ej. Chevrolet)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
-                    <input name="model" placeholder="Modelo (Ej. NPR 816)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
-                    <input name="plate" placeholder="Patente" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm uppercase outline-none focus:border-blue-500 font-bold text-slate-800"/>
-                    <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-lg transition-colors shadow-lg shadow-blue-200">Guardar Vehículo</button>
+                    <input name="brand" defaultValue={editingVehicle ? editingVehicle.brand : ''} placeholder="Marca (Ej. Chevrolet)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+                    <input name="model" defaultValue={editingVehicle ? editingVehicle.model : ''} placeholder="Modelo (Ej. NPR 816)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+                    <input name="plate" defaultValue={editingVehicle ? editingVehicle.plate : ''} placeholder="Patente" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm uppercase outline-none focus:border-blue-500 font-bold text-slate-800"/>
+                    
+                    <div className="flex gap-3">
+                      {editingVehicle && <button type="button" onClick={() => setEditingVehicle(null)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-extrabold text-lg transition-colors">Cancelar</button>}
+                      <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-lg transition-colors shadow-lg shadow-blue-200">{editingVehicle ? 'Guardar Cambios' : 'Guardar Vehículo'}</button>
+                    </div>
                   </form>
 
-                  <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
-                    <h3 className="text-xl font-extrabold text-slate-800 mb-6">Base de Datos Flota</h3>
-                    <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
-                      {vehicles.length === 0 ? <p className="text-sm font-semibold text-slate-400">No hay vehículos registrados</p> : vehicles.map(v=>(
+                  <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 flex flex-col">
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-xl font-extrabold text-slate-800">Flota</h3>
+                      <select value={fleetFilter} onChange={(e) => setFleetFilter(e.target.value)} className="border-2 border-slate-200 p-2 rounded-xl text-xs font-bold text-slate-600 outline-none focus:border-blue-500">
+                        <option value="">Todos los Clientes</option>
+                        {CLIENTES.map(c => <option key={c} value={c}>{c}</option>)}
+                        <option value="OTRO">Otros</option>
+                      </select>
+                    </div>
+                    
+                    <div className="space-y-3 flex-1 overflow-y-auto pr-2" style={{ maxHeight: '60vh' }}>
+                      {vehicles.filter(v => {
+                        if (!fleetFilter) return true;
+                        if (fleetFilter === 'OTRO') return !CLIENTES.includes(v.client);
+                        return v.client === fleetFilter;
+                      }).map(v=>(
                         <div key={v.id} className="flex justify-between items-center p-4 bg-slate-50 border border-slate-100 rounded-2xl group transition-all">
                           <div>
                             <p className="text-base font-extrabold text-slate-800">{v.brand} {v.model}</p>
                             <p className="text-sm font-bold text-blue-600">{v.plate}</p>
                             <p className="text-xs font-bold text-slate-400 mt-1">{v.client || 'Sin cliente'}</p>
                           </div>
-                          <button onClick={() => handleDeleteVehicle(v.id)} className="p-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors shadow-sm"><Trash2 className="w-5 h-5"/></button>
+                          <div className="flex gap-1">
+                            <button onClick={() => setEditingVehicle(v)} className="p-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl transition-colors shadow-sm"><Edit2 className="w-5 h-5"/></button>
+                            <button onClick={() => handleDeleteVehicle(v.id)} className="p-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors shadow-sm"><Trash2 className="w-5 h-5"/></button>
+                          </div>
                         </div>
                       ))}
+                      {vehicles.length === 0 && <p className="text-sm font-semibold text-slate-400">No hay vehículos registrados</p>}
                     </div>
                   </div>
                 </div>
@@ -545,6 +580,12 @@ export default function App() {
         </main>
       )}
 
+      {/* PESTAÑA RANKING (LEADERBOARD) */}
+      {currentView === 'main' && mainTab === 'ranking' && (
+        <LeaderboardView jobs={jobs} drivers={drivers} isAdminView={activeRole === 'admin'} db={db} />
+      )}
+
+      {/* PESTAÑA GASTOS */}
       {currentView === 'main' && mainTab === 'expenses' && (
         <ExpensesView role={activeRole} drivers={drivers} expenses={expenses} db={db} currentUserEmail={currentUserEmail} />
       )}
@@ -558,21 +599,101 @@ export default function App() {
       {/* BOTTOM NAV BAR */}
       {currentView === 'main' && (
         <nav className="fixed bottom-0 w-full bg-white border-t border-slate-200 flex justify-around items-center p-3 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] pb-[env(safe-area-inset-bottom)]">
-          <button onClick={handleQuickChecklist} className="flex flex-col items-center text-slate-400 hover:text-blue-600 transition-colors w-24">
-             <div className="bg-slate-100 p-2 rounded-xl mb-1"><Zap className="w-6 h-6"/></div>
+          <button onClick={handleQuickChecklist} className="flex flex-col items-center text-slate-400 hover:text-blue-600 transition-colors w-20 sm:w-24">
+             <div className="bg-slate-100 p-2 rounded-xl mb-1"><Zap className="w-5 h-5"/></div>
              <span className="text-[10px] font-extrabold tracking-wide">Desde 0</span>
           </button>
-          <button onClick={() => setMainTab('jobs')} className={`flex flex-col items-center transition-colors w-24 ${mainTab==='jobs' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}>
-             <div className={`${mainTab==='jobs' ? 'bg-blue-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><ClipboardList className="w-6 h-6"/></div>
+          <button onClick={() => setMainTab('jobs')} className={`flex flex-col items-center transition-colors w-20 sm:w-24 ${mainTab==='jobs' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}>
+             <div className={`${mainTab==='jobs' ? 'bg-blue-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><ClipboardList className="w-5 h-5"/></div>
              <span className="text-[10px] font-extrabold tracking-wide">Trabajos</span>
           </button>
-          <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors w-24 ${mainTab==='expenses' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}>
-             <div className={`${mainTab==='expenses' ? 'bg-blue-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Wallet className="w-6 h-6"/></div>
+          <button onClick={() => setMainTab('ranking')} className={`flex flex-col items-center transition-colors w-20 sm:w-24 ${mainTab==='ranking' ? 'text-yellow-600' : 'text-slate-400 hover:text-yellow-600'}`}>
+             <div className={`${mainTab==='ranking' ? 'bg-yellow-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Trophy className="w-5 h-5"/></div>
+             <span className="text-[10px] font-extrabold tracking-wide">Ranking</span>
+          </button>
+          <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors w-20 sm:w-24 ${mainTab==='expenses' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}>
+             <div className={`${mainTab==='expenses' ? 'bg-blue-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Wallet className="w-5 h-5"/></div>
              <span className="text-[10px] font-extrabold tracking-wide">Gastos</span>
           </button>
         </nav>
       )}
     </div>
+  );
+}
+
+// ==========================================
+// MÓDULO RANKING (LEADERBOARD)
+// ==========================================
+function LeaderboardView({ jobs, drivers, isAdminView, db }) {
+  const [selectedDriverJobs, setSelectedDriverJobs] = useState(null);
+
+  // Calcular mes actual
+  const now = new Date();
+  const firstOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
+  // Filtrar solo trabajos completados del mes actual
+  const monthlyCompletedJobs = jobs.filter(j => j.status === 'completed' && j.completedAt >= firstOfCurrentMonth);
+
+  // Calcular ranking
+  const ranking = drivers.map(d => {
+    const driverJobs = monthlyCompletedJobs.filter(j => j.acceptedByEmail === d.email);
+    return { ...d, score: driverJobs.length, jobs: driverJobs };
+  }).sort((a, b) => b.score - a.score);
+
+  return (
+    <main className="max-w-5xl mx-auto p-4 pt-6 pb-24">
+      <h2 className="text-2xl font-extrabold text-slate-800 mb-6 flex items-center gap-2"><Trophy className="text-yellow-500"/> Ranking Mensual</h2>
+      
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-2 sm:p-6">
+        {ranking.length === 0 ? <p className="text-slate-400 font-bold text-center py-6">No hay datos suficientes.</p> : ranking.map((driver, index) => (
+          <div key={driver.id} className="flex justify-between items-center p-4 border-b last:border-0 hover:bg-slate-50 transition-colors rounded-xl">
+             <div className="flex items-center gap-4">
+                <span className={`text-2xl font-black ${index === 0 ? 'text-yellow-500' : index === 1 ? 'text-slate-400' : index === 2 ? 'text-amber-700' : 'text-slate-300'}`}>
+                  #{index+1}
+                </span>
+                <div>
+                   <p className="font-extrabold text-slate-800 text-lg">{driver.name}</p>
+                   <p className="text-sm text-slate-500 font-bold">{driver.score} Traslados</p>
+                </div>
+             </div>
+             {isAdminView && (
+                <button onClick={() => setSelectedDriverJobs(driver)} className="flex items-center gap-1.5 text-blue-600 bg-blue-50 px-4 py-2 rounded-xl font-bold text-sm hover:bg-blue-100 transition-colors">
+                   <Eye className="w-4 h-4"/> <span className="hidden sm:inline">Ver Historial</span>
+                </button>
+             )}
+          </div>
+        ))}
+      </div>
+
+      {/* Modal Historial de Conductor para Admin */}
+      {selectedDriverJobs && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+            <div className="p-6 border-b flex justify-between items-center">
+              <h2 className="text-xl font-extrabold text-slate-800">Historial: {selectedDriverJobs.name}</h2>
+              <button onClick={() => setSelectedDriverJobs(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button>
+            </div>
+            <div className="p-6 space-y-4 overflow-y-auto flex-1">
+              {selectedDriverJobs.jobs.length === 0 ? <p className="text-slate-500 font-bold text-center">Sin traslados este mes.</p> :
+                selectedDriverJobs.jobs.map(job => (
+                  <div key={job.id} className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <div className="flex justify-between items-start mb-2">
+                      <p className="font-extrabold text-slate-800 text-lg">{job.brand} {job.model}</p>
+                      <span className="text-xs font-bold bg-white border px-2 py-1 rounded uppercase text-slate-500">{job.plate || job.vin}</span>
+                    </div>
+                    <div className="space-y-1 mb-3">
+                      <p className="text-sm font-bold text-slate-600 flex items-center gap-1"><MapPin className="w-4 h-4 text-slate-400"/> {job.origin}</p>
+                      <p className="text-sm font-bold text-slate-600 flex items-center gap-1"><Navigation className="w-4 h-4 text-slate-400"/> {job.destination}</p>
+                    </div>
+                    <p className="text-xs font-bold text-blue-600 border-t pt-2">{new Date(job.completedAt).toLocaleString()}</p>
+                  </div>
+                ))
+              }
+            </div>
+          </div>
+        </div>
+      )}
+    </main>
   );
 }
 
@@ -584,6 +705,10 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
   const myDriver = drivers.find(d => d.email === currentUserEmail);
   const [selectedDriverId, setSelectedDriverId] = useState(null);
   const [editingExpense, setEditingExpense] = useState(null);
+  
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+  const [returnReceipt, setReturnReceipt] = useState(null);
+  const [viewingReceipt, setViewingReceipt] = useState(null);
 
   const handleAssignFunds = async (e, driver) => {
     e.preventDefault();
@@ -608,24 +733,35 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
     } catch (error) { console.error(error); }
   };
 
-  const handleReturnFunds = async () => {
+  const handleReceiptUploadCompress = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const bmp = await window.createImageBitmap(file, { resizeWidth: 800, resizeQuality: 'medium' });
+      const canvas = document.createElement('canvas'); canvas.width = bmp.width; canvas.height = bmp.height;
+      const ctx = canvas.getContext('2d'); ctx.drawImage(bmp, 0, 0);
+      setReturnReceipt(canvas.toDataURL('image/jpeg', 0.6));
+      bmp.close();
+    } catch (error) { console.error(error); alert("Error al procesar el comprobante."); }
+  };
+
+  const submitReturnFunds = async () => {
     const currentBalance = myDriver?.balance || 0;
-    if (currentBalance <= 0) return;
-    if (window.confirm(`¿Confirmas que rendiste y devolviste $${currentBalance}?`)) {
-      try {
-        await updateDoc(doc(db, 'drivers', myDriver.id), { balance: 0 });
-        await addDoc(collection(db, 'expenses'), { driverId: myDriver.id, driverEmail: currentUserEmail, driverName: myDriver.name, type: 'return', amount: currentBalance, detail: 'Rendición de Vuelto', createdAt: Date.now() });
-        alert("Fondos rendidos a $0");
-      } catch (error) { console.error(error); }
-    }
+    if (currentBalance <= 0 || !returnReceipt) return;
+    try {
+      await updateDoc(doc(db, 'drivers', myDriver.id), { balance: 0 });
+      await addDoc(collection(db, 'expenses'), { 
+        driverId: myDriver.id, driverEmail: currentUserEmail, driverName: myDriver.name, 
+        type: 'return', amount: currentBalance, detail: 'Rendición de Vuelto', receiptImage: returnReceipt, createdAt: Date.now() 
+      });
+      alert("Fondos rendidos y comprobante guardado.");
+      setIsReturnModalOpen(false); setReturnReceipt(null);
+    } catch (error) { console.error(error); alert("Error al rendir fondos"); }
   };
 
   const handleDeleteExpense = async (expense) => {
-    if (!isAdminView && expense.type === 'assignment') {
-      return alert("No puedes eliminar una asignación de fondos. Pide al administrador que lo haga.");
-    }
-
-    if (window.confirm("¿Seguro que deseas eliminar este registro? El saldo del conductor se ajustará automáticamente.")) {
+    if (!isAdminView && expense.type === 'assignment') return alert("No puedes eliminar una asignación. Pide al admin que lo haga.");
+    if (window.confirm("¿Eliminar este registro? El saldo se ajustará automáticamente.")) {
       try {
         const driverSnapshot = drivers.find(d => d.id === expense.driverId);
         if (driverSnapshot) {
@@ -648,16 +784,10 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
   const EditExpenseModal = ({ expense, onClose }) => {
     const handleUpdateSubmit = async (e) => {
       e.preventDefault();
-      
-      if (!isAdminView && expense.type === 'assignment') {
-        alert("No puedes modificar una asignación de fondos. Pide al administrador que lo haga.");
-        return onClose();
-      }
-
+      if (!isAdminView && expense.type === 'assignment') { alert("No puedes modificar una asignación."); return onClose(); }
       const newAmount = Number(e.target.amount.value);
       const newDetail = e.target.detail.value;
       const amountDiff = newAmount - expense.amount;
-
       try {
         const driverSnapshot = drivers.find(d => d.id === expense.driverId);
         if (driverSnapshot) {
@@ -667,31 +797,18 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
           await updateDoc(doc(db, 'drivers', expense.driverId), { balance: newBalance });
         }
         await updateDoc(doc(db, 'expenses', expense.id), { amount: newAmount, detail: newDetail });
-        alert("Registro actualizado correctamente."); onClose();
+        alert("Actualizado correctamente."); onClose();
       } catch (error) { console.error(error); alert("Error actualizando."); }
     };
-
     return (
       <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
         <form onSubmit={handleUpdateSubmit} className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-extrabold text-slate-800">Editar Registro</h3>
-            <button type="button" onClick={onClose} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button>
-          </div>
+          <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-extrabold text-slate-800">Editar Registro</h3><button type="button" onClick={onClose} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button></div>
           <div className="space-y-4">
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase">Detalle</label>
-              <input name="detail" defaultValue={expense.detail} required className="w-full border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase">Monto ($)</label>
-              <input name="amount" type="number" defaultValue={expense.amount} required className="w-full border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" />
-            </div>
+            <div><label className="text-xs font-bold text-slate-500 uppercase">Detalle</label><input name="detail" defaultValue={expense.detail} required className="w-full border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" /></div>
+            <div><label className="text-xs font-bold text-slate-500 uppercase">Monto ($)</label><input name="amount" type="number" defaultValue={expense.amount} required className="w-full border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" /></div>
           </div>
-          <div className="flex gap-4 mt-6">
-            <button type="button" onClick={onClose} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-600">Cancelar</button>
-            <button type="submit" className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold">Guardar Cambios</button>
-          </div>
+          <div className="flex gap-4 mt-6"><button type="button" onClick={onClose} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-600">Cancelar</button><button type="submit" className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold">Guardar</button></div>
         </form>
       </div>
     );
@@ -701,6 +818,16 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
     return (
       <main className="max-w-5xl mx-auto p-4 pt-6 pb-24">
         {editingExpense && <EditExpenseModal expense={editingExpense} onClose={() => setEditingExpense(null)} />}
+        {viewingReceipt && (
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[150] p-4">
+            <div className="bg-white rounded-3xl p-4 w-full max-w-md relative">
+              <button onClick={() => setViewingReceipt(null)} className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"><X className="w-5 h-5 text-slate-700"/></button>
+              <h3 className="font-extrabold text-slate-800 mb-4 ml-2">Comprobante de Transferencia</h3>
+              <img src={viewingReceipt} alt="Comprobante" className="w-full h-auto max-h-[70vh] object-contain rounded-xl border border-slate-100 shadow-sm" />
+            </div>
+          </div>
+        )}
+
         <h2 className="text-2xl font-extrabold text-slate-800 mb-6 flex items-center gap-2"><Wallet className="text-blue-600"/> Control de Viáticos</h2>
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-4">
@@ -724,17 +851,18 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
             <h3 className="text-lg font-bold text-slate-600 mb-4">{selectedDriverId ? 'Historial del Conductor' : 'Historial Global'}</h3>
             <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
               {expenses.filter(e => selectedDriverId ? e.driverId === selectedDriverId : true).map(exp => (
-                <div key={exp.id} className="flex items-center gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                  <TransactionIcon type={exp.type}/>
+                <div key={exp.id} className="flex items-start gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="mt-1"><TransactionIcon type={exp.type}/></div>
                   <div className="flex-1">
                     <p className="text-sm font-extrabold text-slate-800">{exp.detail}</p>
                     <p className="text-xs font-bold text-slate-400">{!selectedDriverId && <span className="text-blue-600">{exp.driverName} • </span>}{new Date(exp.createdAt).toLocaleDateString()}</p>
+                    {exp.receiptImage && <button onClick={() => setViewingReceipt(exp.receiptImage)} className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-100/50 px-2 py-1 rounded-md transition-colors w-fit"><Camera className="w-3.5 h-3.5"/> Ver comprobante</button>}
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`font-extrabold ${exp.type === 'expense' ? 'text-red-500' : 'text-green-600'}`}>{exp.type === 'expense' ? '-' : '+'}{formatMoney(exp.amount)}</span>
                     <div className="flex gap-1 border-l border-slate-200 pl-2 ml-1">
-                      <button onClick={() => setEditingExpense(exp)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors" title="Editar"><Edit2 className="w-4 h-4"/></button>
-                      <button onClick={() => handleDeleteExpense(exp)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Eliminar"><Trash2 className="w-4 h-4"/></button>
+                      <button onClick={() => setEditingExpense(exp)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors"><Edit2 className="w-4 h-4"/></button>
+                      <button onClick={() => handleDeleteExpense(exp)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
                     </div>
                   </div>
                 </div>
@@ -747,16 +875,47 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
     );
   }
 
-  if (!myDriver) return <main className="p-8 text-center text-slate-500 font-bold pb-24">No estás registrado como conductor. Pide al admin que te agregue.</main>;
+  if (!myDriver) return <main className="p-8 text-center text-slate-500 font-bold pb-24">No estás registrado como conductor.</main>;
   const myBalance = myDriver.balance || 0;
 
   return (
     <main className="max-w-md mx-auto p-4 pt-6 space-y-6 pb-24">
+      {viewingReceipt && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[150] p-4">
+          <div className="bg-white rounded-3xl p-4 w-full max-w-md relative">
+            <button onClick={() => setViewingReceipt(null)} className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"><X className="w-5 h-5 text-slate-700"/></button>
+            <h3 className="font-extrabold text-slate-800 mb-4 ml-2">Comprobante de Transferencia</h3>
+            <img src={viewingReceipt} alt="Comprobante" className="w-full h-auto max-h-[70vh] object-contain rounded-xl border border-slate-100 shadow-sm" />
+          </div>
+        </div>
+      )}
+
+      {isReturnModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6">
+            <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-extrabold text-slate-800">Rendir Vuelto</h3><button onClick={() => { setIsReturnModalOpen(false); setReturnReceipt(null); }} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button></div>
+            <p className="text-sm font-bold text-slate-500 mb-4 border-b border-slate-100 pb-4">Monto total a rendir: <span className="text-blue-600 text-xl font-extrabold block mt-1">{formatMoney(myBalance)}</span></p>
+            <label className={`block w-full border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-colors relative overflow-hidden ${returnReceipt ? 'border-green-400 bg-green-50' : 'border-slate-300 hover:bg-slate-50'}`}>
+              <input type="file" accept="image/*" className="hidden" onChange={handleReceiptUploadCompress} />
+              {returnReceipt ? (
+                 <div className="relative z-10"><CheckCircle className="w-10 h-10 text-green-500 mx-auto mb-2 bg-white rounded-full"/><p className="text-sm font-extrabold text-green-700 mb-2">Comprobante Cargado</p><img src={returnReceipt} className="h-28 object-contain mx-auto rounded-lg shadow-sm border border-green-200" alt="preview"/><p className="text-xs font-bold text-slate-500 mt-3 underline">Tocar para cambiar</p></div>
+              ) : (
+                 <div className="py-4"><Camera className="w-10 h-10 text-slate-400 mx-auto mb-3"/><p className="text-sm font-extrabold text-slate-600">Sube aquí el comprobante</p></div>
+              )}
+            </label>
+            <div className="flex gap-4 mt-6"><button onClick={() => { setIsReturnModalOpen(false); setReturnReceipt(null); }} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-600">Cancelar</button><button onClick={submitReturnFunds} disabled={!returnReceipt} className={`flex-[2] py-3 rounded-xl font-extrabold transition-all ${returnReceipt ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-200' : 'bg-slate-200 text-slate-400'}`}>Confirmar</button></div>
+          </div>
+        </div>
+      )}
+
+      {editingExpense && <EditExpenseModal expense={editingExpense} onClose={() => setEditingExpense(null)} />}
+
       <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 rounded-3xl shadow-xl text-center text-white relative overflow-hidden">
         <Wallet className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10" />
         <p className="text-blue-100 font-bold uppercase tracking-wider text-sm mb-2">Fondo Asignado Actual</p>
         <p className="text-5xl font-extrabold tracking-tight">{formatMoney(myBalance)}</p>
       </div>
+
       <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
         <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-2 mb-4"><Receipt className="w-5 h-5 text-red-500"/> Registrar Gasto</h3>
         <form onSubmit={handleAddExpense} className="space-y-4">
@@ -765,40 +924,36 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
           <button type="submit" disabled={myBalance <= 0} className={`w-full py-4 rounded-2xl font-extrabold text-lg transition-all ${myBalance > 0 ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>Guardar Gasto</button>
         </form>
       </div>
+      
       {myBalance > 0 && (
-        <button onClick={handleReturnFunds} className="w-full bg-green-50 hover:bg-green-100 text-green-700 border-2 border-green-200 py-4 rounded-3xl font-extrabold text-lg flex justify-center items-center gap-2 transition-all">
+        <button onClick={() => setIsReturnModalOpen(true)} className="w-full bg-green-50 hover:bg-green-100 text-green-700 border-2 border-green-200 py-4 rounded-3xl font-extrabold text-lg flex justify-center items-center gap-2 transition-all">
           <CheckCircle className="w-6 h-6"/> Rendir Vuelto ($0)
         </button>
       )}
-
-      {editingExpense && <EditExpenseModal expense={editingExpense} onClose={() => setEditingExpense(null)} />}
 
       <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
         <h3 className="text-lg font-extrabold text-slate-800 mb-4">Mis Movimientos</h3>
         <div className="space-y-3">
           {expenses.filter(e => e.driverId === myDriver.id).map(exp => (
-            <div key={exp.id} className="flex items-center gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-100">
-              <TransactionIcon type={exp.type}/>
+            <div key={exp.id} className="flex items-start gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="mt-1"><TransactionIcon type={exp.type}/></div>
               <div className="flex-1">
                 <p className="text-sm font-extrabold text-slate-800">{exp.detail}</p>
                 <p className="text-[10px] font-bold text-slate-400">{new Date(exp.createdAt).toLocaleString()}</p>
+                {exp.receiptImage && <button onClick={() => setViewingReceipt(exp.receiptImage)} className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-100/50 px-2 py-1 rounded-md transition-colors w-fit"><Camera className="w-3.5 h-3.5"/> Ver comprobante</button>}
               </div>
               <div className="flex items-center gap-2">
                 <span className={`font-extrabold ${exp.type === 'expense' ? 'text-red-500' : 'text-green-600'}`}>{exp.type === 'expense' ? '-' : '+'}{formatMoney(exp.amount)}</span>
-                
                 {exp.type !== 'assignment' ? (
                   <div className="flex gap-1 border-l border-slate-200 pl-2 ml-1">
-                    <button onClick={() => setEditingExpense(exp)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors" title="Editar"><Edit2 className="w-4 h-4"/></button>
-                    <button onClick={() => handleDeleteExpense(exp)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Eliminar"><Trash2 className="w-4 h-4"/></button>
+                    <button onClick={() => setEditingExpense(exp)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors"><Edit2 className="w-4 h-4"/></button>
+                    <button onClick={() => handleDeleteExpense(exp)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
                   </div>
-                ) : (
-                  <div className="pl-2 ml-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Fondo</span>
-                  </div>
-                )}
+                ) : <div className="pl-2 ml-1"><span className="text-[10px] font-bold text-slate-400 uppercase">Fondo</span></div>}
               </div>
             </div>
           ))}
+          {expenses.filter(e => e.driverId === myDriver.id).length === 0 && <p className="text-slate-400 font-bold text-sm text-center py-4">No has registrado movimientos.</p>}
         </div>
       </div>
     </main>
@@ -806,7 +961,7 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
 }
 
 // ==========================================
-// 4. COMPONENTE: LISTA DE TRABAJOS (ORDEN INTELIGENTE Y LISTA SIMPLIFICADA)
+// 4. COMPONENTE: LISTA DE TRABAJOS
 // ==========================================
 function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, currentUserEmail }) {
   const [menuOpenId, setMenuOpenId] = useState(null);
@@ -815,7 +970,13 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   const isAdminView = role === 'admin';
   
   const filteredJobs = jobs.filter(job => {
-    if (!isAdminView && (!job.assignedEmails?.includes(currentUserEmail) && job.acceptedByEmail !== currentUserEmail)) return false;
+    if (!isAdminView) {
+      if (job.status === 'pending') {
+        if (!job.assignedEmails?.includes(currentUserEmail)) return false;
+      } else {
+        if (job.acceptedByEmail !== currentUserEmail) return false;
+      }
+    }
     if (!job.createdAt) return true;
     if (!isAdminView) {
       const sevenDays = 7 * 24 * 60 * 60 * 1000;
@@ -839,7 +1000,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     return dateA - dateB; 
   });
 
-  // Dividimos los trabajos: Activos (Cuadrícula) e Historial (Lista Simplificada)
   const activeJobs = sortedJobs.filter(j => j.status === 'pending' || j.status === 'accepted');
   const historyJobs = sortedJobs.filter(j => j.status === 'completed' || j.status === 'failed');
 
@@ -857,9 +1017,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
 
   const handleFailJob = async (job, reason) => {
     try {
-      await updateDoc(doc(db, 'transport_jobs', job.id), { 
-        status: 'failed', failedReason: reason, completedAt: Date.now(), acceptedByEmail: job.acceptedByEmail || currentUserEmail
-      });
+      await updateDoc(doc(db, 'transport_jobs', job.id), { status: 'failed', failedReason: reason, completedAt: Date.now(), acceptedByEmail: job.acceptedByEmail || currentUserEmail });
       setJobToFail(null); alert("Trabajo marcado como fallido.");
     } catch (e) { console.error(e); }
   };
@@ -1070,7 +1228,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                       <button onClick={() => generatePDF(job)} className="p-2 flex-1 sm:flex-none bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors flex justify-center items-center" title="Descargar PDF"><FileDown className="w-4 h-4"/></button>
                       {job.status !== 'failed' && <button onClick={() => handleShareWhatsAppPDF(job)} className="p-2 flex-[2] sm:flex-none bg-green-100 hover:bg-green-200 text-green-700 rounded-xl transition-colors flex justify-center items-center gap-1.5" title="Compartir PDF por WhatsApp"><Share2 className="w-4 h-4"/><span className="text-xs font-bold sm:hidden">Compartir PDF</span></button>}
                       
-                      {/* En el historial, el Admin puede eliminar con el menú de 3 puntos */}
                       {isAdminView && (
                         <>
                           <button onClick={() => setMenuOpenId(menuOpenId === job.id ? null : job.id)} className="p-2 flex-1 sm:flex-none bg-slate-50 hover:bg-slate-200 text-slate-500 rounded-xl transition-colors flex justify-center items-center"><MoreVertical className="w-4 h-4"/></button>
