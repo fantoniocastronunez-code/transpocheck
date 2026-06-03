@@ -391,7 +391,7 @@ function JobsList({ jobs, isAdmin, onStartChecklist, db, currentUserEmail }) {
         docPDF.addImage(job.checklist.signatureData, 'PNG', 20, 135, 80, 40);
       }
 
-      // --- PÁGINA 2: FOTOS ADJUNTAS ---
+      // --- PÁGINA 2: FOTOS ADJUNTAS (CON PROPORCIONES REALES) ---
       if (job.checklist?.photos) {
         const photos = job.checklist.photos;
         const labels = {
@@ -400,8 +400,15 @@ function JobsList({ jobs, isAdmin, onStartChecklist, db, currentUserEmail }) {
         };
         
         let currentY = 30;
-        let currentX = 20;
+        let currentCol = 1; // 1 = Izquierda, 2 = Derecha
         let addedPage = false;
+
+        // Función auxiliar para obtener las dimensiones reales de la foto asíncronamente
+        const getImageDims = (src) => new Promise(resolve => {
+          const img = new Image();
+          img.onload = () => resolve({ w: img.width, h: img.height });
+          img.src = src;
+        });
 
         for (const key in photos) {
           if (photos[key]) {
@@ -413,23 +420,42 @@ function JobsList({ jobs, isAdmin, onStartChecklist, db, currentUserEmail }) {
               addedPage = true;
             }
 
-            docPDF.setFontSize(10);
-            docPDF.text(labels[key], currentX, currentY - 3);
-            docPDF.addImage(photos[key], 'JPEG', currentX, currentY, 75, 55);
+            // Calculamos el ratio real (vertical u horizontal) para no deformarla
+            const dims = await getImageDims(photos[key]);
+            const ratio = dims.h / dims.w;
             
-            // Lógica de cuadrícula: Alternar entre la columna izquierda y derecha
-            if (currentX === 20) {
-               currentX = 110; // Mover a la derecha
-            } else {
-               currentX = 20; // Volver a la izquierda
-               currentY += 65; // Bajar a la siguiente fila
+            let imgW = 80; // Ancho máximo permitido por columna
+            let imgH = imgW * ratio; // Alto proporcional
+            
+            // Si la foto es extremadamente vertical, la limitamos para que no se salga de la hoja
+            if (imgH > 110) {
+                imgH = 110;
+                imgW = imgH / ratio;
             }
 
-            // Si la página se llena (llegamos muy abajo), crear otra página nueva
-            if (currentY > 250) {
+            // Calculamos el centro de la columna para alinear la imagen perfecto
+            const slotCenter = currentCol === 1 ? 60 : 150; // Centro X de la Columna 1 o 2
+            const finalX = slotCenter - (imgW / 2);
+
+            // Verificamos si la imagen chocará con el final de la página ANTES de dibujarla
+            if (currentY + imgH > 280) {
                docPDF.addPage();
                currentY = 30;
-               currentX = 20;
+               docPDF.setFontSize(16);
+               docPDF.text(`Registro Fotográfico Adjunto (Cont.)`, 105, 20, null, null, "center");
+            }
+
+            // Escribimos el título de la foto centrado y dibujamos la imagen
+            docPDF.setFontSize(10);
+            docPDF.text(labels[key], slotCenter, currentY - 3, { align: "center" });
+            docPDF.addImage(photos[key], 'JPEG', finalX, currentY, imgW, imgH);
+            
+            // Alternamos lógicas de columnas para el layout de cuadrícula
+            if (currentCol === 1) {
+               currentCol = 2; // Siguiente foto va a la derecha
+            } else {
+               currentCol = 1; // Vuelve a la izquierda y baja de línea
+               currentY += (imgH > 90 ? imgH : 90) + 15; // Bajamos el eje Y dinámicamente
             }
           }
         }
@@ -621,6 +647,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
                   
                   {formData.photos[p.id] ? (
                     <>
+                      {/* Vista previa cuadrada usando "object-cover" en la web para verse ordenado, pero la foto guardada conserva su formato original */}
                       <img src={formData.photos[p.id]} alt={p.l} className="absolute inset-0 w-full h-full object-cover opacity-40" />
                       <CheckCircle className="text-green-700 w-6 h-6 relative z-10 bg-white rounded-full"/>
                       <span className="text-[10px] font-bold text-slate-900 text-center relative z-10 bg-white/80 px-1 rounded">{p.l}</span>
