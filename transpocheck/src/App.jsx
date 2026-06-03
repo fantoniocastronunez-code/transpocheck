@@ -2,10 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc } from 'firebase/firestore';
-import { jsPDF } from "jspdf";
 import { 
   Car, MapPin, Camera, Fuel, CheckCircle, FileText, Download, 
-  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell
+  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt
 } from 'lucide-react';
 
 // ==========================================
@@ -30,7 +29,7 @@ const CLIENTES = ["Grandleasing", "Kovacs", "Salfa", "Enex"];
 // ==========================================
 // 2. COMPONENTE: FIRMA DIGITAL
 // ==========================================
-const SignaturePad = ({ onSave, onClear }) => {
+const SignaturePad = ({ onSave, onClear, initialData }) => {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
 
@@ -38,7 +37,14 @@ const SignaturePad = ({ onSave, onClear }) => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     ctx.strokeStyle = '#000'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  }, []);
+    
+    // Restaurar firma si había un borrador guardado
+    if (initialData) {
+      const img = new Image();
+      img.onload = () => ctx.drawImage(img, 0, 0);
+      img.src = initialData;
+    }
+  }, [initialData]);
 
   const drawEvent = (e, type) => {
     const canvas = canvasRef.current;
@@ -65,9 +71,17 @@ const SignaturePad = ({ onSave, onClear }) => {
         onTouchStart={(e) => drawEvent(e, 'start')} onTouchMove={(e) => drawEvent(e, 'draw')}
         onTouchEnd={(e) => drawEvent(e, 'stop')}
       />
-      <button type="button" onClick={() => { canvasRef.current.getContext('2d').clearRect(0,0,300,150); if(onClear) onClear(); }} className="mt-2 text-sm text-red-500 hover:text-red-600 font-bold px-2 py-1 bg-red-50 rounded-lg">Limpiar firma</button>
+      <button type="button" onClick={() => { canvasRef.current.getContext('2d').clearRect(0,0,300,150); if(onClear) onClear(); }} className="mt-2 text-sm text-red-500 hover:text-red-600 font-bold px-3 py-1.5 bg-red-50 rounded-lg transition-colors">Limpiar firma</button>
     </div>
   );
+};
+
+// --- HELPER FORMATO MONEDA Y FECHA ---
+const formatMoney = (amount) => `$${Number(amount).toLocaleString('es-CL')}`;
+const formatDateDisplay = (dateString) => {
+  if (!dateString) return '';
+  const [y, m, d] = dateString.split('-');
+  return `${d}/${m}/${y}`;
 };
 
 // ==========================================
@@ -77,43 +91,38 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [drivers, setDrivers] = useState([]);
+  const [expenses, setExpenses] = useState([]);
   const [editingDriver, setEditingDriver] = useState(null);
   const [adminTab, setAdminTab] = useState('dashboard');
   const [selectedJob, setSelectedJob] = useState(null);
+  const [editingJob, setEditingJob] = useState(null);
   const [currentView, setCurrentView] = useState('main');
+  const [mainTab, setMainTab] = useState('jobs');
   const [activeRole, setActiveRole] = useState('driver');
-  const [notifPermission, setNotifPermission] = useState('default');
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   
   const isFirstLoad = useRef(true);
 
-  // Registro de Service Worker para notificaciones en Android
-  useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(err => console.error("Error SW:", err));
-    }
-    if ("Notification" in window) setNotifPermission(Notification.permission);
-  }, []);
-
   const requestNotificationPermission = () => {
-    if ("Notification" in window) {
-      Notification.requestPermission().then(perm => setNotifPermission(perm));
-    }
+    if (!("Notification" in window)) { alert("Tu navegador no soporta notificaciones."); return; }
+    Notification.requestPermission().then(permission => {
+      if (permission === "granted") {
+        setNotificationsEnabled(true);
+        new Notification("¡Notificaciones Activadas!", { body: "Recibirás alertas de nuevos trabajos aquí." });
+      }
+    });
   };
 
-  const triggerNotification = async (title, body) => {
-    if (!("Notification" in window) || Notification.permission !== "granted") return;
-    
-    // Usamos el ServiceWorker para que Android Chrome muestre la alerta correctamente
-    const reg = await navigator.serviceWorker.getRegistration();
-    if (reg && 'showNotification' in reg) {
-      reg.showNotification(title, { body, icon: '/logo.png', vibrate: [200, 100, 200] });
-    } else {
-      new Notification(title, { body, icon: '/logo.png' });
-    }
+  const triggerNotification = (title, body) => {
+    if (!("Notification" in window)) return;
+    if (Notification.permission === "granted") new Notification(title, { body });
   };
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, setUser);
+    const unsub = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if ("Notification" in window && Notification.permission === "granted") setNotificationsEnabled(true);
+    });
     return () => unsub();
   }, []);
 
@@ -133,10 +142,10 @@ export default function App() {
         snapshot.docChanges().forEach((change) => {
           const jobData = change.doc.data();
           if (change.type === 'added' && jobData.status === 'pending' && jobData.assignedEmails?.includes(currentUserEmail)) {
-            triggerNotification('📍 ¡Nuevo Traslado Asignado!', `Mover: ${jobData.brand} ${jobData.model} desde ${jobData.origin}`);
+            triggerNotification('📍 ¡Nuevo Traslado!', `Vehículo: ${jobData.brand || 'Vehículo'} para el ${formatDateDisplay(jobData.scheduledDate) || 'Hoy'}`);
           }
           if (change.type === 'modified' && jobData.status === 'accepted' && isRealAdmin && activeRole === 'admin') {
-            triggerNotification('✅ Trabajo Aceptado', `Conductor ${jobData.acceptedByEmail} aceptó traslado del ${jobData.brand}`);
+            triggerNotification('✅ Trabajo Aceptado', `Conductor: ${jobData.acceptedByEmail} aceptó el traslado.`);
           }
         });
       }
@@ -150,10 +159,15 @@ export default function App() {
       setDrivers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
 
-    return () => { unsubJobs(); unsubDrivers(); };
+    const unsubExpenses = onSnapshot(collection(db, 'expenses'), (snapshot) => {
+      const expData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      expData.sort((a, b) => b.createdAt - a.createdAt);
+      setExpenses(expData);
+    });
+
+    return () => { unsubJobs(); unsubDrivers(); unsubExpenses(); };
   }, [user, activeRole]);
 
-  // FUENTE AMIGABLE GLOBAL
   const globalStyles = (
     <style>{`
       @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
@@ -171,7 +185,7 @@ export default function App() {
           </div>
           <h1 className="text-4xl font-extrabold text-slate-900 mb-2 tracking-tight">LogisticAPP</h1>
           <p className="text-slate-500 mb-10 text-lg">Gestión de traslados inteligente</p>
-          <button onClick={() => signInWithPopup(auth, googleProvider).catch(e => console.error(e))} className="w-full bg-white border-2 border-gray-200 text-slate-700 font-bold py-4 px-4 rounded-2xl shadow-sm hover:bg-gray-50 hover:border-blue-200 flex items-center justify-center gap-3 transition-all text-lg">
+          <button onClick={() => signInWithPopup(auth, googleProvider).catch(e => console.error(e))} className="w-full bg-white border-2 border-slate-200 text-slate-700 font-bold py-4 px-4 rounded-2xl shadow-sm hover:bg-slate-50 flex items-center justify-center gap-3 transition-all text-lg">
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-6 h-6" /> Ingresar con Google
           </button>
         </div>
@@ -182,7 +196,7 @@ export default function App() {
   const handleCreateDriver = async (e) => {
     e.preventDefault();
     try {
-      await addDoc(collection(db, 'drivers'), { name: e.target.driverName.value, email: e.target.driverEmail.value.toLowerCase(), createdAt: Date.now() });
+      await addDoc(collection(db, 'drivers'), { name: e.target.driverName.value, email: e.target.driverEmail.value.toLowerCase(), balance: 0, createdAt: Date.now() });
       e.target.reset(); alert("Conductor creado exitosamente.");
     } catch (error) { console.error(error); }
   };
@@ -190,26 +204,33 @@ export default function App() {
   const handleUpdateDriver = async (e) => {
     e.preventDefault();
     try {
-      await updateDoc(doc(db, 'drivers', editingDriver.id), { 
-        name: e.target.driverName.value, email: e.target.driverEmail.value.toLowerCase() 
-      });
+      await updateDoc(doc(db, 'drivers', editingDriver.id), { name: e.target.driverName.value, email: e.target.driverEmail.value.toLowerCase() });
       setEditingDriver(null); alert("Conductor actualizado exitosamente.");
     } catch (error) { console.error(error); }
   };
 
   const handleQuickChecklist = () => {
-    setSelectedJob({ id: 'NEW_QUICK_JOB', client: '', brand: '', model: '', plate: '', vin: '', origin: '', destination: '' });
+    const today = new Date().toISOString().split('T')[0];
+    setSelectedJob({ id: 'NEW_QUICK_JOB', client: '', brand: '', model: '', plate: '', vin: '', origin: '', destination: '', scheduledDate: today });
     setCurrentView('checklist');
   };
 
   const exportToExcel = () => {
-    const headers = ['ID', 'Cliente', 'Marca', 'Modelo', 'VIN/Patente', 'Desde', 'Hasta', 'Conductores', 'Estado', 'Fecha'];
-    const rows = jobs.map(j => [
-      j.id, `"${j.client || ''}"`, `"${j.brand || ''}"`, `"${j.model || ''}"`, `"${j.plate || j.vin || ''}"`, 
-      `"${j.origin || ''}"`, `"${j.destination || ''}"`, `"${j.assignedDrivers?.map(d=>d.name).join(' - ') || ''}"`, 
-      `"${j.status || ''}"`, `"${new Date(j.createdAt).toLocaleString()}"`
-    ]);
-
+    const headers = ['ID', 'Fecha Prog.', 'Cliente', 'Marca', 'Modelo', 'VIN/Patente', 'Desde', 'Hasta', 'Conductores Asignados', 'Conductor Realizó', 'Estado', 'Fecha Creación'];
+    const rows = jobs.map(j => {
+      let realizedBy = '';
+      if (j.status === 'completed' || j.status === 'accepted') {
+        if (j.acceptedByEmail) {
+          const d = drivers.find(drv => drv.email === j.acceptedByEmail);
+          realizedBy = d ? d.name : j.acceptedByEmail;
+        } else if (j.assignedDriverName) { realizedBy = j.assignedDriverName; }
+      }
+      return [
+        j.id, `"${formatDateDisplay(j.scheduledDate) || ''}"`, `"${j.client || ''}"`, `"${j.brand || ''}"`, `"${j.model || ''}"`, `"${j.plate || j.vin || ''}"`, 
+        `"${j.origin || ''}"`, `"${j.destination || ''}"`, `"${j.assignedDrivers?.map(d=>d.name).join(' - ') || ''}"`,
+        `"${realizedBy}"`, `"${j.status || ''}"`, `"${new Date(j.createdAt).toLocaleString()}"`
+      ];
+    });
     const csvContent = "\uFEFF" + [headers.join(';'), ...rows.map(e => e.join(';'))].join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -220,6 +241,7 @@ export default function App() {
   const NewJobForm = () => {
     const [selectedClient, setSelectedClient] = useState('');
     const [manualClient, setManualClient] = useState('');
+    const todayStr = new Date().toISOString().split('T')[0];
 
     const handleCreateJobSubmit = async (e) => {
       e.preventDefault();
@@ -231,18 +253,12 @@ export default function App() {
       const finalClient = selectedClient === 'OTRO' ? manualClient : selectedClient;
       
       const newJob = {
-        client: finalClient, brand: formData.get('brand'), model: formData.get('model'),
-        vin: formData.get('plateOrVin'), plate: formData.get('plateOrVin'), 
-        origin: formData.get('origin'), destination: formData.get('destination'),
-        assignedDrivers: assignedDriversList.map(d => ({id: d.id, name: d.name, email: d.email})),
-        assignedEmails: assignedDriversList.map(d => d.email),
+        scheduledDate: formData.get('scheduledDate'), client: finalClient, brand: formData.get('brand'), model: formData.get('model'),
+        vin: formData.get('plateOrVin'), plate: formData.get('plateOrVin'), origin: formData.get('origin'), destination: formData.get('destination'),
+        assignedDrivers: assignedDriversList.map(d => ({id: d.id, name: d.name, email: d.email})), assignedEmails: assignedDriversList.map(d => d.email),
         status: 'pending', createdAt: Date.now(), checklist: null
       };
-
-      try {
-        await addDoc(collection(db, 'transport_jobs'), newJob);
-        setAdminTab('dashboard'); alert(`Trabajo asignado a ${assignedDriversList.length} conductor(es).`);
-      } catch (error) { console.error(error); }
+      try { await addDoc(collection(db, 'transport_jobs'), newJob); setAdminTab('dashboard'); alert(`Trabajo asignado.`); } catch (error) { console.error(error); }
     };
 
     return (
@@ -250,33 +266,37 @@ export default function App() {
         <h2 className="text-2xl font-extrabold mb-6 border-b pb-4 text-slate-800">Crear Nuevo Traslado</h2>
         <form onSubmit={handleCreateJobSubmit} className="space-y-6">
           <div className="bg-slate-50 p-6 rounded-2xl space-y-4">
-            <h3 className="text-base font-bold text-slate-700">1. Cliente y Ruta</h3>
+            <h3 className="text-base font-bold text-slate-700">1. Programación y Cliente <span className="text-xs text-slate-400 font-normal">(Opcional)</span></h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <select required value={selectedClient} onChange={(e) => setSelectedClient(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold text-slate-700 bg-white">
-                  <option value="">Seleccione Cliente...</option>
+              <div className="space-y-1">
+                 <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider ml-1">Fecha de Traslado</label>
+                 <input name="scheduledDate" type="date" defaultValue={todayStr} required className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-700" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider ml-1">Cliente</label>
+                <select value={selectedClient} onChange={(e) => setSelectedClient(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold text-slate-700 bg-white">
+                  <option value="">Seleccione Cliente (Opcional)</option>
                   {CLIENTES.map(c => <option key={c} value={c}>{c}</option>)}
                   <option value="OTRO">Otro (Ingreso manual)</option>
                 </select>
-                {selectedClient === 'OTRO' && (
-                  <input type="text" required value={manualClient} onChange={(e) => setManualClient(e.target.value)} placeholder="Escribe el nombre del cliente" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
-                )}
+                {selectedClient === 'OTRO' && <input type="text" value={manualClient} onChange={(e) => setManualClient(e.target.value)} placeholder="Escribe el nombre del cliente" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white mt-2" />}
               </div>
-              <div className="hidden md:block"></div>
-              <input name="origin" required type="text" placeholder="Desde (Origen)" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
-              <input name="destination" required type="text" placeholder="Hasta (Destino)" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              <input name="origin" type="text" placeholder="Desde (Origen)" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+              <input name="destination" type="text" placeholder="Hasta (Destino)" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
             </div>
           </div>
           <div className="bg-slate-50 p-6 rounded-2xl space-y-4">
-             <h3 className="text-base font-bold text-slate-700">2. Vehículo</h3>
+             <h3 className="text-base font-bold text-slate-700">2. Vehículo <span className="text-xs text-slate-400 font-normal">(Opcional)</span></h3>
              <div className="grid grid-cols-2 gap-4">
-               <input name="brand" type="text" placeholder="Marca" required className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
-               <input name="model" type="text" placeholder="Modelo" required className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
-               <input name="plateOrVin" type="text" placeholder="Patente o VIN" required className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl col-span-2 uppercase outline-none focus:border-blue-500 font-semibold bg-white" />
+               <input name="brand" type="text" placeholder="Marca" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+               <input name="model" type="text" placeholder="Modelo" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+               <input name="plateOrVin" type="text" placeholder="Patente o VIN" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl col-span-2 uppercase outline-none focus:border-blue-500 font-semibold bg-white" />
              </div>
           </div>
           <div className="bg-slate-50 p-6 rounded-2xl space-y-4">
-             <h3 className="text-base font-bold text-slate-700">3. Conductores</h3>
+             <h3 className="text-base font-bold text-slate-700">3. Conductores <span className="text-xs text-red-500 font-normal">(Obligatorio seleccionar al menos 1)</span></h3>
              <div className="max-h-48 overflow-y-auto border-2 border-slate-200 bg-white rounded-xl">
                 {drivers.length === 0 ? <p className="text-sm text-slate-400 p-4 font-semibold">No hay conductores.</p> : drivers.map(d => (
                   <label key={d.id} className="flex items-center p-4 border-b border-slate-100 hover:bg-blue-50 cursor-pointer transition-colors">
@@ -292,49 +312,89 @@ export default function App() {
     );
   };
 
+  const EditJobModal = ({ job, onClose }) => {
+    const [selectedClient, setSelectedClient] = useState(CLIENTES.includes(job.client) ? job.client : (job.client ? 'OTRO' : ''));
+    const [manualClient, setManualClient] = useState(!CLIENTES.includes(job.client) ? job.client : '');
+    const defaultDate = job.scheduledDate || new Date().toISOString().split('T')[0];
+
+    const handleUpdateJobSubmit = async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const selectedDriverIds = formData.getAll('assignedDriverId');
+      const assignedDriversList = drivers.filter(d => selectedDriverIds.includes(d.id));
+      const finalClient = selectedClient === 'OTRO' ? manualClient : selectedClient;
+      const updatedData = {
+        scheduledDate: formData.get('scheduledDate'), client: finalClient, brand: formData.get('brand'), model: formData.get('model'),
+        vin: formData.get('plateOrVin'), plate: formData.get('plateOrVin'), origin: formData.get('origin'), destination: formData.get('destination'),
+      };
+      if (assignedDriversList.length > 0) {
+        updatedData.assignedDrivers = assignedDriversList.map(d => ({id: d.id, name: d.name, email: d.email}));
+        updatedData.assignedEmails = assignedDriversList.map(d => d.email);
+      }
+      try { await updateDoc(doc(db, 'transport_jobs', job.id), updatedData); alert("Trabajo actualizado."); onClose(); } catch (error) { console.error(error); }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="p-6 border-b flex justify-between items-center sticky top-0 bg-white z-10">
+            <h2 className="text-xl font-extrabold text-slate-800">Modificar Trabajo</h2><button onClick={onClose} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button>
+          </div>
+          <form onSubmit={handleUpdateJobSubmit} className="p-6 space-y-6">
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-slate-700">Programación, Cliente y Ruta</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1"><label className="text-xs font-bold text-slate-500 uppercase ml-1">Fecha Programada</label><input name="scheduledDate" type="date" defaultValue={defaultDate} required className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold text-slate-700" /></div>
+                <div className="space-y-1"><label className="text-xs font-bold text-slate-500 uppercase ml-1">Cliente</label><select value={selectedClient} onChange={(e) => setSelectedClient(e.target.value)} className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold"><option value="">Seleccione Cliente...</option>{CLIENTES.map(c => <option key={c} value={c}>{c}</option>)}<option value="OTRO">Otro (Ingreso manual)</option></select>{selectedClient === 'OTRO' && <input type="text" value={manualClient} onChange={(e) => setManualClient(e.target.value)} placeholder="Nombre del cliente" className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold mt-2" />}</div>
+                <input name="origin" defaultValue={job.origin} type="text" placeholder="Desde" className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold" />
+                <input name="destination" defaultValue={job.destination} type="text" placeholder="Hasta" className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold" />
+              </div>
+              <h3 className="text-sm font-bold text-slate-700 mt-6">Vehículo</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <input name="brand" defaultValue={job.brand} type="text" placeholder="Marca" className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold" />
+                <input name="model" defaultValue={job.model} type="text" placeholder="Modelo" className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold" />
+                <input name="plateOrVin" defaultValue={job.plate || job.vin} type="text" placeholder="Patente o VIN" className="w-full border-2 p-3 text-sm rounded-xl col-span-2 uppercase outline-none focus:border-blue-500 font-semibold" />
+              </div>
+              <h3 className="text-sm font-bold text-slate-700 mt-6">Conductores <span className="text-xs font-normal text-slate-400">(Dejar igual si no quieres cambiarlos)</span></h3>
+              <div className="max-h-40 overflow-y-auto border-2 rounded-xl">
+                  {drivers.map(d => {
+                    const isPreselected = job.assignedEmails?.includes(d.email);
+                    return (<label key={d.id} className="flex items-center p-3 border-b hover:bg-blue-50 cursor-pointer"><input type="checkbox" name="assignedDriverId" value={d.id} defaultChecked={isPreselected} className="w-5 h-5 cursor-pointer rounded text-blue-600" /><div className="ml-3"><span className="block text-sm font-bold text-slate-800">{d.name}</span></div></label>)
+                  })}
+              </div>
+            </div>
+            <div className="flex gap-4 pt-4 border-t"><button type="button" onClick={onClose} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold">Cancelar</button><button type="submit" className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold">Guardar Cambios</button></div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 pb-20 font-sans">
+    <div className="min-h-screen bg-slate-50 text-slate-800 pb-24 font-sans">
       {globalStyles}
-      <header className="bg-blue-600 text-white p-4 shadow-lg flex flex-wrap justify-between items-center sticky top-0 z-50">
+      <header className="bg-blue-600 text-white p-4 shadow-lg flex justify-between items-center sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm"><Car className="w-6 h-6 text-white" /></div>
-          <h1 className="font-extrabold text-2xl tracking-tight">LogisticAPP</h1>
+          <h1 className="font-extrabold text-2xl tracking-tight hidden sm:block">LogisticAPP</h1>
         </div>
-        
-        <div className="flex items-center gap-2 mt-2 sm:mt-0">
-          {notifPermission === 'default' && (
-            <button onClick={requestNotificationPermission} className="bg-yellow-400 hover:bg-yellow-500 text-slate-900 p-2 rounded-xl flex items-center gap-1 text-xs font-bold transition-colors" title="Activar Notificaciones">
-              <Bell className="w-4 h-4"/> Notificar
-            </button>
-          )}
-
+        <div className="flex items-center gap-2 sm:gap-4">
+          {!notificationsEnabled && <button onClick={requestNotificationPermission} className="p-2 bg-amber-500 hover:bg-amber-400 rounded-xl transition-colors shadow-sm" title="Activar Notificaciones"><Bell className="w-5 h-5 text-white animate-pulse" /></button>}
           {isRealAdmin && (
-            <button 
-              onClick={() => setActiveRole(activeRole === 'admin' ? 'driver' : 'admin')}
-              className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-3 py-2 rounded-xl text-sm font-bold transition-all border border-white/10 backdrop-blur-sm"
-              title="Cambiar Vista"
-            >
-              {activeRole === 'admin' ? <ToggleRight className="w-5 h-5 text-green-300"/> : <ToggleLeft className="w-5 h-5 text-slate-300"/>}
-              <span className="hidden md:inline">{activeRole === 'admin' ? 'Admin' : 'Conductor'}</span>
+            <button onClick={() => setActiveRole(activeRole === 'admin' ? 'driver' : 'admin')} className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-3 py-2 rounded-xl text-sm font-bold transition-all border border-white/10 backdrop-blur-sm">
+              {activeRole === 'admin' ? <ToggleRight className="w-6 h-6 text-green-300"/> : <ToggleLeft className="w-6 h-6 text-slate-300"/>}
+              <span className="hidden md:inline">{activeRole === 'admin' ? 'Modo Admin' : 'Modo Conductor'}</span>
             </button>
           )}
-
-          <div className="hidden sm:block text-right border-l border-white/20 pl-3 ml-1">
-            <p className="text-[10px] text-blue-200 font-bold uppercase tracking-wider">Sesión iniciada</p>
-            <p className="text-xs font-extrabold">{currentUserEmail}</p>
-          </div>
-          <button onClick={() => signOut(auth)} className="bg-white/10 hover:bg-white/20 p-2 rounded-xl text-white transition-colors ml-1"><LogOut className="w-5 h-5" /></button>
+          <div className="hidden md:block text-right mr-2"><p className="text-xs text-blue-200 font-bold uppercase tracking-wider">Sesión iniciada</p><p className="text-sm font-extrabold">{currentUserEmail}</p></div>
+          <button onClick={() => signOut(auth)} className="bg-white/10 hover:bg-white/20 p-2.5 rounded-xl text-white transition-colors" title="Cerrar sesión"><LogOut className="w-5 h-5" /></button>
         </div>
       </header>
 
-      {currentView === 'main' && (
-        <main className="max-w-5xl mx-auto p-4 pt-6">
-          <div className="mb-8">
-            <button onClick={handleQuickChecklist} className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-8 py-4 rounded-2xl font-extrabold text-lg flex items-center justify-center gap-2 shadow-xl shadow-indigo-200 transition-all transform hover:scale-[1.02]">
-              <Zap className="w-6 h-6 fill-current"/> Checklist Rápido (Desde 0)
-            </button>
-          </div>
+      {editingJob && <EditJobModal job={editingJob} onClose={() => setEditingJob(null)} />}
 
+      {currentView === 'main' && mainTab === 'jobs' && (
+        <main className="max-w-5xl mx-auto p-4 pt-6">
           {activeRole === 'admin' ? (
             <>
               <div className="flex flex-wrap gap-2 mb-8 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
@@ -344,24 +404,23 @@ export default function App() {
               </div>
               {adminTab === 'dashboard' && (
                 <div className="space-y-6">
-                  <div className="flex justify-between items-center"><h2 className="text-2xl font-extrabold text-slate-800">Monitor Administrativo</h2><button onClick={exportToExcel} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-green-200 transition-colors"><Download className="w-4 h-4"/> Exportar a Excel</button></div>
-                  <JobsList jobs={jobs} drivers={drivers} role="admin" onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} db={db} currentUserEmail={currentUserEmail} />
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                    <h2 className="text-2xl font-extrabold text-slate-800">Monitor Administrativo</h2>
+                    <button onClick={exportToExcel} className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex justify-center items-center gap-2 shadow-lg shadow-green-200 transition-colors"><Download className="w-5 h-5"/> Exportar Excel</button>
+                  </div>
+                  <JobsList jobs={jobs} drivers={drivers} role="admin" onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} onEditJob={setEditingJob} db={db} currentUserEmail={currentUserEmail} />
                 </div>
               )}
               {adminTab === 'newJob' && <NewJobForm />}
               {adminTab === 'drivers' && (
                 <div className="grid md:grid-cols-2 gap-6">
                   <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={editingDriver ? handleUpdateDriver : handleCreateDriver} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-5">
-                    <h3 className="text-xl font-extrabold text-slate-800 flex items-center gap-2">
-                      <User className="text-blue-600"/> {editingDriver ? 'Editar Conductor' : 'Nuevo Conductor'}
-                    </h3>
+                    <h3 className="text-xl font-extrabold text-slate-800 flex items-center gap-2"><User className="text-blue-600"/> {editingDriver ? 'Editar Conductor' : 'Nuevo Conductor'}</h3>
                     <input name="driverName" defaultValue={editingDriver ? editingDriver.name : ''} placeholder="Nombre completo" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
                     <input name="driverEmail" defaultValue={editingDriver ? editingDriver.email : ''} placeholder="Correo Gmail del conductor" required type="email" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
                     <div className="flex gap-3">
                       {editingDriver && <button type="button" onClick={() => setEditingDriver(null)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-extrabold text-lg transition-colors">Cancelar</button>}
-                      <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-lg transition-colors shadow-lg shadow-blue-200">
-                        {editingDriver ? 'Guardar Cambios' : 'Crear Conductor'}
-                      </button>
+                      <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-lg transition-colors shadow-lg shadow-blue-200">{editingDriver ? 'Guardar Cambios' : 'Crear Conductor'}</button>
                     </div>
                   </form>
                   <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
@@ -369,11 +428,8 @@ export default function App() {
                     <div className="space-y-3">
                       {drivers.length === 0 ? <p className="text-sm font-semibold text-slate-400">Directorio vacío</p> : drivers.map(d=>(
                         <div key={d.id} className="flex justify-between items-center p-4 bg-slate-50 border border-slate-100 rounded-2xl group transition-all">
-                          <div>
-                            <p className="text-base font-extrabold text-slate-800">{d.name}</p>
-                            <p className="text-sm font-bold text-slate-400">{d.email}</p>
-                          </div>
-                          <button onClick={() => setEditingDriver(d)} className="p-2.5 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-xl transition-colors shadow-sm" title="Editar Conductor"><Edit2 className="w-5 h-5"/></button>
+                          <div><p className="text-base font-extrabold text-slate-800">{d.name}</p><p className="text-sm font-bold text-slate-400">{d.email}</p></div>
+                          <button onClick={() => setEditingDriver(d)} className="p-2.5 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-xl transition-colors shadow-sm"><Edit2 className="w-5 h-5"/></button>
                         </div>
                       ))}
                     </div>
@@ -390,19 +446,174 @@ export default function App() {
         </main>
       )}
 
+      {currentView === 'main' && mainTab === 'expenses' && (
+        <ExpensesView role={activeRole} drivers={drivers} expenses={expenses} db={db} currentUserEmail={currentUserEmail} />
+      )}
+
       {currentView === 'checklist' && selectedJob && (
         <main className="max-w-2xl mx-auto p-4 pt-6">
           <ChecklistForm job={selectedJob} db={db} currentUserEmail={currentUserEmail} onCancel={() => setCurrentView('main')} onComplete={() => { setSelectedJob(null); setCurrentView('main'); }} />
         </main>
+      )}
+
+      {currentView === 'main' && (
+        <nav className="fixed bottom-0 w-full bg-white border-t border-slate-200 flex justify-around items-center p-3 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] pb-[env(safe-area-inset-bottom)]">
+          <button onClick={handleQuickChecklist} className="flex flex-col items-center text-slate-400 hover:text-blue-600 transition-colors w-24">
+             <div className="bg-slate-100 p-2 rounded-xl mb-1"><Zap className="w-6 h-6"/></div>
+             <span className="text-[10px] font-extrabold tracking-wide">Desde 0</span>
+          </button>
+          <button onClick={() => setMainTab('jobs')} className={`flex flex-col items-center transition-colors w-24 ${mainTab==='jobs' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}>
+             <div className={`${mainTab==='jobs' ? 'bg-blue-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><ClipboardList className="w-6 h-6"/></div>
+             <span className="text-[10px] font-extrabold tracking-wide">Trabajos</span>
+          </button>
+          <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors w-24 ${mainTab==='expenses' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}>
+             <div className={`${mainTab==='expenses' ? 'bg-blue-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Wallet className="w-6 h-6"/></div>
+             <span className="text-[10px] font-extrabold tracking-wide">Gastos</span>
+          </button>
+        </nav>
       )}
     </div>
   );
 }
 
 // ==========================================
+// MÓDULO DE GASTOS
+// ==========================================
+function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
+  const isAdminView = role === 'admin';
+  const myDriver = drivers.find(d => d.email === currentUserEmail);
+  const [selectedDriverId, setSelectedDriverId] = useState(null);
+
+  const handleAssignFunds = async (e, driver) => {
+    e.preventDefault();
+    const amount = Number(e.target.amount.value);
+    try {
+      await updateDoc(doc(db, 'drivers', driver.id), { balance: (driver.balance || 0) + amount });
+      await addDoc(collection(db, 'expenses'), { driverId: driver.id, driverEmail: driver.email, driverName: driver.name, type: 'assignment', amount, detail: 'Asignación de fondos', createdAt: Date.now() });
+      e.target.reset(); alert(`$${amount} asignados a ${driver.name}`);
+    } catch (error) { console.error(error); }
+  };
+
+  const handleAddExpense = async (e) => {
+    e.preventDefault();
+    const amount = Number(e.target.amount.value);
+    const detail = e.target.detail.value;
+    const currentBalance = myDriver?.balance || 0;
+    if (amount > currentBalance) return alert("No tienes saldo suficiente asignado.");
+    try {
+      await updateDoc(doc(db, 'drivers', myDriver.id), { balance: currentBalance - amount });
+      await addDoc(collection(db, 'expenses'), { driverId: myDriver.id, driverEmail: currentUserEmail, driverName: myDriver.name, type: 'expense', amount, detail, createdAt: Date.now() });
+      e.target.reset(); alert("Gasto registrado");
+    } catch (error) { console.error(error); }
+  };
+
+  const handleReturnFunds = async () => {
+    const currentBalance = myDriver?.balance || 0;
+    if (currentBalance <= 0) return;
+    if (window.confirm(`¿Confirmas que rendiste y devolviste $${currentBalance}?`)) {
+      try {
+        await updateDoc(doc(db, 'drivers', myDriver.id), { balance: 0 });
+        await addDoc(collection(db, 'expenses'), { driverId: myDriver.id, driverEmail: currentUserEmail, driverName: myDriver.name, type: 'return', amount: currentBalance, detail: 'Rendición de Vuelto', createdAt: Date.now() });
+        alert("Fondos rendidos a $0");
+      } catch (error) { console.error(error); }
+    }
+  };
+
+  const TransactionIcon = ({ type }) => {
+    if (type === 'assignment') return <ArrowUpCircle className="w-5 h-5 text-green-500"/>;
+    if (type === 'expense') return <ArrowDownCircle className="w-5 h-5 text-red-500"/>;
+    return <CheckCircle className="w-5 h-5 text-blue-500"/>;
+  };
+
+  if (isAdminView) {
+    return (
+      <main className="max-w-5xl mx-auto p-4 pt-6 pb-24">
+        <h2 className="text-2xl font-extrabold text-slate-800 mb-6 flex items-center gap-2"><Wallet className="text-blue-600"/> Control de Viáticos</h2>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold text-slate-600">Conductores y Saldos</h3>
+            {drivers.map(d => (
+              <div key={d.id} className={`bg-white p-5 rounded-3xl shadow-sm border transition-all cursor-pointer ${selectedDriverId === d.id ? 'border-blue-500 ring-2 ring-blue-100' : 'border-slate-100 hover:border-blue-300'}`} onClick={() => setSelectedDriverId(d.id === selectedDriverId ? null : d.id)}>
+                <div className="flex justify-between items-center">
+                  <div><p className="font-extrabold text-slate-800 text-lg">{d.name}</p><p className="text-sm text-slate-400 font-bold">{d.email}</p></div>
+                  <div className="text-right"><p className="text-xs font-bold text-slate-400 uppercase">Saldo Actual</p><p className={`text-xl font-extrabold ${d.balance > 0 ? 'text-green-600' : 'text-slate-700'}`}>{formatMoney(d.balance || 0)}</p></div>
+                </div>
+                {selectedDriverId === d.id && (
+                  <form onSubmit={(e) => handleAssignFunds(e, d)} className="mt-5 pt-5 border-t border-slate-100 flex gap-2" onClick={e=>e.stopPropagation()}>
+                    <input type="number" name="amount" placeholder="Monto a asignar ($)" required className="flex-1 border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" />
+                    <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-6 font-extrabold rounded-xl transition-colors">Enviar</button>
+                  </form>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 h-fit">
+            <h3 className="text-lg font-bold text-slate-600 mb-4">{selectedDriverId ? 'Historial del Conductor' : 'Historial Global'}</h3>
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+              {expenses.filter(e => selectedDriverId ? e.driverId === selectedDriverId : true).map(exp => (
+                <div key={exp.id} className="flex items-center gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                  <TransactionIcon type={exp.type}/>
+                  <div className="flex-1">
+                    <p className="text-sm font-extrabold text-slate-800">{exp.detail}</p>
+                    <p className="text-xs font-bold text-slate-400">{!selectedDriverId && <span className="text-blue-600">{exp.driverName} • </span>}{new Date(exp.createdAt).toLocaleDateString()}</p>
+                  </div>
+                  <span className={`font-extrabold ${exp.type === 'expense' ? 'text-red-500' : 'text-green-600'}`}>{exp.type === 'expense' ? '-' : '+'}{formatMoney(exp.amount)}</span>
+                </div>
+              ))}
+              {expenses.length === 0 && <p className="text-slate-400 font-bold text-sm text-center py-4">No hay movimientos registrados.</p>}
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!myDriver) return <main className="p-8 text-center text-slate-500 font-bold pb-24">No estás registrado como conductor. Pide al admin que te agregue.</main>;
+  const myBalance = myDriver.balance || 0;
+
+  return (
+    <main className="max-w-md mx-auto p-4 pt-6 space-y-6 pb-24">
+      <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 rounded-3xl shadow-xl text-center text-white relative overflow-hidden">
+        <Wallet className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10" />
+        <p className="text-blue-100 font-bold uppercase tracking-wider text-sm mb-2">Fondo Asignado Actual</p>
+        <p className="text-5xl font-extrabold tracking-tight">{formatMoney(myBalance)}</p>
+      </div>
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+        <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-2 mb-4"><Receipt className="w-5 h-5 text-red-500"/> Registrar Gasto</h3>
+        <form onSubmit={handleAddExpense} className="space-y-4">
+          <input type="text" name="detail" placeholder="¿En qué gastaste? (Ej. Peaje)" required className="w-full border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" />
+          <input type="number" name="amount" placeholder="Monto ($)" required className="w-full border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" />
+          <button type="submit" disabled={myBalance <= 0} className={`w-full py-4 rounded-2xl font-extrabold text-lg transition-all ${myBalance > 0 ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>Guardar Gasto</button>
+        </form>
+      </div>
+      {myBalance > 0 && (
+        <button onClick={handleReturnFunds} className="w-full bg-green-50 hover:bg-green-100 text-green-700 border-2 border-green-200 py-4 rounded-3xl font-extrabold text-lg flex justify-center items-center gap-2 transition-all">
+          <CheckCircle className="w-6 h-6"/> Rendir Vuelto ($0)
+        </button>
+      )}
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+        <h3 className="text-lg font-extrabold text-slate-800 mb-4">Mis Movimientos</h3>
+        <div className="space-y-3">
+          {expenses.filter(e => e.driverId === myDriver.id).map(exp => (
+            <div key={exp.id} className="flex items-center gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+              <TransactionIcon type={exp.type}/>
+              <div className="flex-1">
+                <p className="text-sm font-extrabold text-slate-800">{exp.detail}</p>
+                <p className="text-[10px] font-bold text-slate-400">{new Date(exp.createdAt).toLocaleString()}</p>
+              </div>
+              <span className={`font-extrabold ${exp.type === 'expense' ? 'text-red-500' : 'text-green-600'}`}>{exp.type === 'expense' ? '-' : '+'}{formatMoney(exp.amount)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </main>
+  );
+}
+
+// ==========================================
 // 4. COMPONENTE: LISTA DE TRABAJOS
 // ==========================================
-function JobsList({ jobs, drivers, role, onStartChecklist, db, currentUserEmail }) {
+function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, currentUserEmail }) {
   const [menuOpenId, setMenuOpenId] = useState(null);
   const now = new Date();
   const isAdminView = role === 'admin';
@@ -432,286 +643,216 @@ function JobsList({ jobs, drivers, role, onStartChecklist, db, currentUserEmail 
     }
   };
 
-  const handleCopyWhatsApp = (job) => {
-    const date = new Date();
-    const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
-    const text = `${formattedDate}\n${job.client || 'Sin Cliente'}\n${job.brand} ${job.model}\n${job.plate || job.vin}\n${job.origin} - ${job.destination}`;
-    navigator.clipboard.writeText(text).then(() => {
-      alert("✅ Formato copiado al portapapeles. Listo para pegar en WhatsApp.");
-      setMenuOpenId(null);
-    });
-  };
+  const buildPDFDoc = async (job) => {
+    if (!window.jspdf) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script'); script.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"; script.onload = resolve; script.onerror = reject; document.head.appendChild(script);
+      });
+    }
+    const { jsPDF } = window.jspdf;
+    const docPDF = new jsPDF();
+    
+    docPDF.setFillColor(37, 99, 235); docPDF.rect(0, 0, 210, 30, 'F'); docPDF.setTextColor(255, 255, 255);
+    docPDF.setFontSize(22); docPDF.setFont("helvetica", "bold"); docPDF.text("CHECKLIST DE TRASLADO", 105, 20, null, null, "center");
+    docPDF.setTextColor(0, 0, 0);
+    
+    let driverNameStr = job.checklist?.assignedDriverName || job.acceptedByEmail || "No registrado";
+    if (job.acceptedByEmail) { const foundDriver = drivers?.find(d => d.email === job.acceptedByEmail); if (foundDriver) driverNameStr = foundDriver.name; }
 
-  // --- REDISEÑO DEL PDF ---
-  const generatePDF = async (job) => {
-    try {
-      if (!window.jspdf) {
-        await new Promise((resolve, reject) => {
-          const script = document.createElement('script');
-          script.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
-          script.onload = resolve;
-          script.onerror = reject;
-          document.head.appendChild(script);
-        });
-      }
-      const { jsPDF } = window.jspdf;
-      const docPDF = new jsPDF();
+    docPDF.setFillColor(241, 245, 249); docPDF.rect(15, 40, 180, 50, 'F');
+    docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold"); docPDF.text("1. DATOS DEL SERVICIO Y VEHÍCULO", 20, 48);
+    
+    docPDF.setFontSize(11);
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`Fecha Traslado:`, 20, 58); docPDF.setFont("helvetica", "bold"); docPDF.text(`${formatDateDisplay(job.scheduledDate) || '-'}`, 52, 58);
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`Cliente:`, 110, 58); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.client || 'Sin Cliente'}`, 125, 58);
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`Vehículo:`, 20, 66); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.brand || '-'} ${job.model || '-'}`, 40, 66);
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`Patente/VIN:`, 110, 66); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.plate || job.vin || '-'}`, 135, 66);
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`Ruta:`, 20, 74); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.origin || '-'}  ->  ${job.destination || '-'}`, 35, 74);
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`Conductor:`, 20, 82); docPDF.setFont("helvetica", "bold"); docPDF.text(`${driverNameStr}`, 45, 82);
 
-      // Encontrar el nombre real del conductor
-      const driverObj = drivers.find(d => d.email === job.acceptedByEmail);
-      const driverName = driverObj ? driverObj.name : (job.acceptedByEmail || 'No asignado');
-      
-      // 1. Encabezado Azul Moderno
-      docPDF.setFillColor(37, 99, 235); 
-      docPDF.rect(0, 0, 210, 30, 'F');
-      docPDF.setTextColor(255, 255, 255);
-      docPDF.setFont("helvetica", "bold");
-      docPDF.setFontSize(22);
-      docPDF.text(`LOGISTICAPP`, 105, 15, null, null, "center");
-      docPDF.setFontSize(12);
-      docPDF.setFont("helvetica", "normal");
-      docPDF.text(`Checklist de Traslado`, 105, 24, null, null, "center");
+    docPDF.setFillColor(241, 245, 249); docPDF.rect(15, 95, 180, 45, 'F');
+    docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold"); docPDF.text("2. ESTADO Y DOCUMENTACIÓN", 20, 103);
+    
+    docPDF.setFontSize(11);
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`Nivel de Combustible:`, 20, 113); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.checklist?.fuelLevel || '0'}%`, 65, 113);
+    
+    const docs = job.checklist?.docs || {};
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`SOAP:`, 20, 122); docPDF.setFont("helvetica", "bold"); docPDF.text(docs.soap ? 'SÍ' : 'NO', 35, 122);
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`Permiso de Circ.:`, 60, 122); docPDF.setFont("helvetica", "bold"); docPDF.text(docs.permiso ? 'SÍ' : 'NO', 93, 122);
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`Rev. Técnica:`, 120, 122); docPDF.setFont("helvetica", "bold"); docPDF.text(docs.revTecnica ? 'SÍ' : 'NO', 148, 122);
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`Gases:`, 165, 122); docPDF.setFont("helvetica", "bold"); docPDF.text(docs.gases ? 'SÍ' : 'NO', 180, 122);
+    
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`Observaciones:`, 20, 131); 
+    const obsSplit = docPDF.splitTextToSize(`${job.checklist?.observations || 'Ninguna'}`, 140); docPDF.text(obsSplit, 50, 131);
 
-      // Restaurar color de texto
-      docPDF.setTextColor(0, 0, 0);
+    const startY = 131 + (obsSplit.length * 5) + 10;
+    docPDF.setFillColor(241, 245, 249); docPDF.rect(15, startY, 180, 80, 'F');
+    docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold"); docPDF.text("3. RECEPCIÓN", 20, startY + 8);
+    
+    docPDF.setFontSize(11);
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`Receptor:`, 20, startY + 18); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.checklist?.receiverName || 'N/A'}`, 42, startY + 18);
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`RUT:`, 110, startY + 18); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.checklist?.receiverRut || 'N/A'}`, 122, startY + 18);
+    
+    if (job.checklist?.location) {
+      const { lat, lng } = job.checklist.location;
+      docPDF.setFont("helvetica", "normal"); docPDF.text(`Ubicación GPS:`, 20, startY + 28);
+      docPDF.setTextColor(37, 99, 235); docPDF.textWithLink('Ver en Google Maps', 52, startY + 28, { url: `https://www.google.com/maps?q=${lat},${lng}` }); docPDF.setTextColor(0, 0, 0); 
+    } else { docPDF.setFont("helvetica", "normal"); docPDF.text(`Ubicación GPS: No registrada`, 20, startY + 28); }
 
-      // 2. Sección: Datos del Vehículo
-      let startY = 40;
-      docPDF.setFillColor(241, 245, 249); // Fondo gris muy claro
-      docPDF.rect(15, startY, 180, 10, 'F');
-      docPDF.setFontSize(12);
-      docPDF.setFont("helvetica", "bold");
-      docPDF.text(`DATOS DEL VEHÍCULO`, 20, startY + 7);
+    if(job.checklist?.signatureData) { docPDF.setFont("helvetica", "normal"); docPDF.text(`Firma conformada:`, 20, startY + 45); docPDF.addImage(job.checklist.signatureData, 'PNG', 55, startY + 30, 70, 45); }
 
-      startY += 18;
-      docPDF.setFontSize(11);
-      docPDF.setFont("helvetica", "bold"); docPDF.text(`Marca / Modelo:`, 20, startY);
-      docPDF.setFont("helvetica", "normal"); docPDF.text(`${job.brand} ${job.model}`, 55, startY);
+    if (job.checklist?.photos) {
+      const photos = job.checklist.photos;
+      const labels = { front: 'Frente', driver: 'Lateral Piloto', passenger: 'Lateral Copiloto', back: 'Atrás', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
+      let currentY = 30; let currentCol = 1; let addedPage = false;
+      const getImageDims = (src) => new Promise(resolve => { const img = new Image(); img.onload = () => resolve({ w: img.width, h: img.height }); img.src = src; });
 
-      docPDF.setFont("helvetica", "bold"); docPDF.text(`Patente / VIN:`, 110, startY);
-      docPDF.setFont("helvetica", "normal"); docPDF.text(`${job.plate || job.vin}`, 145, startY);
-
-      // 3. Sección: Ruta y Conductor
-      startY += 15;
-      docPDF.setFillColor(241, 245, 249);
-      docPDF.rect(15, startY, 180, 10, 'F');
-      docPDF.setFontSize(12);
-      docPDF.setFont("helvetica", "bold");
-      docPDF.text(`RUTA Y CONDUCTOR`, 20, startY + 7);
-
-      startY += 18;
-      docPDF.setFontSize(11);
-      docPDF.setFont("helvetica", "bold"); docPDF.text(`Desde:`, 20, startY);
-      docPDF.setFont("helvetica", "normal"); docPDF.text(`${job.origin}`, 35, startY);
-
-      docPDF.setFont("helvetica", "bold"); docPDF.text(`Hasta:`, 110, startY);
-      docPDF.setFont("helvetica", "normal"); docPDF.text(`${job.destination}`, 125, startY);
-
-      startY += 10;
-      docPDF.setFont("helvetica", "bold"); docPDF.text(`Conductor:`, 20, startY);
-      docPDF.setFont("helvetica", "normal"); docPDF.text(driverName, 45, startY);
-
-      // 4. Sección: Detalles de Recepción
-      startY += 15;
-      docPDF.setFillColor(241, 245, 249);
-      docPDF.rect(15, startY, 180, 10, 'F');
-      docPDF.setFontSize(12);
-      docPDF.setFont("helvetica", "bold");
-      docPDF.text(`DETALLES DE RECEPCIÓN`, 20, startY + 7);
-
-      startY += 18;
-      docPDF.setFontSize(11);
-      docPDF.setFont("helvetica", "bold"); docPDF.text(`Receptor:`, 20, startY);
-      docPDF.setFont("helvetica", "normal"); docPDF.text(`${job.checklist?.receiverName || 'N/A'}`, 42, startY);
-
-      docPDF.setFont("helvetica", "bold"); docPDF.text(`RUT:`, 110, startY);
-      docPDF.setFont("helvetica", "normal"); docPDF.text(`${job.checklist?.receiverRut || 'N/A'}`, 122, startY);
-
-      startY += 10;
-      docPDF.setFont("helvetica", "bold"); docPDF.text(`Combustible:`, 20, startY);
-      docPDF.setFont("helvetica", "normal"); docPDF.text(`${job.checklist?.fuelLevel || '0'}%`, 48, startY);
-
-      docPDF.setFont("helvetica", "bold"); docPDF.text(`Ubicación GPS:`, 110, startY);
-      if (job.checklist?.location) {
-        const { lat, lng } = job.checklist.location;
-        docPDF.setTextColor(37, 99, 235); // Link Azul
-        docPDF.textWithLink('Clic para ver en Google Maps', 145, startY, { url: `https://www.google.com/maps?q=${lat},${lng}` });
-        docPDF.setTextColor(0, 0, 0); 
-      } else { 
-        docPDF.setFont("helvetica", "normal"); docPDF.text(`No registrada`, 145, startY); 
-      }
-
-      startY += 15;
-      docPDF.setFont("helvetica", "bold"); docPDF.text(`Observaciones:`, 20, startY);
-      docPDF.setFont("helvetica", "normal");
-      const obsSplit = docPDF.splitTextToSize(job.checklist?.observations || 'Sin observaciones registradas.', 170);
-      docPDF.text(obsSplit, 20, startY + 7);
-
-      startY += 15 + (obsSplit.length * 6);
-
-      // 5. Firma
-      if(job.checklist?.signatureData) {
-        docPDF.setFont("helvetica", "bold"); docPDF.text(`Firma de Conformidad:`, 20, startY);
-        docPDF.setDrawColor(200, 200, 200);
-        docPDF.rect(20, startY + 5, 80, 40); // Borde de firma
-        docPDF.addImage(job.checklist.signatureData, 'PNG', 20, startY + 5, 80, 40);
-      }
-
-      // --- PÁGINA 2: FOTOS ADJUNTAS ---
-      if (job.checklist?.photos) {
-        const photos = job.checklist.photos;
-        const labels = { front: 'Frente', driver: 'Lateral Piloto', passenger: 'Lateral Copiloto', back: 'Atrás', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
-        
-        let currentY = 35; let currentCol = 1; let addedPage = false;
-        const getImageDims = (src) => new Promise(resolve => {
-          const img = new Image(); img.onload = () => resolve({ w: img.width, h: img.height }); img.src = src;
-        });
-
-        for (const key in photos) {
-          if (photos[key]) {
-            if (!addedPage) {
-              docPDF.addPage(); 
-              docPDF.setFillColor(37, 99, 235); docPDF.rect(0, 0, 210, 20, 'F');
-              docPDF.setTextColor(255, 255, 255); docPDF.setFont("helvetica", "bold"); docPDF.setFontSize(16);
-              docPDF.text(`REGISTRO FOTOGRÁFICO`, 105, 14, null, null, "center");
-              docPDF.setTextColor(0, 0, 0);
-              addedPage = true;
-            }
-
-            const dims = await getImageDims(photos[key]);
-            const ratio = dims.h / dims.w;
-            let imgW = 80; let imgH = imgW * ratio; 
-            if (imgH > 110) { imgH = 110; imgW = imgH / ratio; }
-            const slotCenter = currentCol === 1 ? 55 : 155; 
-            const finalX = slotCenter - (imgW / 2);
-
-            if (currentY + imgH > 280) {
-               docPDF.addPage(); currentY = 35; 
-               docPDF.setFillColor(37, 99, 235); docPDF.rect(0, 0, 210, 20, 'F');
-               docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(16);
-               docPDF.text(`REGISTRO FOTOGRÁFICO (Cont.)`, 105, 14, null, null, "center");
-               docPDF.setTextColor(0, 0, 0);
-            }
-            
-            docPDF.setFontSize(11);
-            docPDF.setFont("helvetica", "bold");
-            docPDF.text(labels[key], slotCenter, currentY - 4, { align: "center" });
-            docPDF.setDrawColor(200, 200, 200);
-            docPDF.rect(finalX, currentY, imgW, imgH); // Borde de foto
-            docPDF.addImage(photos[key], 'JPEG', finalX, currentY, imgW, imgH);
-            
-            if (currentCol === 1) { currentCol = 2; } 
-            else { currentCol = 1; currentY += (imgH > 90 ? imgH : 90) + 20; }
+      for (const key in photos) {
+        if (photos[key]) {
+          if (!addedPage) {
+            docPDF.addPage(); docPDF.setFillColor(37, 99, 235); docPDF.rect(0, 0, 210, 20, 'F'); docPDF.setTextColor(255, 255, 255);
+            docPDF.setFontSize(16); docPDF.setFont("helvetica", "bold"); docPDF.text(`REGISTRO FOTOGRÁFICO ADJUNTO`, 105, 14, null, null, "center"); docPDF.setTextColor(0, 0, 0); addedPage = true;
           }
+          const dims = await getImageDims(photos[key]);
+          const ratio = dims.h / dims.w;
+          let imgW = 80; let imgH = imgW * ratio; if (imgH > 100) { imgH = 100; imgW = imgH / ratio; }
+          const slotCenter = currentCol === 1 ? 55 : 155; const finalX = slotCenter - (imgW / 2);
+
+          if (currentY + imgH > 280) {
+             docPDF.addPage(); currentY = 30; docPDF.setFillColor(37, 99, 235); docPDF.rect(0, 0, 210, 20, 'F'); docPDF.setTextColor(255, 255, 255);
+             docPDF.setFontSize(16); docPDF.setFont("helvetica", "bold"); docPDF.text(`REGISTRO FOTOGRÁFICO (CONT.)`, 105, 14, null, null, "center"); docPDF.setTextColor(0, 0, 0);
+          }
+          docPDF.setFontSize(11); docPDF.setFont("helvetica", "bold"); docPDF.text(labels[key], slotCenter, currentY - 3, { align: "center" });
+          docPDF.setDrawColor(200, 200, 200); docPDF.rect(finalX - 1, currentY - 1, imgW + 2, imgH + 2); 
+          docPDF.addImage(photos[key], 'JPEG', finalX, currentY, imgW, imgH);
+          if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; currentY += (imgH > 80 ? imgH : 80) + 15; }
         }
       }
+    }
+    return docPDF;
+  };
 
-      const d = new Date();
-      const day = String(d.getDate()).padStart(2, '0');
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const fileName = `Check.${day}-${month}.${job.client || 'SinCliente'}.${job.plate || job.vin || 'SN'}.pdf`;
-      docPDF.save(fileName);
-      
-    } catch(e) { console.error(e); alert("Hubo un error al generar PDF. Verifica tu conexión a internet."); }
+  const getJobDateStr = (job) => job.scheduledDate ? formatDateDisplay(job.scheduledDate) : formatDateDisplay(new Date().toISOString().split('T')[0]);
+  const handleCopyWhatsApp = (job) => { const text = `${getJobDateStr(job)}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${job.origin || '-'} - ${job.destination || '-'}`; navigator.clipboard.writeText(text).then(() => { alert("✅ Formato copiado al portapapeles. Listo para pegar en WhatsApp."); setMenuOpenId(null); }); };
+
+  const generatePDF = async (job) => {
+    try { const docPDF = await buildPDFDoc(job); const fileName = `Check.${getJobDateStr(job).replace(/\//g, '-')}.${job.client || 'SinCliente'}.${job.plate || job.vin || 'SN'}.pdf`; docPDF.save(fileName); } 
+    catch(e) { console.error(e); alert("Hubo un error al generar PDF."); }
+  };
+
+  const handleShareWhatsAppPDF = async (job) => {
+    try {
+      const fileName = `Check.${getJobDateStr(job).replace(/\//g, '-')}.${job.client || 'SinCliente'}.${job.plate || job.vin || 'SN'}.pdf`;
+      const text = `${getJobDateStr(job)}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${job.origin || '-'} - ${job.destination || '-'}`;
+      const docPDF = await buildPDFDoc(job); const pdfBlob = docPDF.output('blob'); const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ title: fileName, text: text, files: [file] }); } 
+      else { alert("Tu dispositivo no soporta compartir el archivo directamente. Descárgalo primero y compártelo manual."); handleCopyWhatsApp(job); }
+    } catch (e) { console.error(e); }
   };
 
   if (filteredJobs.length === 0) return <div className="text-center py-16 bg-white rounded-3xl border border-slate-100 shadow-sm"><p className="text-slate-400 font-extrabold text-lg">No hay trabajos disponibles.</p></div>;
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 pb-20">
-      {filteredJobs.map(job => (
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {filteredJobs.map(job => {
+        let realizedByName = '';
+        if (job.status === 'completed' || job.status === 'accepted') {
+          if (job.acceptedByEmail) { const foundD = drivers?.find(d => d.email === job.acceptedByEmail); realizedByName = foundD ? foundD.name : job.acceptedByEmail; } 
+          else if (job.assignedDriverName) { realizedByName = job.assignedDriverName; }
+        }
+
+        return (
         <div key={job.id} className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-visible flex flex-col relative transform hover:-translate-y-1 transition-transform duration-200">
           
-          <div className="px-6 py-4 border-b border-slate-50 flex justify-between items-center">
+          <div className="px-6 py-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50 rounded-t-3xl">
             <span className={`px-3 py-1.5 rounded-lg text-xs font-extrabold uppercase tracking-wider ${job.status==='pending'?'bg-amber-100 text-amber-700':job.status==='accepted'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}`}>
               {job.status === 'pending' ? 'Pendiente' : job.status === 'accepted' ? 'En Curso' : 'Completado'}
             </span>
             
             <div className="relative">
-              <button onClick={() => setMenuOpenId(menuOpenId === job.id ? null : job.id)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors">
-                <MoreVertical className="w-5 h-5"/>
-              </button>
+              <button onClick={() => setMenuOpenId(menuOpenId === job.id ? null : job.id)} className="p-2 text-slate-400 hover:bg-slate-200 rounded-xl transition-colors"><MoreVertical className="w-5 h-5"/></button>
               {menuOpenId === job.id && (
                 <div className="absolute right-0 top-10 bg-white border border-slate-100 shadow-2xl rounded-2xl w-56 z-10 overflow-hidden">
-                  <button onClick={() => handleCopyWhatsApp(job)} className="w-full text-left px-5 py-4 text-sm font-bold flex items-center gap-3 hover:bg-slate-50 text-slate-700 transition-colors">
-                    <Copy className="w-5 h-5 text-blue-500"/> Copiar para WhatsApp
-                  </button>
-                  {isAdminView && (
-                    <button onClick={() => handleDeleteJob(job.id)} className="w-full text-left px-5 py-4 text-sm font-bold flex items-center gap-3 hover:bg-red-50 text-red-600 border-t border-slate-50 transition-colors">
-                      <Trash2 className="w-5 h-5"/> Eliminar Trabajo
-                    </button>
-                  )}
+                  <button onClick={() => handleCopyWhatsApp(job)} className="w-full text-left px-5 py-4 text-sm font-bold flex items-center gap-3 hover:bg-slate-50 text-slate-700 transition-colors"><Copy className="w-5 h-5 text-slate-400"/> Copiar formato texto</button>
+                  {isAdminView && <button onClick={() => { onEditJob(job); setMenuOpenId(null); }} className="w-full text-left px-5 py-4 text-sm font-bold flex items-center gap-3 hover:bg-blue-50 text-blue-700 border-t border-slate-50 transition-colors"><Edit2 className="w-5 h-5"/> Editar Trabajo</button>}
+                  {isAdminView && <button onClick={() => handleDeleteJob(job.id)} className="w-full text-left px-5 py-4 text-sm font-bold flex items-center gap-3 hover:bg-red-50 text-red-600 border-t border-slate-50 transition-colors"><Trash2 className="w-5 h-5"/> Eliminar Trabajo</button>}
                 </div>
               )}
             </div>
           </div>
 
           <div className="p-6 flex-1">
-            <h3 className="font-extrabold text-xl text-slate-800 leading-tight mb-1">{job.brand} {job.model}</h3>
-            <p className="text-sm font-extrabold text-blue-600 uppercase tracking-wider mb-4">{job.client}</p>
-            
+            <h3 className="font-extrabold text-xl text-slate-800 leading-tight mb-1">{job.brand || 'Sin Marca'} {job.model || ''}</h3>
+            <div className="flex items-center gap-2 mb-4 mt-2">
+              <div className="flex items-center gap-1.5 bg-blue-50 text-blue-600 px-2 py-1 rounded-lg"><Calendar className="w-4 h-4"/><span className="text-xs font-extrabold">{job.scheduledDate ? formatDateDisplay(job.scheduledDate) : 'Hoy'}</span></div>
+              <p className="text-xs font-extrabold text-indigo-600 uppercase tracking-wider">{job.client || 'Sin Cliente Asignado'}</p>
+            </div>
             <div className="space-y-3 mb-6">
-              <div className="flex items-start gap-3"><MapPin className="w-5 h-5 text-slate-300 shrink-0"/> <span className="text-sm font-bold text-slate-600">{job.origin}</span></div>
-              <div className="flex items-start gap-3"><Navigation className="w-5 h-5 text-slate-300 shrink-0"/> <span className="text-sm font-bold text-slate-600">{job.destination}</span></div>
+              <div className="flex items-start gap-3"><MapPin className="w-5 h-5 text-slate-300 shrink-0"/> <span className="text-sm font-bold text-slate-600">{job.origin || 'No especificado'}</span></div>
+              <div className="flex items-start gap-3"><Navigation className="w-5 h-5 text-slate-300 shrink-0"/> <span className="text-sm font-bold text-slate-600">{job.destination || 'No especificado'}</span></div>
             </div>
-            
             <div className="bg-slate-50 p-3 rounded-xl flex justify-between items-center border border-slate-100">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Patente/VIN</span>
-              <span className="font-extrabold text-slate-700 uppercase bg-white px-3 py-1 rounded-lg shadow-sm">{job.plate || job.vin}</span>
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Patente/VIN</span><span className="font-extrabold text-slate-700 uppercase bg-white px-3 py-1 rounded-lg shadow-sm border border-slate-100">{job.plate || job.vin || 'N/A'}</span>
             </div>
-
-            {isAdminView && (
-              <div className="mt-4 bg-blue-50/50 p-3 rounded-xl border border-blue-100 flex items-center gap-3">
-                <div className="bg-blue-100 p-1.5 rounded-lg"><User className="w-4 h-4 text-blue-600"/></div>
-                <div>
-                  <span className="text-[10px] font-extrabold text-blue-400 uppercase tracking-wider block mb-0.5">
-                    {job.status === 'pending' ? 'Conductores Notificados' : 'Realizado por'}
-                  </span>
-                  <span className="text-sm font-extrabold text-blue-800 leading-none block">
-                    {job.status === 'pending' 
-                      ? (job.assignedDrivers?.map(d => d.name).join(', ') || 'N/A')
-                      : (() => {
-                          const driverObj = drivers.find(drv => drv.email === job.acceptedByEmail);
-                          return driverObj ? driverObj.name : (job.acceptedByEmail || 'N/A');
-                        })()
-                    }
-                  </span>
-                </div>
-              </div>
-            )}
           </div>
+
+          {isAdminView && (
+            <div className="px-6 py-3 bg-blue-50/50 border-t border-blue-100 flex items-center gap-2">
+              <User className="w-4 h-4 text-blue-500 shrink-0"/>
+              {job.status === 'pending' ? <p className="text-xs font-bold text-slate-600">Notificados: <span className="text-blue-700 font-extrabold">{job.assignedDrivers?.map(d=>d.name.split(' ')[0]).join(', ') || 'Nadie'}</span></p> : <p className="text-xs font-bold text-slate-600">Responsable: <span className="text-blue-700 font-extrabold">{realizedByName}</span></p>}
+            </div>
+          )}
           
-          <div className="p-4 bg-slate-50 border-t border-slate-100 rounded-b-3xl">
-            {job.status === 'pending' && (!isAdminView || job.assignedEmails?.includes(currentUserEmail)) && (
-              <button onClick={() => handleAcceptJob(job)} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-base font-extrabold py-3.5 rounded-xl transition-colors shadow-lg shadow-blue-200">Reclamar Traslado</button>
-            )}
-            {((job.status === 'accepted' && (isAdminView || job.acceptedByEmail === currentUserEmail)) || (job.status !== 'completed' && isAdminView)) && (
-              <button onClick={() => onStartChecklist(job)} className="w-full bg-green-600 hover:bg-green-700 text-white text-base font-extrabold py-3.5 rounded-xl flex justify-center items-center gap-2 transition-colors shadow-lg shadow-green-200"><FileText className="w-5 h-5" /> Llenar Checklist</button>
-            )}
+          <div className="p-4 bg-slate-50 border-t border-slate-100 rounded-b-3xl space-y-3">
+            {job.status === 'pending' && (!isAdminView || job.assignedEmails?.includes(currentUserEmail)) && <button onClick={() => handleAcceptJob(job)} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-base font-extrabold py-3.5 rounded-xl transition-colors shadow-lg shadow-blue-200">Reclamar Traslado</button>}
+            {((job.status === 'accepted' && (isAdminView || job.acceptedByEmail === currentUserEmail)) || (job.status !== 'completed' && isAdminView)) && <button onClick={() => onStartChecklist(job)} className="w-full bg-green-600 hover:bg-green-700 text-white text-base font-extrabold py-3.5 rounded-xl flex justify-center items-center gap-2 transition-colors shadow-lg shadow-green-200"><FileText className="w-5 h-5" /> Llenar Checklist</button>}
             {job.status === 'completed' && (
-              <button onClick={() => generatePDF(job)} className="w-full bg-slate-800 hover:bg-slate-900 text-white text-base font-extrabold py-3.5 rounded-xl flex justify-center items-center gap-2 transition-colors shadow-lg shadow-slate-200"><FileDown className="w-5 h-5"/> Descargar PDF</button>
+              <>
+                <button onClick={() => generatePDF(job)} className="w-full bg-slate-800 hover:bg-slate-900 text-white text-sm font-extrabold py-3 rounded-xl flex justify-center items-center gap-2 transition-colors shadow-lg shadow-slate-200"><FileDown className="w-4 h-4"/> Guardar PDF</button>
+                <button onClick={() => handleShareWhatsAppPDF(job)} className="w-full bg-green-500 hover:bg-green-600 text-white text-sm font-extrabold py-3 rounded-xl flex justify-center items-center gap-2 transition-colors shadow-lg shadow-green-200"><Share2 className="w-4 h-4"/> Compartir por WhatsApp</button>
+              </>
             )}
           </div>
         </div>
-      ))}
+      )})}
     </div>
   );
 }
 
 // ==========================================
-// 5. COMPONENTE: FORMULARIO DE CHECKLIST
+// 5. COMPONENTE: FORMULARIO DE CHECKLIST (CON AUTOGUARDADO)
 // ==========================================
 function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
-  const [step, setStep] = useState(1);
-  const [loadingLoc, setLoadingLoc] = useState(false);
   const isQuickJob = job.id === 'NEW_QUICK_JOB';
+  const DRAFT_KEY = `checklist_draft_${job.id}`;
 
-  const [formData, setFormData] = useState({
-    client: job.client || '', brand: job.brand || '', model: job.model || '', plateOrVin: job.plate || job.vin || '',
-    origin: job.origin || '', destination: job.destination || '', fuelLevel: 50, 
-    photos: { front: false, driver: false, passenger: false, back: false, tire: false, dashboard: false, det1: false, det2: false, det3: false, det4: false },
-    observations: '', receiverName: '', receiverCompany: '', receiverRut: '', receiverEmail: '', signatureData: null, location: null
+  const [step, setStep] = useState(() => {
+    const savedStep = localStorage.getItem(`${DRAFT_KEY}_step`);
+    return savedStep ? parseInt(savedStep, 10) : 1;
   });
+  
+  const [loadingLoc, setLoadingLoc] = useState(false);
+
+  const [formData, setFormData] = useState(() => {
+    const saved = localStorage.getItem(DRAFT_KEY);
+    if (saved) {
+      try { return JSON.parse(saved); } catch(e) { console.error("Error cargando borrador"); }
+    }
+    return {
+      scheduledDate: job.scheduledDate || new Date().toISOString().split('T')[0],
+      client: job.client || '', brand: job.brand || '', model: job.model || '', plateOrVin: job.plate || job.vin || '',
+      origin: job.origin || '', destination: job.destination || '', fuelLevel: 50, 
+      photos: { front: false, driver: false, passenger: false, back: false, tire: false, dashboard: false, det1: false, det2: false, det3: false, det4: false },
+      docs: { soap: false, permiso: false, revTecnica: false, gases: false }, 
+      observations: '', receiverName: '', receiverCompany: '', receiverRut: '', receiverEmail: '', signatureData: null, location: null
+    };
+  });
+
+  // Efecto de Autoguardado
+  useEffect(() => {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(formData));
+    localStorage.setItem(`${DRAFT_KEY}_step`, step);
+  }, [formData, step, DRAFT_KEY]);
 
   const updateForm = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
 
@@ -720,31 +861,23 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
     if (!file) return;
     try {
       const bmp = await window.createImageBitmap(file, { resizeWidth: 800, resizeQuality: 'medium' });
-      const canvas = document.createElement('canvas');
-      canvas.width = bmp.width; canvas.height = bmp.height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(bmp, 0, 0);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-      updateForm('photos', { ...formData.photos, [photoId]: dataUrl });
+      const canvas = document.createElement('canvas'); canvas.width = bmp.width; canvas.height = bmp.height;
+      const ctx = canvas.getContext('2d'); ctx.drawImage(bmp, 0, 0);
+      updateForm('photos', { ...formData.photos, [photoId]: canvas.toDataURL('image/jpeg', 0.6) });
       bmp.close();
-    } catch (error) { console.error(error); alert("La foto es demasiado pesada para procesarla en memoria."); }
+    } catch (error) { console.error(error); alert("Error de memoria al procesar la foto."); }
   };
 
   const handleGetLocation = () => {
     setLoadingLoc(true);
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => { updateForm('location', { lat: pos.coords.latitude, lng: pos.coords.longitude }); setLoadingLoc(false); },
-        () => { alert("Error GPS."); setLoadingLoc(false); }
-      );
-    }
+    if ("geolocation" in navigator) { navigator.geolocation.getCurrentPosition((pos) => { updateForm('location', { lat: pos.coords.latitude, lng: pos.coords.longitude }); setLoadingLoc(false); }, () => { alert("Error GPS."); setLoadingLoc(false); }); }
   };
 
   const submitForm = async (e) => { 
     e.preventDefault(); 
     if (!formData.signatureData) return alert("Firma obligatoria."); 
     const finalData = {
-      client: formData.client, brand: formData.brand, model: formData.model, vin: formData.plateOrVin, plate: formData.plateOrVin, origin: formData.origin, destination: formData.destination,
+      scheduledDate: formData.scheduledDate, client: formData.client, brand: formData.brand, model: formData.model, vin: formData.plateOrVin, plate: formData.plateOrVin, origin: formData.origin, destination: formData.destination,
       status: 'completed', completedAt: Date.now(), checklist: formData
     };
     try {
@@ -752,20 +885,29 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
         finalData.createdAt = Date.now(); finalData.assignedDriverName = "Auto-creado"; finalData.acceptedByEmail = currentUserEmail;
         await addDoc(collection(db, 'transport_jobs'), finalData);
       } else { await updateDoc(doc(db, 'transport_jobs', job.id), finalData); }
+      
+      // Borramos el borrador al finalizar con éxito
+      localStorage.removeItem(DRAFT_KEY);
+      localStorage.removeItem(`${DRAFT_KEY}_step`);
+      
       alert("✅ Checklist guardado correctamente."); onComplete();
     } catch (error) { console.error(error); alert("Hubo un error al guardar."); }
+  };
+
+  const handleCancelClick = () => {
+    if (window.confirm("El progreso de este checklist ha sido autoguardado en tu teléfono. ¿Deseas pausar y salir por ahora?")) {
+      onCancel();
+    }
   };
 
   return (
     <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden pb-10">
       <div className="bg-blue-600 text-white p-6 flex justify-between items-center">
         <h2 className="text-xl font-extrabold flex items-center gap-3">
-          <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
-            {isQuickJob ? <Zap className="w-5 h-5 text-white" /> : <FileText className="w-5 h-5 text-white" />} 
-          </div>
+          <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm">{isQuickJob ? <Zap className="w-5 h-5 text-white" /> : <FileText className="w-5 h-5 text-white" />}</div>
           {isQuickJob ? "Checklist Rápido" : "Checklist Asignado"}
         </h2>
-        <button onClick={onCancel} className="text-blue-100 text-sm font-bold hover:text-white bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-xl transition-colors">Cancelar</button>
+        <button onClick={handleCancelClick} className="text-blue-100 text-sm font-bold hover:text-white bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-xl transition-colors">Pausar / Salir</button>
       </div>
       <div className="flex bg-slate-100 h-1.5"><div className={`bg-green-500 transition-all duration-500 ${step === 1 ? 'w-1/2' : 'w-full'}`}></div></div>
       
@@ -774,34 +916,34 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
           <div className="space-y-6">
             <h3 className="text-lg font-extrabold text-slate-800 border-b-2 border-slate-100 pb-2">Datos Principales</h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
-              <input value={formData.client} onChange={e=>updateForm('client', e.target.value)} className="col-span-2 border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Cliente Empresa o Particular" required/>
-              <input value={formData.brand} onChange={e=>updateForm('brand', e.target.value)} className="border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Marca" required/>
-              <input value={formData.model} onChange={e=>updateForm('model', e.target.value)} className="border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Modelo" required/>
-              <input value={formData.plateOrVin} onChange={e=>updateForm('plateOrVin', e.target.value)} className="col-span-2 border-2 border-slate-200 p-4 rounded-xl uppercase outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Patente/VIN" required/>
-              <input value={formData.origin} onChange={e=>updateForm('origin', e.target.value)} className="col-span-2 border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Desde" required/>
-              <input value={formData.destination} onChange={e=>updateForm('destination', e.target.value)} className="col-span-2 border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Hasta" required/>
+              <input type="date" value={formData.scheduledDate} onChange={e=>updateForm('scheduledDate', e.target.value)} required className="col-span-2 border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" />
+              <input value={formData.client} onChange={e=>updateForm('client', e.target.value)} className="col-span-2 border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Cliente Empresa o Particular" />
+              <input value={formData.brand} onChange={e=>updateForm('brand', e.target.value)} className="border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Marca" />
+              <input value={formData.model} onChange={e=>updateForm('model', e.target.value)} className="border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Modelo" />
+              <input value={formData.plateOrVin} onChange={e=>updateForm('plateOrVin', e.target.value)} className="col-span-2 border-2 border-slate-200 p-4 rounded-xl uppercase outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Patente/VIN" />
+              <input value={formData.origin} onChange={e=>updateForm('origin', e.target.value)} className="col-span-2 border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Desde" />
+              <input value={formData.destination} onChange={e=>updateForm('destination', e.target.value)} className="col-span-2 border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Hasta" />
+            </div>
+
+            <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-slate-800">Documentos a bordo</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {[{ id: 'soap', label: 'SOAP' }, { id: 'permiso', label: 'Permiso Circulación' }, { id: 'revTecnica', label: 'Revisión Técnica' }, { id: 'gases', label: 'Revisión Gases' }].map(doc => (
+                <label key={doc.id} className={`flex items-center gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all ${formData.docs[doc.id] ? 'border-green-500 bg-green-50 text-green-800' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}>
+                  <input type="checkbox" className="w-5 h-5 text-green-600 rounded cursor-pointer" checked={formData.docs[doc.id]} onChange={(e) => updateForm('docs', { ...formData.docs, [doc.id]: e.target.checked })} />
+                  <span className="font-extrabold text-sm">{doc.label}</span>
+                </label>
+              ))}
             </div>
             
             <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-blue-600">Fotografías</h3>
-            <p className="text-xs font-bold text-slate-400 -mt-2 mb-4">Toca un cuadro para elegir cámara o galería</p>
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-              {[
-                {id:'front', l:'Frente'}, {id:'driver', l:'Piloto'}, {id:'passenger', l:'Copiloto'}, {id:'back', l:'Atrás'}, 
-                {id:'tire', l:'Repuesto'}, {id:'dashboard', l:'Tablero'}, {id:'det1', l:'Detalle 1'}, {id:'det2', l:'Detalle 2'}, {id:'det3', l:'Detalle 3'}, {id:'det4', l:'Detalle 4'}
-              ].map(p => (
+              {[{id:'front', l:'Frente'}, {id:'driver', l:'Piloto'}, {id:'passenger', l:'Copiloto'}, {id:'back', l:'Atrás'}, {id:'tire', l:'Repuesto'}, {id:'dashboard', l:'Tablero'}, {id:'det1', l:'Detalle 1'}, {id:'det2', l:'Detalle 2'}, {id:'det3', l:'Detalle 3'}, {id:'det4', l:'Detalle 4'}].map(p => (
                 <label key={p.id} className={`p-1 border-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all cursor-pointer relative overflow-hidden h-28 ${formData.photos[p.id] ? 'bg-green-50 border-green-400 shadow-md shadow-green-100' : 'border-dashed border-slate-300 hover:bg-slate-50 hover:border-slate-400'}`}>
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, p.id)} />
                   {formData.photos[p.id] ? (
-                    <>
-                      <img src={formData.photos[p.id]} alt={p.l} className="absolute inset-0 w-full h-full object-cover opacity-50" />
-                      <CheckCircle className="text-green-600 w-8 h-8 relative z-10 bg-white rounded-full shadow-sm"/>
-                      <span className="text-[10px] font-extrabold text-slate-800 text-center relative z-10 bg-white/90 px-2 py-0.5 rounded-full shadow-sm mt-1">{p.l}</span>
-                    </>
+                    <><img src={formData.photos[p.id]} alt={p.l} className="absolute inset-0 w-full h-full object-cover opacity-50" /><CheckCircle className="text-green-600 w-8 h-8 relative z-10 bg-white rounded-full shadow-sm"/><span className="text-[10px] font-extrabold text-slate-800 text-center relative z-10 bg-white/90 px-2 py-0.5 rounded-full shadow-sm mt-1">{p.l}</span></>
                   ) : (
-                    <>
-                      <div className="bg-slate-100 p-2 rounded-full mb-1"><Camera className="text-slate-400 w-5 h-5"/></div>
-                      <span className="text-[10px] font-extrabold text-slate-500 text-center uppercase tracking-wider">{p.l}</span>
-                    </>
+                    <><div className="bg-slate-100 p-2 rounded-full mb-1"><Camera className="text-slate-400 w-5 h-5"/></div><span className="text-[10px] font-extrabold text-slate-500 text-center uppercase tracking-wider">{p.l}</span></>
                   )}
                 </label>
               ))}
@@ -812,10 +954,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
             
             <textarea rows="3" value={formData.observations} onChange={(e) => updateForm('observations', e.target.value)} placeholder="Observaciones de daños o detalles..." className="w-full border-2 border-slate-200 p-4 text-sm outline-none focus:border-blue-500 rounded-xl mt-6 font-bold text-slate-700"></textarea>
             
-            <button onClick={() => {
-              if(!formData.brand || !formData.model || !formData.plateOrVin) return alert("Completa los datos del vehículo");
-              setStep(2);
-            }} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-extrabold transition-all shadow-xl shadow-blue-200 text-lg mt-8">Continuar a Recepción</button>
+            <button onClick={() => setStep(2)} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-extrabold transition-all shadow-xl shadow-blue-200 text-lg mt-8">Continuar a Recepción</button>
           </div>
         )}
         
@@ -833,7 +972,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
             </button>
             
             <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-slate-800">Firma del Receptor</h3>
-            <SignaturePad onSave={(data) => updateForm('signatureData', data)} onClear={() => updateForm('signatureData', null)} />
+            <SignaturePad initialData={formData.signatureData} onSave={(data) => updateForm('signatureData', data)} onClear={() => updateForm('signatureData', null)} />
             
             <div className="flex gap-4 pt-8 border-t-2 border-slate-100 mt-8">
               <button type="button" onClick={() => setStep(1)} className="flex-1 bg-slate-100 hover:bg-slate-200 py-4 rounded-2xl font-extrabold transition-colors text-slate-600">Atrás</button>
