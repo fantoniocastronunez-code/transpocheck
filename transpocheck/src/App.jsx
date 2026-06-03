@@ -544,33 +544,33 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
 
   const updateForm = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
 
-  const handleImageUpload = (e, photoId) => {
+  const handleImageUpload = async (e, photoId) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Solución S23 Ultra: Liberar memoria usando ObjectURL en vez de FileReader
-    // Esto evita que el navegador colapse al procesar fotos de muy alta resolución
-    const objectUrl = URL.createObjectURL(file);
-    const img = new Image();
-    
-    img.onload = () => {
+    try {
+      // Solución Definitiva S23 Ultra: createImageBitmap redimensiona la imagen
+      // DURANTE la decodificación. Esto significa que la foto original gigante 
+      // NUNCA entra a la memoria RAM de la web, evitando el cierre de la app.
+      const bmp = await window.createImageBitmap(file, {
+        resizeWidth: 800,
+        resizeQuality: 'medium'
+      });
+
       const canvas = document.createElement('canvas');
-      const MAX_WIDTH = 800; // Un tamaño ligeramente mejor para la resolución final
-      const scaleSize = MAX_WIDTH / img.width;
-      canvas.width = MAX_WIDTH;
-      canvas.height = img.height * scaleSize;
-      
+      canvas.width = bmp.width;
+      canvas.height = bmp.height;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.6); // 60% calidad
+      ctx.drawImage(bmp, 0, 0);
+
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
       updateForm('photos', { ...formData.photos, [photoId]: dataUrl });
-      
-      // ¡CRÍTICO! Limpiar la memoria RAM inmediatamente después de comprimir
-      URL.revokeObjectURL(objectUrl);
-    };
-    
-    img.src = objectUrl;
+
+      bmp.close(); // Liberar memoria RAM instantáneamente
+    } catch (error) {
+      console.error("Error al procesar foto:", error);
+      alert("La foto es demasiado pesada. Toma las fotos con tu cámara normal y luego súbelas desde la galería.");
+    }
   };
 
   const handleGetLocation = () => {
@@ -642,8 +642,8 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
                 {id:'tire', l:'Repuesto'}, {id:'dashboard', l:'Tablero'}, {id:'det1', l:'Detalle 1'}, {id:'det2', l:'Detalle 2'}, {id:'det3', l:'Detalle 3'}, {id:'det4', l:'Detalle 4'}
               ].map(p => (
                 <label key={p.id} className={`p-1 border rounded flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer relative overflow-hidden h-24 ${formData.photos[p.id] ? 'bg-green-50 border-green-500' : 'border-dashed border-gray-400 hover:bg-gray-50'}`}>
-                  {/* Cámara Real */}
-                  <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleImageUpload(e, p.id)} />
+                  {/* Se quitó capture="environment" para poder guardar en galería y evitar cuelgues */}
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, p.id)} />
                   
                   {formData.photos[p.id] ? (
                     <>
