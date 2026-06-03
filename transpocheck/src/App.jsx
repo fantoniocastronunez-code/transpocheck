@@ -18,7 +18,7 @@ const INICIAL_CLIENTES = ["AutoMundo S.A.", "RentACar Pacific", "Logística Expr
 const INICIAL_MARCAS = ["Toyota", "Chevrolet", "Ford", "Nissan", "Hyundai", "Kia", "Suzuki"];
 const INICIAL_MODELOS = {
   "Toyota": ["Yaris", "Corolla", "Hilux", "RAV4"],
-  "Chevrolet": ["Spark", "Sail", "Tracker", "Colorado", "NKR 612", "NKR "],
+  "Chevrolet": ["Spark", "Sail", "Tracker", "Colorado", "NKR 612", "NKR 615"],
   "Nissan": ["Versa", "Sentra", "Navara", "X-Trail"]
 };
 
