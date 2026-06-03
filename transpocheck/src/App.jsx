@@ -461,7 +461,14 @@ function JobsList({ jobs, isAdmin, onStartChecklist, db, currentUserEmail }) {
         }
       }
 
-      docPDF.save(`Checklist_${job.plate || job.vin}.pdf`);
+      // --- NUEVA LÓGICA DE NOMBRE DEL ARCHIVO ---
+      const d = new Date();
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const fileName = `Check.${day}-${month}.${job.client || 'SinCliente'}.${job.plate || job.vin || 'SN'}.pdf`;
+
+      docPDF.save(fileName);
+      
     } catch(e) { 
       console.error(e);
       alert("Hubo un error al generar PDF. Verifica tu conexión a internet."); 
@@ -549,9 +556,6 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
     if (!file) return;
 
     try {
-      // Solución Definitiva S23 Ultra: createImageBitmap redimensiona la imagen
-      // DURANTE la decodificación. Esto significa que la foto original gigante 
-      // NUNCA entra a la memoria RAM de la web, evitando el cierre de la app.
       const bmp = await window.createImageBitmap(file, {
         resizeWidth: 800,
         resizeQuality: 'medium'
@@ -566,7 +570,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
       const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
       updateForm('photos', { ...formData.photos, [photoId]: dataUrl });
 
-      bmp.close(); // Liberar memoria RAM instantáneamente
+      bmp.close();
     } catch (error) {
       console.error("Error al procesar foto:", error);
       alert("La foto es demasiado pesada. Toma las fotos con tu cámara normal y luego súbelas desde la galería.");
@@ -642,12 +646,9 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
                 {id:'tire', l:'Repuesto'}, {id:'dashboard', l:'Tablero'}, {id:'det1', l:'Detalle 1'}, {id:'det2', l:'Detalle 2'}, {id:'det3', l:'Detalle 3'}, {id:'det4', l:'Detalle 4'}
               ].map(p => (
                 <label key={p.id} className={`p-1 border rounded flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer relative overflow-hidden h-24 ${formData.photos[p.id] ? 'bg-green-50 border-green-500' : 'border-dashed border-gray-400 hover:bg-gray-50'}`}>
-                  {/* Se quitó capture="environment" para poder guardar en galería y evitar cuelgues */}
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, p.id)} />
-                  
                   {formData.photos[p.id] ? (
                     <>
-                      {/* Vista previa cuadrada usando "object-cover" en la web para verse ordenado, pero la foto guardada conserva su formato original */}
                       <img src={formData.photos[p.id]} alt={p.l} className="absolute inset-0 w-full h-full object-cover opacity-40" />
                       <CheckCircle className="text-green-700 w-6 h-6 relative z-10 bg-white rounded-full"/>
                       <span className="text-[10px] font-bold text-slate-900 text-center relative z-10 bg-white/80 px-1 rounded">{p.l}</span>
