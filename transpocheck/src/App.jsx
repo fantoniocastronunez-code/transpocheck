@@ -133,12 +133,33 @@ export default function App() {
     setCurrentView('checklist');
   };
 
-  const exportToCSV = () => {
+  // Función Exportar Mejorada para EXCEL
+  const exportToExcel = () => {
     const headers = ['ID', 'Cliente', 'Marca', 'Modelo', 'VIN/Patente', 'Desde', 'Hasta', 'Conductores', 'Estado', 'Fecha'];
-    const rows = jobs.map(j => [j.id, j.client, j.brand, j.model, j.plate || j.vin, j.origin, j.destination, j.assignedDrivers?.map(d=>d.name).join(' | '), j.status, new Date(j.createdAt).toLocaleString()]);
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join("\n");
-    const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent)); link.setAttribute("download", "reporte.csv");
-    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    const rows = jobs.map(j => [
+      j.id, 
+      `"${j.client || ''}"`, 
+      `"${j.brand || ''}"`, 
+      `"${j.model || ''}"`, 
+      `"${j.plate || j.vin || ''}"`, 
+      `"${j.origin || ''}"`, 
+      `"${j.destination || ''}"`, 
+      `"${j.assignedDrivers?.map(d=>d.name).join(' - ') || ''}"`, 
+      `"${j.status || ''}"`, 
+      `"${new Date(j.createdAt).toLocaleString()}"`
+    ]);
+
+    // Usamos BOM (\uFEFF) para que Excel lea los acentos (ñ, á) y separador de punto y coma (;) para las columnas
+    const csvContent = "\uFEFF" + [headers.join(';'), ...rows.map(e => e.join(';'))].join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement("a"); 
+    link.setAttribute("href", url); 
+    link.setAttribute("download", "Reporte_Trabajos.csv");
+    document.body.appendChild(link); 
+    link.click(); 
+    document.body.removeChild(link);
   };
 
   // --- SUB-COMPONENTE: CREAR TRABAJO ADMIN ---
@@ -245,7 +266,7 @@ export default function App() {
               </div>
               {adminTab === 'dashboard' && (
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center"><h2 className="text-xl font-bold">Monitor Administrativo</h2><button onClick={exportToCSV} className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm flex items-center gap-2"><Download className="w-4 h-4"/> Exportar</button></div>
+                  <div className="flex justify-between items-center"><h2 className="text-xl font-bold">Monitor Administrativo</h2><button onClick={exportToExcel} className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm flex items-center gap-2"><Download className="w-4 h-4"/> Exportar a Excel</button></div>
                   <JobsList jobs={jobs} isAdmin={isAdmin} onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} db={db} currentUserEmail={currentUserEmail} />
                 </div>
               )}
@@ -501,26 +522,29 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Compresión de imagen antes de guardar (Previene colapso de base de datos)
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 600; 
-        const scaleSize = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scaleSize;
-        
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.6); // 60% calidad
-        updateForm('photos', { ...formData.photos, [photoId]: dataUrl });
-      };
-      img.src = event.target.result;
+    // Solución S23 Ultra: Liberar memoria usando ObjectURL en vez de FileReader
+    // Esto evita que el navegador colapse al procesar fotos de muy alta resolución
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+    
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const MAX_WIDTH = 800; // Un tamaño ligeramente mejor para la resolución final
+      const scaleSize = MAX_WIDTH / img.width;
+      canvas.width = MAX_WIDTH;
+      canvas.height = img.height * scaleSize;
+      
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.6); // 60% calidad
+      updateForm('photos', { ...formData.photos, [photoId]: dataUrl });
+      
+      // ¡CRÍTICO! Limpiar la memoria RAM inmediatamente después de comprimir
+      URL.revokeObjectURL(objectUrl);
     };
-    reader.readAsDataURL(file);
+    
+    img.src = objectUrl;
   };
 
   const handleGetLocation = () => {
