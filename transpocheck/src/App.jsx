@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { jsPDF } from "jspdf";
 import { 
   Car, MapPin, Camera, Fuel, CheckCircle, FileText, Download, 
-  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck
+  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle
 } from 'lucide-react';
 
 // ==========================================
@@ -91,7 +92,7 @@ export default function App() {
   const [jobs, setJobs] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [expenses, setExpenses] = useState([]);
-  const [vehicles, setVehicles] = useState([]); // NUEVO: Base de datos de vehículos
+  const [vehicles, setVehicles] = useState([]);
   
   const [editingDriver, setEditingDriver] = useState(null);
   const [adminTab, setAdminTab] = useState('dashboard');
@@ -104,7 +105,6 @@ export default function App() {
   
   const isFirstLoad = useRef(true);
 
-  // Sistema de Notificaciones MEJORADO (Forzando ServiceWorker en Android)
   const requestNotificationPermission = () => {
     if (!("Notification" in window)) { alert("Tu navegador no soporta notificaciones."); return; }
     Notification.requestPermission().then(permission => {
@@ -176,7 +176,6 @@ export default function App() {
       setExpenses(expData);
     });
 
-    // NUEVO: Suscripción a la colección de Vehículos
     const unsubVehicles = onSnapshot(collection(db, 'vehicles'), (snapshot) => {
       setVehicles(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
@@ -209,7 +208,6 @@ export default function App() {
     );
   }
 
-  // --- MÉTODOS CONDUCTORES ---
   const handleCreateDriver = async (e) => {
     e.preventDefault();
     try {
@@ -226,19 +224,13 @@ export default function App() {
     } catch (error) { console.error(error); }
   };
 
-  // --- NUEVO: MÉTODOS VEHÍCULOS ---
   const handleCreateVehicle = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const client = formData.get('client') === 'OTRO' ? formData.get('manualClient') : formData.get('client');
-    
     try {
       await addDoc(collection(db, 'vehicles'), { 
-        client: client,
-        brand: formData.get('brand'), 
-        model: formData.get('model'), 
-        plate: formData.get('plate').toUpperCase(),
-        createdAt: Date.now() 
+        client: client, brand: formData.get('brand'), model: formData.get('model'), plate: formData.get('plate').toUpperCase(), createdAt: Date.now() 
       });
       e.target.reset(); alert("Vehículo guardado exitosamente en la base de datos.");
     } catch (error) { console.error(error); }
@@ -260,16 +252,23 @@ export default function App() {
     const headers = ['ID', 'Fecha Prog.', 'Cliente', 'Marca', 'Modelo', 'VIN/Patente', 'Desde', 'Hasta', 'Conductores Asignados', 'Conductor Realizó', 'Estado', 'Fecha Creación'];
     const rows = jobs.map(j => {
       let realizedBy = '';
-      if (j.status === 'completed' || j.status === 'accepted') {
+      if (j.status === 'completed' || j.status === 'accepted' || j.status === 'failed') {
         if (j.acceptedByEmail) {
           const d = drivers.find(drv => drv.email === j.acceptedByEmail);
           realizedBy = d ? d.name : j.acceptedByEmail;
         } else if (j.assignedDriverName) { realizedBy = j.assignedDriverName; }
       }
+      
+      let statusText = j.status;
+      if (j.status === 'pending') statusText = 'Pendiente';
+      if (j.status === 'accepted') statusText = 'En Curso';
+      if (j.status === 'completed') statusText = 'Completado';
+      if (j.status === 'failed') statusText = `Fallido - ${j.failedReason || ''}`;
+
       return [
         j.id, `"${formatDateDisplay(j.scheduledDate) || ''}"`, `"${j.client || ''}"`, `"${j.brand || ''}"`, `"${j.model || ''}"`, `"${j.plate || j.vin || ''}"`, 
         `"${j.origin || ''}"`, `"${j.destination || ''}"`, `"${j.assignedDrivers?.map(d=>d.name).join(' - ') || ''}"`,
-        `"${realizedBy}"`, `"${j.status || ''}"`, `"${new Date(j.createdAt).toLocaleString()}"`
+        `"${realizedBy}"`, `"${statusText}"`, `"${new Date(j.createdAt).toLocaleString()}"`
       ];
     });
     const csvContent = "\uFEFF" + [headers.join(';'), ...rows.map(e => e.join(';'))].join("\n");
@@ -279,7 +278,6 @@ export default function App() {
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
   };
 
-  // --- SUB-COMPONENTE: CREAR TRABAJO ADMIN (AHORA CON AUTOCOMPLETADO) ---
   const NewJobForm = () => {
     const [selectedClient, setSelectedClient] = useState('');
     const [manualClient, setManualClient] = useState('');
@@ -288,20 +286,14 @@ export default function App() {
     const [plate, setPlate] = useState('');
     const todayStr = new Date().toISOString().split('T')[0];
 
-    // LÓGICA DE AUTOCOMPLETADO
     const handlePlateChange = (e) => {
       const val = e.target.value.toUpperCase();
       setPlate(val);
       const foundVehicle = vehicles.find(v => v.plate === val);
       if (foundVehicle) {
-        setBrand(foundVehicle.brand);
-        setModel(foundVehicle.model);
-        if (CLIENTES.includes(foundVehicle.client)) {
-          setSelectedClient(foundVehicle.client);
-        } else {
-          setSelectedClient('OTRO');
-          setManualClient(foundVehicle.client);
-        }
+        setBrand(foundVehicle.brand); setModel(foundVehicle.model);
+        if (CLIENTES.includes(foundVehicle.client)) { setSelectedClient(foundVehicle.client); } 
+        else { setSelectedClient('OTRO'); setManualClient(foundVehicle.client); }
       }
     };
 
@@ -376,6 +368,64 @@ export default function App() {
     );
   };
 
+  const EditJobModal = ({ job, onClose }) => {
+    const [selectedClient, setSelectedClient] = useState(CLIENTES.includes(job.client) ? job.client : (job.client ? 'OTRO' : ''));
+    const [manualClient, setManualClient] = useState(!CLIENTES.includes(job.client) ? job.client : '');
+    const defaultDate = job.scheduledDate || new Date().toISOString().split('T')[0];
+
+    const handleUpdateJobSubmit = async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const selectedDriverIds = formData.getAll('assignedDriverId');
+      const assignedDriversList = drivers.filter(d => selectedDriverIds.includes(d.id));
+      const finalClient = selectedClient === 'OTRO' ? manualClient : selectedClient;
+      const updatedData = {
+        scheduledDate: formData.get('scheduledDate'), client: finalClient, brand: formData.get('brand'), model: formData.get('model'),
+        vin: formData.get('plateOrVin'), plate: formData.get('plateOrVin'), origin: formData.get('origin'), destination: formData.get('destination'),
+      };
+      if (assignedDriversList.length > 0) {
+        updatedData.assignedDrivers = assignedDriversList.map(d => ({id: d.id, name: d.name, email: d.email}));
+        updatedData.assignedEmails = assignedDriversList.map(d => d.email);
+      }
+      try { await updateDoc(doc(db, 'transport_jobs', job.id), updatedData); alert("Trabajo actualizado."); onClose(); } catch (error) { console.error(error); }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="p-6 border-b flex justify-between items-center sticky top-0 bg-white z-10">
+            <h2 className="text-xl font-extrabold text-slate-800">Modificar Trabajo</h2><button onClick={onClose} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button>
+          </div>
+          <form onSubmit={handleUpdateJobSubmit} className="p-6 space-y-6">
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-slate-700">Programación, Cliente y Ruta</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1"><label className="text-xs font-bold text-slate-500 uppercase ml-1">Fecha Programada</label><input name="scheduledDate" type="date" defaultValue={defaultDate} required className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold text-slate-700" /></div>
+                <div className="space-y-1"><label className="text-xs font-bold text-slate-500 uppercase ml-1">Cliente</label><select value={selectedClient} onChange={(e) => setSelectedClient(e.target.value)} className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold"><option value="">Seleccione Cliente...</option>{CLIENTES.map(c => <option key={c} value={c}>{c}</option>)}<option value="OTRO">Otro (Ingreso manual)</option></select>{selectedClient === 'OTRO' && <input type="text" value={manualClient} onChange={(e) => setManualClient(e.target.value)} placeholder="Nombre del cliente" className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold mt-2" />}</div>
+                <input name="origin" defaultValue={job.origin} type="text" placeholder="Desde" className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold" />
+                <input name="destination" defaultValue={job.destination} type="text" placeholder="Hasta" className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold" />
+              </div>
+              <h3 className="text-sm font-bold text-slate-700 mt-6">Vehículo</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <input name="brand" defaultValue={job.brand} type="text" placeholder="Marca" className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold" />
+                <input name="model" defaultValue={job.model} type="text" placeholder="Modelo" className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold" />
+                <input name="plateOrVin" defaultValue={job.plate || job.vin} type="text" placeholder="Patente o VIN" className="w-full border-2 p-3 text-sm rounded-xl col-span-2 uppercase outline-none focus:border-blue-500 font-semibold" />
+              </div>
+              <h3 className="text-sm font-bold text-slate-700 mt-6">Conductores <span className="text-xs font-normal text-slate-400">(Dejar igual si no quieres cambiarlos)</span></h3>
+              <div className="max-h-40 overflow-y-auto border-2 rounded-xl">
+                  {drivers.map(d => {
+                    const isPreselected = job.assignedEmails?.includes(d.email);
+                    return (<label key={d.id} className="flex items-center p-3 border-b hover:bg-blue-50 cursor-pointer"><input type="checkbox" name="assignedDriverId" value={d.id} defaultChecked={isPreselected} className="w-5 h-5 cursor-pointer rounded text-blue-600" /><div className="ml-3"><span className="block text-sm font-bold text-slate-800">{d.name}</span></div></label>)
+                  })}
+              </div>
+            </div>
+            <div className="flex gap-4 pt-4 border-t"><button type="button" onClick={onClose} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold">Cancelar</button><button type="submit" className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold">Guardar Cambios</button></div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 pb-24 font-sans">
       {globalStyles}
@@ -397,6 +447,8 @@ export default function App() {
         </div>
       </header>
 
+      {editingJob && <EditJobModal job={editingJob} onClose={() => setEditingJob(null)} />}
+
       {currentView === 'main' && mainTab === 'jobs' && (
         <main className="max-w-5xl mx-auto p-4 pt-6">
           {activeRole === 'admin' ? (
@@ -414,7 +466,7 @@ export default function App() {
                     <h2 className="text-2xl font-extrabold text-slate-800">Monitor Administrativo</h2>
                     <button onClick={exportToExcel} className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex justify-center items-center gap-2 shadow-lg shadow-green-200 transition-colors"><Download className="w-5 h-5"/> Exportar Excel</button>
                   </div>
-                  <JobsList jobs={jobs} drivers={drivers} role="admin" onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} db={db} currentUserEmail={currentUserEmail} />
+                  <JobsList jobs={jobs} drivers={drivers} role="admin" onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} onEditJob={setEditingJob} db={db} currentUserEmail={currentUserEmail} />
                 </div>
               )}
               
@@ -659,10 +711,11 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
 }
 
 // ==========================================
-// 4. COMPONENTE: LISTA DE TRABAJOS (ORDEN INTELIGENTE)
+// 4. COMPONENTE: LISTA DE TRABAJOS (ORDEN INTELIGENTE Y LISTA SIMPLIFICADA)
 // ==========================================
-function JobsList({ jobs, drivers, role, onStartChecklist, db, currentUserEmail }) {
+function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, currentUserEmail }) {
   const [menuOpenId, setMenuOpenId] = useState(null);
+  const [jobToFail, setJobToFail] = useState(null);
   const now = new Date();
   const isAdminView = role === 'admin';
   
@@ -680,16 +733,20 @@ function JobsList({ jobs, drivers, role, onStartChecklist, db, currentUserEmail 
   });
 
   const sortedJobs = [...filteredJobs].sort((a, b) => {
-    const adminOrder = { pending: 1, accepted: 2, completed: 3 };
-    const driverOrder = { accepted: 1, pending: 2, completed: 3 };
+    const adminOrder = { pending: 1, accepted: 2, completed: 3, failed: 3 };
+    const driverOrder = { accepted: 1, pending: 2, completed: 3, failed: 3 };
     const order = isAdminView ? adminOrder : driverOrder;
     
     if (order[a.status] !== order[b.status]) return order[a.status] - order[b.status];
-    if (a.status === 'completed') return (b.completedAt || b.createdAt) - (a.completedAt || a.createdAt);
+    if (a.status === 'completed' || a.status === 'failed') return (b.completedAt || b.createdAt) - (a.completedAt || a.createdAt);
     const dateA = a.scheduledDate ? new Date(a.scheduledDate).getTime() : a.createdAt;
     const dateB = b.scheduledDate ? new Date(b.scheduledDate).getTime() : b.createdAt;
     return dateA - dateB; 
   });
+
+  // Dividimos los trabajos: Activos (Cuadrícula) e Historial (Lista Simplificada)
+  const activeJobs = sortedJobs.filter(j => j.status === 'pending' || j.status === 'accepted');
+  const historyJobs = sortedJobs.filter(j => j.status === 'completed' || j.status === 'failed');
 
   const handleAcceptJob = async (job) => {
     try { await updateDoc(doc(db, 'transport_jobs', job.id), { status: 'accepted', acceptedByEmail: currentUserEmail }); } 
@@ -701,6 +758,15 @@ function JobsList({ jobs, drivers, role, onStartChecklist, db, currentUserEmail 
       try { await deleteDoc(doc(db, 'transport_jobs', jobId)); } 
       catch (e) { console.error(e); }
     }
+  };
+
+  const handleFailJob = async (job, reason) => {
+    try {
+      await updateDoc(doc(db, 'transport_jobs', job.id), { 
+        status: 'failed', failedReason: reason, completedAt: Date.now(), acceptedByEmail: job.acceptedByEmail || currentUserEmail
+      });
+      setJobToFail(null); alert("Trabajo marcado como fallido.");
+    } catch (e) { console.error(e); }
   };
 
   const buildPDFDoc = async (job) => {
@@ -715,6 +781,10 @@ function JobsList({ jobs, drivers, role, onStartChecklist, db, currentUserEmail 
     docPDF.setFillColor(37, 99, 235); docPDF.rect(0, 0, 210, 30, 'F'); docPDF.setTextColor(255, 255, 255);
     docPDF.setFontSize(22); docPDF.setFont("helvetica", "bold"); docPDF.text("CHECKLIST DE TRASLADO", 105, 20, null, null, "center");
     docPDF.setTextColor(0, 0, 0);
+
+    if (job.status === 'failed') {
+      docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(12); docPDF.text(`TRABAJO FALLIDO: ${job.failedReason || 'Sin motivo'}`, 20, 37); docPDF.setTextColor(0, 0, 0);
+    }
     
     let driverNameStr = job.checklist?.assignedDriverName || job.acceptedByEmail || "No registrado";
     if (job.acceptedByEmail) { const foundDriver = drivers?.find(d => d.email === job.acceptedByEmail); if (foundDriver) driverNameStr = foundDriver.name; }
@@ -811,68 +881,144 @@ function JobsList({ jobs, drivers, role, onStartChecklist, db, currentUserEmail 
   };
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 pb-20">
-      {sortedJobs.map(job => {
-        let realizedByName = '';
-        if (job.status === 'completed' || job.status === 'accepted') {
-          if (job.acceptedByEmail) { const foundD = drivers?.find(d => d.email === job.acceptedByEmail); realizedByName = foundD ? foundD.name : job.acceptedByEmail; } 
-          else if (job.assignedDriverName) { realizedByName = job.assignedDriverName; }
-        }
+    <>
+      <div className="pb-20">
+        
+        {/* SECCIÓN 1: TRABAJOS ACTIVOS (CUADRÍCULA) */}
+        {activeJobs.length > 0 && (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
+            {activeJobs.map(job => {
+              let realizedByName = '';
+              if (job.status === 'accepted') {
+                if (job.acceptedByEmail) { const foundD = drivers?.find(d => d.email === job.acceptedByEmail); realizedByName = foundD ? foundD.name : job.acceptedByEmail; } 
+                else if (job.assignedDriverName) { realizedByName = job.assignedDriverName; }
+              }
 
-        return (
-        <div key={job.id} className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-visible flex flex-col relative transform hover:-translate-y-1 transition-transform duration-200">
-          
-          <div className="px-6 py-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50 rounded-t-3xl">
-            <span className={`px-3 py-1.5 rounded-lg text-xs font-extrabold uppercase tracking-wider ${job.status==='pending'?'bg-amber-100 text-amber-700':job.status==='accepted'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}`}>
-              {job.status === 'pending' ? 'Pendiente' : job.status === 'accepted' ? 'En Curso' : 'Completado'}
-            </span>
-            
-            <div className="relative">
-              <button onClick={() => setMenuOpenId(menuOpenId === job.id ? null : job.id)} className="p-2 text-slate-400 hover:bg-slate-200 rounded-xl transition-colors"><MoreVertical className="w-5 h-5"/></button>
-              {menuOpenId === job.id && (
-                <div className="absolute right-0 top-10 bg-white border border-slate-100 shadow-2xl rounded-2xl w-56 z-10 overflow-hidden">
-                  <button onClick={() => handleCopyWhatsApp(job)} className="w-full text-left px-5 py-4 text-sm font-bold flex items-center gap-3 hover:bg-slate-50 text-slate-700 transition-colors"><Copy className="w-5 h-5 text-slate-400"/> Copiar formato texto</button>
-                  {isAdminView && <button onClick={() => handleDeleteJob(job.id)} className="w-full text-left px-5 py-4 text-sm font-bold flex items-center gap-3 hover:bg-red-50 text-red-600 border-t border-slate-50 transition-colors"><Trash2 className="w-5 h-5"/> Eliminar Trabajo</button>}
+              return (
+              <div key={job.id} className={`bg-white rounded-3xl shadow-sm border border-slate-100 flex flex-col relative transform transition-all duration-200 ${menuOpenId === job.id ? 'z-50 ring-2 ring-blue-100 scale-[1.02]' : 'z-10 hover:-translate-y-1'}`}>
+                <div className="px-6 py-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50 rounded-t-3xl">
+                  <span className={`px-3 py-1.5 rounded-lg text-xs font-extrabold uppercase tracking-wider ${job.status==='pending'?'bg-amber-100 text-amber-700':'bg-blue-100 text-blue-700'}`}>
+                    {job.status === 'pending' ? 'Pendiente' : 'En Curso'}
+                  </span>
+                  
+                  <div className="flex items-center gap-1">
+                    {isAdminView && (
+                      <button onClick={() => onEditJob(job)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-xl transition-colors" title="Editar Trabajo">
+                        <Edit2 className="w-5 h-5"/>
+                      </button>
+                    )}
+                    <div className="relative">
+                      <button onClick={() => setMenuOpenId(menuOpenId === job.id ? null : job.id)} className="p-2 text-slate-400 hover:bg-slate-200 rounded-xl transition-colors"><MoreVertical className="w-5 h-5"/></button>
+                      {menuOpenId === job.id && (
+                        <div className="absolute right-0 top-10 bg-white border border-slate-100 shadow-2xl rounded-2xl w-56 z-10 overflow-hidden">
+                          <button onClick={() => handleCopyWhatsApp(job)} className="w-full text-left px-5 py-4 text-sm font-bold flex items-center gap-3 hover:bg-slate-50 text-slate-700 transition-colors"><Copy className="w-5 h-5 text-slate-400"/> Copiar formato texto</button>
+                          {job.status !== 'completed' && job.status !== 'failed' && (
+                            <button onClick={() => { setJobToFail(job); setMenuOpenId(null); }} className="w-full text-left px-5 py-4 text-sm font-bold flex items-center gap-3 hover:bg-red-50 text-red-600 border-t border-slate-50 transition-colors"><XCircle className="w-5 h-5"/> Marcar Fallido</button>
+                          )}
+                          {isAdminView && <button onClick={() => handleDeleteJob(job.id)} className="w-full text-left px-5 py-4 text-sm font-bold flex items-center gap-3 hover:bg-red-50 text-red-600 border-t border-slate-50 transition-colors"><Trash2 className="w-5 h-5"/> Eliminar Trabajo</button>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              )}
-            </div>
-          </div>
 
-          <div className="p-6 flex-1">
-            <h3 className="font-extrabold text-xl text-slate-800 leading-tight mb-1">{job.brand || 'Sin Marca'} {job.model || ''}</h3>
-            <div className="flex items-center gap-2 mb-4 mt-2">
-              <div className="flex items-center gap-1.5 bg-blue-50 text-blue-600 px-2 py-1 rounded-lg"><Calendar className="w-4 h-4"/><span className="text-xs font-extrabold">{job.scheduledDate ? formatDateDisplay(job.scheduledDate) : 'Hoy'}</span></div>
-              <p className="text-xs font-extrabold text-indigo-600 uppercase tracking-wider">{job.client || 'Sin Cliente Asignado'}</p>
-            </div>
-            <div className="space-y-3 mb-6">
-              <div className="flex items-start gap-3"><MapPin className="w-5 h-5 text-slate-300 shrink-0"/> <span className="text-sm font-bold text-slate-600">{job.origin || 'No especificado'}</span></div>
-              <div className="flex items-start gap-3"><Navigation className="w-5 h-5 text-slate-300 shrink-0"/> <span className="text-sm font-bold text-slate-600">{job.destination || 'No especificado'}</span></div>
-            </div>
-            <div className="bg-slate-50 p-3 rounded-xl flex justify-between items-center border border-slate-100">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Patente/VIN</span><span className="font-extrabold text-slate-700 uppercase bg-white px-3 py-1 rounded-lg shadow-sm border border-slate-100">{job.plate || job.vin || 'N/A'}</span>
-            </div>
-          </div>
+                <div className="p-6 flex-1">
+                  <h3 className="font-extrabold text-xl text-slate-800 leading-tight mb-1">{job.brand || 'Sin Marca'} {job.model || ''}</h3>
+                  <div className="flex items-center gap-2 mb-4 mt-2">
+                    <div className="flex items-center gap-1.5 bg-blue-50 text-blue-600 px-2 py-1 rounded-lg"><Calendar className="w-4 h-4"/><span className="text-xs font-extrabold">{job.scheduledDate ? formatDateDisplay(job.scheduledDate) : 'Hoy'}</span></div>
+                    <p className="text-xs font-extrabold text-indigo-600 uppercase tracking-wider">{job.client || 'Sin Cliente Asignado'}</p>
+                  </div>
+                  <div className="space-y-3 mb-6">
+                    <div className="flex items-start gap-3"><MapPin className="w-5 h-5 text-slate-300 shrink-0"/> <span className="text-sm font-bold text-slate-600">{job.origin || 'No especificado'}</span></div>
+                    <div className="flex items-start gap-3"><Navigation className="w-5 h-5 text-slate-300 shrink-0"/> <span className="text-sm font-bold text-slate-600">{job.destination || 'No especificado'}</span></div>
+                  </div>
+                  <div className="bg-slate-50 p-3 rounded-xl flex justify-between items-center border border-slate-100">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Patente/VIN</span><span className="font-extrabold text-slate-700 uppercase bg-white px-3 py-1 rounded-lg shadow-sm border border-slate-100">{job.plate || job.vin || 'N/A'}</span>
+                  </div>
+                </div>
 
-          {isAdminView && (
-            <div className="px-6 py-3 bg-blue-50/50 border-t border-blue-100 flex items-center gap-2">
-              <User className="w-4 h-4 text-blue-500 shrink-0"/>
-              {job.status === 'pending' ? <p className="text-xs font-bold text-slate-600">Notificados: <span className="text-blue-700 font-extrabold">{job.assignedDrivers?.map(d=>d.name.split(' ')[0]).join(', ') || 'Nadie'}</span></p> : <p className="text-xs font-bold text-slate-600">Responsable: <span className="text-blue-700 font-extrabold">{realizedByName}</span></p>}
-            </div>
-          )}
-          
-          <div className="p-4 bg-slate-50 border-t border-slate-100 rounded-b-3xl space-y-3">
-            {job.status === 'pending' && (!isAdminView || job.assignedEmails?.includes(currentUserEmail)) && <button onClick={() => handleAcceptJob(job)} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-base font-extrabold py-3.5 rounded-xl transition-colors shadow-lg shadow-blue-200">Reclamar Traslado</button>}
-            {((job.status === 'accepted' && (isAdminView || job.acceptedByEmail === currentUserEmail)) || (job.status !== 'completed' && isAdminView)) && <button onClick={() => onStartChecklist(job)} className="w-full bg-green-600 hover:bg-green-700 text-white text-base font-extrabold py-3.5 rounded-xl flex justify-center items-center gap-2 transition-colors shadow-lg shadow-green-200"><FileText className="w-5 h-5" /> Llenar Checklist</button>}
-            {job.status === 'completed' && (
-              <>
-                <button onClick={() => generatePDF(job)} className="w-full bg-slate-800 hover:bg-slate-900 text-white text-sm font-extrabold py-3 rounded-xl flex justify-center items-center gap-2 transition-colors shadow-lg shadow-slate-200"><FileDown className="w-4 h-4"/> Guardar PDF</button>
-                <button onClick={() => handleShareWhatsAppPDF(job)} className="w-full bg-green-500 hover:bg-green-600 text-white text-sm font-extrabold py-3 rounded-xl flex justify-center items-center gap-2 transition-colors shadow-lg shadow-green-200"><Share2 className="w-4 h-4"/> Compartir por WhatsApp</button>
-              </>
-            )}
+                {isAdminView && (
+                  <div className="px-6 py-3 bg-blue-50/50 border-t border-blue-100 flex items-center gap-2">
+                    <User className="w-4 h-4 text-blue-500 shrink-0"/>
+                    {job.status === 'pending' ? <p className="text-xs font-bold text-slate-600">Notificados: <span className="text-blue-700 font-extrabold">{job.assignedDrivers?.map(d=>d.name.split(' ')[0]).join(', ') || 'Nadie'}</span></p> : <p className="text-xs font-bold text-slate-600">Responsable: <span className="text-blue-700 font-extrabold">{realizedByName}</span></p>}
+                  </div>
+                )}
+                
+                <div className="p-4 bg-slate-50 border-t border-slate-100 rounded-b-3xl space-y-3">
+                  {job.status === 'pending' && (!isAdminView || job.assignedEmails?.includes(currentUserEmail)) && <button onClick={() => handleAcceptJob(job)} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-base font-extrabold py-3.5 rounded-xl transition-colors shadow-lg shadow-blue-200">Reclamar Traslado</button>}
+                  {((job.status === 'accepted' && (isAdminView || job.acceptedByEmail === currentUserEmail)) || (job.status !== 'completed' && job.status !== 'failed' && isAdminView)) && <button onClick={() => onStartChecklist(job)} className="w-full bg-green-600 hover:bg-green-700 text-white text-base font-extrabold py-3.5 rounded-xl flex justify-center items-center gap-2 transition-colors shadow-lg shadow-green-200"><FileText className="w-5 h-5" /> Llenar Checklist</button>}
+                </div>
+              </div>
+            )})}
           </div>
+        )}
+
+        {/* SECCIÓN 2: HISTORIAL DE COMPLETADOS (LISTA SIMPLIFICADA) */}
+        {historyJobs.length > 0 && (
+          <div className="mt-8">
+            <h3 className="text-xl font-extrabold text-slate-800 mb-6 border-b-2 border-slate-100 pb-2">Historial de Trabajos</h3>
+            <div className="flex flex-col gap-4">
+              {historyJobs.map(job => (
+                <div key={job.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 sm:p-5 hover:shadow-md transition-shadow relative overflow-hidden">
+                  {/* Etiqueta Visual Izquierda */}
+                  <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${job.status === 'failed' ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                  
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 ml-2">
+                    <div className="flex items-center gap-3">
+                      <span className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wide ${job.status === 'failed' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700'}`}>
+                        {job.status === 'failed' ? 'Fallido' : 'Completado'}
+                      </span>
+                      <span className="text-xs font-bold text-slate-400 flex items-center gap-1"><Calendar className="w-3 h-3"/> {getJobDateStr(job)}</span>
+                    </div>
+                    
+                    {/* Botones de Acción */}
+                    <div className="flex gap-2 mt-3 sm:mt-0 ml-2 sm:ml-0 w-full sm:w-auto">
+                      <button onClick={() => handleCopyWhatsApp(job)} className="p-2 flex-1 sm:flex-none bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl transition-colors flex justify-center items-center" title="Copiar Formato Texto"><Copy className="w-4 h-4"/></button>
+                      <button onClick={() => generatePDF(job)} className="p-2 flex-1 sm:flex-none bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors flex justify-center items-center" title="Descargar PDF"><FileDown className="w-4 h-4"/></button>
+                      {job.status !== 'failed' && <button onClick={() => handleShareWhatsAppPDF(job)} className="p-2 flex-[2] sm:flex-none bg-green-100 hover:bg-green-200 text-green-700 rounded-xl transition-colors flex justify-center items-center gap-1.5" title="Compartir PDF por WhatsApp"><Share2 className="w-4 h-4"/><span className="text-xs font-bold sm:hidden">Compartir PDF</span></button>}
+                    </div>
+                  </div>
+
+                  {/* Datos del trabajo */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 ml-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <div><p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-0.5">Vehículo</p><p className="text-sm font-extrabold text-slate-800">{job.brand} {job.model}</p></div>
+                    <div><p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-0.5">Patente/VIN</p><p className="text-sm font-extrabold text-slate-800 uppercase">{job.plate || job.vin || 'S/N'}</p></div>
+                    <div className="col-span-2 sm:col-span-2"><p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-0.5">Ruta</p><p className="text-sm font-bold text-slate-600">{job.origin} ➔ {job.destination}</p></div>
+                  </div>
+
+                  {job.status === 'failed' && (
+                    <div className="mt-3 ml-2 bg-red-50 border border-red-100 p-2.5 rounded-lg flex items-start gap-2">
+                      <XCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5"/>
+                      <p className="text-xs font-bold text-red-800"><span className="uppercase text-[10px] block text-red-500 mb-0.5">Motivo del fallo:</span> {job.failedReason || 'No especificado'}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Mensaje Vacío General */}
+        {activeJobs.length === 0 && historyJobs.length === 0 && (
+          <div className="text-center py-16 bg-white rounded-3xl border border-slate-100 shadow-sm"><p className="text-slate-400 font-extrabold text-lg">No hay trabajos disponibles.</p></div>
+        )}
+      </div>
+
+      {/* MODAL PARA JUSTIFICAR EL FALLO */}
+      {jobToFail && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <form onSubmit={(e) => { e.preventDefault(); handleFailJob(jobToFail, e.target.reason.value); }} className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8">
+            <h3 className="text-xl font-extrabold text-slate-800 mb-2 flex items-center gap-2"><XCircle className="text-red-500 w-6 h-6"/> Reportar Trabajo Fallido</h3>
+            <p className="text-sm font-bold text-slate-500 mb-6">El trabajo será marcado como terminado con estado fallido. Indica el motivo:</p>
+            <textarea name="reason" required placeholder="Ej. El cliente no se presentó, vehículo con falla mecánica..." className="w-full border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-red-500 font-bold text-slate-700 mb-6" rows="4"></textarea>
+            <div className="flex gap-4">
+              <button type="button" onClick={() => setJobToFail(null)} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-extrabold text-slate-600">Cancelar</button>
+              <button type="submit" className="flex-[2] py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-extrabold shadow-lg shadow-red-200">Marcar Fallido</button>
+            </div>
+          </form>
         </div>
-      )})}
-    </div>
+      )}
+    </>
   );
 }
 
@@ -910,114 +1056,4 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
       const bmp = await window.createImageBitmap(file, { resizeWidth: 800, resizeQuality: 'medium' });
       const canvas = document.createElement('canvas'); canvas.width = bmp.width; canvas.height = bmp.height;
       const ctx = canvas.getContext('2d'); ctx.drawImage(bmp, 0, 0);
-      updateForm('photos', { ...formData.photos, [photoId]: canvas.toDataURL('image/jpeg', 0.6) });
-      bmp.close();
-    } catch (error) { console.error(error); alert("Error de memoria al procesar la foto."); }
-  };
-
-  const handleGetLocation = () => {
-    setLoadingLoc(true);
-    if ("geolocation" in navigator) { navigator.geolocation.getCurrentPosition((pos) => { updateForm('location', { lat: pos.coords.latitude, lng: pos.coords.longitude }); setLoadingLoc(false); }, () => { alert("Error GPS."); setLoadingLoc(false); }); }
-  };
-
-  const submitForm = async (e) => { 
-    e.preventDefault(); 
-    if (!formData.signatureData) return alert("Firma obligatoria."); 
-    const finalData = {
-      scheduledDate: formData.scheduledDate, client: formData.client, brand: formData.brand, model: formData.model, vin: formData.plateOrVin, plate: formData.plateOrVin, origin: formData.origin, destination: formData.destination,
-      status: 'completed', completedAt: Date.now(), checklist: formData
-    };
-    try {
-      if (isQuickJob) { finalData.createdAt = Date.now(); finalData.assignedDriverName = "Auto-creado"; finalData.acceptedByEmail = currentUserEmail; await addDoc(collection(db, 'transport_jobs'), finalData); } 
-      else { await updateDoc(doc(db, 'transport_jobs', job.id), finalData); }
-      localStorage.removeItem(DRAFT_KEY); localStorage.removeItem(`${DRAFT_KEY}_step`);
-      alert("✅ Checklist guardado correctamente."); onComplete();
-    } catch (error) { console.error(error); alert("Hubo un error al guardar."); }
-  };
-
-  const handleCancelClick = () => { if (window.confirm("El progreso de este checklist ha sido autoguardado en tu teléfono. ¿Deseas pausar y salir por ahora?")) { onCancel(); } };
-
-  return (
-    <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden pb-10">
-      <div className="bg-blue-600 text-white p-6 flex justify-between items-center">
-        <h2 className="text-xl font-extrabold flex items-center gap-3">
-          <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm">{isQuickJob ? <Zap className="w-5 h-5 text-white" /> : <FileText className="w-5 h-5 text-white" />}</div>
-          {isQuickJob ? "Checklist Rápido" : "Checklist Asignado"}
-        </h2>
-        <button onClick={handleCancelClick} className="text-blue-100 text-sm font-bold hover:text-white bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-xl transition-colors">Pausar / Salir</button>
-      </div>
-      <div className="flex bg-slate-100 h-1.5"><div className={`bg-green-500 transition-all duration-500 ${step === 1 ? 'w-1/2' : 'w-full'}`}></div></div>
-      
-      <div className="p-6 sm:p-8">
-        {step === 1 && (
-          <div className="space-y-6">
-            <h3 className="text-lg font-extrabold text-slate-800 border-b-2 border-slate-100 pb-2">Datos Principales</h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <input type="date" value={formData.scheduledDate} onChange={e=>updateForm('scheduledDate', e.target.value)} required className="col-span-2 border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" />
-              <input value={formData.client} onChange={e=>updateForm('client', e.target.value)} className="col-span-2 border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Cliente Empresa o Particular" />
-              <input value={formData.brand} onChange={e=>updateForm('brand', e.target.value)} className="border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Marca" />
-              <input value={formData.model} onChange={e=>updateForm('model', e.target.value)} className="border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Modelo" />
-              <input value={formData.plateOrVin} onChange={e=>updateForm('plateOrVin', e.target.value)} className="col-span-2 border-2 border-slate-200 p-4 rounded-xl uppercase outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Patente/VIN" />
-              <input value={formData.origin} onChange={e=>updateForm('origin', e.target.value)} className="col-span-2 border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Desde" />
-              <input value={formData.destination} onChange={e=>updateForm('destination', e.target.value)} className="col-span-2 border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Hasta" />
-            </div>
-
-            <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-slate-800">Documentos a bordo</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {[{ id: 'soap', label: 'SOAP' }, { id: 'permiso', label: 'Permiso Circulación' }, { id: 'revTecnica', label: 'Revisión Técnica' }, { id: 'gases', label: 'Revisión Gases' }].map(doc => (
-                <label key={doc.id} className={`flex items-center gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all ${formData.docs[doc.id] ? 'border-green-500 bg-green-50 text-green-800' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}>
-                  <input type="checkbox" className="w-5 h-5 text-green-600 rounded cursor-pointer" checked={formData.docs[doc.id]} onChange={(e) => updateForm('docs', { ...formData.docs, [doc.id]: e.target.checked })} />
-                  <span className="font-extrabold text-sm">{doc.label}</span>
-                </label>
-              ))}
-            </div>
-            
-            <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-blue-600">Fotografías</h3>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-              {[{id:'front', l:'Frente'}, {id:'driver', l:'Piloto'}, {id:'passenger', l:'Copiloto'}, {id:'back', l:'Atrás'}, {id:'tire', l:'Repuesto'}, {id:'dashboard', l:'Tablero'}, {id:'det1', l:'Detalle 1'}, {id:'det2', l:'Detalle 2'}, {id:'det3', l:'Detalle 3'}, {id:'det4', l:'Detalle 4'}].map(p => (
-                <label key={p.id} className={`p-1 border-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all cursor-pointer relative overflow-hidden h-28 ${formData.photos[p.id] ? 'bg-green-50 border-green-400 shadow-md shadow-green-100' : 'border-dashed border-slate-300 hover:bg-slate-50 hover:border-slate-400'}`}>
-                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, p.id)} />
-                  {formData.photos[p.id] ? (
-                    <><img src={formData.photos[p.id]} alt={p.l} className="absolute inset-0 w-full h-full object-cover opacity-50" /><CheckCircle className="text-green-600 w-8 h-8 relative z-10 bg-white rounded-full shadow-sm"/><span className="text-[10px] font-extrabold text-slate-800 text-center relative z-10 bg-white/90 px-2 py-0.5 rounded-full shadow-sm mt-1">{p.l}</span></>
-                  ) : (
-                    <><div className="bg-slate-100 p-2 rounded-full mb-1"><Camera className="text-slate-400 w-5 h-5"/></div><span className="text-[10px] font-extrabold text-slate-500 text-center uppercase tracking-wider">{p.l}</span></>
-                  )}
-                </label>
-              ))}
-            </div>
-
-            <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-slate-800">Combustible: <span className="text-blue-600">{formData.fuelLevel}%</span></h3>
-            <input type="range" min="0" max="100" step="5" value={formData.fuelLevel} onChange={(e) => updateForm('fuelLevel', e.target.value)} className="w-full accent-blue-600 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer mt-2" />
-            
-            <textarea rows="3" value={formData.observations} onChange={(e) => updateForm('observations', e.target.value)} placeholder="Observaciones de daños o detalles..." className="w-full border-2 border-slate-200 p-4 text-sm outline-none focus:border-blue-500 rounded-xl mt-6 font-bold text-slate-700"></textarea>
-            
-            <button onClick={() => setStep(2)} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-extrabold transition-all shadow-xl shadow-blue-200 text-lg mt-8">Continuar a Recepción</button>
-          </div>
-        )}
-        
-        {step === 2 && (
-          <form onSubmit={submitForm} className="space-y-6">
-            <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 text-slate-800">Datos de Recepción</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <input required value={formData.receiverName} onChange={e=>updateForm('receiverName', e.target.value)} className="border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Nombre completo del receptor" />
-              <input required value={formData.receiverRut} onChange={e=>updateForm('receiverRut', e.target.value)} className="border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="RUT" />
-              <input required type="email" value={formData.receiverEmail} onChange={e=>updateForm('receiverEmail', e.target.value)} className="border-2 border-slate-200 p-4 rounded-xl col-span-1 sm:col-span-2 outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Correo electrónico del receptor" />
-            </div>
-            
-            <button type="button" onClick={handleGetLocation} className={`px-4 py-4 rounded-2xl text-base w-full font-extrabold transition-all shadow-sm ${formData.location ? 'bg-green-100 text-green-700 border-2 border-green-200' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-2 border-transparent'}`}>
-              {formData.location ? "📍 GPS Capturado Exitosamente" : "📍 Tocar para Capturar GPS Actual"}
-            </button>
-            
-            <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-slate-800">Firma del Receptor</h3>
-            <SignaturePad initialData={formData.signatureData} onSave={(data) => updateForm('signatureData', data)} onClear={() => updateForm('signatureData', null)} />
-            
-            <div className="flex gap-4 pt-8 border-t-2 border-slate-100 mt-8">
-              <button type="button" onClick={() => setStep(1)} className="flex-1 bg-slate-100 hover:bg-slate-200 py-4 rounded-2xl font-extrabold transition-colors text-slate-600">Atrás</button>
-              <button type="submit" className="flex-[2] bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-extrabold transition-all shadow-xl shadow-green-200 text-lg">Guardar y Finalizar</button>
-            </div>
-          </form>
-        )}
-      </div>
-    </div>
-  );
-}
+      updateForm
