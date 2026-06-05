@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
-import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc, enableIndexedDbPersistence } from 'firebase/firestore';
 import { jsPDF } from "jspdf";
 import { 
   Car, MapPin, Camera, Fuel, CheckCircle, FileText, Download, 
-  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye
+  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock
 } from 'lucide-react';
 
 // ==========================================
@@ -24,6 +24,13 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
+
+// Habilitar Offline Persistence
+try {
+  enableIndexedDbPersistence(db).catch((err) => {
+    console.error("Firebase persistence error:", err.code);
+  });
+} catch (e) {}
 
 const CLIENTES = ["Grandleasing", "Kovacs", "Salfa", "Enex", "CIPP", "Simumak", "Mutual Capacitación"];
 
@@ -327,7 +334,19 @@ export default function App() {
         assignedDrivers: assignedDriversList.map(d => ({id: d.id, name: d.name, email: d.email})), assignedEmails: assignedDriversList.map(d => d.email),
         status: 'pending', createdAt: Date.now(), checklist: null
       };
-      try { await addDoc(collection(db, 'transport_jobs'), newJob); setAdminTab('dashboard'); alert(`Trabajo asignado.`); } catch (error) { console.error(error); }
+      
+      try { 
+        await addDoc(collection(db, 'transport_jobs'), newJob); 
+        
+        // AUTO-SAVE VEHICLE si no existe
+        if (plate && !vehicles.find(v => v.plate === plate)) {
+          await addDoc(collection(db, 'vehicles'), {
+             plate: plate, brand: brand, model: model, client: finalClient, createdAt: Date.now()
+          });
+        }
+        
+        setAdminTab('dashboard'); alert(`Trabajo asignado.`); 
+      } catch (error) { console.error(error); }
     };
 
     return (
@@ -487,28 +506,24 @@ export default function App() {
               
               {adminTab === 'newJob' && <NewJobForm />}
               
-              {/* PESTAÑA VEHÍCULOS MEJORADA (Filtro y Edición) */}
+              {/* PESTAÑA VEHÍCULOS */}
               {adminTab === 'vehicles' && (
                 <div className="grid md:grid-cols-2 gap-6">
-                  <form key={editingVehicle ? editingVehicle.id : 'new'} onSubmit={editingVehicle ? handleUpdateVehicle : handleCreateVehicle} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-5">
-                    <h3 className="text-xl font-extrabold text-slate-800 flex items-center gap-2"><Truck className="text-blue-600"/> {editingVehicle ? 'Editar Vehículo' : 'Guardar Nuevo Vehículo'}</h3>
+                  <form onSubmit={handleCreateVehicle} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-5">
+                    <h3 className="text-xl font-extrabold text-slate-800 flex items-center gap-2"><Truck className="text-blue-600"/> Guardar Nuevo Vehículo</h3>
                     <p className="text-xs font-bold text-slate-500 mb-2">Agrega vehículos frecuentes a tu base de datos para autocompletar al crear un trabajo.</p>
                     
-                    <select name="client" defaultValue={editingVehicle && CLIENTES.includes(editingVehicle.client) ? editingVehicle.client : (editingVehicle ? 'OTRO' : '')} className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold text-slate-700">
+                    <select name="client" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold text-slate-700">
                       <option value="">Seleccione Cliente al que pertenece...</option>
                       {CLIENTES.map(c => <option key={c} value={c}>{c}</option>)}
                       <option value="OTRO">Otro (Se debe escribir manualmente)</option>
                     </select>
-                    <input name="manualClient" defaultValue={editingVehicle && !CLIENTES.includes(editingVehicle.client) ? editingVehicle.client : ''} placeholder="Si seleccionaste Otro, escribe el cliente aquí" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+                    <input name="manualClient" placeholder="Si es OTRO, escribe el cliente aquí" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
                     
-                    <input name="brand" defaultValue={editingVehicle ? editingVehicle.brand : ''} placeholder="Marca (Ej. Chevrolet)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
-                    <input name="model" defaultValue={editingVehicle ? editingVehicle.model : ''} placeholder="Modelo (Ej. NPR 816)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
-                    <input name="plate" defaultValue={editingVehicle ? editingVehicle.plate : ''} placeholder="Patente" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm uppercase outline-none focus:border-blue-500 font-bold text-slate-800"/>
-                    
-                    <div className="flex gap-3">
-                      {editingVehicle && <button type="button" onClick={() => setEditingVehicle(null)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-extrabold text-lg transition-colors">Cancelar</button>}
-                      <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-lg transition-colors shadow-lg shadow-blue-200">{editingVehicle ? 'Guardar Cambios' : 'Guardar Vehículo'}</button>
-                    </div>
+                    <input name="brand" placeholder="Marca (Ej. Chevrolet)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+                    <input name="model" placeholder="Modelo (Ej. NPR 816)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+                    <input name="plate" placeholder="Patente" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm uppercase outline-none focus:border-blue-500 font-bold text-slate-800"/>
+                    <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-lg transition-colors shadow-lg shadow-blue-200">Guardar Vehículo</button>
                   </form>
 
                   <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 flex flex-col">
@@ -627,14 +642,11 @@ export default function App() {
 function LeaderboardView({ jobs, drivers, isAdminView, db }) {
   const [selectedDriverJobs, setSelectedDriverJobs] = useState(null);
 
-  // Calcular mes actual
   const now = new Date();
   const firstOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
 
-  // Filtrar solo trabajos completados del mes actual
   const monthlyCompletedJobs = jobs.filter(j => j.status === 'completed' && j.completedAt >= firstOfCurrentMonth);
 
-  // Calcular ranking
   const ranking = drivers.map(d => {
     const driverJobs = monthlyCompletedJobs.filter(j => j.acceptedByEmail === d.email);
     return { ...d, score: driverJobs.length, jobs: driverJobs };
@@ -665,7 +677,6 @@ function LeaderboardView({ jobs, drivers, isAdminView, db }) {
         ))}
       </div>
 
-      {/* Modal Historial de Conductor para Admin */}
       {selectedDriverJobs && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
@@ -749,14 +760,29 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
     const currentBalance = myDriver?.balance || 0;
     if (currentBalance <= 0 || !returnReceipt) return;
     try {
-      await updateDoc(doc(db, 'drivers', myDriver.id), { balance: 0 });
+      // NUEVO: No actualiza el balance a 0 todavía, crea el registro "pending_return"
       await addDoc(collection(db, 'expenses'), { 
         driverId: myDriver.id, driverEmail: currentUserEmail, driverName: myDriver.name, 
-        type: 'return', amount: currentBalance, detail: 'Rendición de Vuelto', receiptImage: returnReceipt, createdAt: Date.now() 
+        type: 'pending_return', amount: currentBalance, detail: 'Rendición de Vuelto (En revisión)', receiptImage: returnReceipt, createdAt: Date.now() 
       });
-      alert("Fondos rendidos y comprobante guardado.");
+      alert("Comprobante enviado. A la espera de validación del Administrador.");
       setIsReturnModalOpen(false); setReturnReceipt(null);
-    } catch (error) { console.error(error); alert("Error al rendir fondos"); }
+    } catch (error) { console.error(error); alert("Error al enviar comprobante"); }
+  };
+
+  const handleApproveReturn = async (expense) => {
+    try {
+        const driverSnapshot = drivers.find(d => d.id === expense.driverId);
+        if (driverSnapshot) {
+            const newBalance = Math.max(0, (driverSnapshot.balance || 0) - expense.amount);
+            await updateDoc(doc(db, 'drivers', expense.driverId), { balance: newBalance });
+        }
+        await updateDoc(doc(db, 'expenses', expense.id), { type: 'return', detail: 'Rendición de Vuelto (Aprobada)' });
+        alert("Rendición aprobada exitosamente. El saldo del conductor ha retornado a 0.");
+    } catch (error) {
+        console.error(error);
+        alert("Hubo un error al aprobar la rendición.");
+    }
   };
 
   const handleDeleteExpense = async (expense) => {
@@ -776,9 +802,10 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
   };
 
   const TransactionIcon = ({ type }) => {
-    if (type === 'assignment') return <ArrowUpCircle className="w-5 h-5 text-green-500"/>;
-    if (type === 'expense') return <ArrowDownCircle className="w-5 h-5 text-red-500"/>;
-    return <CheckCircle className="w-5 h-5 text-blue-500"/>;
+    if (type === 'assignment') return <ArrowUpCircle className="w-5 h-5 text-green-500 shrink-0"/>;
+    if (type === 'expense') return <ArrowDownCircle className="w-5 h-5 text-red-500 shrink-0"/>;
+    if (type === 'pending_return') return <Clock className="w-5 h-5 text-amber-500 shrink-0"/>;
+    return <CheckCircle className="w-5 h-5 text-blue-500 shrink-0"/>;
   };
 
   const EditExpenseModal = ({ expense, onClose }) => {
@@ -829,7 +856,7 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
         )}
 
         <h2 className="text-2xl font-extrabold text-slate-800 mb-6 flex items-center gap-2"><Wallet className="text-blue-600"/> Control de Viáticos</h2>
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-2 gap-6">
           <div className="space-y-4">
             <h3 className="text-lg font-bold text-slate-600">Conductores y Saldos</h3>
             {drivers.map(d => (
@@ -840,30 +867,36 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
                 </div>
                 {selectedDriverId === d.id && (
                   <form onSubmit={(e) => handleAssignFunds(e, d)} className="mt-5 pt-5 border-t border-slate-100 flex gap-2" onClick={e=>e.stopPropagation()}>
-                    <input type="number" name="amount" placeholder="Monto a asignar ($)" required className="flex-1 border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" />
+                    <input type="number" name="amount" placeholder="Monto a asignar ($)" required className="flex-1 w-full border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" />
                     <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-6 font-extrabold rounded-xl transition-colors">Enviar</button>
                   </form>
                 )}
               </div>
             ))}
           </div>
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 h-fit">
+          
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 h-fit w-full overflow-hidden">
             <h3 className="text-lg font-bold text-slate-600 mb-4">{selectedDriverId ? 'Historial del Conductor' : 'Historial Global'}</h3>
             <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
               {expenses.filter(e => selectedDriverId ? e.driverId === selectedDriverId : true).map(exp => (
-                <div key={exp.id} className="flex items-start gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                <div key={exp.id} className="flex items-start gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100 w-full overflow-hidden">
                   <div className="mt-1"><TransactionIcon type={exp.type}/></div>
-                  <div className="flex-1">
-                    <p className="text-sm font-extrabold text-slate-800">{exp.detail}</p>
-                    <p className="text-xs font-bold text-slate-400">{!selectedDriverId && <span className="text-blue-600">{exp.driverName} • </span>}{new Date(exp.createdAt).toLocaleDateString()}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-extrabold text-slate-800 break-words">{exp.detail}</p>
+                    <p className="text-xs font-bold text-slate-400 truncate">{!selectedDriverId && <span className="text-blue-600">{exp.driverName} • </span>}{new Date(exp.createdAt).toLocaleDateString()}</p>
                     {exp.receiptImage && <button onClick={() => setViewingReceipt(exp.receiptImage)} className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-100/50 px-2 py-1 rounded-md transition-colors w-fit"><Camera className="w-3.5 h-3.5"/> Ver comprobante</button>}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <span className={`font-extrabold ${exp.type === 'expense' ? 'text-red-500' : 'text-green-600'}`}>{exp.type === 'expense' ? '-' : '+'}{formatMoney(exp.amount)}</span>
-                    <div className="flex gap-1 border-l border-slate-200 pl-2 ml-1">
-                      <button onClick={() => setEditingExpense(exp)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors"><Edit2 className="w-4 h-4"/></button>
-                      <button onClick={() => handleDeleteExpense(exp)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
-                    </div>
+                    {exp.type === 'pending_return' && (
+                        <button onClick={() => handleApproveReturn(exp)} className="ml-1 text-xs font-bold bg-green-600 text-white hover:bg-green-700 px-3 py-1.5 rounded-lg transition-colors">Aprobar</button>
+                    )}
+                    {exp.type !== 'assignment' && exp.type !== 'pending_return' && (
+                      <div className="flex gap-1 border-l border-slate-200 pl-2 ml-1">
+                        <button onClick={() => setEditingExpense(exp)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors" title="Editar"><Edit2 className="w-4 h-4"/></button>
+                        <button onClick={() => handleDeleteExpense(exp)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Eliminar"><Trash2 className="w-4 h-4"/></button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -877,6 +910,7 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
 
   if (!myDriver) return <main className="p-8 text-center text-slate-500 font-bold pb-24">No estás registrado como conductor.</main>;
   const myBalance = myDriver.balance || 0;
+  const hasPendingReturn = expenses.some(e => e.driverId === myDriver.id && e.type === 'pending_return');
 
   return (
     <main className="max-w-md mx-auto p-4 pt-6 space-y-6 pb-24">
@@ -921,14 +955,22 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
         <form onSubmit={handleAddExpense} className="space-y-4">
           <input type="text" name="detail" placeholder="¿En qué gastaste? (Ej. Peaje)" required className="w-full border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" />
           <input type="number" name="amount" placeholder="Monto ($)" required className="w-full border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" />
-          <button type="submit" disabled={myBalance <= 0} className={`w-full py-4 rounded-2xl font-extrabold text-lg transition-all ${myBalance > 0 ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>Guardar Gasto</button>
+          <button type="submit" disabled={myBalance <= 0 || hasPendingReturn} className={`w-full py-4 rounded-2xl font-extrabold text-lg transition-all ${myBalance > 0 && !hasPendingReturn ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>Guardar Gasto</button>
         </form>
       </div>
       
-      {myBalance > 0 && (
-        <button onClick={() => setIsReturnModalOpen(true)} className="w-full bg-green-50 hover:bg-green-100 text-green-700 border-2 border-green-200 py-4 rounded-3xl font-extrabold text-lg flex justify-center items-center gap-2 transition-all">
-          <CheckCircle className="w-6 h-6"/> Rendir Vuelto ($0)
-        </button>
+      {hasPendingReturn ? (
+        <div className="bg-amber-50 border-2 border-amber-200 p-4 rounded-3xl text-center">
+            <Clock className="w-8 h-8 text-amber-500 mx-auto mb-2"/>
+            <p className="font-extrabold text-amber-700">Rendición en Revisión</p>
+            <p className="text-xs font-bold text-amber-600 mt-1">El administrador debe aprobar tu comprobante para actualizar el saldo a $0.</p>
+        </div>
+      ) : (
+        myBalance > 0 && (
+          <button onClick={() => setIsReturnModalOpen(true)} className="w-full bg-green-50 hover:bg-green-100 text-green-700 border-2 border-green-200 py-4 rounded-3xl font-extrabold text-lg flex justify-center items-center gap-2 transition-all">
+            <CheckCircle className="w-6 h-6"/> Rendir Vuelto ($0)
+          </button>
+        )
       )}
 
       <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
@@ -937,19 +979,20 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
           {expenses.filter(e => e.driverId === myDriver.id).map(exp => (
             <div key={exp.id} className="flex items-start gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-100">
               <div className="mt-1"><TransactionIcon type={exp.type}/></div>
-              <div className="flex-1">
-                <p className="text-sm font-extrabold text-slate-800">{exp.detail}</p>
-                <p className="text-[10px] font-bold text-slate-400">{new Date(exp.createdAt).toLocaleString()}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-extrabold text-slate-800 break-words">{exp.detail}</p>
+                <p className="text-[10px] font-bold text-slate-400 truncate">{new Date(exp.createdAt).toLocaleString()}</p>
                 {exp.receiptImage && <button onClick={() => setViewingReceipt(exp.receiptImage)} className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-100/50 px-2 py-1 rounded-md transition-colors w-fit"><Camera className="w-3.5 h-3.5"/> Ver comprobante</button>}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <span className={`font-extrabold ${exp.type === 'expense' ? 'text-red-500' : 'text-green-600'}`}>{exp.type === 'expense' ? '-' : '+'}{formatMoney(exp.amount)}</span>
-                {exp.type !== 'assignment' ? (
+                
+                {exp.type !== 'assignment' && exp.type !== 'pending_return' ? (
                   <div className="flex gap-1 border-l border-slate-200 pl-2 ml-1">
                     <button onClick={() => setEditingExpense(exp)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors"><Edit2 className="w-4 h-4"/></button>
                     <button onClick={() => handleDeleteExpense(exp)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
                   </div>
-                ) : <div className="pl-2 ml-1"><span className="text-[10px] font-bold text-slate-400 uppercase">Fondo</span></div>}
+                ) : <div className="pl-2 ml-1"><span className="text-[10px] font-bold text-slate-400 uppercase">{exp.type === 'assignment' ? 'Fondo' : 'Espera'}</span></div>}
               </div>
             </div>
           ))}
@@ -970,13 +1013,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   const isAdminView = role === 'admin';
   
   const filteredJobs = jobs.filter(job => {
-    if (!isAdminView) {
-      if (job.status === 'pending') {
-        if (!job.assignedEmails?.includes(currentUserEmail)) return false;
-      } else {
-        if (job.acceptedByEmail !== currentUserEmail) return false;
-      }
-    }
+    if (!isAdminView && (!job.assignedEmails?.includes(currentUserEmail) && job.acceptedByEmail !== currentUserEmail)) return false;
     if (!job.createdAt) return true;
     if (!isAdminView) {
       const sevenDays = 7 * 24 * 60 * 60 * 1000;
@@ -1010,8 +1047,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
 
   const handleDeleteJob = async (jobId) => {
     if(window.confirm("¿Estás seguro de eliminar este trabajo definitivamente?")) {
-      try { await deleteDoc(doc(db, 'transport_jobs', jobId)); } 
-      catch (e) { console.error(e); }
+      try { await deleteDoc(doc(db, 'transport_jobs', jobId)); } catch (e) { console.error(e); }
     }
   };
 
@@ -1072,17 +1108,23 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     docPDF.setFillColor(241, 245, 249); docPDF.rect(15, startY, 180, 80, 'F');
     docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold"); docPDF.text("3. RECEPCIÓN", 20, startY + 8);
     
-    docPDF.setFontSize(11);
-    docPDF.setFont("helvetica", "normal"); docPDF.text(`Receptor:`, 20, startY + 18); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.checklist?.receiverName || 'N/A'}`, 42, startY + 18);
-    docPDF.setFont("helvetica", "normal"); docPDF.text(`RUT:`, 110, startY + 18); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.checklist?.receiverRut || 'N/A'}`, 122, startY + 18);
-    
+    if (job.checklist?.noReception) {
+      docPDF.setTextColor(220, 38, 38);
+      docPDF.setFontSize(12);
+      docPDF.text("ENTREGA SIN RECEPCIÓN (Confirmada por conductor)", 20, startY + 20);
+      docPDF.setTextColor(0, 0, 0);
+    } else {
+      docPDF.setFontSize(11);
+      docPDF.setFont("helvetica", "normal"); docPDF.text(`Receptor:`, 20, startY + 18); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.checklist?.receiverName || 'N/A'}`, 42, startY + 18);
+      docPDF.setFont("helvetica", "normal"); docPDF.text(`RUT:`, 110, startY + 18); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.checklist?.receiverRut || 'N/A'}`, 122, startY + 18);
+      if(job.checklist?.signatureData) { docPDF.setFont("helvetica", "normal"); docPDF.text(`Firma conformada:`, 20, startY + 45); docPDF.addImage(job.checklist.signatureData, 'PNG', 55, startY + 30, 70, 45); }
+    }
+
     if (job.checklist?.location) {
       const { lat, lng } = job.checklist.location;
       docPDF.setFont("helvetica", "normal"); docPDF.text(`Ubicación GPS:`, 20, startY + 28);
       docPDF.setTextColor(37, 99, 235); docPDF.textWithLink('Ver en Google Maps', 52, startY + 28, { url: `https://www.google.com/maps?q=${lat},${lng}` }); docPDF.setTextColor(0, 0, 0); 
     } else { docPDF.setFont("helvetica", "normal"); docPDF.text(`Ubicación GPS: No registrada`, 20, startY + 28); }
-
-    if(job.checklist?.signatureData) { docPDF.setFont("helvetica", "normal"); docPDF.text(`Firma conformada:`, 20, startY + 45); docPDF.addImage(job.checklist.signatureData, 'PNG', 55, startY + 30, 70, 45); }
 
     if (job.checklist?.photos) {
       const photos = job.checklist.photos;
@@ -1136,8 +1178,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   return (
     <>
       <div className="pb-20">
-        
-        {/* SECCIÓN 1: TRABAJOS ACTIVOS (CUADRÍCULA) */}
         {activeJobs.length > 0 && (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
             {activeJobs.map(job => {
@@ -1155,13 +1195,9 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                   </span>
                   
                   <div className="flex items-center gap-1">
-                    {/* BOTÓN EDITAR FUERA DEL MENÚ PARA ADMINS */}
                     {isAdminView && (
-                      <button onClick={() => onEditJob(job)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-xl transition-colors" title="Editar Trabajo">
-                        <Edit2 className="w-5 h-5"/>
-                      </button>
+                      <button onClick={() => onEditJob(job)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-xl transition-colors" title="Editar Trabajo"><Edit2 className="w-5 h-5"/></button>
                     )}
-                    
                     <div className="relative">
                       <button onClick={() => setMenuOpenId(menuOpenId === job.id ? null : job.id)} className="p-2 text-slate-400 hover:bg-slate-200 rounded-xl transition-colors"><MoreVertical className="w-5 h-5"/></button>
                       {menuOpenId === job.id && (
@@ -1179,7 +1215,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                   <h3 className="font-extrabold text-xl text-slate-800 leading-tight mb-1">{job.brand || 'Sin Marca'} {job.model || ''}</h3>
                   <div className="flex items-center gap-2 mb-4 mt-2">
                     <div className="flex items-center gap-1.5 bg-blue-50 text-blue-600 px-2 py-1 rounded-lg"><Calendar className="w-4 h-4"/><span className="text-xs font-extrabold">{job.scheduledDate ? formatDateDisplay(job.scheduledDate) : 'Hoy'}</span></div>
-                    <p className="text-xs font-extrabold text-indigo-600 uppercase tracking-wider">{job.client || 'Sin Cliente Asignado'}</p>
+                    <p className="text-xs font-extrabold text-indigo-600 uppercase tracking-wider">{job.client || 'Sin Cliente'}</p>
                   </div>
                   <div className="space-y-3 mb-6">
                     <div className="flex items-start gap-3"><MapPin className="w-5 h-5 text-slate-300 shrink-0"/> <span className="text-sm font-bold text-slate-600">{job.origin || 'No especificado'}</span></div>
@@ -1206,7 +1242,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
           </div>
         )}
 
-        {/* SECCIÓN 2: HISTORIAL DE COMPLETADOS (LISTA SIMPLIFICADA) */}
         {historyJobs.length > 0 && (
           <div className="mt-8">
             <h3 className="text-xl font-extrabold text-slate-800 mb-6 border-b-2 border-slate-100 pb-2">Historial de Trabajos</h3>
@@ -1214,44 +1249,32 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
               {historyJobs.map(job => (
                 <div key={job.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 sm:p-5 hover:shadow-md transition-shadow relative overflow-hidden">
                   <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${job.status === 'failed' ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                  
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 ml-2">
                     <div className="flex items-center gap-3">
-                      <span className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wide ${job.status === 'failed' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700'}`}>
-                        {job.status === 'failed' ? 'Fallido' : 'Completado'}
-                      </span>
+                      <span className={`px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wide ${job.status === 'failed' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700'}`}>{job.status === 'failed' ? 'Fallido' : 'Completado'}</span>
                       <span className="text-xs font-bold text-slate-400 flex items-center gap-1"><Calendar className="w-3 h-3"/> {getJobDateStr(job)}</span>
                     </div>
-                    
                     <div className="flex gap-2 mt-3 sm:mt-0 ml-2 sm:ml-0 w-full sm:w-auto relative">
                       <button onClick={() => handleCopyWhatsApp(job)} className="p-2 flex-1 sm:flex-none bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl transition-colors flex justify-center items-center" title="Copiar Formato Texto"><Copy className="w-4 h-4"/></button>
                       <button onClick={() => generatePDF(job)} className="p-2 flex-1 sm:flex-none bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors flex justify-center items-center" title="Descargar PDF"><FileDown className="w-4 h-4"/></button>
                       {job.status !== 'failed' && <button onClick={() => handleShareWhatsAppPDF(job)} className="p-2 flex-[2] sm:flex-none bg-green-100 hover:bg-green-200 text-green-700 rounded-xl transition-colors flex justify-center items-center gap-1.5" title="Compartir PDF por WhatsApp"><Share2 className="w-4 h-4"/><span className="text-xs font-bold sm:hidden">Compartir PDF</span></button>}
-                      
                       {isAdminView && (
                         <>
                           <button onClick={() => setMenuOpenId(menuOpenId === job.id ? null : job.id)} className="p-2 flex-1 sm:flex-none bg-slate-50 hover:bg-slate-200 text-slate-500 rounded-xl transition-colors flex justify-center items-center"><MoreVertical className="w-4 h-4"/></button>
                           {menuOpenId === job.id && (
-                            <div className="absolute right-0 top-10 bg-white border border-slate-100 shadow-2xl rounded-2xl w-48 z-50 overflow-hidden">
-                              <button onClick={() => handleDeleteJob(job.id)} className="w-full text-left px-5 py-4 text-sm font-bold flex items-center gap-3 hover:bg-red-50 text-red-600 transition-colors"><Trash2 className="w-4 h-4"/> Eliminar Historial</button>
-                            </div>
+                            <div className="absolute right-0 top-10 bg-white border border-slate-100 shadow-2xl rounded-2xl w-48 z-50 overflow-hidden"><button onClick={() => handleDeleteJob(job.id)} className="w-full text-left px-5 py-4 text-sm font-bold flex items-center gap-3 hover:bg-red-50 text-red-600 transition-colors"><Trash2 className="w-4 h-4"/> Eliminar Historial</button></div>
                           )}
                         </>
                       )}
                     </div>
                   </div>
-
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 ml-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
                     <div><p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-0.5">Vehículo</p><p className="text-sm font-extrabold text-slate-800">{job.brand} {job.model}</p></div>
                     <div><p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-0.5">Patente/VIN</p><p className="text-sm font-extrabold text-slate-800 uppercase">{job.plate || job.vin || 'S/N'}</p></div>
                     <div className="col-span-2 sm:col-span-2"><p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-0.5">Ruta</p><p className="text-sm font-bold text-slate-600">{job.origin} ➔ {job.destination}</p></div>
                   </div>
-
                   {job.status === 'failed' && (
-                    <div className="mt-3 ml-2 bg-red-50 border border-red-100 p-2.5 rounded-lg flex items-start gap-2">
-                      <XCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5"/>
-                      <p className="text-xs font-bold text-red-800"><span className="uppercase text-[10px] block text-red-500 mb-0.5">Motivo del fallo:</span> {job.failedReason || 'No especificado'}</p>
-                    </div>
+                    <div className="mt-3 ml-2 bg-red-50 border border-red-100 p-2.5 rounded-lg flex items-start gap-2"><XCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5"/><p className="text-xs font-bold text-red-800"><span className="uppercase text-[10px] block text-red-500 mb-0.5">Motivo del fallo:</span> {job.failedReason || 'No especificado'}</p></div>
                   )}
                 </div>
               ))}
@@ -1259,13 +1282,11 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
           </div>
         )}
 
-        {/* Mensaje Vacío General */}
         {activeJobs.length === 0 && historyJobs.length === 0 && (
           <div className="text-center py-16 bg-white rounded-3xl border border-slate-100 shadow-sm"><p className="text-slate-400 font-extrabold text-lg">No hay trabajos disponibles.</p></div>
         )}
       </div>
 
-      {/* MODAL PARA JUSTIFICAR EL FALLO */}
       {jobToFail && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <form onSubmit={(e) => { e.preventDefault(); handleFailJob(jobToFail, e.target.reason.value); }} className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8">
@@ -1302,7 +1323,8 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
       origin: job.origin || '', destination: job.destination || '', fuelLevel: 50, 
       photos: { front: false, driver: false, passenger: false, back: false, tire: false, dashboard: false, det1: false, det2: false, det3: false, det4: false },
       docs: { soap: false, permiso: false, revTecnica: false, gases: false }, 
-      observations: '', receiverName: '', receiverCompany: '', receiverRut: '', receiverEmail: '', signatureData: null, location: null
+      observations: '', receiverName: '', receiverCompany: '', receiverRut: '', receiverEmail: '', signatureData: null, location: null,
+      noReception: false // NUEVO CAMPO
     };
   });
 
@@ -1329,17 +1351,40 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
 
   const submitForm = async (e) => { 
     e.preventDefault(); 
-    if (!formData.signatureData) return alert("Firma obligatoria."); 
+    if (!formData.noReception && !formData.signatureData) return alert("Firma del receptor obligatoria."); 
+    
+    // Si se envía sin recepción, sobreescribir campos obligatoriamente
+    let submitData = { ...formData };
+    if (formData.noReception) {
+      submitData.receiverName = 'SIN RECEPCIÓN';
+      submitData.receiverRut = 'N/A';
+      submitData.receiverEmail = 'N/A';
+    }
+
     const finalData = {
-      scheduledDate: formData.scheduledDate, client: formData.client, brand: formData.brand, model: formData.model, vin: formData.plateOrVin, plate: formData.plateOrVin, origin: formData.origin, destination: formData.destination,
-      status: 'completed', completedAt: Date.now(), checklist: formData
+      scheduledDate: submitData.scheduledDate, client: submitData.client, brand: submitData.brand, model: submitData.model, vin: submitData.plateOrVin, plate: submitData.plateOrVin, origin: submitData.origin, destination: submitData.destination,
+      status: 'completed', completedAt: Date.now(), checklist: submitData
     };
+
     try {
-      if (isQuickJob) { finalData.createdAt = Date.now(); finalData.assignedDriverName = "Auto-creado"; finalData.acceptedByEmail = currentUserEmail; await addDoc(collection(db, 'transport_jobs'), finalData); } 
+      if (isQuickJob) { 
+        finalData.createdAt = Date.now(); finalData.assignedDriverName = "Auto-creado"; finalData.acceptedByEmail = currentUserEmail; 
+        
+        // Auto-save vehicle si es checklist desde 0
+        if (submitData.plateOrVin) {
+          const vehRef = collection(db, 'vehicles');
+          onSnapshot(vehRef, async (snap) => {
+            if (!snap.docs.find(d => d.data().plate === submitData.plateOrVin.toUpperCase())) {
+              await addDoc(vehRef, { plate: submitData.plateOrVin.toUpperCase(), brand: submitData.brand, model: submitData.model, client: submitData.client, createdAt: Date.now() });
+            }
+          });
+        }
+        await addDoc(collection(db, 'transport_jobs'), finalData); 
+      } 
       else { await updateDoc(doc(db, 'transport_jobs', job.id), finalData); }
       localStorage.removeItem(DRAFT_KEY); localStorage.removeItem(`${DRAFT_KEY}_step`);
       alert("✅ Checklist guardado correctamente."); onComplete();
-    } catch (error) { console.error(error); alert("Hubo un error al guardar."); }
+    } catch (error) { console.error(error); alert("Hubo un error al guardar. Si estás offline, se guardará al reconectar."); onComplete(); } // En offline pasa por catch o se encola silenciosamente
   };
 
   const handleCancelClick = () => { if (window.confirm("El progreso de este checklist ha sido autoguardado en tu teléfono. ¿Deseas pausar y salir por ahora?")) { onCancel(); } };
@@ -1361,10 +1406,14 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
             <h3 className="text-lg font-extrabold text-slate-800 border-b-2 border-slate-100 pb-2">Datos Principales</h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <input type="date" value={formData.scheduledDate} onChange={e=>updateForm('scheduledDate', e.target.value)} required className="col-span-2 border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" />
-              <input value={formData.client} onChange={e=>updateForm('client', e.target.value)} className="col-span-2 border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Cliente Empresa o Particular" />
+              <select value={formData.client} onChange={e=>updateForm('client', e.target.value)} className="col-span-2 border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700 bg-white">
+                <option value="">Seleccione Cliente...</option>
+                {CLIENTES.map(c => <option key={c} value={c}>{c}</option>)}
+                <option value="OTRO">Otro</option>
+              </select>
               <input value={formData.brand} onChange={e=>updateForm('brand', e.target.value)} className="border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Marca" />
               <input value={formData.model} onChange={e=>updateForm('model', e.target.value)} className="border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Modelo" />
-              <input value={formData.plateOrVin} onChange={e=>updateForm('plateOrVin', e.target.value)} className="col-span-2 border-2 border-slate-200 p-4 rounded-xl uppercase outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Patente/VIN" />
+              <input value={formData.plateOrVin} onChange={e=>updateForm('plateOrVin', e.target.value)} className="col-span-2 border-2 border-slate-200 p-4 rounded-xl uppercase outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Patente o VIN" />
               <input value={formData.origin} onChange={e=>updateForm('origin', e.target.value)} className="col-span-2 border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Desde" />
               <input value={formData.destination} onChange={e=>updateForm('destination', e.target.value)} className="col-span-2 border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Hasta" />
             </div>
@@ -1405,18 +1454,27 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
         {step === 2 && (
           <form onSubmit={submitForm} className="space-y-6">
             <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 text-slate-800">Datos de Recepción</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <input required value={formData.receiverName} onChange={e=>updateForm('receiverName', e.target.value)} className="border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Nombre completo del receptor" />
-              <input required value={formData.receiverRut} onChange={e=>updateForm('receiverRut', e.target.value)} className="border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="RUT" />
-              <input required type="email" value={formData.receiverEmail} onChange={e=>updateForm('receiverEmail', e.target.value)} className="border-2 border-slate-200 p-4 rounded-xl col-span-1 sm:col-span-2 outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Correo electrónico del receptor" />
-            </div>
             
+            <label className={`flex items-center gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-colors ${formData.noReception ? 'bg-amber-50 border-amber-400' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'}`}>
+              <input type="checkbox" checked={formData.noReception} onChange={e => updateForm('noReception', e.target.checked)} className="w-5 h-5 accent-amber-600 rounded cursor-pointer" />
+              <span className="font-extrabold text-sm text-slate-700">Entregar sin recepción (Local cerrado, buzón, etc.)</span>
+            </label>
+
+            {!formData.noReception && (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <input required={!formData.noReception} value={formData.receiverName} onChange={e=>updateForm('receiverName', e.target.value)} className="border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Nombre completo del receptor" />
+                  <input required={!formData.noReception} value={formData.receiverRut} onChange={e=>updateForm('receiverRut', e.target.value)} className="border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="RUT" />
+                  <input type="email" value={formData.receiverEmail} onChange={e=>updateForm('receiverEmail', e.target.value)} className="border-2 border-slate-200 p-4 rounded-xl col-span-1 sm:col-span-2 outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Correo electrónico (Opcional)" />
+                </div>
+                <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-slate-800">Firma del Receptor</h3>
+                <SignaturePad initialData={formData.signatureData} onSave={(data) => updateForm('signatureData', data)} onClear={() => updateForm('signatureData', null)} />
+              </>
+            )}
+
             <button type="button" onClick={handleGetLocation} className={`px-4 py-4 rounded-2xl text-base w-full font-extrabold transition-all shadow-sm ${formData.location ? 'bg-green-100 text-green-700 border-2 border-green-200' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-2 border-transparent'}`}>
               {formData.location ? "📍 GPS Capturado Exitosamente" : "📍 Tocar para Capturar GPS Actual"}
             </button>
-            
-            <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-slate-800">Firma del Receptor</h3>
-            <SignaturePad initialData={formData.signatureData} onSave={(data) => updateForm('signatureData', data)} onClear={() => updateForm('signatureData', null)} />
             
             <div className="flex gap-4 pt-8 border-t-2 border-slate-100 mt-8">
               <button type="button" onClick={() => setStep(1)} className="flex-1 bg-slate-100 hover:bg-slate-200 py-4 rounded-2xl font-extrabold transition-colors text-slate-600">Atrás</button>
