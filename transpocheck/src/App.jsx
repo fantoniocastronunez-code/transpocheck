@@ -84,6 +84,8 @@ export default function App() {
   
   const [editingDriver, setEditingDriver] = useState(null);
   const [editingVehicle, setEditingVehicle] = useState(null);
+  const [editingToll, setEditingToll] = useState(null);
+  const [editingDestination, setEditingDestination] = useState(null);
   const [fleetFilter, setFleetFilter] = useState('');
   const [destDirectionFilter, setDestDirectionFilter] = useState('Norte'); // Filtro Norte/Sur
   
@@ -358,28 +360,57 @@ export default function App() {
               {/* Pestaña Peajes Norte/Sur */}
               {adminTab === 'tolls' && (
                 <div className="grid md:grid-cols-2 gap-6">
-                  <form onSubmit={async e => { e.preventDefault(); const fd = new FormData(e.target); try { await addDoc(collection(db, 'tolls'), { name: fd.get('name'), km: fd.get('km'), direction: fd.get('direction'), route: fd.get('route'), priceAuto: Number(fd.get('pa')), priceTruck2: Number(fd.get('pt2')), priceTruckMore: Number(fd.get('ptm')) }); e.target.reset(); showAlert("Peaje creado."); } catch(err){} }} className="bg-white p-6 rounded-3xl border space-y-4">
-                    <h3 className="font-extrabold text-lg flex items-center gap-2"><Ticket className="text-blue-600"/> Nuevo Peaje</h3>
-                    <input name="name" placeholder="Nombre Peaje" required className="w-full border-2 p-2.5 rounded-xl font-semibold text-sm outline-none"/>
+                  <form key={editingToll ? editingToll.id : 'new-toll'} onSubmit={async e => {
+                    e.preventDefault();
+                    const fd = new FormData(e.target);
+                    const data = {
+                      name: fd.get('name'),
+                      km: fd.get('km'),
+                      direction: fd.get('direction'),
+                      route: fd.get('route'),
+                      priceAuto: Number(fd.get('pa')),
+                      priceTruck2: Number(fd.get('pt2')),
+                      priceTruckMore: Number(fd.get('ptm'))
+                    };
+                    try {
+                      if (editingToll) {
+                        await updateDoc(doc(db, 'tolls', editingToll.id), data);
+                        setEditingToll(null);
+                        showAlert("Peaje actualizado correctamente.");
+                      } else {
+                        await addDoc(collection(db, 'tolls'), data);
+                        e.target.reset();
+                        showAlert("Peaje creado correctamente.");
+                      }
+                    } catch(err) { console.error(err); }
+                  }} className="bg-white p-6 rounded-3xl border space-y-4">
+                    <h3 className="font-extrabold text-lg flex items-center gap-2"><Ticket className="text-blue-600"/> {editingToll ? 'Editar Peaje' : 'Nuevo Peaje'}</h3>
+                    <input name="name" defaultValue={editingToll?.name} placeholder="Nombre Peaje" required className="w-full border-2 p-2.5 rounded-xl font-semibold text-sm outline-none"/>
                     <div className="grid grid-cols-2 gap-3">
-                      <input name="km" placeholder="Km" className="border-2 p-2.5 rounded-xl font-semibold text-sm outline-none"/>
-                      <select name="direction" className="border-2 p-2.5 rounded-xl font-semibold text-sm outline-none">
+                      <input name="km" defaultValue={editingToll?.km} placeholder="Km" className="border-2 p-2.5 rounded-xl font-semibold text-sm outline-none"/>
+                      <select name="direction" defaultValue={editingToll?.direction || 'Norte'} className="border-2 p-2.5 rounded-xl font-semibold text-sm outline-none">
                         <option value="Norte">Norte</option>
                         <option value="Sur">Sur</option>
                       </select>
                     </div>
-                    <input name="route" placeholder="Ruta (Ej. Ruta 5 Norte)" className="w-full border-2 p-2.5 rounded-xl font-semibold text-sm outline-none"/>
-                    <input name="pa" type="number" placeholder="Valor Auto / Camioneta" required className="w-full border-2 p-2.5 rounded-xl text-sm font-semibold outline-none"/>
-                    <input name="pt2" type="number" placeholder="Valor Camión 2 Ejes" required className="w-full border-2 p-2.5 rounded-xl text-sm font-semibold outline-none"/>
-                    <input name="ptm" type="number" placeholder="Valor Camión >2 Ejes" required className="w-full border-2 p-2.5 rounded-xl text-sm font-semibold outline-none"/>
-                    <button type="submit" className="w-full bg-blue-600 text-white py-2.5 rounded-xl font-bold text-sm">Guardar Peaje</button>
+                    <input name="route" defaultValue={editingToll?.route} placeholder="Ruta (Ej. Ruta 5 Norte)" className="w-full border-2 p-2.5 rounded-xl font-semibold text-sm outline-none"/>
+                    <input name="pa" type="number" defaultValue={editingToll?.priceAuto} placeholder="Valor Auto / Camioneta" required className="w-full border-2 p-2.5 rounded-xl text-sm font-semibold outline-none"/>
+                    <input name="pt2" type="number" defaultValue={editingToll?.priceTruck2} placeholder="Valor Camión 2 Ejes" required className="w-full border-2 p-2.5 rounded-xl text-sm font-semibold outline-none"/>
+                    <input name="ptm" type="number" defaultValue={editingToll?.priceTruckMore} placeholder="Valor Camión >2 Ejes" required className="w-full border-2 p-2.5 rounded-xl text-sm font-semibold outline-none"/>
+                    <div className="flex gap-2 pt-2">
+                      {editingToll && <button type="button" onClick={()=>setEditingToll(null)} className="bg-slate-100 p-2.5 rounded-xl font-bold text-sm w-1/3">Cancelar</button>}
+                      <button type="submit" className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-bold text-sm">{editingToll ? 'Guardar Cambios' : 'Guardar Peaje'}</button>
+                    </div>
                   </form>
                   <div className="bg-white p-6 rounded-3xl border overflow-y-auto max-h-[65vh]">
                     <h3 className="font-extrabold text-lg mb-4">Peajes Base</h3>
                     {tolls.map(t => (
                       <div key={t.id} className="p-3 bg-slate-50 border rounded-xl mb-2.5 flex justify-between items-center text-xs">
                         <div><p className="font-bold text-sm">{t.name}</p><p className="text-slate-400 font-semibold">{t.route} (Km {t.km} {t.direction})</p><p className="text-blue-600 font-extrabold mt-1">Auto: {formatMoney(t.priceAuto)} | C2: {formatMoney(t.priceTruck2)} | C+: {formatMoney(t.priceTruckMore)}</p></div>
-                        <button onClick={()=>showConfirm("¿Eliminar peaje?", async () => await deleteDoc(doc(db, 'tolls', t.id)))} className="p-2 text-red-500 bg-red-50 rounded-lg"><Trash2 className="w-4 h-4"/></button>
+                        <div className="flex gap-1 shrink-0 ml-2">
+                          <button onClick={() => setEditingToll(t)} className="p-2 text-blue-600 bg-blue-50 rounded-lg"><Edit2 className="w-4 h-4"/></button>
+                          <button onClick={()=>showConfirm("¿Eliminar peaje?", async () => await deleteDoc(doc(db, 'tolls', t.id)))} className="p-2 text-red-500 bg-red-50 rounded-lg"><Trash2 className="w-4 h-4"/></button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -389,9 +420,24 @@ export default function App() {
               {/* Pestaña Destinos Filtro Norte/Sur */}
               {adminTab === 'destinations' && (
                 <div className="grid md:grid-cols-2 gap-6">
-                  <form onSubmit={async e => { e.preventDefault(); const fd = new FormData(e.target); const tIds = fd.getAll('tollIds'); try { await addDoc(collection(db, 'destinations'), { name: fd.get('name'), tolls: tIds }); e.target.reset(); showAlert("Destino guardado."); } catch(err){} }} className="bg-white p-6 rounded-3xl border space-y-4">
-                    <h3 className="font-extrabold text-lg flex items-center gap-2"><Map className="text-blue-600"/> Nuevo Destino</h3>
-                    <input name="name" placeholder="Ciudad de Destino" required className="w-full border-2 p-2.5 rounded-xl text-sm font-semibold outline-none"/>
+                  <form key={editingDestination ? editingDestination.id : 'new-dest'} onSubmit={async e => {
+                    e.preventDefault();
+                    const fd = new FormData(e.target);
+                    const tIds = fd.getAll('tollIds');
+                    try {
+                      if (editingDestination) {
+                        await updateDoc(doc(db, 'destinations', editingDestination.id), { name: fd.get('name'), tolls: tIds });
+                        setEditingDestination(null);
+                        showAlert("Destino actualizado correctamente.");
+                      } else {
+                        await addDoc(collection(db, 'destinations'), { name: fd.get('name'), tolls: tIds });
+                        e.target.reset();
+                        showAlert("Destino guardado correctamente.");
+                      }
+                    } catch(err) { console.error(err); }
+                  }} className="bg-white p-6 rounded-3xl border space-y-4">
+                    <h3 className="font-extrabold text-lg flex items-center gap-2"><Map className="text-blue-600"/> {editingDestination ? 'Editar Destino' : 'Nuevo Destino'}</h3>
+                    <input name="name" defaultValue={editingDestination?.name} placeholder="Ciudad de Destino" required className="w-full border-2 p-2.5 rounded-xl text-sm font-semibold outline-none"/>
                     
                     <div className="flex justify-between items-center">
                       <p className="text-xs font-bold text-slate-500">Filtrar peajes por zona:</p>
@@ -407,19 +453,25 @@ export default function App() {
                       ) : (
                         tolls.filter(t => t.direction === destDirectionFilter).map(t => (
                           <label key={t.id} className="flex items-center gap-2 p-1.5 border-b last:border-0">
-                            <input type="checkbox" name="tollIds" value={t.id} className="w-4 h-4"/> {t.name} ({t.direction})
+                            <input type="checkbox" name="tollIds" value={t.id} defaultChecked={editingDestination?.tolls?.includes(t.id)} className="w-4 h-4"/> {t.name} ({t.direction})
                           </label>
                         ))
                       )}
                     </div>
-                    <button type="submit" className="w-full bg-blue-600 text-white py-2.5 rounded-xl font-bold text-sm">Guardar Destino</button>
+                    <div className="flex gap-2 pt-2">
+                      {editingDestination && <button type="button" onClick={()=>setEditingDestination(null)} className="bg-slate-100 p-2.5 rounded-xl font-bold text-sm w-1/3">Cancelar</button>}
+                      <button type="submit" className="flex-1 bg-blue-600 text-white py-2.5 rounded-xl font-bold text-sm">{editingDestination ? 'Guardar Cambios' : 'Guardar Destino'}</button>
+                    </div>
                   </form>
                   <div className="bg-white p-6 rounded-3xl border overflow-y-auto max-h-[65vh]">
                     <h3 className="font-extrabold text-lg mb-4">Rutas por Destino</h3>
                     {destinations.map(d => (
                       <div key={d.id} className="p-3 bg-slate-50 border rounded-xl mb-2 flex justify-between items-start text-sm font-bold">
                         <div><p className="text-slate-800">{d.name}</p><p className="text-xs font-semibold text-slate-400">{d.tolls?.length || 0} Peajes vinculados</p></div>
-                        <button onClick={()=>showConfirm("¿Eliminar destino?", async () => await deleteDoc(doc(db, 'destinations', d.id)))} className="p-2 text-red-500 bg-red-50 rounded-lg"><Trash2 className="w-4 h-4"/></button>
+                        <div className="flex gap-1 shrink-0 ml-2">
+                          <button onClick={() => setEditingDestination(d)} className="p-2 text-blue-600 bg-blue-50 rounded-lg"><Edit2 className="w-4 h-4"/></button>
+                          <button onClick={()=>showConfirm("¿Eliminar destino?", async () => await deleteDoc(doc(db, 'destinations', d.id)))} className="p-2 text-red-500 bg-red-50 rounded-lg"><Trash2 className="w-4 h-4"/></button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -880,7 +932,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
 
   return (
     <div className="bg-white rounded-3xl shadow-xl border pb-10">
-      <div className="bg-blue-600 text-white p-6 flex justify-between items-center"><h2 className="font-bold text-lg"><FileText className="inline w-5 h-5"/> Checklist</h2><button onClick={()=>showConfirm("¿Pausar?", onCancel)} className="bg-blue-800 px-3 py-1 rounded">Pausar</button></div>
+      <div className="bg-blue-600 text-white p-6 flex justify-between items-center"><h2 className="font-bold text-lg"><FileText className="inline w-5 h-5"/> Checklist</h2><button onClick={()=>showConfirm("¿Pausar y guardar el borrador localmente?", onCancel)} className="bg-blue-800 hover:bg-blue-900 px-4 py-2 rounded-xl font-bold transition-colors">Pausar / Salir</button></div>
       <div className="flex bg-slate-100 h-1"><div className={`bg-green-500 transition-all ${step===1?'w-1/2':'w-full'}`}></div></div>
       <div className="p-6">
         {step === 1 ? (
@@ -898,10 +950,20 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
             <p className="text-center font-bold">Combustible: {formData.fuelLevel}%</p>
 
             <h3 className="font-bold mt-6">Fotos (Toca para capturar)</h3>
-            <div className="grid grid-cols-3 gap-2 mt-2">
-              {['front','driver','passenger','back','tire','dashboard','det1','det2','det3','det4'].map(p=><label key={p} className={`border-2 p-2 rounded-xl text-center cursor-pointer ${formData.photos[p]?'bg-green-50 border-green-400':''}`}><input type="file" className="hidden" accept="image/*" onChange={e=>handlePic(e,p)}/><Camera className="mx-auto mb-1 w-5 h-5"/> <span className="text-[10px] font-bold uppercase">{p}</span></label>)}
+            <div className="grid grid-cols-3 gap-3 mt-2">
+              {[
+                {id: 'front', label: 'Frente'}, {id: 'driver', label: 'Piloto'}, {id: 'passenger', label: 'Copiloto'},
+                {id: 'back', label: 'Atrás'}, {id: 'tire', label: 'Repuesto'}, {id: 'dashboard', label: 'Tablero'},
+                {id: 'det1', label: 'Detalle 1'}, {id: 'det2', label: 'Detalle 2'}, {id: 'det3', label: 'Detalle 3'}, {id: 'det4', label: 'Detalle 4'}
+              ].map(p=>(
+                <label key={p.id} className={`border-2 p-3 rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all ${formData.photos[p.id]?'bg-green-50 border-green-500 shadow-sm':'border-slate-200 hover:bg-slate-50'}`}>
+                  <input type="file" className="hidden" accept="image/*" onChange={e=>handlePic(e,p.id)}/>
+                  {formData.photos[p.id] ? <CheckCircle className="mx-auto mb-1 w-6 h-6 text-green-600"/> : <Camera className="mx-auto mb-1 w-6 h-6 text-slate-500"/>}
+                  <span className={`text-[10px] font-extrabold uppercase tracking-wider text-center mt-1 ${formData.photos[p.id]?'text-green-700':'text-slate-600'}`}>{p.label}</span>
+                </label>
+              ))}
             </div>
-            <button onClick={()=>setStep(2)} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mt-6">Siguiente</button>
+            <button onClick={()=>setStep(2)} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mt-6 shadow-md hover:bg-blue-700 transition-colors">Siguiente</button>
           </div>
         ) : (
           <form onSubmit={submit} className="space-y-4">
