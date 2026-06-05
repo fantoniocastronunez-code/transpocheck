@@ -115,8 +115,14 @@ export default function App() {
   
   const isFirstLoad = useRef(true);
 
+  // --- SISTEMA DE DIÁLOGOS PERSONALIZADOS (Reemplaza alert/confirm) ---
+  const [dialogConfig, setDialogConfig] = useState(null);
+  const showAlert = (message) => setDialogConfig({ type: 'alert', message });
+  const showConfirm = (message, onConfirm) => setDialogConfig({ type: 'confirm', message, onConfirm });
+  const closeDialog = () => setDialogConfig(null);
+
   const requestNotificationPermission = () => {
-    if (!("Notification" in window)) { alert("Tu navegador no soporta notificaciones."); return; }
+    if (!("Notification" in window)) { showAlert("Tu navegador no soporta notificaciones."); return; }
     Notification.requestPermission().then(permission => {
       if (permission === "granted") {
         setNotificationsEnabled(true);
@@ -222,7 +228,7 @@ export default function App() {
     e.preventDefault();
     try {
       await addDoc(collection(db, 'drivers'), { name: e.target.driverName.value, email: e.target.driverEmail.value.toLowerCase(), balance: 0, createdAt: Date.now() });
-      e.target.reset(); alert("Conductor creado exitosamente.");
+      e.target.reset(); showAlert("Conductor creado exitosamente.");
     } catch (error) { console.error(error); }
   };
 
@@ -230,7 +236,7 @@ export default function App() {
     e.preventDefault();
     try {
       await updateDoc(doc(db, 'drivers', editingDriver.id), { name: e.target.driverName.value, email: e.target.driverEmail.value.toLowerCase() });
-      setEditingDriver(null); alert("Conductor actualizado exitosamente.");
+      setEditingDriver(null); showAlert("Conductor actualizado exitosamente.");
     } catch (error) { console.error(error); }
   };
 
@@ -242,7 +248,7 @@ export default function App() {
       await addDoc(collection(db, 'vehicles'), { 
         client: client, brand: formData.get('brand'), model: formData.get('model'), plate: formData.get('plate').toUpperCase(), createdAt: Date.now() 
       });
-      e.target.reset(); alert("Vehículo guardado exitosamente.");
+      e.target.reset(); showAlert("Vehículo guardado exitosamente.");
     } catch (error) { console.error(error); }
   };
 
@@ -254,14 +260,14 @@ export default function App() {
       await updateDoc(doc(db, 'vehicles', editingVehicle.id), { 
         client: client, brand: formData.get('brand'), model: formData.get('model'), plate: formData.get('plate').toUpperCase() 
       });
-      setEditingVehicle(null); alert("Vehículo actualizado exitosamente.");
+      setEditingVehicle(null); showAlert("Vehículo actualizado exitosamente.");
     } catch (error) { console.error(error); }
   };
 
-  const handleDeleteVehicle = async (vehicleId) => {
-    if(window.confirm("¿Eliminar este vehículo de la base de datos?")) {
+  const handleDeleteVehicle = (vehicleId) => {
+    showConfirm("¿Eliminar este vehículo de la base de datos?", async () => {
       try { await deleteDoc(doc(db, 'vehicles', vehicleId)); } catch (e) { console.error(e); }
-    }
+    });
   };
 
   const handleQuickChecklist = () => {
@@ -323,7 +329,7 @@ export default function App() {
       e.preventDefault();
       const formData = new FormData(e.target);
       const selectedDriverIds = formData.getAll('assignedDriverId');
-      if (selectedDriverIds.length === 0) return alert("Debes seleccionar al menos un conductor.");
+      if (selectedDriverIds.length === 0) return showAlert("Debes seleccionar al menos un conductor.");
 
       const assignedDriversList = drivers.filter(d => selectedDriverIds.includes(d.id));
       const finalClient = selectedClient === 'OTRO' ? manualClient : selectedClient;
@@ -345,7 +351,7 @@ export default function App() {
           });
         }
         
-        setAdminTab('dashboard'); alert(`Trabajo asignado.`); 
+        setAdminTab('dashboard'); showAlert(`Trabajo asignado.`); 
       } catch (error) { console.error(error); }
     };
 
@@ -421,7 +427,7 @@ export default function App() {
         updatedData.assignedDrivers = assignedDriversList.map(d => ({id: d.id, name: d.name, email: d.email}));
         updatedData.assignedEmails = assignedDriversList.map(d => d.email);
       }
-      try { await updateDoc(doc(db, 'transport_jobs', job.id), updatedData); alert("Trabajo actualizado."); onClose(); } catch (error) { console.error(error); }
+      try { await updateDoc(doc(db, 'transport_jobs', job.id), updatedData); showAlert("Trabajo actualizado."); onClose(); } catch (error) { console.error(error); }
     };
 
     return (
@@ -500,7 +506,7 @@ export default function App() {
                     <h2 className="text-2xl font-extrabold text-slate-800">Monitor Administrativo</h2>
                     <button onClick={exportToExcel} className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex justify-center items-center gap-2 shadow-lg shadow-green-200 transition-colors"><Download className="w-5 h-5"/> Exportar Excel</button>
                   </div>
-                  <JobsList jobs={jobs} drivers={drivers} role="admin" onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} onEditJob={setEditingJob} db={db} currentUserEmail={currentUserEmail} />
+                  <JobsList jobs={jobs} drivers={drivers} role="admin" onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} onEditJob={setEditingJob} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />
                 </div>
               )}
               
@@ -589,7 +595,7 @@ export default function App() {
           ) : (
             <div className="space-y-6">
               <h2 className="text-2xl font-extrabold text-slate-800">Mis Trabajos Asignados</h2>
-              <JobsList jobs={jobs} drivers={drivers} role="driver" onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} db={db} currentUserEmail={currentUserEmail} />
+              <JobsList jobs={jobs} drivers={drivers} role="driver" onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />
             </div>
           )}
         </main>
@@ -602,12 +608,12 @@ export default function App() {
 
       {/* PESTAÑA GASTOS */}
       {currentView === 'main' && mainTab === 'expenses' && (
-        <ExpensesView role={activeRole} drivers={drivers} expenses={expenses} db={db} currentUserEmail={currentUserEmail} />
+        <ExpensesView role={activeRole} drivers={drivers} expenses={expenses} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />
       )}
 
       {currentView === 'checklist' && selectedJob && (
         <main className="max-w-2xl mx-auto p-4 pt-6">
-          <ChecklistForm job={selectedJob} db={db} currentUserEmail={currentUserEmail} onCancel={() => setCurrentView('main')} onComplete={() => { setSelectedJob(null); setCurrentView('main'); }} />
+          <ChecklistForm job={selectedJob} db={db} currentUserEmail={currentUserEmail} onCancel={() => setCurrentView('main')} onComplete={() => { setSelectedJob(null); setCurrentView('main'); }} showAlert={showAlert} showConfirm={showConfirm} />
         </main>
       )}
 
@@ -631,6 +637,35 @@ export default function App() {
              <span className="text-[10px] font-extrabold tracking-wide">Gastos</span>
           </button>
         </nav>
+      )}
+
+      {/* CUSTOM DIALOG (REEMPLAZA ALERT Y CONFIRM NATIVOS) */}
+      {dialogConfig && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 transform transition-all animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-blue-100 p-2 rounded-full">
+                {dialogConfig.type === 'confirm' ? <AlertCircle className="w-6 h-6 text-blue-600"/> : <Bell className="w-6 h-6 text-blue-600"/>}
+              </div>
+              <h3 className="text-xl font-extrabold text-slate-800">LogisticAPP</h3>
+            </div>
+            <p className="text-slate-600 font-bold mb-6 text-base">{dialogConfig.message}</p>
+            <div className="flex gap-3">
+              {dialogConfig.type === 'confirm' && (
+                <button onClick={closeDialog} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-extrabold text-slate-600 transition-colors">Cancelar</button>
+              )}
+              <button 
+                onClick={() => {
+                  if (dialogConfig.onConfirm) dialogConfig.onConfirm();
+                  closeDialog();
+                }} 
+                className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-extrabold shadow-lg shadow-blue-200 transition-colors"
+              >
+                {dialogConfig.type === 'confirm' ? 'Confirmar' : 'Aceptar'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -711,7 +746,7 @@ function LeaderboardView({ jobs, drivers, isAdminView, db }) {
 // ==========================================
 // MÓDULO DE GASTOS
 // ==========================================
-function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
+function ExpensesView({ role, drivers, expenses, db, currentUserEmail, showAlert, showConfirm }) {
   const isAdminView = role === 'admin';
   const myDriver = drivers.find(d => d.email === currentUserEmail);
   const [selectedDriverId, setSelectedDriverId] = useState(null);
@@ -727,7 +762,7 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
     try {
       await updateDoc(doc(db, 'drivers', driver.id), { balance: (driver.balance || 0) + amount });
       await addDoc(collection(db, 'expenses'), { driverId: driver.id, driverEmail: driver.email, driverName: driver.name, type: 'assignment', amount, detail: 'Asignación de fondos', createdAt: Date.now() });
-      e.target.reset(); alert(`$${amount} asignados a ${driver.name}`);
+      e.target.reset(); showAlert(`$${amount} asignados a ${driver.name}`);
     } catch (error) { console.error(error); }
   };
 
@@ -736,11 +771,11 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
     const amount = Number(e.target.amount.value);
     const detail = e.target.detail.value;
     const currentBalance = myDriver?.balance || 0;
-    if (amount > currentBalance) return alert("No tienes saldo suficiente asignado.");
+    if (amount > currentBalance) return showAlert("No tienes saldo suficiente asignado.");
     try {
       await updateDoc(doc(db, 'drivers', myDriver.id), { balance: currentBalance - amount });
       await addDoc(collection(db, 'expenses'), { driverId: myDriver.id, driverEmail: currentUserEmail, driverName: myDriver.name, type: 'expense', amount, detail, createdAt: Date.now() });
-      e.target.reset(); alert("Gasto registrado");
+      e.target.reset(); showAlert("Gasto registrado");
     } catch (error) { console.error(error); }
   };
 
@@ -753,21 +788,20 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
       const ctx = canvas.getContext('2d'); ctx.drawImage(bmp, 0, 0);
       setReturnReceipt(canvas.toDataURL('image/jpeg', 0.6));
       bmp.close();
-    } catch (error) { console.error(error); alert("Error al procesar el comprobante."); }
+    } catch (error) { console.error(error); showAlert("Error al procesar el comprobante."); }
   };
 
   const submitReturnFunds = async () => {
     const currentBalance = myDriver?.balance || 0;
     if (currentBalance <= 0 || !returnReceipt) return;
     try {
-      // NUEVO: No actualiza el balance a 0 todavía, crea el registro "pending_return"
       await addDoc(collection(db, 'expenses'), { 
         driverId: myDriver.id, driverEmail: currentUserEmail, driverName: myDriver.name, 
         type: 'pending_return', amount: currentBalance, detail: 'Rendición de Vuelto (En revisión)', receiptImage: returnReceipt, createdAt: Date.now() 
       });
-      alert("Comprobante enviado. A la espera de validación del Administrador.");
+      showAlert("Comprobante enviado. A la espera de validación del Administrador.");
       setIsReturnModalOpen(false); setReturnReceipt(null);
-    } catch (error) { console.error(error); alert("Error al enviar comprobante"); }
+    } catch (error) { console.error(error); showAlert("Error al enviar comprobante"); }
   };
 
   const handleApproveReturn = async (expense) => {
@@ -778,16 +812,16 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
             await updateDoc(doc(db, 'drivers', expense.driverId), { balance: newBalance });
         }
         await updateDoc(doc(db, 'expenses', expense.id), { type: 'return', detail: 'Rendición de Vuelto (Aprobada)' });
-        alert("Rendición aprobada exitosamente. El saldo del conductor ha retornado a 0.");
+        showAlert("Rendición aprobada exitosamente. El saldo del conductor ha retornado a 0.");
     } catch (error) {
         console.error(error);
-        alert("Hubo un error al aprobar la rendición.");
+        showAlert("Hubo un error al aprobar la rendición.");
     }
   };
 
-  const handleDeleteExpense = async (expense) => {
-    if (!isAdminView && expense.type === 'assignment') return alert("No puedes eliminar una asignación. Pide al admin que lo haga.");
-    if (window.confirm("¿Eliminar este registro? El saldo se ajustará automáticamente.")) {
+  const handleDeleteExpense = (expense) => {
+    if (!isAdminView && expense.type === 'assignment') return showAlert("No puedes eliminar una asignación. Pide al admin que lo haga.");
+    showConfirm("¿Eliminar este registro? El saldo se ajustará automáticamente.", async () => {
       try {
         const driverSnapshot = drivers.find(d => d.id === expense.driverId);
         if (driverSnapshot) {
@@ -798,7 +832,7 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
         }
         await deleteDoc(doc(db, 'expenses', expense.id));
       } catch(error) { console.error(error); }
-    }
+    });
   };
 
   const TransactionIcon = ({ type }) => {
@@ -811,7 +845,7 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
   const EditExpenseModal = ({ expense, onClose }) => {
     const handleUpdateSubmit = async (e) => {
       e.preventDefault();
-      if (!isAdminView && expense.type === 'assignment') { alert("No puedes modificar una asignación."); return onClose(); }
+      if (!isAdminView && expense.type === 'assignment') { showAlert("No puedes modificar una asignación."); return onClose(); }
       const newAmount = Number(e.target.amount.value);
       const newDetail = e.target.detail.value;
       const amountDiff = newAmount - expense.amount;
@@ -824,8 +858,8 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
           await updateDoc(doc(db, 'drivers', expense.driverId), { balance: newBalance });
         }
         await updateDoc(doc(db, 'expenses', expense.id), { amount: newAmount, detail: newDetail });
-        alert("Actualizado correctamente."); onClose();
-      } catch (error) { console.error(error); alert("Error actualizando."); }
+        showAlert("Actualizado correctamente."); onClose();
+      } catch (error) { console.error(error); showAlert("Error actualizando."); }
     };
     return (
       <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
@@ -1006,7 +1040,7 @@ function ExpensesView({ role, drivers, expenses, db, currentUserEmail }) {
 // ==========================================
 // 4. COMPONENTE: LISTA DE TRABAJOS
 // ==========================================
-function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, currentUserEmail }) {
+function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, currentUserEmail, showAlert, showConfirm }) {
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [jobToFail, setJobToFail] = useState(null);
   const now = new Date();
@@ -1045,16 +1079,16 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     catch (e) { console.error(e); }
   };
 
-  const handleDeleteJob = async (jobId) => {
-    if(window.confirm("¿Estás seguro de eliminar este trabajo definitivamente?")) {
+  const handleDeleteJob = (jobId) => {
+    showConfirm("¿Estás seguro de eliminar este trabajo definitivamente?", async () => {
       try { await deleteDoc(doc(db, 'transport_jobs', jobId)); } catch (e) { console.error(e); }
-    }
+    });
   };
 
   const handleFailJob = async (job, reason) => {
     try {
       await updateDoc(doc(db, 'transport_jobs', job.id), { status: 'failed', failedReason: reason, completedAt: Date.now(), acceptedByEmail: job.acceptedByEmail || currentUserEmail });
-      setJobToFail(null); alert("Trabajo marcado como fallido.");
+      setJobToFail(null); showAlert("Trabajo marcado como fallido.");
     } catch (e) { console.error(e); }
   };
 
@@ -1158,11 +1192,18 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   };
 
   const getJobDateStr = (job) => job.scheduledDate ? formatDateDisplay(job.scheduledDate) : formatDateDisplay(new Date().toISOString().split('T')[0]);
-  const handleCopyWhatsApp = (job) => { const text = `${getJobDateStr(job)}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${job.origin || '-'} - ${job.destination || '-'}`; navigator.clipboard.writeText(text).then(() => { alert("✅ Formato copiado al portapapeles. Listo para pegar en WhatsApp."); setMenuOpenId(null); }); };
+  
+  const handleCopyWhatsApp = (job) => { 
+    const text = `${getJobDateStr(job)}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${job.origin || '-'} - ${job.destination || '-'}`; 
+    navigator.clipboard.writeText(text).then(() => { 
+      showAlert("✅ Formato copiado al portapapeles. Listo para pegar en WhatsApp."); 
+      setMenuOpenId(null); 
+    }); 
+  };
 
   const generatePDF = async (job) => {
     try { const docPDF = await buildPDFDoc(job); const fileName = `Check.${getJobDateStr(job).replace(/\//g, '-')}.${job.client || 'SinCliente'}.${job.plate || job.vin || 'SN'}.pdf`; docPDF.save(fileName); } 
-    catch(e) { console.error(e); alert("Hubo un error al generar PDF."); }
+    catch(e) { console.error(e); showAlert("Hubo un error al generar PDF."); }
   };
 
   const handleShareWhatsAppPDF = async (job) => {
@@ -1171,7 +1212,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       const text = `${getJobDateStr(job)}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${job.origin || '-'} - ${job.destination || '-'}`;
       const docPDF = await buildPDFDoc(job); const pdfBlob = docPDF.output('blob'); const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ title: fileName, text: text, files: [file] }); } 
-      else { alert("Tu dispositivo no soporta compartir el archivo directamente. Descárgalo primero y compártelo manual."); handleCopyWhatsApp(job); }
+      else { showAlert("Tu dispositivo no soporta compartir el archivo directamente. Descárgalo primero y compártelo manual."); handleCopyWhatsApp(job); }
     } catch (e) { console.error(e); }
   };
 
@@ -1307,7 +1348,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
 // ==========================================
 // 5. COMPONENTE: FORMULARIO DE CHECKLIST (CON AUTOGUARDADO)
 // ==========================================
-function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
+function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm }) {
   const isQuickJob = job.id === 'NEW_QUICK_JOB';
   const DRAFT_KEY = `checklist_draft_${job.id}`;
 
@@ -1324,7 +1365,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
       photos: { front: false, driver: false, passenger: false, back: false, tire: false, dashboard: false, det1: false, det2: false, det3: false, det4: false },
       docs: { soap: false, permiso: false, revTecnica: false, gases: false }, 
       observations: '', receiverName: '', receiverCompany: '', receiverRut: '', receiverEmail: '', signatureData: null, location: null,
-      noReception: false // NUEVO CAMPO
+      noReception: false
     };
   });
 
@@ -1341,19 +1382,18 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
       const ctx = canvas.getContext('2d'); ctx.drawImage(bmp, 0, 0);
       updateForm('photos', { ...formData.photos, [photoId]: canvas.toDataURL('image/jpeg', 0.6) });
       bmp.close();
-    } catch (error) { console.error(error); alert("Error de memoria al procesar la foto."); }
+    } catch (error) { console.error(error); showAlert("Error de memoria al procesar la foto."); }
   };
 
   const handleGetLocation = () => {
     setLoadingLoc(true);
-    if ("geolocation" in navigator) { navigator.geolocation.getCurrentPosition((pos) => { updateForm('location', { lat: pos.coords.latitude, lng: pos.coords.longitude }); setLoadingLoc(false); }, () => { alert("Error GPS."); setLoadingLoc(false); }); }
+    if ("geolocation" in navigator) { navigator.geolocation.getCurrentPosition((pos) => { updateForm('location', { lat: pos.coords.latitude, lng: pos.coords.longitude }); setLoadingLoc(false); }, () => { showAlert("Error GPS."); setLoadingLoc(false); }); }
   };
 
   const submitForm = async (e) => { 
     e.preventDefault(); 
-    if (!formData.noReception && !formData.signatureData) return alert("Firma del receptor obligatoria."); 
+    if (!formData.noReception && !formData.signatureData) return showAlert("Firma del receptor obligatoria."); 
     
-    // Si se envía sin recepción, sobreescribir campos obligatoriamente
     let submitData = { ...formData };
     if (formData.noReception) {
       submitData.receiverName = 'SIN RECEPCIÓN';
@@ -1370,7 +1410,6 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
       if (isQuickJob) { 
         finalData.createdAt = Date.now(); finalData.assignedDriverName = "Auto-creado"; finalData.acceptedByEmail = currentUserEmail; 
         
-        // Auto-save vehicle si es checklist desde 0
         if (submitData.plateOrVin) {
           const vehRef = collection(db, 'vehicles');
           onSnapshot(vehRef, async (snap) => {
@@ -1383,11 +1422,15 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete }) {
       } 
       else { await updateDoc(doc(db, 'transport_jobs', job.id), finalData); }
       localStorage.removeItem(DRAFT_KEY); localStorage.removeItem(`${DRAFT_KEY}_step`);
-      alert("✅ Checklist guardado correctamente."); onComplete();
-    } catch (error) { console.error(error); alert("Hubo un error al guardar. Si estás offline, se guardará al reconectar."); onComplete(); } // En offline pasa por catch o se encola silenciosamente
+      showAlert("✅ Checklist guardado correctamente."); onComplete();
+    } catch (error) { console.error(error); showAlert("Hubo un error al guardar. Si estás offline, se guardará al reconectar."); onComplete(); }
   };
 
-  const handleCancelClick = () => { if (window.confirm("El progreso de este checklist ha sido autoguardado en tu teléfono. ¿Deseas pausar y salir por ahora?")) { onCancel(); } };
+  const handleCancelClick = () => { 
+    showConfirm("El progreso de este checklist ha sido autoguardado en tu teléfono. ¿Deseas pausar y salir por ahora?", () => { 
+      onCancel(); 
+    }); 
+  };
 
   return (
     <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden pb-10">
