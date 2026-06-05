@@ -6,7 +6,7 @@ import { jsPDF } from "jspdf";
 import { 
   Car, MapPin, Camera, Fuel, CheckCircle, FileText, Download, Plus, User, Navigation, AlertCircle, 
   Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, 
-  Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock
+  Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Map, Ticket
 } from 'lucide-react';
 
 const firebaseConfig = {
@@ -85,6 +85,7 @@ export default function App() {
   const [editingDriver, setEditingDriver] = useState(null);
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [fleetFilter, setFleetFilter] = useState('');
+  
   const [adminTab, setAdminTab] = useState('dashboard');
   const [selectedJob, setSelectedJob] = useState(null);
   const [editingJob, setEditingJob] = useState(null);
@@ -98,7 +99,18 @@ export default function App() {
   const showConfirm = (message, onConfirm) => setDialogConfig({ type: 'confirm', message, onConfirm });
   const closeDialog = () => setDialogConfig(null);
 
+  const requestNotificationPermission = () => {
+    if (!("Notification" in window)) { showAlert("Navegador no soporta notificaciones."); return; }
+    Notification.requestPermission().then(permission => {
+      if (permission === "granted") {
+        setNotificationsEnabled(true);
+        triggerNotification("Notificaciones Activadas", "Recibirás alertas aquí.");
+      }
+    });
+  };
+
   const triggerNotification = (title, body) => {
+    if (!("Notification" in window)) return;
     if (Notification.permission === "granted") {
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.ready.then(reg => reg.showNotification(title, { body, icon: '/logo.png', vibrate: [200, 100, 200] })).catch(() => new Notification(title, { body }));
@@ -133,6 +145,8 @@ export default function App() {
     return () => { uJobs(); uDrivers(); uExpenses(); uVehicles(); uTolls(); uDests(); };
   }, [user]);
 
+  const globalStyles = <style>{`@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');body{font-family:'Nunito',sans-serif;background-color:#f8fafc;}`}</style>;
+
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 flex flex-col items-center justify-center p-4">
@@ -148,6 +162,60 @@ export default function App() {
       </div>
     );
   }
+
+  const exportToExcel = () => {
+    const headers = ['ID', 'Fecha Prog.', 'Cliente', 'Marca', 'Modelo', 'VIN/Patente', 'Desde', 'Hasta', 'Conductores Asignados', 'Conductor Realizó', 'Estado', 'Fecha Creación'];
+    const rows = jobs.map(j => {
+      let realizedBy = '';
+      if (['completed', 'accepted', 'failed'].includes(j.status)) realizedBy = j.acceptedByEmail ? (drivers.find(d => d.email === j.acceptedByEmail)?.name || j.acceptedByEmail) : (j.assignedDriverName || '');
+      let st = j.status === 'pending' ? 'Pendiente' : j.status === 'accepted' ? 'En Curso' : j.status === 'completed' ? 'Completado' : `Fallido - ${j.failedReason || ''}`;
+      return [j.id, `"${formatDateDisplay(j.scheduledDate) || ''}"`, `"${j.client || ''}"`, `"${j.brand || ''}"`, `"${j.model || ''}"`, `"${j.plate || j.vin || ''}"`, `"${j.origin || ''}"`, `"${j.destination || ''}"`, `"${j.assignedDrivers?.map(d=>d.name).join(' - ') || ''}"`, `"${realizedBy}"`, `"${st}"`, `"${new Date(j.createdAt).toLocaleString()}"`];
+    });
+    const csvContent = "\uFEFF" + [headers.join(';'), ...rows.map(e => e.join(';'))].join("\n");
+    const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })); link.download = "Reporte_Trabajos.csv"; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+  };
+
+  const handleCreateDriver = async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    try {
+      await addDoc(collection(db, 'drivers'), { 
+        name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), 
+        licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry'),
+        balance: 0, createdAt: Date.now() 
+      });
+      e.target.reset(); showAlert("Conductor creado exitosamente.");
+    } catch (error) { console.error(error); }
+  };
+
+  const handleUpdateDriver = async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    try {
+      await updateDoc(doc(db, 'drivers', editingDriver.id), { 
+        name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(),
+        licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry')
+      });
+      setEditingDriver(null); showAlert("Conductor actualizado.");
+    } catch (error) { console.error(error); }
+  };
+
+  const handleCreateVehicle = async (e) => {
+    e.preventDefault(); const fd = new FormData(e.target); const client = fd.get('client') === 'OTRO' ? fd.get('manualClient') : fd.get('client');
+    try { await addDoc(collection(db, 'vehicles'), { client, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase(), createdAt: Date.now() }); e.target.reset(); showAlert("Vehículo guardado."); } catch (error) {}
+  };
+
+  const handleUpdateVehicle = async (e) => {
+    e.preventDefault(); const fd = new FormData(e.target); const client = fd.get('client') === 'OTRO' ? fd.get('manualClient') : fd.get('client');
+    try { await updateDoc(doc(db, 'vehicles', editingVehicle.id), { client, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase() }); setEditingVehicle(null); showAlert("Vehículo actualizado."); } catch (error) {}
+  };
+
+  const handleDeleteVehicle = (vid) => { showConfirm("¿Eliminar vehículo?", async () => await deleteDoc(doc(db, 'vehicles', vid))); };
+
+  const handleQuickChecklist = () => {
+    setSelectedJob({ id: 'NEW_QUICK_JOB', client: '', brand: '', model: '', plate: '', vin: '', origin: '', destination: '', scheduledDate: new Date().toISOString().split('T')[0] });
+    setCurrentView('checklist');
+  };
 
   const NewJobForm = () => {
     const [client, setClient] = useState('');
@@ -205,7 +273,7 @@ export default function App() {
             </div>
           </div>
           <div className="bg-slate-50 p-4 rounded-2xl space-y-3">
-             <h3 className="font-bold text-slate-700 text-sm">Vehículo</h3>
+             <h3 className="font-bold text-slate-700 text-sm">Vehículo <span className="text-blue-500 font-bold text-[10px]">(Patente autocompleta)</span></h3>
              <div className="grid grid-cols-2 gap-4">
                <input value={plate} onChange={handlePlateChange} type="text" placeholder="Patente o VIN" className="w-full border-2 p-3 rounded-xl col-span-2 uppercase font-bold" />
                <input value={brand} onChange={e=>setBrand(e.target.value)} type="text" placeholder="Marca" className="w-full border-2 p-3 rounded-xl font-semibold bg-white" />
@@ -223,6 +291,7 @@ export default function App() {
               </select>
               {client === 'OTRO' && <input type="text" value={manualClient} onChange={e => setManualClient(e.target.value)} placeholder="Escribe cliente" className="col-span-2 w-full border-2 p-3 rounded-xl font-semibold" />}
               <input name="origin" type="text" placeholder="Origen" className="col-span-2 w-full border-2 p-3 rounded-xl font-semibold" />
+              
               {tripType === 'traslado' ? (
                 <input name="destination" type="text" placeholder="Destino" className="col-span-2 w-full border-2 p-3 rounded-xl font-semibold" />
               ) : (
@@ -313,7 +382,7 @@ export default function App() {
           {isRealAdmin && (
             <button onClick={() => setActiveRole(activeRole === 'admin' ? 'driver' : 'admin')} className="flex items-center gap-1.5 bg-white/20 px-3 py-2 rounded-xl text-sm font-bold">
               {activeRole === 'admin' ? <ToggleRight className="w-6 h-6 text-green-300"/> : <ToggleLeft className="w-6 h-6 text-slate-300"/>}
-              <span className="hidden md:inline">{activeRole === 'admin' ? 'Admin' : 'Conductor'}</span>
+              <span className="hidden md:inline">{activeRole === 'admin' ? 'Modo Admin' : 'Modo Conductor'}</span>
             </button>
           )}
           <button onClick={() => signOut(auth)} className="bg-white/10 p-2.5 rounded-xl"><LogOut className="w-5 h-5" /></button>
@@ -693,6 +762,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     if (!isAdmin && (!j.assignedEmails?.includes(currentUserEmail) && j.acceptedByEmail !== currentUserEmail)) return false;
     if (!j.createdAt) return true;
     if (!isAdmin && (Date.now() - j.createdAt) > 604800000) return false;
+    if (!isAdmin && j.status === 'failed') return false; // El conductor no ve los fallidos
     return true;
   });
 
@@ -708,6 +778,122 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
 
   const getDStr = j => j.scheduledDate?formatDateDisplay(j.scheduledDate):formatDateDisplay(new Date().toISOString().split('T')[0]);
   const cpyWapp = j => { navigator.clipboard.writeText(`${getDStr(j)}\n${j.client}\n${j.brand} ${j.model}\n${j.plate||j.vin}\n${j.origin} - ${j.destination}`).then(()=>showAlert("Texto del servicio copiado.")); setMenuOpenId(null); };
+
+  const buildPDFDoc = async (job) => {
+    if (!window.jspdf) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script'); script.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"; script.onload = resolve; script.onerror = reject; document.head.appendChild(script);
+      });
+    }
+    const { jsPDF } = window.jspdf;
+    const docPDF = new jsPDF();
+    
+    docPDF.setFillColor(37, 99, 235); docPDF.rect(0, 0, 210, 30, 'F'); docPDF.setTextColor(255, 255, 255);
+    docPDF.setFontSize(22); docPDF.setFont("helvetica", "bold"); docPDF.text("CHECKLIST DE TRASLADO", 105, 20, null, null, "center");
+    docPDF.setTextColor(0, 0, 0);
+
+    if (job.status === 'failed') {
+      docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(12); docPDF.text(`TRABAJO FALLIDO: ${job.failedReason || 'Sin motivo'}`, 20, 37); docPDF.setTextColor(0, 0, 0);
+    }
+    
+    let driverNameStr = job.checklist?.assignedDriverName || job.acceptedByEmail || "No registrado";
+    if (job.acceptedByEmail) { const foundDriver = drivers?.find(d => d.email === job.acceptedByEmail); if (foundDriver) driverNameStr = foundDriver.name; }
+
+    docPDF.setFillColor(241, 245, 249); docPDF.rect(15, 40, 180, 50, 'F');
+    docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold"); docPDF.text("1. DATOS DEL SERVICIO Y VEHÍCULO", 20, 48);
+    
+    docPDF.setFontSize(11);
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`Fecha Traslado:`, 20, 58); docPDF.setFont("helvetica", "bold"); docPDF.text(`${formatDateDisplay(job.scheduledDate) || '-'}`, 52, 58);
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`Cliente:`, 110, 58); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.client || 'Sin Cliente'}`, 125, 58);
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`Vehículo:`, 20, 66); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.brand || '-'} ${job.model || '-'}`, 40, 66);
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`Patente/VIN:`, 110, 66); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.plate || job.vin || '-'}`, 135, 66);
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`Ruta:`, 20, 74); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.origin || '-'}  ->  ${job.destination || '-'}`, 35, 74);
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`Conductor:`, 20, 82); docPDF.setFont("helvetica", "bold"); docPDF.text(`${driverNameStr}`, 45, 82);
+
+    docPDF.setFillColor(241, 245, 249); docPDF.rect(15, 95, 180, 45, 'F');
+    docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold"); docPDF.text("2. ESTADO Y DOCUMENTACIÓN", 20, 103);
+    
+    docPDF.setFontSize(11);
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`Nivel de Combustible:`, 20, 113); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.checklist?.fuelLevel || '0'}%`, 65, 113);
+    
+    const docs = job.checklist?.docs || {};
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`SOAP:`, 20, 122); docPDF.setFont("helvetica", "bold"); docPDF.text(docs.soap ? 'SÍ' : 'NO', 35, 122);
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`Permiso de Circ.:`, 60, 122); docPDF.setFont("helvetica", "bold"); docPDF.text(docs.permiso ? 'SÍ' : 'NO', 93, 122);
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`Rev. Técnica:`, 120, 122); docPDF.setFont("helvetica", "bold"); docPDF.text(docs.revTecnica ? 'SÍ' : 'NO', 148, 122);
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`Gases:`, 165, 122); docPDF.setFont("helvetica", "bold"); docPDF.text(docs.gases ? 'SÍ' : 'NO', 180, 122);
+    
+    docPDF.setFont("helvetica", "normal"); docPDF.text(`Observaciones:`, 20, 131); 
+    const obsSplit = docPDF.splitTextToSize(`${job.checklist?.observations || 'Ninguna'}`, 140); docPDF.text(obsSplit, 50, 131);
+
+    const startY = 131 + (obsSplit.length * 5) + 10;
+    docPDF.setFillColor(241, 245, 249); docPDF.rect(15, startY, 180, 80, 'F');
+    docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold"); docPDF.text("3. RECEPCIÓN", 20, startY + 8);
+    
+    if (job.checklist?.noReception) {
+      docPDF.setTextColor(220, 38, 38);
+      docPDF.setFontSize(12);
+      docPDF.text("ENTREGA SIN RECEPCIÓN (Confirmada por conductor)", 20, startY + 20);
+      docPDF.setTextColor(0, 0, 0);
+    } else {
+      docPDF.setFontSize(11);
+      docPDF.setFont("helvetica", "normal"); docPDF.text(`Receptor:`, 20, startY + 18); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.checklist?.receiverName || 'N/A'}`, 42, startY + 18);
+      docPDF.setFont("helvetica", "normal"); docPDF.text(`RUT:`, 110, startY + 18); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.checklist?.receiverRut || 'N/A'}`, 122, startY + 18);
+      if(job.checklist?.signatureData) { docPDF.setFont("helvetica", "normal"); docPDF.text(`Firma conformada:`, 20, startY + 45); docPDF.addImage(job.checklist.signatureData, 'PNG', 55, startY + 30, 70, 45); }
+    }
+
+    if (job.checklist?.location) {
+      const { lat, lng } = job.checklist.location;
+      docPDF.setFont("helvetica", "normal"); docPDF.text(`Ubicación GPS:`, 20, startY + 28);
+      docPDF.setTextColor(37, 99, 235); docPDF.textWithLink('Ver en Google Maps', 52, startY + 28, { url: `https://www.google.com/maps?q=${lat},${lng}` }); docPDF.setTextColor(0, 0, 0); 
+    } else { docPDF.setFont("helvetica", "normal"); docPDF.text(`Ubicación GPS: No registrada`, 20, startY + 28); }
+
+    if (job.checklist?.photos) {
+      const photos = job.checklist.photos;
+      const labels = { front: 'Frente', driver: 'Lateral Piloto', passenger: 'Lateral Copiloto', back: 'Atrás', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
+      let currentY = 30; let currentCol = 1; let addedPage = false;
+      const getImageDims = (src) => new Promise(resolve => { const img = new Image(); img.onload = () => resolve({ w: img.width, h: img.height }); img.src = src; });
+
+      for (const key in photos) {
+        if (photos[key]) {
+          if (!addedPage) {
+            docPDF.addPage(); docPDF.setFillColor(37, 99, 235); docPDF.rect(0, 0, 210, 20, 'F'); docPDF.setTextColor(255, 255, 255);
+            docPDF.setFontSize(16); docPDF.setFont("helvetica", "bold"); docPDF.text(`REGISTRO FOTOGRÁFICO ADJUNTO`, 105, 14, null, null, "center"); docPDF.setTextColor(0, 0, 0); addedPage = true;
+          }
+          const dims = await getImageDims(photos[key]);
+          const ratio = dims.h / dims.w;
+          let imgW = 80; let imgH = imgW * ratio; if (imgH > 100) { imgH = 100; imgW = imgH / ratio; }
+          const slotCenter = currentCol === 1 ? 55 : 155; const finalX = slotCenter - (imgW / 2);
+
+          if (currentY + imgH > 280) {
+             docPDF.addPage(); currentY = 30; docPDF.setFillColor(37, 99, 235); docPDF.rect(0, 0, 210, 20, 'F'); docPDF.setTextColor(255, 255, 255);
+             docPDF.setFontSize(16); docPDF.setFont("helvetica", "bold"); docPDF.text(`REGISTRO FOTOGRÁFICO (CONT.)`, 105, 14, null, null, "center"); docPDF.setTextColor(0, 0, 0);
+          }
+          docPDF.setFontSize(11); docPDF.setFont("helvetica", "bold"); docPDF.text(labels[key], slotCenter, currentY - 3, { align: "center" });
+          docPDF.setDrawColor(200, 200, 200); docPDF.rect(finalX - 1, currentY - 1, imgW + 2, imgH + 2); 
+          docPDF.addImage(photos[key], 'JPEG', finalX, currentY, imgW, imgH);
+          if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; currentY += (imgH > 80 ? imgH : 80) + 15; }
+        }
+      }
+    }
+    return docPDF;
+  };
+
+  const handleShareWhatsAppPDF = async (job) => {
+    try {
+      const fileName = `Check.${getJobDateStr(job).replace(/\//g, '-')}.${job.client || 'SinCliente'}.${job.plate || job.vin || 'SN'}.pdf`;
+      const text = `${getJobDateStr(job)}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${job.origin || '-'} - ${job.destination || '-'}`;
+      const docPDF = await buildPDFDoc(job); const pdfBlob = docPDF.output('blob'); const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ title: fileName, text: text, files: [file] }); } 
+      else { showAlert("Tu dispositivo no soporta compartir el archivo directamente. Descárgalo primero."); handleCopyWhatsApp(job); }
+    } catch (e) { console.error(e); }
+  };
+
+  const handleFailJob = async (job, reason) => {
+    try {
+      await updateDoc(doc(db, 'transport_jobs', job.id), { status: 'failed', failedReason: reason, completedAt: Date.now(), acceptedByEmail: job.acceptedByEmail || currentUserEmail });
+      setJobToFail(null); showAlert("Trabajo marcado como fallido.");
+    } catch (e) { console.error(e); }
+  };
 
   return (
     <div className="pb-16">
@@ -757,8 +943,9 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                    {j.status==='failed' && <p className="text-red-600 text-[11px] mt-0.5 font-bold">Razón: {j.failedReason}</p>}
                 </div>
                 <div className="flex gap-1.5 mt-2 sm:mt-0">
-                  <button onClick={()=>cpyWapp(j)} className="p-2 bg-blue-50 text-blue-600 rounded-xl" title="Copiar Texto"><Copy className="w-4 h-4"/></button>
+                  {j.status !== 'failed' && <button onClick={()=>handleShareWhatsAppPDF(j)} className="p-2 bg-green-50 text-green-600 rounded-xl" title="Compartir"><Share2 className="w-4 h-4"/></button>}
                   <button onClick={async ()=>{ try { const docPDF = await buildPDFDoc(j); docPDF.save(`Check.${j.plate || 'SN'}.pdf`); } catch(e){showAlert("Error generando PDF");} }} className="p-2 bg-slate-100 text-slate-700 rounded-xl" title="Descargar PDF"><FileDown className="w-4 h-4"/></button>
+                  {isAdmin && <button onClick={()=>showConfirm("¿Eliminar?", ()=>deleteDoc(doc(db,'transport_jobs',j.id)))} className="p-2 bg-red-50 text-red-500 rounded-xl"><Trash2 className="w-4 h-4"/></button>}
                 </div>
               </div>
             ))}
@@ -841,5 +1028,3 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     </div>
   );
 }
-
-const globalStyles = <style>{`@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');body{font-family:'Nunito',sans-serif;background-color:#f8fafc;}`}</style>;
