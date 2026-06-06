@@ -7,6 +7,7 @@ import {
   Car, MapPin, Camera, Fuel, CheckCircle, FileText, Download, 
   Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Map, Ticket
 } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/next';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDlX1VY0n5dDEvD_Tyivb0u_DLdfsargfI",
