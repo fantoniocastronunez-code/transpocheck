@@ -979,7 +979,10 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   
   const filteredJobs = jobs.filter(job => {
     if (!isAdminView && (!job.assignedEmails?.includes(currentUserEmail) && job.acceptedByEmail !== currentUserEmail)) return false;
-    if (!isAdminView && job.status === 'failed') return false; 
+    
+    // MODIFICACIÓN: El conductor no ve trabajos fallidos, a excepción de las revisiones técnicas rechazadas
+    if (!isAdminView && job.status === 'failed' && job.tripType !== 'revision') return false; 
+    
     if (!job.createdAt) return true;
     if (!isAdminView) {
       const sevenDays = 7 * 24 * 60 * 60 * 1000;
