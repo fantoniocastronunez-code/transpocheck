@@ -569,7 +569,7 @@ export default function App() {
 
               {adminTab === 'vehicles' && (
                 <div className="grid md:grid-cols-2 gap-6">
-                  <form onSubmit={editingVehicle ? handleUpdateVehicle : handleCreateVehicle} className="bg-white p-6 rounded-3xl border space-y-4 shadow-sm">
+                  <form onSubmit={async (e) => { e.preventDefault(); const formData = new FormData(e.target); const client = formData.get('client') === 'OTRO' ? formData.get('manualClient') : formData.get('client'); try { if(editingVehicle){ await updateDoc(doc(db, 'vehicles', editingVehicle.id), { client, brand: formData.get('brand'), model: formData.get('model'), plate: formData.get('plate').toUpperCase() }); setEditingVehicle(null); showAlert("Vehículo actualizado."); } else { await addDoc(collection(db, 'vehicles'), { client, brand: formData.get('brand'), model: formData.get('model'), plate: formData.get('plate').toUpperCase(), createdAt: Date.now() }); showAlert("Vehículo guardado."); } e.target.reset(); } catch (error) { console.error(error); } }} className="bg-white p-6 rounded-3xl border space-y-4 shadow-sm">
                     <h3 className="text-xl font-extrabold flex items-center gap-2"><Truck className="text-blue-600"/> {editingVehicle ? 'Editar' : 'Nuevo'} Vehículo</h3>
                     <select name="client" defaultValue={editingVehicle?.client || ''} className="w-full border-2 p-2.5 rounded-xl font-semibold text-sm bg-white outline-none"><option value="">Cliente...</option>{CLIENTES.map(c => <option key={c} value={c}>{c}</option>)}<option value="OTRO">Otro</option></select>
                     <input name="manualClient" placeholder="Si elegiste OTRO, escríbelo aquí" className="w-full border-2 p-2.5 rounded-xl font-semibold text-sm outline-none"/>
@@ -587,7 +587,7 @@ export default function App() {
                       {vehicles.filter(v => !fleetFilter ? true : v.client === fleetFilter).map(v=>(
                         <div key={v.id} className="flex justify-between items-center p-3 bg-slate-50 border rounded-xl text-sm">
                           <div><p className="font-extrabold text-slate-800">{v.brand} {v.model}</p><p className="text-sm font-bold text-blue-600">{v.plate}</p><p className="text-xs font-bold text-slate-400 mt-1">{v.client || 'Sin cliente'}</p></div>
-                          <div className="flex gap-1"><button onClick={()=>setEditingVehicle(v)} className="p-1.5 text-blue-600 bg-blue-50 rounded-lg"><Edit2 className="w-4 h-4"/></button><button onClick={()=>handleDeleteVehicle(v.id)} className="p-1.5 text-red-600 bg-red-50 rounded-lg"><Trash2 className="w-4 h-4"/></button></div>
+                          <div className="flex gap-1"><button onClick={()=>setEditingVehicle(v)} className="p-1.5 text-blue-600 bg-blue-50 rounded-lg"><Edit2 className="w-4 h-4"/></button><button onClick={()=>showConfirm("¿Eliminar este vehículo de la base de datos?", async () => {try { await deleteDoc(doc(db, 'vehicles', v.id)); } catch (e) { console.error(e); }})} className="p-1.5 text-red-600 bg-red-50 rounded-lg"><Trash2 className="w-4 h-4"/></button></div>
                         </div>
                       ))}
                     </div>
@@ -597,7 +597,7 @@ export default function App() {
 
               {adminTab === 'drivers' && (
                 <div className="grid md:grid-cols-2 gap-6">
-                  <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={editingDriver ? handleUpdateDriver : handleCreateDriver} className="bg-white p-6 rounded-3xl border space-y-4 shadow-sm">
+                  <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry') }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); showAlert("Conductor actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); showAlert("Conductor creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white p-6 rounded-3xl border space-y-4 shadow-sm">
                     <h3 className="text-lg font-extrabold"><User className="text-blue-600 inline mr-1"/> {editingDriver ? 'Editar' : 'Nuevo'} Conductor</h3>
                     <input name="driverName" defaultValue={editingDriver?.name} placeholder="Nombre completo" required className="w-full border-2 p-2.5 rounded-xl font-semibold text-sm outline-none"/>
                     <input name="driverEmail" defaultValue={editingDriver?.email} placeholder="Correo Gmail" required type="email" className="w-full border-2 p-2.5 rounded-xl font-semibold text-sm outline-none"/>
@@ -736,6 +736,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
   const [viewingReceipt, setViewingReceipt] = useState(null);
   const [isReturnOpen, setIsReturnOpen] = useState(false);
   const [returnReceipt, setReturnReceipt] = useState(null);
+  const [editingExpense, setEditingExpense] = useState(null); // FIXED
 
   const activeOrPendingJobs = jobs?.filter(j => j.status === 'pending' || j.status === 'accepted') || [];
 
@@ -749,7 +750,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
 
     if (assocJobId) {
       const jb = activeOrPendingJobs.find(x => x.id === assocJobId);
-      if (jb) detailString += ` (Asoc. a patente ${jb.plate || 'S/N'})`;
+      if (jb) detailString += ` (Asoc. a patente ${jb.plate || jb.vin || 'S/N'})`;
     }
 
     try {
@@ -776,7 +777,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
     } catch(e){}
   };
 
-  const delExp = (exp) => {
+  const handleDeleteExpense = (exp) => {
     if (!isAdminView && exp.type === 'assignment') return showAlert("No posees permisos.");
     showConfirm("¿Eliminar registro financiero? El saldo se recalculará.", async () => {
       try {
@@ -866,7 +867,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
                     {e.type !== 'pending_return' && (
                       <div className="flex gap-1 border-l border-slate-200 pl-2 ml-1">
                         <button onClick={() => setEditingExpense(e)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors" title="Editar"><Edit2 className="w-3.5 h-3.5"/></button>
-                        <button onClick={() => delExp(e)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Eliminar"><Trash2 className="w-3.5 h-3.5"/></button>
+                        <button onClick={() => handleDeleteExpense(e)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Eliminar"><Trash2 className="w-3.5 h-3.5"/></button>
                       </div>
                     )}
                   </div>
@@ -888,10 +889,10 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
     <main className="max-w-md mx-auto p-4 pt-6 space-y-6 pb-24">
       {viewingReceipt && <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[150] p-4"><div className="bg-white rounded-3xl p-4 w-full max-w-md relative"><button onClick={() => setViewingReceipt(null)} className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"><X className="w-5 h-5 text-slate-700"/></button><h3 className="font-extrabold text-slate-800 mb-4 ml-2">Comprobante</h3><img src={viewingReceipt} alt="Comprobante" className="w-full h-auto max-h-[70vh] object-contain rounded-xl shadow-sm" /></div></div>}
 
-      {isReturnModalOpen && (
+      {isReturnOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6">
-            <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-extrabold text-slate-800">Rendir Vuelto</h3><button onClick={() => { setIsReturnModalOpen(false); setReturnReceipt(null); }} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button></div>
+            <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-extrabold text-slate-800">Rendir Vuelto</h3><button onClick={() => { setIsReturnOpen(false); setReturnReceipt(null); }} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button></div>
             <p className="text-sm font-bold text-slate-500 mb-4 border-b border-slate-100 pb-4">Monto total a transferir: <span className="text-blue-600 text-xl font-extrabold block mt-1">{formatMoney(myBalance)}</span></p>
             <label className={`block w-full border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-colors relative overflow-hidden ${returnReceipt ? 'border-green-400 bg-green-50' : 'border-slate-300 hover:bg-slate-50'}`}>
               <input type="file" accept="image/*" className="hidden" onChange={async e=>{const f=e.target.files[0];if(!f)return;const b=await window.createImageBitmap(f,{resizeWidth:800});const c=document.createElement('canvas');c.width=b.width;c.height=b.height;c.getContext('2d').drawImage(b,0,0);setReturnReceipt(c.toDataURL('image/jpeg',0.6));b.close();}} />
@@ -901,7 +902,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
                  <div className="py-4"><Camera className="w-10 h-10 text-slate-400 mx-auto mb-3"/><p className="text-sm font-extrabold text-slate-600">Sube aquí el comprobante</p></div>
               )}
             </label>
-            <div className="flex gap-4 mt-6"><button onClick={() => { setIsReturnModalOpen(false); setReturnReceipt(null); }} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-600">Cancelar</button><button onClick={submitReturn} disabled={!returnReceipt} className={`flex-[2] py-3 rounded-xl font-extrabold transition-all ${returnReceipt ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-200' : 'bg-slate-200 text-slate-400'}`}>Confirmar</button></div>
+            <div className="flex gap-4 mt-6"><button onClick={() => { setIsReturnOpen(false); setReturnReceipt(null); }} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-600">Cancelar</button><button onClick={submitReturn} disabled={!returnReceipt} className={`flex-[2] py-3 rounded-xl font-extrabold transition-all ${returnReceipt ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-200' : 'bg-slate-200 text-slate-400'}`}>Confirmar</button></div>
           </div>
         </div>
       )}
@@ -931,7 +932,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
         </div>
       ) : (
         myBalance > 0 && (
-          <button onClick={() => setIsReturnModalOpen(true)} className="w-full bg-green-50 hover:bg-green-100 text-green-700 border-2 border-green-200 py-4 rounded-3xl font-extrabold text-sm flex justify-center items-center gap-2 transition-all">
+          <button onClick={() => setIsReturnOpen(true)} className="w-full bg-green-50 hover:bg-green-100 text-green-700 border-2 border-green-200 py-4 rounded-3xl font-extrabold text-sm flex justify-center items-center gap-2 transition-all">
             <CheckCircle className="w-5 h-5"/> Rendir Vuelto ($0)
           </button>
         )
@@ -979,10 +980,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   
   const filteredJobs = jobs.filter(job => {
     if (!isAdminView && (!job.assignedEmails?.includes(currentUserEmail) && job.acceptedByEmail !== currentUserEmail)) return false;
-    
-    // MODIFICACIÓN: El conductor no ve trabajos fallidos, a excepción de las revisiones técnicas rechazadas
     if (!isAdminView && job.status === 'failed' && job.tripType !== 'revision') return false; 
-    
     if (!job.createdAt) return true;
     if (!isAdminView) {
       const sevenDays = 7 * 24 * 60 * 60 * 1000;
@@ -1170,15 +1168,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   const cpyWapp = j => { 
     const dateStr = getDStr(j);
     const dateShort = dateStr.substring(0, 5); 
-    let routeText = `${j.origin || '-'} - ${j.destination || '-'}`;
-    if (j.tripType === 'revision') {
-      if (j.checklist?.rtStatus === 'aprobado') {
-         const ret = j.checklist.rtReturnOption === 'other' ? j.checklist.rtReturnDestination : j.origin;
-         routeText = `${j.origin || '-'} - PRT - ${ret || '-'}`;
-      } else if (j.checklist?.rtStatus === 'rechazado') { routeText = `${j.origin || '-'} - PRT (Rechazada)`; }
-      else { routeText = `${j.origin || '-'} - PRT`; }
-    }
-    const text = `${dateShort}\n${j.client || 'Sin Cliente'}\n${j.brand || '-'} ${j.model || '-'}\n${j.plate || j.vin || '-'}\n${routeText}`; 
+    const text = `${dateShort}\n${j.client || 'Sin Cliente'}\n${j.brand || '-'} ${j.model || '-'}\n${j.plate || j.vin || '-'}\n${getRouteStr(j)}`; 
     navigator.clipboard.writeText(text).then(() => { 
       showAlert("✅ Formato copiado al portapapeles. Listo para pegar en WhatsApp."); 
       setMenuOpenId(null); 
@@ -1195,15 +1185,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       const dateStrForFile = getDStr(job).replace(/\//g, '-');
       const dateShort = getDStr(job).substring(0, 5);
       const fileName = `Check.${dateStrForFile}.${job.client || 'SinCliente'}.${job.plate || job.vin || 'SN'}.pdf`;
-      let routeText = `${job.origin || '-'} - ${job.destination || '-'}`;
-      if (job.tripType === 'revision') {
-        if (job.checklist?.rtStatus === 'aprobado') {
-           const ret = job.checklist.rtReturnOption === 'other' ? job.checklist.rtReturnDestination : job.origin;
-           routeText = `${job.origin || '-'} - PRT - ${ret || '-'}`;
-        } else if (job.checklist?.rtStatus === 'rechazado') { routeText = `${j.origin || '-'} - PRT (Rechazada)`; }
-        else { routeText = `${job.origin || '-'} - PRT`; }
-      }
-      const text = `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${routeText}`;
+      const text = `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}`;
       
       const docPDF = await buildPDFDoc(job); const pdfBlob = docPDF.output('blob'); const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ title: fileName, text: text, files: [file] }); } 
@@ -1262,23 +1244,23 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       )}
       {historyJobs.length > 0 && (
         <div className="mt-4">
-          <h3 className="font-extrabold text-lg text-slate-700 mb-3 border-b-2 pb-1">Historial Simplificado</h3>
+          <div className="flex justify-between items-center mb-3 border-b-2 pb-1">
+             <h3 className="font-extrabold text-lg text-slate-700">Historial Simplificado</h3>
+             {isAdminView && (
+                <select onChange={e=>setHistoryClientFilter(e.target.value)} className="border-2 border-slate-200 p-1.5 rounded-lg text-xs font-bold outline-none text-slate-600">
+                  <option value="">Todos los Clientes</option>
+                  {CLIENTES.map(c=><option key={c} value={c}>{c}</option>)}
+                  <option value="OTRO">Otros</option>
+                </select>
+             )}
+          </div>
           <div className="flex flex-col gap-2.5">
-            {historyJobs.map(j => {
-              let routeText = `${j.origin || '-'} ➔ ${j.destination || '-'}`;
-              if (j.tripType === 'revision') {
-                if (j.checklist?.rtStatus === 'aprobado') {
-                   const ret = j.checklist.rtReturnOption === 'other' ? j.checklist.rtReturnDestination : j.origin;
-                   routeText = `${j.origin || '-'} ➔ PRT ➔ ${ret || '-'}`;
-                } else if (j.checklist?.rtStatus === 'rechazado') { routeText = `${j.origin || '-'} ➔ PRT (Rechazada)`; }
-                else { routeText = `${j.origin || '-'} ➔ PRT`; }
-              }
-              return (
+            {historyJobs.map(j => (
               <div key={j.id} className="bg-white p-3.5 rounded-2xl border flex flex-col sm:flex-row justify-between sm:items-center gap-2 text-xs font-bold shadow-sm relative pl-4 overflow-hidden">
                 <div className={`absolute left-0 top-0 bottom-0 w-1 ${j.status==='failed'?'bg-red-500':'bg-green-500'}`}></div>
                 <div>
                    <div className="flex gap-2 items-center mb-1"><span className={`px-2 py-0.5 rounded text-[9px] uppercase ${j.status==='failed'?'bg-red-100 text-red-700':'bg-green-100 text-green-700'}`}>{j.status==='failed'?'Fallido':'Ok'}</span><p className="text-sm font-black text-slate-800">{j.brand} {j.model} <span className="text-blue-600 uppercase text-xs ml-1">[{j.plate||'S/N'}]</span></p></div>
-                   <p className="text-slate-500 font-semibold">{routeText} <span className="text-slate-400 ml-1">({getDStr(j)})</span></p>
+                   <p className="text-slate-500 font-semibold">{getRouteStr(j)} <span className="text-slate-400 ml-1">({getDStr(j)})</span></p>
                    {j.status==='failed' && <p className="text-red-600 text-[11px] mt-0.5 font-bold">Razón: {j.failedReason}</p>}
                 </div>
                 <div className="flex gap-1.5 mt-2 sm:mt-0">
@@ -1287,7 +1269,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                   {isAdminView && <button onClick={()=>showConfirm("¿Eliminar?", ()=>deleteDoc(doc(db,'transport_jobs',j.id)))} className="p-2 bg-red-50 text-red-500 rounded-xl" title="Eliminar Historial"><Trash2 className="w-4 h-4"/></button>}
                 </div>
               </div>
-            )})}
+            ))}
           </div>
         </div>
       )}
@@ -1309,7 +1291,10 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
   const [step, setStep] = useState(() => Number(localStorage.getItem(`${DK}_s`)||1));
   const [formData, setFormData] = useState(() => {
     try { const s=localStorage.getItem(DK); if(s) return JSON.parse(s); } catch(e){}
-    return { client: job.client||'', brand: job.brand||'', model: job.model||'', plateOrVin: job.plate||job.vin||'', origin: job.origin||'', destination: job.destination||'', fuelLevel: 50, photos: { front:false, left:false, right:false, back:false, tire:false, dashboard:false, det1:false, det2:false, det3:false, det4:false }, docs: { soap:false, permiso:false, revTecnica:false, gases:false }, observations: '', receiverName: '', receiverRut: '', noReception: false, signatureData: null, location: null, rtStatus: 'aprobado', rtRejectReason: '', rtReturnOption: 'origin', rtReturnDestination: '' };
+    return { 
+        client: job.client||'', brand: job.brand||'', model: job.model||'', plateOrVin: job.plate||job.vin||'', origin: job.origin||'', destination: job.destination||'', fuelLevel: 50, photos: { front:false, left:false, right:false, back:false, tire:false, dashboard:false, det1:false, det2:false, det3:false, det4:false }, docs: { soap:false, permiso:false, revTecnica:false, gases:false }, observations: '', receiverName: '', receiverRut: '', noReception: false, signatureData: null, location: null,
+        rtStatus: 'aprobado', rtRejectReason: '', rtReturnOption: 'origin', rtReturnDestination: '' 
+    };
   });
 
   useEffect(() => { localStorage.setItem(DK, JSON.stringify(formData)); localStorage.setItem(`${DK}_s`, step); }, [formData, step, DK]);
@@ -1324,53 +1309,55 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     } catch(err){ showAlert("Error al optimizar foto."); }
   };
 
-  const submitForm = async (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    if(!formData.noReception && !formData.signatureData) return showAlert("Firma obligatoria.");
-    let submitData = {...formData}; 
-    if(submitData.noReception){ 
-      submitData.receiverName="ENTREGA SIN RECEPCIÓN"; 
-      submitData.receiverRut="N/A"; 
-      submitData.receiverEmail="N/A"; 
-      submitData.signatureData=null; 
+    if (job.tripType !== 'revision' && !formData.noReception && !formData.signatureData) return showAlert("La firma del receptor es mandatoria.");
+    
+    let d = {...formData}; 
+    if (job.tripType === 'revision') {
+      d.receiverName = "PLANTA RT";
+      d.receiverRut = "N/A";
+    } else if(d.noReception) { 
+      d.receiverName="ENTREGA SIN RECEPCIÓN"; 
+      d.receiverRut="N/A"; 
     }
     
-    // Limpieza de datos indefinidos para Firebase
-    const finalData = { scheduledDate: submitData.scheduledDate || new Date().toISOString().split('T')[0], client: submitData.client || '', brand: submitData.brand || '', model: submitData.model || '', vin: submitData.plateOrVin || '', plate: submitData.plateOrVin || '', origin: submitData.origin || '', destination: submitData.destination || '', status: 'completed', completedAt: Date.now(), checklist: submitData };
-    const cleanData = JSON.parse(JSON.stringify(finalData));
-
+    const fd = { scheduledDate: new Date().toISOString().split('T')[0], client: d.client, brand: d.brand, model: d.model, vin: d.plateOrVin, plate: d.plateOrVin, origin: d.origin, destination: d.destination, status: 'completed', completedAt: Date.now(), checklist: d, tripType: job.tripType || 'traslado', expectedTollCost: job.expectedTollCost || 0 };
     try {
       if(isQuick) { 
-          cleanData.createdAt = Date.now(); cleanData.assignedDriverName="Auto-creado"; cleanData.acceptedByEmail=currentUserEmail; 
-          if (submitData.plateOrVin) {
-              const vehQuery = query(collection(db, 'vehicles'), where('plate', '==', submitData.plateOrVin.toUpperCase()));
-              const vehSnap = await getDocs(vehQuery);
-              if (vehSnap.empty) {
-                await addDoc(collection(db, 'vehicles'), { plate: submitData.plateOrVin.toUpperCase(), brand: submitData.brand || '', model: submitData.model || '', client: submitData.client || '', createdAt: Date.now() });
-              }
+          fd.assignedDriverName="Auto-creado"; fd.acceptedByEmail=currentUserEmail; 
+          if (d.plateOrVin) {
+              const vehRef = collection(db, 'vehicles');
+              getDocs(query(vehRef, where("plate", "==", d.plateOrVin.toUpperCase()))).then(snap => {
+                  if (snap.empty) { addDoc(vehRef, { plate: d.plateOrVin.toUpperCase(), brand: d.brand, model: d.model, client: d.client, createdAt: Date.now() }); }
+              });
           }
-          await addDoc(collection(db,'transport_jobs'), cleanData); 
+          await addDoc(collection(db,'transport_jobs'), fd); 
       }
       else { 
-          if (job.tripType === 'revision' && submitData.rtStatus === 'rechazado') {
-             cleanData.status = 'failed';
-             cleanData.failedReason = submitData.rtRejectReason || 'Revisión Técnica Rechazada';
+          if (job.tripType === 'revision' && d.rtStatus === 'rechazado') {
+             fd.status = 'failed';
+             fd.failedReason = d.rtRejectReason || 'Revisión Técnica Rechazada';
+             
              const cloneJob = {
-                scheduledDate: submitData.scheduledDate || new Date().toISOString().split('T')[0], client: submitData.client || '', brand: submitData.brand || '', model: submitData.model || '', vin: submitData.plateOrVin || '', plate: submitData.plateOrVin || '', origin: submitData.origin || '', destination: submitData.destination || '', tripType: job.tripType, rtData: job.rtData || null, assignedDrivers: job.assignedDrivers || [], assignedEmails: job.assignedEmails || [], status: 'pending', createdAt: Date.now(), checklist: null
+                scheduledDate: d.scheduledDate, client: d.client, brand: d.brand, model: d.model, vin: d.plateOrVin, plate: d.plateOrVin, origin: d.origin, destination: d.destination,
+                tripType: job.tripType, rtData: job.rtData,
+                assignedDrivers: job.assignedDrivers || [], assignedEmails: job.assignedEmails || [],
+                status: 'pending', createdAt: Date.now(), checklist: null
              };
-             await addDoc(collection(db, 'transport_jobs'), JSON.parse(JSON.stringify(cloneJob)));
+             await addDoc(collection(db, 'transport_jobs'), cloneJob);
           }
-          await updateDoc(doc(db,'transport_jobs',job.id), cleanData); 
+          await updateDoc(doc(db,'transport_jobs',job.id), fd); 
       }
       localStorage.removeItem(DK); localStorage.removeItem(`${DK}_s`); 
       
-      if (job.tripType === 'revision' && submitData.rtStatus === 'rechazado') {
+      if (job.tripType === 'revision' && d.rtStatus === 'rechazado') {
           showAlert("Revisión guardada como RECHAZADA. Se ha creado un nuevo traslado pendiente.");
       } else {
           showAlert("✅ Checklist guardado correctamente."); 
       }
       onComplete();
-    } catch(e) { console.error(e); showAlert("Error al guardar. Si estás offline, se subirá al recuperar señal."); onComplete(); }
+    } catch(e) { showAlert("Guardado localmente. Se subirá al recuperar señal."); onComplete(); }
   };
 
   return (
@@ -1435,14 +1422,26 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
             <button type="button" onClick={()=>setStep(2)} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mt-6 text-sm">Siguiente Paso</button>
           </div>
         ) : (
-          <form onSubmit={submitForm} className="space-y-4">
-            <label className="flex items-center gap-2.5 p-4 bg-amber-50 rounded-2xl border-amber-300 border-2 cursor-pointer"><input type="checkbox" checked={formData.noReception} onChange={e=>setF('noReception',e.target.checked)} className="w-5 h-5 cursor-pointer"/> <span className="font-extrabold text-sm text-slate-700">Dejar sin firma (Local cerrado / sin personal)</span></label>
-            {!formData.noReception && (
-              <><input required={!formData.noReception} value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/><input required={!formData.noReception} value={formData.receiverRut} onChange={e=>setF('receiverRut',e.target.value)} placeholder="RUT Receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/><SignaturePad onSave={d=>setF('signatureData',d)} onClear={()=>setF('signatureData',null)}/></>
+          <form onSubmit={submit} className="space-y-4">
+            {job.tripType !== 'revision' ? (
+               <>
+                 <label className="flex items-center gap-2.5 p-4 bg-amber-50 rounded-2xl border-amber-300 border-2 cursor-pointer"><input type="checkbox" checked={formData.noReception} onChange={e=>setF('noReception',e.target.checked)} className="w-5 h-5 cursor-pointer"/> <span className="font-extrabold text-sm text-slate-700">Dejar sin firma (Local cerrado)</span></label>
+                 {!formData.noReception && (
+                   <><input required={!formData.noReception} value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/><input required={!formData.noReception} value={formData.receiverRut} onChange={e=>setF('receiverRut',e.target.value)} placeholder="RUT Receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/><SignaturePad onSave={d=>setF('signatureData',d)} onClear={()=>setF('signatureData',null)}/></>
+                 )}
+               </>
+            ) : (
+               <div className="bg-blue-50 border-2 border-blue-200 p-6 rounded-2xl text-center mb-6">
+                 <CheckCircle className="w-12 h-12 text-blue-500 mx-auto mb-2"/>
+                 <h3 className="text-lg font-extrabold text-blue-800">Cierre de Revisión Técnica</h3>
+                 <p className="text-sm font-bold text-blue-600">Al finalizar, no se requiere firma del receptor.</p>
+               </div>
             )}
+            
             <button type="button" onClick={() => { if ("geolocation" in navigator) { navigator.geolocation.getCurrentPosition((pos) => setF('location', { lat: pos.coords.latitude, lng: pos.coords.longitude }), () => showAlert("Error GPS.")); } }} className={`px-4 py-4 rounded-2xl text-sm w-full font-extrabold shadow-sm ${formData.location ? 'bg-green-100 text-green-700 border-2 border-green-200' : 'bg-slate-100 text-slate-700 border-2'}`}>
               {formData.location ? "📍 GPS Capturado Exitosamente" : "📍 Tocar para Capturar GPS Actual"}
             </button>
+
             <div className="flex gap-2 pt-4 border-t"><button type="button" onClick={()=>setStep(1)} className="bg-slate-100 p-3 rounded-xl font-bold text-sm flex-1">Atrás</button><button type="submit" className="bg-green-600 text-white p-3 rounded-xl font-bold text-sm flex-[2]">Guardar Todo</button></div>
           </form>
         )}
