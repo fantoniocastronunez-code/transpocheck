@@ -664,7 +664,7 @@ export default function App() {
                   </div>
                 </div>
               )}
-            </>
+            </main>
           )}
 
       {currentView === 'main' && mainTab === 'ranking' && <LeaderboardView jobs={jobs} drivers={drivers} isAdminView={activeRole === 'admin'} />}
