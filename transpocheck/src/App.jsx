@@ -5,7 +5,7 @@ import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc
 import { jsPDF } from "jspdf";
 import { 
   Car, MapPin, Camera, Fuel, CheckCircle, FileText, Download, 
-  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Map, Ticket
+  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Map, Ticket, Settings
 } from 'lucide-react';
 
 // ==========================================
@@ -106,11 +106,12 @@ export default function App() {
   const [fleetFilter, setFleetFilter] = useState('');
   const [destDirectionFilter, setDestDirectionFilter] = useState('Todos'); 
   
-  const [adminTab, setAdminTab] = useState('dashboard');
   const [selectedJob, setSelectedJob] = useState(null);
   const [editingJob, setEditingJob] = useState(null);
   const [currentView, setCurrentView] = useState('main');
-  const [mainTab, setMainTab] = useState('jobs');
+  const [mainTab, setMainTab] = useState('jobs'); // jobs, ranking, expenses, config
+  const [jobsSubTab, setJobsSubTab] = useState('list'); // list, newJob
+  const [configSubTab, setConfigSubTab] = useState('vehicles'); // vehicles, drivers, tolls, destinations
   const [activeRole, setActiveRole] = useState('driver');
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   
@@ -290,7 +291,7 @@ export default function App() {
       try {
         await addDoc(collection(db, 'transport_jobs'), newJob);
         if (plate && !vehicles.find(v => v.plate === plate)) await addDoc(collection(db, 'vehicles'), { plate, brand, model, client: finalClient, createdAt: Date.now() });
-        setAdminTab('dashboard'); showAlert(`Trabajo asignado exitosamente.`);
+        setJobsSubTab('list'); showAlert(`Trabajo asignado exitosamente.`);
       } catch (error) { console.error(error); }
     };
 
@@ -331,7 +332,7 @@ export default function App() {
           </div>
 
           <div className="bg-slate-50 p-6 rounded-2xl space-y-4">
-             <h3 className="text-base font-bold text-slate-700">2. Vehículo</h3>
+             <h3 className="text-base font-bold text-slate-700">2. Vehículo <span className="text-xs text-blue-500 font-bold">(Autocompletado)</span></h3>
              <div className="grid grid-cols-2 gap-4">
                <input value={plate} onChange={handlePlateChange} type="text" placeholder="Patente o VIN" className="w-full border-2 border-blue-200 p-3 text-sm rounded-xl col-span-2 uppercase outline-none focus:border-blue-500 font-bold bg-white text-blue-900 shadow-sm" />
                <input value={brand} onChange={e=>setBrand(e.target.value)} type="text" placeholder="Marca" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
@@ -485,15 +486,11 @@ export default function App() {
           {activeRole === 'admin' ? (
             <>
               <div className="flex flex-wrap gap-1 mb-6 bg-white p-1.5 rounded-2xl border shadow-sm text-xs sm:text-sm">
-                <button onClick={() => setAdminTab('dashboard')} className={`flex-1 py-2 rounded-xl font-bold flex justify-center gap-1.5 ${adminTab==='dashboard'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><ClipboardList className="w-4 h-4"/> Trabajos</button>
-                <button onClick={() => setAdminTab('newJob')} className={`flex-1 py-2 rounded-xl font-bold flex justify-center gap-1.5 ${adminTab==='newJob'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Plus className="w-4 h-4"/> Crear</button>
-                <button onClick={() => setAdminTab('tolls')} className={`flex-1 py-2 rounded-xl font-bold flex justify-center gap-1.5 ${adminTab==='tolls'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Ticket className="w-4 h-4"/> Peajes</button>
-                <button onClick={() => setAdminTab('destinations')} className={`flex-1 py-2 rounded-xl font-bold flex justify-center gap-1.5 ${adminTab==='destinations'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Map className="w-4 h-4"/> Destinos</button>
-                <button onClick={() => setAdminTab('vehicles')} className={`flex-1 py-2 rounded-xl font-bold flex justify-center gap-1.5 ${adminTab==='vehicles'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Truck className="w-4 h-4"/> Flota</button>
-                <button onClick={() => setAdminTab('drivers')} className={`flex-1 py-2 rounded-xl font-bold flex justify-center gap-1.5 ${adminTab==='drivers'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Users className="w-4 h-4"/> Equipo</button>
+                <button onClick={() => setJobsSubTab('list')} className={`flex-1 py-2 rounded-xl font-bold flex justify-center gap-1.5 ${jobsSubTab==='list'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><ClipboardList className="w-4 h-4"/> Trabajos</button>
+                <button onClick={() => setJobsSubTab('create')} className={`flex-1 py-2 rounded-xl font-bold flex justify-center gap-1.5 ${jobsSubTab==='create'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Plus className="w-4 h-4"/> Crear</button>
               </div>
               
-              {adminTab === 'dashboard' && (
+              {jobsSubTab === 'list' && (
                 <div className="space-y-6">
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                     <h2 className="text-2xl font-extrabold text-slate-800">Monitor Operativo</h2>
@@ -503,9 +500,27 @@ export default function App() {
                 </div>
               )}
               
-              {adminTab === 'newJob' && <NewJobForm />}
-              
-              {adminTab === 'tolls' && (
+              {jobsSubTab === 'create' && <NewJobForm />}
+            </>
+          ) : (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-extrabold text-slate-800">Mis Trabajos</h2>
+              <JobsList jobs={jobs} drivers={drivers} role="driver" onStartChecklist={j => {setSelectedJob(j); setCurrentView('checklist')}} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />
+            </div>
+          )}
+        </main>
+      )}
+
+      {currentView === 'main' && mainTab === 'config' && activeRole === 'admin' && (
+        <main className="max-w-5xl mx-auto p-4 pt-6">
+           <div className="flex flex-wrap gap-1 mb-6 bg-white p-1.5 rounded-2xl border shadow-sm text-xs sm:text-sm">
+                <button onClick={() => setConfigSubTab('vehicles')} className={`flex-1 py-2 rounded-xl font-bold flex justify-center gap-1.5 ${configSubTab==='vehicles'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Truck className="w-4 h-4"/> Flota</button>
+                <button onClick={() => setConfigSubTab('drivers')} className={`flex-1 py-2 rounded-xl font-bold flex justify-center gap-1.5 ${configSubTab==='drivers'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Users className="w-4 h-4"/> Equipo</button>
+                <button onClick={() => setConfigSubTab('tolls')} className={`flex-1 py-2 rounded-xl font-bold flex justify-center gap-1.5 ${configSubTab==='tolls'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Ticket className="w-4 h-4"/> Peajes</button>
+                <button onClick={() => setConfigSubTab('destinations')} className={`flex-1 py-2 rounded-xl font-bold flex justify-center gap-1.5 ${configSubTab==='destinations'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Map className="w-4 h-4"/> Destinos</button>
+           </div>
+
+           {configSubTab === 'tolls' && (
                 <div className="grid md:grid-cols-2 gap-6">
                   <form onSubmit={async e => { e.preventDefault(); const fd = new FormData(e.target); const data = { name: fd.get('name'), km: fd.get('km'), direction: fd.get('direction'), route: fd.get('route'), priceAuto: Number(fd.get('pa')), priceTruck2: Number(fd.get('pt2')), priceTruckMore: Number(fd.get('ptm')) }; try { if (editingToll) { await updateDoc(doc(db, 'tolls', editingToll.id), data); setEditingToll(null); showAlert("Peaje actualizado."); } else { await addDoc(collection(db, 'tolls'), data); showAlert("Peaje creado."); } e.target.reset(); } catch(err){} }} className="bg-white p-6 rounded-3xl border space-y-4">
                     <h3 className="font-extrabold text-lg flex items-center gap-2"><Ticket className="text-blue-600"/> {editingToll ? 'Editar Peaje' : 'Nuevo Peaje'}</h3>
@@ -538,7 +553,7 @@ export default function App() {
                 </div>
               )}
 
-              {adminTab === 'destinations' && (
+              {configSubTab === 'destinations' && (
                 <div className="grid md:grid-cols-2 gap-6">
                   <form onSubmit={async e => { e.preventDefault(); const fd = new FormData(e.target); const tIds = fd.getAll('tollIds'); const data = { name: fd.get('name'), tolls: tIds }; try { if (editingDestination) { await updateDoc(doc(db, 'destinations', editingDestination.id), data); setEditingDestination(null); showAlert("Destino actualizado."); } else { await addDoc(collection(db, 'destinations'), data); showAlert("Destino guardado."); } e.target.reset(); } catch(err){} }} className="bg-white p-6 rounded-3xl border space-y-4">
                     <h3 className="font-extrabold text-lg flex items-center gap-2"><Map className="text-blue-600"/> {editingDestination ? 'Editar Destino' : 'Nuevo Destino'}</h3>
@@ -567,7 +582,7 @@ export default function App() {
                 </div>
               )}
 
-              {adminTab === 'vehicles' && (
+              {configSubTab === 'vehicles' && (
                 <div className="grid md:grid-cols-2 gap-6">
                   <form onSubmit={async (e) => { e.preventDefault(); const formData = new FormData(e.target); const client = formData.get('client') === 'OTRO' ? formData.get('manualClient') : formData.get('client'); try { if(editingVehicle){ await updateDoc(doc(db, 'vehicles', editingVehicle.id), { client, brand: formData.get('brand'), model: formData.get('model'), plate: formData.get('plate').toUpperCase() }); setEditingVehicle(null); showAlert("Vehículo actualizado."); } else { await addDoc(collection(db, 'vehicles'), { client, brand: formData.get('brand'), model: formData.get('model'), plate: formData.get('plate').toUpperCase(), createdAt: Date.now() }); showAlert("Vehículo guardado."); } e.target.reset(); } catch (error) { console.error(error); } }} className="bg-white p-6 rounded-3xl border space-y-4 shadow-sm">
                     <h3 className="text-xl font-extrabold flex items-center gap-2"><Truck className="text-blue-600"/> {editingVehicle ? 'Editar' : 'Nuevo'} Vehículo</h3>
@@ -595,7 +610,7 @@ export default function App() {
                 </div>
               )}
 
-              {adminTab === 'drivers' && (
+              {configSubTab === 'drivers' && (
                 <div className="grid md:grid-cols-2 gap-6">
                   <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry') }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); showAlert("Conductor actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); showAlert("Conductor creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white p-6 rounded-3xl border space-y-4 shadow-sm">
                     <h3 className="text-lg font-extrabold"><User className="text-blue-600 inline mr-1"/> {editingDriver ? 'Editar' : 'Nuevo'} Conductor</h3>
@@ -637,13 +652,6 @@ export default function App() {
                   </div>
                 </div>
               )}
-            </>
-          ) : (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-extrabold text-slate-800">Mis Trabajos</h2>
-              <JobsList jobs={jobs} drivers={drivers} role="driver" onStartChecklist={j => {setSelectedJob(j); setCurrentView('checklist')}} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />
-            </div>
-          )}
         </main>
       )}
 
@@ -653,10 +661,13 @@ export default function App() {
 
       {currentView === 'main' && (
         <nav className="fixed bottom-0 w-full bg-white border-t flex justify-around p-2.5 z-40 pb-[env(safe-area-inset-bottom)] shadow-lg">
-          <button onClick={handleQuickChecklist} className="flex flex-col items-center text-slate-400 hover:text-blue-600 w-20"><Zap className="w-6 h-6 mb-0.5 bg-slate-100 p-1 rounded-xl"/><span className="text-[10px] font-bold">Desde 0</span></button>
-          <button onClick={() => setMainTab('jobs')} className={`flex flex-col items-center w-20 ${mainTab==='jobs' ? 'text-blue-600' : 'text-slate-400'}`}><ClipboardList className={`w-6 h-6 mb-0.5 ${mainTab==='jobs'?'bg-blue-100':'bg-transparent'} p-1 rounded-xl`}/><span className="text-[10px] font-bold">Trabajos</span></button>
-          <button onClick={() => setMainTab('ranking')} className={`flex flex-col items-center w-20 ${mainTab==='ranking' ? 'text-yellow-600' : 'text-slate-400'}`}><Trophy className={`w-6 h-6 mb-0.5 ${mainTab==='ranking'?'bg-yellow-100':'bg-transparent'} p-1 rounded-xl`}/><span className="text-[10px] font-bold">Ranking</span></button>
-          <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center w-20 ${mainTab==='expenses' ? 'text-blue-600' : 'text-slate-400'}`}><Wallet className={`w-6 h-6 mb-0.5 ${mainTab==='expenses'?'bg-blue-100':'bg-transparent'} p-1 rounded-xl`}/><span className="text-[10px] font-bold">Gastos</span></button>
+          <button onClick={handleQuickChecklist} className="flex flex-col items-center text-slate-400 hover:text-blue-600 w-16"><Zap className="w-6 h-6 mb-0.5 bg-slate-100 p-1 rounded-xl"/><span className="text-[10px] font-bold">Desde 0</span></button>
+          <button onClick={() => {setMainTab('jobs'); setJobsSubTab('list');}} className={`flex flex-col items-center w-16 ${mainTab==='jobs' ? 'text-blue-600' : 'text-slate-400'}`}><ClipboardList className={`w-6 h-6 mb-0.5 ${mainTab==='jobs'?'bg-blue-100':'bg-transparent'} p-1 rounded-xl`}/><span className="text-[10px] font-bold">Trabajos</span></button>
+          <button onClick={() => setMainTab('ranking')} className={`flex flex-col items-center w-16 ${mainTab==='ranking' ? 'text-yellow-600' : 'text-slate-400'}`}><Trophy className={`w-6 h-6 mb-0.5 ${mainTab==='ranking'?'bg-yellow-100':'bg-transparent'} p-1 rounded-xl`}/><span className="text-[10px] font-bold">Ranking</span></button>
+          <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center w-16 ${mainTab==='expenses' ? 'text-blue-600' : 'text-slate-400'}`}><Wallet className={`w-6 h-6 mb-0.5 ${mainTab==='expenses'?'bg-blue-100':'bg-transparent'} p-1 rounded-xl`}/><span className="text-[10px] font-bold">Gastos</span></button>
+          {activeRole === 'admin' && (
+             <button onClick={() => setMainTab('config')} className={`flex flex-col items-center w-16 ${mainTab==='config' ? 'text-blue-600' : 'text-slate-400'}`}><Settings className={`w-6 h-6 mb-0.5 ${mainTab==='config'?'bg-blue-100':'bg-transparent'} p-1 rounded-xl`}/><span className="text-[10px] font-bold">Config</span></button>
+          )}
         </nav>
       )}
 
@@ -736,7 +747,8 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
   const [viewingReceipt, setViewingReceipt] = useState(null);
   const [isReturnOpen, setIsReturnOpen] = useState(false);
   const [returnReceipt, setReturnReceipt] = useState(null);
-  const [editingExpense, setEditingExpense] = useState(null); // FIXED
+  const [returnMethod, setReturnMethod] = useState('transferencia');
+  const [editingExpense, setEditingExpense] = useState(null);
 
   const activeOrPendingJobs = jobs?.filter(j => j.status === 'pending' || j.status === 'accepted') || [];
 
@@ -745,7 +757,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
     const currentBalance = drivers.find(d => d.id === driverId)?.balance || 0;
     if (type === 'expense' && amount > currentBalance) return showAlert("Saldo insuficiente.");
     
-    const assocJobId = e.target.jobId?.value || '';
+    const assocJobId = type === 'assignment' ? (e.target.jobId?.value || '') : '';
     let detailString = detail || 'Asignación de fondos';
 
     if (assocJobId) {
@@ -761,10 +773,14 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
   };
 
   const submitReturn = async () => {
-    if (!returnReceipt || !myDriver?.balance) return;
+    if (returnMethod === 'transferencia' && !returnReceipt) return showAlert("Sube la foto de la transferencia.");
+    if (!myDriver?.balance) return;
+    
+    let det = returnMethod === 'efectivo' ? 'Rendición en Efectivo (En revisión)' : 'Rendición de Vuelto (En revisión)';
+    
     try {
-      await addDoc(collection(db, 'expenses'), { driverId: myDriver.id, driverEmail: myDriver.email, driverName: myDriver.name, type: 'pending_return', amount: myDriver.balance, detail: 'Rendición de Vuelto (En revisión)', receiptImage: returnReceipt, createdAt: Date.now() });
-      setIsReturnOpen(false); setReturnReceipt(null); showAlert("Comprobante enviado. Esperando validación de Admin.");
+      await addDoc(collection(db, 'expenses'), { driverId: myDriver.id, driverEmail: myDriver.email, driverName: myDriver.name, type: 'pending_return', amount: myDriver.balance, detail: det, receiptImage: returnReceipt, createdAt: Date.now() });
+      setIsReturnOpen(false); setReturnReceipt(null); showAlert("Rendición enviada. Esperando validación de Admin.");
     } catch(e) {}
   };
 
@@ -772,12 +788,12 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
     try {
       const d = drivers.find(x => x.id === exp.driverId);
       if (d) await updateDoc(doc(db, 'drivers', d.id), { balance: Math.max(0, (d.balance||0) - exp.amount) });
-      await updateDoc(doc(db, 'expenses', exp.id), { type: 'return', detail: 'Rendición de Vuelto (Aprobada)' });
+      await updateDoc(doc(db, 'expenses', exp.id), { type: 'return', detail: 'Rendición Aprobada' });
       showAlert("Rendición aprobada. El balance del conductor volvió a 0.");
     } catch(e){}
   };
 
-  const handleDeleteExpense = (exp) => {
+  const delExp = (exp) => {
     if (!isAdminView && exp.type === 'assignment') return showAlert("No posees permisos.");
     showConfirm("¿Eliminar registro financiero? El saldo se recalculará.", async () => {
       try {
@@ -793,7 +809,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
   const EditExpenseModal = ({ expense, onClose }) => {
     const handleUpdateSubmit = async (e) => {
       e.preventDefault();
-      if (!isAdminView && expense.type === 'assignment') { showAlert("No puedes modificar una asignación de fondos."); return onClose(); }
+      if (!isAdminView && expense.type === 'assignment') { showAlert("No puedes modificar una asignación."); return onClose(); }
       const newAmount = Number(e.target.amount.value);
       const newDetail = e.target.detail.value;
       const amountDiff = newAmount - expense.amount;
@@ -807,7 +823,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
           await updateDoc(doc(db, 'drivers', expense.driverId), { balance: newBalance });
         }
         await updateDoc(doc(db, 'expenses', expense.id), { amount: newAmount, detail: newDetail });
-        showAlert("Registro actualizado correctamente."); onClose();
+        showAlert("Registro actualizado."); onClose();
       } catch (error) { console.error(error); showAlert("Error actualizando."); }
     };
 
@@ -854,7 +870,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
             <h3 className="font-bold text-slate-700 mb-4 text-sm">{selectedDriverId ? 'Movimientos del Conductor' : 'Historial de Rendiciones'}</h3>
             <div className="overflow-y-auto space-y-3 flex-1 pr-1" style={{ maxHeight: '60vh' }}>
               {expenses.filter(e => selectedDriverId ? e.driverId === selectedDriverId : true).map(e => (
-                <div key={e.id} className="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex gap-3 items-start text-xs font-bold w-full overflow-hidden">
+                <div key={e.id} className="bg-slate-50 p-3 rounded-2xl border flex gap-3 items-start text-xs font-bold w-full overflow-hidden">
                   <div className="mt-1"><TransactionIcon type={e.type}/></div>
                   <div className="flex-1 min-w-0">
                     <p className="text-slate-800 break-words">{e.detail}</p>
@@ -867,7 +883,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
                     {e.type !== 'pending_return' && (
                       <div className="flex gap-1 border-l border-slate-200 pl-2 ml-1">
                         <button onClick={() => setEditingExpense(e)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors" title="Editar"><Edit2 className="w-3.5 h-3.5"/></button>
-                        <button onClick={() => handleDeleteExpense(e)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Eliminar"><Trash2 className="w-3.5 h-3.5"/></button>
+                        <button onClick={() => delExp(e)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Eliminar"><Trash2 className="w-3.5 h-3.5"/></button>
                       </div>
                     )}
                   </div>
@@ -893,16 +909,27 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6">
             <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-extrabold text-slate-800">Rendir Vuelto</h3><button onClick={() => { setIsReturnOpen(false); setReturnReceipt(null); }} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button></div>
-            <p className="text-sm font-bold text-slate-500 mb-4 border-b border-slate-100 pb-4">Monto total a transferir: <span className="text-blue-600 text-xl font-extrabold block mt-1">{formatMoney(myBalance)}</span></p>
-            <label className={`block w-full border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-colors relative overflow-hidden ${returnReceipt ? 'border-green-400 bg-green-50' : 'border-slate-300 hover:bg-slate-50'}`}>
-              <input type="file" accept="image/*" className="hidden" onChange={async e=>{const f=e.target.files[0];if(!f)return;const b=await window.createImageBitmap(f,{resizeWidth:800});const c=document.createElement('canvas');c.width=b.width;c.height=b.height;c.getContext('2d').drawImage(b,0,0);setReturnReceipt(c.toDataURL('image/jpeg',0.6));b.close();}} />
-              {returnReceipt ? (
-                 <div className="relative z-10"><CheckCircle className="w-10 h-10 text-green-500 mx-auto mb-2 bg-white rounded-full"/><p className="text-sm font-extrabold text-green-700 mb-2">Comprobante Cargado</p><img src={returnReceipt} className="h-28 object-contain mx-auto rounded-lg shadow-sm border border-green-200" alt="preview"/><p className="text-xs font-bold text-slate-500 mt-3 underline">Cambiar foto</p></div>
-              ) : (
-                 <div className="py-4"><Camera className="w-10 h-10 text-slate-400 mx-auto mb-3"/><p className="text-sm font-extrabold text-slate-600">Sube aquí el comprobante</p></div>
-              )}
-            </label>
-            <div className="flex gap-4 mt-6"><button onClick={() => { setIsReturnOpen(false); setReturnReceipt(null); }} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-600">Cancelar</button><button onClick={submitReturn} disabled={!returnReceipt} className={`flex-[2] py-3 rounded-xl font-extrabold transition-all ${returnReceipt ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-200' : 'bg-slate-200 text-slate-400'}`}>Confirmar</button></div>
+            <p className="text-sm font-bold text-slate-500 mb-4 border-b border-slate-100 pb-4">Monto total a transferir/rendir: <span className="text-blue-600 text-xl font-extrabold block mt-1">{formatMoney(myBalance)}</span></p>
+            
+            <div className="flex gap-2 mb-4">
+               <button onClick={()=>setReturnMethod('transferencia')} className={`flex-1 py-2 rounded-xl text-sm font-bold transition-colors ${returnMethod==='transferencia'?'bg-blue-600 text-white':'bg-slate-100 text-slate-600'}`}>Transferencia</button>
+               <button onClick={()=>setReturnMethod('efectivo')} className={`flex-1 py-2 rounded-xl text-sm font-bold transition-colors ${returnMethod==='efectivo'?'bg-blue-600 text-white':'bg-slate-100 text-slate-600'}`}>Efectivo</button>
+            </div>
+
+            {returnMethod === 'transferencia' ? (
+              <label className={`block w-full border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-colors relative overflow-hidden ${returnReceipt ? 'border-green-400 bg-green-50' : 'border-slate-300 hover:bg-slate-50'}`}>
+                <input type="file" accept="image/*" className="hidden" onChange={async e=>{const f=e.target.files[0];if(!f)return;const b=await window.createImageBitmap(f,{resizeWidth:800});const c=document.createElement('canvas');c.width=b.width;c.height=b.height;c.getContext('2d').drawImage(b,0,0);setReturnReceipt(c.toDataURL('image/jpeg',0.6));b.close();}} />
+                {returnReceipt ? (
+                   <div className="relative z-10"><CheckCircle className="w-10 h-10 text-green-500 mx-auto mb-2 bg-white rounded-full"/><p className="text-sm font-extrabold text-green-700 mb-2">Comprobante Cargado</p><img src={returnReceipt} className="h-28 object-contain mx-auto rounded-lg shadow-sm border border-green-200" alt="preview"/><p className="text-xs font-bold text-slate-500 mt-3 underline">Cambiar foto</p></div>
+                ) : (
+                   <div className="py-4"><Camera className="w-10 h-10 text-slate-400 mx-auto mb-3"/><p className="text-sm font-extrabold text-slate-600">Sube aquí el comprobante</p></div>
+                )}
+              </label>
+            ) : (
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-center"><p className="text-sm font-bold text-slate-600">Se registrará que entregaste el dinero en mano.</p></div>
+            )}
+
+            <div className="flex gap-4 mt-6"><button onClick={() => { setIsReturnOpen(false); setReturnReceipt(null); }} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-600">Cancelar</button><button onClick={submitReturn} className="flex-[2] py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-extrabold transition-all shadow-lg shadow-green-200">Confirmar</button></div>
           </div>
         </div>
       )}
@@ -955,7 +982,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
                 {exp.type !== 'assignment' && exp.type !== 'pending_return' ? (
                   <div className="flex gap-1 border-l border-slate-200 pl-2 ml-1">
                     <button onClick={() => setEditingExpense(exp)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors"><Edit2 className="w-4 h-4"/></button>
-                    <button onClick={() => handleDeleteExpense(exp)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
+                    <button onClick={() => delExp(exp)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
                   </div>
                 ) : <div className="pl-2 ml-1"><span className="text-[10px] font-bold text-slate-400 uppercase">{exp.type === 'assignment' ? 'Fondo' : 'Espera'}</span></div>}
               </div>
@@ -980,7 +1007,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   
   const filteredJobs = jobs.filter(job => {
     if (!isAdminView && (!job.assignedEmails?.includes(currentUserEmail) && job.acceptedByEmail !== currentUserEmail)) return false;
-    if (!isAdminView && job.status === 'failed' && job.tripType !== 'revision') return false; 
+    if (!isAdminView && job.status === 'failed' && job.tripType !== 'revision') return false;
     if (!job.createdAt) return true;
     if (!isAdminView) {
       const sevenDays = 7 * 24 * 60 * 60 * 1000;
@@ -1207,7 +1234,10 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                   {menuOpenId===j.id && (
                     <div className="absolute right-4 top-14 bg-white border shadow-2xl rounded-xl w-44 z-50 overflow-hidden text-xs">
                       <button onClick={()=>cpyWapp(j)} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-slate-50"><Copy className="w-4 h-4"/> Copiar Texto</button>
-                      <button onClick={()=>{setJobToFail(j);setMenuOpenId(null);}} className="w-full text-left p-3 font-bold flex gap-2 text-red-600 hover:bg-red-50 border-t"><XCircle className="w-4 h-4"/> Cancelar / Falló</button>
+                      {j.status !== 'completed' && j.status !== 'failed' && (
+                        <button onClick={()=>{setJobToFail(j);setMenuOpenId(null);}} className="w-full text-left p-3 font-bold flex gap-2 text-red-600 hover:bg-red-50 border-t"><XCircle className="w-4 h-4"/> Cancelar / Falló</button>
+                      )}
+                      {isAdminView && <button onClick={()=>handleDeleteJob(j.id)} className="w-full text-left p-3 font-bold flex gap-2 text-red-600 hover:bg-red-50 border-t"><Trash2 className="w-4 h-4"/> Eliminar</button>}
                     </div>
                   )}
                 </div>
@@ -1236,7 +1266,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
               </div>
               <div className="mt-auto pt-3 border-t flex flex-col">
                 {j.status === 'pending' && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && <button onClick={()=>handleAcceptJob(j)} className="bg-blue-600 text-white font-bold py-2.5 rounded-xl text-sm shadow-md">Reclamar Traslado</button>}
-                {((j.status === 'accepted' && (isAdminView || j.acceptedByEmail === currentUserEmail)) || (j.status !== 'completed' && j.status !== 'failed' && isAdminView)) && <button onClick={()=>onStartChecklist(j)} className="bg-green-600 text-white font-bold py-2.5 rounded-xl text-sm shadow-md">Iniciar Checklist</button>}
+                {((j.status === 'accepted' && (isAdminView || job.acceptedByEmail === currentUserEmail)) || (j.status !== 'completed' && j.status !== 'failed' && isAdminView)) && <button onClick={()=>onStartChecklist(j)} className="bg-green-600 text-white font-bold py-2.5 rounded-xl text-sm shadow-md">Iniciar Checklist</button>}
               </div>
             </div>
           ))}
@@ -1265,8 +1295,9 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                 </div>
                 <div className="flex gap-1.5 mt-2 sm:mt-0">
                   <button onClick={()=>cpyWapp(j)} className="p-2 bg-blue-50 text-blue-600 rounded-xl" title="Copiar Texto"><Copy className="w-4 h-4"/></button>
-                  <button onClick={async ()=>{ try { const docPDF = await buildPDFDoc(j); docPDF.save(`Check.${j.plate || 'SN'}.pdf`); } catch(e){showAlert("Error generando PDF");} }} className="p-2 bg-slate-100 text-slate-700 rounded-xl" title="Descargar PDF"><FileDown className="w-4 h-4"/></button>
-                  {isAdminView && <button onClick={()=>showConfirm("¿Eliminar?", ()=>deleteDoc(doc(db,'transport_jobs',j.id)))} className="p-2 bg-red-50 text-red-500 rounded-xl" title="Eliminar Historial"><Trash2 className="w-4 h-4"/></button>}
+                  <button onClick={()=>generatePDF(j)} className="p-2 bg-slate-100 text-slate-700 rounded-xl" title="Descargar PDF"><FileDown className="w-4 h-4"/></button>
+                  {j.status !== 'failed' && <button onClick={() => handleShareWhatsAppPDF(j)} className="p-2 bg-green-100 text-green-700 rounded-xl" title="Compartir PDF"><Share2 className="w-4 h-4"/></button>}
+                  {isAdminView && <button onClick={()=>handleDeleteJob(j.id)} className="p-2 bg-red-50 text-red-500 rounded-xl" title="Eliminar Historial"><Trash2 className="w-4 h-4"/></button>}
                 </div>
               </div>
             ))}
@@ -1328,8 +1359,10 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
           fd.assignedDriverName="Auto-creado"; fd.acceptedByEmail=currentUserEmail; 
           if (d.plateOrVin) {
               const vehRef = collection(db, 'vehicles');
-              getDocs(query(vehRef, where("plate", "==", d.plateOrVin.toUpperCase()))).then(snap => {
-                  if (snap.empty) { addDoc(vehRef, { plate: d.plateOrVin.toUpperCase(), brand: d.brand, model: d.model, client: d.client, createdAt: Date.now() }); }
+              onSnapshot(vehRef, async (snap) => {
+                if (!snap.docs.find(doc => doc.data().plate === d.plateOrVin.toUpperCase())) {
+                  await addDoc(vehRef, { plate: d.plateOrVin.toUpperCase(), brand: d.brand, model: d.model, client: d.client, createdAt: Date.now() });
+                }
               });
           }
           await addDoc(collection(db,'transport_jobs'), fd); 
