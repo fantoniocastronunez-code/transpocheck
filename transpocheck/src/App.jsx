@@ -664,7 +664,7 @@ export default function App() {
                   </div>
                 </div>
               )}
-            </main>
+            </>
           )}
 
       {currentView === 'main' && mainTab === 'ranking' && <LeaderboardView jobs={jobs} drivers={drivers} isAdminView={activeRole === 'admin'} />}
@@ -1459,35 +1459,35 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
               ))}
             </div>
 
-            <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-slate-800">Nivel de Combustible</h3>
-            
-            <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl p-6 mt-4 flex flex-col items-center">
-              <div className="relative w-48 h-24 overflow-hidden mt-2">
-                {/* Arco del medidor (Rojo, Amarillo, Verde) */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-44 h-44 rounded-full border-[16px] border-b-transparent border-l-red-500 border-t-amber-400 border-r-green-500 box-border"></div>
-                
-                {/* Etiquetas E - 1/2 - F */}
-                <span className="absolute left-3 bottom-0 font-black text-red-600 text-sm">E</span>
-                <span className="absolute left-1/2 -translate-x-1/2 top-2 font-black text-amber-600 text-xs bg-white/50 px-1 rounded">1/2</span>
-                <span className="absolute right-3 bottom-0 font-black text-green-600 text-sm">F</span>
+            <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-blue-600">Fotografías</h3>
+            <p className="text-xs font-bold text-slate-400 -mt-2 mb-4">Toca un cuadro para elegir cámara o galería</p>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              {[{id:'front', l:'Frente'}, {id:'left', l:'Lat. Piloto'}, {id:'right', l:'Lat. Copiloto'}, {id:'back', l:'Atrás'}, {id:'tire', l:'Repuesto'}, {id:'dashboard', l:'Tablero'}, {id:'det1', l:'Detalle 1'}, {id:'det2', l:'Detalle 2'}, {id:'det3', l:'Detalle 3'}, {id:'det4', l:'Detalle 4'}].map(p => (
+                <label key={p.id} className={`p-2 border-2 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all cursor-pointer relative overflow-hidden h-28 ${formData.photos[p.id] ? 'bg-green-50 border-green-400 shadow-md shadow-green-100' : 'border-dashed border-slate-300 hover:bg-slate-50 hover:border-slate-400'}`}>
+                  <input type="file" accept="image/*" className="hidden" onChange={e=>handlePic(e,p.id)} />
+                  {formData.photos[p.id] ? (
+                    <>
+                      <img src={formData.photos[p.id]} alt={p.l} className="absolute inset-0 w-full h-full object-cover opacity-50" />
+                      <CheckCircle className="text-green-600 w-8 h-8 relative z-10 bg-white rounded-full shadow-sm"/>
+                      <span className="text-[11px] font-extrabold text-slate-900 text-center relative z-10 bg-white/90 px-2 py-0.5 rounded-full shadow-sm">{p.l}</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="bg-slate-100 p-2.5 rounded-full mb-1"><Camera className="text-slate-400 w-6 h-6"/></div>
+                      <span className="text-xs font-extrabold text-slate-500 text-center tracking-wide">{p.l}</span>
+                    </>
+                  )}
+                </label>
+              ))}
+            </div>
 
-                {/* Aguja Animada */}
-                <div 
-                  className="absolute bottom-0 left-1/2 w-1 h-1 origin-bottom transition-transform duration-500 ease-out z-10"
-                  style={{ transform: `rotate(${(formData.fuelLevel / 100) * 180 - 90}deg)` }}
-                >
-                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1.5 h-[84px] bg-slate-800 rounded-t-full shadow-md"></div>
-                </div>
-                
-                {/* Círculo central */}
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-6 h-6 bg-slate-800 rounded-full z-20 shadow-md"></div>
-              </div>
-              
-              <div className="text-3xl font-black text-blue-600 mt-6 mb-2">{formData.fuelLevel}%</div>
-              <input type="range" min="0" max="100" step="5" value={formData.fuelLevel} onChange={(e) => updateForm('fuelLevel', e.target.value)} className="w-full accent-blue-600 h-3 bg-slate-300 rounded-lg appearance-none cursor-pointer mt-2" />
+            <div className="space-y-2 mt-8">
+              <label className="text-lg font-extrabold text-slate-800 flex justify-between items-center border-b-2 border-slate-100 pb-2">Combustible <span className="text-blue-600 text-xl">{formData.fuelLevel}%</span></label>
+              <input type="range" min="0" max="100" step="5" value={formData.fuelLevel} onChange={e=>setF('fuelLevel',e.target.value)} className="w-full accent-blue-600 h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer mt-4"/>
             </div>
             
-            <textarea rows="3" value={formData.observations} onChange={(e) => updateForm('observations', e.target.value)} placeholder="Observaciones de daños o detalles..." className="w-full border-2 border-slate-200 p-4 text-sm outline-none focus:border-blue-500 rounded-xl mt-6 font-bold text-slate-700"></textarea>
+            <textarea rows="3" value={formData.observations} onChange={e=>setF('observations',e.target.value)} placeholder="Observaciones de daños o detalles importantes..." className="w-full border-2 border-slate-200 p-4 text-base outline-none focus:border-blue-500 rounded-xl mt-8 font-bold text-slate-700"></textarea>
+            
             <button type="button" onClick={()=>setStep(2)} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-5 rounded-2xl mt-8 text-lg shadow-lg shadow-blue-200 transition-all transform hover:scale-[1.01]">Continuar a Recepción</button>
           </div>
         ) : (
