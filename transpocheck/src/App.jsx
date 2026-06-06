@@ -197,6 +197,13 @@ export default function App() {
     );
   }
 
+  // --- FUNCIÓN RECUPERADA (Causa de la pantalla en blanco) ---
+  const handleQuickChecklist = () => {
+    const today = new Date().toISOString().split('T')[0];
+    setSelectedJob({ id: 'NEW_QUICK_JOB', client: '', brand: '', model: '', plate: '', vin: '', origin: '', destination: '', tripType: 'traslado', expectedTollCost: 0, scheduledDate: today });
+    setCurrentView('checklist');
+  };
+
   const exportToExcel = () => {
     const headers = ['ID', 'Fecha Prog.', 'Cliente', 'Marca', 'Modelo', 'VIN/Patente', 'Desde', 'Hasta', 'Conductores Asignados', 'Conductor Realizó', 'Estado', 'Fecha Creación'];
     const rows = jobs.map(j => {
@@ -1010,7 +1017,6 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     try {
       if(isQuick) { 
         fd.createdAt = Date.now(); fd.assignedDriverName="Auto-creado"; fd.acceptedByEmail=currentUserEmail; 
-        if (d.plateOrVin && !vehicles.find(v => v.plate === d.plateOrVin.toUpperCase())) await addDoc(collection(db, 'vehicles'), { plate: d.plateOrVin.toUpperCase(), brand: d.brand, model: d.model, client: d.client, createdAt: Date.now() });
         await addDoc(collection(db,'transport_jobs'), fd); 
       }
       else { await updateDoc(doc(db,'transport_jobs',job.id), fd); }
