@@ -511,6 +511,7 @@ export default function App() {
         </main>
       )}
 
+      {/* PESTAÑA CONFIGURACIÓN (Solo Admin) */}
       {currentView === 'main' && mainTab === 'config' && activeRole === 'admin' && (
         <main className="max-w-5xl mx-auto p-4 pt-6">
            <div className="flex flex-wrap gap-1 mb-6 bg-white p-1.5 rounded-2xl border shadow-sm text-xs sm:text-sm">
@@ -804,7 +805,12 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
     });
   };
 
-  const TI = ({t}) => t==='assignment' ? <ArrowUpCircle className="w-5 h-5 text-green-500 shrink-0"/> : t==='pending_return' ? <Clock className="w-5 h-5 text-amber-500 shrink-0"/> : t==='expense' ? <ArrowDownCircle className="w-5 h-5 text-red-500 shrink-0"/> : <CheckCircle className="w-5 h-5 text-blue-500 shrink-0"/>;
+  const TransactionIcon = ({ type }) => {
+    if (type === 'assignment') return <ArrowUpCircle className="w-5 h-5 text-green-500 shrink-0"/>;
+    if (type === 'pending_return') return <Clock className="w-5 h-5 text-amber-500 shrink-0"/>;
+    if (type === 'expense') return <ArrowDownCircle className="w-5 h-5 text-red-500 shrink-0"/>;
+    return <CheckCircle className="w-5 h-5 text-blue-500 shrink-0"/>;
+  };
 
   const EditExpenseModal = ({ expense, onClose }) => {
     const handleUpdateSubmit = async (e) => {
@@ -1234,10 +1240,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                   {menuOpenId===j.id && (
                     <div className="absolute right-4 top-14 bg-white border shadow-2xl rounded-xl w-44 z-50 overflow-hidden text-xs">
                       <button onClick={()=>cpyWapp(j)} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-slate-50"><Copy className="w-4 h-4"/> Copiar Texto</button>
-                      {j.status !== 'completed' && j.status !== 'failed' && (
-                        <button onClick={()=>{setJobToFail(j);setMenuOpenId(null);}} className="w-full text-left p-3 font-bold flex gap-2 text-red-600 hover:bg-red-50 border-t"><XCircle className="w-4 h-4"/> Cancelar / Falló</button>
-                      )}
-                      {isAdminView && <button onClick={()=>handleDeleteJob(j.id)} className="w-full text-left p-3 font-bold flex gap-2 text-red-600 hover:bg-red-50 border-t"><Trash2 className="w-4 h-4"/> Eliminar</button>}
+                      <button onClick={()=>{setJobToFail(j);setMenuOpenId(null);}} className="w-full text-left p-3 font-bold flex gap-2 text-red-600 hover:bg-red-50 border-t"><XCircle className="w-4 h-4"/> Cancelar / Falló</button>
                     </div>
                   )}
                 </div>
@@ -1266,7 +1269,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
               </div>
               <div className="mt-auto pt-3 border-t flex flex-col">
                 {j.status === 'pending' && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && <button onClick={()=>handleAcceptJob(j)} className="bg-blue-600 text-white font-bold py-2.5 rounded-xl text-sm shadow-md">Reclamar Traslado</button>}
-                {((j.status === 'accepted' && (isAdminView || job.acceptedByEmail === currentUserEmail)) || (j.status !== 'completed' && j.status !== 'failed' && isAdminView)) && <button onClick={()=>onStartChecklist(j)} className="bg-green-600 text-white font-bold py-2.5 rounded-xl text-sm shadow-md">Iniciar Checklist</button>}
+                {((j.status === 'accepted' && (isAdminView || j.acceptedByEmail === currentUserEmail)) || (j.status !== 'completed' && j.status !== 'failed' && isAdminView)) && <button onClick={()=>onStartChecklist(j)} className="bg-green-600 text-white font-bold py-2.5 rounded-xl text-sm shadow-md">Iniciar Checklist</button>}
               </div>
             </div>
           ))}
@@ -1295,7 +1298,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                 </div>
                 <div className="flex gap-1.5 mt-2 sm:mt-0">
                   <button onClick={()=>cpyWapp(j)} className="p-2 bg-blue-50 text-blue-600 rounded-xl" title="Copiar Texto"><Copy className="w-4 h-4"/></button>
-                  <button onClick={()=>generatePDF(j)} className="p-2 bg-slate-100 text-slate-700 rounded-xl" title="Descargar PDF"><FileDown className="w-4 h-4"/></button>
+                  <button onClick={async ()=>{ try { const docPDF = await buildPDFDoc(j); docPDF.save(`Check.${j.plate || 'SN'}.pdf`); } catch(e){showAlert("Error generando PDF");} }} className="p-2 bg-slate-100 text-slate-700 rounded-xl" title="Descargar PDF"><FileDown className="w-4 h-4"/></button>
                   {j.status !== 'failed' && <button onClick={() => handleShareWhatsAppPDF(j)} className="p-2 bg-green-100 text-green-700 rounded-xl" title="Compartir PDF"><Share2 className="w-4 h-4"/></button>}
                   {isAdminView && <button onClick={()=>handleDeleteJob(j.id)} className="p-2 bg-red-50 text-red-500 rounded-xl" title="Eliminar Historial"><Trash2 className="w-4 h-4"/></button>}
                 </div>
