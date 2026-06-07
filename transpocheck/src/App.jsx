@@ -1143,33 +1143,45 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     return docPDF;
   };
 
-  const getJobDateStr = (job) => job.scheduledDate ? formatDateDisplay(job.scheduledDate) : formatDateDisplay(new Date().toISOString().split('T')[0]);
-  
-  const cpyWapp = j => { 
-    const dateStr = getDStr(j);
+ const getJobDateStr = (job) => job.scheduledDate ? formatDateDisplay(job.scheduledDate) : formatDateDisplay(new Date().toISOString().split('T')[0]);
+  const getDStr = getJobDateStr; // Mantenemos la compatibilidad
+
+  const handleCopyWhatsApp = (job) => {
+    const dateStr = getJobDateStr(job);
     const dateShort = dateStr.substring(0, 5); 
-    const text = `${dateShort}\n${j.client || 'Sin Cliente'}\n${j.brand || '-'} ${j.model || '-'}\n${j.plate || j.vin || '-'}\n${getRouteStr(j)}`; 
+    const text = `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}`; 
     navigator.clipboard.writeText(text).then(() => { 
       showAlert("✅ Formato copiado al portapapeles. Listo para pegar en WhatsApp."); 
       setMenuOpenId(null); 
-    }); 
+    }).catch(() => showAlert("Tu navegador bloqueó el copiado automático."));
   };
+  const cpyWapp = handleCopyWhatsApp; // Compatibilidad para el historial
 
   const generatePDF = async (job) => {
-    try { const docPDF = await buildPDFDoc(job); const fileName = `Check.${getJobDateStr(job).replace(/\//g, '-')}.${job.client || 'SinCliente'}.${job.plate || job.vin || 'SN'}.pdf`; docPDF.save(fileName); } 
-    catch(e) { console.error(e); showAlert("Hubo un error al generar PDF."); }
+    try { 
+      const docPDF = await buildPDFDoc(job); 
+      const fileName = `Check.${getJobDateStr(job).replace(/\//g, '-')}.${job.client || 'SinCliente'}.${job.plate || job.vin || 'SN'}.pdf`; 
+      docPDF.save(fileName); 
+    } catch(e) { console.error(e); showAlert("Hubo un error al generar PDF."); }
   };
 
   const handleShareWhatsAppPDF = async (job) => {
     try {
-      const dateStrForFile = getDStr(job).replace(/\//g, '-');
-      const dateShort = getDStr(job).substring(0, 5);
+      const dateStrForFile = getJobDateStr(job).replace(/\//g, '-');
+      const dateShort = getJobDateStr(job).substring(0, 5);
       const fileName = `Check.${dateStrForFile}.${job.client || 'SinCliente'}.${job.plate || job.vin || 'SN'}.pdf`;
       const text = `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}`;
       
-      const docPDF = await buildPDFDoc(job); const pdfBlob = docPDF.output('blob'); const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ title: fileName, text: text, files: [file] }); } 
-      else { showAlert("Tu dispositivo no soporta compartir el archivo directamente. Descárgalo primero y compártelo manual."); cpyWapp(job); }
+      const docPDF = await buildPDFDoc(job); 
+      const pdfBlob = docPDF.output('blob'); 
+      const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+      
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { 
+        await navigator.share({ title: fileName, text: text, files: [file] }); 
+      } else { 
+        showAlert("Tu dispositivo no soporta compartir el archivo directamente. Descárgalo primero."); 
+        handleCopyWhatsApp(job); 
+      }
     } catch (e) { console.error(e); }
   };
 
