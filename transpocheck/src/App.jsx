@@ -1293,7 +1293,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
 
   const setF = (f, v) => setFormData(p => ({...p, [f]:v}));
 
-  const handlePic = async (e, id) => {
+    const handlePic = async (e, id) => {
     const f=e.target.files[0]; if(!f)return;
     try {
       const b = await window.createImageBitmap(f,{resizeWidth:800}); const c=document.createElement('canvas'); c.width=b.width; c.height=b.height; c.getContext('2d').drawImage(b,0,0);
@@ -1303,10 +1303,13 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!formData.noReception && !formData.signatureData) return showAlert("La firma del receptor es mandatoria.");
+    if (job.tripType !== 'revision' && !formData.noReception && !formData.signatureData) return showAlert("La firma del receptor es mandatoria.");
     
     let d = {...formData}; 
-    if(d.noReception) { 
+    if (job.tripType === 'revision') {
+      d.receiverName = "PLANTA RT";
+      d.receiverRut = "N/A";
+    } else if(d.noReception) { 
       d.receiverName="ENTREGA SIN RECEPCIÓN"; 
       d.receiverRut="N/A"; 
     }
@@ -1315,14 +1318,6 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     try {
       if(isQuick) { 
           fd.assignedDriverName="Auto-creado"; fd.acceptedByEmail=currentUserEmail; 
-          if (d.plateOrVin) {
-              const vehRef = collection(db, 'vehicles');
-              onSnapshot(vehRef, async (snap) => {
-                if (!snap.docs.find(doc => doc.data().plate === d.plateOrVin.toUpperCase())) {
-                  await addDoc(vehRef, { plate: d.plateOrVin.toUpperCase(), brand: d.brand, model: d.model, client: d.client, createdAt: Date.now() });
-                }
-              });
-          }
           await addDoc(collection(db,'transport_jobs'), fd); 
       }
       else { 
@@ -1331,8 +1326,8 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
              fd.failedReason = d.rtRejectReason || 'Revisión Técnica Rechazada';
              
              const cloneJob = {
-                scheduledDate: d.scheduledDate, client: d.client, brand: d.brand, model: d.model, vin: d.plateOrVin, plate: d.plateOrVin, origin: d.origin, destination: d.destination,
-                tripType: job.tripType, rtData: job.rtData,
+                scheduledDate: fd.scheduledDate, client: d.client || '', brand: d.brand || '', model: d.model || '', vin: d.plateOrVin || '', plate: d.plateOrVin || '', origin: d.origin || '', destination: d.destination || '',
+                tripType: job.tripType || 'traslado', rtData: job.rtData || null,
                 assignedDrivers: job.assignedDrivers || [], assignedEmails: job.assignedEmails || [],
                 status: 'pending', createdAt: Date.now(), checklist: null
              };
@@ -1348,7 +1343,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
           showAlert("✅ Checklist guardado correctamente."); 
       }
       onComplete();
-    } catch(e) { showAlert("Guardado localmente. Se subirá al recuperar señal."); onComplete(); }
+    } catch(e) { console.error(e); showAlert("Guardado localmente. Se subirá al recuperar señal."); onComplete(); }
   };
 
   return (
@@ -1372,7 +1367,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
                 {formData.rtStatus === 'rechazado' && (
                   <input value={formData.rtRejectReason} onChange={e=>setF('rtRejectReason', e.target.value)} placeholder="¿Cuál fue la razón del rechazo?" required className="w-full border-2 border-red-300 p-4 rounded-xl outline-none focus:border-red-500 font-bold text-red-900 bg-white mt-2" />
                 )}
-                {formData.rtStatus === 'aprobado' && (
+                
                   <div className="mt-4 p-4 border-2 border-green-200 bg-green-50 rounded-xl space-y-3">
                     <p className="text-sm font-bold text-green-800">¿Hacia dónde se dirige el vehículo tras aprobar?</p>
                     <div className="flex gap-4">
@@ -1388,49 +1383,44 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
                     {formData.rtReturnOption === 'other' && (
                       <input value={formData.rtReturnDestination} onChange={e=>setF('rtReturnDestination', e.target.value)} placeholder="Especifique el destino final..." required className="w-full border-2 border-green-300 p-3 rounded-xl outline-none focus:border-green-500 font-bold text-green-900 bg-white" />
                     )}
-                  </div>
+                  </div>{formData.rtStatus === 'aprobado' && (
                 )}
               </>
             )}
 
-            <div className="bg-slate-50 p-4 rounded-2xl border-2 border-slate-100 mt-6 flex flex-col items-center">
-              <h3 className="text-sm font-extrabold text-slate-700 mb-4 w-full text-center">Nivel de Combustible: <span style={{color: formData.fuelLevel <= 15 ? '#ef4444' : formData.fuelLevel <= 40 ? '#f59e0b' : '#22c55e'}}>{formData.fuelLevel}%</span></h3>
+                       <div className="bg-slate-50 p-4 rounded-2xl border-2 border-slate-100 mt-6 flex flex-col items-center">
+              <h3 className="text-sm font-extrabold text-slate-700 mb-4 w-full text-center">Nivel de Combustible: <span style={{color: formData.fuelLevel <= 25 ? '#ef4444' : formData.fuelLevel <= 75 ? '#f59e0b' : '#22c55e'}}>{formData.fuelLevel}%</span></h3>
               <div className="relative w-48 h-24 mb-2 overflow-hidden">
                 <div className="absolute top-0 left-0 w-48 h-48 rounded-full border-[20px] border-slate-200 border-b-transparent border-r-transparent transform -rotate-45"></div>
                 <div className="absolute top-0 left-0 w-48 h-48 rounded-full border-[20px] border-red-400 border-b-transparent border-r-transparent transform -rotate-45" style={{clipPath: 'polygon(0 0, 30% 0, 50% 50%, 0 50%)'}}></div>
                 <div className="absolute top-0 left-0 w-48 h-48 rounded-full border-[20px] border-green-400 border-b-transparent border-r-transparent transform -rotate-45" style={{clipPath: 'polygon(70% 0, 100% 0, 100% 50%, 50% 50%)'}}></div>
-                <div className="absolute bottom-0 left-1/2 w-1 h-20 bg-slate-800 origin-bottom rounded-t-full transition-transform duration-500 ease-out shadow-lg" style={{ transform: `translateX(-50%) rotate(${-90 + (formData.fuelLevel / 100) * 180}deg)`, backgroundColor: formData.fuelLevel <= 15 ? '#ef4444' : formData.fuelLevel <= 40 ? '#f59e0b' : '#22c55e' }}>
-                  <div className="absolute bottom-0 left-1/2 w-4 h-4 bg-slate-800 rounded-full transform -translate-x-1/2 translate-y-1/2 shadow-md" style={{backgroundColor: formData.fuelLevel <= 15 ? '#ef4444' : formData.fuelLevel <= 40 ? '#f59e0b' : '#22c55e'}}></div>
+                <div className="absolute bottom-0 left-1/2 w-1 h-20 origin-bottom rounded-t-full transition-transform duration-500 ease-out shadow-lg" style={{ transform: `translateX(-50%) rotate(${-90 + (formData.fuelLevel / 100) * 180}deg)`, backgroundColor: formData.fuelLevel <= 25 ? '#ef4444' : formData.fuelLevel <= 75 ? '#f59e0b' : '#22c55e' }}>
+                  <div className="absolute bottom-0 left-1/2 w-4 h-4 rounded-full transform -translate-x-1/2 translate-y-1/2 shadow-md" style={{backgroundColor: formData.fuelLevel <= 25 ? '#ef4444' : formData.fuelLevel <= 75 ? '#f59e0b' : '#22c55e'}}></div>
                 </div>
                 <span className="absolute bottom-0 left-4 text-xs font-black text-red-500">E</span>
                 <span className="absolute bottom-0 right-4 text-xs font-black text-green-500">F</span>
               </div>
-              <input type="range" min="0" max="100" step="5" value={formData.fuelLevel} onChange={e=>setF('fuelLevel',e.target.value)} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer mt-4 outline-none" style={{accentColor: formData.fuelLevel <= 15 ? '#ef4444' : formData.fuelLevel <= 40 ? '#f59e0b' : '#22c55e'}}/>
+              <input type="range" min="0" max="100" step="5" value={formData.fuelLevel} onChange={e=>setF('fuelLevel',e.target.value)} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer mt-4 outline-none" style={{accentColor: formData.fuelLevel <= 25 ? '#ef4444' : formData.fuelLevel <= 75 ? '#f59e0b' : '#22c55e'}}/>
             </div>
             
-            <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Documentos a bordo</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {[{ id: 'soap', label: 'SOAP' }, { id: 'permiso', label: 'Permiso' }, { id: 'revTecnica', label: 'Rev. Técnica' }, { id: 'gases', label: 'Gases' }].map(doc => (
-                <label key={doc.id} className={`flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all ${formData.docs[doc.id] ? 'border-green-500 bg-green-50 text-green-800' : 'border-slate-200 bg-white text-slate-600'}`}>
-                  <input type="checkbox" className="w-4 h-4 text-green-600 rounded cursor-pointer" checked={formData.docs[doc.id]} onChange={(e) => setF('docs', { ...formData.docs, [doc.id]: e.target.checked })} />
-                  <span className="font-extrabold text-xs">{doc.label}</span>
-                </label>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pt-4">
+            <div className="grid grid-cols-4 gap-2 pt-4">
               {[{id:'front', l:'Frente'}, {id:'left', l:'Lat. Piloto'}, {id:'right', l:'Lat. Copiloto'}, {id:'back', l:'Atrás'}, {id:'tire', l:'Repuesto'}, {id:'dashboard', l:'Tablero'}, {id:'det1', l:'Detalle 1'}, {id:'det2', l:'Detalle 2'}, {id:'det3', l:'Detalle 3'}, {id:'det4', l:'Detalle 4'}].map(p => (
                 <label key={p.id} className={`p-1 border-2 rounded-2xl text-center cursor-pointer relative overflow-hidden h-20 flex flex-col justify-center items-center ${formData.photos[p.id]?'bg-green-50 border-green-400':'border-dashed'}`}><input type="file" className="hidden" accept="image/*" onChange={e=>handlePic(e,p.id)}/><Camera className="w-5 h-5 text-slate-400 mb-0.5"/> <span className="text-[10px] font-bold text-slate-500 uppercase">{p.l}</span></label>
               ))}
             </div>
             <button type="button" onClick={()=>setStep(2)} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mt-6 text-sm">Siguiente Paso</button>
           </div>
-        ) : (
+       ) : (
           <form onSubmit={submit} className="space-y-4">
             <label className="flex items-center gap-2.5 p-4 bg-amber-50 rounded-2xl border-amber-300 border-2 cursor-pointer"><input type="checkbox" checked={formData.noReception} onChange={e=>setF('noReception',e.target.checked)} className="w-5 h-5 cursor-pointer"/> <span className="font-extrabold text-sm text-slate-700">Dejar sin firma (Local cerrado / sin personal)</span></label>
             {!formData.noReception && (
               <><input required={!formData.noReception} value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/><input required={!formData.noReception} value={formData.receiverRut} onChange={e=>setF('receiverRut',e.target.value)} placeholder="RUT Receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/><SignaturePad onSave={d=>setF('signatureData',d)} onClear={()=>setF('signatureData',null)}/></>
             )}
+            
+            <button type="button" onClick={() => { if ("geolocation" in navigator) { navigator.geolocation.getCurrentPosition((pos) => setF('location', { lat: pos.coords.latitude, lng: pos.coords.longitude }), () => showAlert("Error GPS.")); } else { showAlert("GPS no soportado."); } }} className={`px-4 py-4 rounded-xl text-sm w-full font-extrabold shadow-sm mt-4 ${formData.location ? 'bg-green-100 text-green-700 border-2 border-green-200' : 'bg-slate-100 text-slate-700 border-2 border-slate-200'}`}>
+              {formData.location ? "📍 GPS Capturado Exitosamente" : "📍 Tocar para Capturar GPS Actual"}
+            </button>
+
             <div className="flex gap-2 pt-4 border-t"><button type="button" onClick={()=>setStep(1)} className="bg-slate-100 p-3 rounded-xl font-bold text-sm flex-1">Atrás</button><button type="submit" className="bg-green-600 text-white p-3 rounded-xl font-bold text-sm flex-[2]">Guardar Todo</button></div>
           </form>
         )}
@@ -1440,3 +1430,4 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
 }
 
 const globalStyles = <style>{`@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');body{font-family:'Nunito',sans-serif;background-color:#f8fafc;}`}</style>;
+```
