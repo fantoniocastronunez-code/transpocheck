@@ -8,9 +8,6 @@ import {
   Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Map, Ticket, Settings
 } from 'lucide-react';
 
-// ==========================================
-// 1. CONFIGURACIÓN EXACTA DE FIREBASE
-// ==========================================
 const firebaseConfig = {
   apiKey: "AIzaSyDlX1VY0n5dDEvD_Tyivb0u_DLdfsargfI",
   authDomain: "logisticapp-45452.firebaseapp.com",
@@ -30,9 +27,8 @@ try { enableIndexedDbPersistence(db).catch(() => {}); } catch (e) {}
 const CLIENTES = ["Grandleasing Las Torres", "Grandleasing Umaña", "Kovacs", "Salfa", "Enex", "CIPP", "Simumak", "Mutual Capacitación"];
 const LICENCIAS = ["A1", "A2", "A3", "A4", "A5", "A1 antigua", "A2 antigua", "B", "C"];
 
-// ==========================================
-// 2. COMPONENTE: FIRMA DIGITAL
-// ==========================================
+const globalStyles = <style>{`@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');body{font-family:'Nunito',sans-serif;background-color:#f8fafc;}`}</style>;
+
 const SignaturePad = ({ onSave, onClear, initialData }) => {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -86,9 +82,6 @@ const formatDateDisplay = (dateString) => {
   return `${d}/${m}/${y}`;
 };
 
-// ==========================================
-// 3. APLICACIÓN PRINCIPAL
-// ==========================================
 export default function App() {
   const [user, setUser] = useState(null);
   const [jobs, setJobs] = useState([]);
@@ -109,9 +102,9 @@ export default function App() {
   const [selectedJob, setSelectedJob] = useState(null);
   const [editingJob, setEditingJob] = useState(null);
   const [currentView, setCurrentView] = useState('main');
-  const [mainTab, setMainTab] = useState('jobs'); // jobs, ranking, expenses, config
-  const [jobsSubTab, setJobsSubTab] = useState('list'); // list, newJob
-  const [configSubTab, setConfigSubTab] = useState('vehicles'); // vehicles, drivers, tolls, destinations
+  const [mainTab, setMainTab] = useState('jobs');
+  const [jobsSubTab, setJobsSubTab] = useState('list');
+  const [configSubTab, setConfigSubTab] = useState('vehicles');
   const [activeRole, setActiveRole] = useState('driver');
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   
@@ -185,13 +178,6 @@ export default function App() {
 
     return () => { unsubJobs(); unsubDrivers(); unsubExpenses(); unsubVehicles(); unsubTolls(); unsubDestinations(); };
   }, [user, activeRole, currentUserEmail, isRealAdmin]);
-
-  const globalStyles = (
-    <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
-      body { font-family: 'Nunito', sans-serif; }
-    `}</style>
-  );
 
   if (!user) {
     return (
@@ -394,66 +380,8 @@ export default function App() {
                 ))}
              </div>
           </div>
-          <div className="flex justify-end pt-2"><button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-extrabold text-lg transition-colors shadow-lg shadow-blue-200">Guardar y Asignar</button></div>
+          <div className="flex justify-end pt-2"><button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-extrabold text-lg transition-colors shadow-lg shadow-blue-200">Guardar y Asignar</button></div>
         </form>
-      </div>
-    );
-  };
-
-  const EditJobModal = ({ job, onClose }) => {
-    const [selectedClient, setSelectedClient] = useState(CLIENTES.includes(job.client) ? job.client : (job.client ? 'OTRO' : ''));
-    const [manualClient, setManualClient] = useState(!CLIENTES.includes(job.client) ? job.client : '');
-    const defaultDate = job.scheduledDate || new Date().toISOString().split('T')[0];
-
-    const handleUpdateJobSubmit = async (e) => {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-      const selectedDriverIds = formData.getAll('assignedDriverId');
-      const assignedDriversList = drivers.filter(d => selectedDriverIds.includes(d.id));
-      const finalClient = selectedClient === 'OTRO' ? manualClient : selectedClient;
-      const updatedData = {
-        scheduledDate: formData.get('scheduledDate'), client: finalClient, brand: formData.get('brand'), model: formData.get('model'),
-        vin: formData.get('plateOrVin'), plate: formData.get('plateOrVin'), origin: formData.get('origin'), destination: formData.get('destination'),
-      };
-      if (assignedDriversList.length > 0) {
-        updatedData.assignedDrivers = assignedDriversList.map(d => ({id: d.id, name: d.name, email: d.email}));
-        updatedData.assignedEmails = assignedDriversList.map(d => d.email);
-      }
-      try { await updateDoc(doc(db, 'transport_jobs', job.id), updatedData); showAlert("Trabajo actualizado."); onClose(); } catch (error) { console.error(error); }
-    };
-
-    return (
-      <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-          <div className="p-6 border-b flex justify-between items-center sticky top-0 bg-white z-10">
-            <h2 className="text-xl font-extrabold text-slate-800">Modificar Trabajo</h2><button onClick={onClose} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button>
-          </div>
-          <form onSubmit={handleUpdateJobSubmit} className="p-6 space-y-6">
-            <div className="space-y-4">
-              <h3 className="text-sm font-bold text-slate-700">Programación, Cliente y Ruta</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1"><label className="text-xs font-bold text-slate-500 uppercase ml-1">Fecha Programada</label><input name="scheduledDate" type="date" defaultValue={defaultDate} required className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold text-slate-700" /></div>
-                <div className="space-y-1"><label className="text-xs font-bold text-slate-500 uppercase ml-1">Cliente</label><select value={selectedClient} onChange={(e) => setSelectedClient(e.target.value)} className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold"><option value="">Seleccione Cliente...</option>{CLIENTES.map(c => <option key={c} value={c}>{c}</option>)}<option value="OTRO">Otro (Ingreso manual)</option></select>{selectedClient === 'OTRO' && <input type="text" value={manualClient} onChange={(e) => setManualClient(e.target.value)} placeholder="Nombre del cliente" className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold mt-2" />}</div>
-                <input name="origin" defaultValue={job.origin} type="text" placeholder="Desde" className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold" />
-                <input name="destination" defaultValue={job.destination} type="text" placeholder="Hasta" className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold" />
-              </div>
-              <h3 className="text-sm font-bold text-slate-700 mt-6">Vehículo</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <input name="brand" defaultValue={job.brand} type="text" placeholder="Marca" className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold" />
-                <input name="model" defaultValue={job.model} type="text" placeholder="Modelo" className="w-full border-2 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold" />
-                <input name="plateOrVin" defaultValue={job.plate || job.vin} type="text" placeholder="Patente o VIN" className="w-full border-2 p-3 text-sm rounded-xl col-span-2 uppercase outline-none focus:border-blue-500 font-semibold" />
-              </div>
-              <h3 className="text-sm font-bold text-slate-700 mt-6">Conductores Asignados <span className="text-xs font-normal text-slate-400">(Dejar igual si no quieres cambiarlos)</span></h3>
-              <div className="max-h-40 overflow-y-auto border-2 rounded-xl">
-                  {drivers.map(d => {
-                    const isPreselected = job.assignedEmails?.includes(d.email);
-                    return (<label key={d.id} className="flex items-center p-3 border-b hover:bg-blue-50 cursor-pointer"><input type="checkbox" name="assignedDriverId" value={d.id} defaultChecked={isPreselected} className="w-5 h-5 cursor-pointer rounded text-blue-600" /><div className="ml-3"><span className="block text-sm font-bold text-slate-800">{d.name}</span></div></label>)
-                  })}
-              </div>
-            </div>
-            <div className="flex gap-4 pt-4 border-t"><button type="button" onClick={onClose} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold">Cancelar</button><button type="submit" className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold">Guardar Cambios</button></div>
-          </form>
-        </div>
       </div>
     );
   };
@@ -469,7 +397,7 @@ export default function App() {
         <div className="flex items-center gap-2 sm:gap-4">
           {!notificationsEnabled && <button onClick={requestNotificationPermission} className="p-2 bg-amber-500 hover:bg-amber-400 rounded-xl transition-colors shadow-sm" title="Activar Notificaciones"><Bell className="w-5 h-5 text-white animate-pulse" /></button>}
           {isRealAdmin && (
-            <button onClick={() => { setActiveRole(activeRole === 'admin' ? 'driver' : 'admin'); setMainTab('jobs'); }} className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-3 py-2 rounded-xl text-sm font-bold transition-all border border-white/10 backdrop-blur-sm">
+            <button onClick={() => setActiveRole(activeRole === 'admin' ? 'driver' : 'admin')} className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-3 py-2 rounded-xl text-sm font-bold transition-all border border-white/10 backdrop-blur-sm">
               {activeRole === 'admin' ? <ToggleRight className="w-6 h-6 text-green-300"/> : <ToggleLeft className="w-6 h-6 text-slate-300"/>}
               <span className="hidden md:inline">{activeRole === 'admin' ? 'Modo Admin' : 'Modo Conductor'}</span>
             </button>
@@ -511,7 +439,6 @@ export default function App() {
         </main>
       )}
 
-      {/* PESTAÑA CONFIGURACIÓN (Solo Admin) */}
       {currentView === 'main' && mainTab === 'config' && activeRole === 'admin' && (
         <main className="max-w-5xl mx-auto p-4 pt-6">
            <div className="flex flex-wrap gap-1 mb-6 bg-white p-1.5 rounded-2xl border shadow-sm text-xs sm:text-sm">
@@ -559,7 +486,7 @@ export default function App() {
                   <form onSubmit={async e => { e.preventDefault(); const fd = new FormData(e.target); const tIds = fd.getAll('tollIds'); const data = { name: fd.get('name'), tolls: tIds }; try { if (editingDestination) { await updateDoc(doc(db, 'destinations', editingDestination.id), data); setEditingDestination(null); showAlert("Destino actualizado."); } else { await addDoc(collection(db, 'destinations'), data); showAlert("Destino guardado."); } e.target.reset(); } catch(err){} }} className="bg-white p-6 rounded-3xl border space-y-4">
                     <h3 className="font-extrabold text-lg flex items-center gap-2"><Map className="text-blue-600"/> {editingDestination ? 'Editar Destino' : 'Nuevo Destino'}</h3>
                     <input name="name" defaultValue={editingDestination?.name} placeholder="Ciudad de Destino" required className="w-full border-2 p-2.5 rounded-xl text-sm font-semibold outline-none"/>
-                    <div className="flex justify-between items-center"><p className="text-xs font-bold text-slate-500">Filtrar Peajes:</p><select value={destDirectionFilter} onChange={(e) => setDestDirectionFilter(e.target.value)} className="border-2 p-1 rounded-lg text-xs font-bold outline-none"><option value="Todos">Todos</option><option value="Norte">Norte</option><option value="Sur">Sur</option></select></div>
+                    <div className="flex justify-between items-center"><p className="text-xs font-bold text-slate-500">Filtrar Peajes:</p><select value={destDirectionFilter} onChange={(e) => setDestDirectionFilter(e.target.value)} className="border-2 p-1 rounded-lg text-xs font-bold outline-none bg-white"><option value="Todos">Todos</option><option value="Norte">Norte</option><option value="Sur">Sur</option></select></div>
                     <div className="max-h-48 overflow-y-auto border-2 rounded-xl p-1 bg-slate-50 text-xs font-semibold">
                       {tolls.filter(t => destDirectionFilter === 'Todos' || t.direction === destDirectionFilter).map(t => <label key={t.id} className="flex items-center gap-2 p-1.5 border-b last:border-0 cursor-pointer hover:bg-slate-100"><input type="checkbox" name="tollIds" value={t.id} defaultChecked={editingDestination?.tolls?.includes(t.id)} className="w-4 h-4 rounded cursor-pointer"/> {t.name} ({t.direction})</label>)}
                     </div>
@@ -598,11 +525,11 @@ export default function App() {
                     </div>
                   </form>
                   <div className="bg-white p-6 rounded-3xl border flex flex-col shadow-sm">
-                    <div className="flex justify-between mb-4 items-center"><h3 className="text-lg font-extrabold">Base Flota</h3><select onChange={e=>setFleetFilter(e.target.value)} className="border-2 p-1.5 rounded-xl text-xs font-bold outline-none"><option value="">Todos</option>{CLIENTES.map(c=><option key={c}>{c}</option>)}</select></div>
+                    <div className="flex justify-between mb-4 items-center"><h3 className="text-lg font-extrabold">Base Flota</h3><select onChange={e=>setFleetFilter(e.target.value)} className="border-2 p-1.5 rounded-xl text-xs font-bold outline-none bg-white"><option value="">Todos</option>{CLIENTES.map(c=><option key={c}>{c}</option>)}</select></div>
                     <div className="space-y-2.5 overflow-y-auto max-h-[55vh]">
                       {vehicles.filter(v => !fleetFilter ? true : v.client === fleetFilter).map(v=>(
                         <div key={v.id} className="flex justify-between items-center p-3 bg-slate-50 border rounded-xl text-sm">
-                          <div><p className="font-extrabold text-slate-800">{v.brand} {v.model}</p><p className="text-sm font-bold text-blue-600">{v.plate}</p><p className="text-xs font-bold text-slate-400 mt-1">{v.client || 'Sin cliente'}</p></div>
+                          <div><p className="font-extrabold text-slate-800">{v.brand} {v.model}</p><p className="text-xs font-bold text-blue-600">{v.plate}</p><p className="text-xs font-bold text-slate-400 mt-1">{v.client || 'Sin cliente'}</p></div>
                           <div className="flex gap-1"><button onClick={()=>setEditingVehicle(v)} className="p-1.5 text-blue-600 bg-blue-50 rounded-lg"><Edit2 className="w-4 h-4"/></button><button onClick={()=>showConfirm("¿Eliminar este vehículo de la base de datos?", async () => {try { await deleteDoc(doc(db, 'vehicles', v.id)); } catch (e) { console.error(e); }})} className="p-1.5 text-red-600 bg-red-50 rounded-lg"><Trash2 className="w-4 h-4"/></button></div>
                         </div>
                       ))}
@@ -661,9 +588,9 @@ export default function App() {
       {currentView === 'checklist' && selectedJob && <main className="max-w-2xl mx-auto p-4 pt-6"><ChecklistForm job={selectedJob} db={db} currentUserEmail={currentUserEmail} onCancel={() => setCurrentView('main')} onComplete={() => { setSelectedJob(null); setCurrentView('main'); }} showAlert={showAlert} showConfirm={showConfirm} /></main>}
 
       {currentView === 'main' && (
-        <nav className="fixed bottom-0 w-full bg-white border-t flex justify-around p-2.5 z-40 pb-[env(safe-area-inset-bottom)] shadow-lg">
+        <nav className="fixed bottom-0 w-full bg-white border-t flex justify-around p-2.5 z-40 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
           <button onClick={handleQuickChecklist} className="flex flex-col items-center text-slate-400 hover:text-blue-600 w-16"><Zap className="w-6 h-6 mb-0.5 bg-slate-100 p-1 rounded-xl"/><span className="text-[10px] font-bold">Desde 0</span></button>
-          <button onClick={() => {setMainTab('jobs'); setJobsSubTab('list');}} className={`flex flex-col items-center w-16 ${mainTab==='jobs' ? 'text-blue-600' : 'text-slate-400'}`}><ClipboardList className={`w-6 h-6 mb-0.5 ${mainTab==='jobs'?'bg-blue-100':'bg-transparent'} p-1 rounded-xl`}/><span className="text-[10px] font-bold">Trabajos</span></button>
+          <button onClick={() => setMainTab('jobs')} className={`flex flex-col items-center w-16 ${mainTab==='jobs' ? 'text-blue-600' : 'text-slate-400'}`}><ClipboardList className={`w-6 h-6 mb-0.5 ${mainTab==='jobs'?'bg-blue-100':'bg-transparent'} p-1 rounded-xl`}/><span className="text-[10px] font-bold">Trabajos</span></button>
           <button onClick={() => setMainTab('ranking')} className={`flex flex-col items-center w-16 ${mainTab==='ranking' ? 'text-yellow-600' : 'text-slate-400'}`}><Trophy className={`w-6 h-6 mb-0.5 ${mainTab==='ranking'?'bg-yellow-100':'bg-transparent'} p-1 rounded-xl`}/><span className="text-[10px] font-bold">Ranking</span></button>
           <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center w-16 ${mainTab==='expenses' ? 'text-blue-600' : 'text-slate-400'}`}><Wallet className={`w-6 h-6 mb-0.5 ${mainTab==='expenses'?'bg-blue-100':'bg-transparent'} p-1 rounded-xl`}/><span className="text-[10px] font-bold">Gastos</span></button>
           {activeRole === 'admin' && (
@@ -675,7 +602,7 @@ export default function App() {
       {dialogConfig && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 transform transition-all animate-in zoom-in-95 duration-150">
-            <div className="flex items-center gap-3 mb-4"><div className="bg-blue-100 p-2 rounded-full">{dialogConfig.type === 'confirm' ? <AlertCircle className="w-6 h-6 text-blue-600"/> : <Bell className="w-6 h-6 text-blue-600"/>}</div><h3 className="text-xl font-extrabold">LogisticAPP</h3></div>
+            <div className="flex items-center gap-3 mb-4"><div className="bg-blue-100 p-2 rounded-full">{dialogConfig.type === 'confirm' ? <AlertCircle className="w-6 h-6 text-blue-600"/> : <Bell className="w-6 h-6 text-blue-600"/>}</div><h3 className="text-xl font-extrabold text-slate-800">LogisticAPP</h3></div>
             <p className="text-slate-600 font-bold mb-6 text-sm">{dialogConfig.message}</p>
             <div className="flex gap-3">
               {dialogConfig.type === 'confirm' && <button onClick={closeDialog} className="flex-1 py-2.5 bg-slate-100 rounded-xl font-bold text-sm">Cancelar</button>}
@@ -688,9 +615,6 @@ export default function App() {
   );
 }
 
-// ==========================================
-// MÓDULO RANKING Y HELPERS
-// ==========================================
 const getRouteStr = (j) => {
   if (j.tripType === 'revision') {
      if (j.checklist?.rtStatus === 'aprobado') {
@@ -730,7 +654,7 @@ function LeaderboardView({ jobs, drivers, isAdminView }) {
               {selectedDriverJobs.jobs.length === 0 ? <p className="text-center text-sm font-bold text-slate-400">Sin traslados.</p> : selectedDriverJobs.jobs.map(j => (
                 <div key={j.id} className="bg-slate-50 p-3 rounded-xl border text-xs">
                   <div className="flex justify-between mb-1"><p className="font-extrabold text-slate-800 text-sm">{j.brand} {j.model}</p><span className="border px-1.5 rounded bg-white font-bold text-slate-600 uppercase">{j.plate||j.vin}</span></div>
-                  <p className="font-semibold text-slate-500">{getRouteStr(j)}</p>
+                  <p className="font-semibold text-slate-500"><MapPin className="inline w-3 h-3 mr-0.5"/> {j.origin} ➔ <Navigation className="inline w-3 h-3 mr-0.5"/> {j.destination}</p>
                 </div>
               ))}
             </div>
@@ -805,13 +729,6 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
     });
   };
 
-  const TransactionIcon = ({ type }) => {
-    if (type === 'assignment') return <ArrowUpCircle className="w-5 h-5 text-green-500 shrink-0"/>;
-    if (type === 'pending_return') return <Clock className="w-5 h-5 text-amber-500 shrink-0"/>;
-    if (type === 'expense') return <ArrowDownCircle className="w-5 h-5 text-red-500 shrink-0"/>;
-    return <CheckCircle className="w-5 h-5 text-blue-500 shrink-0"/>;
-  };
-
   const EditExpenseModal = ({ expense, onClose }) => {
     const handleUpdateSubmit = async (e) => {
       e.preventDefault();
@@ -847,6 +764,13 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
     );
   };
 
+  const TransactionIcon = ({ type }) => {
+    if (type === 'assignment') return <ArrowUpCircle className="w-5 h-5 text-green-500 shrink-0"/>;
+    if (type === 'pending_return') return <Clock className="w-5 h-5 text-amber-500 shrink-0"/>;
+    if (type === 'expense') return <ArrowDownCircle className="w-5 h-5 text-red-500 shrink-0"/>;
+    return <CheckCircle className="w-5 h-5 text-blue-500 shrink-0"/>;
+  };
+
   if (isAdminView) {
     return (
       <main className="max-w-5xl mx-auto p-4 pt-6 pb-24">
@@ -875,21 +799,21 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
           <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col overflow-hidden w-full">
             <h3 className="font-bold text-slate-700 mb-4 text-sm">{selectedDriverId ? 'Movimientos del Conductor' : 'Historial de Rendiciones'}</h3>
             <div className="overflow-y-auto space-y-3 flex-1 pr-1" style={{ maxHeight: '60vh' }}>
-              {expenses.filter(e => selectedDriverId ? e.driverId === selectedDriverId : true).map(e => (
-                <div key={e.id} className="bg-slate-50 p-3 rounded-2xl border flex gap-3 items-start text-xs font-bold w-full overflow-hidden">
-                  <div className="mt-1"><TransactionIcon type={e.type}/></div>
+              {expenses.filter(e => selectedDriverId ? e.driverId === selectedDriverId : true).map(exp => (
+                <div key={exp.id} className="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex gap-3 items-start text-xs font-bold w-full overflow-hidden">
+                  <div className="mt-1"><TransactionIcon type={exp.type}/></div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-slate-800 break-words">{e.detail}</p>
-                    <p className="text-[10px] text-slate-400 truncate">{!selectedDriverId && <span className="text-blue-600">{e.driverName} • </span>}{new Date(e.createdAt).toLocaleDateString()}</p>
-                    {e.receiptImage && <button onClick={() => setViewingReceipt(e.receiptImage)} className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-100/50 px-2 py-1 rounded-md transition-colors w-fit"><Camera className="w-3.5 h-3.5"/> Ver comprobante</button>}
+                    <p className="text-slate-800 break-words">{exp.detail}</p>
+                    <p className="text-[10px] text-slate-400 truncate">{!selectedDriverId && <span className="text-blue-600">{exp.driverName} • </span>}{new Date(exp.createdAt).toLocaleDateString()}</p>
+                    {exp.receiptImage && <button onClick={() => setViewingReceipt(exp.receiptImage)} className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-100/50 px-2 py-1 rounded-md transition-colors w-fit"><Camera className="w-3.5 h-3.5"/> Ver comprobante</button>}
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0 ml-1">
-                    <span className={`font-extrabold ${e.type === 'expense' ? 'text-red-500' : 'text-green-600'}`}>{e.type === 'expense' ? '-' : '+'}{formatMoney(e.amount)}</span>
-                    {e.type === 'pending_return' && <button onClick={() => approveReturn(e)} className="ml-1 text-xs font-bold bg-green-600 text-white hover:bg-green-700 px-3 py-1.5 rounded-lg transition-colors">Aprobar</button>}
-                    {e.type !== 'pending_return' && (
+                    <span className={`font-extrabold ${exp.type === 'expense' ? 'text-red-500' : 'text-green-600'}`}>{exp.type === 'expense' ? '-' : '+'}{formatMoney(exp.amount)}</span>
+                    {exp.type === 'pending_return' && <button onClick={() => approveReturn(exp)} className="ml-1 text-xs font-bold bg-green-600 text-white hover:bg-green-700 px-3 py-1.5 rounded-lg transition-colors">Aprobar</button>}
+                    {exp.type !== 'pending_return' && (
                       <div className="flex gap-1 border-l border-slate-200 pl-2 ml-1">
-                        <button onClick={() => setEditingExpense(e)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors" title="Editar"><Edit2 className="w-3.5 h-3.5"/></button>
-                        <button onClick={() => delExp(e)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Eliminar"><Trash2 className="w-3.5 h-3.5"/></button>
+                        <button onClick={() => setEditingExpense(exp)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors" title="Editar"><Edit2 className="w-3.5 h-3.5"/></button>
+                        <button onClick={() => delExp(exp)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Eliminar"><Trash2 className="w-3.5 h-3.5"/></button>
                       </div>
                     )}
                   </div>
@@ -911,10 +835,10 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
     <main className="max-w-md mx-auto p-4 pt-6 space-y-6 pb-24">
       {viewingReceipt && <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[150] p-4"><div className="bg-white rounded-3xl p-4 w-full max-w-md relative"><button onClick={() => setViewingReceipt(null)} className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"><X className="w-5 h-5 text-slate-700"/></button><h3 className="font-extrabold text-slate-800 mb-4 ml-2">Comprobante</h3><img src={viewingReceipt} alt="Comprobante" className="w-full h-auto max-h-[70vh] object-contain rounded-xl shadow-sm" /></div></div>}
 
-      {isReturnOpen && (
+      {isReturnModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6">
-            <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-extrabold text-slate-800">Rendir Vuelto</h3><button onClick={() => { setIsReturnOpen(false); setReturnReceipt(null); }} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button></div>
+            <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-extrabold text-slate-800">Rendir Vuelto</h3><button onClick={() => { setIsReturnModalOpen(false); setReturnReceipt(null); }} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button></div>
             <p className="text-sm font-bold text-slate-500 mb-4 border-b border-slate-100 pb-4">Monto total a transferir/rendir: <span className="text-blue-600 text-xl font-extrabold block mt-1">{formatMoney(myBalance)}</span></p>
             
             <div className="flex gap-2 mb-4">
@@ -935,7 +859,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-center"><p className="text-sm font-bold text-slate-600">Se registrará que entregaste el dinero en mano.</p></div>
             )}
 
-            <div className="flex gap-4 mt-6"><button onClick={() => { setIsReturnOpen(false); setReturnReceipt(null); }} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-600">Cancelar</button><button onClick={submitReturn} className="flex-[2] py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-extrabold transition-all shadow-lg shadow-green-200">Confirmar</button></div>
+            <div className="flex gap-4 mt-6"><button onClick={() => { setIsReturnModalOpen(false); setReturnReceipt(null); }} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-600">Cancelar</button><button onClick={submitReturn} className="flex-[2] py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-extrabold transition-all shadow-lg shadow-green-200">Confirmar</button></div>
           </div>
         </div>
       )}
@@ -965,7 +889,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
         </div>
       ) : (
         myBalance > 0 && (
-          <button onClick={() => setIsReturnOpen(true)} className="w-full bg-green-50 hover:bg-green-100 text-green-700 border-2 border-green-200 py-4 rounded-3xl font-extrabold text-sm flex justify-center items-center gap-2 transition-all">
+          <button onClick={() => setIsReturnModalOpen(true)} className="w-full bg-green-50 hover:bg-green-100 text-green-700 border-2 border-green-200 py-4 rounded-3xl font-extrabold text-sm flex justify-center items-center gap-2 transition-all">
             <CheckCircle className="w-5 h-5"/> Rendir Vuelto ($0)
           </button>
         )
@@ -979,7 +903,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
               <div className="mt-1"><TransactionIcon type={exp.type}/></div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-extrabold text-slate-800 break-words">{exp.detail}</p>
-                <p className="text-[10px] font-bold text-slate-400">{new Date(exp.createdAt).toLocaleDateString()}</p>
+                <p className="text-[10px] font-bold text-slate-400">{new Date(exp.createdAt).toLocaleString()}</p>
                 {exp.receiptImage && <button onClick={() => setViewingReceipt(exp.receiptImage)} className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-100/50 px-2 py-1 rounded-md transition-colors w-fit"><Camera className="w-3.5 h-3.5"/> Ver foto</button>}
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -1001,9 +925,6 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
   );
 }
 
-// ==========================================
-// 4. COMPONENTE: LISTA DE TRABAJOS
-// ==========================================
 function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, currentUserEmail, showAlert, showConfirm }) {
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [jobToFail, setJobToFail] = useState(null);
@@ -1167,7 +1088,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
 
     if (job.checklist?.photos) {
       const photos = job.checklist.photos;
-      const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atrás', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
+      const labels = { front: 'Frente', left: 'Lateral Piloto', right: 'Lateral Copiloto', back: 'Atrás', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
       let currentY = 30; let currentCol = 1; let addedPage = false;
       const getImageDims = (src) => new Promise(resolve => { const img = new Image(); img.onload = () => resolve({ w: img.width, h: img.height }); img.src = src; });
 
@@ -1268,7 +1189,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                 <p className="text-slate-400 mt-2">Patente/VIN: <span className="text-slate-700 bg-slate-100 px-2 py-0.5 rounded ml-1 uppercase">{j.plate || j.vin || 'N/A'}</span></p>
               </div>
               <div className="mt-auto pt-3 border-t flex flex-col">
-                {j.status === 'pending' && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && <button onClick={()=>handleAcceptJob(j)} className="bg-blue-600 text-white font-bold py-2.5 rounded-xl text-sm shadow-md">Reclamar Traslado</button>}
+                {j.status === 'pending' && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && <button onClick={()=>updateDoc(doc(db,'transport_jobs',j.id),{status:'accepted',acceptedByEmail:currentUserEmail})} className="bg-blue-600 text-white font-bold py-2.5 rounded-xl text-sm shadow-md">Reclamar Traslado</button>}
                 {((j.status === 'accepted' && (isAdminView || j.acceptedByEmail === currentUserEmail)) || (j.status !== 'completed' && j.status !== 'failed' && isAdminView)) && <button onClick={()=>onStartChecklist(j)} className="bg-green-600 text-white font-bold py-2.5 rounded-xl text-sm shadow-md">Iniciar Checklist</button>}
               </div>
             </div>
@@ -1277,16 +1198,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       )}
       {historyJobs.length > 0 && (
         <div className="mt-4">
-          <div className="flex justify-between items-center mb-3 border-b-2 pb-1">
-             <h3 className="font-extrabold text-lg text-slate-700">Historial Simplificado</h3>
-             {isAdminView && (
-                <select onChange={e=>setHistoryClientFilter(e.target.value)} className="border-2 border-slate-200 p-1.5 rounded-lg text-xs font-bold outline-none text-slate-600">
-                  <option value="">Todos los Clientes</option>
-                  {CLIENTES.map(c=><option key={c} value={c}>{c}</option>)}
-                  <option value="OTRO">Otros</option>
-                </select>
-             )}
-          </div>
+          <h3 className="font-extrabold text-lg text-slate-700 mb-3 border-b-2 pb-1">Historial Simplificado</h3>
           <div className="flex flex-col gap-2.5">
             {historyJobs.map(j => (
               <div key={j.id} className="bg-white p-3.5 rounded-2xl border flex flex-col sm:flex-row justify-between sm:items-center gap-2 text-xs font-bold shadow-sm relative pl-4 overflow-hidden">
@@ -1300,7 +1212,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                   <button onClick={()=>cpyWapp(j)} className="p-2 bg-blue-50 text-blue-600 rounded-xl" title="Copiar Texto"><Copy className="w-4 h-4"/></button>
                   <button onClick={async ()=>{ try { const docPDF = await buildPDFDoc(j); docPDF.save(`Check.${j.plate || 'SN'}.pdf`); } catch(e){showAlert("Error generando PDF");} }} className="p-2 bg-slate-100 text-slate-700 rounded-xl" title="Descargar PDF"><FileDown className="w-4 h-4"/></button>
                   {j.status !== 'failed' && <button onClick={() => handleShareWhatsAppPDF(j)} className="p-2 bg-green-100 text-green-700 rounded-xl" title="Compartir PDF"><Share2 className="w-4 h-4"/></button>}
-                  {isAdminView && <button onClick={()=>handleDeleteJob(j.id)} className="p-2 bg-red-50 text-red-500 rounded-xl" title="Eliminar Historial"><Trash2 className="w-4 h-4"/></button>}
+                  {isAdminView && <button onClick={()=>showConfirm("¿Eliminar?", ()=>deleteDoc(doc(db,'transport_jobs',j.id)))} className="p-2 bg-red-50 text-red-500 rounded-xl" title="Eliminar Historial"><Trash2 className="w-4 h-4"/></button>}
                 </div>
               </div>
             ))}
@@ -1459,25 +1371,10 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
           </div>
         ) : (
           <form onSubmit={submit} className="space-y-4">
-            {job.tripType !== 'revision' ? (
-               <>
-                 <label className="flex items-center gap-2.5 p-4 bg-amber-50 rounded-2xl border-amber-300 border-2 cursor-pointer"><input type="checkbox" checked={formData.noReception} onChange={e=>setF('noReception',e.target.checked)} className="w-5 h-5 cursor-pointer"/> <span className="font-extrabold text-sm text-slate-700">Dejar sin firma (Local cerrado)</span></label>
-                 {!formData.noReception && (
-                   <><input required={!formData.noReception} value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/><input required={!formData.noReception} value={formData.receiverRut} onChange={e=>setF('receiverRut',e.target.value)} placeholder="RUT Receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/><SignaturePad onSave={d=>setF('signatureData',d)} onClear={()=>setF('signatureData',null)}/></>
-                 )}
-               </>
-            ) : (
-               <div className="bg-blue-50 border-2 border-blue-200 p-6 rounded-2xl text-center mb-6">
-                 <CheckCircle className="w-12 h-12 text-blue-500 mx-auto mb-2"/>
-                 <h3 className="text-lg font-extrabold text-blue-800">Cierre de Revisión Técnica</h3>
-                 <p className="text-sm font-bold text-blue-600">Al finalizar, no se requiere firma del receptor.</p>
-               </div>
+            <label className="flex items-center gap-2.5 p-4 bg-amber-50 rounded-2xl border-amber-300 border-2 cursor-pointer"><input type="checkbox" checked={formData.noReception} onChange={e=>setF('noReception',e.target.checked)} className="w-5 h-5 cursor-pointer"/> <span className="font-extrabold text-sm text-slate-700">Dejar sin firma (Local cerrado / sin personal)</span></label>
+            {!formData.noReception && (
+              <><input required={!formData.noReception} value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/><input required={!formData.noReception} value={formData.receiverRut} onChange={e=>setF('receiverRut',e.target.value)} placeholder="RUT Receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/><SignaturePad onSave={d=>setF('signatureData',d)} onClear={()=>setF('signatureData',null)}/></>
             )}
-            
-            <button type="button" onClick={() => { if ("geolocation" in navigator) { navigator.geolocation.getCurrentPosition((pos) => setF('location', { lat: pos.coords.latitude, lng: pos.coords.longitude }), () => showAlert("Error GPS.")); } }} className={`px-4 py-4 rounded-2xl text-sm w-full font-extrabold shadow-sm ${formData.location ? 'bg-green-100 text-green-700 border-2 border-green-200' : 'bg-slate-100 text-slate-700 border-2'}`}>
-              {formData.location ? "📍 GPS Capturado Exitosamente" : "📍 Tocar para Capturar GPS Actual"}
-            </button>
-
             <div className="flex gap-2 pt-4 border-t"><button type="button" onClick={()=>setStep(1)} className="bg-slate-100 p-3 rounded-xl font-bold text-sm flex-1">Atrás</button><button type="submit" className="bg-green-600 text-white p-3 rounded-xl font-bold text-sm flex-[2]">Guardar Todo</button></div>
           </form>
         )}
@@ -1485,5 +1382,3 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     </div>
   );
 }
-
-const globalStyles = <style>{`@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');body{font-family:'Nunito',sans-serif;background-color:#f8fafc;}`}</style>;
