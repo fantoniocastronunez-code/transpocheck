@@ -292,7 +292,7 @@ export default function App() {
                   {selectedDestId && (
                     <div className="p-4 bg-white border-2 border-blue-100 rounded-xl space-y-3">
                       <select value={tollCat} onChange={e => setTollCat(e.target.value)} className="w-full border-2 p-3 rounded-xl text-sm font-semibold">
-                        <option value="priceAuto">Auto / Camioneta</option><option value="priceTruck2">Camión 2 Ejes</option><option value="priceTruckMore">Camión +2 Ejes</option>
+                        <option value="priceAuto">Auto / Camioneta</option><option value="priceTruck2">Camión 2 Ejes</option><option value="priceTruckMore">Camión >2 Ejes</option>
                       </select>
                       <div className="flex justify-between bg-blue-50 p-3 rounded-xl"><span className="font-bold text-blue-800">Peajes Est.:</span><span className="font-black text-blue-600">{formatMoney(totalTolls)}</span></div>
                     </div>
