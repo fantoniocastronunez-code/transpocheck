@@ -121,12 +121,11 @@ export default function App() {
       const permission = await Notification.requestPermission();
       if (permission === "granted") {
         setNotificationsEnabled(true);
-        // OBTENCIÓN DEL TOKEN DE FCM
         const token = await getToken(messaging, { 
-          vapidKey: 'BK8z3mxtN3JApx1nw-9cVLzsjp78ufh0qimwqsxJOTnRuMIbQ4HQgYWGkKJ8h9MWPpZYFC3WxbX9Y-jskpIaOHY' // REEMPLAZA ESTO CON LA CLAVE QUE GENERASTE EN FIREBASE CONSOLE
+          vapidKey: 'BK8z3mxtN3JApx1nw-9cVLzsjp78ufh0qimwqsxJOTnRuMIbQ4HQgYWGkKJ8h9MWPpZYFC3WxbX9Y-jskpIaOHY' // Reemplaza esto con tu VAPID de Firebase
         });
         if (token) {
-           console.log("FCM Token guardado en consola:", token);
+           console.log("FCM Token:", token);
            triggerNotification("¡Notificaciones Activadas!", "Recibirás alertas Push de nuevos trabajos.");
         }
       }
@@ -146,7 +145,6 @@ export default function App() {
     }
   };
 
-  // Escuchador de mensajes Push en primer plano (FCM)
   useEffect(() => {
     const unsubscribe = onMessage(messaging, (payload) => {
       triggerNotification(payload.notification?.title || "LogisticAPP", payload.notification?.body || "Tienes un nuevo mensaje");
@@ -605,7 +603,7 @@ export default function App() {
                   </div>
                 </div>
               )}
-            </main>
+            </>
           ) : (
             <div className="space-y-6">
               <h2 className="text-2xl font-extrabold text-slate-800">Mis Trabajos</h2>
@@ -1204,14 +1202,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
               {j.tripType === 'revision' && (
                 <div className="mb-3 bg-amber-50 border border-amber-200 p-2 rounded-xl text-center">
                   <span className="text-[10px] font-black text-amber-700 uppercase">REVISIÓN TÉCNICA (TIPO {j.rtData?.type})</span>
-                  {j.rtData?.type === 'A' && (
-                    <p className="text-[9px] font-bold text-amber-600 mt-1">
-                      {j.rtData.gases && "Gases • "}{j.rtData.revision && "Revisión • "}{j.rtData.inspeccion && "Inspección • "}{j.rtData.frenos && "Frenos"}
-                    </p>
-                  )}
-                  {j.rtData?.type === 'B' && (
-                    <p className="text-[9px] font-bold text-amber-600 mt-1 uppercase">{j.rtData.tipoB}</p>
-                  )}
                 </div>
               )}
               {j.tripType === 'viaje' && <div className="bg-blue-50 border border-blue-100 rounded-xl p-2 mb-3 text-center text-xs font-bold text-blue-700 uppercase">Viaje Fuera de Santiago</div>}
@@ -1291,18 +1281,6 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
         rtStatus: 'aprobado', rtRejectReason: '', rtReturnOption: 'origin', rtReturnDestination: '' 
     };
   });
-
-  // Efecto analógico
-  const getRotation = () => {
-    const minAngle = -90; 
-    const maxAngle = 90;
-    return minAngle + (formData.fuelLevel / 100) * (maxAngle - minAngle);
-  };
-  const getFuelColor = () => {
-    if (formData.fuelLevel <= 15) return '#ef4444'; // Red
-    if (formData.fuelLevel <= 40) return '#f59e0b'; // Yellow
-    return '#22c55e'; // Green
-  };
 
   useEffect(() => { localStorage.setItem(DK, JSON.stringify(formData)); localStorage.setItem(`${DK}_s`, step); }, [formData, step, DK]);
 
@@ -1412,34 +1390,18 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
             )}
 
             <div className="bg-slate-50 p-4 rounded-2xl border-2 border-slate-100 mt-6 flex flex-col items-center">
-              <h3 className="text-sm font-extrabold text-slate-700 mb-4 w-full text-center">Nivel de Combustible: <span style={{color: getFuelColor()}}>{formData.fuelLevel}%</span></h3>
-              
-              {/* Medidor Analógico */}
+              <h3 className="text-sm font-extrabold text-slate-700 mb-4 w-full text-center">Nivel de Combustible: <span style={{color: formData.fuelLevel <= 15 ? '#ef4444' : formData.fuelLevel <= 40 ? '#f59e0b' : '#22c55e'}}>{formData.fuelLevel}%</span></h3>
               <div className="relative w-48 h-24 mb-2 overflow-hidden">
-                {/* Arco del medidor */}
                 <div className="absolute top-0 left-0 w-48 h-48 rounded-full border-[20px] border-slate-200 border-b-transparent border-r-transparent transform -rotate-45"></div>
-                {/* Zonas de color */}
                 <div className="absolute top-0 left-0 w-48 h-48 rounded-full border-[20px] border-red-400 border-b-transparent border-r-transparent transform -rotate-45" style={{clipPath: 'polygon(0 0, 30% 0, 50% 50%, 0 50%)'}}></div>
                 <div className="absolute top-0 left-0 w-48 h-48 rounded-full border-[20px] border-green-400 border-b-transparent border-r-transparent transform -rotate-45" style={{clipPath: 'polygon(70% 0, 100% 0, 100% 50%, 50% 50%)'}}></div>
-                
-                {/* Aguja */}
-                <div 
-                  className="absolute bottom-0 left-1/2 w-1 h-20 bg-slate-800 origin-bottom rounded-t-full transition-transform duration-500 ease-out shadow-lg"
-                  style={{ 
-                    transform: `translateX(-50%) rotate(${getRotation()}deg)`,
-                    backgroundColor: getFuelColor() 
-                  }}
-                >
-                  {/* Círculo central de la aguja */}
-                  <div className="absolute bottom-0 left-1/2 w-4 h-4 bg-slate-800 rounded-full transform -translate-x-1/2 translate-y-1/2 shadow-md" style={{backgroundColor: getFuelColor()}}></div>
+                <div className="absolute bottom-0 left-1/2 w-1 h-20 bg-slate-800 origin-bottom rounded-t-full transition-transform duration-500 ease-out shadow-lg" style={{ transform: `translateX(-50%) rotate(${-90 + (formData.fuelLevel / 100) * 180}deg)`, backgroundColor: formData.fuelLevel <= 15 ? '#ef4444' : formData.fuelLevel <= 40 ? '#f59e0b' : '#22c55e' }}>
+                  <div className="absolute bottom-0 left-1/2 w-4 h-4 bg-slate-800 rounded-full transform -translate-x-1/2 translate-y-1/2 shadow-md" style={{backgroundColor: formData.fuelLevel <= 15 ? '#ef4444' : formData.fuelLevel <= 40 ? '#f59e0b' : '#22c55e'}}></div>
                 </div>
-                
-                {/* Textos E y F */}
                 <span className="absolute bottom-0 left-4 text-xs font-black text-red-500">E</span>
                 <span className="absolute bottom-0 right-4 text-xs font-black text-green-500">F</span>
               </div>
-              
-              <input type="range" min="0" max="100" step="5" value={formData.fuelLevel} onChange={e=>setF('fuelLevel',e.target.value)} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer mt-4 outline-none" style={{accentColor: getFuelColor()}}/>
+              <input type="range" min="0" max="100" step="5" value={formData.fuelLevel} onChange={e=>setF('fuelLevel',e.target.value)} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer mt-4 outline-none" style={{accentColor: formData.fuelLevel <= 15 ? '#ef4444' : formData.fuelLevel <= 40 ? '#f59e0b' : '#22c55e'}}/>
             </div>
             
             <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Documentos a bordo</h3>
