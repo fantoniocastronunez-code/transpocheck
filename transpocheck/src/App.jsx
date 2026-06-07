@@ -9,6 +9,9 @@ import {
   Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Map, Ticket, Settings
 } from 'lucide-react';
 
+// ==========================================
+// 1. CONFIGURACIÓN EXACTA DE FIREBASE
+// ==========================================
 const firebaseConfig = {
   apiKey: "AIzaSyDlX1VY0n5dDEvD_Tyivb0u_DLdfsargfI",
   authDomain: "logisticapp-45452.firebaseapp.com",
@@ -29,6 +32,9 @@ try { enableIndexedDbPersistence(db).catch(() => {}); } catch (e) {}
 const CLIENTES = ["Grandleasing Las Torres", "Grandleasing Umaña", "Kovacs", "Salfa", "Enex", "CIPP", "Simumak", "Mutual Capacitación"];
 const LICENCIAS = ["A1", "A2", "A3", "A4", "A5", "A1 antigua", "A2 antigua", "B", "C"];
 
+// ==========================================
+// 2. COMPONENTE: FIRMA DIGITAL
+// ==========================================
 const SignaturePad = ({ onSave, onClear, initialData }) => {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -82,6 +88,9 @@ const formatDateDisplay = (dateString) => {
   return `${d}/${m}/${y}`;
 };
 
+// ==========================================
+// 3. APLICACIÓN PRINCIPAL
+// ==========================================
 export default function App() {
   const [user, setUser] = useState(null);
   const [jobs, setJobs] = useState([]);
@@ -115,19 +124,19 @@ export default function App() {
   const showConfirm = (message, onConfirm) => setDialogConfig({ type: 'confirm', message, onConfirm });
   const closeDialog = () => setDialogConfig(null);
 
+  // --- FCM NOTIFICATIONS ---
   const requestNotificationPermission = async () => {
     if (!("Notification" in window)) { showAlert("Tu navegador no soporta notificaciones."); return; }
     try {
       const permission = await Notification.requestPermission();
       if (permission === "granted") {
         setNotificationsEnabled(true);
-        const token = await getToken(messaging, { 
-          vapidKey: 'BK8z3mxtN3JApx1nw-9cVLzsjp78ufh0qimwqsxJOTnRuMIbQ4HQgYWGkKJ8h9MWPpZYFC3WxbX9Y-jskpIaOHY' // Reemplaza esto con tu VAPID de Firebase
-        });
-        if (token) {
-           console.log("FCM Token:", token);
-           triggerNotification("¡Notificaciones Activadas!", "Recibirás alertas Push de nuevos trabajos.");
-        }
+        // Descomenta y pon tu llave VAPID cuando la tengas en Firebase para habilitar PUSH nativo
+        /* 
+        const token = await getToken(messaging, { vapidKey: 'BK8z3mxtN3JApx1nw-9cVLzsjp78ufh0qimwqsxJOTnRuMIbQ4HQgYWGkKJ8h9MWPpZYFC3WxbX9Y-jskpIaOHY' });
+        if (token) console.log("FCM Token:", token); 
+        */
+        triggerNotification("¡Notificaciones Activadas!", "Recibirás alertas Push de nuevos trabajos.");
       }
     } catch (err) {
       console.error("Error al obtener permisos FCM:", err);
@@ -603,7 +612,7 @@ export default function App() {
                   </div>
                 </div>
               )}
-            </main>
+            </>
           ) : (
             <div className="space-y-6">
               <h2 className="text-2xl font-extrabold text-slate-800">Mis Trabajos</h2>
