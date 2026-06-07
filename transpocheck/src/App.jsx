@@ -123,7 +123,7 @@ export default function App() {
         setNotificationsEnabled(true);
         // OBTENCIÓN DEL TOKEN DE FCM
         const token = await getToken(messaging, { 
-          vapidKey: 'BFIQLxLf3fEp73IyIsatbh6oBI6e9usNun8pSTTtj4N_puVifvaav34' // REEMPLAZA ESTO CON LA CLAVE QUE GENERASTE EN FIREBASE CONSOLE
+          vapidKey: 'BK8z3mxtN3JApx1nw-9cVLzsjp78ufh0qimwqsxJOTnRuMIbQ4HQgYWGkKJ8h9MWPpZYFC3WxbX9Y-jskpIaOHY' // REEMPLAZA ESTO CON LA CLAVE QUE GENERASTE EN FIREBASE CONSOLE
         });
         if (token) {
            console.log("FCM Token guardado en consola:", token);
