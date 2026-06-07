@@ -131,11 +131,18 @@ export default function App() {
       const permission = await Notification.requestPermission();
       if (permission === "granted") {
         setNotificationsEnabled(true);
-        // Descomenta y pon tu llave VAPID cuando la tengas en Firebase para habilitar PUSH nativo
-        /* 
-        const token = await getToken(messaging, { vapidKey: 'BK8z3mxtN3JApx1nw-9cVLzsjp78ufh0qimwqsxJOTnRuMIbQ4HQgYWGkKJ8h9MWPpZYFC3WxbX9Y-jskpIaOHY' });
-        if (token) console.log("FCM Token:", token); 
-        */
+        
+        try {
+          // Conectando con Cloud Messaging usando tu llave VAPID real
+          const token = await getToken(messaging, { vapidKey: 'BK8z3mxtN3JApx1nw-9cVLzsjp78ufh0qimwqsxJOTnRuMIbQ4HQgYWGkKJ8h9MWPpZYFC3WxbX9Y-jskpIaOHY' });
+          if (token) {
+            console.log("FCM Token obtenido exitosamente:", token);
+            // El dispositivo ya está suscrito para recibir Push en segundo plano
+          }
+        } catch (tokenErr) {
+          console.error("Error al registrar el token de FCM:", tokenErr);
+        }
+
         triggerNotification("¡Notificaciones Activadas!", "Recibirás alertas Push de nuevos trabajos.");
       }
     } catch (err) {
@@ -439,7 +446,8 @@ export default function App() {
         </div>
       </header>
 
-      {/* RENDERIZADO CONDICIONAL DE TABS PRINCIPALES */}
+      {editingJob && <EditJobModal job={editingJob} onClose={() => setEditingJob(null)} />}
+
       {currentView === 'main' && mainTab === 'jobs' && (
         <main className="max-w-5xl mx-auto p-4 pt-6">
           {activeRole === 'admin' ? (
@@ -455,7 +463,7 @@ export default function App() {
                     <h2 className="text-2xl font-extrabold text-slate-800">Monitor Operativo</h2>
                     <button onClick={exportToExcel} className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex justify-center items-center gap-2 shadow-lg shadow-green-200 transition-colors"><Download className="w-5 h-5"/> Exportar Excel</button>
                   </div>
-                  <JobsList jobs={jobs} drivers={drivers} role="admin" onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />
+                  <JobsList jobs={jobs} drivers={drivers} role="admin" onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} onEditJob={setEditingJob} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />
                 </div>
               )}
               
@@ -510,9 +518,9 @@ export default function App() {
                     ))}
                   </div>
                 </div>
-           )}
+              )}
 
-           {configSubTab === 'destinations' && (
+              {configSubTab === 'destinations' && (
                 <div className="grid md:grid-cols-2 gap-6">
                   <form onSubmit={async e => { e.preventDefault(); const fd = new FormData(e.target); const tIds = fd.getAll('tollIds'); const data = { name: fd.get('name'), tolls: tIds }; try { if (editingDestination) { await updateDoc(doc(db, 'destinations', editingDestination.id), data); setEditingDestination(null); showAlert("Destino actualizado."); } else { await addDoc(collection(db, 'destinations'), data); showAlert("Destino guardado."); } e.target.reset(); } catch(err){} }} className="bg-white p-6 rounded-3xl border space-y-4">
                     <h3 className="font-extrabold text-lg flex items-center gap-2"><Map className="text-blue-600"/> {editingDestination ? 'Editar Destino' : 'Nuevo Destino'}</h3>
@@ -539,9 +547,9 @@ export default function App() {
                     ))}
                   </div>
                 </div>
-           )}
+              )}
 
-           {configSubTab === 'vehicles' && (
+              {configSubTab === 'vehicles' && (
                 <div className="grid md:grid-cols-2 gap-6">
                   <form onSubmit={async (e) => { e.preventDefault(); const formData = new FormData(e.target); const client = formData.get('client') === 'OTRO' ? formData.get('manualClient') : formData.get('client'); try { if(editingVehicle){ await updateDoc(doc(db, 'vehicles', editingVehicle.id), { client, brand: formData.get('brand'), model: formData.get('model'), plate: formData.get('plate').toUpperCase() }); setEditingVehicle(null); showAlert("Vehículo actualizado."); } else { await addDoc(collection(db, 'vehicles'), { client, brand: formData.get('brand'), model: formData.get('model'), plate: formData.get('plate').toUpperCase(), createdAt: Date.now() }); showAlert("Vehículo guardado."); } e.target.reset(); } catch (error) { console.error(error); } }} className="bg-white p-6 rounded-3xl border space-y-4 shadow-sm">
                     <h3 className="text-xl font-extrabold flex items-center gap-2"><Truck className="text-blue-600"/> {editingVehicle ? 'Editar' : 'Nuevo'} Vehículo</h3>
@@ -567,9 +575,9 @@ export default function App() {
                     </div>
                   </div>
                 </div>
-           )}
+              )}
 
-           {configSubTab === 'drivers' && (
+              {configSubTab === 'drivers' && (
                 <div className="grid md:grid-cols-2 gap-6">
                   <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry') }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); showAlert("Conductor actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); showAlert("Conductor creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white p-6 rounded-3xl border space-y-4 shadow-sm">
                     <h3 className="text-lg font-extrabold"><User className="text-blue-600 inline mr-1"/> {editingDriver ? 'Editar' : 'Nuevo'} Conductor</h3>
@@ -610,7 +618,14 @@ export default function App() {
                     ))}
                   </div>
                 </div>
-           )}
+              )}
+            </>
+          ) : (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-extrabold text-slate-800">Mis Trabajos</h2>
+              <JobsList jobs={jobs} drivers={drivers} role="driver" onStartChecklist={j => {setSelectedJob(j); setCurrentView('checklist')}} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />
+            </div>
+          )}
         </main>
       )}
 
@@ -1202,13 +1217,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
               
               {j.tripType === 'revision' && (
                 <div className="mb-3 bg-amber-50 border border-amber-200 p-2 rounded-xl text-center">
-                  <span className="text-[10px] font-black text-amber-700 uppercase">
-                    REVISIÓN TÉCNICA (TIPO {j.rtData?.type})<br/>
-                    {j.rtData?.type === 'A' ? 
-                      [j.rtData.gases && 'Gases', j.rtData.revision && 'Revisión', j.rtData.inspeccion && 'Inspección', j.rtData.frenos && 'Frenos'].filter(Boolean).join(' • ') 
-                      : (j.rtData?.tipoB === 'completa' ? 'Revisión Completa' : 'Sólo Gases')
-                    }
-                  </span>
+                  <span className="text-[10px] font-black text-amber-700 uppercase">REVISIÓN TÉCNICA (TIPO {j.rtData?.type})</span>
                 </div>
               )}
               {j.tripType === 'viaje' && <div className="bg-blue-50 border border-blue-100 rounded-xl p-2 mb-3 text-center text-xs font-bold text-blue-700 uppercase">Viaje Fuera de Santiago</div>}
@@ -1303,10 +1312,13 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!formData.noReception && !formData.signatureData) return showAlert("La firma del receptor es mandatoria.");
+    if (job.tripType !== 'revision' && !formData.noReception && !formData.signatureData) return showAlert("La firma del receptor es mandatoria.");
     
     let d = {...formData}; 
-    if(d.noReception) { 
+    if (job.tripType === 'revision') {
+      d.receiverName = "PLANTA RT";
+      d.receiverRut = "N/A";
+    } else if(d.noReception) { 
       d.receiverName="ENTREGA SIN RECEPCIÓN"; 
       d.receiverRut="N/A"; 
     }
