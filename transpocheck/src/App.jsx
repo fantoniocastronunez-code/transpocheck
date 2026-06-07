@@ -94,6 +94,14 @@ export default function App() {
   const [tolls, setTolls] = useState([]);
   const [destinations, setDestinations] = useState([]);
   
+  // VARIABLES DE ESTADO RESTAURADAS (CRÍTICAS PARA QUE NO COLAPSE LA PESTAÑA CONFIG)
+  const [editingDriver, setEditingDriver] = useState(null);
+  const [editingVehicle, setEditingVehicle] = useState(null);
+  const [editingToll, setEditingToll] = useState(null);
+  const [editingDestination, setEditingDestination] = useState(null);
+  const [fleetFilter, setFleetFilter] = useState('');
+  const [destDirectionFilter, setDestDirectionFilter] = useState('Todos'); 
+
   const [selectedJob, setSelectedJob] = useState(null);
   const [editingJob, setEditingJob] = useState(null);
   const [currentView, setCurrentView] = useState('main');
@@ -839,10 +847,10 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
     <main className="max-w-md mx-auto p-4 pt-6 space-y-6 pb-24">
       {viewingReceipt && <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[150] p-4"><div className="bg-white rounded-3xl p-4 w-full max-w-md relative"><button onClick={() => setViewingReceipt(null)} className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"><X className="w-5 h-5 text-slate-700"/></button><h3 className="font-extrabold text-slate-800 mb-4 ml-2">Comprobante</h3><img src={viewingReceipt} alt="Comprobante" className="w-full h-auto max-h-[70vh] object-contain rounded-xl shadow-sm" /></div></div>}
 
-      {isReturnOpen && (
+      {isReturnModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6">
-            <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-extrabold text-slate-800">Rendir Vuelto</h3><button onClick={() => { setIsReturnOpen(false); setReturnReceipt(null); }} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button></div>
+            <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-extrabold text-slate-800">Rendir Vuelto</h3><button onClick={() => { setIsReturnModalOpen(false); setReturnReceipt(null); }} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button></div>
             <p className="text-sm font-bold text-slate-500 mb-4 border-b border-slate-100 pb-4">Monto total a transferir/rendir: <span className="text-blue-600 text-xl font-extrabold block mt-1">{formatMoney(myBalance)}</span></p>
             
             <div className="flex gap-2 mb-4">
@@ -863,60 +871,59 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-center"><p className="text-sm font-bold text-slate-600">Se registrará que entregaste el dinero en mano.</p></div>
             )}
 
-            <div className="flex gap-4 mt-6"><button onClick={() => { setIsReturnOpen(false); setReturnReceipt(null); }} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-600">Cancelar</button><button onClick={submitReturn} className="flex-[2] py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-extrabold transition-all shadow-lg shadow-green-200">Confirmar</button></div>
+            <div className="flex gap-4 mt-6"><button onClick={() => { setIsReturnModalOpen(false); setReturnReceipt(null); }} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-600">Cancelar</button><button onClick={submitReturn} className="flex-[2] py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-extrabold transition-all shadow-lg shadow-green-200">Confirmar</button></div>
           </div>
         </div>
       )}
 
       {editingExpense && <EditExpenseModal expense={editingExpense} onClose={() => setEditingExpense(null)} />}
 
-      <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-3xl shadow-md text-center text-white relative overflow-hidden">
+      <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 rounded-3xl shadow-xl text-center text-white relative overflow-hidden">
         <Wallet className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10" />
-        <p className="text-blue-100 font-bold uppercase tracking-wider text-xs mb-1">Fondo Asignado Actual</p>
-        <p className="text-4xl font-extrabold tracking-tight">{formatMoney(myBalance)}</p>
+        <p className="text-blue-100 font-bold uppercase tracking-wider text-sm mb-2">Fondo Asignado Actual</p>
+        <p className="text-5xl font-extrabold tracking-tight">{formatMoney(myBalance)}</p>
       </div>
 
-      <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-        <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2 mb-4"><Receipt className="w-5 h-5 text-red-500"/> Registrar Gasto</h3>
-        <form onSubmit={e=>addExp(e,'expense',Number(e.target.amount.value), e.target.detail.value, myDriver.id, myDriver.name, myDriver.email)} className="space-y-4">
-          <input type="text" name="detail" placeholder="¿En qué gastaste? (Ej. Peaje)" required className="w-full border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-sm text-slate-700" />
-          <input type="number" name="amount" placeholder="Monto ($)" required className="w-full border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-sm text-slate-700" />
-          <button type="submit" disabled={myBalance <= 0 || hasPendingReturn} className={`w-full py-3 rounded-xl font-extrabold text-sm transition-all ${myBalance > 0 && !hasPendingReturn ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>Guardar Gasto</button>
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+        <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-2 mb-4"><Receipt className="w-5 h-5 text-red-500"/> Registrar Gasto</h3>
+        <form onSubmit={handleAddExpense} className="space-y-4">
+          <input type="text" name="detail" placeholder="¿En qué gastaste? (Ej. Peaje)" required className="w-full border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" />
+          <input type="number" name="amount" placeholder="Monto ($)" required className="w-full border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" />
+          <button type="submit" disabled={myBalance <= 0 || hasPendingReturn} className={`w-full py-4 rounded-2xl font-extrabold text-lg transition-all ${myBalance > 0 && !hasPendingReturn ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>Guardar Gasto</button>
         </form>
       </div>
       
       {hasPendingReturn ? (
         <div className="bg-amber-50 border-2 border-amber-200 p-4 rounded-3xl text-center">
-            <Clock className="w-6 h-6 text-amber-500 mx-auto mb-2"/>
-            <p className="font-extrabold text-sm text-amber-700">Rendición en Revisión</p>
+            <Clock className="w-8 h-8 text-amber-500 mx-auto mb-2"/>
+            <p className="font-extrabold text-amber-700">Rendición en Revisión</p>
             <p className="text-xs font-bold text-amber-600 mt-1">El administrador debe aprobar tu comprobante para actualizar el saldo a $0.</p>
         </div>
       ) : (
         myBalance > 0 && (
-          <button onClick={() => setIsReturnOpen(true)} className="w-full bg-green-50 hover:bg-green-100 text-green-700 border-2 border-green-200 py-4 rounded-3xl font-extrabold text-sm flex justify-center items-center gap-2 transition-all">
-            <CheckCircle className="w-5 h-5"/> Rendir Vuelto ($0)
+          <button onClick={() => setIsReturnModalOpen(true)} className="w-full bg-green-50 hover:bg-green-100 text-green-700 border-2 border-green-200 py-4 rounded-3xl font-extrabold text-lg flex justify-center items-center gap-2 transition-all">
+            <CheckCircle className="w-6 h-6"/> Rendir Vuelto ($0)
           </button>
         )
       )}
 
-      <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-        <h3 className="text-base font-extrabold text-slate-800 mb-4">Mis Movimientos</h3>
+      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+        <h3 className="text-lg font-extrabold text-slate-800 mb-4">Mis Movimientos</h3>
         <div className="space-y-3">
           {expenses.filter(e => e.driverId === myDriver.id).map(exp => (
-            <div key={exp.id} className="flex items-start gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-100">
-              <div className="mt-1"><TransactionIcon type={exp.type}/></div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-extrabold text-slate-800 break-words">{exp.detail}</p>
-                <p className="text-[10px] font-bold text-slate-400">{new Date(exp.createdAt).toLocaleDateString()}</p>
-                {exp.receiptImage && <button onClick={() => setViewingReceipt(exp.receiptImage)} className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-100/50 px-2 py-1 rounded-md transition-colors w-fit"><Camera className="w-3.5 h-3.5"/> Ver foto</button>}
+            <div key={exp.id} className="flex items-center gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+              <TransactionIcon type={exp.type}/>
+              <div className="flex-1">
+                <p className="text-sm font-extrabold text-slate-800">{exp.detail}</p>
+                <p className="text-[10px] font-bold text-slate-400">{new Date(exp.createdAt).toLocaleString()}</p>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2">
                 <span className={`font-extrabold ${exp.type === 'expense' ? 'text-red-500' : 'text-green-600'}`}>{exp.type === 'expense' ? '-' : '+'}{formatMoney(exp.amount)}</span>
                 
                 {exp.type !== 'assignment' && exp.type !== 'pending_return' ? (
                   <div className="flex gap-1 border-l border-slate-200 pl-2 ml-1">
                     <button onClick={() => setEditingExpense(exp)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors"><Edit2 className="w-4 h-4"/></button>
-                    <button onClick={() => delExp(exp)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
+                    <button onClick={() => handleDeleteExpense(exp)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
                   </div>
                 ) : <div className="pl-2 ml-1"><span className="text-[10px] font-bold text-slate-400 uppercase">{exp.type === 'assignment' ? 'Fondo' : 'Espera'}</span></div>}
               </div>
@@ -1474,7 +1481,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
               <select value={formData.client} onChange={e=>updateForm('client', e.target.value)} className="col-span-2 border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700 bg-white">
                 <option value="">Seleccione Cliente...</option>
                 {CLIENTES.map(c => <option key={c} value={c}>{c}</option>)}
-                <option value="OTRO">Otro</option>
+                <option value="OTRO">Otro (Ingreso manual)</option>
               </select>
               <input value={formData.brand} onChange={e=>updateForm('brand', e.target.value)} className="border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Marca" />
               <input value={formData.model} onChange={e=>updateForm('model', e.target.value)} className="border-2 border-slate-200 p-4 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" placeholder="Modelo" />
@@ -1516,7 +1523,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
 
             <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-slate-800">Documentos a bordo</h3>
             <div className="grid grid-cols-2 gap-3">
-              {[{ id: 'soap', label: 'SOAP' }, { id: 'permiso', label: 'Permiso' }, { id: 'revTecnica', label: 'Rev. Técnica' }, { id: 'gases', label: 'Gases' }].map(doc => (
+              {[{ id: 'soap', label: 'SOAP' }, { id: 'permiso', label: 'Permiso Circulación' }, { id: 'revTecnica', label: 'Revisión Técnica' }, { id: 'gases', label: 'Revisión Gases' }].map(doc => (
                 <label key={doc.id} className={`flex items-center gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all ${formData.docs[doc.id] ? 'border-green-500 bg-green-50 text-green-800' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}>
                   <input type="checkbox" className="w-5 h-5 text-green-600 rounded cursor-pointer" checked={formData.docs[doc.id]} onChange={(e) => updateForm('docs', { ...formData.docs, [doc.id]: e.target.checked })} />
                   <span className="font-extrabold text-sm">{doc.label}</span>
@@ -1528,7 +1535,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
               {[{id:'front', l:'Frente'}, {id:'left', l:'Lat. Piloto'}, {id:'right', l:'Lat. Copiloto'}, {id:'back', l:'Atrás'}, {id:'tire', l:'Repuesto'}, {id:'dashboard', l:'Tablero'}, {id:'det1', l:'Detalle 1'}, {id:'det2', l:'Detalle 2'}, {id:'det3', l:'Detalle 3'}, {id:'det4', l:'Detalle 4'}].map(p => (
                 <label key={p.id} className={`p-1 border-2 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all cursor-pointer relative overflow-hidden h-28 ${formData.photos[p.id] ? 'bg-green-50 border-green-400 shadow-md shadow-green-100' : 'border-dashed border-slate-300 hover:bg-slate-50 hover:border-slate-400'}`}>
-                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, p.id)} />
+                  <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleImageUpload(e, p.id)} />
                   {formData.photos[p.id] ? (
                     <><img src={formData.photos[p.id]} alt={p.l} className="absolute inset-0 w-full h-full object-cover opacity-50" /><CheckCircle className="text-green-600 w-8 h-8 relative z-10 bg-white rounded-full shadow-sm"/><span className="text-[10px] font-extrabold text-slate-800 text-center relative z-10 bg-white/90 px-2 py-0.5 rounded-full shadow-sm mt-1">{p.l}</span></>
                   ) : (
