@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
-import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc, enableIndexedDbPersistence, getDocs, query, where } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc, enableIndexedDbPersistence } from 'firebase/firestore';
+import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { jsPDF } from "jspdf";
 import { 
   Car, MapPin, Camera, Fuel, CheckCircle, FileText, Download, 
@@ -20,14 +21,13 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const messaging = getMessaging(app);
 const googleProvider = new GoogleAuthProvider();
 
 try { enableIndexedDbPersistence(db).catch(() => {}); } catch (e) {}
 
 const CLIENTES = ["Grandleasing Las Torres", "Grandleasing Umaña", "Kovacs", "Salfa", "Enex", "CIPP", "Simumak", "Mutual Capacitación"];
 const LICENCIAS = ["A1", "A2", "A3", "A4", "A5", "A1 antigua", "A2 antigua", "B", "C"];
-
-const globalStyles = <style>{`@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');body{font-family:'Nunito',sans-serif;background-color:#f8fafc;}`}</style>;
 
 const SignaturePad = ({ onSave, onClear, initialData }) => {
   const canvasRef = useRef(null);
@@ -115,14 +115,24 @@ export default function App() {
   const showConfirm = (message, onConfirm) => setDialogConfig({ type: 'confirm', message, onConfirm });
   const closeDialog = () => setDialogConfig(null);
 
-  const requestNotificationPermission = () => {
+  const requestNotificationPermission = async () => {
     if (!("Notification" in window)) { showAlert("Tu navegador no soporta notificaciones."); return; }
-    Notification.requestPermission().then(permission => {
+    try {
+      const permission = await Notification.requestPermission();
       if (permission === "granted") {
         setNotificationsEnabled(true);
-        triggerNotification("¡Notificaciones Activadas!", "Recibirás alertas de nuevos trabajos aquí.");
+        // OBTENCIÓN DEL TOKEN DE FCM
+        const token = await getToken(messaging, { 
+          vapidKey: 'BFIQLxLf3fEp73IyIsatbh6oBI6e9usNun8pSTTtj4N_puVifvaav34' // REEMPLAZA ESTO CON LA CLAVE QUE GENERASTE EN FIREBASE CONSOLE
+        });
+        if (token) {
+           console.log("FCM Token guardado en consola:", token);
+           triggerNotification("¡Notificaciones Activadas!", "Recibirás alertas Push de nuevos trabajos.");
+        }
       }
-    });
+    } catch (err) {
+      console.error("Error al obtener permisos FCM:", err);
+    }
   };
 
   const triggerNotification = (title, body) => {
@@ -135,6 +145,14 @@ export default function App() {
       } else { new Notification(title, { body }); }
     }
   };
+
+  // Escuchador de mensajes Push en primer plano (FCM)
+  useEffect(() => {
+    const unsubscribe = onMessage(messaging, (payload) => {
+      triggerNotification(payload.notification?.title || "LogisticAPP", payload.notification?.body || "Tienes un nuevo mensaje");
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (currentUser) => {
@@ -178,6 +196,13 @@ export default function App() {
 
     return () => { unsubJobs(); unsubDrivers(); unsubExpenses(); unsubVehicles(); unsubTolls(); unsubDestinations(); };
   }, [user, activeRole, currentUserEmail, isRealAdmin]);
+
+  const globalStyles = (
+    <style>{`
+      @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+      body { font-family: 'Nunito', sans-serif; }
+    `}</style>
+  );
 
   if (!user) {
     return (
@@ -580,6 +605,13 @@ export default function App() {
                   </div>
                 </div>
               )}
+            </>
+          ) : (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-extrabold text-slate-800">Mis Trabajos</h2>
+              <JobsList jobs={jobs} drivers={drivers} role="driver" onStartChecklist={j => {setSelectedJob(j); setCurrentView('checklist')}} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />
+            </div>
+          )}
         </main>
       )}
 
@@ -588,7 +620,7 @@ export default function App() {
       {currentView === 'checklist' && selectedJob && <main className="max-w-2xl mx-auto p-4 pt-6"><ChecklistForm job={selectedJob} db={db} currentUserEmail={currentUserEmail} onCancel={() => setCurrentView('main')} onComplete={() => { setSelectedJob(null); setCurrentView('main'); }} showAlert={showAlert} showConfirm={showConfirm} /></main>}
 
       {currentView === 'main' && (
-        <nav className="fixed bottom-0 w-full bg-white border-t flex justify-around p-2.5 z-40 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+        <nav className="fixed bottom-0 w-full bg-white border-t flex justify-around p-2.5 z-40 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
           <button onClick={handleQuickChecklist} className="flex flex-col items-center text-slate-400 hover:text-blue-600 w-16"><Zap className="w-6 h-6 mb-0.5 bg-slate-100 p-1 rounded-xl"/><span className="text-[10px] font-bold">Desde 0</span></button>
           <button onClick={() => setMainTab('jobs')} className={`flex flex-col items-center w-16 ${mainTab==='jobs' ? 'text-blue-600' : 'text-slate-400'}`}><ClipboardList className={`w-6 h-6 mb-0.5 ${mainTab==='jobs'?'bg-blue-100':'bg-transparent'} p-1 rounded-xl`}/><span className="text-[10px] font-bold">Trabajos</span></button>
           <button onClick={() => setMainTab('ranking')} className={`flex flex-col items-center w-16 ${mainTab==='ranking' ? 'text-yellow-600' : 'text-slate-400'}`}><Trophy className={`w-6 h-6 mb-0.5 ${mainTab==='ranking'?'bg-yellow-100':'bg-transparent'} p-1 rounded-xl`}/><span className="text-[10px] font-bold">Ranking</span></button>
@@ -1172,6 +1204,14 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
               {j.tripType === 'revision' && (
                 <div className="mb-3 bg-amber-50 border border-amber-200 p-2 rounded-xl text-center">
                   <span className="text-[10px] font-black text-amber-700 uppercase">REVISIÓN TÉCNICA (TIPO {j.rtData?.type})</span>
+                  {j.rtData?.type === 'A' && (
+                    <p className="text-[9px] font-bold text-amber-600 mt-1">
+                      {j.rtData.gases && "Gases • "}{j.rtData.revision && "Revisión • "}{j.rtData.inspeccion && "Inspección • "}{j.rtData.frenos && "Frenos"}
+                    </p>
+                  )}
+                  {j.rtData?.type === 'B' && (
+                    <p className="text-[9px] font-bold text-amber-600 mt-1 uppercase">{j.rtData.tipoB}</p>
+                  )}
                 </div>
               )}
               {j.tripType === 'viaje' && <div className="bg-blue-50 border border-blue-100 rounded-xl p-2 mb-3 text-center text-xs font-bold text-blue-700 uppercase">Viaje Fuera de Santiago</div>}
@@ -1189,7 +1229,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                 <p className="text-slate-400 mt-2">Patente/VIN: <span className="text-slate-700 bg-slate-100 px-2 py-0.5 rounded ml-1 uppercase">{j.plate || j.vin || 'N/A'}</span></p>
               </div>
               <div className="mt-auto pt-3 border-t flex flex-col">
-                {j.status === 'pending' && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && <button onClick={()=>updateDoc(doc(db,'transport_jobs',j.id),{status:'accepted',acceptedByEmail:currentUserEmail})} className="bg-blue-600 text-white font-bold py-2.5 rounded-xl text-sm shadow-md">Reclamar Traslado</button>}
+                {j.status === 'pending' && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && <button onClick={()=>handleAcceptJob(j)} className="bg-blue-600 text-white font-bold py-2.5 rounded-xl text-sm shadow-md">Reclamar Traslado</button>}
                 {((j.status === 'accepted' && (isAdminView || j.acceptedByEmail === currentUserEmail)) || (j.status !== 'completed' && j.status !== 'failed' && isAdminView)) && <button onClick={()=>onStartChecklist(j)} className="bg-green-600 text-white font-bold py-2.5 rounded-xl text-sm shadow-md">Iniciar Checklist</button>}
               </div>
             </div>
@@ -1198,7 +1238,16 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       )}
       {historyJobs.length > 0 && (
         <div className="mt-4">
-          <h3 className="font-extrabold text-lg text-slate-700 mb-3 border-b-2 pb-1">Historial Simplificado</h3>
+          <div className="flex justify-between items-center mb-3 border-b-2 pb-1">
+             <h3 className="font-extrabold text-lg text-slate-700">Historial Simplificado</h3>
+             {isAdminView && (
+                <select onChange={e=>setHistoryClientFilter(e.target.value)} className="border-2 border-slate-200 p-1.5 rounded-lg text-xs font-bold outline-none text-slate-600">
+                  <option value="">Todos los Clientes</option>
+                  {CLIENTES.map(c=><option key={c} value={c}>{c}</option>)}
+                  <option value="OTRO">Otros</option>
+                </select>
+             )}
+          </div>
           <div className="flex flex-col gap-2.5">
             {historyJobs.map(j => (
               <div key={j.id} className="bg-white p-3.5 rounded-2xl border flex flex-col sm:flex-row justify-between sm:items-center gap-2 text-xs font-bold shadow-sm relative pl-4 overflow-hidden">
@@ -1212,7 +1261,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                   <button onClick={()=>cpyWapp(j)} className="p-2 bg-blue-50 text-blue-600 rounded-xl" title="Copiar Texto"><Copy className="w-4 h-4"/></button>
                   <button onClick={async ()=>{ try { const docPDF = await buildPDFDoc(j); docPDF.save(`Check.${j.plate || 'SN'}.pdf`); } catch(e){showAlert("Error generando PDF");} }} className="p-2 bg-slate-100 text-slate-700 rounded-xl" title="Descargar PDF"><FileDown className="w-4 h-4"/></button>
                   {j.status !== 'failed' && <button onClick={() => handleShareWhatsAppPDF(j)} className="p-2 bg-green-100 text-green-700 rounded-xl" title="Compartir PDF"><Share2 className="w-4 h-4"/></button>}
-                  {isAdminView && <button onClick={()=>showConfirm("¿Eliminar?", ()=>deleteDoc(doc(db,'transport_jobs',j.id)))} className="p-2 bg-red-50 text-red-500 rounded-xl" title="Eliminar Historial"><Trash2 className="w-4 h-4"/></button>}
+                  {isAdminView && <button onClick={()=>handleDeleteJob(j.id)} className="p-2 bg-red-50 text-red-500 rounded-xl" title="Eliminar Historial"><Trash2 className="w-4 h-4"/></button>}
                 </div>
               </div>
             ))}
@@ -1242,6 +1291,18 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
         rtStatus: 'aprobado', rtRejectReason: '', rtReturnOption: 'origin', rtReturnDestination: '' 
     };
   });
+
+  // Efecto analógico
+  const getRotation = () => {
+    const minAngle = -90; 
+    const maxAngle = 90;
+    return minAngle + (formData.fuelLevel / 100) * (maxAngle - minAngle);
+  };
+  const getFuelColor = () => {
+    if (formData.fuelLevel <= 15) return '#ef4444'; // Red
+    if (formData.fuelLevel <= 40) return '#f59e0b'; // Yellow
+    return '#22c55e'; // Green
+  };
 
   useEffect(() => { localStorage.setItem(DK, JSON.stringify(formData)); localStorage.setItem(`${DK}_s`, step); }, [formData, step, DK]);
 
@@ -1350,7 +1411,36 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
               </>
             )}
 
-            <div className="space-y-1 pt-2"><label className="text-xs font-extrabold text-slate-400 uppercase">Combustible: {formData.fuelLevel}%</label><input type="range" min="0" max="100" step="5" value={formData.fuelLevel} onChange={e=>setF('fuelLevel',e.target.value)} className="w-full accent-blue-600 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"/></div>
+            <div className="bg-slate-50 p-4 rounded-2xl border-2 border-slate-100 mt-6 flex flex-col items-center">
+              <h3 className="text-sm font-extrabold text-slate-700 mb-4 w-full text-center">Nivel de Combustible: <span style={{color: getFuelColor()}}>{formData.fuelLevel}%</span></h3>
+              
+              {/* Medidor Analógico */}
+              <div className="relative w-48 h-24 mb-2 overflow-hidden">
+                {/* Arco del medidor */}
+                <div className="absolute top-0 left-0 w-48 h-48 rounded-full border-[20px] border-slate-200 border-b-transparent border-r-transparent transform -rotate-45"></div>
+                {/* Zonas de color */}
+                <div className="absolute top-0 left-0 w-48 h-48 rounded-full border-[20px] border-red-400 border-b-transparent border-r-transparent transform -rotate-45" style={{clipPath: 'polygon(0 0, 30% 0, 50% 50%, 0 50%)'}}></div>
+                <div className="absolute top-0 left-0 w-48 h-48 rounded-full border-[20px] border-green-400 border-b-transparent border-r-transparent transform -rotate-45" style={{clipPath: 'polygon(70% 0, 100% 0, 100% 50%, 50% 50%)'}}></div>
+                
+                {/* Aguja */}
+                <div 
+                  className="absolute bottom-0 left-1/2 w-1 h-20 bg-slate-800 origin-bottom rounded-t-full transition-transform duration-500 ease-out shadow-lg"
+                  style={{ 
+                    transform: `translateX(-50%) rotate(${getRotation()}deg)`,
+                    backgroundColor: getFuelColor() 
+                  }}
+                >
+                  {/* Círculo central de la aguja */}
+                  <div className="absolute bottom-0 left-1/2 w-4 h-4 bg-slate-800 rounded-full transform -translate-x-1/2 translate-y-1/2 shadow-md" style={{backgroundColor: getFuelColor()}}></div>
+                </div>
+                
+                {/* Textos E y F */}
+                <span className="absolute bottom-0 left-4 text-xs font-black text-red-500">E</span>
+                <span className="absolute bottom-0 right-4 text-xs font-black text-green-500">F</span>
+              </div>
+              
+              <input type="range" min="0" max="100" step="5" value={formData.fuelLevel} onChange={e=>setF('fuelLevel',e.target.value)} className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer mt-4 outline-none" style={{accentColor: getFuelColor()}}/>
+            </div>
             
             <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Documentos a bordo</h3>
             <div className="grid grid-cols-2 gap-2">
@@ -1382,3 +1472,5 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     </div>
   );
 }
+
+const globalStyles = <style>{`@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');body{font-family:'Nunito',sans-serif;background-color:#f8fafc;}`}</style>;
