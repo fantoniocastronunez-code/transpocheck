@@ -605,7 +605,7 @@ export default function App() {
                   </div>
                 </div>
               )}
-            </>
+            </main>
           ) : (
             <div className="space-y-6">
               <h2 className="text-2xl font-extrabold text-slate-800">Mis Trabajos</h2>
