@@ -631,26 +631,6 @@ export default function App() {
 
       {currentView === 'main' && mainTab === 'ranking' && <LeaderboardView jobs={jobs} drivers={drivers} isAdminView={activeRole === 'admin'} />}
       {currentView === 'main' && mainTab === 'expenses' && <ExpensesView role={activeRole} drivers={drivers} jobs={jobs} expenses={expenses} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />}
-
-      {currentView === 'main' && mainTab === 'config' && (
-        <main className="max-w-5xl mx-auto p-4 pt-6 pb-24">
-          <h2 className="text-2xl font-extrabold mb-6">Configuración</h2>
-          
-          <div className="flex flex-wrap gap-2 mb-6">
-            <button onClick={() => setConfigSubTab('peajes')} className={`px-6 py-2 rounded-xl font-bold text-sm ${configSubTab === 'peajes' ? 'bg-blue-600 text-white' : 'bg-white border'}`}>Peajes</button>
-            <button onClick={() => setConfigSubTab('destinos')} className={`px-6 py-2 rounded-xl font-bold text-sm ${configSubTab === 'destinos' ? 'bg-blue-600 text-white' : 'bg-white border'}`}>Destinos</button>
-            <button onClick={() => setConfigSubTab('conductores')} className={`px-6 py-2 rounded-xl font-bold text-sm ${configSubTab === 'conductores' ? 'bg-blue-600 text-white' : 'bg-white border'}`}>Conductores</button>
-            <button onClick={() => setConfigSubTab('vehiculos')} className={`px-6 py-2 rounded-xl font-bold text-sm ${configSubTab === 'vehiculos' ? 'bg-blue-600 text-white' : 'bg-white border'}`}>Vehículos</button>
-          </div>
-
-          <div className="bg-white p-8 rounded-3xl border">
-            {configSubTab === 'peajes' && <p className="text-slate-600">Sección de Peajes lista. Dime si quieres los formularios completos.</p>}
-            {configSubTab === 'destinos' && <p className="text-slate-600">Sección de Destinos lista. Dime si quieres los formularios completos.</p>}
-            {configSubTab === 'conductores' && <p className="text-slate-600">Sección de Conductores lista. Dime si quieres los formularios completos.</p>}
-            {configSubTab === 'vehiculos' && <p className="text-slate-600">Sección de Vehículos lista. Dime si quieres los formularios completos.</p>}
-          </div>
-        </main>
-      )}
       
       {}
       {currentView === 'checklist' && selectedJob && (
@@ -1295,11 +1275,11 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
           ))}
         </div>
       )}
-      {hJobs.length > 0 && (
+      {historyJobs.length > 0 && (
         <div className="mt-4">
           <h3 className="font-extrabold text-lg text-slate-700 mb-3 border-b-2 pb-1">Historial Simplificado</h3>
           <div className="flex flex-col gap-2.5">
-            {hJobs.map(j => (
+            {historyJobs.map(j => (
               <div key={j.id} className="bg-white p-3.5 rounded-2xl border flex flex-col sm:flex-row justify-between sm:items-center gap-2 text-xs font-bold shadow-sm relative pl-4 overflow-hidden">
                 <div className={`absolute left-0 top-0 bottom-0 w-1 ${j.status==='failed'?'bg-red-500':'bg-green-500'}`}></div>
                 <div>
