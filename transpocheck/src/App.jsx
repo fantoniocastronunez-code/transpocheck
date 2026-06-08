@@ -695,15 +695,6 @@ function LeaderboardView({ jobs, drivers, isAdminView }) {
   );
 }
 
-const formatSafeDate = (timestamp) => {
-  if (!timestamp) return 'Fecha desconocida';
-  try {
-     const d = new Date(timestamp);
-     if (isNaN(d.getTime())) return 'Fecha inválida';
-     return d.toLocaleDateString('es-CL');
-  } catch(e) { return 'Error de fecha'; }
-};
-
 function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, showAlert, showConfirm }) {
   const isAdminView = role === 'admin';
   const myDriver = drivers.find(d => d.email === currentUserEmail);
