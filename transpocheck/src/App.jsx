@@ -439,7 +439,7 @@ export default function App() {
               {adminTab === 'newJob' && <NewJobForm />}
               
               {/* PESTAÑA VEHÍCULOS */}
-              {adminTab === 'vehicles' && (
+              {adminTab === 'config' && (
                 <div className="grid md:grid-cols-2 gap-6">
                   <form onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const client = fd.get('client') === 'OTRO' ? fd.get('manualClient') : fd.get('client'); try { if(editingVehicle){ await updateDoc(doc(db, 'vehicles', editingVehicle.id), { client, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase() }); setEditingVehicle(null); showAlert("Vehículo actualizado."); } else { await addDoc(collection(db, 'vehicles'), { client, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase(), createdAt: Date.now() }); showAlert("Vehículo guardado."); } e.target.reset(); } catch (error) { console.error(error); } }} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-5">
                     <h3 className="text-xl font-extrabold flex items-center gap-2"><Truck className="text-blue-600"/> {editingVehicle ? 'Editar' : 'Nuevo'} Vehículo</h3>
@@ -492,7 +492,7 @@ export default function App() {
               )}
 
               {/* PESTAÑA CONDUCTORES */}
-              {adminTab === 'drivers' && (
+              {adminTab === 'config' && (
                 <div className="grid md:grid-cols-2 gap-6">
                   <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry') }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); showAlert("Conductor actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); showAlert("Conductor creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-5">
                     <h3 className="text-xl font-extrabold text-slate-800 flex items-center gap-2"><User className="text-blue-600"/> {editingDriver ? 'Editar Conductor' : 'Nuevo Conductor'}</h3>
@@ -1231,7 +1231,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       {activeJobs.length > 0 && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
           {activeJobs.map(j => (
-            <div key={j.id} className="bg-white rounded-3xl border p-5 flex flex-col shadow-sm">
+            <div key={j.id} className="bg-white rounded-3xl border p-5 flex flex-col shadow-sm relative">
               <div className="flex justify-between items-center mb-3 border-b pb-3">
                 <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase ${j.status==='pending'?'bg-amber-100 text-amber-700':'bg-blue-100 text-blue-700'}`}>{j.status==='pending'?'Pendiente':'En Curso'}</span>
                 <div className="flex gap-1.5 items-center">
