@@ -421,6 +421,9 @@ export default function App() {
               <div className="flex flex-wrap gap-2 mb-8 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
                 <button onClick={() => setAdminTab('dashboard')} className={`flex-1 flex justify-center gap-2 px-4 py-3 rounded-xl text-sm sm:text-base font-extrabold transition-colors ${adminTab==='dashboard'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><ClipboardList className="w-5 h-5"/> Trabajos</button>
                 <button onClick={() => setAdminTab('newJob')} className={`flex-1 flex justify-center gap-2 px-4 py-3 rounded-xl text-sm sm:text-base font-extrabold transition-colors ${adminTab==='newJob'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Plus className="w-5 h-5"/> Crear</button>
+                <button onClick={() => setAdminTab('vehicles')} className={`flex-1 flex justify-center gap-2 px-4 py-3 rounded-xl text-sm sm:text-base font-extrabold transition-colors ${adminTab==='vehicles'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Truck className="w-5 h-5"/> Vehículos</button>
+                <button onClick={() => setAdminTab('drivers')} className={`flex-1 flex justify-center gap-2 px-4 py-3 rounded-xl text-sm sm:text-base font-extrabold transition-colors ${adminTab==='drivers'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Users className="w-5 h-5"/> Conductores</button>
+                <button onClick={() => setAdminTab('config')} className={`flex-1 flex justify-center gap-2 px-4 py-3 rounded-xl text-sm sm:text-base font-extrabold transition-colors ${adminTab==='config'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><MapPin className="w-5 h-5"/> Config</button>
               </div>
               
               {adminTab === 'dashboard' && (
@@ -628,6 +631,26 @@ export default function App() {
 
       {currentView === 'main' && mainTab === 'ranking' && <LeaderboardView jobs={jobs} drivers={drivers} isAdminView={activeRole === 'admin'} />}
       {currentView === 'main' && mainTab === 'expenses' && <ExpensesView role={activeRole} drivers={drivers} jobs={jobs} expenses={expenses} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />}
+
+      {currentView === 'main' && mainTab === 'config' && (
+        <main className="max-w-5xl mx-auto p-4 pt-6 pb-24">
+          <h2 className="text-2xl font-extrabold mb-6">Configuración</h2>
+          
+          <div className="flex flex-wrap gap-2 mb-6">
+            <button onClick={() => setConfigSubTab('peajes')} className={`px-6 py-2 rounded-xl font-bold text-sm ${configSubTab === 'peajes' ? 'bg-blue-600 text-white' : 'bg-white border'}`}>Peajes</button>
+            <button onClick={() => setConfigSubTab('destinos')} className={`px-6 py-2 rounded-xl font-bold text-sm ${configSubTab === 'destinos' ? 'bg-blue-600 text-white' : 'bg-white border'}`}>Destinos</button>
+            <button onClick={() => setConfigSubTab('conductores')} className={`px-6 py-2 rounded-xl font-bold text-sm ${configSubTab === 'conductores' ? 'bg-blue-600 text-white' : 'bg-white border'}`}>Conductores</button>
+            <button onClick={() => setConfigSubTab('vehiculos')} className={`px-6 py-2 rounded-xl font-bold text-sm ${configSubTab === 'vehiculos' ? 'bg-blue-600 text-white' : 'bg-white border'}`}>Vehículos</button>
+          </div>
+
+          <div className="bg-white p-8 rounded-3xl border">
+            {configSubTab === 'peajes' && <p className="text-slate-600">Sección de Peajes lista. Dime si quieres los formularios completos.</p>}
+            {configSubTab === 'destinos' && <p className="text-slate-600">Sección de Destinos lista. Dime si quieres los formularios completos.</p>}
+            {configSubTab === 'conductores' && <p className="text-slate-600">Sección de Conductores lista. Dime si quieres los formularios completos.</p>}
+            {configSubTab === 'vehiculos' && <p className="text-slate-600">Sección de Vehículos lista. Dime si quieres los formularios completos.</p>}
+          </div>
+        </main>
+      )}
       
       {}
       {currentView === 'checklist' && selectedJob && (
