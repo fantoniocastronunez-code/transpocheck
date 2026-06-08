@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
-import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc, enableIndexedDbPersistence } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { jsPDF } from "jspdf";
 import { 
   Car, MapPin, Camera, Fuel, CheckCircle, FileText, Download, 
@@ -24,8 +24,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
-
-try { enableIndexedDbPersistence(db).catch(() => {}); } catch (e) {}
 
 const CLIENTES = ["Grandleasing Las Torres", "Grandleasing Umaña", "Kovacs", "Salfa", "Enex", "CIPP", "Simumak", "Mutual Capacitación"];
 const LICENCIAS = ["A1", "A2", "A3", "A4", "A5", "A1 antigua", "A2 antigua", "B", "C"];
@@ -694,6 +692,15 @@ function LeaderboardView({ jobs, drivers, isAdminView }) {
     </main>
   );
 }
+
+const formatSafeDate = (timestamp) => {
+  if (!timestamp) return 'Fecha desconocida';
+  try {
+     const d = new Date(timestamp);
+     if (isNaN(d.getTime())) return 'Fecha inválida';
+     return d.toLocaleDateString('es-CL');
+  } catch(e) { return 'Error de fecha'; }
+};
 
 function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, showAlert, showConfirm }) {
   const isAdminView = role === 'admin';
@@ -1371,26 +1378,19 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
 // ==========================================
 function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm }) {
   const isQuickJob = job.id === 'NEW_QUICK_JOB';
-  const DRAFT_KEY = `checklist_draft_${job.id}`;
 
-  const [step, setStep] = useState(() => { const savedStep = localStorage.getItem(`${DRAFT_KEY}_step`); return savedStep ? parseInt(savedStep, 10) : 1; });
+  const [step, setStep] = useState(1);
   const [loadingLoc, setLoadingLoc] = useState(false);
 
-  const [formData, setFormData] = useState(() => {
-    const saved = localStorage.getItem(DRAFT_KEY);
-    if (saved) { try { return JSON.parse(saved); } catch(e) { console.error("Error cargando borrador"); } }
-    return {
-      scheduledDate: job.scheduledDate || new Date().toISOString().split('T')[0],
-      client: job.client || '', brand: job.brand || '', model: job.model || '', plateOrVin: job.plate || job.vin || '',
-      origin: job.origin || '', destination: job.destination || '', fuelLevel: 50, 
-      photos: { front: false, left: false, right: false, back: false, tire: false, dashboard: false, det1: false, det2: false, det3: false, det4: false },
-      docs: { soap: false, permiso: false, revTecnica: false, gases: false }, 
-      observations: '', receiverName: '', receiverCompany: '', receiverRut: '', receiverEmail: '', signatureData: null, location: null,
-      noReception: false, rtStatus: 'aprobado', rtRejectReason: '', rtReturnOption: 'origin', rtReturnDestination: '' 
-    };
+  const [formData, setFormData] = useState({
+    scheduledDate: job.scheduledDate || new Date().toISOString().split('T')[0],
+    client: job.client || '', brand: job.brand || '', model: job.model || '', plateOrVin: job.plate || job.vin || '',
+    origin: job.origin || '', destination: job.destination || '', fuelLevel: 50, 
+    photos: { front: false, left: false, right: false, back: false, tire: false, dashboard: false, det1: false, det2: false, det3: false, det4: false },
+    docs: { soap: false, permiso: false, revTecnica: false, gases: false }, 
+    observations: '', receiverName: '', receiverCompany: '', receiverRut: '', receiverEmail: '', signatureData: null, location: null,
+    noReception: false, rtStatus: 'aprobado', rtRejectReason: '', rtReturnOption: 'origin', rtReturnDestination: '' 
   });
-
-  useEffect(() => { localStorage.setItem(DRAFT_KEY, JSON.stringify(formData)); localStorage.setItem(`${DRAFT_KEY}_step`, step); }, [formData, step, DRAFT_KEY]);
 
   const updateForm = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
 
@@ -1457,19 +1457,17 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
         await updateDoc(doc(db, 'transport_jobs', job.id), finalData); 
       }
       
-      localStorage.removeItem(DRAFT_KEY); localStorage.removeItem(`${DRAFT_KEY}_step`);
-      
       if (job.tripType === 'revision' && submitData.rtStatus === 'rechazado') {
           showAlert("Revisión guardada como RECHAZADA. Se ha creado un nuevo traslado pendiente.");
       } else {
           showAlert("✅ Checklist guardado correctamente."); 
       }
       onComplete();
-    } catch (error) { console.error(error); showAlert("Hubo un error al guardar. Si estás offline, se guardará al reconectar."); onComplete(); }
+    } catch (error) { console.error(error); showAlert("Hubo un error al guardar. Verifica tu conexión a internet."); onComplete(); }
   };
 
   const handleCancelClick = () => { 
-    showConfirm("El progreso de este checklist ha sido autoguardado en tu teléfono. ¿Deseas pausar y salir por ahora?", () => { 
+    showConfirm("¿Estás seguro de cancelar? Se perderán los datos ingresados en este checklist.", () => { 
       onCancel(); 
     }); 
   };
@@ -1481,7 +1479,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
           <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm">{isQuickJob ? <Zap className="w-5 h-5 text-white" /> : <FileText className="w-5 h-5 text-white" />}</div>
           {isQuickJob ? "Checklist Rápido" : "Checklist Asignado"}
         </h2>
-        <button onClick={handleCancelClick} className="text-blue-100 text-sm font-bold hover:text-white bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-xl transition-colors">Pausar / Salir</button>
+        <button onClick={handleCancelClick} className="text-blue-100 text-sm font-bold hover:text-white bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-xl transition-colors">Cancelar</button>
       </div>
       <div className="flex bg-slate-100 h-1.5"><div className={`bg-green-500 transition-all duration-500 ${step === 1 ? 'w-1/2' : 'w-full'}`}></div></div>
       
