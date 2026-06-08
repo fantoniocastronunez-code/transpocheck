@@ -31,7 +31,7 @@ const CLIENTES = ["Grandleasing Las Torres", "Grandleasing Umaña", "Kovacs", "S
 const LICENCIAS = ["A1", "A2", "A3", "A4", "A5", "A1 antigua", "A2 antigua", "B", "C"];
 
 // ==========================================
-// 2. COMPONENTE: FIRMA DIGITAL
+// 2. COMPONENTE: FIRMA DIGITAL Y HELPERS
 // ==========================================
 const SignaturePad = ({ onSave, onClear, initialData }) => {
   const canvasRef = useRef(null);
@@ -86,6 +86,18 @@ const formatDateDisplay = (dateString) => {
   return `${d}/${m}/${y}`;
 };
 
+// Escudo de Fechas para iOS Safari
+const formatSafeDate = (timestamp) => {
+  if (!timestamp) return 'Fecha no registrada';
+  try {
+    const d = new Date(timestamp);
+    if (isNaN(d.getTime())) return 'Fecha no válida';
+    return d.toLocaleDateString('es-CL');
+  } catch (e) {
+    return 'Error de fecha';
+  }
+};
+
 // ==========================================
 // 3. APLICACIÓN PRINCIPAL
 // ==========================================
@@ -117,6 +129,7 @@ export default function App() {
   
   const isFirstLoad = useRef(true);
 
+  // Modales Personalizados
   const [dialogConfig, setDialogConfig] = useState(null);
   const showAlert = (message) => setDialogConfig({ type: 'alert', message });
   const showConfirm = (message, onConfirm) => setDialogConfig({ type: 'confirm', message, onConfirm });
@@ -682,6 +695,15 @@ function LeaderboardView({ jobs, drivers, isAdminView }) {
   );
 }
 
+const formatSafeDate = (timestamp) => {
+  if (!timestamp) return 'Fecha desconocida';
+  try {
+     const d = new Date(timestamp);
+     if (isNaN(d.getTime())) return 'Fecha inválida';
+     return d.toLocaleDateString('es-CL');
+  } catch(e) { return 'Error de fecha'; }
+};
+
 function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, showAlert, showConfirm }) {
   const isAdminView = role === 'admin';
   const myDriver = drivers.find(d => d.email === currentUserEmail);
@@ -1151,16 +1173,15 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
 
   const getJobDateStr = (job) => job.scheduledDate ? formatDateDisplay(job.scheduledDate) : formatDateDisplay(new Date().toISOString().split('T')[0]);
   
-  const cpyWapp = j => { 
-    const dateStr = getDStr(j);
+  const handleCopyWhatsApp = (job) => { 
+    const dateStr = getJobDateStr(job);
     const dateShort = dateStr.substring(0, 5); 
-    const text = `${dateShort}\n${j.client || 'Sin Cliente'}\n${j.brand || '-'} ${j.model || '-'}\n${j.plate || j.vin || '-'}\n${getRouteStr(j)}`; 
+    const text = `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}`; 
     navigator.clipboard.writeText(text).then(() => { 
       showAlert("✅ Formato copiado al portapapeles. Listo para pegar en WhatsApp."); 
       setMenuOpenId(null); 
     }).catch(() => showAlert("Tu navegador bloqueó el copiado automático."));
   };
-  const handleCopyWhatsApp = cpyWapp; 
 
   const generatePDF = async (job) => {
     try { const docPDF = await buildPDFDoc(job); const fileName = `Check.${getJobDateStr(job).replace(/\//g, '-')}.${job.client || 'SinCliente'}.${job.plate || job.vin || 'SN'}.pdf`; docPDF.save(fileName); } 
@@ -1382,12 +1403,6 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
 
   const updateForm = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
 
-  const getFuelColor = (level) => {
-    if (level <= 25) return 'accent-red-500 bg-red-100';
-    if (level <= 75) return 'accent-amber-500 bg-amber-100';
-    return 'accent-green-500 bg-green-100';
-  };
-
   const handleImageUpload = async (e, photoId) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1553,7 +1568,10 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
             </div>
 
             <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-slate-800">Combustible: <span className="text-blue-600">{formData.fuelLevel}%</span></h3>
-            <input type="range" min="0" max="100" step="5" value={formData.fuelLevel} onChange={(e) => updateForm('fuelLevel', e.target.value)} className={`w-full h-3 rounded-lg appearance-none cursor-pointer mt-2 ${getFuelColor(formData.fuelLevel)}`} />
+            <div className="w-full relative h-10 mt-2 flex flex-col justify-center">
+               <div className="absolute inset-0 rounded-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500 opacity-20 pointer-events-none"></div>
+               <input type="range" min="0" max="100" step="5" value={formData.fuelLevel} onChange={(e) => updateForm('fuelLevel', e.target.value)} className="w-full accent-blue-600 h-3 bg-transparent rounded-full appearance-none cursor-pointer z-10 relative" style={{background: `linear-gradient(to right, ${formData.fuelLevel < 30 ? '#ef4444' : formData.fuelLevel < 80 ? '#eab308' : '#22c55e'} ${formData.fuelLevel}%, #e2e8f0 ${formData.fuelLevel}%)`}} />
+            </div>
             
             <textarea rows="3" value={formData.observations} onChange={(e) => updateForm('observations', e.target.value)} placeholder="Observaciones de daños o detalles..." className="w-full border-2 border-slate-200 p-4 text-sm outline-none focus:border-blue-500 rounded-xl mt-6 font-bold text-slate-700"></textarea>
             
