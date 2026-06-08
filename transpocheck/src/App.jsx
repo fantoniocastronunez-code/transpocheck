@@ -423,6 +423,7 @@ export default function App() {
                 <button onClick={() => setAdminTab('newJob')} className={`flex-1 flex justify-center gap-2 px-4 py-3 rounded-xl text-sm sm:text-base font-extrabold transition-colors ${adminTab==='newJob'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Plus className="w-5 h-5"/> Crear</button>
                 <button onClick={() => setAdminTab('vehicles')} className={`flex-1 flex justify-center gap-2 px-4 py-3 rounded-xl text-sm sm:text-base font-extrabold transition-colors ${adminTab==='vehicles'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Truck className="w-5 h-5"/> Vehículos</button>
                 <button onClick={() => setAdminTab('drivers')} className={`flex-1 flex justify-center gap-2 px-4 py-3 rounded-xl text-sm sm:text-base font-extrabold transition-colors ${adminTab==='drivers'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Users className="w-5 h-5"/> Conductores</button>
+                <button onClick={() => setAdminTab('config')} className={`flex-1 flex justify-center gap-2 px-4 py-3 rounded-xl text-sm sm:text-base font-extrabold transition-colors ${adminTab==='config'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><MapPin className="w-5 h-5"/> Config</button>
               </div>
               
               {adminTab === 'dashboard' && (
@@ -533,6 +534,87 @@ export default function App() {
                           <button onClick={() => setEditingDriver(d)} className="p-2.5 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-xl transition-colors shadow-sm" title="Editar Conductor"><Edit2 className="w-5 h-5"/></button>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ==================== PESTAÑA CONFIG (Peajes + Destinos) ==================== */}
+              {adminTab === 'config' && (
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* FORM PEAJES */}
+                  <form onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const data = { name: fd.get('tollName'), priceAuto: Number(fd.get('priceAuto')||0), priceTruck2: Number(fd.get('priceTruck2')||0), priceTruckMore: Number(fd.get('priceTruckMore')||0) }; try { if(editingToll){ await updateDoc(doc(db,'tolls',editingToll.id), data); setEditingToll(null); showAlert("Peaje actualizado"); } else { await addDoc(collection(db,'tolls'), {...data, createdAt: Date.now()}); showAlert("Peaje creado"); } e.target.reset(); } catch(err){console.error(err)} }} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+                    <h3 className="text-xl font-extrabold flex items-center gap-2"><MapPin className="text-blue-600"/> {editingToll ? 'Editar Peaje' : 'Nuevo Peaje'}</h3>
+                    <input name="tollName" defaultValue={editingToll?.name} placeholder="Nombre del peaje" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-semibold"/>
+                    <div className="grid grid-cols-3 gap-3 text-sm">
+                      <div><label className="text-xs font-bold">Auto / Camioneta</label><input name="priceAuto" type="number" defaultValue={editingToll?.priceAuto||0} className="w-full border p-2 rounded"/></div>
+                      <div><label className="text-xs font-bold">Camión 2 Ejes</label><input name="priceTruck2" type="number" defaultValue={editingToll?.priceTruck2||0} className="w-full border p-2 rounded"/></div>
+                      <div><label className="text-xs font-bold">Camión +2 Ejes</label><input name="priceTruckMore" type="number" defaultValue={editingToll?.priceTruckMore||0} className="w-full border p-2 rounded"/></div>
+                    </div>
+                    <div className="flex gap-2">
+                      {editingToll && <button type="button" onClick={()=>setEditingToll(null)} className="flex-1 bg-slate-100 py-3 rounded-xl font-bold">Cancelar</button>}
+                      <button type="submit" className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-extrabold">{editingToll ? 'Actualizar' : 'Crear Peaje'}</button>
+                    </div>
+                  </form>
+
+                  {/* LISTA PEAJES */}
+                  <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                    <h3 className="text-xl font-extrabold mb-4">Peajes Registrados</h3>
+                    <div className="space-y-2 max-h-[45vh] overflow-auto">
+                      {tolls.length === 0 && <p className="text-slate-400">No hay peajes aún</p>}
+                      {tolls.map(t => (
+                        <div key={t.id} className="flex justify-between items-center bg-slate-50 p-3 rounded-2xl text-sm">
+                          <div><span className="font-bold">{t.name}</span><br/><span className="text-xs text-slate-500">Auto ${t.priceAuto} • 2e ${t.priceTruck2} • +2e ${t.priceTruckMore}</span></div>
+                          <div className="flex gap-1">
+                            <button onClick={()=>setEditingToll(t)} className="p-2 text-blue-600"><Edit2 className="w-4 h-4"/></button>
+                            <button onClick={()=>showConfirm("¿Eliminar peaje?", async()=>{await deleteDoc(doc(db,'tolls',t.id))})} className="p-2 text-red-600"><Trash2 className="w-4 h-4"/></button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* FORM DESTINOS */}
+                  <form onSubmit={async (e) => { e.preventDefault(); const fd=new FormData(e.target); const selected = fd.getAll('tollIds'); const data={name:fd.get('destName'), tolls:selected}; try{ if(editingDestination){await updateDoc(doc(db,'destinations',editingDestination.id),data);setEditingDestination(null)}else{await addDoc(collection(db,'destinations'),{...data,createdAt:Date.now()})} e.target.reset(); showAlert("Destino guardado"); }catch(err){} }} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-4 md:col-span-2">
+                    <h3 className="text-xl font-extrabold"><Navigation className="inline text-blue-600"/> {editingDestination ? 'Editar Destino' : 'Nuevo Destino Interurbano'}</h3>
+                    <input name="destName" defaultValue={editingDestination?.name} placeholder="Nombre del destino (ej: Valparaíso)" required className="w-full border-2 p-3 rounded-xl"/>
+                    
+                    <div>
+                      <p className="text-xs font-bold text-slate-500 mb-2">Peajes que incluye esta ruta:</p>
+                      <div className="grid grid-cols-2 gap-2 max-h-32 overflow-auto border p-3 rounded-xl bg-white">
+                        {tolls.map(t => (
+                          <label key={t.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                            <input type="checkbox" name="tollIds" value={t.id} defaultChecked={editingDestination?.tolls?.includes(t.id)} /> {t.name}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      {editingDestination && <button type="button" onClick={()=>setEditingDestination(null)} className="flex-1 bg-slate-100 py-3 rounded-xl font-bold">Cancelar</button>}
+                      <button type="submit" className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-extrabold">Guardar Destino</button>
+                    </div>
+                  </form>
+
+                  {/* LISTA DESTINOS */}
+                  <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 md:col-span-2">
+                    <h3 className="text-xl font-extrabold mb-4">Destinos Configurados</h3>
+                    <div className="space-y-3">
+                      {destinations.length === 0 && <p className="text-slate-400">No hay destinos aún</p>}
+                      {destinations.map(d => {
+                        const tollList = (d.tolls || []).map(id => tolls.find(t=>t.id===id)?.name).filter(Boolean).join(" → ");
+                        return (
+                          <div key={d.id} className="flex justify-between bg-slate-50 p-4 rounded-2xl">
+                            <div>
+                              <p className="font-extrabold">{d.name}</p>
+                              <p className="text-xs text-blue-600">Ruta: {tollList || "Sin peajes"}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button onClick={()=>setEditingDestination(d)} className="p-2 text-blue-600"><Edit2 className="w-4 h-4"/></button>
+                              <button onClick={()=>showConfirm("¿Eliminar destino?", async()=>{await deleteDoc(doc(db,'destinations',d.id))})} className="p-2 text-red-600"><Trash2 className="w-4 h-4"/></button>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
@@ -822,7 +904,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
     <main className="max-w-md mx-auto p-4 pt-6 space-y-6 pb-24">
       {viewingReceipt && <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[150] p-4"><div className="bg-white rounded-3xl p-4 w-full max-w-md relative"><button onClick={() => setViewingReceipt(null)} className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"><X className="w-5 h-5 text-slate-700"/></button><h3 className="font-extrabold text-slate-800 mb-4 ml-2">Comprobante</h3><img src={viewingReceipt} alt="Comprobante" className="w-full h-auto max-h-[70vh] object-contain rounded-xl shadow-sm" /></div></div>}
 
-      {isReturnOpen && (
+      {isReturnModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6">
             <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-extrabold text-slate-800">Rendir Vuelto</h3><button onClick={() => { setIsReturnModalOpen(false); setReturnReceipt(null); }} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button></div>
@@ -1193,11 +1275,11 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
           ))}
         </div>
       )}
-      {historyJobs.length > 0 && (
+      {hJobs.length > 0 && (
         <div className="mt-4">
           <h3 className="font-extrabold text-lg text-slate-700 mb-3 border-b-2 pb-1">Historial Simplificado</h3>
           <div className="flex flex-col gap-2.5">
-            {historyJobs.map(j => (
+            {hJobs.map(j => (
               <div key={j.id} className="bg-white p-3.5 rounded-2xl border flex flex-col sm:flex-row justify-between sm:items-center gap-2 text-xs font-bold shadow-sm relative pl-4 overflow-hidden">
                 <div className={`absolute left-0 top-0 bottom-0 w-1 ${j.status==='failed'?'bg-red-500':'bg-green-500'}`}></div>
                 <div>
