@@ -4,8 +4,8 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signO
 import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc, getDocs, query, where } from 'firebase/firestore';
 import { jsPDF } from "jspdf";
 import { 
-  Car, MapPin, Camera, Fuel, CheckCircle, FileText, Download, 
-  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Save
+  Car, MapPin, Camera, CheckCircle, FileText, Download, 
+  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Save
 } from 'lucide-react';
 
 const firebaseConfig = {
@@ -180,11 +180,10 @@ export default function App() {
         snapshot.docChanges().forEach((change) => {
           const d = change.doc.data();
           if (change.type === 'added' && d.status === 'pending' && d.assignedEmails?.includes(currentUserEmail)) {
-             triggerNotification('📍 ¡Nuevo Traslado!', `${d.client || 'Sin Cliente'}\n${d.brand || ''} ${d.model || ''} - [${d.plate || d.vin || 'S/N'}]\nDesde: ${d.origin || '-'}\nHasta: ${d.destination || '-'}`);
+            triggerNotification('📍 ¡Nuevo Traslado!', `Vehículo: ${d.brand || 'Vehículo'} para el ${formatDateDisplay(d.scheduledDate) || 'Hoy'}`);
           }
           if (change.type === 'modified' && d.status === 'accepted' && isRealAdmin && activeRole === 'admin') {
-             const driverName = drivers.find(drv => drv.email === d.acceptedByEmail)?.name || d.acceptedByEmail;
-             triggerNotification('✅ Trabajo Aceptado', `${driverName} aceptó:\n${d.client || 'Sin Cliente'}\n${d.brand || ''} ${d.model || ''} - [${d.plate || d.vin || 'S/N'}]\nDesde: ${d.origin || '-'}\nHasta: ${d.destination || '-'}`);
+            triggerNotification('✅ Trabajo Aceptado', `Conductor: ${d.acceptedByEmail} aceptó el traslado.`);
           }
         });
       }
@@ -198,7 +197,7 @@ export default function App() {
     const unsubClients = onSnapshot(collection(db, 'clients'), snap => setCustomClients(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
 
     return () => { unsubJobs(); unsubDrivers(); unsubExpenses(); unsubVehicles(); unsubClients(); };
-  }, [user, activeRole, currentUserEmail, isRealAdmin, drivers]);
+  }, [user, activeRole, currentUserEmail, isRealAdmin]);
 
   const allClientsList = Array.from(new Set([...DEFAULT_CLIENTES, ...customClients.map(c => c.name)])).sort();
 
@@ -1092,6 +1091,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     
     docPDF.setFillColor(37, 99, 235); docPDF.rect(0, 0, 210, 30, 'F'); docPDF.setTextColor(255, 255, 255);
     
+    // CAMBIO DE TÍTULO DEPENDIENDO DEL TIPO
     let pdfTitle = "CHECKLIST DE TRASLADO";
     if (job.tripType === 'revision') pdfTitle = "CERTIFICADO DE REVISIÓN";
     if (job.tripType === 'viaje') pdfTitle = "TRASLADO A REGIONES";
@@ -1158,29 +1158,27 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
          docPDF.setFontSize(11); docPDF.setFont("helvetica", "normal");
          docPDF.text(`Razón: ${job.checklist?.rtRejectReason || 'No especificada'}`, 20, startY + 30);
        }
-    }
-    // Recepción para TODOS (ahora también Revision incluye sección de entrega si no se omite)
-    docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold"); docPDF.text(job.tripType === 'revision' ? "4. RECEPCIÓN" : "3. RECEPCIÓN", 20, job.tripType === 'revision' ? startY + 40 : startY + 8);
-    
-    const recY = job.tripType === 'revision' ? startY + 40 : startY;
-
-    if (job.checklist?.noReception) {
-      docPDF.setTextColor(220, 38, 38);
-      docPDF.setFontSize(12);
-      docPDF.text("ENTREGA SIN RECEPCIÓN (Confirmada por conductor)", 20, recY + 20);
-      docPDF.setTextColor(0, 0, 0);
     } else {
-      docPDF.setFontSize(11);
-      docPDF.setFont("helvetica", "normal"); docPDF.text(`Receptor:`, 20, recY + 18); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.checklist?.receiverName || 'N/A'}`, 42, recY + 18);
-      docPDF.setFont("helvetica", "normal"); docPDF.text(`RUT:`, 110, recY + 18); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.checklist?.receiverRut || 'N/A'}`, 122, recY + 18);
-      if(job.checklist?.signatureData) { docPDF.setFont("helvetica", "normal"); docPDF.text(`Firma conformada:`, 20, recY + 45); docPDF.addImage(job.checklist.signatureData, 'PNG', 55, recY + 30, 70, 45); }
-    }
+      docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold"); docPDF.text("3. RECEPCIÓN", 20, startY + 8);
+      
+      if (job.checklist?.noReception) {
+        docPDF.setTextColor(220, 38, 38);
+        docPDF.setFontSize(12);
+        docPDF.text("ENTREGA SIN RECEPCIÓN (Confirmada por conductor)", 20, startY + 20);
+        docPDF.setTextColor(0, 0, 0);
+      } else {
+        docPDF.setFontSize(11);
+        docPDF.setFont("helvetica", "normal"); docPDF.text(`Receptor:`, 20, startY + 18); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.checklist?.receiverName || 'N/A'}`, 42, startY + 18);
+        docPDF.setFont("helvetica", "normal"); docPDF.text(`RUT:`, 110, startY + 18); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.checklist?.receiverRut || 'N/A'}`, 122, startY + 18);
+        if(job.checklist?.signatureData) { docPDF.setFont("helvetica", "normal"); docPDF.text(`Firma conformada:`, 20, startY + 45); docPDF.addImage(job.checklist.signatureData, 'PNG', 55, startY + 30, 70, 45); }
+      }
 
-    if (job.checklist?.location) {
-      const { lat, lng } = job.checklist.location;
-      docPDF.setFont("helvetica", "normal"); docPDF.text(`Ubicación GPS:`, 20, recY + 28);
-      docPDF.setTextColor(37, 99, 235); docPDF.textWithLink('Ver en Google Maps', 52, recY + 28, { url: `https://www.google.com/maps?q=${lat},${lng}` }); docPDF.setTextColor(0, 0, 0); 
-    } else { docPDF.setFont("helvetica", "normal"); docPDF.text(`Ubicación GPS: No registrada`, 20, recY + 28); }
+      if (job.checklist?.location) {
+        const { lat, lng } = job.checklist.location;
+        docPDF.setFont("helvetica", "normal"); docPDF.text(`Ubicación GPS:`, 20, startY + 28);
+        docPDF.setTextColor(37, 99, 235); docPDF.textWithLink('Ver en Google Maps', 52, startY + 28, { url: `https://www.google.com/maps?q=${lat},${lng}` }); docPDF.setTextColor(0, 0, 0); 
+      } else { docPDF.setFont("helvetica", "normal"); docPDF.text(`Ubicación GPS: No registrada`, 20, startY + 28); }
+    }
 
     if (job.checklist?.photos) {
       const photos = job.checklist.photos;
@@ -1394,12 +1392,15 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!formData.noReception && !formData.signatureData) return showAlert("La firma del receptor es mandatoria.");
+    if (job.tripType !== 'revision' && !formData.noReception && !formData.signatureData) return showAlert("La firma del receptor es mandatoria.");
     
     let d = {...formData}; 
     d.client = d.client === 'OTRO' ? d.manualClient : d.client; 
 
-    if(d.noReception) { 
+    if (job.tripType === 'revision') {
+      d.receiverName = "PLANTA RT";
+      d.receiverRut = "N/A";
+    } else if(d.noReception) { 
       d.receiverName="ENTREGA SIN RECEPCIÓN"; 
       d.receiverRut="N/A"; 
     }
@@ -1553,12 +1554,20 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
           </div>
         ) : (
           <form onSubmit={submit} className="space-y-4">
-             <>
-               <label className="flex items-center gap-2.5 p-4 bg-amber-50 rounded-2xl border-amber-300 border-2 cursor-pointer"><input type="checkbox" checked={formData.noReception} onChange={e=>setF('noReception',e.target.checked)} className="w-5 h-5 cursor-pointer"/> <span className="font-extrabold text-sm text-slate-700">Dejar sin firma (Local cerrado / PRT)</span></label>
-               {!formData.noReception && (
-                 <><input required={!formData.noReception} value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/><input required={!formData.noReception} value={formData.receiverRut} onChange={e=>setF('receiverRut',e.target.value)} placeholder="RUT Receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/><SignaturePad initialData={formData.signatureData} onSave={d=>setF('signatureData',d)} onClear={()=>setF('signatureData',null)}/></>
-               )}
-             </>
+            {job.tripType !== 'revision' ? (
+               <>
+                 <label className="flex items-center gap-2.5 p-4 bg-amber-50 rounded-2xl border-amber-300 border-2 cursor-pointer"><input type="checkbox" checked={formData.noReception} onChange={e=>setF('noReception',e.target.checked)} className="w-5 h-5 cursor-pointer"/> <span className="font-extrabold text-sm text-slate-700">Dejar sin firma (Local cerrado)</span></label>
+                 {!formData.noReception && (
+                   <><input required={!formData.noReception} value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/><input required={!formData.noReception} value={formData.receiverRut} onChange={e=>setF('receiverRut',e.target.value)} placeholder="RUT Receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/><SignaturePad initialData={formData.signatureData} onSave={d=>setF('signatureData',d)} onClear={()=>setF('signatureData',null)}/></>
+                 )}
+               </>
+            ) : (
+               <div className="bg-blue-50 border-2 border-blue-200 p-6 rounded-2xl text-center mb-6">
+                 <CheckCircle className="w-12 h-12 text-blue-500 mx-auto mb-2"/>
+                 <h3 className="text-lg font-extrabold text-blue-800">Cierre de Revisión Técnica</h3>
+                 <p className="text-sm font-bold text-blue-600">Al finalizar, no se requiere firma del receptor.</p>
+               </div>
+            )}
             
             <button type="button" onClick={() => { if ("geolocation" in navigator) { navigator.geolocation.getCurrentPosition((pos) => setF('location', { lat: pos.coords.latitude, lng: pos.coords.longitude }), () => showAlert("Error GPS.")); } }} className={`px-4 py-4 rounded-2xl text-sm w-full font-extrabold shadow-sm ${formData.location ? 'bg-green-100 text-green-700 border-2 border-green-200' : 'bg-slate-100 text-slate-700 border-2'}`}>
               {formData.location ? "📍 GPS Capturado Exitosamente" : "📍 Tocar para Capturar GPS Actual"}
@@ -1570,4 +1579,4 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
       </div>
     </div>
   );
-}s
+}
