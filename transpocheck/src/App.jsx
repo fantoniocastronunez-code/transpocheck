@@ -180,11 +180,16 @@ export default function App() {
         snapshot.docChanges().forEach((change) => {
           const d = change.doc.data();
           if (change.type === 'added' && d.status === 'pending' && d.assignedEmails?.includes(currentUserEmail)) {
-            triggerNotification('📍 ¡Nuevo Traslado!', `Vehículo: ${d.brand || 'Vehículo'} para el ${formatDateDisplay(d.scheduledDate) || 'Hoy'}`);
-          }
-          if (change.type === 'modified' && d.status === 'accepted' && isRealAdmin && activeRole === 'admin') {
-            triggerNotification('✅ Trabajo Aceptado', `Conductor: ${d.acceptedByEmail} aceptó el traslado.`);
-          }
+          const notifBody = [
+            `Cliente: ${d.client || 'Sin cliente'}`,
+            `Patente: ${d.plate || d.vin || 'N/A'}`,
+            `${d.brand || ''} ${d.model || ''}`.trim(),
+            `Desde: ${d.origin || '-'}`,
+            `Hasta: ${d.destination || '-'}`
+        ].join('\n');
+
+  triggerNotification('📍 ¡Nuevo Traslado!', notifBody);
+}
         });
       }
       setJobs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => b.createdAt - a.createdAt));
