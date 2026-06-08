@@ -22,7 +22,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 
-// NOTA: Se ha eliminado enableIndexedDbPersistence para asegurar MODO 100% ONLINE
+// NOTA: Se ha elimiado enableIndexedDbPersistence para asegurar MODO 100% ONLINE
 
 const CLIENTES = ["Grandleasing Las Torres", "Grandleasing Umaña", "Kovacs", "Salfa", "Enex", "CIPP", "Simumak", "Mutual Capacitación"];
 const LICENCIAS = ["A1", "A2", "A3", "A4", "A5", "A1 antigua", "A2 antigua", "B", "C"];
