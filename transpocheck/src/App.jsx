@@ -81,7 +81,7 @@ const SignaturePad = ({ onSave, onClear, initialData }) => {
   );
 };
 
-// --- FUNCIÓN REDIMENSIONAR IMAGEN (Evita bloqueos de memoria) ---
+// --- FUNCIÓN REDIMENSIONAR IMAGEN ---
 const resizeImage = (file, maxWidth, quality) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -1180,7 +1180,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       } else { docPDF.setFont("helvetica", "normal"); docPDF.text(`Ubicación GPS: No registrada`, 20, startY + 28); }
     }
 
-    if (job.tripType !== 'revision' && job.checklist?.photos) {
+    if (job.checklist?.photos) {
       const photos = job.checklist.photos;
       const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atrás', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
       let currentY = 30; let currentCol = 1; let addedPage = false;
@@ -1527,21 +1527,28 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
               ))}
             </div>
 
-            {/* SECCIÓN DE FOTOS (Oculta si es Revisión Técnica) */}
-            {job.tripType !== 'revision' && (
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pt-4">
-                {[{id:'front', l:'Frente'}, {id:'left', l:'Lat. Piloto'}, {id:'right', l:'Lat. Copiloto'}, {id:'back', l:'Atrás'}, {id:'tire', l:'Repuesto'}, {id:'dashboard', l:'Tablero'}, {id:'det1', l:'Detalle 1'}, {id:'det2', l:'Detalle 2'}, {id:'det3', l:'Detalle 3'}, {id:'det4', l:'Detalle 4'}].map(p => (
-                  <label key={p.id} className={`p-1 border-2 rounded-2xl text-center cursor-pointer relative overflow-hidden h-20 flex flex-col justify-center items-center ${formData.photos[p.id]?'bg-green-50 border-green-400':'border-dashed'}`}>
-                    <input type="file" className="hidden" accept="image/*" onChange={e=>handlePic(e,p.id)}/>
-                    {formData.photos[p.id] ? (
-                       <div className="absolute inset-0 w-full h-full"><img src={formData.photos[p.id]} alt="foto" className="w-full h-full object-cover opacity-60"/><div className="absolute inset-0 flex items-center justify-center"><CheckCircle className="w-6 h-6 text-green-600 bg-white rounded-full"/></div></div>
-                    ) : (
-                      <><Camera className="w-5 h-5 text-slate-400 mb-0.5"/> <span className="text-[10px] font-bold text-slate-500 uppercase">{p.l}</span></>
-                    )}
-                  </label>
-                ))}
-              </div>
-            )}
+            <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Observaciones</h3>
+            <textarea 
+              value={formData.observations} 
+              onChange={e=>setF('observations',e.target.value)} 
+              placeholder="Escribe aquí si hay algún daño, rayón o comentario relevante..." 
+              className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm outline-none focus:border-blue-500 mt-2" 
+              rows="3"
+            ></textarea>
+
+            <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Registro Fotográfico</h3>
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pt-2">
+              {[{id:'front', l:'Frente'}, {id:'left', l:'Lat. Piloto'}, {id:'right', l:'Lat. Copiloto'}, {id:'back', l:'Atrás'}, {id:'tire', l:'Repuesto'}, {id:'dashboard', l:'Tablero'}, {id:'det1', l:'Detalle 1'}, {id:'det2', l:'Detalle 2'}, {id:'det3', l:'Detalle 3'}, {id:'det4', l:'Detalle 4'}].map(p => (
+                <label key={p.id} className={`p-1 border-2 rounded-2xl text-center cursor-pointer relative overflow-hidden h-20 flex flex-col justify-center items-center ${formData.photos[p.id]?'bg-green-50 border-green-400':'border-dashed'}`}>
+                  <input type="file" className="hidden" accept="image/*" onChange={e=>handlePic(e,p.id)}/>
+                  {formData.photos[p.id] ? (
+                     <div className="absolute inset-0 w-full h-full"><img src={formData.photos[p.id]} alt="foto" className="w-full h-full object-cover opacity-60"/><div className="absolute inset-0 flex items-center justify-center"><CheckCircle className="w-6 h-6 text-green-600 bg-white rounded-full"/></div></div>
+                  ) : (
+                    <><Camera className="w-5 h-5 text-slate-400 mb-0.5"/> <span className="text-[10px] font-bold text-slate-500 uppercase">{p.l}</span></>
+                  )}
+                </label>
+              ))}
+            </div>
             
             <button type="button" onClick={()=>setStep(2)} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mt-6 text-sm">Siguiente Paso</button>
           </div>
