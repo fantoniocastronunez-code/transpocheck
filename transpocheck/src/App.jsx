@@ -8,6 +8,7 @@ import {
   Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Map, Ticket, Settings
 } from 'lucide-react';
 
+
 // ==========================================
 // 1. CONFIGURACIÓN DE FIREBASE
 // ==========================================
