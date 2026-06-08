@@ -421,9 +421,6 @@ export default function App() {
               <div className="flex flex-wrap gap-2 mb-8 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
                 <button onClick={() => setAdminTab('dashboard')} className={`flex-1 flex justify-center gap-2 px-4 py-3 rounded-xl text-sm sm:text-base font-extrabold transition-colors ${adminTab==='dashboard'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><ClipboardList className="w-5 h-5"/> Trabajos</button>
                 <button onClick={() => setAdminTab('newJob')} className={`flex-1 flex justify-center gap-2 px-4 py-3 rounded-xl text-sm sm:text-base font-extrabold transition-colors ${adminTab==='newJob'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Plus className="w-5 h-5"/> Crear</button>
-                <button onClick={() => setAdminTab('vehicles')} className={`flex-1 flex justify-center gap-2 px-4 py-3 rounded-xl text-sm sm:text-base font-extrabold transition-colors ${adminTab==='vehicles'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Truck className="w-5 h-5"/> Vehículos</button>
-                <button onClick={() => setAdminTab('drivers')} className={`flex-1 flex justify-center gap-2 px-4 py-3 rounded-xl text-sm sm:text-base font-extrabold transition-colors ${adminTab==='drivers'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Users className="w-5 h-5"/> Conductores</button>
-                <button onClick={() => setAdminTab('config')} className={`flex-1 flex justify-center gap-2 px-4 py-3 rounded-xl text-sm sm:text-base font-extrabold transition-colors ${adminTab==='config'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><MapPin className="w-5 h-5"/> Config</button>
               </div>
               
               {adminTab === 'dashboard' && (
@@ -439,7 +436,7 @@ export default function App() {
               {adminTab === 'newJob' && <NewJobForm />}
               
               {/* PESTAÑA VEHÍCULOS */}
-              {adminTab === 'config' && (
+              {adminTab === 'vehicles' && (
                 <div className="grid md:grid-cols-2 gap-6">
                   <form onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const client = fd.get('client') === 'OTRO' ? fd.get('manualClient') : fd.get('client'); try { if(editingVehicle){ await updateDoc(doc(db, 'vehicles', editingVehicle.id), { client, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase() }); setEditingVehicle(null); showAlert("Vehículo actualizado."); } else { await addDoc(collection(db, 'vehicles'), { client, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase(), createdAt: Date.now() }); showAlert("Vehículo guardado."); } e.target.reset(); } catch (error) { console.error(error); } }} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-5">
                     <h3 className="text-xl font-extrabold flex items-center gap-2"><Truck className="text-blue-600"/> {editingVehicle ? 'Editar' : 'Nuevo'} Vehículo</h3>
@@ -492,7 +489,7 @@ export default function App() {
               )}
 
               {/* PESTAÑA CONDUCTORES */}
-              {adminTab === 'config' && (
+              {adminTab === 'drivers' && (
                 <div className="grid md:grid-cols-2 gap-6">
                   <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry') }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); showAlert("Conductor actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); showAlert("Conductor creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 space-y-5">
                     <h3 className="text-xl font-extrabold text-slate-800 flex items-center gap-2"><User className="text-blue-600"/> {editingDriver ? 'Editar Conductor' : 'Nuevo Conductor'}</h3>
@@ -904,7 +901,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
     <main className="max-w-md mx-auto p-4 pt-6 space-y-6 pb-24">
       {viewingReceipt && <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[150] p-4"><div className="bg-white rounded-3xl p-4 w-full max-w-md relative"><button onClick={() => setViewingReceipt(null)} className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"><X className="w-5 h-5 text-slate-700"/></button><h3 className="font-extrabold text-slate-800 mb-4 ml-2">Comprobante</h3><img src={viewingReceipt} alt="Comprobante" className="w-full h-auto max-h-[70vh] object-contain rounded-xl shadow-sm" /></div></div>}
 
-      {isReturnOpen && (
+      {isReturnModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6">
             <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-extrabold text-slate-800">Rendir Vuelto</h3><button onClick={() => { setIsReturnModalOpen(false); setReturnReceipt(null); }} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button></div>
@@ -1275,11 +1272,11 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
           ))}
         </div>
       )}
-      {historyJobs.length > 0 && (
+      {hJobs.length > 0 && (
         <div className="mt-4">
           <h3 className="font-extrabold text-lg text-slate-700 mb-3 border-b-2 pb-1">Historial Simplificado</h3>
           <div className="flex flex-col gap-2.5">
-            {historyJobs.map(j => (
+            {hJobs.map(j => (
               <div key={j.id} className="bg-white p-3.5 rounded-2xl border flex flex-col sm:flex-row justify-between sm:items-center gap-2 text-xs font-bold shadow-sm relative pl-4 overflow-hidden">
                 <div className={`absolute left-0 top-0 bottom-0 w-1 ${j.status==='failed'?'bg-red-500':'bg-green-500'}`}></div>
                 <div>
