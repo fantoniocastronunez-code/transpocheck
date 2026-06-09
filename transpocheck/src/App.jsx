@@ -1373,12 +1373,17 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         <div className="mt-4">
           <h3 className="font-extrabold text-lg text-slate-700 mb-3 border-b-2 pb-1">Historial Simplificado</h3>
           <div className="flex flex-col gap-2.5">
-            {historyJobs.map(j => (
+            {historyJobs.map(j => {
+              const drv = drivers?.find(d => d.email === j.acceptedByEmail);
+              const driverName = drv ? drv.name : (j.checklist?.assignedDriverName || j.acceptedByEmail || 'No registrado');
+              
+              return (
               <div key={j.id} className="bg-white p-3.5 rounded-2xl border flex flex-col sm:flex-row justify-between sm:items-center gap-2 text-xs font-bold shadow-sm relative pl-4 overflow-hidden">
                 <div className={`absolute left-0 top-0 bottom-0 w-1 ${j.status==='failed'?'bg-red-500':'bg-green-500'}`}></div>
                 <div>
                    <div className="flex gap-2 items-center mb-1"><span className={`px-2 py-0.5 rounded text-[9px] uppercase ${j.status==='failed'?'bg-red-100 text-red-700':'bg-green-100 text-green-700'}`}>{j.status==='failed'?'Fallido':'Ok'}</span><p className="text-sm font-black text-slate-800">{j.brand} {j.model} <span className="text-blue-600 uppercase text-xs ml-1">[{j.plate||'S/N'}]</span></p></div>
                    <p className="text-slate-500 font-semibold">{getRouteStr(j)} <span className="text-slate-400 ml-1">({getDStr(j)})</span></p>
+                   <p className="text-blue-600 font-extrabold text-[10px] mt-1.5 uppercase tracking-wide">Conductor: <span className="text-slate-700">{driverName}</span></p>
                    {j.status==='failed' && <p className="text-red-600 text-[11px] mt-0.5 font-bold">Razón: {j.failedReason}</p>}
                 </div>
                 <div className="flex gap-1.5 mt-2 sm:mt-0">
@@ -1388,7 +1393,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                   {isAdminView && <button onClick={()=>handleDeleteJob(j.id)} className="p-2 bg-red-50 text-red-500 rounded-xl" title="Eliminar Historial"><Trash2 className="w-4 h-4"/></button>}
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         </div>
       )}
