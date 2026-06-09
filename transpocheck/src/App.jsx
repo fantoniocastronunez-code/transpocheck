@@ -771,6 +771,8 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
 
     // Lógica para saldos y negativos
     let newBalance = currentBalance;
+    let deductedAmount = amount; // <-- NUEVO: Memoria de cuánto se descontó realmente
+    
     if (type === 'assignment') {
        newBalance = currentBalance + amount;
     } else if (type === 'expense') {
@@ -781,6 +783,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
           } else {
              // Si es un gasto libre (sólo anotar), el saldo no baja de 0
              newBalance = Math.max(0, currentBalance - amount);
+             deductedAmount = currentBalance - newBalance; // Calcula cuánto se restó de verdad
           }
        } else {
           newBalance = currentBalance - amount;
@@ -789,7 +792,8 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
 
     try {
       await updateDoc(doc(db, 'drivers', driverId), { balance: newBalance });
-      await addDoc(collection(db, 'expenses'), { driverId, driverEmail: dEmail, driverName: dName, type, amount, detail: detailString, jobId: assocJobId, createdAt: Date.now() });
+      // Guardamos también el "deductedAmount" en la base de datos
+      await addDoc(collection(db, 'expenses'), { driverId, driverEmail: dEmail, driverName: dName, type, amount, detail: detailString, jobId: assocJobId, deductedAmount, createdAt: Date.now() });
       e.target.reset(); 
       showAlert(type === 'assignment' ? "Fondo asignado correctamente." : "Gasto registrado exitosamente.");
     } catch (err) { console.error(err); }
@@ -821,7 +825,11 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
     showConfirm("¿Eliminar registro financiero? El saldo se recalculará.", async () => {
       try {
         const d = drivers.find(x => x.id === exp.driverId);
-        if (d) await updateDoc(doc(db, 'drivers', d.id), { balance: (d.balance||0) + (exp.type === 'assignment' ? -exp.amount : exp.amount) });
+        if (d) {
+           // Al eliminar, solo devuelve el dinero que REALMENTE se le descontó al conductor
+           let amountToRestore = exp.type === 'assignment' ? -exp.amount : (exp.deductedAmount !== undefined ? exp.deductedAmount : exp.amount);
+           await updateDoc(doc(db, 'drivers', d.id), { balance: (d.balance||0) + amountToRestore });
+        }
         await deleteDoc(doc(db, 'expenses', exp.id));
       } catch(e){}
     });
@@ -840,17 +848,38 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
       if (!isAdminView && expense.type === 'assignment') { showAlert("No puedes modificar una asignación."); return onClose(); }
       const newAmount = Number(e.target.amount.value);
       const newDetail = e.target.detail.value;
-      const amountDiff = newAmount - expense.amount;
 
       try {
+        let newlyDeducted = newAmount;
         const driverSnapshot = drivers.find(d => d.id === expense.driverId);
+        
         if (driverSnapshot) {
-          let newBalance = driverSnapshot.balance || 0;
-          if (expense.type === 'assignment') newBalance += amountDiff;
-          if (expense.type === 'expense' || expense.type === 'return') newBalance -= amountDiff;
-          await updateDoc(doc(db, 'drivers', expense.driverId), { balance: newBalance });
+          let currentDriverBalance = driverSnapshot.balance || 0;
+          
+          if (expense.type === 'assignment') {
+             const amountDiff = newAmount - expense.amount;
+             currentDriverBalance += amountDiff;
+          } else if (expense.type === 'expense' || expense.type === 'return') {
+             let oldDeducted = expense.deductedAmount !== undefined ? expense.deductedAmount : expense.amount;
+             
+             // 1. Devolvemos el dinero que se había descontado originalmente
+             currentDriverBalance += oldDeducted;
+             
+             // 2. Aplicamos el nuevo descuento
+             if (isAdminView && !expense.jobId && expense.type === 'expense') {
+                 // Si es gasto libre, vuelve a respetar el límite de 0
+                 let balanceAfter = Math.max(0, currentDriverBalance - newAmount);
+                 newlyDeducted = currentDriverBalance - balanceAfter;
+                 currentDriverBalance = balanceAfter;
+             } else {
+                 // Si es con trabajo, descuenta directo
+                 currentDriverBalance -= newAmount;
+                 newlyDeducted = newAmount;
+             }
+          }
+          await updateDoc(doc(db, 'drivers', expense.driverId), { balance: currentDriverBalance });
         }
-        await updateDoc(doc(db, 'expenses', expense.id), { amount: newAmount, detail: newDetail });
+        await updateDoc(doc(db, 'expenses', expense.id), { amount: newAmount, detail: newDetail, deductedAmount: newlyDeducted });
         showAlert("Registro actualizado."); onClose();
       } catch (error) { console.error(error); showAlert("Error actualizando."); }
     };
