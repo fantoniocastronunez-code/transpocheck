@@ -4,8 +4,8 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signO
 import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc, getDocs, query, where } from 'firebase/firestore';
 import { jsPDF } from "jspdf";
 import { 
-  Car, MapPin, Camera, CheckCircle, FileText, Download, 
-  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Save
+  Car, MapPin, Camera, Fuel, CheckCircle, FileText, Download, 
+  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Save
 } from 'lucide-react';
 
 const firebaseConfig = {
@@ -180,16 +180,12 @@ export default function App() {
         snapshot.docChanges().forEach((change) => {
           const d = change.doc.data();
           if (change.type === 'added' && d.status === 'pending' && d.assignedEmails?.includes(currentUserEmail)) {
-          const notifBody = [
-            `Cliente: ${d.client || 'Sin cliente'}`,
-            `Patente: ${d.plate || d.vin || 'N/A'}`,
-            `${d.brand || ''} ${d.model || ''}`.trim(),
-            `Desde: ${d.origin || '-'}`,
-            `Hasta: ${d.destination || '-'}`
-        ].join('\n');
-
-  triggerNotification('📍 ¡Nuevo Traslado!', notifBody);
-}
+             triggerNotification('📍 ¡Nuevo Traslado!', `CLIENTE: ${d.client || 'Sin Cliente'}\nMARCA: ${d.brand || '-'}\nMODELO: ${d.model || '-'}\nPATENTE: ${d.plate || d.vin || 'S/N'}\nDESDE: ${d.origin || '-'}\nHASTA: ${d.destination || '-'}`);
+          }
+          if (change.type === 'modified' && d.status === 'accepted' && isRealAdmin && activeRole === 'admin') {
+             const driverName = drivers.find(drv => drv.email === d.acceptedByEmail)?.name || d.acceptedByEmail;
+             triggerNotification('✅ Trabajo Aceptado', `Conductor: ${driverName}\nCLIENTE: ${d.client || 'Sin Cliente'}\nMARCA: ${d.brand || '-'}\nMODELO: ${d.model || '-'}\nPATENTE: ${d.plate || d.vin || 'S/N'}\nDESDE: ${d.origin || '-'}\nHASTA: ${d.destination || '-'}`);
+          }
         });
       }
       setJobs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => b.createdAt - a.createdAt));
@@ -202,7 +198,7 @@ export default function App() {
     const unsubClients = onSnapshot(collection(db, 'clients'), snap => setCustomClients(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
 
     return () => { unsubJobs(); unsubDrivers(); unsubExpenses(); unsubVehicles(); unsubClients(); };
-  }, [user, activeRole, currentUserEmail, isRealAdmin]);
+  }, [user, activeRole, currentUserEmail, isRealAdmin, drivers]);
 
   const allClientsList = Array.from(new Set([...DEFAULT_CLIENTES, ...customClients.map(c => c.name)])).sort();
 
@@ -1073,14 +1069,14 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       if (job.tripType === 'revision' && reason === 'RECHAZO_RT_AUTOMATICO') {
           const cloneJob = {
               scheduledDate: job.scheduledDate, client: job.client, brand: job.brand, model: job.model, vin: job.vin, plate: job.plate,
-              origin: job.origin, destination: job.destination, tripType: job.tripType, rtData: job.rtData,
+              origin: job.origin, destination: job.destination, tripType: job.tripType, rtData: job.rtData || null,
               assignedDrivers: job.assignedDrivers || [], assignedEmails: job.assignedEmails || [],
               status: 'pending', createdAt: Date.now(), checklist: null
           };
           await addDoc(collection(db, 'transport_jobs'), cloneJob);
       }
       await updateDoc(doc(db, 'transport_jobs', job.id), { 
-        status: 'failed', failedReason: reason === 'RECHAZO_RT_AUTOMATICO' ? job.checklist?.rtRejectReason || 'Revisión Técnica Rechazada' : reason, 
+        status: 'failed', failedReason: reason === 'RECHAZO_RT_AUTOMATICO' ? (job.checklist?.rtRejectReason || 'Revisión Técnica Rechazada') : reason, 
         completedAt: Date.now(), acceptedByEmail: job.acceptedByEmail || currentUserEmail
       });
       setJobToFail(null); showAlert(reason === 'RECHAZO_RT_AUTOMATICO' ? "Revisión guardada como rechazada y se ha creado un nuevo traslado pendiente." : "Trabajo marcado como fallido.");
@@ -1096,7 +1092,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     
     docPDF.setFillColor(37, 99, 235); docPDF.rect(0, 0, 210, 30, 'F'); docPDF.setTextColor(255, 255, 255);
     
-    // CAMBIO DE TÍTULO DEPENDIENDO DEL TIPO
     let pdfTitle = "CHECKLIST DE TRASLADO";
     if (job.tripType === 'revision') pdfTitle = "CERTIFICADO DE REVISIÓN";
     if (job.tripType === 'viaje') pdfTitle = "TRASLADO A REGIONES";
@@ -1151,44 +1146,49 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     const obsSplit = docPDF.splitTextToSize(`${job.checklist?.observations || 'Ninguna'}`, 140); docPDF.text(obsSplit, 50, 131);
 
     const startY = 131 + (obsSplit.length * 5) + 10;
-    docPDF.setFillColor(241, 245, 249); docPDF.rect(15, startY, 180, 80, 'F');
-    
+    let currentY = startY;
+
     if (job.tripType === 'revision') {
-       docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold"); docPDF.text("3. RESULTADO REVISIÓN", 20, startY + 8);
+       docPDF.setFillColor(241, 245, 249); docPDF.rect(15, currentY, 180, 40, 'F');
+       docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold"); docPDF.text("3. RESULTADO REVISIÓN", 20, currentY + 8);
        docPDF.setFontSize(12);
        if (job.checklist?.rtStatus === 'aprobado') {
-         docPDF.setTextColor(22, 163, 74); docPDF.text("APROBADO", 20, startY + 20); docPDF.setTextColor(0, 0, 0);
+         docPDF.setTextColor(22, 163, 74); docPDF.text("APROBADO", 20, currentY + 20); docPDF.setTextColor(0, 0, 0);
        } else {
-         docPDF.setTextColor(220, 38, 38); docPDF.text("RECHAZADO", 20, startY + 20); docPDF.setTextColor(0, 0, 0);
+         docPDF.setTextColor(220, 38, 38); docPDF.text("RECHAZADO", 20, currentY + 20); docPDF.setTextColor(0, 0, 0);
          docPDF.setFontSize(11); docPDF.setFont("helvetica", "normal");
-         docPDF.text(`Razón: ${job.checklist?.rtRejectReason || 'No especificada'}`, 20, startY + 30);
+         docPDF.text(`Razón: ${job.checklist?.rtRejectReason || 'No especificada'}`, 20, currentY + 30);
        }
+       currentY += 45;
+       docPDF.setFillColor(241, 245, 249); docPDF.rect(15, currentY, 180, 60, 'F');
+       docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold"); docPDF.text("4. RECEPCIÓN", 20, currentY + 8);
     } else {
-      docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold"); docPDF.text("3. RECEPCIÓN", 20, startY + 8);
-      
-      if (job.checklist?.noReception) {
-        docPDF.setTextColor(220, 38, 38);
-        docPDF.setFontSize(12);
-        docPDF.text("ENTREGA SIN RECEPCIÓN (Confirmada por conductor)", 20, startY + 20);
-        docPDF.setTextColor(0, 0, 0);
-      } else {
-        docPDF.setFontSize(11);
-        docPDF.setFont("helvetica", "normal"); docPDF.text(`Receptor:`, 20, startY + 18); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.checklist?.receiverName || 'N/A'}`, 42, startY + 18);
-        docPDF.setFont("helvetica", "normal"); docPDF.text(`RUT:`, 110, startY + 18); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.checklist?.receiverRut || 'N/A'}`, 122, startY + 18);
-        if(job.checklist?.signatureData) { docPDF.setFont("helvetica", "normal"); docPDF.text(`Firma conformada:`, 20, startY + 45); docPDF.addImage(job.checklist.signatureData, 'PNG', 55, startY + 30, 70, 45); }
-      }
-
-      if (job.checklist?.location) {
-        const { lat, lng } = job.checklist.location;
-        docPDF.setFont("helvetica", "normal"); docPDF.text(`Ubicación GPS:`, 20, startY + 28);
-        docPDF.setTextColor(37, 99, 235); docPDF.textWithLink('Ver en Google Maps', 52, startY + 28, { url: `https://www.google.com/maps?q=${lat},${lng}` }); docPDF.setTextColor(0, 0, 0); 
-      } else { docPDF.setFont("helvetica", "normal"); docPDF.text(`Ubicación GPS: No registrada`, 20, startY + 28); }
+       docPDF.setFillColor(241, 245, 249); docPDF.rect(15, currentY, 180, 60, 'F');
+       docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold"); docPDF.text("3. RECEPCIÓN", 20, currentY + 8);
     }
+    
+    if (job.checklist?.noReception) {
+      docPDF.setTextColor(220, 38, 38);
+      docPDF.setFontSize(12);
+      docPDF.text("ENTREGA SIN RECEPCIÓN (Confirmada por conductor)", 20, currentY + 20);
+      docPDF.setTextColor(0, 0, 0);
+    } else {
+      docPDF.setFontSize(11);
+      docPDF.setFont("helvetica", "normal"); docPDF.text(`Receptor:`, 20, currentY + 18); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.checklist?.receiverName || 'N/A'}`, 42, currentY + 18);
+      docPDF.setFont("helvetica", "normal"); docPDF.text(`RUT:`, 110, currentY + 18); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.checklist?.receiverRut || 'N/A'}`, 122, currentY + 18);
+      if(job.checklist?.signatureData) { docPDF.setFont("helvetica", "normal"); docPDF.text(`Firma conformada:`, 20, currentY + 45); docPDF.addImage(job.checklist.signatureData, 'PNG', 55, currentY + 30, 70, 45); }
+    }
+
+    if (job.checklist?.location) {
+      const { lat, lng } = job.checklist.location;
+      docPDF.setFont("helvetica", "normal"); docPDF.text(`Ubicación GPS:`, 20, currentY + 28);
+      docPDF.setTextColor(37, 99, 235); docPDF.textWithLink('Ver en Google Maps', 52, currentY + 28, { url: `https://www.google.com/maps?q=${lat},${lng}` }); docPDF.setTextColor(0, 0, 0); 
+    } else { docPDF.setFont("helvetica", "normal"); docPDF.text(`Ubicación GPS: No registrada`, 20, currentY + 28); }
 
     if (job.checklist?.photos) {
       const photos = job.checklist.photos;
       const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atrás', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
-      let currentY = 30; let currentCol = 1; let addedPage = false;
+      let photoY = 30; let currentCol = 1; let addedPage = false;
       const getImageDims = (src) => new Promise(resolve => { const img = new Image(); img.onload = () => resolve({ w: img.width, h: img.height }); img.src = src; });
 
       for (const key in photos) {
@@ -1202,14 +1202,14 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
           let imgW = 80; let imgH = imgW * ratio; if (imgH > 100) { imgH = 100; imgW = imgH / ratio; }
           const slotCenter = currentCol === 1 ? 55 : 155; const finalX = slotCenter - (imgW / 2);
 
-          if (currentY + imgH > 280) {
-             docPDF.addPage(); currentY = 30; docPDF.setFillColor(37, 99, 235); docPDF.rect(0, 0, 210, 20, 'F'); docPDF.setTextColor(255, 255, 255);
+          if (photoY + imgH > 280) {
+             docPDF.addPage(); photoY = 30; docPDF.setFillColor(37, 99, 235); docPDF.rect(0, 0, 210, 20, 'F'); docPDF.setTextColor(255, 255, 255);
              docPDF.setFontSize(16); docPDF.setFont("helvetica", "bold"); docPDF.text(`REGISTRO FOTOGRÁFICO (CONT.)`, 105, 14, null, null, "center"); docPDF.setTextColor(0, 0, 0);
           }
-          docPDF.setFontSize(11); docPDF.setFont("helvetica", "bold"); docPDF.text(labels[key] || key, slotCenter, currentY - 3, { align: "center" });
-          docPDF.setDrawColor(200, 200, 200); docPDF.rect(finalX - 1, currentY - 1, imgW + 2, imgH + 2); 
-          docPDF.addImage(photos[key], 'JPEG', finalX, currentY, imgW, imgH);
-          if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; currentY += (imgH > 80 ? imgH : 80) + 15; }
+          docPDF.setFontSize(11); docPDF.setFont("helvetica", "bold"); docPDF.text(labels[key] || key, slotCenter, photoY - 3, { align: "center" });
+          docPDF.setDrawColor(200, 200, 200); docPDF.rect(finalX - 1, photoY - 1, imgW + 2, imgH + 2); 
+          docPDF.addImage(photos[key], 'JPEG', finalX, photoY, imgW, imgH);
+          if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 15; }
         }
       }
     }
@@ -1397,15 +1397,12 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
 
   const submit = async (e) => {
     e.preventDefault();
-    if (job.tripType !== 'revision' && !formData.noReception && !formData.signatureData) return showAlert("La firma del receptor es mandatoria.");
+    if (!formData.noReception && !formData.signatureData) return showAlert("La firma del receptor es mandatoria.");
     
     let d = {...formData}; 
     d.client = d.client === 'OTRO' ? d.manualClient : d.client; 
 
-    if (job.tripType === 'revision') {
-      d.receiverName = "PLANTA RT";
-      d.receiverRut = "N/A";
-    } else if(d.noReception) { 
+    if(d.noReception) { 
       d.receiverName="ENTREGA SIN RECEPCIÓN"; 
       d.receiverRut="N/A"; 
     }
@@ -1432,7 +1429,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
              
              const cloneJob = {
                 scheduledDate: d.scheduledDate, client: d.client, brand: d.brand, model: d.model, vin: d.plateOrVin, plate: d.plateOrVin, origin: d.origin, destination: d.destination,
-                tripType: job.tripType, rtData: job.rtData,
+                tripType: job.tripType, rtData: job.rtData || null, // <- PROTECCIÓN CONTRA UNDEFINED PARA FIREBASE
                 assignedDrivers: job.assignedDrivers || [], assignedEmails: job.assignedEmails || [],
                 status: 'pending', createdAt: Date.now(), checklist: null
              };
@@ -1559,20 +1556,19 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
           </div>
         ) : (
           <form onSubmit={submit} className="space-y-4">
-            {job.tripType !== 'revision' ? (
-               <>
-                 <label className="flex items-center gap-2.5 p-4 bg-amber-50 rounded-2xl border-amber-300 border-2 cursor-pointer"><input type="checkbox" checked={formData.noReception} onChange={e=>setF('noReception',e.target.checked)} className="w-5 h-5 cursor-pointer"/> <span className="font-extrabold text-sm text-slate-700">Dejar sin firma (Local cerrado)</span></label>
-                 {!formData.noReception && (
-                   <><input required={!formData.noReception} value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/><input required={!formData.noReception} value={formData.receiverRut} onChange={e=>setF('receiverRut',e.target.value)} placeholder="RUT Receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/><SignaturePad initialData={formData.signatureData} onSave={d=>setF('signatureData',d)} onClear={()=>setF('signatureData',null)}/></>
-                 )}
-               </>
-            ) : (
-               <div className="bg-blue-50 border-2 border-blue-200 p-6 rounded-2xl text-center mb-6">
-                 <CheckCircle className="w-12 h-12 text-blue-500 mx-auto mb-2"/>
-                 <h3 className="text-lg font-extrabold text-blue-800">Cierre de Revisión Técnica</h3>
-                 <p className="text-sm font-bold text-blue-600">Al finalizar, no se requiere firma del receptor.</p>
-               </div>
-            )}
+             <>
+               <label className="flex items-center gap-2.5 p-4 bg-amber-50 rounded-2xl border-amber-300 border-2 cursor-pointer">
+                  <input type="checkbox" checked={formData.noReception} onChange={e=>setF('noReception',e.target.checked)} className="w-5 h-5 cursor-pointer"/> 
+                  <span className="font-extrabold text-sm text-slate-700">Dejar sin firma (Local cerrado / PRT)</span>
+               </label>
+               {!formData.noReception && (
+                 <>
+                   <input required={!formData.noReception} value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
+                   <input required={!formData.noReception} value={formData.receiverRut} onChange={e=>setF('receiverRut',e.target.value)} placeholder="RUT Receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
+                   <SignaturePad initialData={formData.signatureData} onSave={d=>setF('signatureData',d)} onClear={()=>setF('signatureData',null)}/>
+                 </>
+               )}
+             </>
             
             <button type="button" onClick={() => { if ("geolocation" in navigator) { navigator.geolocation.getCurrentPosition((pos) => setF('location', { lat: pos.coords.latitude, lng: pos.coords.longitude }), () => showAlert("Error GPS.")); } }} className={`px-4 py-4 rounded-2xl text-sm w-full font-extrabold shadow-sm ${formData.location ? 'bg-green-100 text-green-700 border-2 border-green-200' : 'bg-slate-100 text-slate-700 border-2'}`}>
               {formData.location ? "📍 GPS Capturado Exitosamente" : "📍 Tocar para Capturar GPS Actual"}
