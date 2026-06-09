@@ -737,26 +737,48 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
   const [returnReceipt, setReturnReceipt] = useState(null);
   const [returnMethod, setReturnMethod] = useState('transferencia');
   const [editingExpense, setEditingExpense] = useState(null);
+  const [adminTxType, setAdminTxType] = useState('assignment'); 
 
   const activeOrPendingJobs = jobs?.filter(j => j.status === 'pending' || j.status === 'accepted') || [];
 
   const addExp = async (e, type, amount, detail, driverId, dName, dEmail) => {
     e.preventDefault();
     const currentBalance = drivers.find(d => d.id === driverId)?.balance || 0;
-    if (type === 'expense' && amount > currentBalance) return showAlert("Saldo insuficiente.");
     
-    const assocJobId = type === 'assignment' ? (e.target.jobId?.value || '') : '';
-    let detailString = detail || 'Asignación de fondos';
+    // Si es conductor, bloquea si no hay saldo
+    if (!isAdminView && type === 'expense' && amount > currentBalance) return showAlert("Saldo insuficiente.");
+    
+    const assocJobId = e.target.jobId?.value || '';
+    let detailString = detail || (type === 'assignment' ? 'Asignación de fondos' : 'Gasto registrado por Admin');
 
     if (assocJobId) {
       const jb = activeOrPendingJobs.find(x => x.id === assocJobId);
       if (jb) detailString += ` (Asoc. a patente ${jb.plate || jb.vin || 'S/N'})`;
     }
 
+    // Lógica para saldos y negativos
+    let newBalance = currentBalance;
+    if (type === 'assignment') {
+       newBalance = currentBalance + amount;
+    } else if (type === 'expense') {
+       if (isAdminView) {
+          if (assocJobId) {
+             // Si el admin asocia el gasto a un trabajo, el saldo puede quedar en negativo
+             newBalance = currentBalance - amount;
+          } else {
+             // Si es un gasto libre (sólo anotar), el saldo no baja de 0
+             newBalance = Math.max(0, currentBalance - amount);
+          }
+       } else {
+          newBalance = currentBalance - amount;
+       }
+    }
+
     try {
-      await updateDoc(doc(db, 'drivers', driverId), { balance: type === 'assignment' ? currentBalance + amount : currentBalance - amount });
+      await updateDoc(doc(db, 'drivers', driverId), { balance: newBalance });
       await addDoc(collection(db, 'expenses'), { driverId, driverEmail: dEmail, driverName: dName, type, amount, detail: detailString, jobId: assocJobId, createdAt: Date.now() });
-      e.target.reset(); showAlert(type === 'assignment' ? "Fondo asignado correctamente." : "Gasto registrado");
+      e.target.reset(); 
+      showAlert(type === 'assignment' ? "Fondo asignado correctamente." : "Gasto registrado exitosamente.");
     } catch (err) { console.error(err); }
   };
 
@@ -848,20 +870,30 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
         {editingExpense && <EditExpenseModal expense={editingExpense} onClose={() => setEditingExpense(null)} />}
         {viewingReceipt && <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[150] p-4"><div className="bg-white rounded-3xl p-4 w-full max-w-md relative"><button onClick={() => setViewingReceipt(null)} className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"><X className="w-5 h-5 text-slate-700"/></button><h3 className="font-extrabold text-slate-800 mb-4 ml-2">Comprobante</h3><img src={viewingReceipt} alt="Comprobante" className="w-full h-auto max-h-[70vh] object-contain rounded-xl shadow-sm" /></div></div>}
 
-        <h2 className="text-2xl font-extrabold mb-6 flex items-center gap-2"><Wallet className="text-blue-600"/> Control Viáticos</h2>
+       <h2 className="text-2xl font-extrabold mb-6 flex items-center gap-2"><Wallet className="text-blue-600"/> Control Viáticos</h2>
         <div className="grid lg:grid-cols-2 gap-6 items-start">
           <div className="space-y-4">
             {drivers.map(d => (
-              <div key={d.id} className={`bg-white p-4 rounded-3xl border cursor-pointer ${selectedDriverId === d.id ? 'border-blue-500 ring-2 ring-blue-100' : 'border-slate-100 hover:border-blue-300'}`} onClick={() => setSelectedDriverId(d.id === selectedDriverId ? null : d.id)}>
-                <div className="flex justify-between items-center"><div><p className="font-extrabold text-base text-slate-800">{d.name}</p><p className="text-xs text-slate-400 font-bold">{d.email}</p></div><div className="text-right"><p className="text-[10px] uppercase font-bold text-slate-400">Saldo</p><p className="font-black text-lg text-green-600">{formatMoney(d.balance||0)}</p></div></div>
+              <div key={d.id} className={`bg-white p-4 rounded-3xl border cursor-pointer ${selectedDriverId === d.id ? 'border-blue-500 ring-2 ring-blue-100' : 'border-slate-100 hover:border-blue-300'}`} onClick={() => {setSelectedDriverId(d.id === selectedDriverId ? null : d.id); setAdminTxType('assignment');}}>
+                <div className="flex justify-between items-center"><div><p className="font-extrabold text-base text-slate-800">{d.name}</p><p className="text-xs text-slate-400 font-bold">{d.email}</p></div><div className="text-right"><p className="text-[10px] uppercase font-bold text-slate-400">Saldo</p><p className={`font-black text-lg ${d.balance < 0 ? 'text-red-600' : 'text-green-600'}`}>{formatMoney(d.balance||0)}</p></div></div>
                 {selectedDriverId === d.id && (
-                  <form onSubmit={(e) => addExp(e, 'assignment', Number(e.target.amount.value), '', d.id, d.name, d.email)} className="mt-4 border-t pt-3 space-y-2.5" onClick={e=>e.stopPropagation()}>
-                    <input name="amount" type="number" required placeholder="Monto a asignar $" className="w-full border-2 border-slate-200 p-2.5 rounded-xl text-sm font-bold outline-none focus:border-blue-500"/>
+                  <form onSubmit={(e) => addExp(e, adminTxType, Number(e.target.amount.value), adminTxType === 'expense' ? e.target.detail?.value : '', d.id, d.name, d.email)} className="mt-4 border-t pt-3 space-y-2.5" onClick={e=>e.stopPropagation()}>
+                    <div className="flex gap-2 mb-2">
+                       <button type="button" onClick={() => setAdminTxType('assignment')} className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors ${adminTxType === 'assignment' ? 'bg-green-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>+ Entregar Fondo</button>
+                       <button type="button" onClick={() => setAdminTxType('expense')} className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors ${adminTxType === 'expense' ? 'bg-red-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>- Anotar Gasto</button>
+                    </div>
+                    
+                    {adminTxType === 'expense' && (
+                       <input name="detail" type="text" required placeholder="Detalle del gasto (ej. Peaje, Bencina)" className="w-full border-2 border-slate-200 p-2.5 rounded-xl text-sm font-bold outline-none focus:border-blue-500"/>
+                    )}
+                    
+                    <input name="amount" type="number" required placeholder={adminTxType === 'assignment' ? "Monto a asignar $" : "Monto del gasto $"} className="w-full border-2 border-slate-200 p-2.5 rounded-xl text-sm font-bold outline-none focus:border-blue-500"/>
+                    
                     <select name="jobId" className="w-full border-2 border-slate-200 p-2.5 rounded-xl text-xs font-semibold bg-white text-slate-700 outline-none focus:border-blue-500">
-                       <option value="">Asociar a un Trabajo (Opcional)</option>
+                       <option value="">{adminTxType === 'assignment' ? "Asociar a un Trabajo (Opcional)" : "Trabajo activo (Opcional, permite saldo negativo)"}</option>
                        {activeOrPendingJobs.map(j => <option key={j.id} value={j.id}>{j.client} - {j.brand} ({j.plate || j.vin || 'S/N'})</option>)}
                     </select>
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white py-2 w-full rounded-xl font-bold text-sm transition-colors">Enviar</button>
+                    <button className={`w-full py-2 rounded-xl font-bold text-sm transition-colors text-white ${adminTxType === 'assignment' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}>Confirmar {adminTxType === 'assignment' ? 'Fondo' : 'Gasto'}</button>
                   </form>
                 )}
               </div>
@@ -937,9 +969,9 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
 
       {editingExpense && <EditExpenseModal expense={editingExpense} onClose={() => setEditingExpense(null)} />}
 
-      <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-3xl shadow-md text-center text-white relative overflow-hidden">
+      <div className={`bg-gradient-to-br ${myBalance < 0 ? 'from-red-600 to-red-800' : 'from-blue-600 to-indigo-700'} p-6 rounded-3xl shadow-md text-center text-white relative overflow-hidden`}>
         <Wallet className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10" />
-        <p className="text-blue-100 font-bold uppercase tracking-wider text-xs mb-1">Fondo Asignado Actual</p>
+        <p className={`font-bold uppercase tracking-wider text-xs mb-1 ${myBalance < 0 ? 'text-red-200' : 'text-blue-100'}`}>Fondo Asignado Actual</p>
         <p className="text-4xl font-extrabold tracking-tight">{formatMoney(myBalance)}</p>
       </div>
 
