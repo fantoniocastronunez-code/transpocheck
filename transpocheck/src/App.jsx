@@ -695,7 +695,13 @@ const getRouteStr = (j) => {
 function LeaderboardView({ jobs, drivers, isAdminView }) {
   const [selectedDriverJobs, setSelectedDriverJobs] = useState(null);
   const now = new Date(); const firstOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-  const monthlyCompleted = jobs.filter(j => j.status === 'completed' && j.completedAt >= firstOfCurrentMonth);
+  
+  // Modificado: Ahora cuenta los completados Y las revisiones técnicas fallidas del mes
+  const monthlyCompleted = jobs.filter(j => {
+    if (!j.completedAt || j.completedAt < firstOfCurrentMonth) return false;
+    return j.status === 'completed' || (j.status === 'failed' && j.tripType === 'revision');
+  });
+  
   const ranking = drivers.map(d => { const dj = monthlyCompleted.filter(j => j.acceptedByEmail === d.email); return { ...d, score: dj.length, jobs: dj }; }).sort((a, b) => b.score - a.score);
 
   return (
@@ -715,9 +721,16 @@ function LeaderboardView({ jobs, drivers, isAdminView }) {
             <div className="p-2 border-b flex justify-between items-center"><h2 className="text-lg font-extrabold text-slate-800">{selectedDriverJobs.name}</h2><button onClick={()=>setSelectedDriverJobs(null)} className="bg-slate-100 p-2 rounded-full hover:bg-slate-200"><X className="w-4 h-4"/></button></div>
             <div className="p-2 overflow-y-auto space-y-3 flex-1 mt-2">
               {selectedDriverJobs.jobs.length === 0 ? <p className="text-center text-sm font-bold text-slate-400">Sin traslados.</p> : selectedDriverJobs.jobs.map(j => (
-                <div key={j.id} className="bg-slate-50 p-3 rounded-xl border text-xs">
-                  <div className="flex justify-between mb-1"><p className="font-extrabold text-slate-800 text-sm">{j.brand} {j.model}</p><span className="border px-1.5 rounded bg-white font-bold text-slate-600 uppercase">{j.plate||j.vin}</span></div>
-                  <p className="font-semibold text-slate-500"><MapPin className="inline w-3 h-3 mr-0.5"/> {j.origin} ➔ <Navigation className="inline w-3 h-3 mr-0.5"/> {j.destination}</p>
+                <div key={j.id} className="bg-slate-50 p-3 rounded-xl border text-xs relative overflow-hidden">
+                  <div className={`absolute left-0 top-0 bottom-0 w-1 ${j.status==='failed'?'bg-red-500':'bg-green-500'}`}></div>
+                  <div className="flex justify-between mb-1 pl-2">
+                     <p className="font-extrabold text-slate-800 text-sm flex items-center gap-2">
+                       {j.brand} {j.model} 
+                       {j.status === 'failed' && <span className="bg-red-100 text-red-700 text-[9px] px-1.5 py-0.5 rounded uppercase">Rechazada</span>}
+                     </p>
+                     <span className="border px-1.5 rounded bg-white font-bold text-slate-600 uppercase">{j.plate||j.vin}</span>
+                  </div>
+                  <p className="font-semibold text-slate-500 pl-2"><MapPin className="inline w-3 h-3 mr-0.5"/> {j.origin} ➔ <Navigation className="inline w-3 h-3 mr-0.5"/> {j.destination}</p>
                 </div>
               ))}
             </div>
