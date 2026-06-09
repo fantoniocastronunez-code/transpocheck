@@ -1077,8 +1077,18 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   const isAdminView = role === 'admin';
   
   const filteredJobs = jobs.filter(job => {
-    if (!isAdminView && (!job.assignedEmails?.includes(currentUserEmail) && job.acceptedByEmail !== currentUserEmail)) return false;
-    if (!isAdminView && job.status === 'failed' && job.tripType !== 'revision') return false; 
+    if (!isAdminView) {
+      // Si está pendiente, lo ven los que estén asignados
+      if (job.status === 'pending') {
+        if (!job.assignedEmails?.includes(currentUserEmail)) return false;
+      } else {
+        // Si ya fue aceptado, completado o falló, SOLO lo ve quien lo reclamó
+        if (job.acceptedByEmail !== currentUserEmail) return false;
+      }
+      // Ocultar fallidos a menos que sean revisión técnica
+      if (job.status === 'failed' && job.tripType !== 'revision') return false; 
+    }
+    
     if (!job.createdAt) return true;
     if (!isAdminView) {
       const sevenDays = 7 * 24 * 60 * 60 * 1000;
