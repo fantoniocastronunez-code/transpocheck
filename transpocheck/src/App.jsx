@@ -22,11 +22,9 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 
-// Lista por defecto de clientes
 const DEFAULT_CLIENTES = ["Grandleasing Las Torres", "Grandleasing Umaña", "Kovacs", "Salfa", "Enex", "CIPP", "Simumak", "Mutual Capacitación"];
 const LICENCIAS = ["A1", "A2", "A3", "A4", "A5", "A1 antigua", "A2 antigua", "B", "C"];
 
-// --- UTILIDADES ---
 const formatMoney = (amount) => `$${Number(amount).toLocaleString('es-CL')}`;
 const formatDateDisplay = (dateString) => {
   if (!dateString) return '';
@@ -34,7 +32,6 @@ const formatDateDisplay = (dateString) => {
   return `${d}/${m}/${y}`;
 };
 
-// --- COMPONENTE DE FIRMA ---
 const SignaturePad = ({ onSave, onClear, initialData }) => {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -81,8 +78,8 @@ const SignaturePad = ({ onSave, onClear, initialData }) => {
   );
 };
 
-// --- FUNCIÓN REDIMENSIONAR IMAGEN ---
-const resizeImage = (file, maxWidth, quality) => {
+// Se reduce la resolución máxima y la calidad para evitar el bloqueo por peso en Firestore
+const resizeImage = (file, maxWidth = 500, quality = 0.4) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -93,12 +90,10 @@ const resizeImage = (file, maxWidth, quality) => {
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
-
         if (width > maxWidth) {
           height = Math.round((height * maxWidth) / width);
           width = maxWidth;
         }
-
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext('2d');
@@ -111,6 +106,316 @@ const resizeImage = (file, maxWidth, quality) => {
   });
 };
 
+function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers, db, showAlert, onSuccess }) {
+  const [selectedClient, setSelectedClient] = useState(jobToEdit?.client && allClientsList.includes(jobToEdit.client) ? jobToEdit.client : (jobToEdit?.client ? 'OTRO' : ''));
+  const [manualClient, setManualClient] = useState(jobToEdit?.client && !allClientsList.includes(jobToEdit.client) ? jobToEdit.client : '');
+  const [brand, setBrand] = useState(jobToEdit?.brand || '');
+  const [model, setModel] = useState(jobToEdit?.model || '');
+  const [plate, setPlate] = useState(jobToEdit?.plate || jobToEdit?.vin || '');
+  const [tripType, setTripType] = useState(jobToEdit?.tripType || 'traslado');
+  
+  const [revType, setRevType] = useState(jobToEdit?.rtData?.type || 'A');
+  const [revA_gases, setRevA_gases] = useState(jobToEdit?.rtData?.gases || false);
+  const [revA_revision, setRevA_revision] = useState(jobToEdit?.rtData?.revision || false);
+  const [revA_inspeccion, setRevA_inspeccion] = useState(jobToEdit?.rtData?.inspeccion || false);
+  const [revA_frenos, setRevA_frenos] = useState(jobToEdit?.rtData?.frenos || false);
+  const [revB_tipo, setRevB_tipo] = useState(jobToEdit?.rtData?.tipoB || 'completa');
+  
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const handlePlateChange = (e) => {
+    const val = e.target.value.toUpperCase(); setPlate(val);
+    const v = vehicles.find(x => x.plate === val);
+    if (v) {
+      setBrand(v.brand); setModel(v.model);
+      if (allClientsList.includes(v.client)) setSelectedClient(v.client); else { setSelectedClient('OTRO'); setManualClient(v.client); }
+    }
+  };
+
+  const handleCreateOrUpdateJob = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const selectedDriverIds = formData.getAll('assignedDriverId');
+    if (selectedDriverIds.length === 0) return showAlert("Debes seleccionar al menos un conductor.");
+
+    const assignedDriversList = drivers.filter(d => selectedDriverIds.includes(d.id));
+    const finalClient = selectedClient === 'OTRO' ? manualClient : selectedClient;
+    
+    const rtData = tripType === 'revision' ? {
+      type: revType, gases: revType === 'A' ? revA_gases : (revB_tipo === 'gases'),
+      revision: revType === 'A' ? revA_revision : (revB_tipo === 'completa'),
+      inspeccion: revType === 'A' ? revA_inspeccion : false,
+      frenos: revType === 'A' ? revA_frenos : false,
+      tipoB: revType === 'B' ? revB_tipo : null
+    } : null;
+
+    const jobData = {
+      scheduledDate: formData.get('scheduledDate'), client: finalClient, brand, model,
+      vin: plate, plate, origin: formData.get('origin'), destination: formData.get('destination'),
+      tripType, rtData: rtData || null, // Protección anti-crash
+      assignedDrivers: assignedDriversList.map(d => ({id: d.id, name: d.name, email: d.email})), assignedEmails: assignedDriversList.map(d => d.email)
+    };
+
+    try {
+      if (jobToEdit) {
+         await updateDoc(doc(db, 'transport_jobs', jobToEdit.id), jobData);
+         showAlert(`Trabajo actualizado exitosamente.`);
+         if (onCancelEdit) onCancelEdit();
+      } else {
+         jobData.status = 'pending';
+         jobData.createdAt = Date.now();
+         jobData.checklist = null;
+         await addDoc(collection(db, 'transport_jobs'), jobData);
+         showAlert(`Trabajo asignado exitosamente.`);
+      }
+      
+      if (plate && !vehicles.find(v => v.plate === plate)) await addDoc(collection(db, 'vehicles'), { plate, brand, model, client: finalClient, createdAt: Date.now() });
+      onSuccess();
+    } catch (error) { console.error(error); showAlert("Ocurrió un error guardando el trabajo."); }
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-100">
+      <div className="flex justify-between items-center mb-6 border-b pb-4">
+        <h2 className="text-xl sm:text-2xl font-extrabold text-slate-800">{jobToEdit ? 'Editar Trabajo' : 'Crear Nuevo Trabajo'}</h2>
+        {jobToEdit && <button type="button" onClick={onCancelEdit} className="text-slate-500 hover:bg-slate-100 p-2 rounded-xl transition"><X className="w-6 h-6"/></button>}
+      </div>
+      <form onSubmit={handleCreateOrUpdateJob} className="space-y-6">
+        <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl space-y-4">
+          <h3 className="text-base font-bold text-slate-700">1. Tipo de Servicio</h3>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button type="button" onClick={()=>setTripType('traslado')} className={`flex-1 p-3 border-2 rounded-xl text-center font-bold text-sm transition-colors ${tripType === 'traslado' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-500'}`}>Traslado Local</button>
+            <button type="button" onClick={()=>setTripType('viaje')} className={`flex-1 p-3 border-2 rounded-xl text-center font-bold text-sm transition-colors ${tripType === 'viaje' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-500'}`}>A Regiones</button>
+            <button type="button" onClick={()=>setTripType('revision')} className={`flex-1 p-3 border-2 rounded-xl text-center font-bold text-sm transition-colors ${tripType === 'revision' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-500'}`}>Revisión Técnica</button>
+          </div>
+          {tripType === 'revision' && (
+            <div className="p-4 bg-white border-2 border-blue-100 rounded-xl space-y-4 mt-4 animate-in fade-in">
+               <h4 className="text-xs font-extrabold text-blue-600 uppercase">Detalle Revisión Técnica</h4>
+               <select value={revType} onChange={e=>setRevType(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700">
+                 <option value="A">Revisión Tipo A</option>
+                 <option value="B">Revisión Tipo B</option>
+               </select>
+               {revType === 'A' && (
+                 <div className="grid grid-cols-2 gap-3 text-sm font-bold text-slate-600">
+                   <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_gases} onChange={e=>setRevA_gases(e.target.checked)} className="w-4 h-4 text-blue-600 rounded"/> Gases</label>
+                   <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_revision} onChange={e=>setRevA_revision(e.target.checked)} className="w-4 h-4 text-blue-600 rounded"/> Revisión</label>
+                   <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_inspeccion} onChange={e=>setRevA_inspeccion(e.target.checked)} className="w-4 h-4 text-blue-600 rounded"/> Insp. Visual</label>
+                   <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_frenos} onChange={e=>setRevA_frenos(e.target.checked)} className="w-4 h-4 text-blue-600 rounded"/> Cert. Frenos</label>
+                 </div>
+               )}
+               {revType === 'B' && (
+                 <select value={revB_tipo} onChange={e=>setRevB_tipo(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700">
+                   <option value="completa">Revisión Completa</option>
+                   <option value="gases">Sólo Gases</option>
+                 </select>
+               )}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl space-y-4">
+           <h3 className="text-base font-bold text-slate-700">2. Vehículo <span className="text-xs text-blue-500 font-bold">(Escribe la patente para autocompletar)</span></h3>
+           <div className="grid grid-cols-2 gap-4">
+             <input value={plate} onChange={handlePlateChange} type="text" placeholder="Patente o VIN" className="w-full border-2 border-blue-200 p-3 text-sm rounded-xl col-span-2 uppercase outline-none focus:border-blue-500 font-bold bg-white text-blue-900 shadow-sm" />
+             <input value={brand} onChange={e=>setBrand(e.target.value)} type="text" placeholder="Marca" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+             <input value={model} onChange={e=>setModel(e.target.value)} type="text" placeholder="Modelo" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+           </div>
+        </div>
+        
+        <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl space-y-4">
+          <h3 className="text-base font-bold text-slate-700">3. Programación y Ruta</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+               <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider ml-1">Fecha de Traslado</label>
+               <input name="scheduledDate" type="date" defaultValue={jobToEdit?.scheduledDate || todayStr} required className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-700" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider ml-1">Cliente</label>
+              <select value={selectedClient} onChange={(e) => setSelectedClient(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold text-slate-700 bg-white">
+                <option value="">Seleccione Cliente (Opcional)</option>
+                {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
+                <option value="OTRO">Otro (Ingreso manual)</option>
+              </select>
+              {selectedClient === 'OTRO' && <input type="text" value={manualClient} onChange={(e) => setManualClient(e.target.value)} placeholder="Escribe el nombre del cliente" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white mt-2" />}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+            <input name="origin" defaultValue={jobToEdit?.origin || ''} type="text" placeholder="Desde (Origen)" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+            <input name="destination" defaultValue={jobToEdit?.destination || ''} type="text" placeholder={tripType === 'revision' ? 'Planta de Revisión (Destino)' : 'Hasta (Destino)'} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+          </div>
+        </div>
+        
+        <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl space-y-4">
+           <h3 className="text-base font-bold text-slate-700">4. Conductores <span className="text-xs text-red-500 font-normal">(Obligatorio seleccionar al menos 1)</span></h3>
+           <div className="max-h-48 overflow-y-auto border-2 border-slate-200 bg-white rounded-xl">
+              {drivers.length === 0 ? <p className="text-sm text-slate-400 p-4 font-semibold">No hay conductores.</p> : drivers.map(d => (
+                <label key={d.id} className="flex items-center p-4 border-b border-slate-100 hover:bg-blue-50 cursor-pointer transition-colors">
+                  <input type="checkbox" name="assignedDriverId" value={d.id} defaultChecked={jobToEdit?.assignedEmails?.includes(d.email)} className="w-5 h-5 cursor-pointer rounded text-blue-600 focus:ring-blue-500" />
+                  <div className="ml-4"><span className="block text-base font-bold text-slate-800">{d.name}</span><span className="block text-sm font-semibold text-slate-400">{d.email}</span></div>
+                </label>
+              ))}
+           </div>
+        </div>
+        <div className="flex gap-3 pt-2">
+          {jobToEdit && <button type="button" onClick={onCancelEdit} className="w-1/3 bg-slate-200 hover:bg-slate-300 text-slate-700 px-8 py-3 rounded-2xl font-extrabold text-sm sm:text-lg transition-colors">Cancelar</button>}
+          <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-extrabold text-sm sm:text-lg transition-colors shadow-lg shadow-blue-200">{jobToEdit ? 'Actualizar Trabajo' : 'Guardar y Asignar'}</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function ConfigView({ allClientsList, customClients, vehicles, drivers, db, showAlert, showConfirm }) {
+  const [configSubTab, setConfigSubTab] = useState('clients');
+  const [editingDriver, setEditingDriver] = useState(null);
+  const [editingVehicle, setEditingVehicle] = useState(null);
+  const [editingClient, setEditingClient] = useState(null);
+  const [fleetFilter, setFleetFilter] = useState('');
+  
+  return (
+    <div className="space-y-6">
+      <div className="flex gap-2 pb-2">
+         <button onClick={()=>setConfigSubTab('clients')} className={`px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='clients'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Clientes</button>
+         <button onClick={()=>setConfigSubTab('vehicles')} className={`px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='vehicles'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Vehículos</button>
+         <button onClick={()=>setConfigSubTab('drivers')} className={`px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='drivers'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Conductores</button>
+      </div>
+
+      {configSubTab === 'clients' && (
+        <div className="grid md:grid-cols-2 gap-6">
+          <form onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const name = fd.get('name'); try { if(editingClient){ await updateDoc(doc(db, 'clients', editingClient.id), { name }); setEditingClient(null); showAlert("Cliente actualizado"); } else { await addDoc(collection(db, 'clients'), { name, createdAt: Date.now() }); showAlert("Cliente agregado"); } e.target.reset(); } catch(err){} }} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+            <h3 className="font-extrabold text-lg">{editingClient ? 'Editar Cliente' : 'Nuevo Cliente'}</h3>
+            <input name="name" defaultValue={editingClient?.name} placeholder="Nombre del cliente" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-semibold"/>
+            <div className="flex gap-2">
+              {editingClient && <button type="button" onClick={()=>setEditingClient(null)} className="flex-1 bg-slate-100 py-3 rounded-xl font-bold">Cancelar</button>}
+              <button type="submit" className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-extrabold">{editingClient ? 'Actualizar' : 'Agregar'}</button>
+            </div>
+          </form>
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 max-h-[60vh] overflow-y-auto">
+             <h3 className="font-extrabold text-lg mb-4">Base de Clientes</h3>
+             <div className="space-y-2">
+                {allClientsList.map((c, i) => {
+                   const isCustom = customClients.find(cc => cc.name === c);
+                   return (
+                      <div key={i} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+                        <span className="font-bold text-slate-700">{c} {!isCustom && <span className="text-[10px] text-slate-400 bg-slate-200 px-1.5 rounded ml-2">Por defecto</span>}</span>
+                        {isCustom && (
+                           <div className="flex gap-1">
+                             <button onClick={()=>setEditingClient(isCustom)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg"><Edit2 className="w-4 h-4"/></button>
+                             <button onClick={()=>showConfirm("¿Eliminar cliente?", async()=>await deleteDoc(doc(db,'clients',isCustom.id)))} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg"><Trash2 className="w-4 h-4"/></button>
+                           </div>
+                        )}
+                      </div>
+                   )
+                })}
+             </div>
+          </div>
+        </div>
+      )}
+
+      {configSubTab === 'vehicles' && (
+        <div className="grid md:grid-cols-2 gap-6">
+          <form onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const client = fd.get('client') === 'OTRO' ? fd.get('manualClient') : fd.get('client'); try { if(editingVehicle){ await updateDoc(doc(db, 'vehicles', editingVehicle.id), { client, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase() }); setEditingVehicle(null); showAlert("Vehículo actualizado."); } else { await addDoc(collection(db, 'vehicles'), { client, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase(), createdAt: Date.now() }); showAlert("Vehículo guardado."); } e.target.reset(); } catch (error) { console.error(error); } }} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+            <h3 className="font-extrabold flex items-center gap-2"><Truck className="text-blue-600"/> {editingVehicle ? 'Editar Vehículo' : 'Nuevo Vehículo'}</h3>
+            <select name="client" defaultValue={editingVehicle?.client || ''} className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-semibold outline-none focus:border-blue-500 bg-white">
+              <option value="">Cliente...</option>
+              {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
+              <option value="OTRO">Otro (Se debe escribir manualmente)</option>
+            </select>
+            <input name="manualClient" placeholder="Si es OTRO, escribe el cliente aquí" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+            <input name="brand" defaultValue={editingVehicle?.brand} placeholder="Marca (Ej. Chevrolet)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+            <input name="model" defaultValue={editingVehicle?.model} placeholder="Modelo (Ej. NPR 816)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+            <input name="plate" defaultValue={editingVehicle?.plate} placeholder="Patente" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm uppercase outline-none focus:border-blue-500 font-bold text-slate-800"/>
+            <div className="flex gap-2">
+              {editingVehicle && <button type="button" onClick={()=>setEditingVehicle(null)} className="bg-slate-100 p-3 rounded-xl font-bold text-sm w-1/3 hover:bg-slate-200 transition-colors">Cancelar</button>}
+              <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-lg transition-colors shadow-lg shadow-blue-200">Guardar Vehículo</button>
+            </div>
+          </form>
+
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-extrabold text-slate-800">Base Flota</h3>
+              <select onChange={(e) => setFleetFilter(e.target.value)} className="border-2 border-slate-200 p-2 rounded-xl text-xs font-bold text-slate-600 outline-none focus:border-blue-500">
+                <option value="">Todos los Clientes</option>
+                {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
+                <option value="OTRO">Otros</option>
+              </select>
+            </div>
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+              {vehicles.filter(v => {
+                if (!fleetFilter) return true;
+                if (fleetFilter === 'OTRO') return !allClientsList.includes(v.client);
+                return v.client === fleetFilter;
+              }).map(v=>(
+                <div key={v.id} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-xl group transition-all">
+                  <div>
+                    <p className="text-sm font-extrabold text-slate-800">{v.brand} {v.model}</p>
+                    <p className="text-xs font-bold text-blue-600">{v.plate}</p>
+                    <p className="text-[10px] font-bold text-slate-400 mt-1">{v.client || 'Sin cliente'}</p>
+                  </div>
+                  <div className="flex gap-1">
+                    <button onClick={() => setEditingVehicle(v)} className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors shadow-sm"><Edit2 className="w-4 h-4"/></button>
+                    <button onClick={()=>showConfirm("¿Eliminar este vehículo de la base de datos?", async () => {try { await deleteDoc(doc(db, 'vehicles', v.id)); } catch (e) { console.error(e); }})} className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors shadow-sm"><Trash2 className="w-4 h-4"/></button>
+                  </div>
+                </div>
+              ))}
+              {vehicles.length === 0 && <p className="text-sm font-semibold text-slate-400">No hay vehículos registrados</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {configSubTab === 'drivers' && (
+        <div className="grid md:grid-cols-2 gap-6">
+          <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry') }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); showAlert("Conductor actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); showAlert("Conductor creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+            <h3 className="font-extrabold text-slate-800 flex items-center gap-2"><User className="text-blue-600"/> {editingDriver ? 'Editar Conductor' : 'Nuevo Conductor'}</h3>
+            <input name="driverName" defaultValue={editingDriver?.name} placeholder="Nombre completo" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+            <input name="driverEmail" defaultValue={editingDriver?.email} placeholder="Correo Gmail del conductor" required type="email" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+            
+            <div className="space-y-1.5 border-t pt-2">
+               <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wide">Clase de Licencia</label>
+               <div className="grid grid-cols-3 gap-1.5">
+                  {LICENCIAS.map(l => (
+                    <label key={l} className="flex items-center gap-1 p-1 bg-slate-50 border rounded-lg text-[11px] font-bold cursor-pointer hover:bg-slate-100">
+                      <input type="checkbox" name="licenses" value={l} defaultChecked={editingDriver?.licenses?.includes(l)} className="w-3.5 h-3.5 cursor-pointer" />
+                      {l}
+                    </label>
+                  ))}
+               </div>
+            </div>
+            <div className="space-y-1">
+               <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wide">Fecha de Vencimiento Licencia</label>
+               <input name="licenseExpiry" type="date" defaultValue={editingDriver?.licenseExpiry || ''} className="w-full border-2 p-2 rounded-xl text-sm font-semibold outline-none text-slate-700 bg-white" />
+            </div>
+
+            <div className="flex gap-3 pt-2 border-t">
+              {editingDriver && <button type="button" onClick={() => setEditingDriver(null)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>}
+              <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-sm transition-colors shadow-lg shadow-blue-200">{editingDriver ? 'Guardar Cambios' : 'Crear Conductor'}</button>
+            </div>
+          </form>
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 max-h-[75vh] overflow-y-auto">
+            <h3 className="font-extrabold text-slate-800 mb-4">Directorio</h3>
+            <div className="space-y-2">
+              {drivers.length === 0 ? <p className="text-sm font-semibold text-slate-400">Directorio vacío</p> : drivers.map(d=>(
+                <div key={d.id} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-xl group transition-all">
+                  <div>
+                    <p className="text-sm font-extrabold text-slate-800">{d.name}</p>
+                    <p className="text-xs font-bold text-slate-400">{d.email}</p>
+                    {d.licenses && d.licenses.length > 0 && <p className="text-[9px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md mt-1 w-fit">Licencias: {d.licenses.join(', ')}</p>}
+                  </div>
+                  <div className="flex gap-1">
+                     <button onClick={() => setEditingDriver(d)} className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors shadow-sm" title="Editar Conductor"><Edit2 className="w-4 h-4"/></button>
+                     <button onClick={() => showConfirm("¿Eliminar conductor?", async()=>await deleteDoc(doc(db,'drivers',d.id)))} className="p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors shadow-sm"><Trash2 className="w-4 h-4"/></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -121,7 +426,6 @@ export default function App() {
   const [customClients, setCustomClients] = useState([]);
   
   const [adminTab, setAdminTab] = useState('dashboard');
-  const [configSubTab, setConfigSubTab] = useState('clients');
   const [selectedJob, setSelectedJob] = useState(null);
   const [editingJob, setEditingJob] = useState(null);
   const [currentView, setCurrentView] = useState('main');
@@ -130,6 +434,7 @@ export default function App() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   
   const isFirstLoad = useRef(true);
+  const driversRef = useRef([]);
 
   const [dialogConfig, setDialogConfig] = useState(null);
   const showAlert = (message) => setDialogConfig({ type: 'alert', message });
@@ -172,6 +477,8 @@ export default function App() {
     if (isRealAdmin) setActiveRole('admin');
   }, [isRealAdmin]);
 
+  useEffect(() => { driversRef.current = drivers; }, [drivers]);
+
   useEffect(() => {
     if (!user) return;
     
@@ -183,7 +490,7 @@ export default function App() {
              triggerNotification('📍 ¡Nuevo Traslado!', `CLIENTE: ${d.client || 'Sin Cliente'}\nMARCA: ${d.brand || '-'}\nMODELO: ${d.model || '-'}\nPATENTE: ${d.plate || d.vin || 'S/N'}\nDESDE: ${d.origin || '-'}\nHASTA: ${d.destination || '-'}`);
           }
           if (change.type === 'modified' && d.status === 'accepted' && isRealAdmin && activeRole === 'admin') {
-             const driverName = drivers.find(drv => drv.email === d.acceptedByEmail)?.name || d.acceptedByEmail;
+             const driverName = driversRef.current.find(drv => drv.email === d.acceptedByEmail)?.name || d.acceptedByEmail;
              triggerNotification('✅ Trabajo Aceptado', `Conductor: ${driverName}\nCLIENTE: ${d.client || 'Sin Cliente'}\nMARCA: ${d.brand || '-'}\nMODELO: ${d.model || '-'}\nPATENTE: ${d.plate || d.vin || 'S/N'}\nDESDE: ${d.origin || '-'}\nHASTA: ${d.destination || '-'}`);
           }
         });
@@ -198,7 +505,7 @@ export default function App() {
     const unsubClients = onSnapshot(collection(db, 'clients'), snap => setCustomClients(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
 
     return () => { unsubJobs(); unsubDrivers(); unsubExpenses(); unsubVehicles(); unsubClients(); };
-  }, [user, activeRole, currentUserEmail, isRealAdmin, drivers]);
+  }, [user, activeRole, currentUserEmail, isRealAdmin]);
 
   const allClientsList = Array.from(new Set([...DEFAULT_CLIENTES, ...customClients.map(c => c.name)])).sort();
 
@@ -251,322 +558,6 @@ export default function App() {
     setCurrentView('checklist');
   };
 
-  // --- FORMULARIO NUEVO TRABAJO / EDICIÓN ---
-  const NewJobForm = ({ jobToEdit, onCancelEdit }) => {
-    const [selectedClient, setSelectedClient] = useState(jobToEdit?.client && allClientsList.includes(jobToEdit.client) ? jobToEdit.client : (jobToEdit?.client ? 'OTRO' : ''));
-    const [manualClient, setManualClient] = useState(jobToEdit?.client && !allClientsList.includes(jobToEdit.client) ? jobToEdit.client : '');
-    const [brand, setBrand] = useState(jobToEdit?.brand || '');
-    const [model, setModel] = useState(jobToEdit?.model || '');
-    const [plate, setPlate] = useState(jobToEdit?.plate || jobToEdit?.vin || '');
-    const [tripType, setTripType] = useState(jobToEdit?.tripType || 'traslado');
-    
-    // Revisiones Técnicas
-    const [revType, setRevType] = useState(jobToEdit?.rtData?.type || 'A');
-    const [revA_gases, setRevA_gases] = useState(jobToEdit?.rtData?.gases || false);
-    const [revA_revision, setRevA_revision] = useState(jobToEdit?.rtData?.revision || false);
-    const [revA_inspeccion, setRevA_inspeccion] = useState(jobToEdit?.rtData?.inspeccion || false);
-    const [revA_frenos, setRevA_frenos] = useState(jobToEdit?.rtData?.frenos || false);
-    const [revB_tipo, setRevB_tipo] = useState(jobToEdit?.rtData?.tipoB || 'completa');
-    
-    const todayStr = new Date().toISOString().split('T')[0];
-
-    const handlePlateChange = (e) => {
-      const val = e.target.value.toUpperCase(); setPlate(val);
-      const v = vehicles.find(x => x.plate === val);
-      if (v) {
-        setBrand(v.brand); setModel(v.model);
-        if (allClientsList.includes(v.client)) setSelectedClient(v.client); else { setSelectedClient('OTRO'); setManualClient(v.client); }
-      }
-    };
-
-    const handleCreateOrUpdateJob = async (e) => {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-      const selectedDriverIds = formData.getAll('assignedDriverId');
-      if (selectedDriverIds.length === 0) return showAlert("Debes seleccionar al menos un conductor.");
-
-      const assignedDriversList = drivers.filter(d => selectedDriverIds.includes(d.id));
-      const finalClient = selectedClient === 'OTRO' ? manualClient : selectedClient;
-      
-      const rtData = tripType === 'revision' ? {
-        type: revType, gases: revType === 'A' ? revA_gases : (revB_tipo === 'gases'),
-        revision: revType === 'A' ? revA_revision : (revB_tipo === 'completa'),
-        inspeccion: revType === 'A' ? revA_inspeccion : false,
-        frenos: revType === 'A' ? revA_frenos : false,
-        tipoB: revType === 'B' ? revB_tipo : null
-      } : null;
-
-      const jobData = {
-        scheduledDate: formData.get('scheduledDate'), client: finalClient, brand, model,
-        vin: plate, plate, origin: formData.get('origin'), destination: formData.get('destination'),
-        tripType, rtData,
-        assignedDrivers: assignedDriversList.map(d => ({id: d.id, name: d.name, email: d.email})), assignedEmails: assignedDriversList.map(d => d.email)
-      };
-
-      try {
-        if (jobToEdit) {
-           await updateDoc(doc(db, 'transport_jobs', jobToEdit.id), jobData);
-           showAlert(`Trabajo actualizado exitosamente.`);
-           if (onCancelEdit) onCancelEdit();
-        } else {
-           jobData.status = 'pending';
-           jobData.createdAt = Date.now();
-           jobData.checklist = null;
-           await addDoc(collection(db, 'transport_jobs'), jobData);
-           showAlert(`Trabajo asignado exitosamente.`);
-        }
-        
-        if (plate && !vehicles.find(v => v.plate === plate)) await addDoc(collection(db, 'vehicles'), { plate, brand, model, client: finalClient, createdAt: Date.now() });
-        setAdminTab('dashboard'); 
-      } catch (error) { console.error(error); }
-    };
-
-    return (
-      <div className="max-w-2xl mx-auto bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
-        <div className="flex justify-between items-center mb-6 border-b pb-4">
-          <h2 className="text-2xl font-extrabold text-slate-800">{jobToEdit ? 'Editar Trabajo' : 'Crear Nuevo Trabajo'}</h2>
-          {jobToEdit && <button type="button" onClick={onCancelEdit} className="text-slate-500 hover:bg-slate-100 p-2 rounded-xl transition"><X className="w-6 h-6"/></button>}
-        </div>
-        <form onSubmit={handleCreateOrUpdateJob} className="space-y-6">
-          <div className="bg-slate-50 p-6 rounded-2xl space-y-4">
-            <h3 className="text-base font-bold text-slate-700">1. Tipo de Servicio</h3>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button type="button" onClick={()=>setTripType('traslado')} className={`flex-1 p-3 border-2 rounded-xl text-center font-bold text-sm transition-colors ${tripType === 'traslado' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-500'}`}>Traslado Local</button>
-              <button type="button" onClick={()=>setTripType('viaje')} className={`flex-1 p-3 border-2 rounded-xl text-center font-bold text-sm transition-colors ${tripType === 'viaje' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-500'}`}>A Regiones</button>
-              <button type="button" onClick={()=>setTripType('revision')} className={`flex-1 p-3 border-2 rounded-xl text-center font-bold text-sm transition-colors ${tripType === 'revision' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-500'}`}>Revisión Técnica</button>
-            </div>
-            {tripType === 'revision' && (
-              <div className="p-4 bg-white border-2 border-blue-100 rounded-xl space-y-4 mt-4 animate-in fade-in">
-                 <h4 className="text-xs font-extrabold text-blue-600 uppercase">Detalle Revisión Técnica</h4>
-                 <select value={revType} onChange={e=>setRevType(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700">
-                   <option value="A">Revisión Tipo A</option>
-                   <option value="B">Revisión Tipo B</option>
-                 </select>
-                 {revType === 'A' && (
-                   <div className="grid grid-cols-2 gap-3 text-sm font-bold text-slate-600">
-                     <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_gases} onChange={e=>setRevA_gases(e.target.checked)} className="w-4 h-4 text-blue-600 rounded"/> Gases</label>
-                     <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_revision} onChange={e=>setRevA_revision(e.target.checked)} className="w-4 h-4 text-blue-600 rounded"/> Revisión</label>
-                     <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_inspeccion} onChange={e=>setRevA_inspeccion(e.target.checked)} className="w-4 h-4 text-blue-600 rounded"/> Insp. Visual</label>
-                     <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_frenos} onChange={e=>setRevA_frenos(e.target.checked)} className="w-4 h-4 text-blue-600 rounded"/> Cert. Frenos</label>
-                   </div>
-                 )}
-                 {revType === 'B' && (
-                   <select value={revB_tipo} onChange={e=>setRevB_tipo(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700">
-                     <option value="completa">Revisión Completa</option>
-                     <option value="gases">Sólo Gases</option>
-                   </select>
-                 )}
-              </div>
-            )}
-          </div>
-
-          <div className="bg-slate-50 p-6 rounded-2xl space-y-4">
-             <h3 className="text-base font-bold text-slate-700">2. Vehículo <span className="text-xs text-blue-500 font-bold">(Escribe la patente para autocompletar)</span></h3>
-             <div className="grid grid-cols-2 gap-4">
-               <input value={plate} onChange={handlePlateChange} type="text" placeholder="Patente o VIN" className="w-full border-2 border-blue-200 p-3 text-sm rounded-xl col-span-2 uppercase outline-none focus:border-blue-500 font-bold bg-white text-blue-900 shadow-sm" />
-               <input value={brand} onChange={e=>setBrand(e.target.value)} type="text" placeholder="Marca" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
-               <input value={model} onChange={e=>setModel(e.target.value)} type="text" placeholder="Modelo" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
-             </div>
-          </div>
-          
-          <div className="bg-slate-50 p-6 rounded-2xl space-y-4">
-            <h3 className="text-base font-bold text-slate-700">3. Programación y Ruta</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                 <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider ml-1">Fecha de Traslado</label>
-                 <input name="scheduledDate" type="date" defaultValue={jobToEdit?.scheduledDate || todayStr} required className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-700" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider ml-1">Cliente</label>
-                <select value={selectedClient} onChange={(e) => setSelectedClient(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold text-slate-700 bg-white">
-                  <option value="">Seleccione Cliente (Opcional)</option>
-                  {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
-                  <option value="OTRO">Otro (Ingreso manual)</option>
-                </select>
-                {selectedClient === 'OTRO' && <input type="text" value={manualClient} onChange={(e) => setManualClient(e.target.value)} placeholder="Escribe el nombre del cliente" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white mt-2" />}
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-              <input name="origin" defaultValue={jobToEdit?.origin || ''} type="text" placeholder="Desde (Origen)" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
-              <input name="destination" defaultValue={jobToEdit?.destination || ''} type="text" placeholder={tripType === 'revision' ? 'Planta de Revisión (Destino)' : 'Hasta (Destino)'} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
-            </div>
-          </div>
-          
-          <div className="bg-slate-50 p-6 rounded-2xl space-y-4">
-             <h3 className="text-base font-bold text-slate-700">4. Conductores <span className="text-xs text-red-500 font-normal">(Obligatorio seleccionar al menos 1)</span></h3>
-             <div className="max-h-48 overflow-y-auto border-2 border-slate-200 bg-white rounded-xl">
-                {drivers.length === 0 ? <p className="text-sm text-slate-400 p-4 font-semibold">No hay conductores.</p> : drivers.map(d => (
-                  <label key={d.id} className="flex items-center p-4 border-b border-slate-100 hover:bg-blue-50 cursor-pointer transition-colors">
-                    <input type="checkbox" name="assignedDriverId" value={d.id} defaultChecked={jobToEdit?.assignedEmails?.includes(d.email)} className="w-5 h-5 cursor-pointer rounded text-blue-600 focus:ring-blue-500" />
-                    <div className="ml-4"><span className="block text-base font-bold text-slate-800">{d.name}</span><span className="block text-sm font-semibold text-slate-400">{d.email}</span></div>
-                  </label>
-                ))}
-             </div>
-          </div>
-          <div className="flex gap-3 pt-2">
-            {jobToEdit && <button type="button" onClick={onCancelEdit} className="w-1/3 bg-slate-200 hover:bg-slate-300 text-slate-700 px-8 py-3 rounded-2xl font-extrabold text-lg transition-colors">Cancelar</button>}
-            <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-extrabold text-lg transition-colors shadow-lg shadow-blue-200">{jobToEdit ? 'Actualizar Trabajo' : 'Guardar y Asignar'}</button>
-          </div>
-        </form>
-      </div>
-    );
-  };
-
-  // --- CONFIGURACIÓN GENERAL UNIFICADA ---
-  const ConfigView = () => {
-    const [editingDriver, setEditingDriver] = useState(null);
-    const [editingVehicle, setEditingVehicle] = useState(null);
-    const [editingClient, setEditingClient] = useState(null);
-    const [fleetFilter, setFleetFilter] = useState('');
-    
-    return (
-      <div className="space-y-6">
-        <div className="flex gap-2 pb-2">
-           <button onClick={()=>setConfigSubTab('clients')} className={`px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='clients'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Clientes</button>
-           <button onClick={()=>setConfigSubTab('vehicles')} className={`px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='vehicles'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Vehículos</button>
-           <button onClick={()=>setConfigSubTab('drivers')} className={`px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='drivers'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Conductores</button>
-        </div>
-
-        {/* --- SUBTAB: CLIENTES --- */}
-        {configSubTab === 'clients' && (
-          <div className="grid md:grid-cols-2 gap-6">
-            <form onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const name = fd.get('name'); try { if(editingClient){ await updateDoc(doc(db, 'clients', editingClient.id), { name }); setEditingClient(null); showAlert("Cliente actualizado"); } else { await addDoc(collection(db, 'clients'), { name, createdAt: Date.now() }); showAlert("Cliente agregado"); } e.target.reset(); } catch(err){} }} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
-              <h3 className="font-extrabold text-lg">{editingClient ? 'Editar Cliente' : 'Nuevo Cliente'}</h3>
-              <input name="name" defaultValue={editingClient?.name} placeholder="Nombre del cliente" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-semibold"/>
-              <div className="flex gap-2">
-                {editingClient && <button type="button" onClick={()=>setEditingClient(null)} className="flex-1 bg-slate-100 py-3 rounded-xl font-bold">Cancelar</button>}
-                <button type="submit" className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-extrabold">{editingClient ? 'Actualizar' : 'Agregar'}</button>
-              </div>
-            </form>
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 max-h-[60vh] overflow-y-auto">
-               <h3 className="font-extrabold text-lg mb-4">Base de Clientes</h3>
-               <div className="space-y-2">
-                  {allClientsList.map((c, i) => {
-                     const isCustom = customClients.find(cc => cc.name === c);
-                     return (
-                        <div key={i} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-                          <span className="font-bold text-slate-700">{c} {!isCustom && <span className="text-[10px] text-slate-400 bg-slate-200 px-1.5 rounded ml-2">Por defecto</span>}</span>
-                          {isCustom && (
-                             <div className="flex gap-1">
-                               <button onClick={()=>setEditingClient(isCustom)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg"><Edit2 className="w-4 h-4"/></button>
-                               <button onClick={()=>showConfirm("¿Eliminar cliente?", async()=>await deleteDoc(doc(db,'clients',isCustom.id)))} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg"><Trash2 className="w-4 h-4"/></button>
-                             </div>
-                          )}
-                        </div>
-                     )
-                  })}
-               </div>
-            </div>
-          </div>
-        )}
-
-        {/* --- SUBTAB: VEHICULOS --- */}
-        {configSubTab === 'vehicles' && (
-          <div className="grid md:grid-cols-2 gap-6">
-            <form onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const client = fd.get('client') === 'OTRO' ? fd.get('manualClient') : fd.get('client'); try { if(editingVehicle){ await updateDoc(doc(db, 'vehicles', editingVehicle.id), { client, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase() }); setEditingVehicle(null); showAlert("Vehículo actualizado."); } else { await addDoc(collection(db, 'vehicles'), { client, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase(), createdAt: Date.now() }); showAlert("Vehículo guardado."); } e.target.reset(); } catch (error) { console.error(error); } }} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
-              <h3 className="font-extrabold flex items-center gap-2"><Truck className="text-blue-600"/> {editingVehicle ? 'Editar Vehículo' : 'Nuevo Vehículo'}</h3>
-              <select name="client" defaultValue={editingVehicle?.client || ''} className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-semibold outline-none focus:border-blue-500 bg-white">
-                <option value="">Cliente...</option>
-                {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
-                <option value="OTRO">Otro (Se debe escribir manualmente)</option>
-              </select>
-              <input name="manualClient" placeholder="Si es OTRO, escribe el cliente aquí" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
-              <input name="brand" defaultValue={editingVehicle?.brand} placeholder="Marca (Ej. Chevrolet)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
-              <input name="model" defaultValue={editingVehicle?.model} placeholder="Modelo (Ej. NPR 816)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
-              <input name="plate" defaultValue={editingVehicle?.plate} placeholder="Patente" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm uppercase outline-none focus:border-blue-500 font-bold text-slate-800"/>
-              <div className="flex gap-2">
-                {editingVehicle && <button type="button" onClick={()=>setEditingVehicle(null)} className="bg-slate-100 p-3 rounded-xl font-bold text-sm w-1/3 hover:bg-slate-200 transition-colors">Cancelar</button>}
-                <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-lg transition-colors shadow-lg shadow-blue-200">Guardar Vehículo</button>
-              </div>
-            </form>
-
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-extrabold text-slate-800">Base Flota</h3>
-                <select onChange={(e) => setFleetFilter(e.target.value)} className="border-2 border-slate-200 p-2 rounded-xl text-xs font-bold text-slate-600 outline-none focus:border-blue-500">
-                  <option value="">Todos los Clientes</option>
-                  {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
-                  <option value="OTRO">Otros</option>
-                </select>
-              </div>
-              <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
-                {vehicles.filter(v => {
-                  if (!fleetFilter) return true;
-                  if (fleetFilter === 'OTRO') return !allClientsList.includes(v.client);
-                  return v.client === fleetFilter;
-                }).map(v=>(
-                  <div key={v.id} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-xl group transition-all">
-                    <div>
-                      <p className="text-sm font-extrabold text-slate-800">{v.brand} {v.model}</p>
-                      <p className="text-xs font-bold text-blue-600">{v.plate}</p>
-                      <p className="text-[10px] font-bold text-slate-400 mt-1">{v.client || 'Sin cliente'}</p>
-                    </div>
-                    <div className="flex gap-1">
-                      <button onClick={() => setEditingVehicle(v)} className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors shadow-sm"><Edit2 className="w-4 h-4"/></button>
-                      <button onClick={()=>showConfirm("¿Eliminar este vehículo de la base de datos?", async () => {try { await deleteDoc(doc(db, 'vehicles', v.id)); } catch (e) { console.error(e); }})} className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors shadow-sm"><Trash2 className="w-4 h-4"/></button>
-                    </div>
-                  </div>
-                ))}
-                {vehicles.length === 0 && <p className="text-sm font-semibold text-slate-400">No hay vehículos registrados</p>}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* --- SUBTAB: CONDUCTORES --- */}
-        {configSubTab === 'drivers' && (
-          <div className="grid md:grid-cols-2 gap-6">
-            <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry') }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); showAlert("Conductor actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); showAlert("Conductor creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
-              <h3 className="font-extrabold text-slate-800 flex items-center gap-2"><User className="text-blue-600"/> {editingDriver ? 'Editar Conductor' : 'Nuevo Conductor'}</h3>
-              <input name="driverName" defaultValue={editingDriver?.name} placeholder="Nombre completo" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
-              <input name="driverEmail" defaultValue={editingDriver?.email} placeholder="Correo Gmail del conductor" required type="email" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
-              
-              <div className="space-y-1.5 border-t pt-2">
-                 <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wide">Clase de Licencia</label>
-                 <div className="grid grid-cols-3 gap-1.5">
-                    {LICENCIAS.map(l => (
-                      <label key={l} className="flex items-center gap-1 p-1 bg-slate-50 border rounded-lg text-[11px] font-bold cursor-pointer hover:bg-slate-100">
-                        <input type="checkbox" name="licenses" value={l} defaultChecked={editingDriver?.licenses?.includes(l)} className="w-3.5 h-3.5 cursor-pointer" />
-                        {l}
-                      </label>
-                    ))}
-                 </div>
-              </div>
-              <div className="space-y-1">
-                 <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wide">Fecha de Vencimiento Licencia</label>
-                 <input name="licenseExpiry" type="date" defaultValue={editingDriver?.licenseExpiry || ''} className="w-full border-2 p-2 rounded-xl text-sm font-semibold outline-none text-slate-700 bg-white" />
-              </div>
-
-              <div className="flex gap-3 pt-2 border-t">
-                {editingDriver && <button type="button" onClick={() => setEditingDriver(null)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>}
-                <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-sm transition-colors shadow-lg shadow-blue-200">{editingDriver ? 'Guardar Cambios' : 'Crear Conductor'}</button>
-              </div>
-            </form>
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 max-h-[75vh] overflow-y-auto">
-              <h3 className="font-extrabold text-slate-800 mb-4">Directorio</h3>
-              <div className="space-y-2">
-                {drivers.length === 0 ? <p className="text-sm font-semibold text-slate-400">Directorio vacío</p> : drivers.map(d=>(
-                  <div key={d.id} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-xl group transition-all">
-                    <div>
-                      <p className="text-sm font-extrabold text-slate-800">{d.name}</p>
-                      <p className="text-xs font-bold text-slate-400">{d.email}</p>
-                      {d.licenses && d.licenses.length > 0 && <p className="text-[9px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md mt-1 w-fit">Licencias: {d.licenses.join(', ')}</p>}
-                    </div>
-                    <div className="flex gap-1">
-                       <button onClick={() => setEditingDriver(d)} className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors shadow-sm" title="Editar Conductor"><Edit2 className="w-4 h-4"/></button>
-                       <button onClick={() => showConfirm("¿Eliminar conductor?", async()=>await deleteDoc(doc(db,'drivers',d.id)))} className="p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors shadow-sm"><Trash2 className="w-4 h-4"/></button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-32">
       {globalStyles}
@@ -613,8 +604,8 @@ export default function App() {
                 </div>
               )}
               
-              {adminTab === 'newJob' && <NewJobForm jobToEdit={editingJob} onCancelEdit={() => {setEditingJob(null); setAdminTab('dashboard');}} />}
-              {adminTab === 'config' && <ConfigView />}
+              {adminTab === 'newJob' && <NewJobForm key={editingJob ? editingJob.id : 'new'} jobToEdit={editingJob} onCancelEdit={() => {setEditingJob(null); setAdminTab('dashboard');}} allClientsList={allClientsList} vehicles={vehicles} drivers={drivers} db={db} showAlert={showAlert} onSuccess={() => setAdminTab('dashboard')} />}
+              {adminTab === 'config' && <ConfigView allClientsList={allClientsList} customClients={customClients} vehicles={vehicles} drivers={drivers} db={db} showAlert={showAlert} showConfirm={showConfirm} />}
             </>
           ) : (
             <div className="space-y-6">
@@ -907,17 +898,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
     );
   }
 
-  // --- VISTA DRIVERS GASTOS ---
-  if (!myDriver) return (
-    <main className="p-8 text-center text-slate-500 font-bold pb-24">
-       <div className="bg-white p-6 rounded-3xl border max-w-sm mx-auto shadow-sm">
-          <Wallet className="w-12 h-12 text-slate-300 mx-auto mb-4"/>
-          <p>No estás registrado como conductor con el correo <b>{currentUserEmail}</b>.</p>
-          <p className="text-sm mt-2 text-slate-400">Pide al administrador que te agregue usando exactamente este correo.</p>
-       </div>
-    </main>
-  );
-
+  if (!myDriver) return <main className="p-8 text-center text-slate-500 font-bold pb-24">No estás registrado como conductor. Pide al admin que te agregue.</main>;
   const myBalance = myDriver.balance || 0;
   const hasPendingReturn = expenses.some(e => e.driverId === myDriver.id && e.type === 'pending_return');
 
@@ -1035,13 +1016,21 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     return true;
   });
 
+  // Prevención de Crash con isNaN por fechas vacías de navegadores antiguos
   const sortedJobs = [...filteredJobs].sort((a, b) => {
     const adminOrder = { pending: 1, accepted: 2, completed: 3, failed: 3 };
     const driverOrder = { accepted: 1, pending: 2, completed: 3, failed: 3 };
     const order = isAdminView ? adminOrder : driverOrder;
     if (order[a.status] !== order[b.status]) return order[a.status] - order[b.status];
+    
     if (a.status === 'completed' || a.status === 'failed') return (b.completedAt || b.createdAt) - (a.completedAt || a.createdAt);
-    return (a.scheduledDate ? new Date(a.scheduledDate).getTime() : a.createdAt) - (b.scheduledDate ? new Date(b.scheduledDate).getTime() : b.createdAt); 
+    
+    const getValidTime = (dateStr, fallback) => {
+       if (!dateStr) return fallback || 0;
+       const time = new Date(dateStr).getTime();
+       return isNaN(time) ? fallback || 0 : time;
+    };
+    return getValidTime(a.scheduledDate, a.createdAt) - getValidTime(b.scheduledDate, b.createdAt);
   });
 
   const activeJobs = sortedJobs.filter(j => j.status === 'pending' || j.status === 'accepted');
@@ -1068,8 +1057,8 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     try {
       if (job.tripType === 'revision' && reason === 'RECHAZO_RT_AUTOMATICO') {
           const cloneJob = {
-              scheduledDate: job.scheduledDate, client: job.client, brand: job.brand, model: job.model, vin: job.vin, plate: job.plate,
-              origin: job.origin, destination: job.destination, tripType: job.tripType, rtData: job.rtData || null,
+              scheduledDate: job.scheduledDate || null, client: job.client || '', brand: job.brand || '', model: job.model || '', vin: job.vin || '', plate: job.plate || '',
+              origin: job.origin || '', destination: job.destination || '', tripType: job.tripType || 'traslado', rtData: job.rtData || null,
               assignedDrivers: job.assignedDrivers || [], assignedEmails: job.assignedEmails || [],
               status: 'pending', createdAt: Date.now(), checklist: null
           };
@@ -1355,7 +1344,6 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
   const [formData, setFormData] = useState(defaultData);
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
 
-  // Cargar borrador de localStorage
   useEffect(() => {
     const savedDraft = localStorage.getItem(localStorageKey);
     if (savedDraft) {
@@ -1368,7 +1356,6 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     }
   }, [localStorageKey]);
 
-  // Guardar en localStorage cada vez que hay un cambio
   useEffect(() => {
     localStorage.setItem(localStorageKey, JSON.stringify({ step, formData }));
   }, [step, formData, localStorageKey]);
@@ -1387,7 +1374,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
   const handlePic = async (e, id) => {
     const f=e.target.files[0]; if(!f)return;
     try {
-      const dataUrl = await resizeImage(f, 800, 0.6);
+      const dataUrl = await resizeImage(f, 500, 0.4); 
       setF('photos', {...formData.photos, [id]: dataUrl}); 
     } catch(err){ 
       console.error("Error al procesar la foto:", err);
@@ -1428,8 +1415,8 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
              fd.failedReason = d.rtRejectReason || 'Revisión Técnica Rechazada';
              
              const cloneJob = {
-                scheduledDate: d.scheduledDate, client: d.client, brand: d.brand, model: d.model, vin: d.plateOrVin, plate: d.plateOrVin, origin: d.origin, destination: d.destination,
-                tripType: job.tripType, rtData: job.rtData || null, // <- PROTECCIÓN CONTRA UNDEFINED PARA FIREBASE
+                scheduledDate: d.scheduledDate || null, client: d.client || '', brand: d.brand || '', model: d.model || '', vin: d.plateOrVin || '', plate: d.plateOrVin || '', origin: d.origin || '', destination: d.destination || '',
+                tripType: job.tripType || 'traslado', rtData: job.rtData || null,
                 assignedDrivers: job.assignedDrivers || [], assignedEmails: job.assignedEmails || [],
                 status: 'pending', createdAt: Date.now(), checklist: null
              };
@@ -1446,7 +1433,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
       onComplete();
     } catch(error) { 
       console.error("Firebase Error:", error);
-      showAlert("Hubo un error al guardar. Verifica tu conexión a internet o el tamaño de las fotos."); 
+      showAlert("Hubo un error al guardar. Verifica tu conexión a internet."); 
     }
   };
 
