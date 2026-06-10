@@ -1287,7 +1287,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       }
     }
     let routeH = drawKV("Ruta Asignada", routeText, 15, currentY, leftColWidth);
-    currentY += Math.max(10, routeH + 6);
+    currentY += routeH + 12; // Separación incrementada para evitar choques
 
     // SECCIÓN 2: RECEPCIÓN Y DOCUMENTACIÓN
     currentY = drawSectionTitle("2. Recepcion y Estado", currentY);
@@ -1306,18 +1306,18 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
     const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin observaciones registradas.'}`), leftColWidth);
     docPDF.text(obsSplit, 15, currentY + 4);
-    currentY += (obsSplit.length * 4) + 8;
+    currentY += (obsSplit.length * 4) + 12; // Separación incrementada
 
     // SECCIÓN 3: RESULTADOS / RECEPCIÓN
     if (job.tripType === 'revision') {
        currentY = drawSectionTitle("3. Resultado", currentY);
        if (job.checklist?.rtStatus === 'aprobado') {
-         docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(12); docPDF.text("APROBADO", 15, currentY+4);
+         docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(18); docPDF.text("APROBADO", 15, currentY+6);
        } else {
-         docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(12); docPDF.text("RECHAZADO", 15, currentY+4);
-         docPDF.setFontSize(9); docPDF.setTextColor(...secondaryColor);
+         docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(18); docPDF.text("RECHAZADO", 15, currentY+6);
+         docPDF.setFontSize(11); docPDF.setTextColor(153, 27, 27); // Color más oscuro para el motivo
          const rejSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.checklist?.rtRejectReason || 'No especificada'}`), leftColWidth);
-         docPDF.text(rejSplit, 15, currentY + 10);
+         docPDF.text(rejSplit, 15, currentY + 14);
        }
     } else {
       currentY = drawSectionTitle("3. Conformidad Entrega", currentY);
@@ -1486,6 +1486,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       }
     } catch (e) { console.error(e); }
   };
+  
   return (
     <div className="pb-16">
       {activeJobs.length > 0 && (
