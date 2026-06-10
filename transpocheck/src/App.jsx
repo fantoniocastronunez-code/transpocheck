@@ -571,9 +571,9 @@ export default function App() {
       {/* Nombre de la aplicación */}
       <h1 className="font-extrabold text-xl sm:text-2xl tracking-tight shrink-0 text-white">LogisticAPP</h1>
       
-      {/* Logo Logística TS SpA envuelto en el mismo borde traslúcido */}
-      <div className="bg-white/20 p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0 ml-1">
-        <img src="/LogoLogistica.png" alt="Logística TS SpA" className="h-10 sm:h-12 object-contain" />
+      {/* Logo Logística TS SpA llegando exactamente hasta los bordes del cuadrado */}
+      <div className="bg-white/20 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0 ml-1 overflow-hidden">
+        <img src="/LogoLogistica.png" alt="Logística TS SpA" className="h-12 sm:h-15 object-contain" />
       </div>
     </div>
         <div className="flex items-center gap-2 sm:gap-4">
