@@ -511,12 +511,12 @@ export default function App() {
 
   const globalStyles = (
     <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Shrikhand&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Alfa+Slab+One&display=swap');
       body { font-family: 'Nunito', sans-serif; background-color: #f8fafc; }
-      .font-shrikhand { font-family: 'Shrikhand', cursive; font-weight: 400; }
+      .font-alfa { font-family: 'Alfa Slab One', serif; font-weight: 400; }
     `}</style>
   );
-
+  
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 flex flex-col items-center justify-center p-4">
@@ -569,8 +569,8 @@ export default function App() {
         <img src="/logo.png" alt="Logo App" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" />
       </div>
       
-      {/* Nombre de la aplicación con la fuente Shrikhand */}
-      <h1 className="font-shrikhand text-2xl sm:text-3xl tracking-wide shrink-0 text-white" style={{ paddingTop: '2px' }}>
+      {/* Nombre de la aplicación con la fuente Alfa Slab One */}
+      <h1 className="font-alfa text-2xl sm:text-3xl tracking-wide shrink-0 text-white" style={{ paddingTop: '2px' }}>
         LogisticAPP
       </h1>
       
