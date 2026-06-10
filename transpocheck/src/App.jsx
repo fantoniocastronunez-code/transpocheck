@@ -4,8 +4,8 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signO
 import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc, getDocs, query, where } from 'firebase/firestore';
 import { jsPDF } from "jspdf";
 import { 
-  Car, MapPin, Camera, CheckCircle, FileText, Download, 
-  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Save
+  Car, MapPin, Camera, Fuel, CheckCircle, FileText, Download, 
+  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Save
 } from 'lucide-react';
 
 const firebaseConfig = {
@@ -89,11 +89,14 @@ const resizeImage = (file, maxWidth, quality) => {
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
+
         if (width > maxWidth) {
           height = Math.round((height * maxWidth) / width);
           width = maxWidth;
         }
-        canvas.width = width; canvas.height = height;
+
+        canvas.width = width;
+        canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
         resolve(canvas.toDataURL('image/jpeg', quality));
@@ -172,7 +175,10 @@ export default function App() {
         snapshot.docChanges().forEach((change) => {
           const d = change.doc.data();
           if (change.type === 'added' && d.status === 'pending' && d.assignedEmails?.includes(currentUserEmail)) {
-            triggerNotification('📍 ¡Nuevo Traslado!', `CLIENTE: ${d.client||'-'}, MARCA: ${d.brand||'-'}, MODELO: ${d.model||'-'}, PATENTE: ${d.plate||'-'}, DESDE: ${d.origin||'-'}, HASTA: ${d.destination||'-'}`);
+            triggerNotification('📍 ¡Nuevo Traslado!', `CLIENTE: ${d.client || '-'}, MARCA: ${d.brand || '-'}, MODELO: ${d.model || '-'}, PATENTE: ${d.plate || d.vin || '-'}, DESDE: ${d.origin || '-'}, HASTA: ${d.destination || '-'}`);
+          }
+          if (change.type === 'modified' && d.status === 'accepted' && isRealAdmin && activeRole === 'admin') {
+            triggerNotification('✅ Trabajo Aceptado', `Conductor: ${d.acceptedByEmail} aceptó el traslado.`);
           }
         });
       }
@@ -247,6 +253,7 @@ export default function App() {
     const [plate, setPlate] = useState(jobToEdit?.plate || jobToEdit?.vin || '');
     const [tripType, setTripType] = useState(jobToEdit?.tripType || 'traslado');
     
+    // Revisiones Técnicas
     const [revType, setRevType] = useState(jobToEdit?.rtData?.type || 'A');
     const [revA_gases, setRevA_gases] = useState(jobToEdit?.rtData?.gases || false);
     const [revA_revision, setRevA_revision] = useState(jobToEdit?.rtData?.revision || false);
@@ -668,21 +675,31 @@ export default function App() {
   );
 }
 
+const getRouteStr = (j) => {
+  if (j.tripType === 'revision') {
+     if (j.checklist?.rtStatus === 'aprobado') {
+         const ret = j.checklist.rtReturnOption === 'other' ? j.checklist.rtReturnDestination : j.origin;
+         return `${j.origin} ➔ PRT ➔ ${ret || '-'}`;
+     }
+     if (j.checklist?.rtStatus === 'rechazado') {
+         return `${j.origin} ➔ PRT (Rechazada)`;
+     }
+     return `${j.origin} ➔ Planta de Revisión (PRT)`;
+  }
+  return `${j.origin} ➔ ${j.destination}`;
+};
+
 function LeaderboardView({ jobs, drivers, isAdminView }) {
   const [selectedDriverJobs, setSelectedDriverJobs] = useState(null);
   const now = new Date(); const firstOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
   
-  const monthlyJobs = jobs.filter(j => {
-    if (j.createdAt < firstOfCurrentMonth) return false;
-    if (j.status === 'completed') return true;
-    if (j.status === 'failed' && j.tripType === 'revision') return true;
-    return false;
-  });
+  // Logic correctly includes completed OR failed technical revisions
+  const monthlyCompleted = jobs.filter(j => 
+    (j.status === 'completed' || (j.status === 'failed' && j.tripType === 'revision')) && 
+    (j.completedAt || j.createdAt) >= firstOfCurrentMonth
+  );
 
-  const ranking = drivers.map(d => { 
-    const dj = monthlyJobs.filter(j => j.acceptedByEmail === d.email); 
-    return { ...d, score: dj.length, jobs: dj }; 
-  }).sort((a, b) => b.score - a.score);
+  const ranking = drivers.map(d => { const dj = monthlyCompleted.filter(j => j.acceptedByEmail === d.email); return { ...d, score: dj.length, jobs: dj }; }).sort((a, b) => b.score - a.score);
 
   return (
     <main className="max-w-5xl mx-auto p-4 pt-6 pb-24">
@@ -701,10 +718,14 @@ function LeaderboardView({ jobs, drivers, isAdminView }) {
             <div className="p-2 border-b flex justify-between items-center"><h2 className="text-lg font-extrabold text-slate-800">{selectedDriverJobs.name}</h2><button onClick={()=>setSelectedDriverJobs(null)} className="bg-slate-100 p-2 rounded-full hover:bg-slate-200"><X className="w-4 h-4"/></button></div>
             <div className="p-2 overflow-y-auto space-y-3 flex-1 mt-2">
               {selectedDriverJobs.jobs.length === 0 ? <p className="text-center text-sm font-bold text-slate-400">Sin traslados.</p> : selectedDriverJobs.jobs.map(j => (
-                <div key={j.id} className="bg-slate-50 p-3 rounded-xl border text-xs relative">
-                  {j.status === 'failed' && <span className="absolute top-2 right-2 bg-red-100 text-red-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Rechazado</span>}
-                  <div className="flex justify-between mb-1"><p className="font-extrabold text-slate-800 text-sm pr-16">{j.brand} {j.model}</p></div>
-                  <span className="border border-slate-200 px-1.5 rounded bg-white font-bold text-slate-600 uppercase mb-2 inline-block">{j.plate||j.vin}</span>
+                <div key={j.id} className="bg-slate-50 p-3 rounded-xl border text-xs">
+                  <div className="flex justify-between mb-1">
+                    <p className="font-extrabold text-slate-800 text-sm">{j.brand} {j.model}</p>
+                    <div className="flex gap-2">
+                       {j.status === 'failed' && <span className="border border-red-200 bg-red-50 text-red-600 px-1.5 rounded font-bold uppercase">Rechazado</span>}
+                       <span className="border px-1.5 rounded bg-white font-bold text-slate-600 uppercase">{j.plate||j.vin}</span>
+                    </div>
+                  </div>
                   <p className="font-semibold text-slate-500"><MapPin className="inline w-3 h-3 mr-0.5"/> {j.origin} ➔ <Navigation className="inline w-3 h-3 mr-0.5"/> {j.destination}</p>
                 </div>
               ))}
@@ -725,56 +746,40 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
   const [returnReceipt, setReturnReceipt] = useState(null);
   const [returnMethod, setReturnMethod] = useState('transferencia');
   const [editingExpense, setEditingExpense] = useState(null);
-  const [adminActionType, setAdminActionType] = useState('assignment'); 
 
   const activeOrPendingJobs = jobs?.filter(j => j.status === 'pending' || j.status === 'accepted') || [];
 
-  const addExp = async (e, driverId, dName, dEmail) => {
+  const addExp = async (e, type, amount, detail, driverId, dName, dEmail) => {
     e.preventDefault();
-    const amount = Number(e.target.amount.value);
-    const detail = e.target.detail.value;
-    const type = isAdminView ? adminActionType : 'expense';
-    
     const currentBalance = drivers.find(d => d.id === driverId)?.balance || 0;
-    const assocJobId = e.target.jobId?.value || '';
+    
+    const assocJobId = type === 'assignment' ? (e.target.jobId?.value || '') : '';
+    let detailString = detail || 'Asignación de fondos';
 
-    let amountToDeduct = 0;
-    if (type === 'expense') {
-      if (isAdminView && assocJobId) {
-        amountToDeduct = amount; 
-      } else if (isAdminView && !assocJobId) {
-        amountToDeduct = Math.min(currentBalance, amount);
-      } else {
-        if (amount > currentBalance) return showAlert("Saldo insuficiente.");
-        amountToDeduct = amount;
-      }
-    }
-
-    let detailString = detail || (type === 'assignment' ? 'Asignación de fondos' : 'Gasto registrado');
     if (assocJobId) {
       const jb = activeOrPendingJobs.find(x => x.id === assocJobId);
-      if (jb) detailString += ` (Patente ${jb.plate || jb.vin || 'S/N'})`;
+      if (jb) detailString += ` (Asoc. a patente ${jb.plate || jb.vin || 'S/N'})`;
+    }
+
+    // Regla de saldo negativo: Si es un gasto y NO tiene trabajo asociado, no puede quedar en negativo.
+    let amountToDeduct = amount;
+    if (type === 'expense' && !assocJobId && amount > currentBalance) {
+        amountToDeduct = currentBalance; // Solo le descuenta hasta llegar a 0
     }
 
     try {
-      let newBalance = currentBalance;
-      if (type === 'assignment') newBalance += amount;
-      if (type === 'expense') newBalance -= amountToDeduct;
-
-      await updateDoc(doc(db, 'drivers', driverId), { balance: newBalance });
-      await addDoc(collection(db, 'expenses'), { 
-        driverId, driverEmail: dEmail, driverName: dName, 
-        type, amount, deductedAmount: amountToDeduct, 
-        detail: detailString, jobId: assocJobId, createdAt: Date.now() 
-      });
-      e.target.reset(); showAlert(type === 'assignment' ? "Fondo asignado correctamente." : "Gasto registrado correctamente.");
+      await updateDoc(doc(db, 'drivers', driverId), { balance: type === 'assignment' ? currentBalance + amount : currentBalance - amountToDeduct });
+      await addDoc(collection(db, 'expenses'), { driverId, driverEmail: dEmail, driverName: dName, type, amount, realDeducted: type === 'expense' ? amountToDeduct : amount, detail: detailString, jobId: assocJobId, createdAt: Date.now() });
+      e.target.reset(); showAlert(type === 'assignment' ? "Fondo asignado correctamente." : "Gasto registrado");
     } catch (err) { console.error(err); }
   };
 
   const submitReturn = async () => {
     if (returnMethod === 'transferencia' && !returnReceipt) return showAlert("Sube la foto de la transferencia.");
     if (!myDriver?.balance) return;
+    
     let det = returnMethod === 'efectivo' ? 'Rendición en Efectivo (En revisión)' : 'Rendición de Vuelto (En revisión)';
+    
     try {
       await addDoc(collection(db, 'expenses'), { driverId: myDriver.id, driverEmail: myDriver.email, driverName: myDriver.name, type: 'pending_return', amount: myDriver.balance, detail: det, receiptImage: returnReceipt, createdAt: Date.now() });
       setIsReturnOpen(false); setReturnReceipt(null); showAlert("Rendición enviada. Esperando validación de Admin.");
@@ -792,14 +797,12 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
 
   const delExp = (exp) => {
     if (!isAdminView && exp.type === 'assignment') return showAlert("No posees permisos.");
-    showConfirm("¿Eliminar registro financiero?", async () => {
+    showConfirm("¿Eliminar registro financiero? El saldo se recalculará.", async () => {
       try {
         const d = drivers.find(x => x.id === exp.driverId);
         if (d) {
-           let balanceChange = 0;
-           if (exp.type === 'assignment') balanceChange = -exp.amount;
-           if (exp.type === 'expense') balanceChange = (exp.deductedAmount !== undefined ? exp.deductedAmount : exp.amount);
-           await updateDoc(doc(db, 'drivers', d.id), { balance: (d.balance||0) + balanceChange });
+           const amountToRestore = exp.realDeducted !== undefined ? exp.realDeducted : exp.amount;
+           await updateDoc(doc(db, 'drivers', d.id), { balance: (d.balance||0) + (exp.type === 'assignment' ? -exp.amount : amountToRestore) });
         }
         await deleteDoc(doc(db, 'expenses', exp.id));
       } catch(e){}
@@ -813,14 +816,53 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
     return <CheckCircle className="w-5 h-5 text-blue-500 shrink-0"/>;
   };
 
+  const EditExpenseModal = ({ expense, onClose }) => {
+    const handleUpdateSubmit = async (e) => {
+      e.preventDefault();
+      if (!isAdminView && expense.type === 'assignment') { showAlert("No puedes modificar una asignación."); return onClose(); }
+      const newAmount = Number(e.target.amount.value);
+      const newDetail = e.target.detail.value;
+      const amountDiff = newAmount - expense.amount;
+
+      try {
+        const driverSnapshot = drivers.find(d => d.id === expense.driverId);
+        if (driverSnapshot) {
+          let newBalance = driverSnapshot.balance || 0;
+          if (expense.type === 'assignment') newBalance += amountDiff;
+          if (expense.type === 'expense' || expense.type === 'return') newBalance -= amountDiff;
+          await updateDoc(doc(db, 'drivers', expense.driverId), { balance: newBalance });
+        }
+        await updateDoc(doc(db, 'expenses', expense.id), { amount: newAmount, detail: newDetail });
+        showAlert("Registro actualizado."); onClose();
+      } catch (error) { console.error(error); showAlert("Error actualizando."); }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+        <form onSubmit={handleUpdateSubmit} className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6">
+          <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-extrabold text-slate-800">Editar Registro</h3><button type="button" onClick={onClose} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button></div>
+          <div className="space-y-4">
+            <div><label className="text-xs font-bold text-slate-500 uppercase">Detalle</label><input name="detail" defaultValue={expense.detail} required className="w-full border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" /></div>
+            <div><label className="text-xs font-bold text-slate-500 uppercase">Monto ($)</label><input name="amount" type="number" defaultValue={expense.amount} required className="w-full border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" /></div>
+          </div>
+          <div className="flex gap-4 mt-6"><button type="button" onClick={onClose} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-600">Cancelar</button><button type="submit" className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold">Guardar</button></div>
+        </form>
+      </div>
+    );
+  };
+
   const safeDateRender = (timestamp) => {
-    try { const d = new Date(timestamp); if (isNaN(d.getTime())) return 'Fecha inválida'; return d.toLocaleDateString(); } 
-    catch(e) { return 'Fecha inválida'; }
+    try {
+      const d = new Date(timestamp);
+      if (isNaN(d.getTime())) return 'Fecha inválida';
+      return d.toLocaleDateString();
+    } catch(e) { return 'Fecha inválida'; }
   };
 
   if (isAdminView) {
     return (
       <main className="max-w-5xl mx-auto p-4 pt-6 pb-24">
+        {editingExpense && <EditExpenseModal expense={editingExpense} onClose={() => setEditingExpense(null)} />}
         {viewingReceipt && <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[150] p-4"><div className="bg-white rounded-3xl p-4 w-full max-w-md relative"><button onClick={() => setViewingReceipt(null)} className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"><X className="w-5 h-5 text-slate-700"/></button><h3 className="font-extrabold text-slate-800 mb-4 ml-2">Comprobante</h3><img src={viewingReceipt} alt="Comprobante" className="w-full h-auto max-h-[70vh] object-contain rounded-xl shadow-sm" /></div></div>}
 
         <h2 className="text-2xl font-extrabold mb-6 flex items-center gap-2"><Wallet className="text-blue-600"/> Control Viáticos</h2>
@@ -830,21 +872,18 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
               <div key={d.id} className={`bg-white p-4 rounded-3xl border cursor-pointer ${selectedDriverId === d.id ? 'border-blue-500 ring-2 ring-blue-100' : 'border-slate-100 hover:border-blue-300'}`} onClick={() => setSelectedDriverId(d.id === selectedDriverId ? null : d.id)}>
                 <div className="flex justify-between items-center"><div><p className="font-extrabold text-base text-slate-800">{d.name}</p><p className="text-xs text-slate-400 font-bold">{d.email}</p></div><div className="text-right"><p className="text-[10px] uppercase font-bold text-slate-400">Saldo</p><p className={`font-black text-lg ${d.balance < 0 ? 'text-red-600' : 'text-green-600'}`}>{formatMoney(d.balance||0)}</p></div></div>
                 {selectedDriverId === d.id && (
-                  <div className="mt-4 border-t pt-3" onClick={e=>e.stopPropagation()}>
-                    <div className="flex gap-2 mb-3">
-                       <button type="button" onClick={()=>setAdminActionType('assignment')} className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-colors ${adminActionType === 'assignment' ? 'bg-green-600 text-white' : 'bg-slate-100 text-slate-600'}`}>Entregar Fondo (+)</button>
-                       <button type="button" onClick={()=>setAdminActionType('expense')} className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-colors ${adminActionType === 'expense' ? 'bg-red-600 text-white' : 'bg-slate-100 text-slate-600'}`}>Anotar Gasto (-)</button>
+                  <form onSubmit={(e) => addExp(e, e.nativeEvent.submitter.value, Number(e.target.amount.value), e.target.detail.value, d.id, d.name, d.email)} className="mt-4 border-t pt-3 space-y-2.5" onClick={e=>e.stopPropagation()}>
+                    <input name="detail" type="text" placeholder="Detalle (Ej. Fondo, Peaje, Bencina)" className="w-full border-2 border-slate-200 p-2.5 rounded-xl text-sm font-bold outline-none focus:border-blue-500"/>
+                    <input name="amount" type="number" required placeholder="Monto $" className="w-full border-2 border-slate-200 p-2.5 rounded-xl text-sm font-bold outline-none focus:border-blue-500"/>
+                    <select name="jobId" className="w-full border-2 border-slate-200 p-2.5 rounded-xl text-xs font-semibold bg-white text-slate-700 outline-none focus:border-blue-500">
+                       <option value="">Gasto General (Sin asociar)</option>
+                       {activeOrPendingJobs.map(j => <option key={j.id} value={j.id}>Trabajo: {j.client} - {j.brand} ({j.plate || j.vin || 'S/N'})</option>)}
+                    </select>
+                    <div className="flex gap-2 mt-2">
+                       <button type="submit" value="assignment" className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl font-bold text-xs transition-colors">Entregar Fondo (+)</button>
+                       <button type="submit" value="expense" className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-xl font-bold text-xs transition-colors">Anotar Gasto (-)</button>
                     </div>
-                    <form onSubmit={(e) => addExp(e, d.id, d.name, d.email)} className="space-y-2.5">
-                      <input name="amount" type="number" required placeholder={`Monto a ${adminActionType==='assignment'?'asignar':'descontar'} $`} className="w-full border-2 border-slate-200 p-2.5 rounded-xl text-sm font-bold outline-none focus:border-blue-500"/>
-                      {adminActionType === 'expense' && <input name="detail" type="text" placeholder="Detalle del gasto (ej: Bencina)" required className="w-full border-2 border-slate-200 p-2.5 rounded-xl text-sm font-bold outline-none focus:border-blue-500"/>}
-                      <select name="jobId" className="w-full border-2 border-slate-200 p-2.5 rounded-xl text-xs font-semibold bg-white text-slate-700 outline-none focus:border-blue-500">
-                         <option value="">Asociar a un Trabajo (Opcional)</option>
-                         {activeOrPendingJobs.map(j => <option key={j.id} value={j.id}>{j.client} - {j.brand} ({j.plate || j.vin || 'S/N'})</option>)}
-                      </select>
-                      <button className={`w-full py-2 rounded-xl font-bold text-sm transition-colors text-white shadow-sm ${adminActionType==='assignment'?'bg-green-600 hover:bg-green-700':'bg-red-600 hover:bg-red-700'}`}>Confirmar {adminActionType==='assignment'?'Abono':'Gasto'}</button>
-                    </form>
-                  </div>
+                  </form>
                 )}
               </div>
             ))}
@@ -865,6 +904,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
                     {exp.type === 'pending_return' && <button onClick={() => approveReturn(exp)} className="ml-1 text-xs font-bold bg-green-600 text-white hover:bg-green-700 px-3 py-1.5 rounded-lg transition-colors">Aprobar</button>}
                     {exp.type !== 'pending_return' && (
                       <div className="flex gap-1 border-l border-slate-200 pl-2 ml-1">
+                        <button onClick={() => setEditingExpense(exp)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors" title="Editar"><Edit2 className="w-3.5 h-3.5"/></button>
                         <button onClick={() => delExp(exp)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Eliminar"><Trash2 className="w-3.5 h-3.5"/></button>
                       </div>
                     )}
@@ -879,6 +919,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
     );
   }
 
+  // --- VISTA DRIVERS GASTOS ---
   if (!myDriver) return (
     <main className="p-8 text-center text-slate-500 font-bold pb-24">
        <div className="bg-white p-6 rounded-3xl border max-w-sm mx-auto shadow-sm">
@@ -925,15 +966,17 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
         </div>
       )}
 
-      <div className={`p-6 rounded-3xl shadow-md text-center text-white relative overflow-hidden ${myBalance < 0 ? 'bg-gradient-to-br from-red-600 to-rose-700' : 'bg-gradient-to-br from-blue-600 to-indigo-700'}`}>
+      {editingExpense && <EditExpenseModal expense={editingExpense} onClose={() => setEditingExpense(null)} />}
+
+      <div className={`bg-gradient-to-br ${myBalance < 0 ? 'from-red-600 to-rose-700' : 'from-blue-600 to-indigo-700'} p-6 rounded-3xl shadow-md text-center text-white relative overflow-hidden`}>
         <Wallet className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10" />
-        <p className={`${myBalance < 0 ? 'text-red-100' : 'text-blue-100'} font-bold uppercase tracking-wider text-xs mb-1`}>Fondo Asignado Actual</p>
+        <p className="text-blue-100 font-bold uppercase tracking-wider text-xs mb-1">Fondo Asignado Actual</p>
         <p className="text-4xl font-extrabold tracking-tight">{formatMoney(myBalance)}</p>
       </div>
 
       <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
         <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2 mb-4"><Receipt className="w-5 h-5 text-red-500"/> Registrar Gasto</h3>
-        <form onSubmit={e=>addExp(e, myDriver.id, myDriver.name, myDriver.email)} className="space-y-4">
+        <form onSubmit={e=>addExp(e,'expense',Number(e.target.amount.value), e.target.detail.value, myDriver.id, myDriver.name, myDriver.email)} className="space-y-4">
           <input type="text" name="detail" placeholder="¿En qué gastaste? (Ej. Peaje)" required className="w-full border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-sm text-slate-700" />
           <input type="number" name="amount" placeholder="Monto ($)" required className="w-full border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-sm text-slate-700" />
           <button type="submit" disabled={myBalance <= 0 || hasPendingReturn} className={`w-full py-3 rounded-xl font-extrabold text-sm transition-all ${myBalance > 0 && !hasPendingReturn ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>Guardar Gasto</button>
@@ -969,6 +1012,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
                 <span className={`font-extrabold ${exp.type === 'expense' ? 'text-red-500' : 'text-green-600'}`}>{exp.type === 'expense' ? '-' : '+'}{formatMoney(exp.amount)}</span>
                 {exp.type !== 'assignment' && exp.type !== 'pending_return' ? (
                   <div className="flex gap-1 border-l border-slate-200 pl-2 ml-1">
+                    <button onClick={() => setEditingExpense(exp)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors"><Edit2 className="w-3.5 h-3.5"/></button>
                     <button onClick={() => delExp(exp)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5"/></button>
                   </div>
                 ) : <div className="pl-2 ml-1"><span className="text-[10px] font-bold text-slate-400 uppercase">{exp.type === 'assignment' ? 'Fondo' : 'Espera'}</span></div>}
@@ -990,10 +1034,14 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   const isAdminView = role === 'admin';
   
   const filteredJobs = jobs.filter(job => {
+    // Para conductores: ocultar si no está asignado o si ya fue aceptado por otro conductor.
     if (!isAdminView) {
-      if (job.status === 'pending' && !job.assignedEmails?.includes(currentUserEmail)) return false;
-      if (job.status !== 'pending' && job.acceptedByEmail !== currentUserEmail) return false;
+        const soyAsignado = job.assignedEmails?.includes(currentUserEmail);
+        const loReclameYo = job.acceptedByEmail === currentUserEmail;
+        if (job.status === 'pending' && !soyAsignado) return false;
+        if (job.status !== 'pending' && !loReclameYo) return false;
     }
+
     if (!isAdminView && job.status === 'failed' && job.tripType !== 'revision') return false; 
     if (!job.createdAt) return true;
     if (!isAdminView) {
@@ -1011,10 +1059,8 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     const driverOrder = { accepted: 1, pending: 2, completed: 3, failed: 3 };
     const order = isAdminView ? adminOrder : driverOrder;
     if (order[a.status] !== order[b.status]) return order[a.status] - order[b.status];
-    
-    const timeA = a.status === 'completed' || a.status === 'failed' ? (a.completedAt || a.createdAt) : (a.scheduledDate ? new Date(a.scheduledDate).getTime() : a.createdAt);
-    const timeB = b.status === 'completed' || b.status === 'failed' ? (b.completedAt || b.createdAt) : (b.scheduledDate ? new Date(b.scheduledDate).getTime() : b.createdAt);
-    return timeB - timeA;
+    if (a.status === 'completed' || a.status === 'failed') return (b.completedAt || b.createdAt) - (a.completedAt || a.createdAt);
+    return (a.scheduledDate ? new Date(a.scheduledDate).getTime() : a.createdAt) - (b.scheduledDate ? new Date(b.scheduledDate).getTime() : b.createdAt); 
   });
 
   const activeJobs = sortedJobs.filter(j => j.status === 'pending' || j.status === 'accepted');
@@ -1075,7 +1121,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     docPDF.rect(0, 0, 210, 40, 'F');
 
     let pdfTitle = "CHECKLIST DE TRASLADO";
-    if (job.tripType === 'revision') pdfTitle = "CERTIFICADO DE REVISIÓN TÉCNICA";
+    if (job.tripType === 'revision') pdfTitle = "CERTIFICADO DE REVISION TECNICA";
     if (job.tripType === 'viaje') pdfTitle = "TRASLADO A REGIONES";
 
     docPDF.setTextColor(255, 255, 255);
@@ -1086,7 +1132,8 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     docPDF.setFontSize(9);
     docPDF.setFont("helvetica", "normal");
     docPDF.setTextColor(148, 163, 184); // slate-400
-    docPDF.text(`LOGISTICA TS SPA • FECHA TRASLADO: ${formatDateDisplay(job.scheduledDate) || '-'}`, 15, 30);
+    // Eliminado el "ID", modificado por LOGISTICA TS SPA
+    docPDF.text(`LOGISTICA TS SPA - FECHA TRASLADO: ${formatDateDisplay(job.scheduledDate) || '-'}`, 15, 30);
 
     let currentY = 50;
 
@@ -1119,7 +1166,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     if (job.acceptedByEmail) { const foundDriver = drivers?.find(d => d.email === job.acceptedByEmail); if (foundDriver) driverNameStr = foundDriver.name; }
 
     // SECCIÓN 1: DETALLES GENERALES
-    currentY = drawSectionTitle("1. Detalles del Vehículo y Servicio", currentY);
+    currentY = drawSectionTitle("1. Detalles del Vehiculo y Servicio", currentY);
     drawKV("Cliente Asociado", `${job.client || 'Sin Cliente'}`, 15, currentY);
     drawKV("Marca y Modelo", `${job.brand || '-'} ${job.model || '-'}`, 80, currentY);
     drawKV("Patente / VIN", `${job.plate || job.vin || '-'}`, 145, currentY);
@@ -1142,14 +1189,14 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     currentY += 18;
 
     // SECCIÓN 2: RECEPCIÓN Y DOCUMENTACIÓN
-    currentY = drawSectionTitle("2. Recepción y Estado General", currentY);
+    currentY = drawSectionTitle("2. Recepcion y Estado General", currentY);
     drawKV("Nivel Combustible", `${job.checklist?.fuelLevel || '0'}%`, 15, currentY);
 
     const docs = job.checklist?.docs || {};
-    drawKV("Seguro SOAP", docs.soap ? 'AL DÍA' : 'FALTA', 60, currentY);
-    drawKV("Permiso de Circ.", docs.permiso ? 'AL DÍA' : 'FALTA', 100, currentY);
-    drawKV("Rev. Técnica", docs.revTecnica ? 'AL DÍA' : 'FALTA', 140, currentY);
-    drawKV("Gases", docs.gases ? 'AL DÍA' : 'FALTA', 175, currentY);
+    drawKV("Seguro SOAP", docs.soap ? 'AL DIA' : 'FALTA', 60, currentY);
+    drawKV("Permiso de Circ.", docs.permiso ? 'AL DIA' : 'FALTA', 100, currentY);
+    drawKV("Rev. Tecnica", docs.revTecnica ? 'AL DIA' : 'FALTA', 140, currentY);
+    drawKV("Gases", docs.gases ? 'AL DIA' : 'FALTA', 175, currentY);
 
     currentY += 14;
     docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
@@ -1162,7 +1209,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
 
     // SECCIÓN 3: RESULTADOS / RECEPCIÓN
     if (job.tripType === 'revision') {
-       currentY = drawSectionTitle("3. Resultado de Revisión Técnica", currentY);
+       currentY = drawSectionTitle("3. Resultado de Revision Tecnica", currentY);
        if (job.checklist?.rtStatus === 'aprobado') {
          docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(14); docPDF.text("APROBADO", 15, currentY+4);
        } else {
@@ -1175,7 +1222,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
 
       if (job.checklist?.noReception) {
         docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(10);
-        docPDF.text("ENTREGA SIN RECEPCIÓN (Confirmada por conductor en terreno)", 15, currentY + 4);
+        docPDF.text("ENTREGA SIN RECEPCION (Confirmada por conductor en terreno)", 15, currentY + 4);
       } else {
         drawKV("Receptor Final", `${job.checklist?.receiverName || 'N/A'}`, 15, currentY);
         drawKV("RUT", `${job.checklist?.receiverRut || 'N/A'}`, 90, currentY);
@@ -1189,9 +1236,9 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       if (job.checklist?.location) {
         const { lat, lng } = job.checklist.location;
         docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
-        docPDF.text(`UBICACIÓN GPS:`, 15, currentY);
+        docPDF.text(`UBICACION GPS:`, 15, currentY);
         docPDF.setFontSize(10); docPDF.setTextColor(...accentColor);
-        docPDF.textWithLink('Clic aquí para verificar en Google Maps', 45, currentY, { url: `https://www.google.com/maps?q=${lat},${lng}` });
+        docPDF.textWithLink('Clic aqui para verificar en Google Maps', 45, currentY, { url: `https://www.google.com/maps?q=${lat},${lng}` });
       }
     }
 
@@ -1202,14 +1249,14 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
            docPDF.setPage(i);
            docPDF.setFontSize(8);
            docPDF.setTextColor(148, 163, 184);
-           docPDF.text(`Generado por LogisticAPP el ${new Date().toLocaleString('es-CL')} - Página ${i} de ${pageCount}`, 105, 290, null, null, "center");
+           docPDF.text(`Generado por LogisticAPP el ${new Date().toLocaleString('es-CL')} - Pagina ${i} de ${pageCount}`, 105, 290, null, null, "center");
        }
-    };
+    }
 
     // SECCIÓN 4: FOTOS (ANEXO)
     if (job.checklist?.photos) {
       const photos = job.checklist.photos;
-      const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atrás', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
+      const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
       let photoY = 40; let currentCol = 1; let addedPage = false;
       const getImageDims = (src) => new Promise(resolve => { const img = new Image(); img.onload = () => resolve({ w: img.width, h: img.height }); img.onerror = () => resolve({ w: 85, h: 60 }); img.src = src; });
 
@@ -1219,7 +1266,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
             docPDF.addPage();
             docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 25, 'F');
             docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold");
-            docPDF.text(`ANEXO FOTOGRÁFICO`, 105, 16, null, null, "center");
+            docPDF.text(`ANEXO FOTOGRAFICO`, 105, 16, null, null, "center");
             addedPage = true;
           }
           
@@ -1233,9 +1280,10 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                docPDF.addPage(); photoY = 40;
                docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 25, 'F');
                docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold");
-               docPDF.text(`ANEXO FOTOGRÁFICO (CONT.)`, 105, 16, null, null, "center");
+               docPDF.text(`ANEXO FOTOGRAFICO (CONT.)`, 105, 16, null, null, "center");
             }
 
+            // Marco moderno de foto
             docPDF.setDrawColor(...borderColor);
             docPDF.setLineWidth(0.5);
             docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S');
@@ -1245,6 +1293,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
             docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor);
             docPDF.text((labels[key] || key).toUpperCase(), slotCenter, photoY - 3, { align: "center" });
 
+            // Foto renderizada de forma segura
             docPDF.addImage(photos[key], 'JPEG', finalX, photoY + 2, imgW, imgH);
 
             if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 20; }
@@ -1324,7 +1373,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
               
               {j.tripType === 'revision' && (
                 <div className="mb-3 bg-amber-50 border border-amber-200 p-2 rounded-xl text-center">
-                  <span className="text-[10px] font-black text-amber-700 uppercase">REVISION TECNICA (TIPO {j.rtData?.type})</span>
+                  <span className="text-[10px] font-black text-amber-700 uppercase">REVISIÓN TÉCNICA (TIPO {j.rtData?.type})</span>
                 </div>
               )}
               {j.tripType === 'viaje' && <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-2 mb-3 text-center text-xs font-bold text-indigo-700 uppercase">A Regiones</div>}
@@ -1335,7 +1384,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                   <span className="flex-1">
                     {j.tripType === 'revision' ? (
                         j.checklist?.rtStatus === 'aprobado' ? `PRT ➔ ${j.checklist.rtReturnOption === 'other' ? j.checklist.rtReturnDestination : j.origin}` :
-                        j.checklist?.rtStatus === 'rechazado' ? 'PRT (Rechazada)' : 'Planta de Revision (PRT)'
+                        j.checklist?.rtStatus === 'rechazado' ? 'PRT (Rechazada)' : 'Planta de Revisión (PRT)'
                     ) : j.destination}
                   </span>
                 </p>
@@ -1354,34 +1403,33 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
           <h3 className="font-extrabold text-lg text-slate-700 mb-3 border-b-2 pb-1">Historial Simplificado</h3>
           <div className="flex flex-col gap-2.5">
             {historyJobs.map(j => {
-               let driverNameStr = j.checklist?.assignedDriverName || j.acceptedByEmail || "No registrado";
-               if (j.acceptedByEmail) { const foundDriver = drivers?.find(d => d.email === j.acceptedByEmail); if (foundDriver) driverNameStr = foundDriver.name; }
-               return (
-                  <div key={j.id} className="bg-white p-3.5 rounded-2xl border flex flex-col sm:flex-row justify-between sm:items-center gap-2 text-xs font-bold shadow-sm relative pl-4 overflow-hidden">
-                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${j.status==='failed'?'bg-red-500':'bg-green-500'}`}></div>
-                    <div>
-                       <div className="flex gap-2 items-center mb-1"><span className={`px-2 py-0.5 rounded text-[9px] uppercase ${j.status==='failed'?'bg-red-100 text-red-700':'bg-green-100 text-green-700'}`}>{j.status==='failed'?'Fallido':'Ok'}</span><p className="text-sm font-black text-slate-800">{j.brand} {j.model} <span className="text-blue-600 uppercase text-xs ml-1">[{j.plate||'S/N'}]</span></p></div>
-                       <p className="text-slate-500 font-semibold">{getRouteStr(j)} <span className="text-slate-400 ml-1">({getDStr(j)})</span></p>
-                       <p className="text-blue-600 mt-1 uppercase text-[10px]">Conductor: {driverNameStr}</p>
-                       {j.status==='failed' && <p className="text-red-600 text-[11px] mt-0.5 font-bold">Razón: {j.failedReason}</p>}
-                    </div>
-                    <div className="flex gap-1.5 mt-2 sm:mt-0">
-                      <button onClick={()=>cpyWapp(j)} className="p-2 bg-blue-50 text-blue-600 rounded-xl" title="Copiar Texto"><Copy className="w-4 h-4"/></button>
-                      <button onClick={() => generatePDF(j)} className="p-2 bg-slate-100 text-slate-700 rounded-xl" title="Descargar PDF"><FileDown className="w-4 h-4"/></button>
-                      <button onClick={() => handleShareWhatsAppPDF(j)} className="p-2 bg-green-100 text-green-700 rounded-xl" title="Compartir PDF"><Share2 className="w-4 h-4"/></button>
-                      {isAdminView && <button onClick={()=>handleDeleteJob(j.id)} className="p-2 bg-red-50 text-red-500 rounded-xl" title="Eliminar Historial"><Trash2 className="w-4 h-4"/></button>}
-                    </div>
-                  </div>
-               );
-            })}
+              let realizedBy = "No registrado";
+              if (j.acceptedByEmail) { const d = drivers.find(drv => drv.email === j.acceptedByEmail); if (d) realizedBy = d.name; }
+              return (
+              <div key={j.id} className="bg-white p-3.5 rounded-2xl border flex flex-col sm:flex-row justify-between sm:items-center gap-2 text-xs font-bold shadow-sm relative pl-4 overflow-hidden">
+                <div className={`absolute left-0 top-0 bottom-0 w-1 ${j.status==='failed'?'bg-red-500':'bg-green-500'}`}></div>
+                <div>
+                   <div className="flex gap-2 items-center mb-1"><span className={`px-2 py-0.5 rounded text-[9px] uppercase ${j.status==='failed'?'bg-red-100 text-red-700':'bg-green-100 text-green-700'}`}>{j.status==='failed'?'Fallido':'Ok'}</span><p className="text-sm font-black text-slate-800">{j.brand} {j.model} <span className="text-blue-600 uppercase text-xs ml-1">[{j.plate||'S/N'}]</span></p></div>
+                   <p className="text-slate-500 font-semibold">{getRouteStr(j)} <span className="text-slate-400 ml-1">({getDStr(j)})</span></p>
+                   <p className="text-blue-500 text-[10px] mt-0.5 font-bold uppercase">CONDUCTOR: {realizedBy}</p>
+                   {j.status==='failed' && <p className="text-red-600 text-[11px] mt-0.5 font-bold">Razón: {j.failedReason}</p>}
+                </div>
+                <div className="flex gap-1.5 mt-2 sm:mt-0">
+                  <button onClick={()=>cpyWapp(j)} className="p-2 bg-blue-50 text-blue-600 rounded-xl" title="Copiar Texto"><Copy className="w-4 h-4"/></button>
+                  <button onClick={() => generatePDF(j)} className="p-2 bg-slate-100 text-slate-700 rounded-xl" title="Descargar PDF"><FileDown className="w-4 h-4"/></button>
+                  <button onClick={() => handleShareWhatsAppPDF(j)} className="p-2 bg-green-100 text-green-700 rounded-xl" title="Compartir PDF"><Share2 className="w-4 h-4"/></button>
+                  {isAdminView && <button onClick={()=>handleDeleteJob(j.id)} className="p-2 bg-red-50 text-red-500 rounded-xl" title="Eliminar Historial"><Trash2 className="w-4 h-4"/></button>}
+                </div>
+              </div>
+            )})}
           </div>
         </div>
       )}
       {jobToFail && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <form onSubmit={(e) => { e.preventDefault(); handleFailJob(jobToFail, e.target.reason.value); }} className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-xl">
-            <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5"><XCircle className="text-red-500"/> ¿Por qué fallo el traslado?</h3>
-            <textarea name="reason" required placeholder="Escribe el motivo del fallo o cancelacion aqui..." className="w-full border-2 p-3 rounded-xl font-bold text-sm outline-none focus:border-red-500" rows="3"></textarea>
+            <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5"><XCircle className="text-red-500"/> ¿Por qué falló el traslado?</h3>
+            <textarea name="reason" required placeholder="Escribe el motivo del fallo o cancelación aquí..." className="w-full border-2 p-3 rounded-xl font-bold text-sm outline-none focus:border-red-500" rows="3"></textarea>
             <div className="flex gap-3"><button type="button" onClick={()=>setJobToFail(null)} className="flex-1 py-2 bg-slate-100 rounded-xl font-bold text-sm text-slate-600">Volver</button><button type="submit" className="flex-[2] py-2 bg-red-600 text-white rounded-xl font-bold text-sm shadow-md">Confirmar Fallo</button></div>
           </form>
         </div>
@@ -1390,224 +1438,4 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   );
 }
 
-function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList }) {
-  const isQuick = job.id === 'NEW_QUICK_JOB'; 
-  const localStorageKey = `checklist_draft_${job.id}`;
-
-  const defaultData = {
-    client: job.client||'', manualClient: '', brand: job.brand||'', model: job.model||'', plateOrVin: job.plate||job.vin||'', origin: job.origin||'', destination: job.destination||'', fuelLevel: 50, photos: { front:false, left:false, right:false, back:false, tire:false, dashboard:false, det1:false, det2:false, det3:false, det4:false }, docs: { soap:false, permiso:false, revTecnica:false, gases:false }, observations: '', receiverName: '', receiverRut: '', noReception: false, signatureData: null, location: null,
-    rtStatus: 'aprobado', rtRejectReason: '', rtReturnOption: 'origin', rtReturnDestination: '' 
-  };
-
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState(defaultData);
-  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
-
-  useEffect(() => {
-    const savedDraft = localStorage.getItem(localStorageKey);
-    if (savedDraft) {
-      try {
-        const parsedData = JSON.parse(savedDraft);
-        setFormData(parsedData.formData);
-        setStep(parsedData.step || 1);
-        setIsDraftLoaded(true);
-      } catch (e) { console.error("Error al leer borrador", e); }
-    }
-  }, [localStorageKey]);
-
-  useEffect(() => {
-    localStorage.setItem(localStorageKey, JSON.stringify({ step, formData }));
-  }, [step, formData, localStorageKey]);
-
-  const setF = (f, v) => setFormData(p => ({...p, [f]:v}));
-
-  const clearDraft = () => {
-    showConfirm("¿Eliminar borrador y empezar de nuevo?", () => {
-      localStorage.removeItem(localStorageKey);
-      setFormData(defaultData);
-      setStep(1);
-      setIsDraftLoaded(false);
-    });
-  };
-
-  const handlePic = async (e, id) => {
-    const f=e.target.files[0]; if(!f)return;
-    try {
-      const dataUrl = await resizeImage(f, 800, 0.6);
-      setF('photos', {...formData.photos, [id]: dataUrl}); 
-    } catch(err){ 
-      console.error("Error al procesar la foto:", err);
-      showAlert("Error al procesar la foto. Intenta con una imagen mas pequena."); 
-    }
-  };
-
-  const submit = async (e) => {
-    e.preventDefault();
-    if (!formData.noReception && !formData.signatureData) return showAlert("La firma del receptor es mandatoria.");
-    
-    let d = {...formData}; 
-    d.client = d.client === 'OTRO' ? d.manualClient : d.client; 
-
-    if(d.noReception) { 
-      d.receiverName="ENTREGA SIN RECEPCION"; 
-      d.receiverRut="N/A"; 
-    }
-    
-    const fd = { scheduledDate: new Date().toISOString().split('T')[0], client: d.client, brand: d.brand, model: d.model, vin: d.plateOrVin, plate: d.plateOrVin, origin: d.origin, destination: d.destination, status: 'completed', completedAt: Date.now(), checklist: d, tripType: job.tripType || 'traslado' };
-    
-    try {
-      if(isQuick) { 
-          fd.assignedDriverName="Auto-creado"; fd.acceptedByEmail=currentUserEmail; 
-          if (d.plateOrVin) {
-              const vehRef = collection(db, 'vehicles');
-              const q = query(vehRef, where('plate', '==', d.plateOrVin.toUpperCase()));
-              const querySnapshot = await getDocs(q);
-              if (querySnapshot.empty) {
-                await addDoc(vehRef, { plate: d.plateOrVin.toUpperCase(), brand: d.brand, model: d.model, client: d.client, createdAt: Date.now() });
-              }
-          }
-          await addDoc(collection(db,'transport_jobs'), fd); 
-      }
-      else { 
-          if (job.tripType === 'revision' && d.rtStatus === 'rechazado') {
-             fd.status = 'failed';
-             fd.failedReason = d.rtRejectReason || 'Revision Tecnica Rechazada';
-             
-             const cloneJob = {
-                scheduledDate: d.scheduledDate, client: d.client, brand: d.brand, model: d.model, vin: d.plateOrVin, plate: d.plateOrVin, origin: d.origin, destination: d.destination,
-                tripType: job.tripType, rtData: job.rtData,
-                assignedDrivers: job.assignedDrivers || [], assignedEmails: job.assignedEmails || [],
-                status: 'pending', createdAt: Date.now(), checklist: null
-             };
-             await addDoc(collection(db, 'transport_jobs'), cloneJob);
-          }
-          await updateDoc(doc(db,'transport_jobs',job.id), fd); 
-      }
-      
-      if (job.tripType === 'revision' && d.rtStatus === 'rechazado') {
-          showAlert("Revision guardada como RECHAZADA. Se ha creado un nuevo traslado pendiente.");
-      } else {
-          showAlert("✅ Checklist guardado correctamente."); 
-      }
-      onComplete();
-    } catch(error) { 
-      console.error("Firebase Error:", error);
-      showAlert("Hubo un error al guardar. Verifica tu conexion a internet o el tamano de las fotos."); 
-    }
-  };
-
-  return (
-    <div className="bg-white rounded-3xl shadow-xl border pb-10 relative">
-      {isDraftLoaded && (
-         <div className="absolute -top-12 left-0 right-0 flex justify-center items-center">
-            <div className="bg-amber-100 text-amber-800 text-xs px-3 py-1.5 rounded-full font-bold flex items-center gap-2 shadow-sm border border-amber-200">
-               <Save className="w-3.5 h-3.5"/> Borrador recuperado
-               <button onClick={clearDraft} className="ml-2 text-amber-600 underline">Limpiar</button>
-            </div>
-         </div>
-      )}
-
-      <div className="bg-blue-600 text-white p-5 flex justify-between items-center rounded-t-3xl"><h2 className="font-bold text-base"><FileText className="inline w-5 h-5 mr-1"/> Formulario Checklist</h2><button type="button" onClick={()=>showConfirm("¿Deseas salir? (Tu progreso quedara guardado localmente)", onCancel)} className="bg-blue-800 px-3 py-1 rounded-xl text-xs font-bold">Salir</button></div>
-      <div className="flex bg-slate-100 h-1"><div className={`bg-green-500 transition-all duration-300 ${step===1?'w-1/2':'w-full'}`}></div></div>
-      <div className="p-5">
-        {step === 1 ? (
-          <div className="space-y-4 text-sm">
-            
-            {isQuick ? (
-              <div className="space-y-2">
-                 <select value={formData.client} onChange={(e) => setF('client', e.target.value)} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 bg-white outline-none focus:border-blue-500">
-                    <option value="">Selecciona el Cliente...</option>
-                    {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
-                    <option value="OTRO">Otro (Ingreso Manual)</option>
-                 </select>
-                 {formData.client === 'OTRO' && <input value={formData.manualClient} onChange={e=>setF('manualClient',e.target.value)} placeholder="Escribe el nombre del cliente" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 mt-2"/>}
-              </div>
-            ) : (
-              <input value={formData.client} onChange={e=>setF('client',e.target.value)} placeholder="Cliente" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700" readOnly/>
-            )}
-            
-            <div className="grid grid-cols-2 gap-4"><input value={formData.brand} onChange={e=>setF('brand',e.target.value)} placeholder="Marca" className="border-2 p-3 rounded-xl font-bold text-slate-700"/><input value={formData.model} onChange={e=>setF('model',e.target.value)} placeholder="Modelo" className="border-2 p-3 rounded-xl font-bold text-slate-700"/></div>
-            <input value={formData.plateOrVin} onChange={e=>setF('plateOrVin',e.target.value)} placeholder="Patente o VIN" className="w-full border-2 p-3 rounded-xl font-bold uppercase text-slate-700"/>
-            
-            {job.tripType === 'revision' && (
-              <>
-                <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-blue-600">Resultado de la Revision</h3>
-                <select value={formData.rtStatus} onChange={e=>setF('rtStatus', e.target.value)} className={`w-full border-2 p-4 rounded-xl outline-none font-extrabold text-sm ${formData.rtStatus === 'aprobado' ? 'border-green-200 bg-green-50 text-green-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
-                  <option value="aprobado">✅ APROBADO</option>
-                  <option value="rechazado">❌ RECHAZADO</option>
-                </select>
-                {formData.rtStatus === 'rechazado' && (
-                  <input value={formData.rtRejectReason} onChange={e=>setF('rtRejectReason', e.target.value)} placeholder="¿Cual fue la razon del rechazo?" required className="w-full border-2 border-red-300 p-4 rounded-xl outline-none focus:border-red-500 font-bold text-red-900 bg-white mt-2" />
-                )}
-                {formData.rtStatus === 'aprobado' && (
-                  <div className="mt-4 p-4 border-2 border-green-200 bg-green-50 rounded-xl space-y-3">
-                    <p className="text-sm font-bold text-green-800">¿Hacia donde se dirige el vehiculo tras aprobar?</p>
-                    <div className="flex gap-4">
-                      <label className="flex items-center gap-2 cursor-pointer text-sm font-bold text-green-700">
-                        <input type="radio" name="rtReturnOption" value="origin" checked={formData.rtReturnOption === 'origin'} onChange={e=>setF('rtReturnOption', e.target.value)} className="w-4 h-4 accent-green-600"/>
-                        Volver al Origen
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer text-sm font-bold text-green-700">
-                        <input type="radio" name="rtReturnOption" value="other" checked={formData.rtReturnOption === 'other'} onChange={e=>setF('rtReturnOption', e.target.value)} className="w-4 h-4 accent-green-600"/>
-                        Otro Destino
-                      </label>
-                    </div>
-                    {formData.rtReturnOption === 'other' && (
-                      <input value={formData.rtReturnDestination} onChange={e=>setF('rtReturnDestination', e.target.value)} placeholder="Especifique el destino final..." required className="w-full border-2 border-green-300 p-3 rounded-xl outline-none focus:border-green-500 font-bold text-green-900 bg-white" />
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-
-            <div className="space-y-1 pt-2">
-              <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-slate-800 mb-4">Combustible: <span className="text-blue-600">{formData.fuelLevel}%</span></h3>
-              <input type="range" min="0" max="100" step="5" value={formData.fuelLevel} onChange={(e) => setF('fuelLevel', e.target.value)} className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer" style={{background: `linear-gradient(to right, ${formData.fuelLevel < 30 ? '#ef4444' : formData.fuelLevel < 80 ? '#eab308' : '#22c55e'} ${formData.fuelLevel}%, #e2e8f0 ${formData.fuelLevel}%)`}} />
-            </div>
-            
-            <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Documentos a bordo</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {[{ id: 'soap', label: 'SOAP' }, { id: 'permiso', label: 'Permiso' }, { id: 'revTecnica', label: 'Rev. Tecnica' }, { id: 'gases', label: 'Gases' }].map(doc => (
-                <label key={doc.id} className={`flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all ${formData.docs[doc.id] ? 'border-green-500 bg-green-50 text-green-800' : 'border-slate-200 bg-white text-slate-600'}`}>
-                  <input type="checkbox" className="w-4 h-4 text-green-600 rounded cursor-pointer" checked={formData.docs[doc.id]} onChange={(e) => setF('docs', { ...formData.docs, [doc.id]: e.target.checked })} />
-                  <span className="font-extrabold text-xs">{doc.label}</span>
-                </label>
-              ))}
-            </div>
-            
-            <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Observaciones (Opcional)</h3>
-            <textarea value={formData.observations} onChange={e=>setF('observations',e.target.value)} placeholder="Ej: Rayon en puerta..." className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 h-20 outline-none focus:border-blue-500"/>
-
-            <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Anexo Fotografico</h3>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pt-2">
-              {[{id:'front', l:'Frente'}, {id:'left', l:'Piloto'}, {id:'right', l:'Copiloto'}, {id:'back', l:'Atras'}, {id:'tire', l:'Repuesto'}, {id:'dashboard', l:'Tablero'}, {id:'det1', l:'Det. 1'}, {id:'det2', l:'Det. 2'}, {id:'det3', l:'Det. 3'}, {id:'det4', l:'Det. 4'}].map(p => (
-                <label key={p.id} className={`p-1 border-2 rounded-2xl text-center cursor-pointer relative overflow-hidden h-20 flex flex-col justify-center items-center ${formData.photos[p.id]?'bg-green-50 border-green-400':'border-dashed'}`}>
-                  <input type="file" className="hidden" accept="image/*" onChange={e=>handlePic(e,p.id)}/>
-                  {formData.photos[p.id] ? (
-                     <div className="absolute inset-0 w-full h-full"><img src={formData.photos[p.id]} alt="foto" className="w-full h-full object-cover opacity-60"/><div className="absolute inset-0 flex items-center justify-center"><CheckCircle className="w-6 h-6 text-green-600 bg-white rounded-full"/></div></div>
-                  ) : (
-                    <><Camera className="w-5 h-5 text-slate-400 mb-0.5"/> <span className="text-[10px] font-bold text-slate-500 uppercase">{p.l}</span></>
-                  )}
-                </label>
-              ))}
-            </div>
-            <button type="button" onClick={()=>setStep(2)} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mt-6 text-sm">Siguiente Paso</button>
-          </div>
-        ) : (
-          <form onSubmit={submit} className="space-y-4">
-             <label className="flex items-center gap-2.5 p-4 bg-amber-50 rounded-2xl border-amber-300 border-2 cursor-pointer"><input type="checkbox" checked={formData.noReception} onChange={e=>setF('noReception',e.target.checked)} className="w-5 h-5 cursor-pointer"/> <span className="font-extrabold text-sm text-slate-700">Dejar sin firma (Local cerrado / Sin recepcion)</span></label>
-             {!formData.noReception && (
-               <><input required={!formData.noReception} value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/><input required={!formData.noReception} value={formData.receiverRut} onChange={e=>setF('receiverRut',e.target.value)} placeholder="RUT Receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/><SignaturePad initialData={formData.signatureData} onSave={d=>setF('signatureData',d)} onClear={()=>setF('signatureData',null)}/></>
-             )}
-            
-            <button type="button" onClick={() => { if ("geolocation" in navigator) { navigator.geolocation.getCurrentPosition((pos) => setF('location', { lat: pos.coords.latitude, lng: pos.coords.longitude }), () => showAlert("Error GPS.")); } }} className={`px-4 py-4 rounded-2xl text-sm w-full font-extrabold shadow-sm mt-4 ${formData.location ? 'bg-green-100 text-green-700 border-2 border-green-200' : 'bg-slate-100 text-slate-700 border-2'}`}>
-              {formData.location ? "📍 GPS Capturado Exitosamente" : "📍 Tocar para Capturar GPS Actual"}
-            </button>
-
-            <div className="flex gap-2 pt-4 border-t"><button type="button" onClick={()=>setStep(1)} className="bg-slate-100 p-3 rounded-xl font-bold text-sm flex-1">Atras</button><button type="submit" className="bg-green-600 text-white p-3 rounded-xl font-bold text-sm flex-[2]">Finalizar y Guardar</button></div>
-          </form>
-        )}
-      </div>
-    </div>
-  );
-}
+/* STREAMING_CHUNK:
