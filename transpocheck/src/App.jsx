@@ -1062,13 +1062,22 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     }
     const { jsPDF } = window.jspdf;
     const docPDF = new jsPDF();
-    
+
+    // Paleta de Colores Corporativa
+    const primaryColor = [30, 41, 59]; // slate-800
+    const secondaryColor = [100, 116, 139]; // slate-500
+    const accentColor = [37, 99, 235]; // blue-600
+    const lightBg = [248, 250, 252]; // slate-50
+    const borderColor = [226, 232, 240]; // slate-200
+
+    // ENCABEZADO
+    docPDF.setFillColor(...primaryColor);
+    docPDF.rect(0, 0, 210, 40, 'F');
+
     let pdfTitle = "CHECKLIST DE TRASLADO";
-    if (job.tripType === 'revision') pdfTitle = "CERTIFICADO DE REVISIÓN";
+    if (job.tripType === 'revision') pdfTitle = "CERTIFICADO DE REVISIÓN TÉCNICA";
     if (job.tripType === 'viaje') pdfTitle = "TRASLADO A REGIONES";
 
-    docPDF.setFillColor(30, 41, 59);
-    docPDF.rect(0, 0, 210, 40, 'F');
     docPDF.setTextColor(255, 255, 255);
     docPDF.setFontSize(22);
     docPDF.setFont("helvetica", "bold");
@@ -1076,18 +1085,19 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
 
     docPDF.setFontSize(9);
     docPDF.setFont("helvetica", "normal");
-    docPDF.setTextColor(148, 163, 184); 
+    docPDF.setTextColor(148, 163, 184); // slate-400
     docPDF.text(`LOGISTICA TS SPA • FECHA TRASLADO: ${formatDateDisplay(job.scheduledDate) || '-'}`, 15, 30);
 
     let currentY = 50;
 
+    // FUNCIONES AUXILIARES DE DIBUJO ELEGANTES
     const drawSectionTitle = (title, y) => {
-      docPDF.setFillColor(248, 250, 252);
+      docPDF.setFillColor(...lightBg);
       docPDF.rect(15, y - 6, 180, 10, 'F');
-      docPDF.setDrawColor(37, 99, 235);
+      docPDF.setDrawColor(...accentColor);
       docPDF.setLineWidth(1);
       docPDF.line(15, y - 6, 15, y + 4);
-      docPDF.setTextColor(30, 41, 59);
+      docPDF.setTextColor(...primaryColor);
       docPDF.setFontSize(11);
       docPDF.setFont("helvetica", "bold");
       docPDF.text(title.toUpperCase(), 20, y+1);
@@ -1097,17 +1107,18 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     const drawKV = (label, value, x, y) => {
       docPDF.setFontSize(8);
       docPDF.setFont("helvetica", "normal");
-      docPDF.setTextColor(100, 116, 139);
+      docPDF.setTextColor(...secondaryColor);
       docPDF.text(label.toUpperCase(), x, y);
       docPDF.setFontSize(10);
       docPDF.setFont("helvetica", "bold");
-      docPDF.setTextColor(30, 41, 59);
+      docPDF.setTextColor(...primaryColor);
       docPDF.text(value, x, y + 5);
     };
 
     let driverNameStr = job.checklist?.assignedDriverName || job.acceptedByEmail || "No registrado";
     if (job.acceptedByEmail) { const foundDriver = drivers?.find(d => d.email === job.acceptedByEmail); if (foundDriver) driverNameStr = foundDriver.name; }
 
+    // SECCIÓN 1: DETALLES GENERALES
     currentY = drawSectionTitle("1. Detalles del Vehículo y Servicio", currentY);
     drawKV("Cliente Asociado", `${job.client || 'Sin Cliente'}`, 15, currentY);
     drawKV("Marca y Modelo", `${job.brand || '-'} ${job.model || '-'}`, 80, currentY);
@@ -1130,44 +1141,46 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
 
     currentY += 18;
 
+    // SECCIÓN 2: RECEPCIÓN Y DOCUMENTACIÓN
     currentY = drawSectionTitle("2. Recepción y Estado General", currentY);
     drawKV("Nivel Combustible", `${job.checklist?.fuelLevel || '0'}%`, 15, currentY);
 
     const docs = job.checklist?.docs || {};
-    drawKV("Seguro SOAP", docs.soap ? 'AL DIA' : 'FALTA', 60, currentY);
-    drawKV("Permiso de Circ.", docs.permiso ? 'AL DIA' : 'FALTA', 100, currentY);
-    drawKV("Rev. Tecnica", docs.revTecnica ? 'AL DIA' : 'FALTA', 140, currentY);
-    drawKV("Gases", docs.gases ? 'AL DIA' : 'FALTA', 175, currentY);
+    drawKV("Seguro SOAP", docs.soap ? 'AL DÍA' : 'FALTA', 60, currentY);
+    drawKV("Permiso de Circ.", docs.permiso ? 'AL DÍA' : 'FALTA', 100, currentY);
+    drawKV("Rev. Técnica", docs.revTecnica ? 'AL DÍA' : 'FALTA', 140, currentY);
+    drawKV("Gases", docs.gases ? 'AL DÍA' : 'FALTA', 175, currentY);
 
     currentY += 14;
-    docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(100, 116, 139);
+    docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
     docPDF.text("OBSERVACIONES DEL CONDUCTOR:", 15, currentY);
-    docPDF.setFontSize(10); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(30, 41, 59);
+    docPDF.setFontSize(10); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
     const obsSplit = docPDF.splitTextToSize(`${job.checklist?.observations || 'Sin observaciones registradas.'}`, 180);
     docPDF.text(obsSplit, 15, currentY + 5);
 
     currentY += (obsSplit.length * 5) + 12;
 
+    // SECCIÓN 3: RESULTADOS / RECEPCIÓN
     if (job.tripType === 'revision') {
-       currentY = drawSectionTitle("3. Resultado de Revision Tecnica", currentY);
+       currentY = drawSectionTitle("3. Resultado de Revisión Técnica", currentY);
        if (job.checklist?.rtStatus === 'aprobado') {
          docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(14); docPDF.text("APROBADO", 15, currentY+4);
        } else {
          docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(14); docPDF.text("RECHAZADO", 15, currentY+4);
-         docPDF.setFontSize(10); docPDF.setTextColor(100, 116, 139);
+         docPDF.setFontSize(10); docPDF.setTextColor(...secondaryColor);
          docPDF.text(`Motivo: ${job.checklist?.rtRejectReason || 'No especificada'}`, 15, currentY + 12);
        }
-       currentY += 20;
     } else {
       currentY = drawSectionTitle("3. Conformidad de Entrega", currentY);
+
       if (job.checklist?.noReception) {
         docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(10);
-        docPDF.text("ENTREGA SIN RECEPCION (Confirmada por conductor en terreno)", 15, currentY + 4);
+        docPDF.text("ENTREGA SIN RECEPCIÓN (Confirmada por conductor en terreno)", 15, currentY + 4);
       } else {
         drawKV("Receptor Final", `${job.checklist?.receiverName || 'N/A'}`, 15, currentY);
         drawKV("RUT", `${job.checklist?.receiverRut || 'N/A'}`, 90, currentY);
         if(job.checklist?.signatureData) {
-            docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(100, 116, 139);
+            docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
             docPDF.text("FIRMA DE CONFORMIDAD:", 140, currentY);
             docPDF.addImage(job.checklist.signatureData, 'PNG', 140, currentY + 2, 45, 25);
         }
@@ -1175,26 +1188,28 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       currentY += 28; 
       if (job.checklist?.location) {
         const { lat, lng } = job.checklist.location;
-        docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(100, 116, 139);
-        docPDF.text(`UBICACION GPS:`, 15, currentY);
-        docPDF.setFontSize(10); docPDF.setTextColor(37, 99, 235);
-        docPDF.textWithLink('Clic aqui para verificar en Google Maps', 45, currentY, { url: `https://www.google.com/maps?q=${lat},${lng}` });
+        docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
+        docPDF.text(`UBICACIÓN GPS:`, 15, currentY);
+        docPDF.setFontSize(10); docPDF.setTextColor(...accentColor);
+        docPDF.textWithLink('Clic aquí para verificar en Google Maps', 45, currentY, { url: `https://www.google.com/maps?q=${lat},${lng}` });
       }
     }
 
+    // PIE DE PÁGINA GLOBAL
     const addFooter = () => {
        const pageCount = docPDF.internal.getNumberOfPages();
        for(let i = 1; i <= pageCount; i++) {
            docPDF.setPage(i);
            docPDF.setFontSize(8);
            docPDF.setTextColor(148, 163, 184);
-           docPDF.text(`Generado por LogisticAPP el ${new Date().toLocaleString('es-CL')} - Pagina ${i} de ${pageCount}`, 105, 290, null, null, "center");
+           docPDF.text(`Generado por LogisticAPP el ${new Date().toLocaleString('es-CL')} - Página ${i} de ${pageCount}`, 105, 290, null, null, "center");
        }
-    }
+    };
 
+    // SECCIÓN 4: FOTOS (ANEXO)
     if (job.checklist?.photos) {
       const photos = job.checklist.photos;
-      const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
+      const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atrás', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
       let photoY = 40; let currentCol = 1; let addedPage = false;
       const getImageDims = (src) => new Promise(resolve => { const img = new Image(); img.onload = () => resolve({ w: img.width, h: img.height }); img.onerror = () => resolve({ w: 85, h: 60 }); img.src = src; });
 
@@ -1202,9 +1217,9 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         if (photos[key] && typeof photos[key] === 'string' && photos[key].startsWith('data:image')) {
           if (!addedPage) {
             docPDF.addPage();
-            docPDF.setFillColor(30, 41, 59); docPDF.rect(0, 0, 210, 25, 'F');
+            docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 25, 'F');
             docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold");
-            docPDF.text(`ANEXO FOTOGRAFICO`, 105, 16, null, null, "center");
+            docPDF.text(`ANEXO FOTOGRÁFICO`, 105, 16, null, null, "center");
             addedPage = true;
           }
           
@@ -1216,17 +1231,18 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
 
             if (photoY + imgH > 275) {
                docPDF.addPage(); photoY = 40;
-               docPDF.setFillColor(30, 41, 59); docPDF.rect(0, 0, 210, 25, 'F');
+               docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 25, 'F');
                docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold");
-               docPDF.text(`ANEXO FOTOGRAFICO (CONT.)`, 105, 16, null, null, "center");
+               docPDF.text(`ANEXO FOTOGRÁFICO (CONT.)`, 105, 16, null, null, "center");
             }
 
-            docPDF.setDrawColor(226, 232, 240);
+            docPDF.setDrawColor(...borderColor);
             docPDF.setLineWidth(0.5);
             docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S');
-            docPDF.setFillColor(248, 250, 252);
+            
+            docPDF.setFillColor(...lightBg);
             docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F');
-            docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(100, 116, 139);
+            docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor);
             docPDF.text((labels[key] || key).toUpperCase(), slotCenter, photoY - 3, { align: "center" });
 
             docPDF.addImage(photos[key], 'JPEG', finalX, photoY + 2, imgW, imgH);
