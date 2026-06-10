@@ -1137,7 +1137,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     });
   };
 
- const handleFailJob = async (job, reason) => {
+  const handleFailJob = async (job, reason) => {
     try {
       if (job.tripType === 'revision' && reason === 'RECHAZO_RT_AUTOMATICO') {
           const cloneJob = {
@@ -1364,7 +1364,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     return docPDF;
   };
 
-  const getDStr = j => j.scheduledDate?formatDateDisplay(j.scheduledDate):formatDateDisplay(new Date().toISOString().split('T')[0]);    const dateStr = getDStr(job);
+  const getDStr = j => j.scheduledDate?formatDateDisplay(j.scheduledDate):formatDateDisplay(new Date().toISOString().split('T')[0]);
     const dateShort = dateStr.substring(0, 5); 
     const text = `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}`; 
     navigator.clipboard.writeText(text).then(() => { 
