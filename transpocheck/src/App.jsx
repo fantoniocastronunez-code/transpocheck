@@ -1196,28 +1196,8 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     const lightBg = [248, 250, 252];
     const borderColor = [226, 232, 240];
 
-    // ENCABEZADO OSCURO
-    docPDF.setFillColor(...primaryColor);
-    docPDF.rect(0, 0, 210, 40, 'F');
-
-    let pdfTitle = "CHECKLIST DE TRASLADO";
-    if (job.tripType === 'revision') pdfTitle = "CERTIFICADO DE REVISION TECNICA";
-    if (job.tripType === 'viaje') pdfTitle = "TRASLADO A REGIONES";
-
-    // TÍTULO DEL DOCUMENTO (Centrado)
-    docPDF.setTextColor(255, 255, 255);
-    docPDF.setFontSize(18);
-    docPDF.setFont("helvetica", "bold");
-    docPDF.text(cleanStr(pdfTitle), 105, 20, null, null, "center");
-
-    // FECHA DE TRASLADO (Centrada debajo del título)
-    docPDF.setFontSize(9);
-    docPDF.setFont("helvetica", "normal");
-    docPDF.setTextColor(148, 163, 184);
-    docPDF.text(`FECHA TRASLADO: ${formatDateDisplay(job.scheduledDate) || '-'}`, 105, 28, null, null, "center");
-
-    // FUNCIÓN PARA CARGAR LOGOS CON TRANSPARENCIA
-    const loadTransparentLogo = async (src) => {
+    // FUNCIÓN PARA CARGAR LOGOS SIMPLES (Respetando transparencia)
+    const loadSimpleLogo = async (src) => {
       return new Promise((resolve) => {
         const img = new Image();
         img.src = src;
@@ -1227,39 +1207,72 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
           tempCanvas.width = img.width;
           tempCanvas.height = img.height;
           const ctx = tempCanvas.getContext('2d');
-          
-          // Dibujamos la imagen directamente para conservar transparencia nativa
           ctx.drawImage(img, 0, 0, img.width, img.height);
-          resolve(tempCanvas.toDataURL('image/png'));
+          resolve({ data: tempCanvas.toDataURL('image/png'), w: img.width, h: img.height });
         };
         img.onerror = () => resolve(null);
-        setTimeout(() => resolve(null), 1500); // Timeout por si no carga
+        setTimeout(() => resolve(null), 1500); 
       });
     };
 
-    // LOGOS A LOS EXTREMOS
-    try {
-      const [logoApp, logoLogistica] = await Promise.all([
-        loadTransparentLogo('/logo.png'),
-        loadTransparentLogo('/LogoLogistica.png')
-      ]);
-      
-      docPDF.setFontSize(8);
-      docPDF.setFont("helvetica", "bold");
-      docPDF.setTextColor(255, 255, 255);
+    const [logoApp, logoLogistica] = await Promise.all([
+      loadSimpleLogo('/logo.png'),
+      loadSimpleLogo('/LogoLogistica.png')
+    ]);
 
+    // FUNCIÓN PARA DIBUJAR LA CABECERA EN CADA PÁGINA
+    const drawHeader = (titleText) => {
+      docPDF.setFillColor(...primaryColor);
+      docPDF.rect(0, 0, 210, 40, 'F');
+
+      // TÍTULO DEL DOCUMENTO (Centrado)
+      docPDF.setTextColor(255, 255, 255);
+      docPDF.setFontSize(18);
+      docPDF.setFont("helvetica", "bold");
+      docPDF.text(cleanStr(titleText), 105, 20, null, null, "center");
+
+      // FECHA DE TRASLADO
+      docPDF.setFontSize(9);
+      docPDF.setFont("helvetica", "normal");
+      docPDF.setTextColor(148, 163, 184);
+      docPDF.text(`FECHA TRASLADO: ${formatDateDisplay(job.scheduledDate) || '-'}`, 105, 28, null, null, "center");
+
+      // NOMBRES DE LA EMPRESA (Fuente elegante)
+      docPDF.setFontSize(10);
+      docPDF.setFont("times", "italic");
+      docPDF.setTextColor(255, 255, 255);
+      
       if (logoLogistica) {
-        docPDF.addImage(logoLogistica, 'PNG', 15, 8, 24, 14);
-        docPDF.text("Logística TS SpA", 27, 32, null, null, "center");
+        // Cálculo para mantener proporción y evitar que se estire
+        const ratio = logoLogistica.h / logoLogistica.w;
+        let imgW = 32; 
+        let imgH = imgW * ratio;
+        if (imgH > 22) { imgH = 22; imgW = imgH / ratio; }
+        
+        docPDF.addImage(logoLogistica.data, 'PNG', 27 - (imgW/2), 16 - (imgH/2), imgW, imgH);
+        docPDF.text("Logística TS SpA", 27, 33, null, null, "center");
       }
       
       if (logoApp) {
-        docPDF.addImage(logoApp, 'PNG', 175, 8, 16, 16);
-        docPDF.text("LogisticAPP", 183, 32, null, null, "center");
+        const ratio = logoApp.h / logoApp.w;
+        let imgW = 16; 
+        let imgH = imgW * ratio;
+        if (imgH > 22) { imgH = 22; imgW = imgH / ratio; }
+
+        docPDF.addImage(logoApp.data, 'PNG', 183 - (imgW/2), 16 - (imgH/2), imgW, imgH);
+        docPDF.text("LogisticAPP", 183, 33, null, null, "center");
       }
-    } catch(e) {
-      console.warn("Problema al cargar los logos", e);
-    }
+
+      // Resetear fuente para el resto del contenido
+      docPDF.setFont("helvetica", "normal");
+    };
+
+    let pdfTitle = "CHECKLIST DE TRASLADO";
+    if (job.tripType === 'revision') pdfTitle = "CERTIFICADO DE REVISION TECNICA";
+    if (job.tripType === 'viaje') pdfTitle = "TRASLADO A REGIONES";
+
+    // Dibujar cabecera en la primera página
+    drawHeader(pdfTitle);
 
     let currentY = 50;
 
@@ -1439,7 +1452,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     if (job.checklist?.photos) {
       const photos = job.checklist.photos;
       const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
-      let photoY = 40; let currentCol = 1; let addedPage = false;
+      let photoY = 46; let currentCol = 1; let addedPage = false;
 
       for (const key in photos) {
         // Omite la foto frontal en el anexo, pues ya se dibujó en la primera hoja
@@ -1448,9 +1461,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         if (photos[key] && typeof photos[key] === 'string' && photos[key].startsWith('data:image')) {
           if (!addedPage) {
             docPDF.addPage();
-            docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 25, 'F');
-            docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold");
-            docPDF.text(`ANEXO FOTOGRAFICO`, 105, 16, null, null, "center");
+            drawHeader("ANEXO FOTOGRAFICO");
             addedPage = true;
           }
           
@@ -1461,10 +1472,9 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
             const slotCenter = currentCol === 1 ? 55 : 155; const finalX = slotCenter - (imgW / 2);
 
             if (photoY + imgH > 275) {
-               docPDF.addPage(); photoY = 40;
-               docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 25, 'F');
-               docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold");
-               docPDF.text(`ANEXO FOTOGRAFICO (CONT.)`, 105, 16, null, null, "center");
+               docPDF.addPage(); 
+               photoY = 46; // Reiniciar Y debajo de la cabecera
+               drawHeader("ANEXO FOTOGRAFICO (CONT.)");
             }
 
             // Marco moderno de foto en anexo
