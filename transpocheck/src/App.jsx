@@ -1543,7 +1543,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       }
     } catch (e) { console.error(e); }
   };
-    
+  
   return (
     <div className="pb-16">
       {activeJobs.length > 0 && (
