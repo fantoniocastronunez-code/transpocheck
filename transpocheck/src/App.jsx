@@ -1190,7 +1190,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     const lightBg = [248, 250, 252]; // slate-50
     const borderColor = [226, 232, 240]; // slate-200
 
-    // ENCABEZADO
+    // ENCABEZADO OSCURO
     docPDF.setFillColor(...primaryColor);
     docPDF.rect(0, 0, 210, 40, 'F');
 
@@ -1203,22 +1203,31 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     docPDF.setFont("helvetica", "bold");
     docPDF.text(cleanStr(pdfTitle), 15, 22);
 
-    // ESTADO EN LA BARRA SUPERIOR (Solo Aprobado o Rechazado en negrita)
-    if (job.tripType === 'revision' && job.checklist?.rtStatus) {
-        const isApproved = job.checklist.rtStatus === 'aprobado';
-        const statusText = isApproved ? "APROBADO" : "RECHAZADO";
-        docPDF.setFontSize(20);
-        docPDF.setFont("helvetica", "bold");
-        docPDF.setTextColor(isApproved ? 74 : 239, isApproved ? 222 : 68, isApproved ? 128 : 68); 
-        docPDF.text(statusText, 195, 22, null, null, "right");
-    }
-
     docPDF.setFontSize(9);
     docPDF.setFont("helvetica", "normal");
     docPDF.setTextColor(148, 163, 184); // slate-400
     docPDF.text(cleanStr(`LOGISTICA TS SPA - FECHA TRASLADO: ${formatDateDisplay(job.scheduledDate) || '-'}`), 15, 30);
 
-    let currentY = 50;
+    let currentY = 50; // Punto de inicio por defecto para el resto del contenido
+
+    // ESTADO DE REVISIÓN (Barra traslúcida debajo del encabezado oscuro)
+    if (job.tripType === 'revision' && job.checklist?.rtStatus) {
+        const isApproved = job.checklist.rtStatus === 'aprobado';
+        const statusText = isApproved ? "APROBADO" : "RECHAZADO";
+        
+        // Dibujamos la barra de color pastel suave (traslúcida) justo debajo del encabezado (Y=40)
+        docPDF.setFillColor(isApproved ? 220 : 254, isApproved ? 252 : 226, isApproved ? 231 : 226);
+        docPDF.rect(0, 40, 210, 12, 'F');
+        
+        // Escribimos el estado en negrita alineado a la derecha sobre esta barra
+        docPDF.setFontSize(16);
+        docPDF.setFont("helvetica", "bold");
+        docPDF.setTextColor(isApproved ? 22 : 220, isApproved ? 163 : 38, isApproved ? 74 : 38); 
+        docPDF.text(statusText, 195, 48, null, null, "right");
+        
+        // Empujamos el inicio del resto del contenido más abajo para que no choque con la barra
+        currentY = 60; 
+    }
 
     // FUNCIONES AUXILIARES DE DIBUJO ELEGANTES
     const drawSectionTitle = (title, y) => {
