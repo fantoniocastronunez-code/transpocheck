@@ -1225,6 +1225,8 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     try {
       const logoImg = new Image();
       logoImg.src = '/logo.png'; // Ruta de tu logo en la carpeta public
+      logoImg.crossOrigin = "Anonymous";
+      
       // Usamos un Promise.race para evitar que el PDF se cuelgue si el logo no carga rápido
       await Promise.race([
         new Promise((resolve, reject) => {
@@ -1233,7 +1235,17 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         }),
         new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout logo")), 1500))
       ]);
-      docPDF.addImage(logoImg, 'PNG', 181, 8, 14, 14);
+      
+      // Dibujamos en un canvas interno para evitar que jsPDF genere bordes grises de transparencia
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = logoImg.width;
+      tempCanvas.height = logoImg.height;
+      const ctx = tempCanvas.getContext('2d');
+      ctx.drawImage(logoImg, 0, 0, logoImg.width, logoImg.height);
+      const cleanLogo = tempCanvas.toDataURL('image/png');
+
+      // Logo más grande y centrado en relación al texto
+      docPDF.addImage(cleanLogo, 'PNG', 175, 6, 20, 20);
     } catch(e) {
       console.warn("Logo no cargado para el PDF", e);
     }
@@ -1241,7 +1253,8 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     docPDF.setFontSize(10);
     docPDF.setFont("helvetica", "bold");
     docPDF.setTextColor(255, 255, 255);
-    docPDF.text("LogisticAPP", 195, 32, null, null, "right");
+    // Texto centrado en X=185 (mitad del logo) y pegado abajo
+    docPDF.text("LogisticAPP", 185, 33, null, null, "center");
 
     let currentY = 50;
 
@@ -1514,8 +1527,8 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         handleCopyWhatsApp(job); 
       }
     } catch (e) { console.error(e); }
-  };
-    
+  };  
+  
   return (
     <div className="pb-16">
       {activeJobs.length > 0 && (
