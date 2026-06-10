@@ -1204,15 +1204,44 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     if (job.tripType === 'revision') pdfTitle = "CERTIFICADO DE REVISION TECNICA";
     if (job.tripType === 'viaje') pdfTitle = "TRASLADO A REGIONES";
 
+    // TÍTULO DEL DOCUMENTO
     docPDF.setTextColor(255, 255, 255);
-    docPDF.setFontSize(22);
+    docPDF.setFontSize(20);
     docPDF.setFont("helvetica", "bold");
-    docPDF.text(cleanStr(pdfTitle), 15, 22);
+    docPDF.text(cleanStr(pdfTitle), 15, 18);
 
+    // NOMBRE DE LA EMPRESA (Más grande)
+    docPDF.setFontSize(12);
+    docPDF.setFont("helvetica", "bold");
+    docPDF.text("LOGISTICA TS SPA", 15, 26);
+
+    // FECHA DE TRASLADO
     docPDF.setFontSize(9);
     docPDF.setFont("helvetica", "normal");
     docPDF.setTextColor(148, 163, 184);
-    docPDF.text(cleanStr(`LOGISTICA TS SPA - FECHA TRASLADO: ${formatDateDisplay(job.scheduledDate) || '-'}`), 15, 30);
+    docPDF.text(`FECHA TRASLADO: ${formatDateDisplay(job.scheduledDate) || '-'}`, 15, 32);
+
+    // LOGO Y NOMBRE DE LA APP A LA DERECHA
+    try {
+      const logoImg = new Image();
+      logoImg.src = '/logo.png'; // Ruta de tu logo en la carpeta public
+      // Usamos un Promise.race para evitar que el PDF se cuelgue si el logo no carga rápido
+      await Promise.race([
+        new Promise((resolve, reject) => {
+           logoImg.onload = resolve;
+           logoImg.onerror = reject;
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout logo")), 1500))
+      ]);
+      docPDF.addImage(logoImg, 'PNG', 181, 8, 14, 14);
+    } catch(e) {
+      console.warn("Logo no cargado para el PDF", e);
+    }
+    
+    docPDF.setFontSize(10);
+    docPDF.setFont("helvetica", "bold");
+    docPDF.setTextColor(255, 255, 255);
+    docPDF.text("LogisticAPP", 195, 32, null, null, "right");
 
     let currentY = 50;
 
@@ -1486,7 +1515,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       }
     } catch (e) { console.error(e); }
   };
-  
+    
   return (
     <div className="pb-16">
       {activeJobs.length > 0 && (
