@@ -1186,7 +1186,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     docPDF.setFontSize(9);
     docPDF.setFont("helvetica", "normal");
     docPDF.setTextColor(148, 163, 184); // slate-400
-    docPDF.text(`LOGISTIC APP OFICIAL • ID: ${job.id.substring(0,8).toUpperCase()} • FECHA TRASLADO: ${formatDateDisplay(job.scheduledDate) || '-'}`, 15, 30);
+    docPDF.text(`LOGISTICA TS SPA • FECHA TRASLADO: ${formatDateDisplay(job.scheduledDate) || '-'}`, 15, 30);
 
     let currentY = 50;
 
@@ -1214,17 +1214,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       docPDF.setTextColor(...primaryColor);
       docPDF.text(value, x, y + 5);
     };
-
-    // ALERTA DE RECHAZO / FALLIDO
-    if (job.status === 'failed') {
-      docPDF.setFillColor(254, 226, 226);
-      docPDF.rect(15, currentY, 180, 14, 'F');
-      docPDF.setTextColor(220, 38, 38);
-      docPDF.setFontSize(11);
-      docPDF.setFont("helvetica", "bold");
-      docPDF.text(`⚠ ESTADO: FALLIDO / RECHAZADO - ${job.failedReason || 'Sin motivo reportado'}`, 20, currentY + 9);
-      currentY += 22;
-    }
 
     let driverNameStr = job.checklist?.assignedDriverName || job.acceptedByEmail || "No registrado";
     if (job.acceptedByEmail) { const foundDriver = drivers?.find(d => d.email === job.acceptedByEmail); if (foundDriver) driverNameStr = foundDriver.name; }
@@ -1275,9 +1264,9 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     if (job.tripType === 'revision') {
        currentY = drawSectionTitle("3. Resultado de Revisión Técnica", currentY);
        if (job.checklist?.rtStatus === 'aprobado') {
-         docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(14); docPDF.text("✅ APROBADO", 15, currentY+4);
+         docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(14); docPDF.text("APROBADO", 15, currentY+4);
        } else {
-         docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(14); docPDF.text("❌ RECHAZADO", 15, currentY+4);
+         docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(14); docPDF.text("RECHAZADO", 15, currentY+4);
          docPDF.setFontSize(10); docPDF.setTextColor(...secondaryColor);
          docPDF.text(`Motivo: ${job.checklist?.rtRejectReason || 'No especificada'}`, 15, currentY + 12);
        }
@@ -1286,7 +1275,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
 
       if (job.checklist?.noReception) {
         docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(10);
-        docPDF.text("⚠ ENTREGA SIN RECEPCIÓN (Confirmada por conductor en terreno)", 15, currentY + 4);
+        docPDF.text("ENTREGA SIN RECEPCIÓN (Confirmada por conductor en terreno)", 15, currentY + 4);
       } else {
         drawKV("Receptor Final", `${job.checklist?.receiverName || 'N/A'}`, 15, currentY);
         drawKV("RUT", `${job.checklist?.receiverRut || 'N/A'}`, 90, currentY);
@@ -1375,8 +1364,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     return docPDF;
   };
 
-  const getDStr = j => j.scheduledDate?formatDateDisplay(j.scheduledDate):formatDateDisplay(new Date().toISOString().split('T')[0]);  const handleCopyWhatsApp = (job) => { 
-    const dateStr = getDStr(job);
+  const getDStr = j => j.scheduledDate?formatDateDisplay(j.scheduledDate):formatDateDisplay(new Date().toISOString().split('T')[0]);    const dateStr = getDStr(job);
     const dateShort = dateStr.substring(0, 5); 
     const text = `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}`; 
     navigator.clipboard.writeText(text).then(() => { 
