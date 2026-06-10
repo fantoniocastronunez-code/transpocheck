@@ -1056,6 +1056,20 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     } catch (e) { console.error(e); }
   };
 
+const getRouteStr = (j) => {
+    if (j.tripType === 'revision') {
+       if (j.checklist?.rtStatus === 'aprobado') {
+           const ret = j.checklist.rtReturnOption === 'other' ? j.checklist.rtReturnDestination : j.origin;
+           return `${j.origin} -> PRT -> ${ret || '-'}`;
+       }
+       if (j.checklist?.rtStatus === 'rechazado') {
+           return `${j.origin} -> PRT (Rechazada)`;
+       }
+       return `${j.origin} -> Planta de Revisión (PRT)`;
+    }
+    return `${j.origin} -> ${j.destination}`;
+  };
+
   const buildPDFDoc = async (job) => {
     if (!window.jspdf) {
       await new Promise((resolve, reject) => { const script = document.createElement('script'); script.src = "[https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js](https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js)"; script.onload = resolve; script.onerror = reject; document.head.appendChild(script); });
@@ -1063,7 +1077,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     const { jsPDF } = window.jspdf;
     const docPDF = new jsPDF();
 
-    // NUEVO: Función para limpiar emojis y caracteres raros
+    // Función para limpiar emojis y caracteres raros
     const cleanStr = (str) => {
       if (!str) return '';
       return String(str)
@@ -1092,7 +1106,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     docPDF.setFont("helvetica", "bold");
     docPDF.text(cleanStr(pdfTitle), 15, 22);
 
-    // NUEVO: ESTADO EN LA BARRA SUPERIOR (Solo Aprobado o Rechazado en negrita)
+    // ESTADO EN LA BARRA SUPERIOR (Solo Aprobado o Rechazado en negrita)
     if (job.tripType === 'revision' && job.checklist?.rtStatus) {
         const isApproved = job.checklist.rtStatus === 'aprobado';
         const statusText = isApproved ? "APROBADO" : "RECHAZADO";
