@@ -1401,7 +1401,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       }
     } catch (e) { console.error(e); }
   };
-
   return (
     <div className="pb-16">
       {activeJobs.length > 0 && (
@@ -1491,7 +1490,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     </div>
   );
 }
-
 function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList }) {
   const isQuick = job.id === 'NEW_QUICK_JOB'; 
   const localStorageKey = `checklist_draft_${job.id}`;
