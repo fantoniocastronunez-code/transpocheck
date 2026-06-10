@@ -1137,19 +1137,19 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     });
   };
 
-  const handleFailJob = async (job, reason) => {
+ const handleFailJob = async (job, reason) => {
     try {
       if (job.tripType === 'revision' && reason === 'RECHAZO_RT_AUTOMATICO') {
           const cloneJob = {
-              scheduledDate: job.scheduledDate || null, client: job.client || '', brand: job.brand || '', model: job.model || '', vin: job.vin || '', plate: job.plate || '',
-              origin: job.origin || '', destination: job.destination || '', tripType: job.tripType || 'traslado', rtData: job.rtData || null,
+              scheduledDate: job.scheduledDate, client: job.client, brand: job.brand, model: job.model, vin: job.vin, plate: job.plate,
+              origin: job.origin, destination: job.destination, tripType: job.tripType, rtData: job.rtData,
               assignedDrivers: job.assignedDrivers || [], assignedEmails: job.assignedEmails || [],
               status: 'pending', createdAt: Date.now(), checklist: null
           };
           await addDoc(collection(db, 'transport_jobs'), cloneJob);
       }
       await updateDoc(doc(db, 'transport_jobs', job.id), { 
-        status: 'failed', failedReason: reason === 'RECHAZO_RT_AUTOMATICO' ? (job.checklist?.rtRejectReason || 'Revisión Técnica Rechazada') : reason, 
+        status: 'failed', failedReason: reason === 'RECHAZO_RT_AUTOMATICO' ? job.checklist?.rtRejectReason || 'Revisión Técnica Rechazada' : reason, 
         completedAt: Date.now(), acceptedByEmail: job.acceptedByEmail || currentUserEmail
       });
       setJobToFail(null); showAlert(reason === 'RECHAZO_RT_AUTOMATICO' ? "Revisión guardada como rechazada y se ha creado un nuevo traslado pendiente." : "Trabajo marcado como fallido.");
@@ -1162,32 +1162,80 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     }
     const { jsPDF } = window.jspdf;
     const docPDF = new jsPDF();
-    
-    docPDF.setFillColor(37, 99, 235); docPDF.rect(0, 0, 210, 30, 'F'); docPDF.setTextColor(255, 255, 255);
-    
-    let pdfTitle = "CHECKLIST DE TRASLADO";
-    if (job.tripType === 'revision') pdfTitle = "CERTIFICADO DE REVISIÓN";
-    if (job.tripType === 'viaje') pdfTitle = "TRASLADO A REGIONES";
-    
-    docPDF.setFontSize(22); docPDF.setFont("helvetica", "bold"); docPDF.text(pdfTitle, 105, 20, null, null, "center");
-    docPDF.setTextColor(0, 0, 0);
 
+    // Paleta de Colores Corporativa
+    const primaryColor = [30, 41, 59]; // slate-800
+    const secondaryColor = [100, 116, 139]; // slate-500
+    const accentColor = [37, 99, 235]; // blue-600
+    const lightBg = [248, 250, 252]; // slate-50
+    const borderColor = [226, 232, 240]; // slate-200
+
+    // ENCABEZADO
+    docPDF.setFillColor(...primaryColor);
+    docPDF.rect(0, 0, 210, 40, 'F');
+
+    let pdfTitle = "CHECKLIST DE TRASLADO";
+    if (job.tripType === 'revision') pdfTitle = "CERTIFICADO DE REVISIÓN TÉCNICA";
+    if (job.tripType === 'viaje') pdfTitle = "TRASLADO A REGIONES";
+
+    docPDF.setTextColor(255, 255, 255);
+    docPDF.setFontSize(22);
+    docPDF.setFont("helvetica", "bold");
+    docPDF.text(pdfTitle, 15, 22);
+
+    docPDF.setFontSize(9);
+    docPDF.setFont("helvetica", "normal");
+    docPDF.setTextColor(148, 163, 184); // slate-400
+    docPDF.text(`LOGISTIC APP OFICIAL • ID: ${job.id.substring(0,8).toUpperCase()} • FECHA TRASLADO: ${formatDateDisplay(job.scheduledDate) || '-'}`, 15, 30);
+
+    let currentY = 50;
+
+    // FUNCIONES AUXILIARES DE DIBUJO ELEGANTES
+    const drawSectionTitle = (title, y) => {
+      docPDF.setFillColor(...lightBg);
+      docPDF.rect(15, y - 6, 180, 10, 'F');
+      docPDF.setDrawColor(...accentColor);
+      docPDF.setLineWidth(1);
+      docPDF.line(15, y - 6, 15, y + 4);
+      docPDF.setTextColor(...primaryColor);
+      docPDF.setFontSize(11);
+      docPDF.setFont("helvetica", "bold");
+      docPDF.text(title.toUpperCase(), 20, y+1);
+      return y + 12;
+    };
+
+    const drawKV = (label, value, x, y) => {
+      docPDF.setFontSize(8);
+      docPDF.setFont("helvetica", "normal");
+      docPDF.setTextColor(...secondaryColor);
+      docPDF.text(label.toUpperCase(), x, y);
+      docPDF.setFontSize(10);
+      docPDF.setFont("helvetica", "bold");
+      docPDF.setTextColor(...primaryColor);
+      docPDF.text(value, x, y + 5);
+    };
+
+    // ALERTA DE RECHAZO / FALLIDO
     if (job.status === 'failed') {
-      docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(12); docPDF.text(`TRABAJO FALLIDO: ${job.failedReason || 'Sin motivo'}`, 20, 37); docPDF.setTextColor(0, 0, 0);
+      docPDF.setFillColor(254, 226, 226);
+      docPDF.rect(15, currentY, 180, 14, 'F');
+      docPDF.setTextColor(220, 38, 38);
+      docPDF.setFontSize(11);
+      docPDF.setFont("helvetica", "bold");
+      docPDF.text(`⚠ ESTADO: FALLIDO / RECHAZADO - ${job.failedReason || 'Sin motivo reportado'}`, 20, currentY + 9);
+      currentY += 22;
     }
-    
+
     let driverNameStr = job.checklist?.assignedDriverName || job.acceptedByEmail || "No registrado";
     if (job.acceptedByEmail) { const foundDriver = drivers?.find(d => d.email === job.acceptedByEmail); if (foundDriver) driverNameStr = foundDriver.name; }
 
-    docPDF.setFillColor(241, 245, 249); docPDF.rect(15, 40, 180, 50, 'F');
-    docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold"); docPDF.text("1. DATOS DEL SERVICIO Y VEHÍCULO", 20, 48);
-    
-    docPDF.setFontSize(11);
-    docPDF.setFont("helvetica", "normal"); docPDF.text(`Fecha Traslado:`, 20, 58); docPDF.setFont("helvetica", "bold"); docPDF.text(`${formatDateDisplay(job.scheduledDate) || '-'}`, 52, 58);
-    docPDF.setFont("helvetica", "normal"); docPDF.text(`Cliente:`, 110, 58); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.client || 'Sin Cliente'}`, 125, 58);
-    docPDF.setFont("helvetica", "normal"); docPDF.text(`Vehículo:`, 20, 66); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.brand || '-'} ${job.model || '-'}`, 40, 66);
-    docPDF.setFont("helvetica", "normal"); docPDF.text(`Patente/VIN:`, 110, 66); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.plate || job.vin || '-'}`, 135, 66);
-    
+    // SECCIÓN 1: DETALLES GENERALES
+    currentY = drawSectionTitle("1. Detalles del Vehículo y Servicio", currentY);
+    drawKV("Cliente Asociado", `${job.client || 'Sin Cliente'}`, 15, currentY);
+    drawKV("Marca y Modelo", `${job.brand || '-'} ${job.model || '-'}`, 80, currentY);
+    drawKV("Patente / VIN", `${job.plate || job.vin || '-'}`, 145, currentY);
+
+    currentY += 14;
     let routeText = `${job.origin || '-'}  ->  ${job.destination || '-'}`;
     if (job.tripType === 'revision') {
       if (job.checklist?.rtStatus === 'aprobado') {
@@ -1199,93 +1247,353 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
          routeText = `${job.origin || '-'}  ->  PRT`;
       }
     }
+    drawKV("Ruta Asignada", routeText, 15, currentY);
+    drawKV("Conductor a Cargo", driverNameStr, 145, currentY);
 
-    docPDF.setFont("helvetica", "normal"); docPDF.text(`Ruta:`, 20, 74); docPDF.setFont("helvetica", "bold"); docPDF.text(routeText, 35, 74);
-    docPDF.setFont("helvetica", "normal"); docPDF.text(`Conductor:`, 20, 82); docPDF.setFont("helvetica", "bold"); docPDF.text(`${driverNameStr}`, 45, 82);
+    currentY += 18;
 
-    docPDF.setFillColor(241, 245, 249); docPDF.rect(15, 95, 180, 45, 'F');
-    docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold"); docPDF.text("2. ESTADO Y DOCUMENTACIÓN", 20, 103);
-    
-    docPDF.setFontSize(11);
-    docPDF.setFont("helvetica", "normal"); docPDF.text(`Nivel de Combustible:`, 20, 113); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.checklist?.fuelLevel || '0'}%`, 65, 113);
-    
+    // SECCIÓN 2: RECEPCIÓN Y DOCUMENTACIÓN
+    currentY = drawSectionTitle("2. Recepción y Estado General", currentY);
+    drawKV("Nivel Combustible", `${job.checklist?.fuelLevel || '0'}%`, 15, currentY);
+
     const docs = job.checklist?.docs || {};
-    docPDF.setFont("helvetica", "normal"); docPDF.text(`SOAP:`, 20, 122); docPDF.setFont("helvetica", "bold"); docPDF.text(docs.soap ? 'SÍ' : 'NO', 35, 122);
-    docPDF.setFont("helvetica", "normal"); docPDF.text(`Permiso de Circ.:`, 60, 122); docPDF.setFont("helvetica", "bold"); docPDF.text(docs.permiso ? 'SÍ' : 'NO', 93, 122);
-    docPDF.setFont("helvetica", "normal"); docPDF.text(`Rev. Técnica:`, 120, 122); docPDF.setFont("helvetica", "bold"); docPDF.text(docs.revTecnica ? 'SÍ' : 'NO', 148, 122);
-    docPDF.setFont("helvetica", "normal"); docPDF.text(`Gases:`, 165, 122); docPDF.setFont("helvetica", "bold"); docPDF.text(docs.gases ? 'SÍ' : 'NO', 180, 122);
-    
-    docPDF.setFont("helvetica", "normal"); docPDF.text(`Observaciones:`, 20, 131); 
-    const obsSplit = docPDF.splitTextToSize(`${job.checklist?.observations || 'Ninguna'}`, 140); docPDF.text(obsSplit, 50, 131);
+    drawKV("Seguro SOAP", docs.soap ? 'AL DÍA' : 'FALTA', 60, currentY);
+    drawKV("Permiso de Circ.", docs.permiso ? 'AL DÍA' : 'FALTA', 100, currentY);
+    drawKV("Rev. Técnica", docs.revTecnica ? 'AL DÍA' : 'FALTA', 140, currentY);
+    drawKV("Gases", docs.gases ? 'AL DÍA' : 'FALTA', 175, currentY);
 
-    const startY = 131 + (obsSplit.length * 5) + 10;
-    let currentY = startY;
+    currentY += 14;
+    docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
+    docPDF.text("OBSERVACIONES DEL CONDUCTOR:", 15, currentY);
+    docPDF.setFontSize(10); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
+    const obsSplit = docPDF.splitTextToSize(`${job.checklist?.observations || 'Sin observaciones registradas.'}`, 180);
+    docPDF.text(obsSplit, 15, currentY + 5);
 
+    currentY += (obsSplit.length * 5) + 12;
+
+    // SECCIÓN 3: RESULTADOS / RECEPCIÓN
     if (job.tripType === 'revision') {
-       docPDF.setFillColor(241, 245, 249); docPDF.rect(15, currentY, 180, 40, 'F');
-       docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold"); docPDF.text("3. RESULTADO REVISIÓN", 20, currentY + 8);
-       docPDF.setFontSize(12);
+       currentY = drawSectionTitle("3. Resultado de Revisión Técnica", currentY);
        if (job.checklist?.rtStatus === 'aprobado') {
-         docPDF.setTextColor(22, 163, 74); docPDF.text("APROBADO", 20, currentY + 20); docPDF.setTextColor(0, 0, 0);
+         docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(14); docPDF.text("✅ APROBADO", 15, currentY+4);
        } else {
-         docPDF.setTextColor(220, 38, 38); docPDF.text("RECHAZADO", 20, currentY + 20); docPDF.setTextColor(0, 0, 0);
-         docPDF.setFontSize(11); docPDF.setFont("helvetica", "normal");
-         docPDF.text(`Razón: ${job.checklist?.rtRejectReason || 'No especificada'}`, 20, currentY + 30);
+         docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(14); docPDF.text("❌ RECHAZADO", 15, currentY+4);
+         docPDF.setFontSize(10); docPDF.setTextColor(...secondaryColor);
+         docPDF.text(`Motivo: ${job.checklist?.rtRejectReason || 'No especificada'}`, 15, currentY + 12);
        }
-       currentY += 45;
-       docPDF.setFillColor(241, 245, 249); docPDF.rect(15, currentY, 180, 60, 'F');
-       docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold"); docPDF.text("4. RECEPCIÓN", 20, currentY + 8);
     } else {
-       docPDF.setFillColor(241, 245, 249); docPDF.rect(15, currentY, 180, 60, 'F');
-       docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold"); docPDF.text("3. RECEPCIÓN", 20, currentY + 8);
-    }
-    
-    if (job.checklist?.noReception) {
-      docPDF.setTextColor(220, 38, 38);
-      docPDF.setFontSize(12);
-      docPDF.text("ENTREGA SIN RECEPCIÓN (Confirmada por conductor)", 20, currentY + 20);
-      docPDF.setTextColor(0, 0, 0);
-    } else {
-      docPDF.setFontSize(11);
-      docPDF.setFont("helvetica", "normal"); docPDF.text(`Receptor:`, 20, currentY + 18); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.checklist?.receiverName || 'N/A'}`, 42, currentY + 18);
-      docPDF.setFont("helvetica", "normal"); docPDF.text(`RUT:`, 110, currentY + 18); docPDF.setFont("helvetica", "bold"); docPDF.text(`${job.checklist?.receiverRut || 'N/A'}`, 122, currentY + 18);
-      if(job.checklist?.signatureData) { docPDF.setFont("helvetica", "normal"); docPDF.text(`Firma conformada:`, 20, currentY + 45); docPDF.addImage(job.checklist.signatureData, 'PNG', 55, currentY + 30, 70, 45); }
+      currentY = drawSectionTitle("3. Conformidad de Entrega", currentY);
+
+      if (job.checklist?.noReception) {
+        docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(10);
+        docPDF.text("⚠ ENTREGA SIN RECEPCIÓN (Confirmada por conductor en terreno)", 15, currentY + 4);
+      } else {
+        drawKV("Receptor Final", `${job.checklist?.receiverName || 'N/A'}`, 15, currentY);
+        drawKV("RUT", `${job.checklist?.receiverRut || 'N/A'}`, 90, currentY);
+        if(job.checklist?.signatureData) {
+            docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
+            docPDF.text("FIRMA DE CONFORMIDAD:", 140, currentY);
+            docPDF.addImage(job.checklist.signatureData, 'PNG', 140, currentY + 2, 45, 25);
+        }
+      }
+      currentY += 28; 
+      if (job.checklist?.location) {
+        const { lat, lng } = job.checklist.location;
+        docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
+        docPDF.text(`UBICACIÓN GPS:`, 15, currentY);
+        docPDF.setFontSize(10); docPDF.setTextColor(...accentColor);
+        docPDF.textWithLink('Clic aquí para verificar en Google Maps', 45, currentY, { url: `https://www.google.com/maps?q=${lat},${lng}` });
+      }
     }
 
-    if (job.checklist?.location) {
-      const { lat, lng } = job.checklist.location;
-      docPDF.setFont("helvetica", "normal"); docPDF.text(`Ubicación GPS:`, 20, currentY + 28);
-      docPDF.setTextColor(37, 99, 235); docPDF.textWithLink('Ver en Google Maps', 52, currentY + 28, { url: `https://www.google.com/maps?q=${lat},${lng}` }); docPDF.setTextColor(0, 0, 0); 
-    } else { docPDF.setFont("helvetica", "normal"); docPDF.text(`Ubicación GPS: No registrada`, 20, currentY + 28); }
+    // PIE DE PÁGINA GLOBAL
+    const addFooter = () => {
+       const pageCount = docPDF.internal.getNumberOfPages();
+       for(let i = 1; i <= pageCount; i++) {
+           docPDF.setPage(i);
+           docPDF.setFontSize(8);
+           docPDF.setTextColor(148, 163, 184);
+           docPDF.text(`Generado por LogisticAPP el ${new Date().toLocaleString('es-CL')} - Página ${i} de ${pageCount}`, 105, 290, null, null, "center");
+       }
+    }
 
-    if (job.checklist?.photos) {
+    // SECCIÓN 4: FOTOS (ANEXO)
+    if (job.tripType !== 'revision' && job.checklist?.photos) {
       const photos = job.checklist.photos;
       const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atrás', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
-      let photoY = 30; let currentCol = 1; let addedPage = false;
+      let photoY = 40; let currentCol = 1; let addedPage = false;
       const getImageDims = (src) => new Promise(resolve => { const img = new Image(); img.onload = () => resolve({ w: img.width, h: img.height }); img.src = src; });
 
       for (const key in photos) {
         if (photos[key]) {
           if (!addedPage) {
-            docPDF.addPage(); docPDF.setFillColor(37, 99, 235); docPDF.rect(0, 0, 210, 20, 'F'); docPDF.setTextColor(255, 255, 255);
-            docPDF.setFontSize(16); docPDF.setFont("helvetica", "bold"); docPDF.text(`REGISTRO FOTOGRÁFICO ADJUNTO`, 105, 14, null, null, "center"); docPDF.setTextColor(0, 0, 0); addedPage = true;
+            docPDF.addPage();
+            docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 25, 'F');
+            docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold");
+            docPDF.text(`ANEXO FOTOGRÁFICO`, 105, 16, null, null, "center");
+            addedPage = true;
           }
           const dims = await getImageDims(photos[key]);
           const ratio = dims.h / dims.w;
-          let imgW = 80; let imgH = imgW * ratio; if (imgH > 100) { imgH = 100; imgW = imgH / ratio; }
+          let imgW = 85; let imgH = imgW * ratio; if (imgH > 95) { imgH = 95; imgW = imgH / ratio; }
           const slotCenter = currentCol === 1 ? 55 : 155; const finalX = slotCenter - (imgW / 2);
 
-          if (photoY + imgH > 280) {
-             docPDF.addPage(); photoY = 30; docPDF.setFillColor(37, 99, 235); docPDF.rect(0, 0, 210, 20, 'F'); docPDF.setTextColor(255, 255, 255);
-             docPDF.setFontSize(16); docPDF.setFont("helvetica", "bold"); docPDF.text(`REGISTRO FOTOGRÁFICO (CONT.)`, 105, 14, null, null, "center"); docPDF.setTextColor(0, 0, 0);
+          if (photoY + imgH > 275) {
+             docPDF.addPage(); photoY = 40;
+             docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 25, 'F');
+             docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold");
+             docPDF.text(`ANEXO FOTOGRÁFICO (CONT.)`, 105, 16, null, null, "center");
           }
-          docPDF.setFontSize(11); docPDF.setFont("helvetica", "bold"); docPDF.text(labels[key] || key, slotCenter, photoY - 3, { align: "center" });
-          docPDF.setDrawColor(200, 200, 200); docPDF.rect(finalX - 1, photoY - 1, imgW + 2, imgH + 2); 
-          docPDF.addImage(photos[key], 'JPEG', finalX, photoY, imgW, imgH);
-          if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 15; }
+
+          // Marco moderno de foto
+          docPDF.setDrawColor(...borderColor);
+          docPDF.setLineWidth(0.5);
+          docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S');
+          
+          docPDF.setFillColor(...lightBg);
+          docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F');
+          docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor);
+          docPDF.text((labels[key] || key).toUpperCase(), slotCenter, photoY - 3, { align: "center" });
+
+          // Foto
+          docPDF.addImage(photos[key], 'JPEG', finalX, photoY + 2, imgW, imgH);
+
+          if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 20; }
         }
       }
     }
+
+    addFooter();
+    return docPDF;
+  };
+
+  const getDStr = j => j.scheduledDate?formatDateDisplay(j.scheduledDate):formatDateDisplay(new Date().toISOString().split('T')[0]);const handleFailJob = async (job, reason) => {
+    try {
+      if (job.tripType === 'revision' && reason === 'RECHAZO_RT_AUTOMATICO') {
+          const cloneJob = {
+              scheduledDate: job.scheduledDate, client: job.client, brand: job.brand, model: job.model, vin: job.vin, plate: job.plate,
+              origin: job.origin, destination: job.destination, tripType: job.tripType, rtData: job.rtData,
+              assignedDrivers: job.assignedDrivers || [], assignedEmails: job.assignedEmails || [],
+              status: 'pending', createdAt: Date.now(), checklist: null
+          };
+          await addDoc(collection(db, 'transport_jobs'), cloneJob);
+      }
+      await updateDoc(doc(db, 'transport_jobs', job.id), { 
+        status: 'failed', failedReason: reason === 'RECHAZO_RT_AUTOMATICO' ? job.checklist?.rtRejectReason || 'Revisión Técnica Rechazada' : reason, 
+        completedAt: Date.now(), acceptedByEmail: job.acceptedByEmail || currentUserEmail
+      });
+      setJobToFail(null); showAlert(reason === 'RECHAZO_RT_AUTOMATICO' ? "Revisión guardada como rechazada y se ha creado un nuevo traslado pendiente." : "Trabajo marcado como fallido.");
+    } catch (e) { console.error(e); }
+  };
+
+  const buildPDFDoc = async (job) => {
+    if (!window.jspdf) {
+      await new Promise((resolve, reject) => { const script = document.createElement('script'); script.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"; script.onload = resolve; script.onerror = reject; document.head.appendChild(script); });
+    }
+    const { jsPDF } = window.jspdf;
+    const docPDF = new jsPDF();
+
+    // Paleta de Colores Corporativa
+    const primaryColor = [30, 41, 59]; // slate-800
+    const secondaryColor = [100, 116, 139]; // slate-500
+    const accentColor = [37, 99, 235]; // blue-600
+    const lightBg = [248, 250, 252]; // slate-50
+    const borderColor = [226, 232, 240]; // slate-200
+
+    // ENCABEZADO
+    docPDF.setFillColor(...primaryColor);
+    docPDF.rect(0, 0, 210, 40, 'F');
+
+    let pdfTitle = "CHECKLIST DE TRASLADO";
+    if (job.tripType === 'revision') pdfTitle = "CERTIFICADO DE REVISIÓN TÉCNICA";
+    if (job.tripType === 'viaje') pdfTitle = "TRASLADO A REGIONES";
+
+    docPDF.setTextColor(255, 255, 255);
+    docPDF.setFontSize(22);
+    docPDF.setFont("helvetica", "bold");
+    docPDF.text(pdfTitle, 15, 22);
+
+    docPDF.setFontSize(9);
+    docPDF.setFont("helvetica", "normal");
+    docPDF.setTextColor(148, 163, 184); // slate-400
+    docPDF.text(`LOGISTIC APP OFICIAL • ID: ${job.id.substring(0,8).toUpperCase()} • FECHA TRASLADO: ${formatDateDisplay(job.scheduledDate) || '-'}`, 15, 30);
+
+    let currentY = 50;
+
+    // FUNCIONES AUXILIARES DE DIBUJO ELEGANTES
+    const drawSectionTitle = (title, y) => {
+      docPDF.setFillColor(...lightBg);
+      docPDF.rect(15, y - 6, 180, 10, 'F');
+      docPDF.setDrawColor(...accentColor);
+      docPDF.setLineWidth(1);
+      docPDF.line(15, y - 6, 15, y + 4);
+      docPDF.setTextColor(...primaryColor);
+      docPDF.setFontSize(11);
+      docPDF.setFont("helvetica", "bold");
+      docPDF.text(title.toUpperCase(), 20, y+1);
+      return y + 12;
+    };
+
+    const drawKV = (label, value, x, y) => {
+      docPDF.setFontSize(8);
+      docPDF.setFont("helvetica", "normal");
+      docPDF.setTextColor(...secondaryColor);
+      docPDF.text(label.toUpperCase(), x, y);
+      docPDF.setFontSize(10);
+      docPDF.setFont("helvetica", "bold");
+      docPDF.setTextColor(...primaryColor);
+      docPDF.text(value, x, y + 5);
+    };
+
+    // ALERTA DE RECHAZO / FALLIDO
+    if (job.status === 'failed') {
+      docPDF.setFillColor(254, 226, 226);
+      docPDF.rect(15, currentY, 180, 14, 'F');
+      docPDF.setTextColor(220, 38, 38);
+      docPDF.setFontSize(11);
+      docPDF.setFont("helvetica", "bold");
+      docPDF.text(`⚠ ESTADO: FALLIDO / RECHAZADO - ${job.failedReason || 'Sin motivo reportado'}`, 20, currentY + 9);
+      currentY += 22;
+    }
+
+    let driverNameStr = job.checklist?.assignedDriverName || job.acceptedByEmail || "No registrado";
+    if (job.acceptedByEmail) { const foundDriver = drivers?.find(d => d.email === job.acceptedByEmail); if (foundDriver) driverNameStr = foundDriver.name; }
+
+    // SECCIÓN 1: DETALLES GENERALES
+    currentY = drawSectionTitle("1. Detalles del Vehículo y Servicio", currentY);
+    drawKV("Cliente Asociado", `${job.client || 'Sin Cliente'}`, 15, currentY);
+    drawKV("Marca y Modelo", `${job.brand || '-'} ${job.model || '-'}`, 80, currentY);
+    drawKV("Patente / VIN", `${job.plate || job.vin || '-'}`, 145, currentY);
+
+    currentY += 14;
+    let routeText = `${job.origin || '-'}  ->  ${job.destination || '-'}`;
+    if (job.tripType === 'revision') {
+      if (job.checklist?.rtStatus === 'aprobado') {
+         const ret = job.checklist.rtReturnOption === 'other' ? job.checklist.rtReturnDestination : job.origin;
+         routeText = `${job.origin || '-'}  ->  PRT  ->  ${ret || '-'}`;
+      } else if (job.checklist?.rtStatus === 'rechazado') {
+         routeText = `${job.origin || '-'}  ->  PRT (Rechazada)`;
+      } else {
+         routeText = `${job.origin || '-'}  ->  PRT`;
+      }
+    }
+    drawKV("Ruta Asignada", routeText, 15, currentY);
+    drawKV("Conductor a Cargo", driverNameStr, 145, currentY);
+
+    currentY += 18;
+
+    // SECCIÓN 2: RECEPCIÓN Y DOCUMENTACIÓN
+    currentY = drawSectionTitle("2. Recepción y Estado General", currentY);
+    drawKV("Nivel Combustible", `${job.checklist?.fuelLevel || '0'}%`, 15, currentY);
+
+    const docs = job.checklist?.docs || {};
+    drawKV("Seguro SOAP", docs.soap ? 'AL DÍA' : 'FALTA', 60, currentY);
+    drawKV("Permiso de Circ.", docs.permiso ? 'AL DÍA' : 'FALTA', 100, currentY);
+    drawKV("Rev. Técnica", docs.revTecnica ? 'AL DÍA' : 'FALTA', 140, currentY);
+    drawKV("Gases", docs.gases ? 'AL DÍA' : 'FALTA', 175, currentY);
+
+    currentY += 14;
+    docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
+    docPDF.text("OBSERVACIONES DEL CONDUCTOR:", 15, currentY);
+    docPDF.setFontSize(10); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
+    const obsSplit = docPDF.splitTextToSize(`${job.checklist?.observations || 'Sin observaciones registradas.'}`, 180);
+    docPDF.text(obsSplit, 15, currentY + 5);
+
+    currentY += (obsSplit.length * 5) + 12;
+
+    // SECCIÓN 3: RESULTADOS / RECEPCIÓN
+    if (job.tripType === 'revision') {
+       currentY = drawSectionTitle("3. Resultado de Revisión Técnica", currentY);
+       if (job.checklist?.rtStatus === 'aprobado') {
+         docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(14); docPDF.text("✅ APROBADO", 15, currentY+4);
+       } else {
+         docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(14); docPDF.text("❌ RECHAZADO", 15, currentY+4);
+         docPDF.setFontSize(10); docPDF.setTextColor(...secondaryColor);
+         docPDF.text(`Motivo: ${job.checklist?.rtRejectReason || 'No especificada'}`, 15, currentY + 12);
+       }
+    } else {
+      currentY = drawSectionTitle("3. Conformidad de Entrega", currentY);
+
+      if (job.checklist?.noReception) {
+        docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(10);
+        docPDF.text("⚠ ENTREGA SIN RECEPCIÓN (Confirmada por conductor en terreno)", 15, currentY + 4);
+      } else {
+        drawKV("Receptor Final", `${job.checklist?.receiverName || 'N/A'}`, 15, currentY);
+        drawKV("RUT", `${job.checklist?.receiverRut || 'N/A'}`, 90, currentY);
+        if(job.checklist?.signatureData) {
+            docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
+            docPDF.text("FIRMA DE CONFORMIDAD:", 140, currentY);
+            docPDF.addImage(job.checklist.signatureData, 'PNG', 140, currentY + 2, 45, 25);
+        }
+      }
+      currentY += 28; 
+      if (job.checklist?.location) {
+        const { lat, lng } = job.checklist.location;
+        docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
+        docPDF.text(`UBICACIÓN GPS:`, 15, currentY);
+        docPDF.setFontSize(10); docPDF.setTextColor(...accentColor);
+        docPDF.textWithLink('Clic aquí para verificar en Google Maps', 45, currentY, { url: `https://www.google.com/maps?q=${lat},${lng}` });
+      }
+    }
+
+    // PIE DE PÁGINA GLOBAL
+    const addFooter = () => {
+       const pageCount = docPDF.internal.getNumberOfPages();
+       for(let i = 1; i <= pageCount; i++) {
+           docPDF.setPage(i);
+           docPDF.setFontSize(8);
+           docPDF.setTextColor(148, 163, 184);
+           docPDF.text(`Generado por LogisticAPP el ${new Date().toLocaleString('es-CL')} - Página ${i} de ${pageCount}`, 105, 290, null, null, "center");
+       }
+    }
+
+    // SECCIÓN 4: FOTOS (ANEXO)
+    if (job.tripType !== 'revision' && job.checklist?.photos) {
+      const photos = job.checklist.photos;
+      const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atrás', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
+      let photoY = 40; let currentCol = 1; let addedPage = false;
+      const getImageDims = (src) => new Promise(resolve => { const img = new Image(); img.onload = () => resolve({ w: img.width, h: img.height }); img.src = src; });
+
+      for (const key in photos) {
+        if (photos[key]) {
+          if (!addedPage) {
+            docPDF.addPage();
+            docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 25, 'F');
+            docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold");
+            docPDF.text(`ANEXO FOTOGRÁFICO`, 105, 16, null, null, "center");
+            addedPage = true;
+          }
+          const dims = await getImageDims(photos[key]);
+          const ratio = dims.h / dims.w;
+          let imgW = 85; let imgH = imgW * ratio; if (imgH > 95) { imgH = 95; imgW = imgH / ratio; }
+          const slotCenter = currentCol === 1 ? 55 : 155; const finalX = slotCenter - (imgW / 2);
+
+          if (photoY + imgH > 275) {
+             docPDF.addPage(); photoY = 40;
+             docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 25, 'F');
+             docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold");
+             docPDF.text(`ANEXO FOTOGRÁFICO (CONT.)`, 105, 16, null, null, "center");
+          }
+
+          // Marco moderno de foto
+          docPDF.setDrawColor(...borderColor);
+          docPDF.setLineWidth(0.5);
+          docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S');
+          
+          docPDF.setFillColor(...lightBg);
+          docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F');
+          docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor);
+          docPDF.text((labels[key] || key).toUpperCase(), slotCenter, photoY - 3, { align: "center" });
+
+          // Foto
+          docPDF.addImage(photos[key], 'JPEG', finalX, photoY + 2, imgW, imgH);
+
+          if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 20; }
+        }
+      }
+    }
+
+    addFooter();
     return docPDF;
   };
 
