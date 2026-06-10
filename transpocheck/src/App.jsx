@@ -511,8 +511,9 @@ export default function App() {
 
   const globalStyles = (
     <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Shrikhand&display=swap');
       body { font-family: 'Nunito', sans-serif; background-color: #f8fafc; }
+      .font-shrikhand { font-family: 'Shrikhand', cursive; font-weight: 400; }
     `}</style>
   );
 
@@ -568,8 +569,10 @@ export default function App() {
         <img src="/logo.png" alt="Logo App" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" />
       </div>
       
-      {/* Nombre de la aplicación */}
-      <h1 className="font-extrabold text-xl sm:text-2xl tracking-tight shrink-0 text-white">LogisticAPP</h1>
+      {/* Nombre de la aplicación con la fuente Shrikhand */}
+      <h1 className="font-shrikhand text-2xl sm:text-3xl tracking-wide shrink-0 text-white" style={{ paddingTop: '2px' }}>
+        LogisticAPP
+      </h1>
       
       {/* Logo Logística TS SpA llegando exactamente hasta los bordes del cuadrado */}
       <div className="bg-white/20 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0 ml-1 overflow-hidden">
