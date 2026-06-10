@@ -563,16 +563,18 @@ export default function App() {
       {globalStyles}
       <header className="bg-blue-600 text-white p-4 shadow-lg flex justify-between items-center sticky top-0 z-50">
         <div className="flex items-center gap-2 sm:gap-3">
-      {/* Logo de la app más grande y visible en todos los dispositivos */}
+      {/* Logo de la app con borde traslúcido */}
       <div className="bg-white/20 p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">
-        <img src="/logo.png" alt="Logo App" className="w-9 h-9 sm:w-11 sm:h-11 object-contain" />
+        <img src="/logo.png" alt="Logo App" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" />
       </div>
       
-      {/* Nombre de la aplicación (Ahora se ve en celular con tamaño adaptativo) */}
+      {/* Nombre de la aplicación */}
       <h1 className="font-extrabold text-xl sm:text-2xl tracking-tight shrink-0 text-white">LogisticAPP</h1>
       
-      {/* Logo de Logística TS SpA más grande y completamente visible en celular */}
-      <img src="/LogoLogistica.png" alt="Logística TS SpA" className="h-10 sm:h-14 object-contain ml-1 shrink-0" />
+      {/* Logo Logística TS SpA envuelto en el mismo borde traslúcido */}
+      <div className="bg-white/20 p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0 ml-1">
+        <img src="/LogoLogistica.png" alt="Logística TS SpA" className="h-10 sm:h-12 object-contain" />
+      </div>
     </div>
         <div className="flex items-center gap-2 sm:gap-4">
           {!notificationsEnabled && <button onClick={requestNotificationPermission} className="p-2 bg-amber-500 hover:bg-amber-400 rounded-xl transition-colors shadow-sm" title="Activar Notificaciones"><Bell className="w-5 h-5 text-white animate-pulse" /></button>}
