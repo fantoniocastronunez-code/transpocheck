@@ -1137,7 +1137,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     });
   };
 
-const handleFailJob = async (job, reason) => {
+ const handleFailJob = async (job, reason) => {
     try {
       if (job.tripType === 'revision' && reason === 'RECHAZO_RT_AUTOMATICO') {
           const cloneJob = {
@@ -1318,14 +1318,17 @@ const handleFailJob = async (job, reason) => {
     }
 
     // SECCIÓN 4: FOTOS (ANEXO)
-    if (job.tripType !== 'revision' && job.checklist?.photos) {
+    // Se elimina la restricción de tipo de viaje para que aparezcan en TODO tipo de traslado
+    if (job.checklist?.photos) {
       const photos = job.checklist.photos;
       const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atrás', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
       let photoY = 40; let currentCol = 1; let addedPage = false;
-      const getImageDims = (src) => new Promise(resolve => { const img = new Image(); img.onload = () => resolve({ w: img.width, h: img.height }); img.src = src; });
+      // Añadido img.onerror por seguridad
+      const getImageDims = (src) => new Promise(resolve => { const img = new Image(); img.onload = () => resolve({ w: img.width, h: img.height }); img.onerror = () => resolve({ w: 85, h: 60 }); img.src = src; });
 
       for (const key in photos) {
-        if (photos[key]) {
+        // Validación extra: Asegurarse de que exista y sea un string base64 válido
+        if (photos[key] && typeof photos[key] === 'string' && photos[key].startsWith('data:image')) {
           if (!addedPage) {
             docPDF.addPage();
             docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 25, 'F');
@@ -1333,32 +1336,37 @@ const handleFailJob = async (job, reason) => {
             docPDF.text(`ANEXO FOTOGRÁFICO`, 105, 16, null, null, "center");
             addedPage = true;
           }
-          const dims = await getImageDims(photos[key]);
-          const ratio = dims.h / dims.w;
-          let imgW = 85; let imgH = imgW * ratio; if (imgH > 95) { imgH = 95; imgW = imgH / ratio; }
-          const slotCenter = currentCol === 1 ? 55 : 155; const finalX = slotCenter - (imgW / 2);
-
-          if (photoY + imgH > 275) {
-             docPDF.addPage(); photoY = 40;
-             docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 25, 'F');
-             docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold");
-             docPDF.text(`ANEXO FOTOGRÁFICO (CONT.)`, 105, 16, null, null, "center");
-          }
-
-          // Marco moderno de foto
-          docPDF.setDrawColor(...borderColor);
-          docPDF.setLineWidth(0.5);
-          docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S');
           
-          docPDF.setFillColor(...lightBg);
-          docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F');
-          docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor);
-          docPDF.text((labels[key] || key).toUpperCase(), slotCenter, photoY - 3, { align: "center" });
+          try {
+            const dims = await getImageDims(photos[key]);
+            const ratio = dims.h / dims.w;
+            let imgW = 85; let imgH = imgW * ratio; if (imgH > 95) { imgH = 95; imgW = imgH / ratio; }
+            const slotCenter = currentCol === 1 ? 55 : 155; const finalX = slotCenter - (imgW / 2);
 
-          // Foto
-          docPDF.addImage(photos[key], 'JPEG', finalX, photoY + 2, imgW, imgH);
+            if (photoY + imgH > 275) {
+               docPDF.addPage(); photoY = 40;
+               docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 25, 'F');
+               docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(14); docPDF.setFont("helvetica", "bold");
+               docPDF.text(`ANEXO FOTOGRÁFICO (CONT.)`, 105, 16, null, null, "center");
+            }
 
-          if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 20; }
+            // Marco moderno de foto
+            docPDF.setDrawColor(...borderColor);
+            docPDF.setLineWidth(0.5);
+            docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S');
+            
+            docPDF.setFillColor(...lightBg);
+            docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F');
+            docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor);
+            docPDF.text((labels[key] || key).toUpperCase(), slotCenter, photoY - 3, { align: "center" });
+
+            // Foto renderizada de forma segura
+            docPDF.addImage(photos[key], 'JPEG', finalX, photoY + 2, imgW, imgH);
+
+            if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 20; }
+          } catch (err) {
+            console.error("Error al incrustar la foto:", key, err);
+          }
         }
       }
     }
@@ -1367,8 +1375,7 @@ const handleFailJob = async (job, reason) => {
     return docPDF;
   };
 
-  const getDStr = j => j.scheduledDate?formatDateDisplay(j.scheduledDate):formatDateDisplay(new Date().toISOString().split('T')[0]);  
-  const handleCopyWhatsApp = (job) => { 
+  const getDStr = j => j.scheduledDate?formatDateDisplay(j.scheduledDate):formatDateDisplay(new Date().toISOString().split('T')[0]);  const handleCopyWhatsApp = (job) => { 
     const dateStr = getDStr(job);
     const dateShort = dateStr.substring(0, 5); 
     const text = `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}`; 
