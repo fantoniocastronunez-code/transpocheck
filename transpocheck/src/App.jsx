@@ -1204,20 +1204,20 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     if (job.tripType === 'revision') pdfTitle = "CERTIFICADO DE REVISION TECNICA";
     if (job.tripType === 'viaje') pdfTitle = "TRASLADO A REGIONES";
 
-    // TÍTULO DEL DOCUMENTO
+    // TÍTULO DEL DOCUMENTO (Centrado)
     docPDF.setTextColor(255, 255, 255);
-    docPDF.setFontSize(20);
+    docPDF.setFontSize(18);
     docPDF.setFont("helvetica", "bold");
-    docPDF.text(cleanStr(pdfTitle), 15, 20);
+    docPDF.text(cleanStr(pdfTitle), 105, 20, null, null, "center");
 
-    // FECHA DE TRASLADO (Movida un poco más arriba ya que quitamos el texto de la empresa)
+    // FECHA DE TRASLADO (Centrada debajo del título)
     docPDF.setFontSize(9);
     docPDF.setFont("helvetica", "normal");
     docPDF.setTextColor(148, 163, 184);
-    docPDF.text(`FECHA TRASLADO: ${formatDateDisplay(job.scheduledDate) || '-'}`, 15, 28);
+    docPDF.text(`FECHA TRASLADO: ${formatDateDisplay(job.scheduledDate) || '-'}`, 105, 28, null, null, "center");
 
-    // FUNCIÓN PARA CARGAR Y LIMPIAR FONDOS DE LOGOS
-    const loadAndCleanLogo = async (src) => {
+    // FUNCIÓN PARA CARGAR LOGOS CON TRANSPARENCIA
+    const loadTransparentLogo = async (src) => {
       return new Promise((resolve) => {
         const img = new Image();
         img.src = src;
@@ -1228,24 +1228,20 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
           tempCanvas.height = img.height;
           const ctx = tempCanvas.getContext('2d');
           
-          // Llenamos el fondo con el mismo color oscuro de la cabecera para eliminar el borde gris
-          ctx.fillStyle = `rgb(${primaryColor[0]}, ${primaryColor[1]}, ${primaryColor[2]})`;
-          ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-          
-          // Dibujamos la imagen encima
+          // Dibujamos la imagen directamente para conservar transparencia nativa
           ctx.drawImage(img, 0, 0, img.width, img.height);
-          resolve(tempCanvas.toDataURL('image/jpeg', 0.9)); // Forzamos JPEG para evitar problemas de canal alpha
+          resolve(tempCanvas.toDataURL('image/png'));
         };
         img.onerror = () => resolve(null);
         setTimeout(() => resolve(null), 1500); // Timeout por si no carga
       });
     };
 
-    // LOGOS A LA DERECHA
+    // LOGOS A LOS EXTREMOS
     try {
       const [logoApp, logoLogistica] = await Promise.all([
-        loadAndCleanLogo('/logo.png'),
-        loadAndCleanLogo('/LogoLogistica.png')
+        loadTransparentLogo('/logo.png'),
+        loadTransparentLogo('/LogoLogistica.png')
       ]);
       
       docPDF.setFontSize(8);
@@ -1253,13 +1249,13 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       docPDF.setTextColor(255, 255, 255);
 
       if (logoLogistica) {
-        docPDF.addImage(logoLogistica, 'JPEG', 145, 6, 20, 20);
-        docPDF.text("Logística TS SpA", 155, 33, null, null, "center");
+        docPDF.addImage(logoLogistica, 'PNG', 15, 8, 24, 14);
+        docPDF.text("Logística TS SpA", 27, 32, null, null, "center");
       }
       
       if (logoApp) {
-        docPDF.addImage(logoApp, 'JPEG', 175, 6, 20, 20);
-        docPDF.text("LogisticAPP", 185, 33, null, null, "center");
+        docPDF.addImage(logoApp, 'PNG', 175, 8, 16, 16);
+        docPDF.text("LogisticAPP", 183, 32, null, null, "center");
       }
     } catch(e) {
       console.warn("Problema al cargar los logos", e);
@@ -1537,7 +1533,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       }
     } catch (e) { console.error(e); }
   };
-  
+    
   return (
     <div className="pb-16">
       {activeJobs.length > 0 && (
