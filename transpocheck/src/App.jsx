@@ -1181,7 +1181,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         .replace(/[^\x20-\x7E\xA0-\xFF]/g, '');
     };
 
-    // Helper para obtener dimensiones de imágenes sin errores
     const getImageDims = (src) => new Promise(resolve => { 
       const img = new Image(); 
       img.onload = () => resolve({ w: img.width, h: img.height }); 
@@ -1189,14 +1188,12 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       img.src = src; 
     });
 
-    // Paleta de Colores
     const primaryColor = [30, 41, 59];
     const secondaryColor = [100, 116, 139];
     const accentColor = [37, 99, 235];
     const lightBg = [248, 250, 252];
     const borderColor = [226, 232, 240];
 
-    // FUNCIÓN PARA CARGAR LOGOS SIMPLES (Respetando transparencia)
     const loadSimpleLogo = async (src) => {
       return new Promise((resolve) => {
         const img = new Image();
@@ -1220,50 +1217,50 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       loadSimpleLogo('/LogoLogistica.png')
     ]);
 
-    // FUNCIÓN PARA DIBUJAR LA CABECERA EN CADA PÁGINA
+    // CABECERA REPETIBLE EN CADA HOJA (Con logos corregidos, más grandes y fuentes elegantes)
     const drawHeader = (titleText) => {
       docPDF.setFillColor(...primaryColor);
       docPDF.rect(0, 0, 210, 40, 'F');
 
-      // TÍTULO DEL DOCUMENTO (Centrado)
+      // TÍTULO CENTRAL
       docPDF.setTextColor(255, 255, 255);
       docPDF.setFontSize(18);
       docPDF.setFont("helvetica", "bold");
-      docPDF.text(cleanStr(titleText), 105, 20, null, null, "center");
+      docPDF.text(cleanStr(titleText), 105, 18, null, null, "center");
 
-      // FECHA DE TRASLADO
+      // FECHA CENTRAL
       docPDF.setFontSize(9);
       docPDF.setFont("helvetica", "normal");
       docPDF.setTextColor(148, 163, 184);
-      docPDF.text(`FECHA TRASLADO: ${formatDateDisplay(job.scheduledDate) || '-'}`, 105, 28, null, null, "center");
+      docPDF.text(`FECHA TRASLADO: ${formatDateDisplay(job.scheduledDate) || '-'}`, 105, 26, null, null, "center");
 
-      // NOMBRES DE LA EMPRESA (Fuente elegante)
-      docPDF.setFontSize(10);
-      docPDF.setFont("times", "italic");
+      // FUENTE ELEGANTE, GRANDE Y NEGRITA PARA LOS SUBTÍTULOS DE LOS LOGOS
+      docPDF.setFontSize(11);
+      docPDF.setFont("times", "bolditalic"); // Elegante: Negrita + Cursiva
       docPDF.setTextColor(255, 255, 255);
       
       if (logoLogistica) {
-        // Cálculo para mantener proporción y evitar que se estire
         const ratio = logoLogistica.h / logoLogistica.w;
-        let imgW = 32; 
+        let imgW = 35; // Tamaño incrementado
         let imgH = imgW * ratio;
-        if (imgH > 22) { imgH = 22; imgW = imgH / ratio; }
+        if (imgH > 24) { imgH = 24; imgW = imgH / ratio; }
         
-        docPDF.addImage(logoLogistica.data, 'PNG', 27 - (imgW/2), 16 - (imgH/2), imgW, imgH);
-        docPDF.text("Logística TS SpA", 27, 33, null, null, "center");
+        // Centrado verticalmente un poco más abajo (Y=19) para emparejar con el otro logo
+        docPDF.addImage(logoLogistica.data, 'PNG', 27 - (imgW/2), 19 - (imgH/2), imgW, imgH);
+        docPDF.text("Logística TS SpA", 27, 34, null, null, "center");
       }
       
       if (logoApp) {
         const ratio = logoApp.h / logoApp.w;
-        let imgW = 16; 
+        let imgW = 20; // Tamaño incrementado
         let imgH = imgW * ratio;
-        if (imgH > 22) { imgH = 22; imgW = imgH / ratio; }
+        if (imgH > 24) { imgH = 24; imgW = imgH / ratio; }
 
-        docPDF.addImage(logoApp.data, 'PNG', 183 - (imgW/2), 16 - (imgH/2), imgW, imgH);
-        docPDF.text("LogisticAPP", 183, 33, null, null, "center");
+        // Posicionado simétricamente a la misma altura (Y=19)
+        docPDF.addImage(logoApp.data, 'PNG', 183 - (imgW/2), 19 - (imgH/2), imgW, imgH);
+        docPDF.text("LogisticAPP", 183, 34, null, null, "center");
       }
 
-      // Resetear fuente para el resto del contenido
       docPDF.setFont("helvetica", "normal");
     };
 
@@ -1271,12 +1268,10 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     if (job.tripType === 'revision') pdfTitle = "CERTIFICADO DE REVISION TECNICA";
     if (job.tripType === 'viaje') pdfTitle = "TRASLADO A REGIONES";
 
-    // Dibujar cabecera en la primera página
     drawHeader(pdfTitle);
 
     let currentY = 50;
 
-    // ESTADO DE REVISIÓN (Barra traslúcida)
     if (job.tripType === 'revision' && job.checklist?.rtStatus) {
         const isApproved = job.checklist.rtStatus === 'aprobado';
         const statusText = isApproved ? "APROBADO" : "RECHAZADO";
@@ -1292,13 +1287,12 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         currentY = 60; 
     }
 
-    const startY = currentY; // Referencia para la imagen de la derecha
-    const leftColWidth = 90; // Ancho máximo para la columna izquierda
+    const startY = currentY;
+    const leftColWidth = 90;
 
-    // FUNCIONES DE DIBUJO AJUSTADAS A COLUMNA IZQUIERDA
     const drawSectionTitle = (title, y) => {
       docPDF.setFillColor(...lightBg);
-      docPDF.rect(15, y - 6, leftColWidth, 10, 'F'); // Se acorta el fondo
+      docPDF.rect(15, y - 6, leftColWidth, 10, 'F');
       docPDF.setDrawColor(...accentColor);
       docPDF.setLineWidth(1);
       docPDF.line(15, y - 6, 15, y + 4);
@@ -1326,7 +1320,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     if (job.acceptedByEmail) { const foundDriver = drivers?.find(d => d.email === job.acceptedByEmail); if (foundDriver) driverNameStr = foundDriver.name; }
 
     // === COLUMNA IZQUIERDA ===
-    // SECCIÓN 1: DETALLES GENERALES
     currentY = drawSectionTitle("1. Detalles del Vehiculo", currentY);
     drawKV("Cliente", `${job.client || 'Sin Cliente'}`, 15, currentY, 40);
     drawKV("Marca y Modelo", `${job.brand || '-'} ${job.model || '-'}`, 60, currentY, 45);
@@ -1347,9 +1340,8 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       }
     }
     let routeH = drawKV("Ruta Asignada", routeText, 15, currentY, leftColWidth);
-    currentY += routeH + 12; // Separación incrementada para evitar choques
+    currentY += routeH + 12;
 
-    // SECCIÓN 2: RECEPCIÓN Y DOCUMENTACIÓN
     currentY = drawSectionTitle("2. Recepcion y Estado", currentY);
     drawKV("Combustible", `${job.checklist?.fuelLevel || '0'}%`, 15, currentY, 40);
     const docs = job.checklist?.docs || {};
@@ -1366,16 +1358,15 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
     const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin observaciones registradas.'}`), leftColWidth);
     docPDF.text(obsSplit, 15, currentY + 4);
-    currentY += (obsSplit.length * 4) + 12; // Separación incrementada
+    currentY += (obsSplit.length * 4) + 12;
 
-    // SECCIÓN 3: RESULTADOS / RECEPCIÓN
     if (job.tripType === 'revision') {
        currentY = drawSectionTitle("3. Resultado", currentY);
        if (job.checklist?.rtStatus === 'aprobado') {
          docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(18); docPDF.text("APROBADO", 15, currentY+6);
        } else {
          docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(18); docPDF.text("RECHAZADO", 15, currentY+6);
-         docPDF.setFontSize(11); docPDF.setTextColor(153, 27, 27); // Color más oscuro para el motivo
+         docPDF.setFontSize(11); docPDF.setTextColor(153, 27, 27);
          const rejSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.checklist?.rtRejectReason || 'No especificada'}`), leftColWidth);
          docPDF.text(rejSplit, 15, currentY + 14);
        }
@@ -1419,9 +1410,8 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         if (imgH > 130) { imgH = 130; imgW = imgH / ratio; }
 
         const rightX = 115;
-        const rightY = startY + 6; // Se alinea ligeramente debajo de la primera sección
+        const rightY = startY + 6;
 
-        // Marco de la foto
         docPDF.setDrawColor(...borderColor);
         docPDF.setLineWidth(0.5);
         docPDF.roundedRect(rightX - 2, rightY - 8, imgW + 4, imgH + 12, 2, 2, 'S');
@@ -1437,7 +1427,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       }
     }
 
-    // PIE DE PÁGINA GLOBAL
     const addFooter = () => {
        const pageCount = docPDF.internal.getNumberOfPages();
        for(let i = 1; i <= pageCount; i++) {
@@ -1448,14 +1437,13 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
        }
     }
 
-    // SECCIÓN 4: FOTOS (ANEXO)
+    // === SECCIÓN 4: ANEXO FOTOGRÁFICO CON CABECERAS REPETIDAS ===
     if (job.checklist?.photos) {
       const photos = job.checklist.photos;
       const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
       let photoY = 46; let currentCol = 1; let addedPage = false;
 
       for (const key in photos) {
-        // Omite la foto frontal en el anexo, pues ya se dibujó en la primera hoja
         if (key === 'front') continue; 
 
         if (photos[key] && typeof photos[key] === 'string' && photos[key].startsWith('data:image')) {
@@ -1473,11 +1461,10 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
 
             if (photoY + imgH > 275) {
                docPDF.addPage(); 
-               photoY = 46; // Reiniciar Y debajo de la cabecera
+               photoY = 46; 
                drawHeader("ANEXO FOTOGRAFICO (CONT.)");
             }
 
-            // Marco moderno de foto en anexo
             docPDF.setDrawColor(...borderColor);
             docPDF.setLineWidth(0.5);
             docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S');
@@ -1542,8 +1529,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         handleCopyWhatsApp(job); 
       }
     } catch (e) { console.error(e); }
-  };
-  
+  };  
   return (
     <div className="pb-16">
       {activeJobs.length > 0 && (
