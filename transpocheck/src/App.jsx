@@ -1208,53 +1208,62 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     docPDF.setTextColor(255, 255, 255);
     docPDF.setFontSize(20);
     docPDF.setFont("helvetica", "bold");
-    docPDF.text(cleanStr(pdfTitle), 15, 18);
+    docPDF.text(cleanStr(pdfTitle), 15, 20);
 
-    // NOMBRE DE LA EMPRESA (Más grande)
-    docPDF.setFontSize(12);
-    docPDF.setFont("helvetica", "bold");
-    docPDF.text("LOGISTICA TS SPA", 15, 26);
-
-    // FECHA DE TRASLADO
+    // FECHA DE TRASLADO (Movida un poco más arriba ya que quitamos el texto de la empresa)
     docPDF.setFontSize(9);
     docPDF.setFont("helvetica", "normal");
     docPDF.setTextColor(148, 163, 184);
-    docPDF.text(`FECHA TRASLADO: ${formatDateDisplay(job.scheduledDate) || '-'}`, 15, 32);
+    docPDF.text(`FECHA TRASLADO: ${formatDateDisplay(job.scheduledDate) || '-'}`, 15, 28);
 
-    // LOGO Y NOMBRE DE LA APP A LA DERECHA
+    // FUNCIÓN PARA CARGAR Y LIMPIAR FONDOS DE LOGOS
+    const loadAndCleanLogo = async (src) => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.src = src;
+        img.crossOrigin = "Anonymous";
+        img.onload = () => {
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = img.width;
+          tempCanvas.height = img.height;
+          const ctx = tempCanvas.getContext('2d');
+          
+          // Llenamos el fondo con el mismo color oscuro de la cabecera para eliminar el borde gris
+          ctx.fillStyle = `rgb(${primaryColor[0]}, ${primaryColor[1]}, ${primaryColor[2]})`;
+          ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+          
+          // Dibujamos la imagen encima
+          ctx.drawImage(img, 0, 0, img.width, img.height);
+          resolve(tempCanvas.toDataURL('image/jpeg', 0.9)); // Forzamos JPEG para evitar problemas de canal alpha
+        };
+        img.onerror = () => resolve(null);
+        setTimeout(() => resolve(null), 1500); // Timeout por si no carga
+      });
+    };
+
+    // LOGOS A LA DERECHA
     try {
-      const logoImg = new Image();
-      logoImg.src = '/logo.png'; // Ruta de tu logo en la carpeta public
-      logoImg.crossOrigin = "Anonymous";
-      
-      // Usamos un Promise.race para evitar que el PDF se cuelgue si el logo no carga rápido
-      await Promise.race([
-        new Promise((resolve, reject) => {
-           logoImg.onload = resolve;
-           logoImg.onerror = reject;
-        }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout logo")), 1500))
+      const [logoApp, logoLogistica] = await Promise.all([
+        loadAndCleanLogo('/logo.png'),
+        loadAndCleanLogo('/LogoLogistica.png')
       ]);
       
-      // Dibujamos en un canvas interno para evitar que jsPDF genere bordes grises de transparencia
-      const tempCanvas = document.createElement('canvas');
-      tempCanvas.width = logoImg.width;
-      tempCanvas.height = logoImg.height;
-      const ctx = tempCanvas.getContext('2d');
-      ctx.drawImage(logoImg, 0, 0, logoImg.width, logoImg.height);
-      const cleanLogo = tempCanvas.toDataURL('image/png');
+      docPDF.setFontSize(8);
+      docPDF.setFont("helvetica", "bold");
+      docPDF.setTextColor(255, 255, 255);
 
-      // Logo más grande y centrado en relación al texto
-      docPDF.addImage(cleanLogo, 'PNG', 175, 6, 20, 20);
+      if (logoLogistica) {
+        docPDF.addImage(logoLogistica, 'JPEG', 145, 6, 20, 20);
+        docPDF.text("Logística TS SpA", 155, 33, null, null, "center");
+      }
+      
+      if (logoApp) {
+        docPDF.addImage(logoApp, 'JPEG', 175, 6, 20, 20);
+        docPDF.text("LogisticAPP", 185, 33, null, null, "center");
+      }
     } catch(e) {
-      console.warn("Logo no cargado para el PDF", e);
+      console.warn("Problema al cargar los logos", e);
     }
-    
-    docPDF.setFontSize(10);
-    docPDF.setFont("helvetica", "bold");
-    docPDF.setTextColor(255, 255, 255);
-    // Texto centrado en X=185 (mitad del logo) y pegado abajo
-    docPDF.text("LogisticAPP", 185, 33, null, null, "center");
 
     let currentY = 50;
 
@@ -1527,7 +1536,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         handleCopyWhatsApp(job); 
       }
     } catch (e) { console.error(e); }
-  };  
+  };
   
   return (
     <div className="pb-16">
