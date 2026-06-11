@@ -641,7 +641,8 @@ export default function App() {
           <ChecklistForm 
              job={selectedJob} db={db} currentUserEmail={currentUserEmail} 
              allClientsList={allClientsList}
-             onCancel={() => {
+             drivers={drivers} expenses={expenses} 
+             onCancel={() => { 
                 localStorage.removeItem('checklist_draft_' + selectedJob.id);
                 setCurrentView('main');
              }} 
@@ -1653,7 +1654,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   );
 }
 
-function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList }) {
+function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList, drivers, expenses }) {
   const isQuick = job.id === 'NEW_QUICK_JOB'; 
   const localStorageKey = `checklist_draft_${job.id}`;
 
@@ -1719,6 +1720,37 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     const fd = { scheduledDate: new Date().toISOString().split('T')[0], client: d.client, brand: d.brand, model: d.model, vin: d.plateOrVin, plate: d.plateOrVin, origin: d.origin, destination: d.destination, status: 'completed', completedAt: Date.now(), checklist: d, tripType: job.tripType || 'traslado' };
     
     try {
+      // --- PARTE 2: AUTOMATIZAR EL GASTO DE COMBUSTIBLE ---
+      if (d.hasFuelCharge && d.fuelChargeAmount) {
+        // Limpiamos lo que haya escrito el conductor para dejar solo los números
+        const numericAmount = Number(String(d.fuelChargeAmount).replace(/[^0-9]/g, ''));
+
+        if (numericAmount > 0) {
+          const currentDriver = drivers?.find(drv => drv.email === currentUserEmail);
+          if (currentDriver) {
+            const currentBalance = currentDriver.balance || 0;
+            const newBalance = currentBalance - numericAmount;
+
+            // 1. Descontar del saldo del conductor
+            await updateDoc(doc(db, 'drivers', currentDriver.id), { balance: newBalance });
+
+            // 2. Registrar el gasto automáticamente en la pestaña Finanzas
+            await addDoc(collection(db, 'expenses'), {
+              driverId: currentDriver.id,
+              driverEmail: currentDriver.email,
+              driverName: currentDriver.name,
+              type: 'expense',
+              amount: numericAmount,
+              detail: `Carga Combustible (Patente: ${d.plateOrVin || 'S/N'})`,
+              jobId: job.id === 'NEW_QUICK_JOB' ? '' : job.id,
+              deductedAmount: numericAmount,
+              createdAt: Date.now()
+            });
+          }
+        }
+      }
+      // ----------------------------------------------------
+
       if(isQuick) { 
           fd.assignedDriverName="Auto-creado"; fd.acceptedByEmail=currentUserEmail; 
           if (d.plateOrVin) {
@@ -1827,7 +1859,27 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
               <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-slate-800 mb-4">Combustible: <span className="text-blue-600">{formData.fuelLevel}%</span></h3>
               <input type="range" min="0" max="100" step="5" value={formData.fuelLevel} onChange={(e) => setF('fuelLevel', e.target.value)} className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer" style={{background: `linear-gradient(to right, ${formData.fuelLevel < 30 ? '#ef4444' : formData.fuelLevel < 80 ? '#eab308' : '#22c55e'} ${formData.fuelLevel}%, #e2e8f0 ${formData.fuelLevel}%)`}} />
             </div>
-            
+            {/* --- BANNER DE FONDO ASIGNADO (Corregido) --- */}
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mt-6 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-blue-100 p-2 rounded-lg">
+                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-blue-600 uppercase">Fondo Asignado al Traslado</p>
+                  <p className="text-[10px] font-bold text-slate-500">Patente: {job.plate || job.vin || 'N/A'}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xl font-extrabold text-blue-700">
+                  {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(
+                    expenses?.filter(g => g.jobId === job.id && g.type === 'assignment')
+                            .reduce((acc, curr) => acc + Number(curr.amount || 0), 0) || 0
+                  )}
+                </p>
+              </div>
+            </div>
+            {/* ----------------------------------------------------------------- */}
             <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Documentos a bordo</h3>
             <div className="grid grid-cols-2 gap-3 pt-2">
               {[{ id: 'soap', label: 'SOAP' }, { id: 'permiso', label: 'Permiso' }, { id: 'revTecnica', label: 'Rev. Técnica' }, { id: 'gases', label: 'Gases' }].map(doc => (
