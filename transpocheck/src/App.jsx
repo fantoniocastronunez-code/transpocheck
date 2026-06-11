@@ -1829,6 +1829,9 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
                       />
                     </div>
                   )}
+                </div>
+              ))}
+            </div>
 
             <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Observaciones</h3>
             <textarea 
