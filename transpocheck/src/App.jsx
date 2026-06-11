@@ -1356,16 +1356,25 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     currentY += routeH + 12;
 
     currentY = drawSectionTitle("2. Recepcion y Estado", currentY);
-    drawKV("Combustible", `${job.checklist?.fuelLevel || '0'}%`, 15, currentY, 40);
+    
     const docs = job.checklist?.docs || {};
-    drawKV("Seguro SOAP", docs.soap ? 'AL DIA' : 'FALTA', 60, currentY, 40);
-    currentY += 12;
-    drawKV("Permiso Circ.", docs.permiso ? 'AL DIA' : 'FALTA', 15, currentY, 40);
-    drawKV("Rev. Tecnica", docs.revTecnica ? 'AL DIA' : 'FALTA', 60, currentY, 40);
-    currentY += 12;
-    drawKV("Gases", docs.gases ? 'AL DIA' : 'FALTA', 15, currentY, 40);
-    currentY += 12;
+    const exp = job.checklist?.docsExpiry || {}; // Rescatamos las fechas de vencimiento
 
+    // Función interna para empaquetar el estado con su fecha en formato DD/MM/AAAA si existe
+    const getDocStatus = (id) => {
+      if (!docs[id]) return 'FALTA';
+      return exp[id] ? `AL DIA (${formatDateDisplay(exp[id])})` : 'AL DIA';
+    };
+
+    drawKV("Combustible", `${job.checklist?.fuelLevel || '0'}%`, 15, currentY, 40);
+    drawKV("Seguro SOAP", getDocStatus('soap'), 60, currentY, 40);
+    currentY += 12;
+    drawKV("Permiso Circ.", getDocStatus('permiso'), 15, currentY, 40);
+    drawKV("Rev. Tecnica", getDocStatus('revTecnica'), 60, currentY, 40);
+    currentY += 12;
+    drawKV("Gases", getDocStatus('gases'), 15, currentY, 40);
+    currentY += 12;
+    
     docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
     docPDF.text("OBSERVACIONES:", 15, currentY);
     docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
