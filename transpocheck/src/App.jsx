@@ -1720,30 +1720,52 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     const fd = { scheduledDate: new Date().toISOString().split('T')[0], client: d.client, brand: d.brand, model: d.model, vin: d.plateOrVin, plate: d.plateOrVin, origin: d.origin, destination: d.destination, status: 'completed', completedAt: Date.now(), checklist: d, tripType: job.tripType || 'traslado' };
     
     try {
-      // --- PARTE 2: AUTOMATIZAR EL GASTO DE COMBUSTIBLE ---
+      // --- PARTE 2: AUTOMATIZAR MÚLTIPLES GASTOS (COMBUSTIBLE + PRT) ---
+      let totalToDeduct = 0;
+      const expensesToRegister = [];
+
+      // Función interna para limpiar números y añadir a la lista
+      const processExpense = (amountStr, detailStr) => {
+        const num = Number(String(amountStr).replace(/[^0-9]/g, ''));
+        if (num > 0) {
+          totalToDeduct += num;
+          expensesToRegister.push({ amount: num, detail: detailStr });
+        }
+      };
+
+      // 1. Leer Gasto de Combustible
       if (d.hasFuelCharge && d.fuelChargeAmount) {
-        // Limpiamos lo que haya escrito el conductor para dejar solo los números
-        const numericAmount = Number(String(d.fuelChargeAmount).replace(/[^0-9]/g, ''));
+        processExpense(d.fuelChargeAmount, `Carga Combustible (Patente: ${d.plateOrVin || 'S/N'})`);
+      }
+      
+      // 2. Leer Gastos PRT (Solo si es Revisión Técnica)
+      if (job.tripType === 'revision') {
+        if (job.rtData?.revision && d.prtCostRevision) processExpense(d.prtCostRevision, `Valor Revisión Técnica (Patente: ${d.plateOrVin || 'S/N'})`);
+        if (job.rtData?.inspeccion && d.prtCostInspeccion) processExpense(d.prtCostInspeccion, `Valor Inspección Visual (Patente: ${d.plateOrVin || 'S/N'})`);
+        if (job.rtData?.frenos && d.prtCostFrenos) processExpense(d.prtCostFrenos, `Valor Cert. Frenos (Patente: ${d.plateOrVin || 'S/N'})`);
+      }
 
-        if (numericAmount > 0) {
-          const currentDriver = drivers?.find(drv => drv.email === currentUserEmail);
-          if (currentDriver) {
-            const currentBalance = currentDriver.balance || 0;
-            const newBalance = currentBalance - numericAmount;
+      // Si hubo algún gasto, lo procesamos
+      if (totalToDeduct > 0) {
+        const currentDriver = drivers?.find(drv => drv.email === currentUserEmail);
+        if (currentDriver) {
+          const currentBalance = currentDriver.balance || 0;
+          const newBalance = currentBalance - totalToDeduct;
 
-            // 1. Descontar del saldo del conductor
-            await updateDoc(doc(db, 'drivers', currentDriver.id), { balance: newBalance });
+          // A. Descontar del saldo del conductor TODO sumado
+          await updateDoc(doc(db, 'drivers', currentDriver.id), { balance: newBalance });
 
-            // 2. Registrar el gasto automáticamente en la pestaña Finanzas
+          // B. Registrar CADA gasto individualmente en la pestaña Finanzas
+          for (const exp of expensesToRegister) {
             await addDoc(collection(db, 'expenses'), {
               driverId: currentDriver.id,
               driverEmail: currentDriver.email,
               driverName: currentDriver.name,
               type: 'expense',
-              amount: numericAmount,
-              detail: `Carga Combustible (Patente: ${d.plateOrVin || 'S/N'})`,
+              amount: exp.amount,
+              detail: exp.detail,
               jobId: job.id === 'NEW_QUICK_JOB' ? '' : job.id,
-              deductedAmount: numericAmount,
+              deductedAmount: exp.amount,
               createdAt: Date.now()
             });
           }
@@ -1879,7 +1901,37 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
                 </p>
               </div>
             </div>
+            
+            {/* --- NUEVO: GASTOS DE REVISIÓN TÉCNICA CONDICIONALES --- */}
+            {job.tripType === 'revision' && (job.rtData?.revision || job.rtData?.inspeccion || job.rtData?.frenos) && (
+              <div className="bg-indigo-50 border-2 border-indigo-200 rounded-xl p-4 mt-4 shadow-sm">
+                <h3 className="text-sm font-extrabold text-indigo-800 mb-3 flex items-center gap-2">
+                  <Receipt className="w-4 h-4" /> Valores pagados en PRT
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {job.rtData?.revision && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-bold text-indigo-600 uppercase">Revisión Técnica ($)</label>
+                      <input type="text" placeholder="Ej: 20000" className="w-full border-2 border-indigo-100 p-2.5 rounded-xl font-bold text-sm outline-none focus:border-indigo-400 bg-white" value={formData.prtCostRevision || ''} onChange={e => setF('prtCostRevision', e.target.value)} />
+                    </div>
+                  )}
+                  {job.rtData?.inspeccion && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-bold text-indigo-600 uppercase">Inspección Visual ($)</label>
+                      <input type="text" placeholder="Ej: 5000" className="w-full border-2 border-indigo-100 p-2.5 rounded-xl font-bold text-sm outline-none focus:border-indigo-400 bg-white" value={formData.prtCostInspeccion || ''} onChange={e => setF('prtCostInspeccion', e.target.value)} />
+                    </div>
+                  )}
+                  {job.rtData?.frenos && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-bold text-indigo-600 uppercase">Certificado Frenos ($)</label>
+                      <input type="text" placeholder="Ej: 8000" className="w-full border-2 border-indigo-100 p-2.5 rounded-xl font-bold text-sm outline-none focus:border-indigo-400 bg-white" value={formData.prtCostFrenos || ''} onChange={e => setF('prtCostFrenos', e.target.value)} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             {/* ----------------------------------------------------------------- */}
+
             <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Documentos a bordo</h3>
             <div className="grid grid-cols-2 gap-3 pt-2">
               {[{ id: 'soap', label: 'SOAP' }, { id: 'permiso', label: 'Permiso' }, { id: 'revTecnica', label: 'Rev. Técnica' }, { id: 'gases', label: 'Gases' }].map(doc => (
