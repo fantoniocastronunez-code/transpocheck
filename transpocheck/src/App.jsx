@@ -1230,46 +1230,40 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       loadSimpleLogo('/LogoLogistica.png')
     ]);
 
-    // CABECERA REPETIBLE EN CADA HOJA (Con logos corregidos, más grandes y fuentes elegantes)
     const drawHeader = (titleText) => {
       docPDF.setFillColor(...primaryColor);
       docPDF.rect(0, 0, 210, 40, 'F');
 
-      // TÍTULO CENTRAL
       docPDF.setTextColor(255, 255, 255);
       docPDF.setFontSize(18);
       docPDF.setFont("helvetica", "bold");
       docPDF.text(cleanStr(titleText), 105, 18, null, null, "center");
 
-      // FECHA CENTRAL
       docPDF.setFontSize(9);
       docPDF.setFont("helvetica", "normal");
       docPDF.setTextColor(148, 163, 184);
       docPDF.text(`FECHA TRASLADO: ${formatDateDisplay(job.scheduledDate) || '-'}`, 105, 26, null, null, "center");
 
-      // FUENTE ELEGANTE, GRANDE Y NEGRITA PARA LOS SUBTÍTULOS DE LOS LOGOS
       docPDF.setFontSize(11);
-      docPDF.setFont("times", "bolditalic"); // Elegante: Negrita + Cursiva
+      docPDF.setFont("times", "bolditalic");
       docPDF.setTextColor(255, 255, 255);
       
       if (logoLogistica) {
         const ratio = logoLogistica.h / logoLogistica.w;
-        let imgW = 35; // Tamaño incrementado
+        let imgW = 35;
         let imgH = imgW * ratio;
         if (imgH > 24) { imgH = 24; imgW = imgH / ratio; }
         
-        // Centrado verticalmente un poco más abajo (Y=19) para emparejar con el otro logo
         docPDF.addImage(logoLogistica.data, 'PNG', 27 - (imgW/2), 19 - (imgH/2), imgW, imgH);
         docPDF.text("Logística TS SpA", 27, 34, null, null, "center");
       }
       
       if (logoApp) {
         const ratio = logoApp.h / logoApp.w;
-        let imgW = 20; // Tamaño incrementado
+        let imgW = 20; 
         let imgH = imgW * ratio;
         if (imgH > 24) { imgH = 24; imgW = imgH / ratio; }
 
-        // Posicionado simétricamente a la misma altura (Y=19)
         docPDF.addImage(logoApp.data, 'PNG', 183 - (imgW/2), 19 - (imgH/2), imgW, imgH);
         docPDF.text("LogisticAPP", 183, 34, null, null, "center");
       }
@@ -1356,31 +1350,39 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     currentY += routeH + 12;
 
     currentY = drawSectionTitle("2. Recepcion y Estado", currentY);
-    
-    const docs = job.checklist?.docs || {};
-    const exp = job.checklist?.docsExpiry || {}; // Rescatamos las fechas de vencimiento
-
-    // Función interna para empaquetar el estado con su fecha en formato DD/MM/AAAA si existe
-    const getDocStatus = (id) => {
-      if (!docs[id]) return 'FALTA';
-      return exp[id] ? `AL DIA (${formatDateDisplay(exp[id])})` : 'AL DIA';
-    };
-
     drawKV("Combustible", `${job.checklist?.fuelLevel || '0'}%`, 15, currentY, 40);
-    drawKV("Seguro SOAP", getDocStatus('soap'), 60, currentY, 40);
+    const docs = job.checklist?.docs || {};
+    drawKV("Seguro SOAP", docs.soap ? 'AL DIA' : 'FALTA', 60, currentY, 40);
     currentY += 12;
-    drawKV("Permiso Circ.", getDocStatus('permiso'), 15, currentY, 40);
-    drawKV("Rev. Tecnica", getDocStatus('revTecnica'), 60, currentY, 40);
+    drawKV("Permiso Circ.", docs.permiso ? 'AL DIA' : 'FALTA', 15, currentY, 40);
+    drawKV("Rev. Tecnica", docs.revTecnica ? 'AL DIA' : 'FALTA', 60, currentY, 40);
     currentY += 12;
-    drawKV("Gases", getDocStatus('gases'), 15, currentY, 40);
+    drawKV("Gases", docs.gases ? 'AL DIA' : 'FALTA', 15, currentY, 40);
     currentY += 12;
-    
+
     docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
     docPDF.text("OBSERVACIONES:", 15, currentY);
     docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
     const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin observaciones registradas.'}`), leftColWidth);
     docPDF.text(obsSplit, 15, currentY + 4);
-    currentY += (obsSplit.length * 4) + 12;
+    currentY += (obsSplit.length * 4) + 8; // Ajuste de salto
+
+    // --- NUEVOS CAMPOS: ESPERA Y COMBUSTIBLE ---
+    if (job.checklist?.hasWaitTime) {
+      docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38); // Rojo
+      const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth);
+      docPDF.text(wtStr, 15, currentY);
+      currentY += (wtStr.length * 4) + 2;
+    }
+    
+    if (job.checklist?.hasFuelCharge) {
+      docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(37, 99, 235); // Azul
+      const fcStr = docPDF.splitTextToSize(`CARGA DE COMBUSTIBLE: ${cleanStr(job.checklist.fuelChargeAmount || 'Sí')}`, leftColWidth);
+      docPDF.text(fcStr, 15, currentY);
+      currentY += (fcStr.length * 4) + 2;
+    }
+    currentY += 6; // Separador final para sección 3
+    // ------------------------------------------
 
     if (job.tripType === 'revision') {
        currentY = drawSectionTitle("3. Resultado", currentY);
@@ -1459,7 +1461,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
        }
     }
 
-    // === SECCIÓN 4: ANEXO FOTOGRÁFICO CON CABECERAS REPETIDAS ===
     if (job.checklist?.photos) {
       const photos = job.checklist.photos;
       const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
@@ -1512,10 +1513,18 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
 
   const getDStr = j => j.scheduledDate?formatDateDisplay(j.scheduledDate):formatDateDisplay(new Date().toISOString().split('T')[0]);
   
+  // Función para obtener texto adicional de WhatsApp dinámicamente
+  const getExtraWappTxt = (j) => {
+    let t = '';
+    if (j.checklist?.hasWaitTime) t += `\nTIEMPO DE ESPERA: ${j.checklist.waitTime || 'Sí'}`;
+    if (j.checklist?.hasFuelCharge) t += `\nCARGA DE COMBUSTIBLE: ${j.checklist.fuelChargeAmount || 'Sí'}`;
+    return t;
+  };
+
   const handleCopyWhatsApp = (job) => { 
     const dateStr = getDStr(job);
     const dateShort = dateStr.substring(0, 5); 
-    const text = `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}`; 
+    const text = `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`; 
     navigator.clipboard.writeText(text).then(() => { 
       showAlert("✅ Formato copiado al portapapeles. Listo para pegar en WhatsApp."); 
       setMenuOpenId(null); 
@@ -1538,7 +1547,9 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       const dateShort = getDStr(job).substring(0, 5);
       const cleanPlate = job.plate || job.vin || 'SN';
       const fileName = `Check.${dateStrForFile}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`;
-      const text = `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}`;
+      
+      // Inyección de los extras al formato compartido con el PDF
+      const text = `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`;
       
       const docPDF = await buildPDFDoc(job); 
       const pdfBlob = docPDF.output('blob'); 
@@ -1550,8 +1561,8 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         showAlert("Tu dispositivo no soporta compartir el archivo directamente. Descárgalo primero."); 
         handleCopyWhatsApp(job); 
       }
-    } catch (e) { console.error(e); }
-  };  
+    } catch (e) { console.error(e); }  
+  };
   return (
     <div className="pb-16">
       {activeJobs.length > 0 && (
@@ -1843,13 +1854,38 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
             </div>
 
             <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Observaciones</h3>
-            <textarea 
-              value={formData.observations} 
-              onChange={e=>setF('observations',e.target.value)} 
-              placeholder="Escribe aquí si hay algún daño, rayón o comentario relevante..." 
-              className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm outline-none focus:border-blue-500 mt-2" 
-              rows="3"
-            ></textarea>
+            <textarea className="w-full border-2 border-slate-200 p-3 rounded-xl mt-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500 min-h-[80px]" placeholder="Escribe aquí si hay algún daño, rayón o comentario relevante..." value={formData.observations || ''} onChange={(e) => setF('observations', e.target.value)} />
+            
+            {/* SECCIÓN NUEVA: ADICIONALES (Espera y Combustible) */}
+            <div className="flex flex-col gap-3 mt-4 p-4 bg-slate-50 rounded-xl border-2 border-slate-100">
+              {/* Tiempo de Espera */}
+              <div className="flex flex-col gap-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="w-5 h-5 text-blue-600 rounded border-slate-300" checked={formData.hasWaitTime || false} onChange={(e) => setF('hasWaitTime', e.target.checked)} />
+                  <span className="font-extrabold text-sm text-slate-700">Tiempo de espera</span>
+                </label>
+                {formData.hasWaitTime && (
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-200 pl-7">
+                    <input type="text" placeholder="Ej: 45 min, 2 hrs..." className="w-full border-2 border-slate-200 bg-white p-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 transition-colors shadow-sm" value={formData.waitTime || ''} onChange={(e) => setF('waitTime', e.target.value)} />
+                  </div>
+                )}
+              </div>
+
+              <div className="w-full h-px bg-slate-200 my-1"></div>
+
+              {/* Carga de Combustible */}
+              <div className="flex flex-col gap-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="w-5 h-5 text-blue-600 rounded border-slate-300" checked={formData.hasFuelCharge || false} onChange={(e) => setF('hasFuelCharge', e.target.checked)} />
+                  <span className="font-extrabold text-sm text-slate-700">Carga de combustible</span>
+                </label>
+                {formData.hasFuelCharge && (
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-200 pl-7">
+                    <input type="text" placeholder="Monto cargado (Ej: $15.000)" className="w-full border-2 border-slate-200 bg-white p-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 transition-colors shadow-sm" value={formData.fuelChargeAmount || ''} onChange={(e) => setF('fuelChargeAmount', e.target.value)} />
+                  </div>
+                )}
+              </div>
+            </div>
 
             <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Registro Fotográfico</h3>
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pt-2">
