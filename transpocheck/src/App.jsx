@@ -1809,14 +1809,26 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
             </div>
             
             <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Documentos a bordo</h3>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3 pt-2">
               {[{ id: 'soap', label: 'SOAP' }, { id: 'permiso', label: 'Permiso' }, { id: 'revTecnica', label: 'Rev. Técnica' }, { id: 'gases', label: 'Gases' }].map(doc => (
-                <label key={doc.id} className={`flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all ${formData.docs[doc.id] ? 'border-green-500 bg-green-50 text-green-800' : 'border-slate-200 bg-white text-slate-600'}`}>
-                  <input type="checkbox" className="w-4 h-4 text-green-600 rounded cursor-pointer" checked={formData.docs[doc.id]} onChange={(e) => setF('docs', { ...formData.docs, [doc.id]: e.target.checked })} />
-                  <span className="font-extrabold text-xs">{doc.label}</span>
-                </label>
-              ))}
-            </div>
+                <div key={doc.id} className="flex flex-col gap-1">
+                  <label className={`flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all ${formData.docs[doc.id] ? 'border-green-500 bg-green-50 text-green-800' : 'border-slate-200 bg-white text-slate-600'}`}>
+                    <input type="checkbox" className="w-4 h-4 text-green-600 rounded cursor-pointer" checked={formData.docs[doc.id]} onChange={(e) => setF('docs', { ...formData.docs, [doc.id]: e.target.checked })} />
+                    <span className="font-extrabold text-xs">{doc.label}</span>
+                  </label>
+                  
+                  {/* Desplegable de fecha de vencimiento (Opcional) */}
+                  {formData.docs[doc.id] && (
+                    <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                      <p className="text-[10px] font-bold text-slate-400 mb-1 ml-1">Vencimiento (Opcional):</p>
+                      <input 
+                        type="date" 
+                        value={formData.docsExpiry?.[doc.id] || ''} 
+                        onChange={(e) => setF('docsExpiry', { ...(formData.docsExpiry || {}), [doc.id]: e.target.value })}
+                        className="w-full border-2 border-green-200 bg-white p-2.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-green-500 transition-colors shadow-sm" 
+                      />
+                    </div>
+                  )}
 
             <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Observaciones</h3>
             <textarea 
