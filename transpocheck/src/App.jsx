@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
-import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc, getDocs, query, where } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 import { jsPDF } from "jspdf";
 import { 
   Car, MapPin, Camera, Fuel, CheckCircle, FileText, Download, 
@@ -482,7 +482,10 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
     
-    const unsubJobs = onSnapshot(collection(db, 'transport_jobs'), (snapshot) => {
+    // OPTIMIZACIÓN 1: Traer solo los últimos 200 trabajos (evita descargar historial antiguo)
+    const qJobs = query(collection(db, 'transport_jobs'), orderBy('createdAt', 'desc'), limit(50));
+    
+    const unsubJobs = onSnapshot(qJobs, (snapshot) => {
       if (!isFirstLoad.current) {
         snapshot.docChanges().forEach((change) => {
           const d = change.doc.data();
@@ -495,12 +498,16 @@ export default function App() {
           }
         });
       }
-      setJobs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => b.createdAt - a.createdAt));
+      // Ya vienen ordenados de Firebase, solo mapeamos
+      setJobs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       isFirstLoad.current = false;
     });
 
+    // OPTIMIZACIÓN 2: Traer solo los últimos 300 gastos
+    const qExpenses = query(collection(db, 'expenses'), orderBy('createdAt', 'desc'), limit(300));
+
     const unsubDrivers = onSnapshot(collection(db, 'drivers'), snap => setDrivers(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    const unsubExpenses = onSnapshot(collection(db, 'expenses'), snap => setExpenses(snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => b.createdAt - a.createdAt)));
+    const unsubExpenses = onSnapshot(qExpenses, snap => setExpenses(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     const unsubVehicles = onSnapshot(collection(db, 'vehicles'), snap => setVehicles(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     const unsubClients = onSnapshot(collection(db, 'clients'), snap => setCustomClients(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
 
