@@ -483,7 +483,7 @@ export default function App() {
     if (!user) return;
     
     // OPTIMIZACIÓN 1: Traer solo los últimos 200 trabajos (evita descargar historial antiguo)
-    const qJobs = query(collection(db, 'transport_jobs'), orderBy('createdAt', 'desc'), limit(50));
+    const qJobs = query(collection(db, 'transport_jobs'), orderBy('createdAt', 'desc'), limit(200));
     
     const unsubJobs = onSnapshot(qJobs, (snapshot) => {
       if (!isFirstLoad.current) {
