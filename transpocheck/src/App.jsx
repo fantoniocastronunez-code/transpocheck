@@ -1509,27 +1509,24 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
 function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, currentUserEmail, showAlert, showConfirm, allClientsList }) {
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [jobToFail, setJobToFail] = useState(null);
-  const [prtPromptJob, setPrtPromptJob] = useState(null); // <-- NUEVO: Para el rechazo PRT rápido
+  const [prtPromptJob, setPrtPromptJob] = useState(null);
   const [historyClientFilter, setHistoryClientFilter] = useState(''); 
 
-  // NUEVO: Función para actualizar la fase del traslado en vivo
   const updatePhase = async (job, phase, extra = {}) => {
     try { await updateDoc(doc(db, 'transport_jobs', job.id), { phase, ...extra }); } 
     catch (e) { console.error(e); showAlert("Error de conexión al actualizar fase."); }
   }; 
+  
   const now = new Date();
   const isAdminView = role === 'admin';
   
   const filteredJobs = jobs.filter(job => {
     if (!isAdminView) {
-      // Si está pendiente, lo ven los que estén asignados
       if (job.status === 'pending') {
         if (!job.assignedEmails?.includes(currentUserEmail)) return false;
       } else {
-        // Si ya fue aceptado, completado o falló, SOLO lo ve quien lo reclamó
         if (job.acceptedByEmail !== currentUserEmail) return false;
       }
-      // Ocultar fallidos a menos que sean revisión técnica
       if (job.status === 'failed' && job.tripType !== 'revision') return false; 
     }
     
@@ -1544,7 +1541,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     return true;
   });
 
-  // Prevención de Crash con isNaN por fechas vacías de navegadores antiguos
   const sortedJobs = [...filteredJobs].sort((a, b) => {
     const adminOrder = { pending: 1, accepted: 2, completed: 3, failed: 3 };
     const driverOrder = { accepted: 1, pending: 2, completed: 3, failed: 3 };
@@ -1581,7 +1577,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     });
   };
 
- const handleFailJob = async (job, reason) => {
+  const handleFailJob = async (job, reason) => {
     try {
       if (job.tripType === 'revision' && reason === 'RECHAZO_RT_AUTOMATICO') {
           const cloneJob = {
@@ -1796,24 +1792,20 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
     const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin observaciones registradas.'}`), leftColWidth);
     docPDF.text(obsSplit, 15, currentY + 4);
-    currentY += (obsSplit.length * 4) + 8; // Ajuste de salto
+    currentY += (obsSplit.length * 4) + 8;
 
-    // --- NUEVOS CAMPOS: ESPERA Y COMBUSTIBLE ---
     if (job.checklist?.hasWaitTime) {
-      docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38); // Rojo
+      docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38);
       const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth);
-      docPDF.text(wtStr, 15, currentY);
-      currentY += (wtStr.length * 4) + 2;
+      docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2;
     }
     
     if (job.checklist?.hasFuelCharge) {
-      docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(37, 99, 235); // Azul
+      docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(37, 99, 235);
       const fcStr = docPDF.splitTextToSize(`CARGA DE COMBUSTIBLE: ${cleanStr(job.checklist.fuelChargeAmount || 'Sí')}`, leftColWidth);
-      docPDF.text(fcStr, 15, currentY);
-      currentY += (fcStr.length * 4) + 2;
+      docPDF.text(fcStr, 15, currentY); currentY += (fcStr.length * 4) + 2;
     }
-    currentY += 6; // Separador final para sección 3
-    // ------------------------------------------
+    currentY += 6;
 
     if (job.tripType === 'revision') {
        currentY = drawSectionTitle("3. Resultado", currentY);
@@ -1854,7 +1846,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       }
     }
 
-    // === COLUMNA DERECHA (FOTO FRONTAL) ===
     const frontPhotoStr = job.checklist?.photos?.front;
     if (frontPhotoStr && typeof frontPhotoStr === 'string' && frontPhotoStr.startsWith('data:image')) {
       try {
@@ -1877,9 +1868,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         docPDF.text("VISTA FRONTAL", rightX + (imgW/2), rightY - 3, { align: "center" });
 
         docPDF.addImage(frontPhotoStr, 'JPEG', rightX, rightY + 2, imgW, imgH);
-      } catch (err) {
-        console.error("Error al incrustar foto frontal:", err);
-      }
+      } catch (err) { console.error("Error al incrustar foto frontal:", err); }
     }
 
     const addFooter = () => {
@@ -1913,11 +1902,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
             let imgW = 85; let imgH = imgW * ratio; if (imgH > 95) { imgH = 95; imgW = imgH / ratio; }
             const slotCenter = currentCol === 1 ? 55 : 155; const finalX = slotCenter - (imgW / 2);
 
-            if (photoY + imgH > 275) {
-               docPDF.addPage(); 
-               photoY = 46; 
-               drawHeader("ANEXO FOTOGRAFICO (CONT.)");
-            }
+            if (photoY + imgH > 275) { docPDF.addPage(); photoY = 46; drawHeader("ANEXO FOTOGRAFICO (CONT.)"); }
 
             docPDF.setDrawColor(...borderColor);
             docPDF.setLineWidth(0.5);
@@ -1931,9 +1916,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
             docPDF.addImage(photos[key], 'JPEG', finalX, photoY + 2, imgW, imgH);
 
             if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 20; }
-          } catch (err) {
-            console.error("Error al incrustar la foto:", key, err);
-          }
+          } catch (err) { console.error("Error al incrustar la foto:", key, err); }
         }
       }
     }
@@ -1944,7 +1927,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
 
   const getDStr = j => j.scheduledDate?formatDateDisplay(j.scheduledDate):formatDateDisplay(new Date().toISOString().split('T')[0]);
   
-  // Función para obtener texto adicional de WhatsApp dinámicamente
   const getExtraWappTxt = (j) => {
     let t = '';
     if (j.checklist?.hasWaitTime) t += `\nTIEMPO DE ESPERA: ${j.checklist.waitTime || 'Sí'}`;
@@ -1979,7 +1961,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       const cleanPlate = job.plate || job.vin || 'SN';
       const fileName = `Check.${dateStrForFile}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`;
       
-      // Inyección de los extras al formato compartido con el PDF
       const text = `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`;
       
       const docPDF = await buildPDFDoc(job); 
@@ -1994,6 +1975,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       }
     } catch (e) { console.error(e); }  
   };
+  
   return (
     <div className="pb-16">
       {activeJobs.length > 0 && (
@@ -2007,7 +1989,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                   <button onClick={()=>setMenuOpenId(menuOpenId===j.id?null:j.id)} className="p-1.5 text-slate-400 hover:bg-slate-50 rounded-lg"><MoreVertical className="w-4 h-4"/></button>
                   {menuOpenId===j.id && (
                     <div className="absolute right-0 top-8 bg-white border shadow-2xl rounded-xl w-48 z-50 overflow-hidden text-xs">
-                      {/* NUEVO BOTÓN: COPIAR LINK DE PORTAL DE CLIENTE */}
                       <button onClick={() => {
                         const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
                         navigator.clipboard.writeText(`📍 Sigue en tiempo real todos los traslados de ${j.client || 'tu empresa'} aquí:\n${url}`);
@@ -2079,10 +2060,10 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
           ))}
         </div>
       )}
+      
       {historyJobs.length > 0 && (
         <div className="mt-8">
           <h3 className="font-extrabold text-lg text-slate-700 mb-4 border-b-2 border-slate-100 pb-2">Historial Simplificado</h3>
-          {/* AQUÍ ESTÁ LA MAGIA: Grilla de múltiples columnas */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {historyJobs.map(j => {
               const drv = drivers?.find(d => d.email === j.acceptedByEmail);
@@ -2124,29 +2105,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
           </div>
         </div>
       )}
-            {historyJobs.map(j => {
-              const drv = drivers?.find(d => d.email === j.acceptedByEmail);
-              const driverName = drv ? drv.name : (j.checklist?.assignedDriverName || j.acceptedByEmail || 'No registrado');
-              
-              return (
-              <div key={j.id} className="bg-white p-3.5 rounded-2xl border flex flex-col sm:flex-row justify-between sm:items-center gap-2 text-xs font-bold shadow-sm relative pl-4 overflow-hidden">
-                <div className={`absolute left-0 top-0 bottom-0 w-1 ${j.status==='failed'?'bg-red-500':'bg-green-500'}`}></div>
-                <div>
-                   <div className="flex gap-2 items-center mb-1"><span className={`px-2 py-0.5 rounded text-[9px] uppercase ${j.status==='failed'?'bg-red-100 text-red-700':'bg-green-100 text-green-700'}`}>{j.status==='failed'?'Fallido':'Ok'}</span><p className="text-sm font-black text-slate-800">{j.brand} {j.model} <span className="text-blue-600 uppercase text-xs ml-1">[{j.plate||'S/N'}]</span></p></div>
-                   <p className="text-slate-500 font-semibold">{getRouteStr(j)} <span className="text-slate-400 ml-1">({getDStr(j)})</span></p>
-                   <p className="text-blue-600 font-extrabold text-[10px] mt-1.5 uppercase tracking-wide">Conductor: <span className="text-slate-700">{driverName}</span></p>
-                   {j.status==='failed' && <p className="text-red-600 text-[11px] mt-0.5 font-bold">Razón: {j.failedReason}</p>}
-                </div>
-                <div className="flex gap-1.5 mt-2 sm:mt-0">
-                  <button onClick={()=>cpyWapp(j)} className="p-2 bg-blue-50 text-blue-600 rounded-xl" title="Copiar Texto"><Copy className="w-4 h-4"/></button>
-                  <button onClick={() => generatePDF(j)} className="p-2 bg-slate-100 text-slate-700 rounded-xl" title="Descargar PDF"><FileDown className="w-4 h-4"/></button>
-                  <button onClick={() => handleShareWhatsAppPDF(j)} className="p-2 bg-green-100 text-green-700 rounded-xl" title="Compartir PDF"><Share2 className="w-4 h-4"/></button>
-                  {isAdminView && <button onClick={()=>handleDeleteJob(j.id)} className="p-2 bg-red-50 text-red-500 rounded-xl" title="Eliminar Historial"><Trash2 className="w-4 h-4"/></button>}
-                </div>
-              </div>
-            )})}
-          </div>
-      )}
+
       {jobToFail && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <form onSubmit={(e) => { e.preventDefault(); handleFailJob(jobToFail, e.target.reason.value); }} className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-xl">
@@ -2170,10 +2129,10 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
           </form>
         </div>
       )}
+
     </div>
   );
 }
-
 function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList, drivers, expenses }) {
   const isQuick = job.id === 'NEW_QUICK_JOB'; 
   const localStorageKey = `checklist_draft_${job.id}`;
