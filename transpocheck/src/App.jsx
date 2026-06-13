@@ -683,64 +683,92 @@ function TrackingView({ clientName, db }) {
       </header>
 
       <main className="max-w-2xl mx-auto p-4 pt-6 space-y-8">
+        {/* Cabecera del Portal */}
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-500"></div>
           <h2 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-1">Portal de Seguimiento</h2>
           <p className="text-2xl font-black text-slate-800">{clientName}</p>
         </div>
 
+        {/* Sección 1: En Curso */}
         <div>
           <h3 className="font-extrabold text-slate-700 mb-4 flex items-center gap-2"><Navigation className="w-5 h-5 text-blue-600"/> Vehículos en Tránsito ({activeJobs.length})</h3>
-          <div className="space-y-3">
+          <div className="space-y-5">
             {activeJobs.length === 0 ? (
                <p className="text-sm font-bold text-slate-400 bg-white p-4 rounded-2xl border text-center">No hay traslados activos en este momento.</p>
-            ) : activeJobs.map(job => (
-              <div key={job.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
-                <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${job.status === 'pending' ? 'bg-amber-400' : 'bg-blue-500'}`}></div>
-                <div className="flex justify-between items-start mb-2 pl-2">
+            ) : activeJobs.map(job => {
+              const isPending = job.status === 'pending';
+              return (
+              <div key={job.id} className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden">
+                <div className={`absolute top-0 left-0 w-full h-1.5 ${isPending ? 'bg-amber-400' : 'bg-blue-500'}`}></div>
+                
+                <div className="flex justify-between items-start mb-5 pb-4 border-b border-slate-100">
                   <div>
-                    <p className="font-black text-slate-800 text-lg leading-tight">{job.brand} {job.model}</p>
-                    <p className="text-xs font-bold text-slate-400 mt-0.5"><span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded uppercase">{job.plate || job.vin || 'S/N'}</span></p>
+                    <h2 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">En Traslado</h2>
+                    <p className="text-xl font-black text-slate-800 leading-none">{job.brand} {job.model}</p>
                   </div>
-                  <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-md ${job.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
-                    {job.status === 'pending' ? 'Programado' : 'En Ruta'}
-                  </span>
+                  <div className="bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+                    <p className="text-sm font-bold text-slate-700 uppercase tracking-widest">{job.plate || job.vin || 'S/N'}</p>
+                  </div>
                 </div>
-                <div className="pl-2 mt-3 text-xs font-bold text-slate-600 space-y-1">
-                  <p className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-slate-400"/> {job.origin}</p>
-                  <p className="flex items-center gap-1.5"><Navigation className="w-3.5 h-3.5 text-slate-400"/> {job.tripType === 'revision' ? 'Planta de Revisión (PRT)' : job.destination}</p>
+                
+                <div className="relative pl-8 space-y-6 before:absolute before:inset-y-2 before:left-[11px] before:w-0.5 before:bg-slate-100">
+                  <div className="relative">
+                    <div className="absolute -left-8 bg-blue-500 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center"><CheckCircle className="w-3 h-3 text-white"/></div>
+                    <p className="font-extrabold text-slate-800 text-sm">Origen / Programado</p>
+                    <p className="text-xs font-bold text-slate-500 mt-0.5">{job.origin}</p>
+                  </div>
+
+                  <div className="relative">
+                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${!isPending ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                      {!isPending && <CheckCircle className="w-3 h-3 text-white"/>}
+                    </div>
+                    <p className={`font-extrabold text-sm ${!isPending ? 'text-slate-800' : 'text-slate-400'}`}>Vehículo en Tránsito</p>
+                    <p className={`text-xs font-bold mt-0.5 ${!isPending ? 'text-blue-600' : 'text-slate-400'}`}>
+                      {isPending ? 'Esperando inicio de ruta' : `Hacia ${job.tripType === 'revision' ? 'Planta de Revisión (PRT)' : job.destination}`}
+                    </p>
+                  </div>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         </div>
 
+        {/* Sección 2: Historial Reciente */}
         <div>
           <h3 className="font-extrabold text-slate-700 mb-4 flex items-center gap-2"><CheckCircle className="w-5 h-5 text-green-600"/> Últimos Finalizados</h3>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {historyJobs.length === 0 ? (
                <p className="text-sm font-bold text-slate-400 bg-white p-4 rounded-2xl border text-center">No hay registro de traslados anteriores.</p>
-            ) : historyJobs.map(job => (
-              <div key={job.id} className="bg-white p-3 rounded-2xl border border-slate-100 flex items-center justify-between text-xs font-bold relative pl-3 overflow-hidden opacity-90 hover:opacity-100 transition-opacity">
-                 <div className={`absolute left-0 top-0 bottom-0 w-1 ${job.status === 'failed' ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                 <div>
-                   <p className="text-sm font-extrabold text-slate-800">{job.brand} {job.model} <span className="text-slate-500 text-[10px] ml-1 uppercase bg-slate-100 px-1 rounded">{job.plate || 'S/N'}</span></p>
-                   <p className="text-slate-500 mt-1">{job.origin} ➔ {job.tripType === 'revision' ? 'PRT' : job.destination}</p>
-                 </div>
-                 
-                 {/* NUEVO BOTÓN DE PDF PARA EL CLIENTE */}
-                 <div className="flex flex-col items-end shrink-0 ml-2 gap-1.5">
-                   <div className="text-right">
-                     <p className={`text-[10px] font-black uppercase ${job.status === 'failed' ? 'text-red-500' : 'text-green-600'}`}>{job.status === 'failed' ? 'Rechazado' : 'Entregado'}</p>
-                     <p className="text-slate-400 mt-0.5">{new Date(job.completedAt || job.createdAt).toLocaleDateString('es-CL')}</p>
-                   </div>
-                   <button onClick={() => handleDownloadPDF(job)} className="flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg transition-colors shadow-sm border border-blue-100">
-                     <FileDown className="w-3.5 h-3.5"/> Descargar Certificado
-                   </button>
-                 </div>
-                 
+            ) : historyJobs.map(job => {
+              const isFailed = job.status === 'failed';
+              return (
+              <div key={job.id} className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden">
+                <div className={`absolute top-0 left-0 w-full h-1.5 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <p className="text-lg font-black text-slate-800 leading-none">{job.brand} {job.model}</p>
+                    <p className="text-[10px] font-bold text-slate-400 mt-1.5 uppercase tracking-widest">{job.origin} ➔ {job.tripType === 'revision' ? 'PRT' : job.destination}</p>
+                  </div>
+                  <div className="bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200 shadow-sm">
+                    <p className="text-xs font-bold text-slate-700 uppercase tracking-widest">{job.plate || 'S/N'}</p>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-end border-t border-slate-100 pt-4 mt-2">
+                  <div>
+                    <p className={`text-[11px] font-black uppercase ${isFailed ? 'text-red-500' : 'text-green-600'}`}>
+                      {isFailed ? 'Rechazado' : 'Entregado'}
+                    </p>
+                    <p className="text-slate-400 text-xs font-bold mt-0.5">{new Date(job.completedAt || job.createdAt).toLocaleDateString('es-CL')}</p>
+                  </div>
+                  <button onClick={() => handleDownloadPDF(job)} className="flex items-center gap-1.5 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-xl transition-colors shadow-sm">
+                    <FileDown className="w-4 h-4"/> Ver Certificado
+                  </button>
+                </div>
               </div>
-            ))}
+            )})}
           </div>
         </div>
       </main>
