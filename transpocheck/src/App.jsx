@@ -895,10 +895,7 @@ export default function App() {
   const liveTrackId = params.get('track'); 
   const signTrackId = params.get('sign'); // <-- DETECTA EL LINK DE FIRMA
 
-  const [user, setUser] = useState(null);
-  // -----------------------------------------------
 
-  const [user, setUser] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [expenses, setExpenses] = useState([]);
