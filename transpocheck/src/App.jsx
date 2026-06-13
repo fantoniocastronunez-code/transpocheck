@@ -799,11 +799,103 @@ function TrackingView({ clientName, db, onBack }) {
     </div>
   );
 }
+function ClientSignView({ jobId, db }) {
+  const [job, setJob] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [submitted, setSubmitted] = useState(false);
+  const [formData, setFormData] = useState({ name: '', rut: '', comments: '', signature: null });
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'transport_jobs', jobId), (docSnap) => {
+      if (docSnap.exists()) setJob({ id: docSnap.id, ...docSnap.data() });
+      setLoading(false);
+    });
+    return () => unsub();
+  }, [jobId, db]);
+
+  if (loading) return <div className="min-h-screen bg-slate-50 flex items-center justify-center font-bold text-slate-400"><Clock className="w-5 h-5 mr-2 animate-spin"/> Cargando acta...</div>;
+  if (!job || !job.checklist) return <div className="min-h-screen bg-slate-50 flex items-center justify-center font-bold text-red-500">Acta no encontrada.</div>;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.signature) return alert("Por favor, firme en el recuadro blanco.");
+    
+    try {
+      await updateDoc(doc(db, 'transport_jobs', jobId), {
+        'checklist.clientSigned': true,
+        'checklist.receiverName': formData.name,
+        'checklist.receiverRut': formData.rut,
+        'checklist.clientComments': formData.comments,
+        'checklist.signatureData': formData.signature
+      });
+      setSubmitted(true);
+    } catch (error) { console.error(error); alert("Error al guardar la firma."); }
+  };
+
+  if (submitted || job.checklist.clientSigned) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
+        <div className="bg-white p-8 rounded-3xl shadow-xl max-w-sm w-full border-t-8 border-green-500">
+          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4"/>
+          <h2 className="text-2xl font-black text-slate-800 mb-2">¡Recepción Exitosa!</h2>
+          <p className="text-slate-500 font-bold text-sm">Tu firma y comentarios han sido enviados al conductor. Ya puedes cerrar esta ventana.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const photos = job.checklist.photos || {};
+  const hasPhotos = Object.values(photos).some(val => typeof val === 'string');
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans pb-10">
+      <header className="bg-blue-600 text-white p-4 shadow-md text-center">
+        <h1 className="font-black text-xl tracking-wide">Acta de Recepción</h1>
+      </header>
+
+      <main className="max-w-md mx-auto p-4 pt-6 space-y-6">
+        <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-200">
+           <p className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest mb-1">Vehículo a recibir</p>
+           <h2 className="text-2xl font-black text-slate-800">{job.brand} {job.model}</h2>
+           <p className="text-sm font-bold text-slate-500 uppercase mt-1">Patente: <span className="bg-slate-100 text-slate-800 px-2 py-0.5 rounded">{job.plate || job.vin}</span></p>
+        </div>
+
+        {hasPhotos && (
+          <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-200">
+            <h3 className="text-sm font-extrabold text-slate-800 mb-3 flex items-center gap-2"><Camera className="w-4 h-4 text-blue-500"/> Registro Fotográfico</h3>
+            <div className="grid grid-cols-3 gap-2">
+              {Object.entries(photos).map(([key, val]) => val && typeof val === 'string' && (
+                 <img key={key} src={val} alt="Evidencia" className="w-full h-20 object-cover rounded-xl border border-slate-200 shadow-sm" />
+              ))}
+            </div>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="bg-white p-5 rounded-3xl shadow-sm border border-slate-200 space-y-4">
+           <h3 className="text-sm font-extrabold text-slate-800 mb-2 flex items-center gap-2"><User className="w-4 h-4 text-blue-500"/> Tus Datos de Recepción</h3>
+           <input required type="text" placeholder="Nombre Completo" value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500" />
+           <input required type="text" placeholder="RUT" value={formData.rut} onChange={e=>setFormData({...formData, rut: e.target.value})} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500" />
+           
+           <h3 className="text-sm font-extrabold text-slate-800 pt-2 border-t border-slate-100">Comentarios (Opcional)</h3>
+           <textarea placeholder="¿Alguna observación sobre el estado del vehículo al recibirlo?" value={formData.comments} onChange={e=>setFormData({...formData, comments: e.target.value})} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500 min-h-[80px]" />
+
+           <h3 className="text-sm font-extrabold text-slate-800 pt-2 border-t border-slate-100">Firma Digital</h3>
+           <SignaturePad initialData={formData.signature} onSave={d=>setFormData({...formData, signature: d})} onClear={()=>setFormData({...formData, signature: null})} />
+
+           <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg shadow-blue-200 transition-colors mt-4 text-lg">Confirmar y Enviar Acta</button>
+        </form>
+      </main>
+    </div>
+  );
+}
 
 export default function App() {
-  // --- NUEVO: DETECCIÓN DE PORTAL DE CLIENTE ---
   const params = new URLSearchParams(window.location.search);
   const clientTrack = params.get('client');
+  const liveTrackId = params.get('track'); 
+  const signTrackId = params.get('sign'); // <-- DETECTA EL LINK DE FIRMA
+
+  const [user, setUser] = useState(null);
   // -----------------------------------------------
 
   const [user, setUser] = useState(null);
@@ -932,6 +1024,22 @@ export default function App() {
       <>
         {globalStyles}
         <TrackingView clientName={simulatedClient} db={db} onBack={() => { setActiveRole('admin'); setRoleMenuOpen(false); }} />
+      </>
+    );
+  }
+  // --------------------------------------------------------------------------------
+  
+ // --- NUEVO: MAPA DE RASTREO EN VIVO ---
+  if (liveTrackId) {
+    return <LiveTrackingView jobId={liveTrackId} db={db} />;
+  }
+  
+  // --- NUEVO: VISTA DE FIRMA REMOTA DEL CLIENTE ---
+  if (signTrackId) {
+    return (
+      <>
+        {globalStyles}
+        <ClientSignView jobId={signTrackId} db={db} />
       </>
     );
   }
@@ -2182,6 +2290,41 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
   const [formData, setFormData] = useState(defaultData);
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
 
+  // NUEVO: Escucha en tiempo real si el cliente firma desde su celular
+  useEffect(() => {
+    if (isQuick || !job.id) return;
+    const unsub = onSnapshot(doc(db, 'transport_jobs', job.id), (docSnap) => {
+      const data = docSnap.data();
+      if (data?.checklist?.clientSigned) {
+        setFormData(prev => ({
+          ...prev,
+          signatureData: data.checklist.signatureData,
+          receiverName: data.checklist.receiverName,
+          receiverRut: data.checklist.receiverRut,
+          clientComments: data.checklist.clientComments || ''
+        }));
+      }
+    });
+    return () => unsub();
+  }, [job.id, isQuick, db]);
+
+  // NUEVO: Función para generar y mandar el link de firma
+  const handleRemoteSignRequest = async () => {
+    try {
+      // 1. Guarda las fotos actuales en Firebase para que el cliente las pueda ver
+      await updateDoc(doc(db, 'transport_jobs', job.id), { checklist: formData });
+      
+      // 2. Copia el link al portapapeles
+      const url = `${window.location.origin}/?sign=${job.id}`;
+      navigator.clipboard.writeText(`¡Hola! Por favor firma el acta de recepción y revisa las fotografías del vehículo aquí:\n${url}`);
+      
+      showAlert("✅ Link copiado. Envíalo al cliente por WhatsApp. La pantalla se actualizará sola cuando firme.");
+    } catch (e) {
+      console.error(e);
+      showAlert("Error al generar el link. Revisa tu conexión.");
+    }
+  };
+
   useEffect(() => {
     const savedDraft = localStorage.getItem(localStorageKey);
     if (savedDraft) {
@@ -2525,20 +2668,45 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
         ) : (
           <form onSubmit={submit} className="space-y-4">
              <>
-               <label className="flex items-center gap-2.5 p-4 bg-amber-50 rounded-2xl border-amber-300 border-2 cursor-pointer">
+               <label className="flex items-center gap-2.5 p-4 bg-amber-50 rounded-2xl border-amber-300 border-2 cursor-pointer mb-4">
                   <input type="checkbox" checked={formData.noReception} onChange={e=>setF('noReception',e.target.checked)} className="w-5 h-5 cursor-pointer"/> 
                   <span className="font-extrabold text-sm text-slate-700">Dejar sin firma (Local cerrado / PRT)</span>
                </label>
+               
+               {!formData.noReception && (
+                 <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-5 mb-4">
+                    <h3 className="font-extrabold text-blue-800 mb-2 flex items-center gap-2"><Zap className="w-5 h-5"/> Firma Remota (Recomendado)</h3>
+                    <p className="text-xs font-bold text-blue-600 mb-4">Envíale el link al cliente. Cuando firme en su celular, los datos aparecerán mágicamente aquí abajo.</p>
+                    <button type="button" onClick={handleRemoteSignRequest} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-md transition-colors flex justify-center items-center gap-2">
+                       <Share2 className="w-4 h-4"/> Compartir Acta al Cliente
+                    </button>
+                 </div>
+               )}
+
                {!formData.noReception && (
                  <>
+                   <div className="flex items-center gap-2 mb-2"><div className="h-px bg-slate-200 flex-1"></div><span className="text-xs font-bold text-slate-400 uppercase">O llenar manualmente</span><div className="h-px bg-slate-200 flex-1"></div></div>
+                   
                    <input required={!formData.noReception} value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
                    <input required={!formData.noReception} value={formData.receiverRut} onChange={e=>setF('receiverRut',e.target.value)} placeholder="RUT Receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
-                   <SignaturePad initialData={formData.signatureData} onSave={d=>setF('signatureData',d)} onClear={()=>setF('signatureData',null)}/>
+                   
+                   {/* NUEVO: Muestra los comentarios si el cliente dejó alguno por el link remoto */}
+                   {formData.clientComments && (
+                     <div className="bg-slate-100 p-3 rounded-xl border border-slate-200">
+                       <p className="text-[10px] font-extrabold text-slate-500 uppercase">Comentarios del Cliente:</p>
+                       <p className="text-sm font-bold text-slate-800 italic">"{formData.clientComments}"</p>
+                     </div>
+                   )}
+
+                   <div className="relative mt-2">
+                     {formData.signatureData && <div className="absolute top-2 right-2 bg-green-500 text-white text-[10px] px-2 py-1 rounded-full font-black flex items-center gap-1 z-10"><CheckCircle className="w-3 h-3"/> FIRMA CAPTURADA</div>}
+                     <SignaturePad initialData={formData.signatureData} onSave={d=>setF('signatureData',d)} onClear={()=>setF('signatureData',null)}/>
+                   </div>
                  </>
                )}
              </>
             
-            <button type="button" onClick={() => { if ("geolocation" in navigator) { navigator.geolocation.getCurrentPosition((pos) => setF('location', { lat: pos.coords.latitude, lng: pos.coords.longitude }), () => showAlert("Error GPS.")); } }} className={`px-4 py-4 rounded-2xl text-sm w-full font-extrabold shadow-sm ${formData.location ? 'bg-green-100 text-green-700 border-2 border-green-200' : 'bg-slate-100 text-slate-700 border-2'}`}>
+            <button type="button" onClick={() => { if ("geolocation" in navigator) { navigator.geolocation.getCurrentPosition((pos) => setF('location', { lat: pos.coords.latitude, lng: pos.coords.longitude }), () => showAlert("Error GPS.")); } }} className={`px-4 py-4 rounded-2xl text-sm w-full font-extrabold shadow-sm mt-4 ${formData.location ? 'bg-green-100 text-green-700 border-2 border-green-200' : 'bg-slate-100 text-slate-700 border-2'}`}>
               {formData.location ? "📍 GPS Capturado Exitosamente" : "📍 Tocar para Capturar GPS Actual"}
             </button>
 
