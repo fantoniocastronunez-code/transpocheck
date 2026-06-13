@@ -1487,8 +1487,9 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   const [jobToFail, setJobToFail] = useState(null);
   const [prtPromptJob, setPrtPromptJob] = useState(null); 
   const [historyClientFilter, setHistoryClientFilter] = useState(''); 
-  const [searchTerm, setSearchTerm] = useState(''); // <-- NUEVO ESTADO BÚSQUEDA
+  const [searchTerm, setSearchTerm] = useState(''); // <-- ESTADO BÚSQUEDA
 
+  // Función para actualizar la fase del traslado en vivo (SE DECLARA SOLO UNA VEZ)
   const updatePhase = async (job, phase, extra = {}) => {
     try { await updateDoc(doc(db, 'transport_jobs', job.id), { phase, ...extra }); } 
     catch (e) { console.error(e); showAlert("Error de conexión al actualizar fase."); }
@@ -1497,6 +1498,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   const now = new Date();
   const isAdminView = role === 'admin';
   
+  // LÓGICA DE FILTRADO Y BÚSQUEDA (SE DECLARA SOLO UNA VEZ)
   const filteredJobs = jobs.filter(job => {
     if (!isAdminView) {
       if (job.status === 'pending') {
@@ -1516,7 +1518,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       if (job.createdAt < firstOfCurrentMonth) return false;
     }
 
-    // NUEVO: Filtro de Búsqueda
+    // Filtro de Búsqueda
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       const matchPlate = (job.plate || '').toLowerCase().includes(term);
@@ -1526,35 +1528,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       if (!matchPlate && !matchBrand && !matchModel && !matchClient) return false;
     }
 
-    return true;
-  });
-
-  const updatePhase = async (job, phase, extra = {}) => {
-    try { await updateDoc(doc(db, 'transport_jobs', job.id), { phase, ...extra }); } 
-    catch (e) { console.error(e); showAlert("Error de conexión al actualizar fase."); }
-  }; 
-  
-  const now = new Date();
-  const isAdminView = role === 'admin';
-  
-  const filteredJobs = jobs.filter(job => {
-    if (!isAdminView) {
-      if (job.status === 'pending') {
-        if (!job.assignedEmails?.includes(currentUserEmail)) return false;
-      } else {
-        if (job.acceptedByEmail !== currentUserEmail) return false;
-      }
-      if (job.status === 'failed' && job.tripType !== 'revision') return false; 
-    }
-    
-    if (!job.createdAt) return true;
-    if (!isAdminView) {
-      const sevenDays = 7 * 24 * 60 * 60 * 1000;
-      if ((now.getTime() - job.createdAt) > sevenDays) return false;
-    } else {
-      const firstOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-      if (job.createdAt < firstOfCurrentMonth) return false;
-    }
     return true;
   });
 
@@ -1617,14 +1590,14 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     if (j.tripType === 'revision') {
        if (j.checklist?.rtStatus === 'aprobado') {
            const ret = j.checklist.rtReturnOption === 'other' ? j.checklist.rtReturnDestination : j.origin;
-           return `${j.origin} -> PRT -> ${ret || '-'}`;
+           return `${j.origin} ➔ PRT ➔ ${ret || '-'}`;
        }
        if (j.checklist?.rtStatus === 'rechazado') {
-           return `${j.origin} -> PRT (Rechazada)`;
+           return `${j.origin} ➔ PRT (Rechazada)`;
        }
-       return `${j.origin} -> Planta de Revisión (PRT)`;
+       return `${j.origin} ➔ Planta de Revisión (PRT)`;
     }
-    return `${j.origin} -> ${j.destination}`;
+    return `${j.origin} ➔ ${j.destination}`;
   };
 
   const buildPDFDoc = async (job) => {
@@ -1831,7 +1804,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
        } else {
          docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(18); docPDF.text("RECHAZADO", 15, currentY+6);
          docPDF.setFontSize(11); docPDF.setTextColor(153, 27, 27);
-         const rejSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.checklist?.rtRejectReason || 'No especificada'}`), leftColWidth);
+         const rejSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.checklist?.rtRejectReason || job.failedReason || 'No especificada'}`), leftColWidth);
          docPDF.text(rejSplit, 15, currentY + 14);
        }
     } else {
@@ -2014,6 +1987,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                   <button onClick={()=>setMenuOpenId(menuOpenId===j.id?null:j.id)} className="p-1.5 text-slate-400 hover:bg-slate-50 rounded-lg"><MoreVertical className="w-4 h-4"/></button>
                   {menuOpenId===j.id && (
                     <div className="absolute right-0 top-8 bg-white border shadow-2xl rounded-xl w-48 z-50 overflow-hidden text-xs">
+                      {/* NUEVO BOTÓN: COPIAR LINK DE PORTAL DE CLIENTE */}
                       <button onClick={() => {
                         const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
                         navigator.clipboard.writeText(`📍 Sigue en tiempo real todos los traslados de ${j.client || 'tu empresa'} aquí:\n${url}`);
@@ -2085,7 +2059,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
           ))}
         </div>
       )}
-      
+
       {historyJobs.length > 0 && (
         <div className="mt-8">
           <h3 className="font-extrabold text-lg text-slate-700 mb-4 border-b-2 border-slate-100 pb-2">Historial Simplificado</h3>
