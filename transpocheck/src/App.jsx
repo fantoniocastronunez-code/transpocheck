@@ -2146,7 +2146,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
               </div>
             )})}
           </div>
-        </div>
       )}
       {jobToFail && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
