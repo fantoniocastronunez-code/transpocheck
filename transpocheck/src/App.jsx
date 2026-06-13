@@ -2141,9 +2141,8 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
 
   const defaultData = {
     client: job.client||'', manualClient: '', brand: job.brand||'', model: job.model||'', plateOrVin: job.plate||job.vin||'', origin: job.origin||'', destination: job.destination||'', fuelLevel: 50, photos: { front:false, left:false, right:false, back:false, tire:false, dashboard:false, det1:false, det2:false, det3:false, det4:false }, docs: { soap:false, permiso:false, revTecnica:false, gases:false }, observations: '', receiverName: '', receiverRut: '', noReception: false, signatureData: null, location: null,
-    rtStatus: 'aprobado', rtRejectReason: '', rtReturnOption: 'origin', rtReturnDestination: '' 
+    rtStatus: job.prt_result || 'aprobado', rtRejectReason: job.prt_reason || '', rtReturnOption: 'origin', rtReturnDestination: '' 
   };
-
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState(defaultData);
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
