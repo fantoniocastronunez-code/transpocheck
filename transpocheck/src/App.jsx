@@ -698,6 +698,13 @@ function TrackingView({ clientName, db }) {
                <p className="text-sm font-bold text-slate-400 bg-white p-4 rounded-2xl border text-center">No hay traslados activos en este momento.</p>
             ) : activeJobs.map(job => {
               const isPending = job.status === 'pending';
+              const isAccepted = job.status === 'accepted';
+              const phase = job.phase || 'claimed'; 
+              
+              const step2Done = isAccepted && ['picked_up', 'arrived_destination', 'arrived_prt', 'prt_done'].includes(phase);
+              const step3Done = isAccepted && ['arrived_destination', 'arrived_prt', 'prt_done'].includes(phase);
+              const step4Done = isAccepted && phase === 'prt_done';
+
               return (
               <div key={job.id} className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden">
                 <div className={`absolute top-0 left-0 w-full h-1.5 ${isPending ? 'bg-amber-400' : 'bg-blue-500'}`}></div>
@@ -713,21 +720,57 @@ function TrackingView({ clientName, db }) {
                 </div>
                 
                 <div className="relative pl-8 space-y-6 before:absolute before:inset-y-2 before:left-[11px] before:w-0.5 before:bg-slate-100">
+                  
+                  {/* STEP 1: Programado / Asignado */}
                   <div className="relative">
                     <div className="absolute -left-8 bg-blue-500 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center"><CheckCircle className="w-3 h-3 text-white"/></div>
-                    <p className="font-extrabold text-slate-800 text-sm">Origen / Programado</p>
+                    <p className="font-extrabold text-slate-800 text-sm">Conductor Asignado</p>
                     <p className="text-xs font-bold text-slate-500 mt-0.5">{job.origin}</p>
                   </div>
 
+                  {/* STEP 2: En tránsito */}
                   <div className="relative">
-                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${!isPending ? 'bg-blue-500' : 'bg-slate-200'}`}>
-                      {!isPending && <CheckCircle className="w-3 h-3 text-white"/>}
+                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step2Done ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                      {step2Done && <CheckCircle className="w-3 h-3 text-white"/>}
                     </div>
-                    <p className={`font-extrabold text-sm ${!isPending ? 'text-slate-800' : 'text-slate-400'}`}>Vehículo en Tránsito</p>
-                    <p className={`text-xs font-bold mt-0.5 ${!isPending ? 'text-blue-600' : 'text-slate-400'}`}>
-                      {isPending ? 'Esperando inicio de ruta' : `Hacia ${job.tripType === 'revision' ? 'Planta de Revisión (PRT)' : job.destination}`}
+                    <p className={`font-extrabold text-sm ${step2Done ? 'text-slate-800' : 'text-slate-400'}`}>Vehículo en Tránsito</p>
+                    <p className={`text-xs font-bold mt-0.5 ${step2Done ? 'text-blue-600' : 'text-slate-400'}`}>
+                      {step2Done ? 'El conductor tiene el vehículo en su poder' : 'Esperando retiro'}
                     </p>
                   </div>
+
+                  {/* STEP 3: Llegada a Destino / PRT */}
+                  <div className="relative">
+                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step3Done ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                      {step3Done && <CheckCircle className="w-3 h-3 text-white"/>}
+                    </div>
+                    <p className={`font-extrabold text-sm ${step3Done ? 'text-slate-800' : 'text-slate-400'}`}>
+                      {job.tripType === 'revision' ? 'En Planta de Revisión' : 'Llegada a Destino'}
+                    </p>
+                    <p className={`text-xs font-bold mt-0.5 ${step3Done ? 'text-blue-600' : 'text-slate-400'}`}>
+                      {step3Done ? (job.tripType === 'revision' ? 'Realizando inspección técnica' : 'En proceso de entrega y checklist') : `Hacia ${job.tripType === 'revision' ? 'PRT' : job.destination}`}
+                    </p>
+                  </div>
+
+                  {/* STEP 4: Resultado PRT (SOLO PARA REVISIONES) */}
+                  {job.tripType === 'revision' && (
+                  <div className="relative">
+                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step4Done ? (job.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200'}`}>
+                      {step4Done && <CheckCircle className="w-3 h-3 text-white"/>}
+                    </div>
+                    <p className={`font-extrabold text-sm ${step4Done ? (job.prt_result === 'rechazado' ? 'text-red-600' : 'text-green-600') : 'text-slate-400'}`}>
+                      Resultado de Revisión
+                    </p>
+                    {step4Done ? (
+                       <p className={`text-xs font-bold mt-0.5 ${job.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-600'}`}>
+                         {job.prt_result === 'rechazado' ? `Rechazado: ${job.prt_reason}` : 'Aprobado Exitosamente'}
+                       </p>
+                    ) : (
+                       <p className="text-xs font-bold text-slate-400 mt-0.5">Esperando documento de la planta</p>
+                    )}
+                  </div>
+                  )}
+
                 </div>
               </div>
             )})}
@@ -1468,7 +1511,14 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
 function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, currentUserEmail, showAlert, showConfirm, allClientsList }) {
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [jobToFail, setJobToFail] = useState(null);
+  const [prtPromptJob, setPrtPromptJob] = useState(null); // <-- NUEVO: Para el rechazo PRT rápido
   const [historyClientFilter, setHistoryClientFilter] = useState(''); 
+
+  // NUEVO: Función para actualizar la fase del traslado en vivo
+  const updatePhase = async (job, phase, extra = {}) => {
+    try { await updateDoc(doc(db, 'transport_jobs', job.id), { phase, ...extra }); } 
+    catch (e) { console.error(e); showAlert("Error de conexión al actualizar fase."); }
+  }; 
   const now = new Date();
   const isAdminView = role === 'admin';
   
@@ -1995,9 +2045,37 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                 </p>
                 <p className="text-slate-400 mt-2">Patente/VIN: <span className="text-slate-700 bg-slate-100 px-2 py-0.5 rounded ml-1 uppercase">{j.plate || j.vin || 'N/A'}</span></p>
               </div>
-              <div className="mt-auto pt-3 border-t flex flex-col">
-                {j.status === 'pending' && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && <button onClick={()=>handleAcceptJob(j)} className="bg-blue-600 text-white font-bold py-2.5 rounded-xl text-sm shadow-md">Reclamar Traslado</button>}
-                {((j.status === 'accepted' && (isAdminView || j.acceptedByEmail === currentUserEmail)) || (j.status !== 'completed' && j.status !== 'failed' && isAdminView)) && <button onClick={()=>onStartChecklist(j)} className="bg-green-600 text-white font-bold py-2.5 rounded-xl text-sm shadow-md">Iniciar Checklist</button>}
+              <div className="mt-auto pt-4 border-t flex flex-col gap-2">
+                {j.status === 'pending' && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && (
+                  <button onClick={()=>handleAcceptJob(j)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">Reclamar Traslado</button>
+                )}
+
+                {j.status === 'accepted' && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
+                  <>
+                    {(!j.phase || j.phase === 'claimed') && (
+                      <button onClick={()=>updatePhase(j, 'picked_up')} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">🚘 Vehículo en mi poder</button>
+                    )}
+
+                    {j.phase === 'picked_up' && j.tripType !== 'revision' && (
+                      <button onClick={()=>updatePhase(j, 'arrived_destination')} className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">📍 Llegué a Destino</button>
+                    )}
+
+                    {j.phase === 'picked_up' && j.tripType === 'revision' && (
+                      <button onClick={()=>updatePhase(j, 'arrived_prt')} className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">📍 Llegué a la PRT</button>
+                    )}
+
+                    {j.phase === 'arrived_prt' && (
+                      <div className="flex gap-2">
+                         <button onClick={()=>updatePhase(j, 'prt_done', { prt_result: 'aprobado' })} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">✅ Aprobado</button>
+                         <button onClick={()=>setPrtPromptJob(j)} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">❌ Rechazado</button>
+                      </div>
+                    )}
+
+                    {(j.phase === 'arrived_destination' || j.phase === 'prt_done') && (
+                      <button onClick={()=>onStartChecklist(j)} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">📸 Entregar / Checklist</button>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           ))}
@@ -2043,6 +2121,19 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     </div>
   );
 }
+{/* NUEVO: MODAL DE RECHAZO PRT RÁPIDO */}
+      {prtPromptJob && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <form onSubmit={(e) => { e.preventDefault(); updatePhase(prtPromptJob, 'prt_done', { prt_result: 'rechazado', prt_reason: e.target.reason.value }); setPrtPromptJob(null); }} className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-xl border-t-8 border-red-500">
+            <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5"><XCircle className="text-red-500"/> Motivo del Rechazo PRT</h3>
+            <textarea name="reason" required placeholder="Escribe por qué rechazaron el vehículo en la planta..." className="w-full border-2 p-3 rounded-xl font-bold text-sm outline-none focus:border-red-500" rows="3"></textarea>
+            <div className="flex gap-3">
+              <button type="button" onClick={()=>setPrtPromptJob(null)} className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-sm text-slate-600 transition-colors">Cancelar</button>
+              <button type="submit" className="flex-[2] py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm shadow-md transition-colors">Guardar Rechazo</button>
+            </div>
+          </form>
+        </div>
+      )}
 
 function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList, drivers, expenses }) {
   const isQuick = job.id === 'NEW_QUICK_JOB'; 
