@@ -2170,7 +2170,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
           </form>
         </div>
       )}
-
     </div>
   );
 }
