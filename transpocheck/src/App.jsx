@@ -415,9 +415,105 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
     </div>
   );
 }
+function TrackingView({ trackingId, db }) {
+  const [job, setJob] = useState(null);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'transport_jobs', trackingId), (docSnap) => {
+      if (docSnap.exists()) {
+        setJob({ id: docSnap.id, ...docSnap.data() });
+      } else {
+        setJob(null);
+      }
+      setLoading(false);
+    }, (err) => {
+      console.error("Error al leer traslado", err);
+      setLoading(false);
+    });
+    return () => unsub();
+  }, [trackingId, db]);
+
+  if (loading) return <div className="min-h-screen bg-slate-50 flex items-center justify-center"><p className="font-bold text-slate-400 animate-pulse flex items-center gap-2"><Clock className="w-5 h-5"/> Buscando traslado...</p></div>;
+  if (!job) return <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center"><XCircle className="w-16 h-16 text-red-400 mb-4"/><h2 className="text-xl font-extrabold text-slate-800">Traslado no encontrado</h2><p className="text-slate-500 font-bold mt-2">El enlace es inválido o el registro fue eliminado.</p></div>;
+
+  const isCompleted = job.status === 'completed';
+  const isFailed = job.status === 'failed';
+  const isActive = job.status === 'accepted';
+  const isPending = job.status === 'pending';
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10">
+      <header className="bg-blue-600 text-white p-4 shadow-md flex justify-center items-center gap-3">
+        <div className="bg-white/20 p-1.5 rounded-xl backdrop-blur-sm"><img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" /></div>
+        <h1 className="font-alfa text-xl tracking-wide pt-1">LogisticAPP</h1>
+      </header>
+
+      <main className="max-w-md mx-auto p-4 pt-6 space-y-6">
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-500"></div>
+          <h2 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-1">Vehículo en Traslado</h2>
+          <p className="text-2xl font-black text-slate-800">{job.brand} {job.model}</p>
+          <div className="inline-block bg-slate-100 px-3 py-1 rounded-md mt-2 border border-slate-200">
+            <p className="text-lg font-bold text-slate-700 uppercase tracking-widest">{job.plate || job.vin || 'S/N'}</p>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 relative">
+          <h3 className="font-extrabold text-slate-800 mb-6 flex items-center gap-2"><Navigation className="w-5 h-5 text-blue-600"/> Estado del Servicio</h3>
+          
+          <div className="relative pl-8 space-y-8 before:absolute before:inset-y-2 before:left-[11px] before:w-0.5 before:bg-slate-100">
+            {/* Paso 1: Programado */}
+            <div className="relative">
+              <div className="absolute -left-8 bg-blue-500 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center"><CheckCircle className="w-3 h-3 text-white"/></div>
+              <p className="font-extrabold text-slate-800 text-sm">Servicio Programado</p>
+              <p className="text-xs font-bold text-slate-500 mt-0.5">Esperando asignación de conductor</p>
+            </div>
+
+            {/* Paso 2: En Camino / En PRT */}
+            <div className="relative">
+              <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${!isPending ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                {!isPending && <CheckCircle className="w-3 h-3 text-white"/>}
+              </div>
+              <p className={`font-extrabold text-sm ${!isPending ? 'text-slate-800' : 'text-slate-400'}`}>Vehículo en tránsito</p>
+              <p className={`text-xs font-bold mt-0.5 ${!isPending ? 'text-blue-600' : 'text-slate-400'}`}>
+                {isPending ? 'Conductor en camino al origen' : job.tripType === 'revision' ? 'En ruta / En Planta de Revisión' : 'En ruta hacia el destino'}
+              </p>
+            </div>
+
+            {/* Paso 3: Finalizado / Rechazado */}
+            <div className="relative">
+              <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${isCompleted ? 'bg-green-500' : isFailed ? 'bg-red-500' : 'bg-slate-200'}`}>
+                {(isCompleted || isFailed) && <CheckCircle className="w-3 h-3 text-white"/>}
+              </div>
+              <p className={`font-extrabold text-sm ${isCompleted ? 'text-green-600' : isFailed ? 'text-red-600' : 'text-slate-400'}`}>
+                {isCompleted ? (job.tripType === 'revision' && job.checklist?.rtStatus === 'aprobado' ? 'Revisión Aprobada' : 'Entregado con Éxito') : isFailed ? 'Servicio Fallido / Rechazado' : 'Finalización'}
+              </p>
+              {(isCompleted || isFailed) && (
+                <p className="text-xs font-bold text-slate-500 mt-0.5">
+                  El conductor ha cerrado el checklist.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col gap-3">
+           <div className="flex items-start gap-3"><MapPin className="w-5 h-5 text-slate-400 shrink-0"/><div className="min-w-0"><p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Origen</p><p className="text-sm font-bold text-slate-700">{job.origin}</p></div></div>
+           <div className="h-px bg-slate-100 w-full ml-8"></div>
+           <div className="flex items-start gap-3"><Navigation className="w-5 h-5 text-blue-400 shrink-0"/><div className="min-w-0"><p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Destino</p><p className="text-sm font-bold text-slate-700">{job.tripType === 'revision' ? 'Planta de Revisión (PRT)' : job.destination}</p></div></div>
+        </div>
+      </main>
+    </div>
+  );
+}
 
 export default function App() {
+  // --- NUEVO: DETECCIÓN DE LINK DE SEGUIMIENTO ---
+  const params = new URLSearchParams(window.location.search);
+  const trackId = params.get('track');
+  // -----------------------------------------------
+
   const [user, setUser] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [drivers, setDrivers] = useState([]);
@@ -523,6 +619,17 @@ export default function App() {
       .font-alfa { font-family: 'Alfa Slab One', serif; font-weight: 400; }
     `}</style>
   );
+
+  // --- NUEVO: SI HAY UN ID DE TRACKING, MOSTRAR VISTA PÚBLICA (SIN PEDIR LOGIN) ---
+  if (trackId) {
+    return (
+      <>
+        {globalStyles}
+        <TrackingView trackingId={trackId} db={db} />
+      </>
+    );
+  }
+  // --------------------------------------------------------------------------------
   
   if (!user) {
     return (
@@ -1583,8 +1690,16 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                   {isAdminView && <button onClick={()=>onEditJob(j)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg"><Edit2 className="w-4 h-4"/></button>}
                   <button onClick={()=>setMenuOpenId(menuOpenId===j.id?null:j.id)} className="p-1.5 text-slate-400 hover:bg-slate-50 rounded-lg"><MoreVertical className="w-4 h-4"/></button>
                   {menuOpenId===j.id && (
-                    <div className="absolute right-0 top-8 bg-white border shadow-2xl rounded-xl w-44 z-50 overflow-hidden text-xs">
-                      <button onClick={()=>cpyWapp(j)} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-slate-50"><Copy className="w-4 h-4"/> Copiar Texto</button>
+                    <div className="absolute right-0 top-8 bg-white border shadow-2xl rounded-xl w-48 z-50 overflow-hidden text-xs">
+                      {/* NUEVO BOTÓN: COPIAR LINK DE SEGUIMIENTO */}
+                      <button onClick={() => {
+                        const url = `${window.location.origin}/?track=${j.id}`;
+                        navigator.clipboard.writeText(`📍 Sigue en tiempo real el traslado de tu vehículo (${j.plate || j.vin || 'S/N'}) aquí:\n${url}`);
+                        showAlert("✅ Link de seguimiento copiado. ¡Pégalo en WhatsApp!");
+                        setMenuOpenId(null);
+                      }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-blue-50 text-blue-600"><Navigation className="w-4 h-4"/> Link Tracking</button>
+                      
+                      <button onClick={()=>cpyWapp(j)} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-slate-50 border-t"><Copy className="w-4 h-4"/> Copiar Resumen</button>
                       <button onClick={()=>{setJobToFail(j);setMenuOpenId(null);}} className="w-full text-left p-3 font-bold flex gap-2 text-red-600 hover:bg-red-50 border-t"><XCircle className="w-4 h-4"/> Cancelar / Falló</button>
                     </div>
                   )}
