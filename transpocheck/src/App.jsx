@@ -415,7 +415,7 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
     </div>
   );
 }
-function TrackingView({ clientName, db }) {
+function TrackingView({ clientName, db, onBack }) {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -688,9 +688,16 @@ function TrackingView({ clientName, db }) {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10">
-      <header className="bg-blue-600 text-white p-4 shadow-md flex justify-center items-center gap-3">
-        <div className="bg-white/20 p-1.5 rounded-xl backdrop-blur-sm"><img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" /></div>
-        <h1 className="font-alfa text-xl tracking-wide pt-1">LogisticAPP</h1>
+      <header className="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center relative">
+        <div className="flex items-center gap-3">
+          <div className="bg-white/20 p-1.5 rounded-xl backdrop-blur-sm"><img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" /></div>
+          <h1 className="font-alfa text-xl tracking-wide pt-1">LogisticAPP</h1>
+        </div>
+        {onBack && (
+          <button onClick={onBack} className="bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-xl text-sm font-bold text-white transition-colors border border-red-400 shadow-sm flex items-center gap-1.5 z-10">
+            <LogOut className="w-4 h-4"/> <span className="hidden sm:inline">Volver a Admin</span>
+          </button>
+        )}
       </header>
 
       <main className="max-w-5xl mx-auto p-4 pt-6 space-y-8">
@@ -814,6 +821,9 @@ export default function App() {
   const [activeRole, setActiveRole] = useState('driver');
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   
+  const [roleMenuOpen, setRoleMenuOpen] = useState(false); // NUEVO
+  const [simulatedClient, setSimulatedClient] = useState(''); // NUEVO
+  
   const isFirstLoad = useRef(true);
   const driversRef = useRef([]);
 
@@ -915,6 +925,17 @@ export default function App() {
     );
   }
   // --------------------------------------------------------------------------------
+
+  // --- NUEVO: SI EL ADMIN ELIGE VISTA CLIENTE ---
+  if (user && activeRole === 'client' && simulatedClient) {
+    return (
+      <>
+        {globalStyles}
+        <TrackingView clientName={simulatedClient} db={db} onBack={() => { setActiveRole('admin'); setRoleMenuOpen(false); }} />
+      </>
+    );
+  }
+  // --------------------------------------------------------------------------------
   
   if (!user) {
     return (
@@ -981,10 +1002,31 @@ export default function App() {
         <div className="flex items-center gap-2 sm:gap-4">
           {!notificationsEnabled && <button onClick={requestNotificationPermission} className="p-2 bg-amber-500 hover:bg-amber-400 rounded-xl transition-colors shadow-sm" title="Activar Notificaciones"><Bell className="w-5 h-5 text-white animate-pulse" /></button>}
           {isRealAdmin && (
-            <button onClick={() => { setActiveRole(activeRole === 'admin' ? 'driver' : 'admin'); setMainTab('jobs'); }} className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-3 py-2 rounded-xl text-sm font-bold transition-all border border-white/10 backdrop-blur-sm">
-              {activeRole === 'admin' ? <ToggleRight className="w-6 h-6 text-green-300"/> : <ToggleLeft className="w-6 h-6 text-slate-300"/>}
-              <span className="hidden md:inline">{activeRole === 'admin' ? 'Admin' : 'Conductor'}</span>
-            </button>
+            <div className="relative">
+              <button onClick={() => setRoleMenuOpen(!roleMenuOpen)} className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-3 py-2 rounded-xl text-sm font-bold transition-all border border-white/10 backdrop-blur-sm">
+                <Eye className="w-5 h-5 text-white"/>
+                <span className="hidden md:inline">Vista: {activeRole === 'admin' ? 'Admin' : activeRole === 'driver' ? 'Conductor' : 'Cliente'}</span>
+              </button>
+              {roleMenuOpen && (
+                <div className="absolute right-0 top-12 mt-1 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 text-slate-800">
+                  <div className="p-2 border-b border-slate-100 bg-slate-50"><p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider text-center">Cambiar Perfil</p></div>
+                  <button onClick={() => { setActiveRole('admin'); setMainTab('jobs'); setRoleMenuOpen(false); }} className={`w-full text-left px-4 py-3 text-sm font-bold hover:bg-slate-50 flex items-center gap-2 transition-colors ${activeRole==='admin'?'text-blue-600 bg-blue-50':'text-slate-600'}`}>
+                     <Users className="w-4 h-4"/> Administrador
+                  </button>
+                  <button onClick={() => { setActiveRole('driver'); setMainTab('jobs'); setRoleMenuOpen(false); }} className={`w-full text-left px-4 py-3 text-sm font-bold hover:bg-slate-50 flex items-center gap-2 transition-colors ${activeRole==='driver'?'text-blue-600 bg-blue-50':'text-slate-600'}`}>
+                     <Car className="w-4 h-4"/> Conductor
+                  </button>
+                  <div className="p-3 border-t border-slate-100 bg-slate-50 space-y-2">
+                     <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5"><Eye className="w-3.5 h-3.5"/> Simular Portal de Cliente</p>
+                     <select value={simulatedClient} onChange={(e) => setSimulatedClient(e.target.value)} className="w-full border-2 border-slate-200 p-2.5 rounded-xl text-xs font-bold outline-none focus:border-blue-500 bg-white">
+                        <option value="">Seleccionar Cliente...</option>
+                        {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
+                     </select>
+                     <button onClick={() => { if(simulatedClient) { setActiveRole('client'); setRoleMenuOpen(false); } else { showAlert("Selecciona un cliente de la lista primero"); } }} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 rounded-xl transition-colors shadow-sm">Entrar como Cliente</button>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
           <div className="hidden md:block text-right mr-2"><p className="text-xs text-blue-200 font-bold uppercase tracking-wider">Sesión iniciada</p><p className="text-sm font-extrabold">{currentUserEmail}</p></div>
           <button onClick={() => signOut(auth)} className="bg-white/10 hover:bg-white/20 p-2.5 rounded-xl text-white transition-colors" title="Cerrar sesión"><LogOut className="w-5 h-5" /></button>
