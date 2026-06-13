@@ -2118,10 +2118,8 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
           </form>
         </div>
       )}
-    </div>
-  );
-}
-{/* NUEVO: MODAL DE RECHAZO PRT RÁPIDO */}
+
+      {/* NUEVO: MODAL DE RECHAZO PRT RÁPIDO */}
       {prtPromptJob && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <form onSubmit={(e) => { e.preventDefault(); updatePhase(prtPromptJob, 'prt_done', { prt_result: 'rechazado', prt_reason: e.target.reason.value }); setPrtPromptJob(null); }} className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-xl border-t-8 border-red-500">
@@ -2134,6 +2132,10 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
           </form>
         </div>
       )}
+
+    </div>
+  );
+}
 
 function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList, drivers, expenses }) {
   const isQuick = job.id === 'NEW_QUICK_JOB'; 
