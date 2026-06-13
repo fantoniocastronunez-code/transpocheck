@@ -415,16 +415,64 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
     </div>
   );
 }
+¡Esa es la pieza que faltaba para que el portal sea 100% autónomo! Si el cliente puede descargar su propio PDF, te ahorrarás decenas de mensajes de WhatsApp pidiendo los respaldos.
+
+Como la vista de seguimiento que creamos recién es un componente aislado (para proteger tu base de datos y que el cliente no vea cosas internas), vamos a incorporarle un "motor generador de PDF" exclusivo para ellos.
+
+Vamos a reemplazar todo el bloque del Portal de Seguimiento que pegamos en el paso anterior por esta nueva versión, que ahora incluye el botón "Ver Certificado" y la lógica para construir el PDF al vuelo.
+
+Busca todo este bloque (justo antes de export default function App() {):
+
+JavaScript
+// ==========================================
+// VISTA PÚBLICA DE SEGUIMIENTO PARA CLIENTES
+// ==========================================
+function TrackingView({ clientName, db }) {
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // ... (todo el código intermedio de esta función) ...
+
+        {/* Sección 2: Historial Reciente */}
+        <div>
+          <h3 className="font-extrabold text-slate-700 mb-4 flex items-center gap-2"><CheckCircle className="w-5 h-5 text-green-600"/> Últimos Finalizados</h3>
+          <div className="space-y-3">
+            {historyJobs.length === 0 ? (
+               <p className="text-sm font-bold text-slate-400 bg-white p-4 rounded-2xl border text-center">No hay registro de traslados anteriores.</p>
+            ) : historyJobs.map(job => (
+              <div key={job.id} className="bg-white p-3 rounded-2xl border border-slate-100 flex items-center justify-between text-xs font-bold relative pl-3 overflow-hidden opacity-80 hover:opacity-100 transition-opacity">
+                 <div className={`absolute left-0 top-0 bottom-0 w-1 ${job.status === 'failed' ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                 <div>
+                   <p className="text-sm font-extrabold text-slate-800">{job.brand} {job.model} <span className="text-slate-500 text-[10px] ml-1 uppercase bg-slate-100 px-1 rounded">{job.plate || 'S/N'}</span></p>
+                   <p className="text-slate-500 mt-1">{job.origin} ➔ {job.tripType === 'revision' ? 'PRT' : job.destination}</p>
+                 </div>
+                 <div className="text-right shrink-0 ml-2">
+                   <p className={`text-[10px] font-black uppercase ${job.status === 'failed' ? 'text-red-500' : 'text-green-600'}`}>{job.status === 'failed' ? 'Rechazado' : 'Entregado'}</p>
+                   <p className="text-slate-400 mt-1">{new Date(job.completedAt || job.createdAt).toLocaleDateString('es-CL')}</p>
+                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+// ==========================================
+Y reemplázalo COMPLETO por esta nueva versión:
+
+JavaScript
+// ==========================================
+// VISTA PÚBLICA DE SEGUIMIENTO PARA CLIENTES
+// ==========================================
 function TrackingView({ clientName, db }) {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Buscamos todos los trabajos que coincidan con el nombre de este cliente
     const q = query(collection(db, 'transport_jobs'), where('client', '==', clientName));
     const unsub = onSnapshot(q, (snapshot) => {
       const fetched = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      // Los ordenamos en Javascript para evitar errores de índices en Firebase
       fetched.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
       setJobs(fetched);
       setLoading(false);
@@ -435,10 +483,247 @@ function TrackingView({ clientName, db }) {
     return () => unsub();
   }, [clientName, db]);
 
+  // --- MOTOR GENERADOR DE PDF PARA EL CLIENTE ---
+  const handleDownloadPDF = async (job) => {
+    if (!job.checklist && job.status !== 'failed') return alert("Este traslado no tiene un checklist registrado.");
+    
+    const docPDF = new jsPDF();
+    const cleanStr = (str) => {
+      if (!str) return '';
+      return String(str).replace(/➔/g, '->').replace(/•/g, '-').replace(/[^\x20-\x7E\xA0-\xFF]/g, '');
+    };
+
+    const getImageDims = (src) => new Promise(resolve => { 
+      const img = new Image(); 
+      img.onload = () => resolve({ w: img.width, h: img.height }); 
+      img.onerror = () => resolve({ w: 85, h: 60 }); 
+      img.src = src; 
+    });
+
+    const primaryColor = [30, 41, 59]; const secondaryColor = [100, 116, 139]; const accentColor = [37, 99, 235];
+    const lightBg = [248, 250, 252]; const borderColor = [226, 232, 240];
+
+    const loadSimpleLogo = async (src) => {
+      return new Promise((resolve) => {
+        const img = new Image(); img.src = src; img.crossOrigin = "Anonymous";
+        img.onload = () => {
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = img.width; tempCanvas.height = img.height;
+          const ctx = tempCanvas.getContext('2d'); ctx.drawImage(img, 0, 0, img.width, img.height);
+          resolve({ data: tempCanvas.toDataURL('image/png'), w: img.width, h: img.height });
+        };
+        img.onerror = () => resolve(null);
+        setTimeout(() => resolve(null), 1500); 
+      });
+    };
+
+    const [logoApp, logoLogistica] = await Promise.all([loadSimpleLogo('/logo.png'), loadSimpleLogo('/LogoLogistica.png')]);
+
+    const drawHeader = (titleText) => {
+      docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 40, 'F');
+      docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(18); docPDF.setFont("helvetica", "bold");
+      docPDF.text(cleanStr(titleText), 105, 18, null, null, "center");
+      
+      // Intentamos usar tu función global si está disponible, si no, fallback
+      const dateTxt = typeof formatDateDisplay === 'function' && job.scheduledDate ? formatDateDisplay(job.scheduledDate) : (job.scheduledDate || '-');
+      docPDF.setFontSize(9); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(148, 163, 184);
+      docPDF.text(`FECHA TRASLADO: ${dateTxt}`, 105, 26, null, null, "center");
+
+      docPDF.setFontSize(11); docPDF.setFont("times", "bolditalic"); docPDF.setTextColor(255, 255, 255);
+      if (logoLogistica) {
+        const ratio = logoLogistica.h / logoLogistica.w; let imgW = 35; let imgH = imgW * ratio;
+        if (imgH > 24) { imgH = 24; imgW = imgH / ratio; }
+        docPDF.addImage(logoLogistica.data, 'PNG', 27 - (imgW/2), 19 - (imgH/2), imgW, imgH);
+        docPDF.text("Logística TS SpA", 27, 34, null, null, "center");
+      }
+      if (logoApp) {
+        const ratio = logoApp.h / logoApp.w; let imgW = 20; let imgH = imgW * ratio;
+        if (imgH > 24) { imgH = 24; imgW = imgH / ratio; }
+        docPDF.addImage(logoApp.data, 'PNG', 183 - (imgW/2), 19 - (imgH/2), imgW, imgH);
+        docPDF.text("LogisticAPP", 183, 34, null, null, "center");
+      }
+    };
+
+    let pdfTitle = job.tripType === 'revision' ? "CERTIFICADO DE REVISION TECNICA" : (job.tripType === 'viaje' ? "TRASLADO A REGIONES" : "CHECKLIST DE TRASLADO");
+    drawHeader(pdfTitle);
+
+    let currentY = 50;
+    if (job.tripType === 'revision' && job.checklist?.rtStatus) {
+        const isApproved = job.checklist.rtStatus === 'aprobado';
+        const statusText = isApproved ? "APROBADO" : "RECHAZADO";
+        docPDF.setFillColor(isApproved ? 220 : 254, isApproved ? 252 : 226, isApproved ? 231 : 226);
+        docPDF.rect(0, 40, 210, 12, 'F');
+        docPDF.setFontSize(16); docPDF.setFont("helvetica", "bold");
+        docPDF.setTextColor(isApproved ? 22 : 220, isApproved ? 163 : 38, isApproved ? 74 : 38); 
+        docPDF.text(statusText, 195, 48, null, null, "right");
+        currentY = 60; 
+    }
+
+    const startY = currentY; const leftColWidth = 90;
+    const drawSectionTitle = (title, y) => {
+      docPDF.setFillColor(...lightBg); docPDF.rect(15, y - 6, leftColWidth, 10, 'F');
+      docPDF.setDrawColor(...accentColor); docPDF.setLineWidth(1); docPDF.line(15, y - 6, 15, y + 4);
+      docPDF.setTextColor(...primaryColor); docPDF.setFontSize(10); docPDF.setFont("helvetica", "bold");
+      docPDF.text(cleanStr(title).toUpperCase(), 20, y+1);
+      return y + 10;
+    };
+
+    const drawKV = (label, value, x, y, maxW = 40) => {
+      docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
+      docPDF.text(cleanStr(label).toUpperCase(), x, y);
+      docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
+      const splitValue = docPDF.splitTextToSize(cleanStr(value), maxW); docPDF.text(splitValue, x, y + 4);
+      return splitValue.length * 4;
+    };
+
+    // Rescatar nombre de conductor (El cliente no tiene la base de datos de drivers, así que la armamos de lo que esté guardado en el Job)
+    let driverNameStr = job.checklist?.assignedDriverName || job.acceptedByEmail || "Conductor";
+    if (job.assignedDrivers && job.assignedDrivers.length > 0) {
+       const found = job.assignedDrivers.find(d => d.email === job.acceptedByEmail);
+       if (found) driverNameStr = found.name;
+    }
+
+    currentY = drawSectionTitle("1. Detalles del Vehiculo", currentY);
+    drawKV("Cliente", `${job.client || 'Sin Cliente'}`, 15, currentY, 40);
+    drawKV("Marca y Modelo", `${job.brand || '-'} ${job.model || '-'}`, 60, currentY, 45);
+    currentY += 12;
+    drawKV("Patente / VIN", `${job.plate || job.vin || '-'}`, 15, currentY, 40);
+    drawKV("Conductor", driverNameStr, 60, currentY, 45);
+    currentY += 12;
+    
+    let routeText = `${job.origin || '-'}  ->  ${job.destination || '-'}`;
+    if (job.tripType === 'revision') {
+      if (job.checklist?.rtStatus === 'aprobado') {
+         const ret = job.checklist.rtReturnOption === 'other' ? job.checklist.rtReturnDestination : job.origin;
+         routeText = `${job.origin || '-'}  ->  PRT  ->  ${ret || '-'}`;
+      } else if (job.checklist?.rtStatus === 'rechazado') {
+         routeText = `${job.origin || '-'}  ->  PRT (Rechazada)`;
+      } else {
+         routeText = `${job.origin || '-'}  ->  PRT`;
+      }
+    }
+    let routeH = drawKV("Ruta Asignada", routeText, 15, currentY, leftColWidth);
+    currentY += routeH + 12;
+
+    currentY = drawSectionTitle("2. Recepcion y Estado", currentY);
+    drawKV("Combustible", `${job.checklist?.fuelLevel || '0'}%`, 15, currentY, 40);
+    const docs = job.checklist?.docs || {};
+    drawKV("Seguro SOAP", docs.soap ? 'AL DIA' : 'FALTA', 60, currentY, 40);
+    currentY += 12;
+    drawKV("Permiso Circ.", docs.permiso ? 'AL DIA' : 'FALTA', 15, currentY, 40);
+    drawKV("Rev. Tecnica", docs.revTecnica ? 'AL DIA' : 'FALTA', 60, currentY, 40);
+    currentY += 12;
+    drawKV("Gases", docs.gases ? 'AL DIA' : 'FALTA', 15, currentY, 40);
+    currentY += 12;
+
+    docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
+    docPDF.text("OBSERVACIONES:", 15, currentY);
+    docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
+    const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin observaciones registradas.'}`), leftColWidth);
+    docPDF.text(obsSplit, 15, currentY + 4);
+    currentY += (obsSplit.length * 4) + 8;
+
+    if (job.checklist?.hasWaitTime) {
+      docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38);
+      const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth);
+      docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2;
+    }
+    if (job.checklist?.hasFuelCharge) {
+      docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(37, 99, 235);
+      const fcStr = docPDF.splitTextToSize(`CARGA DE COMBUSTIBLE: ${cleanStr(job.checklist.fuelChargeAmount || 'Sí')}`, leftColWidth);
+      docPDF.text(fcStr, 15, currentY); currentY += (fcStr.length * 4) + 2;
+    }
+    currentY += 6; 
+
+    if (job.tripType === 'revision') {
+       currentY = drawSectionTitle("3. Resultado", currentY);
+       if (job.checklist?.rtStatus === 'aprobado') {
+         docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(18); docPDF.text("APROBADO", 15, currentY+6);
+       } else {
+         docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(18); docPDF.text("RECHAZADO", 15, currentY+6);
+         docPDF.setFontSize(11); docPDF.setTextColor(153, 27, 27);
+         const rejSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.checklist?.rtRejectReason || job.failedReason || 'No especificada'}`), leftColWidth);
+         docPDF.text(rejSplit, 15, currentY + 14);
+       }
+    } else {
+      currentY = drawSectionTitle("3. Conformidad Entrega", currentY);
+      if (job.checklist?.noReception) {
+        docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(9);
+        const nrSplit = docPDF.splitTextToSize("ENTREGA SIN RECEPCION (Confirmada por conductor en terreno)", leftColWidth);
+        docPDF.text(nrSplit, 15, currentY + 4); currentY += (nrSplit.length * 4) + 6;
+      } else {
+        drawKV("Receptor", `${job.checklist?.receiverName || 'N/A'}`, 15, currentY, leftColWidth); currentY += 12;
+        drawKV("RUT", `${job.checklist?.receiverRut || 'N/A'}`, 15, currentY, leftColWidth); currentY += 12;
+        if(job.checklist?.signatureData) {
+            docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
+            docPDF.text("FIRMA DE CONFORMIDAD:", 15, currentY);
+            docPDF.addImage(job.checklist.signatureData, 'PNG', 15, currentY + 2, 45, 25);
+            currentY += 30;
+        }
+      }
+    }
+
+    const frontPhotoStr = job.checklist?.photos?.front;
+    if (frontPhotoStr && typeof frontPhotoStr === 'string' && frontPhotoStr.startsWith('data:image')) {
+      try {
+        const dims = await getImageDims(frontPhotoStr); const ratio = dims.h / dims.w;
+        let imgW = 80; let imgH = imgW * ratio; if (imgH > 130) { imgH = 130; imgW = imgH / ratio; }
+        const rightX = 115; const rightY = startY + 6;
+        docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(rightX - 2, rightY - 8, imgW + 4, imgH + 12, 2, 2, 'S');
+        docPDF.setFillColor(...lightBg); docPDF.rect(rightX - 2, rightY - 8, imgW + 4, 8, 'F');
+        docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor);
+        docPDF.text("VISTA FRONTAL", rightX + (imgW/2), rightY - 3, { align: "center" });
+        docPDF.addImage(frontPhotoStr, 'JPEG', rightX, rightY + 2, imgW, imgH);
+      } catch (err) { console.error(err); }
+    }
+
+    const addFooter = () => {
+       const pageCount = docPDF.internal.getNumberOfPages();
+       for(let i = 1; i <= pageCount; i++) {
+           docPDF.setPage(i); docPDF.setFontSize(8); docPDF.setTextColor(148, 163, 184);
+           docPDF.text(`Generado por LogisticAPP el ${new Date().toLocaleString('es-CL')} - Pagina ${i} de ${pageCount}`, 105, 290, null, null, "center");
+       }
+    }
+
+    if (job.checklist?.photos) {
+      const photos = job.checklist.photos;
+      const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
+      let photoY = 46; let currentCol = 1; let addedPage = false;
+
+      for (const key in photos) {
+        if (key === 'front') continue; 
+        if (photos[key] && typeof photos[key] === 'string' && photos[key].startsWith('data:image')) {
+          if (!addedPage) { docPDF.addPage(); drawHeader("ANEXO FOTOGRAFICO"); addedPage = true; }
+          try {
+            const dims = await getImageDims(photos[key]); const ratio = dims.h / dims.w;
+            let imgW = 85; let imgH = imgW * ratio; if (imgH > 95) { imgH = 95; imgW = imgH / ratio; }
+            const slotCenter = currentCol === 1 ? 55 : 155; const finalX = slotCenter - (imgW / 2);
+            if (photoY + imgH > 275) { docPDF.addPage(); photoY = 46; drawHeader("ANEXO FOTOGRAFICO (CONT.)"); }
+            
+            docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S');
+            docPDF.setFillColor(...lightBg); docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F');
+            docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor);
+            docPDF.text((labels[key] || key).toUpperCase(), slotCenter, photoY - 3, { align: "center" });
+            docPDF.addImage(photos[key], 'JPEG', finalX, photoY + 2, imgW, imgH);
+            if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 20; }
+          } catch (err) {}
+        }
+      }
+    }
+    addFooter();
+
+    // Guardado del archivo
+    const cleanPlate = job.plate || job.vin || 'SN';
+    const dateStrForFile = (job.scheduledDate || new Date().toISOString().split('T')[0]).replace(/\//g, '-');
+    const fileName = `Certificado.${dateStrForFile}.${(job.client || 'Cliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`; 
+    docPDF.save(fileName); 
+  };
+  // ----------------------------------------------
+
   if (loading) return <div className="min-h-screen bg-slate-50 flex items-center justify-center"><p className="font-bold text-slate-400 animate-pulse flex items-center gap-2"><Clock className="w-5 h-5"/> Cargando portal...</p></div>;
 
   const activeJobs = jobs.filter(j => j.status === 'pending' || j.status === 'accepted');
-  const historyJobs = jobs.filter(j => j.status === 'completed' || j.status === 'failed').slice(0, 15); // Mostrar solo los últimos 15 finalizados
+  const historyJobs = jobs.filter(j => j.status === 'completed' || j.status === 'failed').slice(0, 15);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10">
@@ -448,14 +733,12 @@ function TrackingView({ clientName, db }) {
       </header>
 
       <main className="max-w-2xl mx-auto p-4 pt-6 space-y-8">
-        {/* Cabecera del Portal */}
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-500"></div>
           <h2 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-1">Portal de Seguimiento</h2>
           <p className="text-2xl font-black text-slate-800">{clientName}</p>
         </div>
 
-        {/* Sección 1: En Curso */}
         <div>
           <h3 className="font-extrabold text-slate-700 mb-4 flex items-center gap-2"><Navigation className="w-5 h-5 text-blue-600"/> Vehículos en Tránsito ({activeJobs.length})</h3>
           <div className="space-y-3">
@@ -482,23 +765,30 @@ function TrackingView({ clientName, db }) {
           </div>
         </div>
 
-        {/* Sección 2: Historial Reciente */}
         <div>
           <h3 className="font-extrabold text-slate-700 mb-4 flex items-center gap-2"><CheckCircle className="w-5 h-5 text-green-600"/> Últimos Finalizados</h3>
           <div className="space-y-3">
             {historyJobs.length === 0 ? (
                <p className="text-sm font-bold text-slate-400 bg-white p-4 rounded-2xl border text-center">No hay registro de traslados anteriores.</p>
             ) : historyJobs.map(job => (
-              <div key={job.id} className="bg-white p-3 rounded-2xl border border-slate-100 flex items-center justify-between text-xs font-bold relative pl-3 overflow-hidden opacity-80 hover:opacity-100 transition-opacity">
+              <div key={job.id} className="bg-white p-3 rounded-2xl border border-slate-100 flex items-center justify-between text-xs font-bold relative pl-3 overflow-hidden opacity-90 hover:opacity-100 transition-opacity">
                  <div className={`absolute left-0 top-0 bottom-0 w-1 ${job.status === 'failed' ? 'bg-red-500' : 'bg-green-500'}`}></div>
                  <div>
                    <p className="text-sm font-extrabold text-slate-800">{job.brand} {job.model} <span className="text-slate-500 text-[10px] ml-1 uppercase bg-slate-100 px-1 rounded">{job.plate || 'S/N'}</span></p>
                    <p className="text-slate-500 mt-1">{job.origin} ➔ {job.tripType === 'revision' ? 'PRT' : job.destination}</p>
                  </div>
-                 <div className="text-right shrink-0 ml-2">
-                   <p className={`text-[10px] font-black uppercase ${job.status === 'failed' ? 'text-red-500' : 'text-green-600'}`}>{job.status === 'failed' ? 'Rechazado' : 'Entregado'}</p>
-                   <p className="text-slate-400 mt-1">{new Date(job.completedAt || job.createdAt).toLocaleDateString('es-CL')}</p>
+                 
+                 {/* NUEVO BOTÓN DE PDF PARA EL CLIENTE */}
+                 <div className="flex flex-col items-end shrink-0 ml-2 gap-1.5">
+                   <div className="text-right">
+                     <p className={`text-[10px] font-black uppercase ${job.status === 'failed' ? 'text-red-500' : 'text-green-600'}`}>{job.status === 'failed' ? 'Rechazado' : 'Entregado'}</p>
+                     <p className="text-slate-400 mt-0.5">{new Date(job.completedAt || job.createdAt).toLocaleDateString('es-CL')}</p>
+                   </div>
+                   <button onClick={() => handleDownloadPDF(job)} className="flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg transition-colors shadow-sm border border-blue-100">
+                     <FileDown className="w-3.5 h-3.5"/> Descargar Certificado
+                   </button>
                  </div>
+                 
               </div>
             ))}
           </div>
