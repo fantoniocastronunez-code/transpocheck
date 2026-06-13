@@ -5,7 +5,7 @@ import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc
 import { jsPDF } from "jspdf";
 import { 
   Car, MapPin, Camera, Fuel, CheckCircle, FileText, Download, 
-  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Save
+  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Save, Search
 } from 'lucide-react';
 
 const firebaseConfig = {
@@ -670,10 +670,21 @@ function TrackingView({ clientName, db }) {
   };
   // ----------------------------------------------
 
+  const [searchTerm, setSearchTerm] = useState('');
+
   if (loading) return <div className="min-h-screen bg-slate-50 flex items-center justify-center"><p className="font-bold text-slate-400 animate-pulse flex items-center gap-2"><Clock className="w-5 h-5"/> Cargando portal...</p></div>;
 
-  const activeJobs = jobs.filter(j => j.status === 'pending' || j.status === 'accepted');
-  const historyJobs = jobs.filter(j => j.status === 'completed' || j.status === 'failed').slice(0, 15);
+  // NUEVO: Lógica de Filtro
+  const filteredJobs = jobs.filter(j => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (j.plate || '').toLowerCase().includes(term) || 
+           (j.brand || '').toLowerCase().includes(term) || 
+           (j.model || '').toLowerCase().includes(term);
+  });
+
+  const activeJobs = filteredJobs.filter(j => j.status === 'pending' || j.status === 'accepted');
+  const historyJobs = filteredJobs.filter(j => j.status === 'completed' || j.status === 'failed').slice(0, 30); // Ampliado para que la búsqueda sea útil
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10">
@@ -683,20 +694,26 @@ function TrackingView({ clientName, db }) {
       </header>
 
       <main className="max-w-5xl mx-auto p-4 pt-6 space-y-8">
-        {/* Cabecera del Portal */}
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center relative overflow-hidden max-w-2xl mx-auto">
           <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-500"></div>
           <h2 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-1">Portal de Seguimiento</h2>
           <p className="text-2xl font-black text-slate-800">{clientName}</p>
         </div>
 
-        {/* Sección 1: En Curso (Grilla de 2 columnas) */}
+        {/* BARRA DE BÚSQUEDA */}
+        <div className="relative max-w-2xl mx-auto">
+           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+             <Search className="w-5 h-5 text-slate-400" />
+           </div>
+           <input type="text" placeholder="Buscar por patente, marca o modelo..." className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 shadow-sm transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+        </div>
+
+        {/* Sección 1: En Curso */}
         <div>
           <h3 className="font-extrabold text-slate-700 mb-4 flex items-center gap-2"><Navigation className="w-5 h-5 text-blue-600"/> Vehículos en Tránsito ({activeJobs.length})</h3>
-          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {activeJobs.length === 0 ? (
-               <p className="text-sm font-bold text-slate-400 bg-white p-4 rounded-2xl border text-center col-span-full">No hay traslados activos en este momento.</p>
+               <p className="text-sm font-bold text-slate-400 bg-white p-4 rounded-2xl border text-center col-span-full">No se encontraron traslados activos.</p>
             ) : activeJobs.map(job => {
               const isPending = job.status === 'pending';
               const isAccepted = job.status === 'accepted';
@@ -709,67 +726,22 @@ function TrackingView({ clientName, db }) {
               return (
               <div key={job.id} className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden flex flex-col hover:shadow-md transition-shadow">
                 <div className={`absolute top-0 left-0 w-full h-1.5 ${isPending ? 'bg-amber-400' : 'bg-blue-500'}`}></div>
-                
                 <div className="flex justify-between items-start mb-5 pb-4 border-b border-slate-100">
                   <div>
                     <h2 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">En Traslado</h2>
                     <p className="text-xl font-black text-slate-800 leading-none">{job.brand} {job.model}</p>
                   </div>
-                  <div className="bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
-                    <p className="text-sm font-bold text-slate-700 uppercase tracking-widest">{job.plate || job.vin || 'S/N'}</p>
+                  <div className="bg-slate-800 text-white px-3 py-1.5 rounded-lg shadow-sm shrink-0">
+                    <p className="text-sm font-black uppercase tracking-widest">{job.plate || job.vin || 'S/N'}</p>
                   </div>
                 </div>
                 
                 <div className="relative pl-8 space-y-6 before:absolute before:inset-y-2 before:left-[11px] before:w-0.5 before:bg-slate-100 flex-1">
-                  
-                  {/* STEP 1: Programado / Asignado */}
-                  <div className="relative">
-                    <div className="absolute -left-8 bg-blue-500 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center"><CheckCircle className="w-3 h-3 text-white"/></div>
-                    <p className="font-extrabold text-slate-800 text-sm">Conductor Asignado</p>
-                    <p className="text-xs font-bold text-slate-500 mt-0.5">{job.origin}</p>
-                  </div>
-
-                  {/* STEP 2: En tránsito */}
-                  <div className="relative">
-                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step2Done ? 'bg-blue-500' : 'bg-slate-200'}`}>
-                      {step2Done && <CheckCircle className="w-3 h-3 text-white"/>}
-                    </div>
-                    <p className={`font-extrabold text-sm ${step2Done ? 'text-slate-800' : 'text-slate-400'}`}>Vehículo en Tránsito</p>
-                    <p className={`text-xs font-bold mt-0.5 ${step2Done ? 'text-blue-600' : 'text-slate-400'}`}>
-                      {step2Done ? 'El conductor tiene el vehículo en su poder' : 'Esperando retiro'}
-                    </p>
-                  </div>
-
-                  {/* STEP 3: Llegada a Destino / PRT */}
-                  <div className="relative">
-                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step3Done ? 'bg-blue-500' : 'bg-slate-200'}`}>
-                      {step3Done && <CheckCircle className="w-3 h-3 text-white"/>}
-                    </div>
-                    <p className={`font-extrabold text-sm ${step3Done ? 'text-slate-800' : 'text-slate-400'}`}>
-                      {job.tripType === 'revision' ? 'En Planta de Revisión' : 'Llegada a Destino'}
-                    </p>
-                    <p className={`text-xs font-bold mt-0.5 ${step3Done ? 'text-blue-600' : 'text-slate-400'}`}>
-                      {step3Done ? (job.tripType === 'revision' ? 'Realizando inspección técnica' : 'En proceso de entrega y checklist') : `Hacia ${job.tripType === 'revision' ? 'PRT' : job.destination}`}
-                    </p>
-                  </div>
-
-                  {/* STEP 4: Resultado PRT (SOLO PARA REVISIONES) */}
+                  <div className="relative"><div className="absolute -left-8 bg-blue-500 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center"><CheckCircle className="w-3 h-3 text-white"/></div><p className="font-extrabold text-slate-800 text-sm">Conductor Asignado</p><p className="text-xs font-bold text-slate-500 mt-0.5">{job.origin}</p></div>
+                  <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step2Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step2Done && <CheckCircle className="w-3 h-3 text-white"/>}</div><p className={`font-extrabold text-sm ${step2Done ? 'text-slate-800' : 'text-slate-400'}`}>Vehículo en Tránsito</p><p className={`text-xs font-bold mt-0.5 ${step2Done ? 'text-blue-600' : 'text-slate-400'}`}>{step2Done ? 'El conductor tiene el vehículo en su poder' : 'Esperando retiro'}</p></div>
+                  <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step3Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step3Done && <CheckCircle className="w-3 h-3 text-white"/>}</div><p className={`font-extrabold text-sm ${step3Done ? 'text-slate-800' : 'text-slate-400'}`}>{job.tripType === 'revision' ? 'En Planta de Revisión' : 'Llegada a Destino'}</p><p className={`text-xs font-bold mt-0.5 ${step3Done ? 'text-blue-600' : 'text-slate-400'}`}>{step3Done ? (job.tripType === 'revision' ? 'Realizando inspección técnica' : 'En proceso de entrega y checklist') : `Hacia ${job.tripType === 'revision' ? 'PRT' : job.destination}`}</p></div>
                   {job.tripType === 'revision' && (
-                  <div className="relative">
-                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step4Done ? (job.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200'}`}>
-                      {step4Done && <CheckCircle className="w-3 h-3 text-white"/>}
-                    </div>
-                    <p className={`font-extrabold text-sm ${step4Done ? (job.prt_result === 'rechazado' ? 'text-red-600' : 'text-green-600') : 'text-slate-400'}`}>
-                      Resultado de Revisión
-                    </p>
-                    {step4Done ? (
-                       <p className={`text-xs font-bold mt-0.5 ${job.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-600'}`}>
-                         {job.prt_result === 'rechazado' ? `Rechazado: ${job.prt_reason}` : 'Aprobado Exitosamente'}
-                       </p>
-                    ) : (
-                       <p className="text-xs font-bold text-slate-400 mt-0.5">Esperando documento de la planta</p>
-                    )}
-                  </div>
+                  <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step4Done ? (job.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200'}`}>{step4Done && <CheckCircle className="w-3 h-3 text-white"/>}</div><p className={`font-extrabold text-sm ${step4Done ? (job.prt_result === 'rechazado' ? 'text-red-600' : 'text-green-600') : 'text-slate-400'}`}>Resultado de Revisión</p>{step4Done ? (<p className={`text-xs font-bold mt-0.5 ${job.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-600'}`}>{job.prt_result === 'rechazado' ? `Rechazado: ${job.prt_reason}` : 'Aprobado Exitosamente'}</p>) : (<p className="text-xs font-bold text-slate-400 mt-0.5">Esperando documento de la planta</p>)}</div>
                   )}
                 </div>
               </div>
@@ -777,34 +749,38 @@ function TrackingView({ clientName, db }) {
           </div>
         </div>
 
-        {/* Sección 2: Historial Reciente (Mini Tarjetas en Grilla de hasta 4) */}
+        {/* NUEVO DISEÑO COMPACTO DE HISTORIAL (Tarjeta Estilo Ticket) */}
         <div>
           <h3 className="font-extrabold text-slate-700 mb-4 flex items-center gap-2"><CheckCircle className="w-5 h-5 text-green-600"/> Últimos Finalizados</h3>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {historyJobs.length === 0 ? (
-               <p className="text-sm font-bold text-slate-400 bg-white p-4 rounded-2xl border text-center col-span-full">No hay registro de traslados anteriores.</p>
+               <p className="text-sm font-bold text-slate-400 bg-white p-4 rounded-2xl border text-center col-span-full">No se encontraron resultados.</p>
             ) : historyJobs.map(job => {
               const isFailed = job.status === 'failed';
               return (
-              <div key={job.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between text-xs font-bold relative pl-4 overflow-hidden hover:shadow-md transition-shadow">
-                <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
+              <div key={job.id} className="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between relative pl-4 overflow-hidden hover:shadow-md transition-shadow h-[120px]">
+                {/* Borde lateral grueso y coloreado */}
+                <div className={`absolute top-0 left-0 bottom-0 w-2 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
                 
-                <div className="flex justify-between items-start mb-2">
-                  <p className="text-sm font-black text-slate-800 leading-tight pr-2">{job.brand} {job.model}</p>
-                  <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] text-slate-700 uppercase tracking-widest border border-slate-200 shrink-0">{job.plate || 'S/N'}</span>
+                {/* Fila 1: Auto y Patente Grande */}
+                <div className="flex justify-between items-center mb-1">
+                  <p className="text-sm font-black text-slate-800 leading-tight truncate pr-2">{job.brand} {job.model}</p>
+                  <span className="bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-md text-xs font-black uppercase tracking-widest shrink-0">{job.plate || 'S/N'}</span>
                 </div>
                 
-                <p className="text-slate-500 text-[10px] uppercase mb-4 flex items-center gap-1 opacity-90"><MapPin className="w-3 h-3 shrink-0"/> <span className="truncate">{job.origin} ➔ {job.tripType === 'revision' ? 'PRT' : job.destination}</span></p>
+                {/* Fila 2: Ruta */}
+                <p className="text-slate-500 text-[10px] font-bold uppercase mb-2 flex items-center gap-1 truncate opacity-90"><MapPin className="w-3.5 h-3.5 shrink-0"/> {job.origin} ➔ {job.tripType === 'revision' ? 'PRT' : job.destination}</p>
                 
-                <div className="flex justify-between items-center border-t border-slate-50 pt-3 mt-auto">
+                {/* Fila 3: Resultado y Botón PDF */}
+                <div className="flex justify-between items-end mt-auto pt-2 border-t border-slate-50">
                   <div>
-                    <p className={`text-[10px] font-black uppercase ${isFailed ? 'text-red-500' : 'text-green-600'}`}>
-                      {isFailed ? 'Rechazado' : 'Entregado'}
+                    <p className={`text-[11px] font-black uppercase ${isFailed ? 'text-red-500' : 'text-green-600'}`}>
+                      {isFailed ? 'RECHAZADO' : 'ENTREGADO'}
                     </p>
-                    <p className="text-slate-400 text-[9px] mt-0.5">{new Date(job.completedAt || job.createdAt).toLocaleDateString('es-CL')}</p>
+                    <p className="text-slate-400 text-[9px] font-bold mt-0.5">{new Date(job.completedAt || job.createdAt).toLocaleDateString('es-CL')}</p>
                   </div>
-                  <button onClick={() => handleDownloadPDF(job)} className="flex items-center justify-center w-8 h-8 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors shadow-sm border border-blue-100" title="Descargar Certificado PDF">
+                  <button onClick={() => handleDownloadPDF(job)} className="flex items-center justify-center p-2.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors border border-blue-100" title="Descargar PDF">
                     <FileDown className="w-4 h-4"/>
                   </button>
                 </div>
@@ -1509,8 +1485,49 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
 function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, currentUserEmail, showAlert, showConfirm, allClientsList }) {
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [jobToFail, setJobToFail] = useState(null);
-  const [prtPromptJob, setPrtPromptJob] = useState(null);
+  const [prtPromptJob, setPrtPromptJob] = useState(null); 
   const [historyClientFilter, setHistoryClientFilter] = useState(''); 
+  const [searchTerm, setSearchTerm] = useState(''); // <-- NUEVO ESTADO BÚSQUEDA
+
+  const updatePhase = async (job, phase, extra = {}) => {
+    try { await updateDoc(doc(db, 'transport_jobs', job.id), { phase, ...extra }); } 
+    catch (e) { console.error(e); showAlert("Error de conexión al actualizar fase."); }
+  }; 
+  
+  const now = new Date();
+  const isAdminView = role === 'admin';
+  
+  const filteredJobs = jobs.filter(job => {
+    if (!isAdminView) {
+      if (job.status === 'pending') {
+        if (!job.assignedEmails?.includes(currentUserEmail)) return false;
+      } else {
+        if (job.acceptedByEmail !== currentUserEmail) return false;
+      }
+      if (job.status === 'failed' && job.tripType !== 'revision') return false; 
+    }
+    
+    if (!job.createdAt) return true;
+    if (!isAdminView) {
+      const sevenDays = 7 * 24 * 60 * 60 * 1000;
+      if ((now.getTime() - job.createdAt) > sevenDays) return false;
+    } else {
+      const firstOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+      if (job.createdAt < firstOfCurrentMonth) return false;
+    }
+
+    // NUEVO: Filtro de Búsqueda
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      const matchPlate = (job.plate || '').toLowerCase().includes(term);
+      const matchBrand = (job.brand || '').toLowerCase().includes(term);
+      const matchModel = (job.model || '').toLowerCase().includes(term);
+      const matchClient = (job.client || '').toLowerCase().includes(term);
+      if (!matchPlate && !matchBrand && !matchModel && !matchClient) return false;
+    }
+
+    return true;
+  });
 
   const updatePhase = async (job, phase, extra = {}) => {
     try { await updateDoc(doc(db, 'transport_jobs', job.id), { phase, ...extra }); } 
@@ -1978,6 +1995,14 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   
   return (
     <div className="pb-16">
+      {/* BARRA DE BÚSQUEDA GENERAL */}
+      <div className="relative mb-6">
+         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+           <Search className="w-5 h-5 text-slate-400" />
+         </div>
+         <input type="text" placeholder="Buscar por patente, marca, modelo o cliente..." className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 shadow-sm transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+      </div>
+
       {activeJobs.length > 0 && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
           {activeJobs.map(j => (
@@ -2064,6 +2089,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       {historyJobs.length > 0 && (
         <div className="mt-8">
           <h3 className="font-extrabold text-lg text-slate-700 mb-4 border-b-2 border-slate-100 pb-2">Historial Simplificado</h3>
+          {/* AQUÍ ESTÁ LA MAGIA: Grilla de múltiples columnas */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {historyJobs.map(j => {
               const drv = drivers?.find(d => d.email === j.acceptedByEmail);
@@ -2071,30 +2097,25 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
               const isFailed = j.status === 'failed';
               
               return (
-              <div key={j.id} className="bg-white p-4 rounded-2xl border border-slate-100 flex flex-col justify-between text-xs font-bold shadow-sm relative pl-4 overflow-hidden hover:shadow-md transition-shadow">
-                <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
+              <div key={j.id} className="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between relative pl-4 overflow-hidden hover:shadow-md transition-shadow">
+                <div className={`absolute top-0 left-0 bottom-0 w-2 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
                 
-                <div className="flex justify-between items-start mb-2">
+                <div className="flex justify-between items-center mb-1.5">
+                  <p className="text-sm font-black text-slate-800 leading-tight truncate pr-2">{j.brand} {j.model}</p>
+                  <span className="bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-md text-xs font-black uppercase tracking-widest shrink-0">{j.plate || 'S/N'}</span>
+                </div>
+                
+                <p className="text-slate-500 text-[10px] font-bold uppercase mb-2 flex items-center gap-1 truncate opacity-90"><MapPin className="w-3.5 h-3.5 shrink-0"/> {j.origin} ➔ {j.tripType === 'revision' ? 'PRT' : j.destination}</p>
+                
+                <div className="mb-3 flex justify-between items-center">
                    <div>
-                      <span className={`px-1.5 py-0.5 rounded text-[9px] uppercase ${isFailed ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'} mb-1 inline-block`}>
-                         {isFailed ? 'Fallido' : 'Completado'}
-                      </span>
-                      <p className="text-sm font-black text-slate-800 leading-tight pr-1">{j.brand} {j.model}</p>
+                     <p className="text-blue-600 font-extrabold text-[10px] uppercase tracking-wide truncate">Conductor: <span className="text-slate-700">{driverName}</span></p>
+                     {isFailed && <p className="text-red-600 text-[10px] mt-0.5 font-bold line-clamp-1">Razón: {j.failedReason}</p>}
                    </div>
-                   <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] text-blue-600 uppercase tracking-widest border border-slate-200 shrink-0">{j.plate || 'S/N'}</span>
+                   <p className="text-slate-400 font-bold text-[9px] text-right shrink-0 ml-2">{getDStr(j)}</p>
                 </div>
                 
-                <div className="mb-3">
-                   <p className="text-slate-500 font-semibold truncate text-[10px]">{getRouteStr(j)}</p>
-                   <p className="text-slate-400 font-bold mt-0.5 text-[9px]">{getDStr(j)}</p>
-                </div>
-
-                <div className="mb-4">
-                   <p className="text-blue-600 font-extrabold text-[10px] uppercase tracking-wide truncate">Conductor: <span className="text-slate-700">{driverName}</span></p>
-                   {isFailed && <p className="text-red-600 text-[10px] mt-1 font-bold line-clamp-2">Razón: {j.failedReason}</p>}
-                </div>
-                
-                <div className="flex gap-1.5 mt-auto pt-3 border-t border-slate-50">
+                <div className="flex gap-1.5 mt-auto pt-2 border-t border-slate-50">
                   <button onClick={()=>cpyWapp(j)} className="flex-1 py-1.5 flex justify-center bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors" title="Copiar Texto"><Copy className="w-4 h-4"/></button>
                   <button onClick={() => generatePDF(j)} className="flex-1 py-1.5 flex justify-center bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg transition-colors" title="Descargar PDF"><FileDown className="w-4 h-4"/></button>
                   <button onClick={() => handleShareWhatsAppPDF(j)} className="flex-1 py-1.5 flex justify-center bg-green-50 text-green-700 hover:bg-green-100 rounded-lg transition-colors" title="Compartir PDF"><Share2 className="w-4 h-4"/></button>
