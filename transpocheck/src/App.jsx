@@ -415,56 +415,6 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
     </div>
   );
 }
-¡Esa es la pieza que faltaba para que el portal sea 100% autónomo! Si el cliente puede descargar su propio PDF, te ahorrarás decenas de mensajes de WhatsApp pidiendo los respaldos.
-
-Como la vista de seguimiento que creamos recién es un componente aislado (para proteger tu base de datos y que el cliente no vea cosas internas), vamos a incorporarle un "motor generador de PDF" exclusivo para ellos.
-
-Vamos a reemplazar todo el bloque del Portal de Seguimiento que pegamos en el paso anterior por esta nueva versión, que ahora incluye el botón "Ver Certificado" y la lógica para construir el PDF al vuelo.
-
-Busca todo este bloque (justo antes de export default function App() {):
-
-JavaScript
-// ==========================================
-// VISTA PÚBLICA DE SEGUIMIENTO PARA CLIENTES
-// ==========================================
-function TrackingView({ clientName, db }) {
-  const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  // ... (todo el código intermedio de esta función) ...
-
-        {/* Sección 2: Historial Reciente */}
-        <div>
-          <h3 className="font-extrabold text-slate-700 mb-4 flex items-center gap-2"><CheckCircle className="w-5 h-5 text-green-600"/> Últimos Finalizados</h3>
-          <div className="space-y-3">
-            {historyJobs.length === 0 ? (
-               <p className="text-sm font-bold text-slate-400 bg-white p-4 rounded-2xl border text-center">No hay registro de traslados anteriores.</p>
-            ) : historyJobs.map(job => (
-              <div key={job.id} className="bg-white p-3 rounded-2xl border border-slate-100 flex items-center justify-between text-xs font-bold relative pl-3 overflow-hidden opacity-80 hover:opacity-100 transition-opacity">
-                 <div className={`absolute left-0 top-0 bottom-0 w-1 ${job.status === 'failed' ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                 <div>
-                   <p className="text-sm font-extrabold text-slate-800">{job.brand} {job.model} <span className="text-slate-500 text-[10px] ml-1 uppercase bg-slate-100 px-1 rounded">{job.plate || 'S/N'}</span></p>
-                   <p className="text-slate-500 mt-1">{job.origin} ➔ {job.tripType === 'revision' ? 'PRT' : job.destination}</p>
-                 </div>
-                 <div className="text-right shrink-0 ml-2">
-                   <p className={`text-[10px] font-black uppercase ${job.status === 'failed' ? 'text-red-500' : 'text-green-600'}`}>{job.status === 'failed' ? 'Rechazado' : 'Entregado'}</p>
-                   <p className="text-slate-400 mt-1">{new Date(job.completedAt || job.createdAt).toLocaleDateString('es-CL')}</p>
-                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-}
-// ==========================================
-Y reemplázalo COMPLETO por esta nueva versión:
-
-JavaScript
-// ==========================================
-// VISTA PÚBLICA DE SEGUIMIENTO PARA CLIENTES
-// ==========================================
 function TrackingView({ clientName, db }) {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
