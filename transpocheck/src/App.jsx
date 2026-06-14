@@ -893,9 +893,9 @@ export default function App() {
   const params = new URLSearchParams(window.location.search);
   const clientTrack = params.get('client');
   const liveTrackId = params.get('track'); 
-  const signTrackId = params.get('sign'); // <-- DETECTA EL LINK DE FIRMA
+  const signTrackId = params.get('sign'); 
 
-
+  const [user, setUser] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [expenses, setExpenses] = useState([]);
@@ -910,8 +910,8 @@ export default function App() {
   const [activeRole, setActiveRole] = useState('driver');
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   
-  const [roleMenuOpen, setRoleMenuOpen] = useState(false); // NUEVO
-  const [simulatedClient, setSimulatedClient] = useState(''); // NUEVO
+  const [roleMenuOpen, setRoleMenuOpen] = useState(false);
+  const [simulatedClient, setSimulatedClient] = useState('');
   
   const isFirstLoad = useRef(true);
   const driversRef = useRef([]);
