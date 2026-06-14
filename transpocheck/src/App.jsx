@@ -536,10 +536,10 @@ function TrackingView({ clientName, db, onBack }) {
     currentY = drawSectionTitle("1. Detalles del Vehiculo", currentY);
     drawKV("Cliente", `${job.client || 'Sin Cliente'}`, 15, currentY, 40);
     drawKV("Marca y Modelo", `${job.brand || '-'} ${job.model || '-'}`, 60, currentY, 45);
-    currentY += 10;
+    currentY += 14; 
     drawKV("Patente / VIN", `${job.plate || job.vin || '-'}`, 15, currentY, 40);
     drawKV("Conductor", driverNameStr, 60, currentY, 45);
-    currentY += 10;
+    currentY += 12;
     
     let routeText = `${job.origin || '-'}  ->  ${job.destination || '-'}`;
     if (job.tripType === 'revision') {
@@ -553,10 +553,9 @@ function TrackingView({ clientName, db, onBack }) {
       }
     }
     let routeH = drawKV("Ruta Asignada", routeText, 15, currentY, leftColWidth);
-    currentY += routeH + 8;
+    currentY += routeH + 10;
 
     currentY = drawSectionTitle("2. Recepcion y Estado", currentY);
-    drawKV("Combustible", `${job.checklist?.fuelLevel || '0'}%`, 15, currentY, 40);
     
     const getDocStatus = (docKey) => {
         const isOk = job.checklist?.docs?.[docKey];
@@ -569,13 +568,16 @@ function TrackingView({ clientName, db, onBack }) {
         return 'AL DIA';
     };
 
+    drawKV("Combustible", `${job.checklist?.fuelLevel || '0'}%`, 15, currentY, 40);
     drawKV("Seguro SOAP", getDocStatus('soap'), 60, currentY, 45);
-    currentY += 10;
+    currentY += 14; 
+    
     drawKV("Permiso Circ.", getDocStatus('permiso'), 15, currentY, 40);
     drawKV("Rev. Tecnica", getDocStatus('revTecnica'), 60, currentY, 45);
-    currentY += 10;
+    currentY += 14; 
+    
     drawKV("Gases", getDocStatus('gases'), 15, currentY, 40);
-    currentY += 10;
+    currentY += 12;
 
     docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
     docPDF.text("OBSERVACIONES:", 15, currentY);
@@ -594,7 +596,7 @@ function TrackingView({ clientName, db, onBack }) {
       const fcStr = docPDF.splitTextToSize(`CARGA DE COMBUSTIBLE: ${cleanStr(job.checklist.fuelChargeAmount || 'Sí')}`, leftColWidth);
       docPDF.text(fcStr, 15, currentY); currentY += (fcStr.length * 4) + 2;
     }
-    currentY += 6; 
+    currentY += 8; 
 
     let sectionNum = 3;
 
@@ -603,14 +605,14 @@ function TrackingView({ clientName, db, onBack }) {
        if (job.checklist?.rtStatus === 'aprobado') {
          docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(16); 
          docPDF.text("APROBADO", 15, currentY + 6);
-         currentY += 16; 
+         currentY += 18; 
        } else {
          docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(16); 
          docPDF.text("RECHAZADO", 15, currentY + 6);
          docPDF.setFontSize(10); docPDF.setTextColor(153, 27, 27);
          const rejSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.checklist?.rtRejectReason || job.failedReason || 'No especificada'}`), leftColWidth);
          docPDF.text(rejSplit, 15, currentY + 12);
-         currentY += 18 + (rejSplit.length * 4); 
+         currentY += 20 + (rejSplit.length * 4); 
        }
        sectionNum++;
     }
@@ -621,8 +623,8 @@ function TrackingView({ clientName, db, onBack }) {
       const nrSplit = docPDF.splitTextToSize("ENTREGA SIN RECEPCION (Confirmada por conductor en terreno)", leftColWidth);
       docPDF.text(nrSplit, 15, currentY + 4); currentY += (nrSplit.length * 4) + 6;
     } else {
-      drawKV("Receptor", `${job.checklist?.receiverName || 'N/A'}`, 15, currentY, leftColWidth); currentY += 10;
-      drawKV("RUT", `${job.checklist?.receiverRut || 'N/A'}`, 15, currentY, leftColWidth); currentY += 10;
+      drawKV("Receptor", `${job.checklist?.receiverName || 'N/A'}`, 15, currentY, leftColWidth); currentY += 12;
+      drawKV("RUT", `${job.checklist?.receiverRut || 'N/A'}`, 15, currentY, leftColWidth); currentY += 12;
       
       if (job.checklist?.clientComments) {
           docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
@@ -636,8 +638,8 @@ function TrackingView({ clientName, db, onBack }) {
       if(job.checklist?.signatureData) {
           docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
           docPDF.text("FIRMA DE CONFORMIDAD:", 15, currentY);
-          docPDF.addImage(job.checklist.signatureData, 'PNG', 15, currentY + 2, 35, 18);
-          currentY += 24;
+          docPDF.addImage(job.checklist.signatureData, 'PNG', 15, currentY + 2, 45, 25);
+          currentY += 30;
       }
     }
 
@@ -2071,10 +2073,10 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     currentY = drawSectionTitle("1. Detalles del Vehiculo", currentY);
     drawKV("Cliente", `${job.client || 'Sin Cliente'}`, 15, currentY, 40);
     drawKV("Marca y Modelo", `${job.brand || '-'} ${job.model || '-'}`, 60, currentY, 45);
-    currentY += 10;
+    currentY += 14; 
     drawKV("Patente / VIN", `${job.plate || job.vin || '-'}`, 15, currentY, 40);
     drawKV("Conductor", driverNameStr, 60, currentY, 45);
-    currentY += 10;
+    currentY += 12;
     
     let routeText = `${job.origin || '-'}  ->  ${job.destination || '-'}`;
     if (job.tripType === 'revision') {
@@ -2088,10 +2090,9 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       }
     }
     let routeH = drawKV("Ruta Asignada", routeText, 15, currentY, leftColWidth);
-    currentY += routeH + 8;
+    currentY += routeH + 10;
 
     currentY = drawSectionTitle("2. Recepcion y Estado", currentY);
-    drawKV("Combustible", `${job.checklist?.fuelLevel || '0'}%`, 15, currentY, 40);
     
     const getDocStatus = (docKey) => {
         const isOk = job.checklist?.docs?.[docKey];
@@ -2104,20 +2105,23 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         return 'AL DIA';
     };
 
+    drawKV("Combustible", `${job.checklist?.fuelLevel || '0'}%`, 15, currentY, 40);
     drawKV("Seguro SOAP", getDocStatus('soap'), 60, currentY, 45);
-    currentY += 10;
+    currentY += 14; 
+    
     drawKV("Permiso Circ.", getDocStatus('permiso'), 15, currentY, 40);
     drawKV("Rev. Tecnica", getDocStatus('revTecnica'), 60, currentY, 45);
-    currentY += 10;
+    currentY += 14; 
+    
     drawKV("Gases", getDocStatus('gases'), 15, currentY, 40);
-    currentY += 10;
+    currentY += 12;
 
     docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
     docPDF.text("OBSERVACIONES:", 15, currentY);
     docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
     const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin observaciones registradas.'}`), leftColWidth);
     docPDF.text(obsSplit, 15, currentY + 4);
-    currentY += (obsSplit.length * 4) + 6;
+    currentY += (obsSplit.length * 4) + 8;
 
     if (job.checklist?.hasWaitTime) {
       docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38);
@@ -2139,14 +2143,14 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
        if (job.checklist?.rtStatus === 'aprobado') {
          docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(16); 
          docPDF.text("APROBADO", 15, currentY + 6);
-         currentY += 16; 
+         currentY += 18; 
        } else {
          docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(16); 
          docPDF.text("RECHAZADO", 15, currentY + 6);
          docPDF.setFontSize(10); docPDF.setTextColor(153, 27, 27);
          const rejSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.checklist?.rtRejectReason || job.failedReason || 'No especificada'}`), leftColWidth);
          docPDF.text(rejSplit, 15, currentY + 12);
-         currentY += 18 + (rejSplit.length * 4); 
+         currentY += 20 + (rejSplit.length * 4); 
        }
        sectionNum++;
     }
@@ -2159,9 +2163,9 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       currentY += (nrSplit.length * 4) + 6;
     } else {
       drawKV("Receptor", `${job.checklist?.receiverName || 'N/A'}`, 15, currentY, leftColWidth);
-      currentY += 10;
+      currentY += 12;
       drawKV("RUT", `${job.checklist?.receiverRut || 'N/A'}`, 15, currentY, leftColWidth);
-      currentY += 10;
+      currentY += 12;
       
       if (job.checklist?.clientComments) {
           docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
@@ -2175,8 +2179,8 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       if(job.checklist?.signatureData) {
           docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
           docPDF.text("FIRMA DE CONFORMIDAD:", 15, currentY);
-          docPDF.addImage(job.checklist.signatureData, 'PNG', 15, currentY + 2, 35, 18);
-          currentY += 24;
+          docPDF.addImage(job.checklist.signatureData, 'PNG', 15, currentY + 2, 45, 25);
+          currentY += 30;
       }
     }
     
