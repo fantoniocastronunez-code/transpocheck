@@ -975,7 +975,11 @@ function ClientSignView({ jobId, db }) {
   }, [jobId, db]);
 
   if (loading) return <div className="min-h-screen bg-slate-50 flex items-center justify-center font-bold text-slate-400"><Clock className="w-5 h-5 mr-2 animate-spin"/> Cargando acta...</div>;
-  if (!job || !job.checklist) return <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center font-bold text-red-500"><XCircle className="w-12 h-12 mb-4 text-red-400"/>Acta no encontrada.<br/><span className="text-sm text-slate-400 mt-2">El conductor aún no ha guardado los datos. Intenta escanear nuevamente en unos segundos.</span></div>;
+  
+  if (!job) return <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center font-bold text-red-500"><XCircle className="w-12 h-12 mb-4 text-red-400"/>Acta no encontrada.<br/><span className="text-sm text-slate-400 mt-2">Verifica el link o escanea nuevamente.</span></div>;
+  
+  // NUEVO: PANTALLA DE SINCRONIZACIÓN. Si el conductor aún está subiendo las fotos, el cliente espera aquí.
+  if (!job.checklist) return <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center font-bold text-slate-600"><Clock className="w-12 h-12 mb-4 text-blue-500 animate-spin mx-auto"/>Sincronizando datos...<br/><span className="text-sm text-slate-400 mt-2">Esperando a que el celular del conductor termine de enviar las fotografías. No cierres esta pantalla, la firma aparecerá automáticamente.</span></div>;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -2626,11 +2630,10 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     if (isQuick) return showAlert("⚠️ Para usar la Firma Remota en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
     
     try {
-      // 1. Guarda las fotos actuales en Firebase usando setDoc para mayor seguridad
       await setDoc(doc(db, 'transport_jobs', job.id), { checklist: formData }, { merge: true });
       
-      // 2. Copia el link al portapapeles
-      const url = `${window.location.origin}/?sign=${job.id}`;
+      // Se crea la URL limpia de forma absoluta
+      const url = `${window.location.href.split('?')[0]}?sign=${job.id}`;
       navigator.clipboard.writeText(`¡Hola! Por favor firma el acta de recepción y revisa las fotografías del vehículo aquí:\n${url}`);
       
       showAlert("✅ Link copiado. Envíalo al cliente por WhatsApp. La pantalla se actualizará sola cuando firme.");
@@ -2643,9 +2646,9 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
   // NUEVO: Función para guardar datos antes de mostrar el QR
   const handleOpenQR = async () => {
     if (isQuick) return showAlert("⚠️ Para usar el Código QR en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
+    if (!navigator.onLine) return showAlert("⚠️ Tu celular no tiene señal en este momento. El cliente no podrá descargar las fotos con el QR. Usa 'Compartir Link' y envíalo cuando recuperes la conexión.");
     
     try {
-      // Guarda temporalmente para que el celular del cliente encuentre el formulario
       await setDoc(doc(db, 'transport_jobs', job.id), { checklist: formData }, { merge: true });
       setQrOpen(true);
     } catch (e) {
@@ -3027,13 +3030,13 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
                       
                       <div className="bg-white p-3 rounded-2xl border-4 border-slate-100 shadow-inner inline-block">
                         {/* Usamos QuickChart que es más confiable y no guarda caché erróneo */}
-                        <img src={`https://quickchart.io/qr?size=250&margin=1&text=${encodeURIComponent(`${window.location.origin}/?sign=${job.id}`)}`} alt="QR Signature" className="w-48 h-48 mx-auto" />
+                        <img src={`https://quickchart.io/qr?size=250&margin=1&text=${encodeURIComponent(`${window.location.href.split('?')[0]}?sign=${job.id}`)}`} alt="QR Signature" className="w-48 h-48 mx-auto" />
                       </div>
                       
                       {/* Mostramos el código por si el escáner falla */}
                       <div className="mt-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
                         <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">O ingresa manualmente a:</p>
-                        <p className="text-[11px] font-extrabold text-blue-600 break-all select-all">{`${window.location.origin}/?sign=${job.id}`}</p>
+                        <p className="text-[11px] font-extrabold text-blue-600 break-all select-all">{`${window.location.href.split('?')[0]}?sign=${job.id}`}</p>
                       </div>
                     </div>
                   </div>
