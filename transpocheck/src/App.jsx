@@ -735,15 +735,28 @@ function TrackingView({ clientName, db, onBack }) {
   const pendingSignatureJobs = activeJobs.filter(j => j.checklist && !j.checklist.clientSigned);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10">
-      <header className="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center relative">
-        <div className="flex items-center gap-3">
-          <div className="bg-white/20 p-1.5 rounded-xl backdrop-blur-sm"><img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" /></div>
-          <h1 className="font-alfa text-xl tracking-wide pt-1">LogisticAPP</h1>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans pb-10 transition-colors duration-300">
+      <header className="bg-blue-600 dark:bg-slate-950 text-white p-4 shadow-lg flex justify-between items-center sticky top-0 z-50 transition-colors duration-300">
+        <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
+          {/* Logo de la app más pequeño en móvil */}
+          <div className="bg-white/20 p-1 sm:p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">
+            <img src="/logo.png" alt="Logo App" className="w-7 h-7 sm:w-12 sm:h-12 object-contain" />
+          </div>
+          
+          {/* Nombre de la aplicación adaptado */}
+          <h1 className="font-alfa text-lg sm:text-3xl tracking-wide shrink-0 text-white" style={{ paddingTop: '2px' }}>
+            LogisticAPP
+          </h1>
+          
+          {/* Logo Logística TS SpA ajustado */}
+          <div className="bg-white/20 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0 ml-0.5 sm:ml-1 overflow-hidden">
+            <img src="/LogoLogistica.png" alt="Logística TS SpA" className="h-8 sm:h-15 object-contain" />
+          </div>
         </div>
+
         {onBack && (
-          <button onClick={onBack} className="bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-xl text-sm font-bold text-white transition-colors border border-red-400 shadow-sm flex items-center gap-1.5 z-10">
-            <LogOut className="w-4 h-4"/> <span className="hidden sm:inline">Volver a Admin</span>
+          <button onClick={onBack} className="bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-xl text-sm font-bold text-white transition-colors border border-red-400 shadow-sm flex items-center gap-1.5 z-10 shrink-0 ml-2">
+            <LogOut className="w-4 h-4"/> <span className="hidden sm:inline">Volver</span>
           </button>
         )}
       </header>
