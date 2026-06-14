@@ -744,11 +744,23 @@ function TrackingView({ clientName, db, onBack }) {
                 </div>
                 
                 <div className="relative pl-8 space-y-6 before:absolute before:inset-y-2 before:left-[11px] before:w-0.5 before:bg-slate-100 flex-1">
-                  <div className="relative"><div className="absolute -left-8 bg-blue-500 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center"><CheckCircle className="w-3 h-3 text-white"/></div><p className="font-extrabold text-slate-800 text-sm">Conductor Asignado</p><p className="text-xs font-bold text-slate-500 mt-0.5">{job.origin}</p></div>
+                  {/* PASO 1: Nombre del Conductor si está aceptado */}
+                  <div className="relative"><div className="absolute -left-8 bg-blue-500 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center"><CheckCircle className="w-3 h-3 text-white"/></div><p className="font-extrabold text-slate-800 text-sm">{isAccepted ? (job.assignedDrivers?.find(d => d.email === job.acceptedByEmail)?.name || "Conductor en camino") : "Buscando conductor..."}</p><p className="text-xs font-bold text-slate-500 mt-0.5">{isAccepted ? `Responsable del retiro en ${job.origin}` : `Esperando asignación para ${job.origin}`}</p></div>
+                  
+                  {/* PASO 2: Vehículo en poder */}
                   <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step2Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step2Done && <CheckCircle className="w-3 h-3 text-white"/>}</div><p className={`font-extrabold text-sm ${step2Done ? 'text-slate-800' : 'text-slate-400'}`}>Vehículo en Tránsito</p><p className={`text-xs font-bold mt-0.5 ${step2Done ? 'text-blue-600' : 'text-slate-400'}`}>{step2Done ? 'El conductor tiene el vehículo en su poder' : 'Esperando retiro'}</p></div>
+                  
+                  {/* PASO 3: Llegada */}
                   <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step3Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step3Done && <CheckCircle className="w-3 h-3 text-white"/>}</div><p className={`font-extrabold text-sm ${step3Done ? 'text-slate-800' : 'text-slate-400'}`}>{job.tripType === 'revision' ? 'En Planta de Revisión' : 'Llegada a Destino'}</p><p className={`text-xs font-bold mt-0.5 ${step3Done ? 'text-blue-600' : 'text-slate-400'}`}>{step3Done ? (job.tripType === 'revision' ? 'Realizando inspección técnica' : 'En proceso de entrega y checklist') : `Hacia ${job.tripType === 'revision' ? 'PRT' : job.destination}`}</p></div>
+                  
+                  {/* PASO 4: Resultado PRT */}
                   {job.tripType === 'revision' && (
                   <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step4Done ? (job.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200'}`}>{step4Done && <CheckCircle className="w-3 h-3 text-white"/>}</div><p className={`font-extrabold text-sm ${step4Done ? (job.prt_result === 'rechazado' ? 'text-red-600' : 'text-green-600') : 'text-slate-400'}`}>Resultado de Revisión</p>{step4Done ? (<p className={`text-xs font-bold mt-0.5 ${job.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-600'}`}>{job.prt_result === 'rechazado' ? `Rechazado: ${job.prt_reason}` : 'Aprobado Exitosamente'}</p>) : (<p className="text-xs font-bold text-slate-400 mt-0.5">Esperando documento de la planta</p>)}</div>
+                  )}
+
+                  {/* NUEVO PASO 5: Camino a Destino (Solo si la PRT ya se resolvió) */}
+                  {job.tripType === 'revision' && step4Done && (
+                  <div className="relative"><div className="absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center bg-blue-500"><div className="w-2 h-2 bg-white rounded-full animate-ping"></div></div><p className="font-extrabold text-sm text-slate-800">Camino a destino</p><p className="text-xs font-bold text-blue-600 mt-0.5">El vehículo va en ruta a su destino final</p></div>
                   )}
                 </div>
               </div>
@@ -821,15 +833,26 @@ function ClientSignView({ jobId, db }) {
     if (!formData.signature) return alert("Por favor, firme en el recuadro blanco.");
     
     try {
+      // Unimos el checklist existente con los datos nuevos (Evita el error de notación de punto)
+      const updatedChecklist = {
+        ...job.checklist,
+        clientSigned: true,
+        receiverName: formData.name || '',
+        receiverRut: formData.rut || '',
+        clientComments: formData.comments || '',
+        signatureData: formData.signature
+      };
+
+      // Subimos el objeto completo a Firebase
       await updateDoc(doc(db, 'transport_jobs', jobId), {
-        'checklist.clientSigned': true,
-        'checklist.receiverName': formData.name,
-        'checklist.receiverRut': formData.rut,
-        'checklist.clientComments': formData.comments,
-        'checklist.signatureData': formData.signature
+        checklist: updatedChecklist
       });
+      
       setSubmitted(true);
-    } catch (error) { console.error(error); alert("Error al guardar la firma."); }
+    } catch (error) { 
+      console.error("Firebase Error:", error); 
+      alert("Error al guardar la firma: " + error.message); 
+    }
   };
 
   if (submitted || job.checklist.clientSigned) {
