@@ -1229,7 +1229,18 @@ export default function App() {
   const globalStyles = (
     <style>{`
       @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Alfa+Slab+One&display=swap');
-      body { font-family: 'Nunito', sans-serif; background-color: #f8fafc; transition: background-color 0.3s; }
+      
+      body { 
+        font-family: 'Nunito', sans-serif; 
+        background-color: #f8fafc; 
+        transition: background-color 0.3s; 
+        
+        /* MAGIA APP NATIVA */
+        overscroll-behavior-y: none; /* Elimina el rebote (pull-to-refresh) de los navegadores */
+        touch-action: manipulation; /* Bloquea el zoom al tocar dos veces rápido (iOS) */
+        -webkit-tap-highlight-color: transparent; /* Quita el destello azul al tocar botones en Android/iOS */
+      }
+      
       .font-alfa { font-family: 'Alfa Slab One', serif; font-weight: 400; }
       
       /* MAGIA MODO OSCURO AUTOMATIZADO */
