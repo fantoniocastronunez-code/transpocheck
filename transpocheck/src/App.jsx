@@ -746,8 +746,9 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
   const pendingSignatureJobs = activeJobs.filter(j => j.checklist && !j.checklist.clientSigned);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10 transition-colors duration-300">
-      <header className="fixed-nav-bar bg-blue-600 text-white p-4 shadow-lg flex justify-between items-center transition-colors duration-300 h-16 sm:h-20">
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10 transition-colors duration-300 pt-20 sm:pt-24">
+      {/* SE ANCLA CON LA CLASE fixed-nav-bar PARA EVITAR DESPLAZAMIENTOS */}
+      <header className="fixed-nav-bar bg-blue-600 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300">
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
           {/* Logo de la app */}
           <div className="bg-white/20 p-1 sm:p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">
@@ -781,8 +782,7 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
         </div>
       </header>
 
-      {/* CORRECCIÓN: pt-24 en móvil y pt-28 en PC para empujar el contenido abajo de la barra fija */}
-      <main className="max-w-5xl mx-auto p-4 pt-24 sm:pt-28 space-y-8">
+      <main className="max-w-5xl mx-auto p-4 pt-6 space-y-8">
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center relative overflow-hidden max-w-2xl mx-auto">
           <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-500"></div>
           <h2 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-1">Portal de Seguimiento</h2>
@@ -1388,7 +1388,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-32 transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-32 transition-colors duration-300 pt-20 sm:pt-24">
       {globalStyles}
       <header className="fixed-nav-bar bg-blue-600 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300">
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
@@ -1476,7 +1476,7 @@ export default function App() {
       </header>
 
       {currentView === 'main' && mainTab === 'jobs' && (
-        <main className="max-w-5xl mx-auto p-4 pt-24 sm:pt-28">
+        <main className="max-w-5xl mx-auto p-4 pt-6">
           {activeRole === 'admin' ? (
             <>
               <div className="flex flex-wrap gap-2 mb-6 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
