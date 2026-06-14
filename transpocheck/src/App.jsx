@@ -602,15 +602,15 @@ function TrackingView({ clientName, db, onBack }) {
        currentY = drawSectionTitle(`${sectionNum}. Resultado`, currentY);
        if (job.checklist?.rtStatus === 'aprobado') {
          docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(16); 
-         docPDF.text("APROBADO", 15, currentY + 5);
-         currentY += 10;
+         docPDF.text("APROBADO", 15, currentY + 6);
+         currentY += 16; 
        } else {
          docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(16); 
-         docPDF.text("RECHAZADO", 15, currentY + 5);
+         docPDF.text("RECHAZADO", 15, currentY + 6);
          docPDF.setFontSize(10); docPDF.setTextColor(153, 27, 27);
          const rejSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.checklist?.rtRejectReason || job.failedReason || 'No especificada'}`), leftColWidth);
-         docPDF.text(rejSplit, 15, currentY + 11);
-         currentY += 14 + (rejSplit.length * 4);
+         docPDF.text(rejSplit, 15, currentY + 12);
+         currentY += 18 + (rejSplit.length * 4); 
        }
        sectionNum++;
     }
