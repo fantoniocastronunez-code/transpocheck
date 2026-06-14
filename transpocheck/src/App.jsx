@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
-import { getFirestore, enableIndexedDbPersistence, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
+import { getFirestore, enableIndexedDbPersistence, collection, addDoc, onSnapshot, updateDoc, setDoc, doc, deleteDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 // Eliminamos la importación global de jsPDF para que la app cargue más rápido (Lazy Loading)
 import { 
   Car, MapPin, Camera, Fuel, CheckCircle, FileText, Download, 
@@ -959,14 +959,22 @@ function ClientSignView({ jobId, db }) {
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'transport_jobs', jobId), (docSnap) => {
-      if (docSnap.exists()) setJob({ id: docSnap.id, ...docSnap.data() });
+      if (docSnap.exists()) {
+        setJob({ id: docSnap.id, ...docSnap.data() });
+      } else {
+        setJob(null);
+      }
+      setLoading(false);
+    }, (error) => {
+      console.error(error);
+      setAlertMessage("Error de conexión: " + error.message);
       setLoading(false);
     });
     return () => unsub();
   }, [jobId, db]);
 
   if (loading) return <div className="min-h-screen bg-slate-50 flex items-center justify-center font-bold text-slate-400"><Clock className="w-5 h-5 mr-2 animate-spin"/> Cargando acta...</div>;
-  if (!job || !job.checklist) return <div className="min-h-screen bg-slate-50 flex items-center justify-center font-bold text-red-500">Acta no encontrada.</div>;
+  if (!job || !job.checklist) return <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center font-bold text-red-500"><XCircle className="w-12 h-12 mb-4 text-red-400"/>Acta no encontrada.<br/><span className="text-sm text-slate-400 mt-2">El conductor aún no ha guardado los datos. Intenta escanear nuevamente en unos segundos.</span></div>;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -2610,9 +2618,11 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
 
   // NUEVO: Función para generar y mandar el link de firma
   const handleRemoteSignRequest = async () => {
+    if (isQuick) return showAlert("⚠️ Para usar la Firma Remota en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
+    
     try {
-      // 1. Guarda las fotos actuales en Firebase para que el cliente las pueda ver
-      await updateDoc(doc(db, 'transport_jobs', job.id), { checklist: formData });
+      // 1. Guarda las fotos actuales en Firebase usando setDoc para mayor seguridad
+      await setDoc(doc(db, 'transport_jobs', job.id), { checklist: formData }, { merge: true });
       
       // 2. Copia el link al portapapeles
       const url = `${window.location.origin}/?sign=${job.id}`;
@@ -2627,9 +2637,11 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
 
   // NUEVO: Función para guardar datos antes de mostrar el QR
   const handleOpenQR = async () => {
+    if (isQuick) return showAlert("⚠️ Para usar el Código QR en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
+    
     try {
       // Guarda temporalmente para que el celular del cliente encuentre el formulario
-      await updateDoc(doc(db, 'transport_jobs', job.id), { checklist: formData });
+      await setDoc(doc(db, 'transport_jobs', job.id), { checklist: formData }, { merge: true });
       setQrOpen(true);
     } catch (e) {
       console.error(e);
