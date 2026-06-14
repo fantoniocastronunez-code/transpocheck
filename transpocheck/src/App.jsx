@@ -1090,7 +1090,10 @@ export default function App() {
   const params = new URLSearchParams(window.location.search);
   const clientTrack = params.get('client');
   const liveTrackId = params.get('track'); 
-  const signTrackId = params.get('sign'); 
+  
+  // NUEVO: Limpiamos la URL por si el escáner QR le agrega barras invertidas ("/") o espacios al final
+  const rawSign = params.get('sign');
+  const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
 
   const [user, setUser] = useState(null);
   const [jobs, setJobs] = useState([]);
@@ -3012,16 +3015,23 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
                  </div>
                )}
 
-               {/* NUEVO: MODAL PARA CÓDIGO QR */}
+               {/* NUEVO: MODAL PARA CÓDIGO QR MEJORADO */}
                {qrOpen && (
                   <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-                    <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center relative animate-in zoom-in-95 border border-slate-100">
+                    <div className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 max-w-sm w-full text-center relative animate-in zoom-in-95 border border-slate-100">
                       <button type="button" onClick={() => setQrOpen(false)} className="absolute top-4 right-4 bg-slate-100 p-2 rounded-full hover:bg-slate-200 transition-colors"><X className="w-5 h-5 text-slate-700"/></button>
-                      <h3 className="text-xl font-black text-slate-800 mb-2">Escanea para Firmar</h3>
-                      <p className="text-sm font-bold text-slate-500 mb-6">El cliente debe apuntar con su cámara a este código.</p>
-                      <div className="bg-white p-4 rounded-2xl border-4 border-slate-100 shadow-inner inline-block">
-                        {/* Se genera un código QR automático con la URL de firma */}
-                        <img src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`${window.location.origin}/?sign=${job.id}`)}`} alt="QR Signature" className="w-48 h-48" />
+                      <h3 className="text-xl font-black text-slate-800 mb-1">Escanea para Firmar</h3>
+                      <p className="text-xs font-bold text-slate-500 mb-5">El cliente debe apuntar con su cámara a este código.</p>
+                      
+                      <div className="bg-white p-3 rounded-2xl border-4 border-slate-100 shadow-inner inline-block">
+                        {/* Usamos QuickChart que es más confiable y no guarda caché erróneo */}
+                        <img src={`https://quickchart.io/qr?size=250&margin=1&text=${encodeURIComponent(`${window.location.origin}/?sign=${job.id}`)}`} alt="QR Signature" className="w-48 h-48 mx-auto" />
+                      </div>
+                      
+                      {/* Mostramos el código por si el escáner falla */}
+                      <div className="mt-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">O ingresa manualmente a:</p>
+                        <p className="text-[11px] font-extrabold text-blue-600 break-all select-all">{`${window.location.origin}/?sign=${job.id}`}</p>
                       </div>
                     </div>
                   </div>
