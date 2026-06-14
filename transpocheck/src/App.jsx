@@ -747,19 +747,20 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans pb-10 transition-colors duration-300">
-      <header className="bg-blue-600 dark:bg-slate-950 text-white p-4 shadow-lg flex justify-between items-center sticky top-0 z-50 transition-colors duration-300">
+      {/* CORRECCIÓN: Header congelado de forma absoluta en el borde superior */}
+      <header className="bg-blue-600 dark:bg-slate-950 text-white p-4 shadow-lg flex justify-between items-center fixed top-0 left-0 right-0 z-50 transition-colors duration-300 h-16 sm:h-20">
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
-          {/* Logo de la app más pequeño en móvil */}
+          {/* Logo de la app */}
           <div className="bg-white/20 p-1 sm:p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">
             <img src="/logo.png" alt="Logo App" className="w-7 h-7 sm:w-12 sm:h-12 object-contain" />
           </div>
           
-          {/* Nombre de la aplicación adaptado */}
+          {/* Nombre de la aplicación */}
           <h1 className="font-alfa text-lg sm:text-3xl tracking-wide shrink-0 text-white" style={{ paddingTop: '2px' }}>
             LogisticAPP
           </h1>
           
-          {/* Logo Logística TS SpA ajustado */}
+          {/* Logo Logística TS SpA */}
           <div className="bg-white/20 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0 ml-0.5 sm:ml-1 overflow-hidden">
             <img src="/LogoLogistica.png" alt="Logística TS SpA" className="h-8 sm:h-15 object-contain" />
           </div>
@@ -781,7 +782,8 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto p-4 pt-6 space-y-8">
+      {/* CORRECCIÓN: pt-24 en móvil y pt-28 en PC para empujar el contenido abajo de la barra fija */}
+      <main className="max-w-5xl mx-auto p-4 pt-24 sm:pt-28 space-y-8">
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center relative overflow-hidden max-w-2xl mx-auto">
           <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-500"></div>
           <h2 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-1">Portal de Seguimiento</h2>
