@@ -6,7 +6,7 @@ import { getFirestore, enableIndexedDbPersistence, collection, addDoc, onSnapsho
 import { 
   Car, MapPin, Camera, Fuel, CheckCircle, FileText, Download, 
   Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Save, Search,
-  CloudOff, Wifi, QrCode, Sun, Moon // <-- NUEVOS ICONOS
+  CloudOff, Wifi, QrCode, Sun, Moon, Settings // <-- NUEVOS ICONOS
 } from 'lucide-react';
 
 const firebaseConfig = {
@@ -1102,7 +1102,8 @@ export default function App() {
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
   const [simulatedClient, setSimulatedClient] = useState('');
   
-  // NUEVO: Estados para Modo Oscuro y Conexión Offline
+  // NUEVO: Estados para Modo Oscuro, Conexión Offline y Tuerca
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
   
@@ -1212,8 +1213,20 @@ export default function App() {
   const globalStyles = (
     <style>{`
       @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Alfa+Slab+One&display=swap');
-      body { font-family: 'Nunito', sans-serif; background-color: #f8fafc; }
+      body { font-family: 'Nunito', sans-serif; background-color: #f8fafc; transition: background-color 0.3s; }
       .font-alfa { font-family: 'Alfa Slab One', serif; font-weight: 400; }
+      
+      /* MAGIA MODO OSCURO AUTOMATIZADO */
+      .dark body { background-color: #020617; }
+      .dark .bg-white:not(canvas) { background-color: #0f172a !important; border-color: #1e293b !important; }
+      .dark canvas { background-color: #ffffff !important; } /* Protege la libreta de firmas */
+      .dark .bg-slate-50 { background-color: #020617 !important; border-color: #0f172a !important; }
+      .dark .bg-slate-100 { background-color: #1e293b !important; }
+      .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
+      .dark .text-slate-700 { color: #e2e8f0 !important; }
+      .dark .text-slate-600 { color: #cbd5e1 !important; }
+      .dark .text-slate-500, .dark .text-slate-400 { color: #94a3b8 !important; }
+      .dark .border-slate-100, .dark .border-slate-200 { border-color: #1e293b !important; }
     `}</style>
   );
 
@@ -1319,15 +1332,38 @@ export default function App() {
     </div>
         <div className="flex items-center gap-2 sm:gap-4">
           
-          {/* NUEVO: Indicador de Conexión Offline/Online (Idea 7) */}
-          <div className="hidden sm:flex items-center gap-1 px-2 py-1.5 rounded-xl text-xs font-bold bg-white/10 backdrop-blur-sm border border-white/10">
-            {isOnline ? <><Wifi className="w-4 h-4 text-green-400"/> Online</> : <><CloudOff className="w-4 h-4 text-amber-400 animate-pulse"/> Offline</>}
+          {/* NUEVO: BOTÓN TUERCA (AJUSTES) */}
+          <div className="relative">
+            <button onClick={() => setSettingsOpen(!settingsOpen)} className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors shadow-sm border border-white/10">
+              <Settings className="w-5 h-5 text-white" />
+            </button>
+            
+            {settingsOpen && (
+              <div className="absolute right-0 top-12 mt-1 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2">
+                <div className="p-3 border-b border-slate-100 bg-slate-50">
+                  <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider text-center">Ajustes de App</p>
+                </div>
+                <div className="p-4 space-y-5">
+                  {/* Estado de Red */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-slate-700">Señal de Red</span>
+                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm border ${isOnline ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200 animate-pulse'}`}>
+                      {isOnline ? <><Wifi className="w-3.5 h-3.5"/> Online</> : <><CloudOff className="w-3.5 h-3.5"/> Offline</>}
+                    </div>
+                  </div>
+                  {/* Switch Modo Oscuro */}
+                  <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+                    <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                      {darkMode ? <Moon className="w-4 h-4 text-blue-600"/> : <Sun className="w-4 h-4 text-amber-500"/>} Modo Oscuro
+                    </span>
+                    <button onClick={() => setDarkMode(!darkMode)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shadow-inner ${darkMode ? 'bg-blue-600' : 'bg-slate-300'}`}>
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${darkMode ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-
-          {/* NUEVO: Botón Modo Oscuro (Idea 9) */}
-          <button onClick={() => setDarkMode(!darkMode)} className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors shadow-sm border border-white/10">
-            {darkMode ? <Sun className="w-5 h-5 text-yellow-300"/> : <Moon className="w-5 h-5 text-white"/>}
-          </button>
 
           {!notificationsEnabled && <button onClick={requestNotificationPermission} className="p-2 bg-amber-500 hover:bg-amber-400 rounded-xl transition-colors shadow-sm" title="Activar Notificaciones"><Bell className="w-5 h-5 text-white animate-pulse" /></button>}
           {isRealAdmin && (
