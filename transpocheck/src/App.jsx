@@ -422,7 +422,7 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
     </div>
   );
 }
-function TrackingView({ clientName, db, onBack }) {
+function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -754,11 +754,20 @@ function TrackingView({ clientName, db, onBack }) {
           </div>
         </div>
 
-        {onBack && (
-          <button onClick={onBack} className="bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-xl text-sm font-bold text-white transition-colors border border-red-400 shadow-sm flex items-center gap-1.5 z-10 shrink-0 ml-2">
-            <LogOut className="w-4 h-4"/> <span className="hidden sm:inline">Volver</span>
-          </button>
-        )}
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+          {/* BOTÓN MODO OSCURO PARA CLIENTE */}
+          {setDarkMode && (
+            <button onClick={() => setDarkMode(!darkMode)} className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors shadow-sm border border-white/10">
+              {darkMode ? <Sun className="w-5 h-5 text-yellow-300"/> : <Moon className="w-5 h-5 text-white"/>}
+            </button>
+          )}
+
+          {onBack && (
+            <button onClick={onBack} className="bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-xl text-sm font-bold text-white transition-colors border border-red-400 shadow-sm flex items-center gap-1.5 z-10 shrink-0 ml-2">
+              <LogOut className="w-4 h-4"/> <span className="hidden sm:inline">Volver</span>
+            </button>
+          )}
+        </div>
       </header>
 
       <main className="max-w-5xl mx-auto p-4 pt-6 space-y-8">
@@ -1283,7 +1292,7 @@ export default function App() {
     return (
       <>
         {globalStyles}
-        <TrackingView clientName={clientTrack} db={db} />
+        <TrackingView clientName={clientTrack} db={db} darkMode={darkMode} setDarkMode={setDarkMode} />
       </>
     );
   }
@@ -1294,7 +1303,7 @@ export default function App() {
     return (
       <>
         {globalStyles}
-        <TrackingView clientName={simulatedClient} db={db} onBack={() => { setActiveRole('admin'); setRoleMenuOpen(false); }} />
+        <TrackingView clientName={simulatedClient} db={db} onBack={() => { setActiveRole('admin'); setRoleMenuOpen(false); }} darkMode={darkMode} setDarkMode={setDarkMode} />
       </>
     );
   }
