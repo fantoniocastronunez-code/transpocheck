@@ -699,6 +699,10 @@ function TrackingView({ clientName, db, onBack }) {
   // ----------------------------------------------
 
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // NUEVO: Estados para la Firma Masiva
+  const [batchSignOpen, setBatchSignOpen] = useState(false);
+  const [batchFormData, setBatchFormData] = useState({ name: '', rut: '', comments: '', signature: null, selectedIds: [] });
 
   if (loading) return <div className="min-h-screen bg-slate-50 flex items-center justify-center"><p className="font-bold text-slate-400 animate-pulse flex items-center gap-2"><Clock className="w-5 h-5"/> Cargando portal...</p></div>;
 
@@ -712,7 +716,10 @@ function TrackingView({ clientName, db, onBack }) {
   });
 
   const activeJobs = filteredJobs.filter(j => j.status === 'pending' || j.status === 'accepted');
-  const historyJobs = filteredJobs.filter(j => j.status === 'completed' || j.status === 'failed').slice(0, 30); // Ampliado para que la búsqueda sea útil
+  const historyJobs = filteredJobs.filter(j => j.status === 'completed' || j.status === 'failed').slice(0, 30);
+  
+  // NUEVO: Vehículos que tienen checklist guardado pero faltan por firmar
+  const pendingSignatureJobs = activeJobs.filter(j => j.checklist && !j.checklist.clientSigned);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10">
@@ -742,6 +749,22 @@ function TrackingView({ clientName, db, onBack }) {
            </div>
            <input type="text" placeholder="Buscar por patente, marca o modelo..." className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 shadow-sm transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
+
+        {/* NUEVO: BANNER DE FIRMA MASIVA */}
+        {pendingSignatureJobs.length > 0 && (
+          <div className="bg-blue-600 rounded-3xl p-5 shadow-xl text-white flex flex-col sm:flex-row items-center justify-between gap-4 animate-in zoom-in duration-300 border-4 border-blue-400 max-w-2xl mx-auto">
+             <div>
+               <h3 className="font-black text-xl flex items-center gap-2"><CheckCircle className="w-6 h-6 text-green-300"/> ¡Acción Requerida!</h3>
+               <p className="font-bold text-blue-100 text-sm mt-1">Tienes {pendingSignatureJobs.length} vehículo(s) esperando tu firma de recepción.</p>
+             </div>
+             <button onClick={() => {
+                setBatchFormData({ name: '', rut: '', comments: '', signature: null, selectedIds: pendingSignatureJobs.map(j => j.id) });
+                setBatchSignOpen(true);
+             }} className="w-full sm:w-auto bg-white text-blue-700 hover:bg-blue-50 px-6 py-3 rounded-xl font-black shadow-md transition-colors whitespace-nowrap">
+               Firmar Lote Completo
+             </button>
+          </div>
+        )}
 
         {/* Sección 1: En Curso */}
         <div>
@@ -836,6 +859,81 @@ function TrackingView({ clientName, db, onBack }) {
           </div>
         </div>
       </main>
+
+      {/* NUEVO: MODAL DE FIRMA MASIVA */}
+      {batchSignOpen && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[95vh] flex flex-col relative overflow-hidden animate-in fade-in zoom-in-95">
+            
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <div>
+                <h2 className="text-xl font-black text-slate-800">Firma de Recepción</h2>
+                <p className="text-xs font-bold text-slate-500">Selecciona los vehículos a recepcionar</p>
+              </div>
+              <button onClick={() => setBatchSignOpen(false)} className="bg-white hover:bg-slate-200 p-2 rounded-full transition-colors shadow-sm border border-slate-200"><X className="w-5 h-5 text-slate-700"/></button>
+            </div>
+
+            <div className="p-5 overflow-y-auto flex-1 space-y-4">
+              <div className="space-y-2 border-b border-slate-100 pb-4">
+                 {pendingSignatureJobs.map(j => (
+                   <label key={j.id} className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors ${batchFormData.selectedIds.includes(j.id) ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white'}`}>
+                      <input type="checkbox" checked={batchFormData.selectedIds.includes(j.id)} onChange={(e) => {
+                         const ids = e.target.checked ? [...batchFormData.selectedIds, j.id] : batchFormData.selectedIds.filter(id => id !== j.id);
+                         setBatchFormData({...batchFormData, selectedIds: ids});
+                      }} className="w-6 h-6 accent-blue-600 rounded cursor-pointer shrink-0"/>
+                      <div className="flex-1">
+                         <p className="font-extrabold text-sm text-slate-800 leading-tight">{j.brand} {j.model}</p>
+                         <p className="font-bold text-xs text-blue-600 uppercase mt-0.5">{j.plate || j.vin}</p>
+                      </div>
+                   </label>
+                 ))}
+              </div>
+
+              <form id="batch-sign-form" onSubmit={async (e) => {
+                 e.preventDefault();
+                 if (batchFormData.selectedIds.length === 0) return alert("Debes seleccionar al menos un vehículo.");
+                 if (!batchFormData.signature) return alert("Por favor, dibuja tu firma en el recuadro blanco.");
+                 
+                 try {
+                    await Promise.all(batchFormData.selectedIds.map(async (id) => {
+                       const jobToUpdate = jobs.find(x => x.id === id);
+                       if (!jobToUpdate) return;
+                       const updatedChecklist = {
+                          ...jobToUpdate.checklist,
+                          clientSigned: true,
+                          receiverName: batchFormData.name,
+                          receiverRut: batchFormData.rut,
+                          clientComments: batchFormData.comments,
+                          signatureData: batchFormData.signature
+                       };
+                       await updateDoc(doc(db, 'transport_jobs', id), { checklist: updatedChecklist });
+                    }));
+                    setBatchSignOpen(false);
+                    alert("¡Recepción masiva exitosa! Los conductores ya han sido notificados para cerrar el traslado.");
+                 } catch (error) {
+                    console.error(error);
+                    alert("Error guardando la firma.");
+                 }
+              }} className="space-y-3">
+                 <input required type="text" placeholder="Nombre de quien recibe" value={batchFormData.name} onChange={e=>setBatchFormData({...batchFormData, name: e.target.value})} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500 text-sm" />
+                 <input required type="text" placeholder="RUT" value={batchFormData.rut} onChange={e=>setBatchFormData({...batchFormData, rut: e.target.value})} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500 text-sm" />
+                 <textarea placeholder="Comentarios generales para el lote (Opcional)" value={batchFormData.comments} onChange={e=>setBatchFormData({...batchFormData, comments: e.target.value})} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500 h-16 text-sm" />
+                 
+                 <div className="pt-2">
+                    <h3 className="text-xs font-extrabold text-slate-500 uppercase mb-2">Firma Digital (Aplica para todos)</h3>
+                    <SignaturePad initialData={batchFormData.signature} onSave={d=>setBatchFormData({...batchFormData, signature: d})} onClear={()=>setBatchFormData({...batchFormData, signature: null})} />
+                 </div>
+              </form>
+            </div>
+            
+            <div className="p-4 bg-slate-50 border-t border-slate-100">
+              <button type="submit" form="batch-sign-form" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg transition-colors text-lg">Confirmar Lote ({batchFormData.selectedIds.length})</button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
