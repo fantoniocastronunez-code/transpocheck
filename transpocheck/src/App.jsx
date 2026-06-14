@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
-import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
-import { jsPDF } from "jspdf";
+import { getFirestore, enableIndexedDbPersistence, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
+// Eliminamos la importación global de jsPDF para que la app cargue más rápido (Lazy Loading)
 import { 
   Car, MapPin, Camera, Fuel, CheckCircle, FileText, Download, 
   Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Save, Search
@@ -20,6 +20,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+// NUEVO: Activamos la Persistencia Offline. La app funcionará sin internet leyendo el caché local.
+enableIndexedDbPersistence(db).catch((err) => {
+  console.warn("Modo offline limitado:", err.code);
+});
+
 const googleProvider = new GoogleAuthProvider();
 
 const DEFAULT_CLIENTES = ["Grandleasing Las Torres", "Grandleasing Umaña", "Kovacs", "Salfa", "Enex", "CIPP", "Simumak", "Mutual Capacitación"];
@@ -436,6 +442,9 @@ function TrackingView({ clientName, db, onBack }) {
   // --- MOTOR GENERADOR DE PDF PARA EL CLIENTE ---
   const handleDownloadPDF = async (job) => {
     if (!job.checklist && job.status !== 'failed') return alert("Este traslado no tiene un checklist registrado.");
+    
+    // NUEVO: LAZY LOADING. Descarga el motor de PDF de internet SOLO si presionan el botón.
+    const { jsPDF } = await import('jspdf');
     
     const docPDF = new jsPDF();
     const cleanStr = (str) => {
@@ -1927,6 +1936,9 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   };
 
   const buildPDFDoc = async (job) => {
+    // NUEVO: LAZY LOADING interno.
+    const { jsPDF } = await import('jspdf');
+    
     const docPDF = new jsPDF();
 
     const cleanStr = (str) => {
