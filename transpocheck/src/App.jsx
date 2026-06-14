@@ -746,9 +746,8 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
   const pendingSignatureJobs = activeJobs.filter(j => j.checklist && !j.checklist.clientSigned);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans pb-10 transition-colors duration-300">
-      {/* CORRECCIÓN: Header congelado de forma absoluta en el borde superior */}
-      <header className="bg-blue-600 dark:bg-slate-950 text-white p-4 shadow-lg flex justify-between items-center fixed top-0 left-0 right-0 z-50 transition-colors duration-300 h-16 sm:h-20">
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10 transition-colors duration-300">
+      <header className="fixed-nav-bar bg-blue-600 text-white p-4 shadow-lg flex justify-between items-center transition-colors duration-300 h-16 sm:h-20">
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
           {/* Logo de la app */}
           <div className="bg-white/20 p-1 sm:p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">
@@ -819,7 +818,7 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
           <h3 className="font-extrabold text-slate-700 mb-4 flex items-center gap-2"><Navigation className="w-5 h-5 text-blue-600"/> Vehículos en Tránsito ({activeJobs.length})</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {activeJobs.length === 0 ? (
-               <p className="text-sm font-bold text-slate-400 bg-white dark:bg-slate-800 p-4 rounded-2xl border dark:border-slate-700 text-center col-span-full">No se encontraron traslados activos.</p>
+               <p className="text-sm font-bold text-slate-400 bg-white p-4 rounded-2xl border text-center col-span-full">No se encontraron traslados activos.</p>
             ) : activeJobs.map(job => {
               const isPending = job.status === 'pending';
               const isAccepted = job.status === 'accepted';
@@ -830,21 +829,21 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
               const step4Done = isAccepted && phase === 'prt_done';
 
               return (
-              <div key={job.id} className="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 relative overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+              <div key={job.id} className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden flex flex-col hover:shadow-md transition-shadow">
                 <div className={`absolute top-0 left-0 w-full h-1.5 ${isPending ? 'bg-amber-400' : 'bg-blue-500'}`}></div>
-                <div className="flex justify-between items-start mb-5 pb-4 border-b border-slate-100 dark:border-slate-700">
+                <div className="flex justify-between items-start mb-5 pb-4 border-b border-slate-100">
                   <div>
                     <h2 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">En Traslado</h2>
-                    <p className="text-xl font-black text-slate-800 dark:text-white leading-none">{job.brand} {job.model}</p>
+                    <p className="text-xl font-black text-slate-800 leading-none">{job.brand} {job.model}</p>
                   </div>
                   <div className="bg-slate-800 text-white px-3 py-1.5 rounded-lg shadow-sm shrink-0">
                     <p className="text-sm font-black uppercase tracking-widest">{job.plate || job.vin || 'S/N'}</p>
                   </div>
                 </div>
                 
-                <div className="relative pl-8 space-y-6 before:absolute before:inset-y-2 before:left-[11px] before:w-0.5 before:bg-slate-100 dark:before:bg-slate-700 flex-1">
+                <div className="relative pl-8 space-y-6 before:absolute before:inset-y-2 before:left-[11px] before:w-0.5 before:bg-slate-100 flex-1">
                   {/* PASO 1: Nombre del Conductor si está aceptado */}
-                  <div className="relative"><div className="absolute -left-8 bg-blue-500 w-6 h-6 rounded-full border-4 border-white dark:border-slate-800 shadow-sm flex items-center justify-center"><CheckCircle className="w-3 h-3 text-white"/></div><p className="font-extrabold text-slate-800 dark:text-white text-sm">{isAccepted ? (job.assignedDrivers?.find(d => d.email === job.acceptedByEmail)?.name || "Conductor en camino") : "Buscando conductor..."}</p><p className="text-xs font-bold text-slate-500 mt-0.5">{isAccepted ? `Responsable del retiro en ${job.origin}` : `Esperando asignación para ${job.origin}`}</p></div>
+                  <div className="relative"><div className="absolute -left-8 bg-blue-500 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center"><CheckCircle className="w-3 h-3 text-white"/></div><p className="font-extrabold text-slate-800 text-sm">{isAccepted ? (job.assignedDrivers?.find(d => d.email === job.acceptedByEmail)?.name || "Conductor en camino") : "Buscando conductor..."}</p><p className="text-xs font-bold text-slate-500 mt-0.5">{isAccepted ? `Responsable del retiro en ${job.origin}` : `Esperando asignación para ${job.origin}`}</p></div>
                   
                   {/* PASO 2: Vehículo en poder */}
                   <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step2Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step2Done && <CheckCircle className="w-3 h-3 text-white"/>}</div><p className={`font-extrabold text-sm ${step2Done ? 'text-slate-800' : 'text-slate-400'}`}>Vehículo en Tránsito</p><p className={`text-xs font-bold mt-0.5 ${step2Done ? 'text-blue-600' : 'text-slate-400'}`}>{step2Done ? 'El conductor tiene el vehículo en su poder' : 'Esperando retiro'}</p></div>
@@ -1278,9 +1277,33 @@ export default function App() {
       
       .font-alfa { font-family: 'Alfa Slab One', serif; font-weight: 400; }
       
-      /* MAGIA MODO OSCURO AUTOMATIZADO LIMPIA */
-      .dark body { background-color: #020617 !important; }
-      .dark canvas { background-color: #ffffff !important; border-radius: 0.5rem; }
+      /* REGLAS MAESTRAS MODO OSCURO (Anula Tailwind) */
+      .dark body { background-color: #020617 !important; color: #f8fafc !important; }
+      .dark header.fixed-nav-bar { background-color: #0f172a !important; border-bottom: 1px solid #1e293b !important; }
+      .dark .bg-white:not(canvas) { background-color: #0f172a !important; border-color: #1e293b !important; }
+      .dark canvas { background-color: #ffffff !important; border-radius: 0.5rem; color: #000 !important; }
+      .dark .bg-slate-50 { background-color: #020617 !important; border-color: #0f172a !important; }
+      .dark .bg-slate-100 { background-color: #1e293b !important; }
+      .dark .bg-slate-200 { background-color: #334155 !important; }
+      
+      .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
+      .dark .text-slate-700 { color: #e2e8f0 !important; }
+      .dark .text-slate-600 { color: #cbd5e1 !important; }
+      .dark .text-slate-500, .dark .text-slate-400 { color: #94a3b8 !important; }
+      .dark .border-slate-100, .dark .border-slate-200, .dark .border-slate-300 { border-color: #1e293b !important; }
+      
+      .dark .bg-blue-50 { background-color: rgba(30, 58, 138, 0.3) !important; border-color: #1e3a8a !important; }
+      .dark .text-blue-800 { color: #93c5fd !important; }
+      .dark .text-blue-600 { color: #60a5fa !important; }
+
+      /* CLASE CUSTOM PARA CONGELAR LA BARRA DE NAVEGACIÓN SIN REBOTE */
+      .fixed-nav-bar {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 50 !important;
+      }
     `}</style>
   );
 
@@ -1367,7 +1390,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-32 transition-colors duration-300">
       {globalStyles}
-      <header className="bg-blue-600 text-white p-4 shadow-lg flex justify-between items-center sticky top-0 z-50 transition-colors duration-300">
+      <header className="fixed-nav-bar bg-blue-600 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300">
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
       {/* Logo de la app más pequeño en móvil */}
       <div className="bg-white/20 p-1 sm:p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">
@@ -1453,7 +1476,7 @@ export default function App() {
       </header>
 
       {currentView === 'main' && mainTab === 'jobs' && (
-        <main className="max-w-5xl mx-auto p-4 pt-6">
+        <main className="max-w-5xl mx-auto p-4 pt-24 sm:pt-28">
           {activeRole === 'admin' ? (
             <>
               <div className="flex flex-wrap gap-2 mb-6 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
