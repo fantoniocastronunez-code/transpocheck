@@ -844,6 +844,8 @@ function ClientSignView({ jobId, db }) {
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({ name: '', rut: '', comments: '', signature: null });
+  const [fullScreenImage, setFullScreenImage] = useState(null); 
+  const [alertMessage, setAlertMessage] = useState(null); // <-- NUEVO: ESTADO PARA ALERTA PERSONALIZADA
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'transport_jobs', jobId), (docSnap) => {
@@ -858,10 +860,10 @@ function ClientSignView({ jobId, db }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.signature) return alert("Por favor, firme en el recuadro blanco.");
+    if (!formData.signature) return setAlertMessage("Por favor, firme en el recuadro blanco."); // <-- USA LA NUEVA ALERTA
     
     try {
-      // Unimos el checklist existente con los datos nuevos (Evita el error de notación de punto)
+      // Unimos el checklist existente con los datos nuevos
       const updatedChecklist = {
         ...job.checklist,
         clientSigned: true,
@@ -879,7 +881,7 @@ function ClientSignView({ jobId, db }) {
       setSubmitted(true);
     } catch (error) { 
       console.error("Firebase Error:", error); 
-      alert("Error al guardar la firma: " + error.message); 
+      setAlertMessage("Error al guardar la firma: " + error.message); // <-- USA LA NUEVA ALERTA
     }
   };
 
@@ -913,12 +915,23 @@ function ClientSignView({ jobId, db }) {
 
         {hasPhotos && (
           <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-200">
-            <h3 className="text-sm font-extrabold text-slate-800 mb-3 flex items-center gap-2"><Camera className="w-4 h-4 text-blue-500"/> Registro Fotográfico</h3>
+            <h3 className="text-sm font-extrabold text-slate-800 mb-1 flex items-center gap-2"><Camera className="w-4 h-4 text-blue-500"/> Registro Fotográfico</h3>
+            <p className="text-[10px] font-bold text-slate-400 mb-3 uppercase tracking-wide">Toca una foto para ampliarla</p>
             <div className="grid grid-cols-3 gap-2">
               {Object.entries(photos).map(([key, val]) => val && typeof val === 'string' && (
-                 <img key={key} src={val} alt="Evidencia" className="w-full h-20 object-cover rounded-xl border border-slate-200 shadow-sm" />
+                 <img key={key} src={val} alt="Evidencia" onClick={() => setFullScreenImage(val)} className="w-full h-20 object-cover rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:opacity-80 active:scale-95 transition-all" />
               ))}
             </div>
+          </div>
+        )}
+
+        {/* MODAL DE FOTO EN PANTALLA COMPLETA */}
+        {fullScreenImage && (
+          <div className="fixed inset-0 bg-slate-900/95 z-[200] flex items-center justify-center p-4 backdrop-blur-sm cursor-zoom-out animate-in fade-in duration-200" onClick={() => setFullScreenImage(null)}>
+            <button onClick={() => setFullScreenImage(null)} className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 p-2 rounded-full text-white transition-colors shadow-lg">
+              <X className="w-6 h-6" />
+            </button>
+            <img src={fullScreenImage} alt="Evidencia Ampliada" className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
           </div>
         )}
 
@@ -936,6 +949,21 @@ function ClientSignView({ jobId, db }) {
            <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg shadow-blue-200 transition-colors mt-4 text-lg">Confirmar y Enviar Acta</button>
         </form>
       </main>
+
+      {/* NUEVO: MODAL DE ALERTA PERSONALIZADO CON TU MARCA */}
+      {alertMessage && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 transform transition-all animate-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-blue-100 p-2 rounded-full"><AlertCircle className="w-6 h-6 text-blue-600"/></div>
+              <h3 className="text-xl font-extrabold text-slate-800">LOGISTICAPP / LOGÍSTICA TS</h3>
+            </div>
+            <p className="text-slate-600 font-bold mb-6 text-sm">{alertMessage}</p>
+            <button onClick={() => setAlertMessage(null)} className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-md transition-colors hover:bg-blue-700">Aceptar</button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
