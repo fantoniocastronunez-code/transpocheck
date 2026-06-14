@@ -5,7 +5,8 @@ import { getFirestore, enableIndexedDbPersistence, collection, addDoc, onSnapsho
 // Eliminamos la importación global de jsPDF para que la app cargue más rápido (Lazy Loading)
 import { 
   Car, MapPin, Camera, Fuel, CheckCircle, FileText, Download, 
-  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Save, Search
+  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Save, Search,
+  CloudOff, Wifi, QrCode, Sun, Moon // <-- NUEVOS ICONOS
 } from 'lucide-react';
 
 const firebaseConfig = {
@@ -1101,10 +1102,34 @@ export default function App() {
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
   const [simulatedClient, setSimulatedClient] = useState('');
   
+  // NUEVO: Estados para Modo Oscuro y Conexión Offline
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+  
   const isFirstLoad = useRef(true);
   const driversRef = useRef([]);
 
   const [dialogConfig, setDialogConfig] = useState(null);
+
+  // NUEVO: Escuchador de conexión a Internet (Idea 7)
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); };
+  }, []);
+
+  // NUEVO: Aplicador del Modo Oscuro Global (Idea 9)
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('darkMode', 'true');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('darkMode', 'false');
+    }
+  }, [darkMode]);
   const showAlert = (message) => setDialogConfig({ type: 'alert', message });
   const showConfirm = (message, onConfirm) => setDialogConfig({ type: 'confirm', message, onConfirm });
   const closeDialog = () => setDialogConfig(null);
@@ -1273,9 +1298,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-32">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans pb-32 transition-colors duration-300">
       {globalStyles}
-      <header className="bg-blue-600 text-white p-4 shadow-lg flex justify-between items-center sticky top-0 z-50">
+      <header className="bg-blue-600 dark:bg-slate-950 text-white p-4 shadow-lg flex justify-between items-center sticky top-0 z-50 transition-colors duration-300">
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
       {/* Logo de la app más pequeño en móvil */}
       <div className="bg-white/20 p-1 sm:p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">
@@ -1293,6 +1318,17 @@ export default function App() {
       </div>
     </div>
         <div className="flex items-center gap-2 sm:gap-4">
+          
+          {/* NUEVO: Indicador de Conexión Offline/Online (Idea 7) */}
+          <div className="hidden sm:flex items-center gap-1 px-2 py-1.5 rounded-xl text-xs font-bold bg-white/10 backdrop-blur-sm border border-white/10">
+            {isOnline ? <><Wifi className="w-4 h-4 text-green-400"/> Online</> : <><CloudOff className="w-4 h-4 text-amber-400 animate-pulse"/> Offline</>}
+          </div>
+
+          {/* NUEVO: Botón Modo Oscuro (Idea 9) */}
+          <button onClick={() => setDarkMode(!darkMode)} className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors shadow-sm border border-white/10">
+            {darkMode ? <Sun className="w-5 h-5 text-yellow-300"/> : <Moon className="w-5 h-5 text-white"/>}
+          </button>
+
           {!notificationsEnabled && <button onClick={requestNotificationPermission} className="p-2 bg-amber-500 hover:bg-amber-400 rounded-xl transition-colors shadow-sm" title="Activar Notificaciones"><Bell className="w-5 h-5 text-white animate-pulse" /></button>}
           {isRealAdmin && (
             <div className="relative">
@@ -2508,6 +2544,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState(defaultData);
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false); // <-- NUEVO ESTADO PARA QR (Idea 8)
 
   // NUEVO: Escucha en tiempo real si el cliente firma desde su celular
   useEffect(() => {
@@ -2893,18 +2930,38 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
                </label>
                
                {!formData.noReception && (
-                 <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-5 mb-4">
-                    <h3 className="font-extrabold text-blue-800 mb-2 flex items-center gap-2"><Zap className="w-5 h-5"/> Firma Remota (Recomendado)</h3>
-                    <p className="text-xs font-bold text-blue-600 mb-4">Envíale el link al cliente. Cuando firme en su celular, los datos aparecerán mágicamente aquí abajo.</p>
-                    <button type="button" onClick={handleRemoteSignRequest} className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-md transition-colors flex justify-center items-center gap-2">
-                       <Share2 className="w-4 h-4"/> Compartir Acta al Cliente
-                    </button>
+                 <div className="bg-blue-50 dark:bg-blue-900/40 border-2 border-blue-200 dark:border-blue-800 rounded-2xl p-5 mb-4">
+                    <h3 className="font-extrabold text-blue-800 dark:text-blue-300 mb-2 flex items-center gap-2"><Zap className="w-5 h-5"/> Firma Remota o QR (Recomendado)</h3>
+                    <p className="text-xs font-bold text-blue-600 dark:text-blue-400 mb-4">Envía el link al cliente o muéstrale el QR para que firme desde su propio celular.</p>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <button type="button" onClick={handleRemoteSignRequest} className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-md transition-colors flex justify-center items-center gap-2">
+                         <Share2 className="w-4 h-4"/> Compartir Link
+                      </button>
+                      <button type="button" onClick={() => setQrOpen(true)} className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl shadow-md transition-colors flex justify-center items-center gap-2">
+                         <QrCode className="w-4 h-4"/> Mostrar QR
+                      </button>
+                    </div>
                  </div>
+               )}
+
+               {/* NUEVO: MODAL PARA CÓDIGO QR */}
+               {qrOpen && (
+                  <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center relative animate-in zoom-in-95 border border-slate-100 dark:border-slate-700">
+                      <button type="button" onClick={() => setQrOpen(false)} className="absolute top-4 right-4 bg-slate-100 dark:bg-slate-700 p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"><X className="w-5 h-5 text-slate-700 dark:text-white"/></button>
+                      <h3 className="text-xl font-black text-slate-800 dark:text-white mb-2">Escanea para Firmar</h3>
+                      <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">El cliente debe apuntar con su cámara a este código.</p>
+                      <div className="bg-white p-4 rounded-2xl border-4 border-slate-100 shadow-inner inline-block">
+                        {/* Se genera un código QR automático con la URL de firma */}
+                        <img src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`${window.location.origin}/?sign=${job.id}`)}`} alt="QR Signature" className="w-48 h-48" />
+                      </div>
+                    </div>
+                  </div>
                )}
 
                {!formData.noReception && (
                  <>
-                   <div className="flex items-center gap-2 mb-2"><div className="h-px bg-slate-200 flex-1"></div><span className="text-xs font-bold text-slate-400 uppercase">O llenar manualmente</span><div className="h-px bg-slate-200 flex-1"></div></div>
+                   <div className="flex items-center gap-2 mb-2"><div className="h-px bg-slate-200 dark:bg-slate-700 flex-1"></div><span className="text-xs font-bold text-slate-400 uppercase">O llenar manualmente</span><div className="h-px bg-slate-200 dark:bg-slate-700 flex-1"></div></div>
                    
                    <input required={!formData.noReception} value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
                    <input required={!formData.noReception} value={formData.receiverRut} onChange={e=>setF('receiverRut',e.target.value)} placeholder="RUT Receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
