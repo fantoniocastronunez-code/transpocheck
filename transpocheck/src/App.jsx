@@ -2617,6 +2617,18 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     }
   };
 
+  // NUEVO: Función para guardar datos antes de mostrar el QR
+  const handleOpenQR = async () => {
+    try {
+      // Guarda temporalmente para que el celular del cliente encuentre el formulario
+      await updateDoc(doc(db, 'transport_jobs', job.id), { checklist: formData });
+      setQrOpen(true);
+    } catch (e) {
+      console.error(e);
+      showAlert("Error al generar el QR. Revisa tu conexión.");
+    }
+  };
+
   useEffect(() => {
     const savedDraft = localStorage.getItem(localStorageKey);
     if (savedDraft) {
@@ -2973,7 +2985,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
                       <button type="button" onClick={handleRemoteSignRequest} className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-md transition-colors flex justify-center items-center gap-2">
                          <Share2 className="w-4 h-4"/> Compartir Link
                       </button>
-                      <button type="button" onClick={() => setQrOpen(true)} className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl shadow-md transition-colors flex justify-center items-center gap-2">
+                      <button type="button" onClick={handleOpenQR} className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl shadow-md transition-colors flex justify-center items-center gap-2">
                          <QrCode className="w-4 h-4"/> Mostrar QR
                       </button>
                     </div>
