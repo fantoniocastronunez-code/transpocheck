@@ -425,6 +425,7 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
 function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState(null); // <-- NUEVO ESTADO PARA EL SPINNER
 
   useEffect(() => {
     const q = query(collection(db, 'transport_jobs'), where('client', '==', clientName));
@@ -444,8 +445,11 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
   const handleDownloadPDF = async (job) => {
     if (!job.checklist && job.status !== 'failed') return alert("Este traslado no tiene un checklist registrado.");
     
-    // CORRECCIÓN: Carga ultra-segura de jsPDF compatible con Vite
-    const jsPDFModule = await import('jspdf');
+    try {
+      setDownloadingId(job.id); // Enciende el relojito de carga
+      
+      // CORRECCIÓN: Carga ultra-segura de jsPDF compatible con Vite
+      const jsPDFModule = await import('jspdf');
     const JsPDFClass = jsPDFModule.default?.jsPDF || jsPDFModule.default || jsPDFModule.jsPDF;
     const docPDF = new JsPDFClass();
     const cleanStr = (str) => {
@@ -708,6 +712,13 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
     const dateStrForFile = (job.scheduledDate || new Date().toISOString().split('T')[0]).replace(/\//g, '-');
     const fileName = `Certificado.${dateStrForFile}.${(job.client || 'Cliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`; 
     docPDF.save(fileName); 
+    setDownloadingId(null); // Apaga el relojito
+    
+    } catch (error) {
+      console.error("Error crítico generando PDF en Portal:", error);
+      alert("Hubo un error al descargar el PDF. Verifica tu conexión a internet e intenta de nuevo.");
+      setDownloadingId(null); // Apaga el relojito en caso de error
+    }
   };
   // ----------------------------------------------
 
@@ -885,8 +896,8 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
                     </p>
                     <p className="text-slate-400 text-[9px] font-bold mt-0.5">{new Date(job.completedAt || job.createdAt).toLocaleDateString('es-CL')}</p>
                   </div>
-                  <button onClick={() => handleDownloadPDF(job)} className="flex items-center justify-center p-2.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors border border-blue-100" title="Descargar PDF">
-                    <FileDown className="w-4 h-4"/>
+                  <button onClick={() => handleDownloadPDF(job)} disabled={downloadingId === job.id} className="flex items-center justify-center p-2.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors border border-blue-100 disabled:opacity-50" title="Descargar PDF">
+                    {downloadingId === job.id ? <Clock className="w-4 h-4 animate-spin"/> : <FileDown className="w-4 h-4"/>}
                   </button>
                 </div>
               </div>
@@ -2332,7 +2343,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
       docPDF.text(`UBICACION GPS:`, 15, currentY);
       docPDF.setFontSize(9); docPDF.setTextColor(...accentColor);
-      docPDF.textWithLink('Clic aqui para ver mapa en Google', 15, currentY + 4, { url: `https://www.google.com/maps?q=${lat},${lng}` });
+      docPDF.textWithLink('Clic aqui para ver mapa en Google', 15, currentY + 4, { url: `https://maps.google.com/?q=${lat},${lng}` });
     }
 
     const frontPhotoStr = job.checklist?.photos?.front;
