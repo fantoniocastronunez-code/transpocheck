@@ -817,7 +817,7 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
           <h3 className="font-extrabold text-slate-700 mb-4 flex items-center gap-2"><Navigation className="w-5 h-5 text-blue-600"/> Vehículos en Tránsito ({activeJobs.length})</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {activeJobs.length === 0 ? (
-               <p className="text-sm font-bold text-slate-400 bg-white p-4 rounded-2xl border text-center col-span-full">No se encontraron traslados activos.</p>
+               <p className="text-sm font-bold text-slate-400 bg-white dark:bg-slate-800 p-4 rounded-2xl border dark:border-slate-700 text-center col-span-full">No se encontraron traslados activos.</p>
             ) : activeJobs.map(job => {
               const isPending = job.status === 'pending';
               const isAccepted = job.status === 'accepted';
@@ -828,21 +828,21 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
               const step4Done = isAccepted && phase === 'prt_done';
 
               return (
-              <div key={job.id} className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+              <div key={job.id} className="bg-white dark:bg-slate-800 p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 relative overflow-hidden flex flex-col hover:shadow-md transition-shadow">
                 <div className={`absolute top-0 left-0 w-full h-1.5 ${isPending ? 'bg-amber-400' : 'bg-blue-500'}`}></div>
-                <div className="flex justify-between items-start mb-5 pb-4 border-b border-slate-100">
+                <div className="flex justify-between items-start mb-5 pb-4 border-b border-slate-100 dark:border-slate-700">
                   <div>
                     <h2 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">En Traslado</h2>
-                    <p className="text-xl font-black text-slate-800 leading-none">{job.brand} {job.model}</p>
+                    <p className="text-xl font-black text-slate-800 dark:text-white leading-none">{job.brand} {job.model}</p>
                   </div>
                   <div className="bg-slate-800 text-white px-3 py-1.5 rounded-lg shadow-sm shrink-0">
                     <p className="text-sm font-black uppercase tracking-widest">{job.plate || job.vin || 'S/N'}</p>
                   </div>
                 </div>
                 
-                <div className="relative pl-8 space-y-6 before:absolute before:inset-y-2 before:left-[11px] before:w-0.5 before:bg-slate-100 flex-1">
+                <div className="relative pl-8 space-y-6 before:absolute before:inset-y-2 before:left-[11px] before:w-0.5 before:bg-slate-100 dark:before:bg-slate-700 flex-1">
                   {/* PASO 1: Nombre del Conductor si está aceptado */}
-                  <div className="relative"><div className="absolute -left-8 bg-blue-500 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center"><CheckCircle className="w-3 h-3 text-white"/></div><p className="font-extrabold text-slate-800 text-sm">{isAccepted ? (job.assignedDrivers?.find(d => d.email === job.acceptedByEmail)?.name || "Conductor en camino") : "Buscando conductor..."}</p><p className="text-xs font-bold text-slate-500 mt-0.5">{isAccepted ? `Responsable del retiro en ${job.origin}` : `Esperando asignación para ${job.origin}`}</p></div>
+                  <div className="relative"><div className="absolute -left-8 bg-blue-500 w-6 h-6 rounded-full border-4 border-white dark:border-slate-800 shadow-sm flex items-center justify-center"><CheckCircle className="w-3 h-3 text-white"/></div><p className="font-extrabold text-slate-800 dark:text-white text-sm">{isAccepted ? (job.assignedDrivers?.find(d => d.email === job.acceptedByEmail)?.name || "Conductor en camino") : "Buscando conductor..."}</p><p className="text-xs font-bold text-slate-500 mt-0.5">{isAccepted ? `Responsable del retiro en ${job.origin}` : `Esperando asignación para ${job.origin}`}</p></div>
                   
                   {/* PASO 2: Vehículo en poder */}
                   <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step2Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step2Done && <CheckCircle className="w-3 h-3 text-white"/>}</div><p className={`font-extrabold text-sm ${step2Done ? 'text-slate-800' : 'text-slate-400'}`}>Vehículo en Tránsito</p><p className={`text-xs font-bold mt-0.5 ${step2Done ? 'text-blue-600' : 'text-slate-400'}`}>{step2Done ? 'El conductor tiene el vehículo en su poder' : 'Esperando retiro'}</p></div>
@@ -1269,32 +1269,16 @@ export default function App() {
         transition: background-color 0.3s; 
         
         /* MAGIA APP NATIVA */
-        overscroll-behavior-y: none; /* Elimina el rebote (pull-to-refresh) de los navegadores */
-        touch-action: manipulation; /* Bloquea el zoom al tocar dos veces rápido (iOS) */
-        -webkit-tap-highlight-color: transparent; /* Quita el destello azul al tocar botones en Android/iOS */
+        overscroll-behavior-y: none;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
       }
       
       .font-alfa { font-family: 'Alfa Slab One', serif; font-weight: 400; }
       
-      /* MAGIA MODO OSCURO AUTOMATIZADO */
+      /* MAGIA MODO OSCURO AUTOMATIZADO LIMPIA */
       .dark body { background-color: #020617 !important; }
-      .dark header { background-color: #0f172a !important; border-bottom: 1px solid #1e293b; }
-      .dark .bg-white:not(canvas) { background-color: #0f172a !important; border-color: #1e293b !important; }
-      .dark canvas { background-color: #ffffff !important; }
-      .dark .bg-slate-50 { background-color: #020617 !important; border-color: #0f172a !important; }
-      .dark .bg-slate-100 { background-color: #1e293b !important; }
-      .dark .bg-slate-200 { background-color: #334155 !important; }
-      
-      .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
-      .dark .text-slate-700 { color: #e2e8f0 !important; }
-      .dark .text-slate-600 { color: #cbd5e1 !important; }
-      .dark .text-slate-500, .dark .text-slate-400 { color: #94a3b8 !important; }
-      .dark .border-slate-100, .dark .border-slate-200 { border-color: #1e293b !important; }
-      
-      /* Especiales para el formulario QR */
-      .dark .bg-blue-50 { background-color: rgba(30, 58, 138, 0.3) !important; border-color: #1e3a8a !important; }
-      .dark .text-blue-800 { color: #93c5fd !important; }
-      .dark .text-blue-600 { color: #60a5fa !important; }
+      .dark canvas { background-color: #ffffff !important; border-radius: 0.5rem; }
     `}</style>
   );
 
