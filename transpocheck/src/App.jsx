@@ -127,6 +127,8 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
   const [revA_inspeccion, setRevA_inspeccion] = useState(jobToEdit?.rtData?.inspeccion || false);
   const [revA_frenos, setRevA_frenos] = useState(jobToEdit?.rtData?.frenos || false);
   const [revB_tipo, setRevB_tipo] = useState(jobToEdit?.rtData?.tipoB || 'completa');
+  // NUEVO: Estado Reactivo para las tarjetas de conductores
+  const [selectedDriversUI, setSelectedDriversUI] = useState(() => jobToEdit?.assignedEmails ? drivers.filter(d => jobToEdit.assignedEmails.includes(d.email)).map(d => d.id) : []);
   
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -255,25 +257,26 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
         <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl space-y-4">
            <h3 className="text-base font-bold text-slate-700">4. Conductores <span className="text-xs text-red-500 font-normal">(Obligatorio seleccionar al menos 1)</span></h3>
            <div className="max-h-64 overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {drivers.length === 0 ? <p className="text-sm text-slate-400 p-4 font-semibold col-span-full text-center">No hay conductores registrados.</p> : drivers.map(d => (
+              {drivers.length === 0 ? <p className="text-sm text-slate-400 p-4 font-semibold col-span-full text-center">No hay conductores registrados.</p> : drivers.map(d => {
+                const isSelected = selectedDriversUI.includes(d.id);
+                return (
                 <label key={d.id} className="relative flex cursor-pointer group">
-                  {/* El input nativo se oculta con 'sr-only' y se usa 'peer' para controlar el diseño del hermano */}
-                  <input type="checkbox" name="assignedDriverId" value={d.id} defaultChecked={jobToEdit?.assignedEmails?.includes(d.email)} className="peer sr-only" />
+                  {/* El input oculto envía los datos, pero el evento onChange actualiza la UI visual instantáneamente */}
+                  <input type="checkbox" name="assignedDriverId" value={d.id} checked={isSelected} onChange={() => setSelectedDriversUI(prev => prev.includes(d.id) ? prev.filter(id => id !== d.id) : [...prev, d.id])} className="sr-only" />
                   
-                  {/* Tarjeta interactiva */}
-                  <div className="w-full flex items-center p-3 bg-white border-2 border-slate-200 rounded-2xl transition-all peer-checked:border-blue-600 peer-checked:bg-blue-50 group-hover:border-blue-300">
-                    <div className="bg-slate-100 p-2.5 rounded-xl text-slate-400 peer-checked:bg-blue-600 peer-checked:text-white transition-colors shrink-0">
+                  {/* Tarjeta interactiva conectada a React */}
+                  <div className={`w-full flex items-center p-3 bg-white border-2 rounded-2xl transition-all ${isSelected ? 'border-blue-600 bg-blue-50' : 'border-slate-200 group-hover:border-blue-300'}`}>
+                    <div className={`p-2.5 rounded-xl transition-colors shrink-0 ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
                       <User className="w-5 h-5" />
                     </div>
                     <div className="ml-3 flex-1 overflow-hidden">
-                      <span className="block text-sm font-extrabold text-slate-800 truncate">{d.name}</span>
-                      <span className="block text-[10px] font-bold text-slate-400 truncate mt-0.5">{d.email}</span>
+                      <span className={`block text-sm font-extrabold truncate ${isSelected ? 'text-blue-700' : 'text-slate-800'}`}>{d.name}</span>
+                      <span className={`block text-[10px] font-bold truncate mt-0.5 ${isSelected ? 'text-blue-500' : 'text-slate-400'}`}>{d.email}</span>
                     </div>
-                    {/* Icono de Check que aparece suavemente con 'scale' */}
-                    <CheckCircle className="w-6 h-6 text-blue-600 scale-0 peer-checked:scale-100 transition-transform duration-200 shrink-0 ml-2" />
+                    <CheckCircle className={`w-6 h-6 transition-transform duration-200 shrink-0 ml-2 ${isSelected ? 'scale-100 text-blue-600' : 'scale-0 text-slate-300'}`} />
                   </div>
                 </label>
-              ))}
+              )})}
            </div>
         </div>
         <div className="flex gap-3 pt-2">
