@@ -2678,66 +2678,11 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     });
   };
 
-  const handlePic = async (e, id) => {
-    const f = e.target.files[0]; 
-    if(!f) return;
-    
+const handlePic = async (e, id) => {
+    const f=e.target.files[0]; if(!f)return;
     try {
-      const dataUrl = await resizeImage(f, 800, 0.6); 
-      
-      try {
-        const base64Data = dataUrl.split(',')[1];
-        const response = await fetch(
-          "https://detect.roboflow.com/car-damage-detection-t0g92/1?api_key=QvWTIuwyzGMUxh7Q3TGY",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: base64Data
-          }
-        );
-        
-        const result = await response.json();
-        const predictions = result.predictions || [];
-
-        if (predictions.length > 0) {
-          const imgEl = new Image();
-          imgEl.src = dataUrl;
-          
-          imgEl.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = imgEl.width;
-            canvas.height = imgEl.height;
-            const ctx = canvas.getContext('2d');
-            
-            ctx.drawImage(imgEl, 0, 0);
-            ctx.lineWidth = 5;
-            ctx.font = "bold 16px Arial";
-
-            predictions.forEach(p => {
-              const tlX = p.x - p.width / 2;
-              const tlY = p.y - p.height / 2;
-
-              ctx.strokeStyle = "#eab308";
-              ctx.fillStyle = "rgba(234, 179, 8, 0.25)"; 
-              
-              ctx.strokeRect(tlX, tlY, p.width, p.height);
-              ctx.fillRect(tlX, tlY, p.width, p.height);
-
-              ctx.fillStyle = "#eab308";
-              ctx.fillText(`${p.class} ${(p.confidence * 100).toFixed(0)}%`, tlX, tlY - 8);
-            });
-
-            setF('photos', {...formData.photos, [id]: canvas.toDataURL('image/jpeg', 0.7)});
-            showAlert(`🤖 Asistencia IA: Se detectaron ${predictions.length} anomalía(s) en la foto. Revisa los recuadros amarillos.`);
-          };
-          return; 
-        }
-      } catch (apiError) {
-        console.error("La IA falló o no hay internet para detectarlo:", apiError);
-      }
-
+      const dataUrl = await resizeImage(f, 500, 0.4); 
       setF('photos', {...formData.photos, [id]: dataUrl}); 
-
     } catch(err){ 
       console.error("Error al procesar la foto:", err);
       showAlert("Error al procesar la foto. Intenta con una imagen más pequeña."); 
