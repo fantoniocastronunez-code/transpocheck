@@ -25,8 +25,8 @@ const db = getFirestore(app);
 // NUEVO: Variable global de la versión de la App (Cámbiala cuando actualices el código)
 const APP_VERSION = "v1.2.0";
 
-// Activamos la Persistencia Offline. La app funcionará sin internet leyendo el caché local.
-enableIndexedDbPersistence(db).catch((err) => {
+// NUEVO: Activamos la Persistencia Offline Multi-Pestaña.
+enableMultiTabIndexedDbPersistence(db).catch((err) => {
   console.warn("Modo offline limitado:", err.code);
 });
 
@@ -1041,7 +1041,6 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
           </div>
         </div>
       )}
-
     </div>
   );
 }
