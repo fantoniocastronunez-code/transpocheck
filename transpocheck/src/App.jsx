@@ -3461,6 +3461,4 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
       </div>
     </div>
   );
-}
-
-export default App;
+}DASASD
