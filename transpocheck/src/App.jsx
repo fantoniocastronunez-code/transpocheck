@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, enableIndexedDbPersistence, collection, addDoc, onSnapshot, updateDoc, setDoc, doc, deleteDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
+// Eliminamos la importación global de jsPDF para que la app cargue más rápido (Lazy Loading)
 import { 
   Car, MapPin, Camera, CheckCircle, FileText, Download, 
   Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, Edit2, Bell, Share2, X, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Save, Search,
@@ -21,7 +22,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Activamos la Persistencia Offline. La app funcionará sin internet leyendo el caché local.
+// NUEVO: Activamos la Persistencia Offline. La app funcionará sin internet leyendo el caché local.
 enableIndexedDbPersistence(db).catch((err) => {
   console.warn("Modo offline limitado:", err.code);
 });
@@ -57,18 +58,23 @@ const SignaturePad = ({ onSave, onClear, initialData }) => {
   const drawEvent = (e, type) => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
+    
+    if (type === 'stop') {
+      setIsDrawing(false);
+      if (onSave) onSave(canvas.toDataURL());
+      return; // Salir antes de leer coordenadas vacías (Evita el crash en móviles)
+    }
+
     const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const clientX = e.touches && e.touches.length > 0 ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches && e.touches.length > 0 ? e.touches[0].clientY : e.clientY;
+    if (clientX === undefined || clientY === undefined) return;
+
     const x = clientX - rect.left;
     const y = clientY - rect.top;
     
     if (type === 'start') { ctx.beginPath(); ctx.moveTo(x, y); setIsDrawing(true); }
     if (type === 'draw' && isDrawing) { ctx.lineTo(x, y); ctx.stroke(); }
-    if (type === 'stop') {
-      setIsDrawing(false);
-      if (onSave) onSave(canvas.toDataURL());
-    }
   };
 
   return (
@@ -84,6 +90,7 @@ const SignaturePad = ({ onSave, onClear, initialData }) => {
   );
 };
 
+// Se reduce la resolución máxima y la calidad para evitar el bloqueo por peso en Firestore
 const resizeImage = (file, maxWidth = 500, quality = 0.4) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -125,6 +132,7 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
   const [revA_inspeccion, setRevA_inspeccion] = useState(jobToEdit?.rtData?.inspeccion || false);
   const [revA_frenos, setRevA_frenos] = useState(jobToEdit?.rtData?.frenos || false);
   const [revB_tipo, setRevB_tipo] = useState(jobToEdit?.rtData?.tipoB || 'completa');
+  // NUEVO: Estado Reactivo para las tarjetas de conductores
   const [selectedDriversUI, setSelectedDriversUI] = useState(() => jobToEdit?.assignedEmails ? drivers.filter(d => jobToEdit.assignedEmails.includes(d.email)).map(d => d.id) : []);
   
   const todayStr = new Date().toISOString().split('T')[0];
@@ -140,9 +148,11 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
 
   const handleCreateOrUpdateJob = async (e) => {
     e.preventDefault();
-    if (selectedDriversUI.length === 0) return showAlert("Debes seleccionar al menos un conductor.");
+    const formData = new FormData(e.target);
+    const selectedDriverIds = formData.getAll('assignedDriverId');
+    if (selectedDriverIds.length === 0) return showAlert("Debes seleccionar al menos un conductor.");
 
-    const assignedDriversList = drivers.filter(d => selectedDriversUI.includes(d.id));
+    const assignedDriversList = drivers.filter(d => selectedDriverIds.includes(d.id));
     const finalClient = selectedClient === 'OTRO' ? manualClient : selectedClient;
     
     const rtData = tripType === 'revision' ? {
@@ -154,9 +164,9 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
     } : null;
 
     const jobData = {
-      scheduledDate: e.target.scheduledDate.value, client: finalClient, brand, model,
-      vin: plate, plate, origin: e.target.origin.value, destination: e.target.destination.value,
-      tripType, rtData: rtData || null, 
+      scheduledDate: formData.get('scheduledDate'), client: finalClient, brand, model,
+      vin: plate, plate, origin: formData.get('origin'), destination: formData.get('destination'),
+      tripType, rtData: rtData || null, // Protección anti-crash
       assignedDrivers: assignedDriversList.map(d => ({id: d.id, name: d.name, email: d.email})), assignedEmails: assignedDriversList.map(d => d.email)
     };
 
@@ -256,8 +266,10 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
                 const isSelected = selectedDriversUI.includes(d.id);
                 return (
                 <label key={d.id} className="relative flex cursor-pointer group">
+                  {/* El input oculto envía los datos, pero el evento onChange actualiza la UI visual instantáneamente */}
                   <input type="checkbox" name="assignedDriverId" value={d.id} checked={isSelected} onChange={() => setSelectedDriversUI(prev => prev.includes(d.id) ? prev.filter(id => id !== d.id) : [...prev, d.id])} className="sr-only" />
                   
+                  {/* Tarjeta interactiva conectada a React */}
                   <div className={`w-full flex items-center p-3 bg-white border-2 rounded-2xl transition-all ${isSelected ? 'border-blue-600 bg-blue-50' : 'border-slate-200 group-hover:border-blue-300'}`}>
                     <div className={`p-2.5 rounded-xl transition-colors shrink-0 ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
                       <User className="w-5 h-5" />
@@ -431,11 +443,10 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
     </div>
   );
 }
-
 function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [downloadingId, setDownloadingId] = useState(null);
+  const [downloadingId, setDownloadingId] = useState(null); // <-- NUEVO ESTADO PARA EL SPINNER
 
   useEffect(() => {
     const q = query(collection(db, 'transport_jobs'), where('client', '==', clientName));
@@ -451,287 +462,296 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
     return () => unsub();
   }, [clientName, db]);
 
+  // --- MOTOR GENERADOR DE PDF PARA EL CLIENTE ---
   const handleDownloadPDF = async (job) => {
     if (!job.checklist && job.status !== 'failed') return alert("Este traslado no tiene un checklist registrado.");
     
     try {
-      setDownloadingId(job.id);
+      setDownloadingId(job.id); // Enciende el relojito de carga
       
+      // CORRECCIÓN: Carga ultra-segura de jsPDF compatible con Vite
       const jsPDFModule = await import('jspdf');
-      const JsPDFClass = jsPDFModule.default?.jsPDF || jsPDFModule.default || jsPDFModule.jsPDF;
-      const docPDF = new JsPDFClass();
-      const cleanStr = (str) => {
-        if (!str) return '';
-        return String(str).replace(/➔/g, '->').replace(/•/g, '-').replace(/[^\x20-\x7E\xA0-\xFF]/g, '');
-      };
+    const JsPDFClass = jsPDFModule.default?.jsPDF || jsPDFModule.default || jsPDFModule.jsPDF;
+    const docPDF = new JsPDFClass();
+    const cleanStr = (str) => {
+      if (!str) return '';
+      return String(str).replace(/➔/g, '->').replace(/•/g, '-').replace(/[^\x20-\x7E\xA0-\xFF]/g, '');
+    };
 
-      const getImageDims = (src) => new Promise(resolve => { 
-        const img = new Image(); 
-        img.onload = () => resolve({ w: img.width, h: img.height }); 
-        img.onerror = () => resolve({ w: 85, h: 60 }); 
-        img.src = src; 
+    const getImageDims = (src) => new Promise(resolve => { 
+      const img = new Image(); 
+      img.onload = () => resolve({ w: img.width, h: img.height }); 
+      img.onerror = () => resolve({ w: 85, h: 60 }); 
+      img.src = src; 
+    });
+
+    const primaryColor = [30, 41, 59]; const secondaryColor = [100, 116, 139]; const accentColor = [37, 99, 235];
+    const lightBg = [248, 250, 252]; const borderColor = [226, 232, 240];
+
+    const loadSimpleLogo = async (src) => {
+      return new Promise((resolve) => {
+        const img = new Image(); img.src = src; img.crossOrigin = "Anonymous";
+        img.onload = () => {
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = img.width; tempCanvas.height = img.height;
+          const ctx = tempCanvas.getContext('2d'); ctx.drawImage(img, 0, 0, img.width, img.height);
+          resolve({ data: tempCanvas.toDataURL('image/png'), w: img.width, h: img.height });
+        };
+        img.onerror = () => resolve(null);
+        setTimeout(() => resolve(null), 1500); 
       });
+    };
 
-      const primaryColor = [30, 41, 59]; const secondaryColor = [100, 116, 139]; const accentColor = [37, 99, 235];
-      const lightBg = [248, 250, 252]; const borderColor = [226, 232, 240];
+    const [logoApp, logoLogistica] = await Promise.all([loadSimpleLogo('/logo.png'), loadSimpleLogo('/LogoLogistica.png')]);
 
-      const loadSimpleLogo = async (src) => {
-        return new Promise((resolve) => {
-          const img = new Image(); img.src = src; img.crossOrigin = "Anonymous";
-          img.onload = () => {
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = img.width; tempCanvas.height = img.height;
-            const ctx = tempCanvas.getContext('2d'); ctx.drawImage(img, 0, 0, img.width, img.height);
-            resolve({ data: tempCanvas.toDataURL('image/png'), w: img.width, h: img.height });
-          };
-          img.onerror = () => resolve(null);
-          setTimeout(() => resolve(null), 1500); 
-        });
-      };
-
-      const [logoApp, logoLogistica] = await Promise.all([loadSimpleLogo('/logo.png'), loadSimpleLogo('/LogoLogistica.png')]);
-
-      const drawHeader = (titleText) => {
-        docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 40, 'F');
-        docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(18); docPDF.setFont("helvetica", "bold");
-        docPDF.text(cleanStr(titleText), 105, 18, null, null, "center");
-        
-        const dateTxt = typeof formatDateDisplay === 'function' && job.scheduledDate ? formatDateDisplay(job.scheduledDate) : (job.scheduledDate || '-');
-        docPDF.setFontSize(9); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(148, 163, 184);
-        docPDF.text(`FECHA TRASLADO: ${dateTxt}`, 105, 26, null, null, "center");
-
-        docPDF.setFontSize(11); docPDF.setFont("times", "bolditalic"); docPDF.setTextColor(255, 255, 255);
-        if (logoLogistica) {
-          const ratio = logoLogistica.h / logoLogistica.w; let imgW = 35; let imgH = imgW * ratio;
-          if (imgH > 24) { imgH = 24; imgW = imgH / ratio; }
-          docPDF.addImage(logoLogistica.data, 'PNG', 27 - (imgW/2), 19 - (imgH/2), imgW, imgH);
-          docPDF.text("Logística TS SpA", 27, 34, null, null, "center");
-        }
-        if (logoApp) {
-          const ratio = logoApp.h / logoApp.w; let imgW = 20; let imgH = imgW * ratio;
-          if (imgH > 24) { imgH = 24; imgW = imgH / ratio; }
-          docPDF.addImage(logoApp.data, 'PNG', 183 - (imgW/2), 19 - (imgH/2), imgW, imgH);
-          docPDF.text("LogisticAPP", 183, 34, null, null, "center");
-        }
-      };
-
-      let pdfTitle = job.tripType === 'revision' ? "CERTIFICADO DE REVISION TECNICA" : (job.tripType === 'viaje' ? "TRASLADO A REGIONES" : "CHECKLIST DE TRASLADO");
-      drawHeader(pdfTitle);
-
-      let currentY = 50;
-      if (job.tripType === 'revision' && job.checklist?.rtStatus) {
-          const isApproved = job.checklist.rtStatus === 'aprobado';
-          const statusText = isApproved ? "APROBADO" : "RECHAZADO";
-          docPDF.setFillColor(isApproved ? 220 : 254, isApproved ? 252 : 226, isApproved ? 231 : 226);
-          docPDF.rect(0, 40, 210, 12, 'F');
-          docPDF.setFontSize(16); docPDF.setFont("helvetica", "bold");
-          docPDF.setTextColor(isApproved ? 22 : 220, isApproved ? 163 : 38, isApproved ? 74 : 38); 
-          docPDF.text(statusText, 195, 48, null, null, "right");
-          currentY = 60; 
-      }
-
-      const startY = currentY; const leftColWidth = 90;
-      const drawSectionTitle = (title, y) => {
-        docPDF.setFillColor(...lightBg); docPDF.rect(15, y - 6, leftColWidth, 10, 'F');
-        docPDF.setDrawColor(...accentColor); docPDF.setLineWidth(1); docPDF.line(15, y - 6, 15, y + 4);
-        docPDF.setTextColor(...primaryColor); docPDF.setFontSize(10); docPDF.setFont("helvetica", "bold");
-        docPDF.text(cleanStr(title).toUpperCase(), 20, y+1);
-        return y + 10;
-      };
-
-      const drawKV = (label, value, x, y, maxW = 40) => {
-        docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
-        docPDF.text(cleanStr(label).toUpperCase(), x, y);
-        docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
-        const splitValue = docPDF.splitTextToSize(cleanStr(value), maxW); docPDF.text(splitValue, x, y + 4);
-        return splitValue.length * 4;
-      };
-
-      let driverNameStr = job.checklist?.assignedDriverName || job.acceptedByEmail || "Conductor";
-      if (job.assignedDrivers && job.assignedDrivers.length > 0) {
-         const found = job.assignedDrivers.find(d => d.email === job.acceptedByEmail);
-         if (found) driverNameStr = found.name;
-      }
-
-      currentY = drawSectionTitle("1. Detalles del Vehiculo", currentY);
-      let hC = drawKV("Cliente", `${job.client || 'Sin Cliente'}`, 15, currentY, 45);
-      let hM = drawKV("Marca y Modelo", `${job.brand || '-'} ${job.model || '-'}`, 65, currentY, 45);
-      currentY += Math.max(hC, hM) + 6;
-
-      let hP = drawKV("Patente / VIN", `${job.plate || job.vin || '-'}`, 15, currentY, 45);
-      let hD = drawKV("Conductor", driverNameStr, 65, currentY, 45);
-      currentY += Math.max(hP, hD) + 6;
+    const drawHeader = (titleText) => {
+      docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 40, 'F');
+      docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(18); docPDF.setFont("helvetica", "bold");
+      docPDF.text(cleanStr(titleText), 105, 18, null, null, "center");
       
-      let routeText = `${job.origin || '-'}  ->  ${job.destination || '-'}`;
-      if (job.tripType === 'revision') {
-        if (job.checklist?.rtStatus === 'aprobado') {
-           const ret = job.checklist.rtReturnOption === 'other' ? job.checklist.rtReturnDestination : job.origin;
-           routeText = `${job.origin || '-'}  ->  PRT  ->  ${ret || '-'}`;
-        } else if (job.checklist?.rtStatus === 'rechazado') {
-           routeText = `${job.origin || '-'}  ->  PRT (Rechazada)`;
-        } else {
-           routeText = `${job.origin || '-'}  ->  PRT`;
-        }
+      // Intentamos usar tu función global si está disponible, si no, fallback
+      const dateTxt = typeof formatDateDisplay === 'function' && job.scheduledDate ? formatDateDisplay(job.scheduledDate) : (job.scheduledDate || '-');
+      docPDF.setFontSize(9); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(148, 163, 184);
+      docPDF.text(`FECHA TRASLADO: ${dateTxt}`, 105, 26, null, null, "center");
+
+      docPDF.setFontSize(11); docPDF.setFont("times", "bolditalic"); docPDF.setTextColor(255, 255, 255);
+      if (logoLogistica) {
+        const ratio = logoLogistica.h / logoLogistica.w; let imgW = 35; let imgH = imgW * ratio;
+        if (imgH > 24) { imgH = 24; imgW = imgH / ratio; }
+        docPDF.addImage(logoLogistica.data, 'PNG', 27 - (imgW/2), 19 - (imgH/2), imgW, imgH);
+        docPDF.text("Logística TS SpA", 27, 34, null, null, "center");
       }
-      let routeH = drawKV("Ruta Asignada", routeText, 15, currentY, leftColWidth);
-      currentY += routeH + 8;
+      if (logoApp) {
+        const ratio = logoApp.h / logoApp.w; let imgW = 20; let imgH = imgW * ratio;
+        if (imgH > 24) { imgH = 24; imgW = imgH / ratio; }
+        docPDF.addImage(logoApp.data, 'PNG', 183 - (imgW/2), 19 - (imgH/2), imgW, imgH);
+        docPDF.text("LogisticAPP", 183, 34, null, null, "center");
+      }
+    };
 
-      currentY = drawSectionTitle("2. Recepcion y Estado", currentY);
-      
-      const getDocStatus = (docKey) => {
-          const isOk = job.checklist?.docs?.[docKey];
-          const expDate = job.checklist?.docsExpiry?.[docKey];
-          if (!isOk) return 'FALTA';
-          if (expDate) {
-              const [y, m, d] = expDate.split('-');
-              return `AL DIA (Vence: ${d}/${m}/${y})`;
-          }
-          return 'AL DIA';
-      };
+    let pdfTitle = job.tripType === 'revision' ? "CERTIFICADO DE REVISION TECNICA" : (job.tripType === 'viaje' ? "TRASLADO A REGIONES" : "CHECKLIST DE TRASLADO");
+    drawHeader(pdfTitle);
 
-      let hFuel = drawKV("Combustible", `${job.checklist?.fuelLevel || '0'}%`, 15, currentY, 45);
-      let hSoap = drawKV("Seguro SOAP", getDocStatus('soap'), 65, currentY, 45);
-      currentY += Math.max(hFuel, hSoap) + 6;
+    let currentY = 50;
+    if (job.tripType === 'revision' && job.checklist?.rtStatus) {
+        const isApproved = job.checklist.rtStatus === 'aprobado';
+        const statusText = isApproved ? "APROBADO" : "RECHAZADO";
+        docPDF.setFillColor(isApproved ? 220 : 254, isApproved ? 252 : 226, isApproved ? 231 : 226);
+        docPDF.rect(0, 40, 210, 12, 'F');
+        docPDF.setFontSize(16); docPDF.setFont("helvetica", "bold");
+        docPDF.setTextColor(isApproved ? 22 : 220, isApproved ? 163 : 38, isApproved ? 74 : 38); 
+        docPDF.text(statusText, 195, 48, null, null, "right");
+        currentY = 60; 
+    }
 
-      let hPerm = drawKV("Permiso Circ.", getDocStatus('permiso'), 15, currentY, 45);
-      let hRev = drawKV("Rev. Tecnica", getDocStatus('revTecnica'), 65, currentY, 45);
-      currentY += Math.max(hPerm, hRev) + 6;
+    const startY = currentY; const leftColWidth = 90;
+    const drawSectionTitle = (title, y) => {
+      docPDF.setFillColor(...lightBg); docPDF.rect(15, y - 6, leftColWidth, 10, 'F');
+      docPDF.setDrawColor(...accentColor); docPDF.setLineWidth(1); docPDF.line(15, y - 6, 15, y + 4);
+      docPDF.setTextColor(...primaryColor); docPDF.setFontSize(10); docPDF.setFont("helvetica", "bold");
+      docPDF.text(cleanStr(title).toUpperCase(), 20, y+1);
+      return y + 10;
+    };
 
-      let hGas = drawKV("Gases", getDocStatus('gases'), 15, currentY, 45);
-      currentY += hGas + 8;
-
+    const drawKV = (label, value, x, y, maxW = 40) => {
       docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
-      docPDF.text("OBSERVACIONES:", 15, currentY);
+      docPDF.text(cleanStr(label).toUpperCase(), x, y);
       docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
-      const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin observaciones registradas.'}`), leftColWidth);
-      docPDF.text(obsSplit, 15, currentY + 4);
-      currentY += (obsSplit.length * 4) + 6;
+      const splitValue = docPDF.splitTextToSize(cleanStr(value), maxW); docPDF.text(splitValue, x, y + 4);
+      return splitValue.length * 4;
+    };
 
-      if (job.checklist?.hasWaitTime) {
-        docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38);
-        const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth);
-        docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2;
-      }
-      if (job.checklist?.hasFuelCharge) {
-        docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(37, 99, 235);
-        const fcStr = docPDF.splitTextToSize(`CARGA DE COMBUSTIBLE: ${cleanStr(job.checklist.fuelChargeAmount || 'Sí')}`, leftColWidth);
-        docPDF.text(fcStr, 15, currentY); currentY += (fcStr.length * 4) + 2;
-      }
-      currentY += 8; 
+    // Rescatar nombre de conductor (El cliente no tiene la base de datos de drivers, así que la armamos de lo que esté guardado en el Job)
+    let driverNameStr = job.checklist?.assignedDriverName || job.acceptedByEmail || "Conductor";
+    if (job.assignedDrivers && job.assignedDrivers.length > 0) {
+       const found = job.assignedDrivers.find(d => d.email === job.acceptedByEmail);
+       if (found) driverNameStr = found.name;
+    }
 
-      let sectionNum = 3;
+    currentY = drawSectionTitle("1. Detalles del Vehiculo", currentY);
+    let hC = drawKV("Cliente", `${job.client || 'Sin Cliente'}`, 15, currentY, 45);
+    let hM = drawKV("Marca y Modelo", `${job.brand || '-'} ${job.model || '-'}`, 65, currentY, 45);
+    currentY += Math.max(hC, hM) + 6;
 
-      if (job.tripType === 'revision') {
-         currentY = drawSectionTitle(`${sectionNum}. Resultado`, currentY);
-         if (job.checklist?.rtStatus === 'aprobado') {
-           docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(16); 
-           docPDF.text("APROBADO", 15, currentY + 6);
-           currentY += 18; 
-         } else {
-           docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(16); 
-           docPDF.text("RECHAZADO", 15, currentY + 6);
-           docPDF.setFontSize(10); docPDF.setTextColor(153, 27, 27);
-           const rejSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.checklist?.rtRejectReason || job.failedReason || 'No especificada'}`), leftColWidth);
-           docPDF.text(rejSplit, 15, currentY + 12);
-           currentY += 20 + (rejSplit.length * 4); 
-         }
-         sectionNum++;
-      }
-
-      currentY = drawSectionTitle(`${sectionNum}. Conformidad Entrega`, currentY);
-      if (job.checklist?.noReception) {
-        docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(9);
-        const nrSplit = docPDF.splitTextToSize("ENTREGA SIN RECEPCION (Confirmada por conductor en terreno)", leftColWidth);
-        docPDF.text(nrSplit, 15, currentY + 4); currentY += (nrSplit.length * 4) + 6;
+    let hP = drawKV("Patente / VIN", `${job.plate || job.vin || '-'}`, 15, currentY, 45);
+    let hD = drawKV("Conductor", driverNameStr, 65, currentY, 45);
+    currentY += Math.max(hP, hD) + 6;
+    
+    let routeText = `${job.origin || '-'}  ->  ${job.destination || '-'}`;
+    if (job.tripType === 'revision') {
+      if (job.checklist?.rtStatus === 'aprobado') {
+         const ret = job.checklist.rtReturnOption === 'other' ? job.checklist.rtReturnDestination : job.origin;
+         routeText = `${job.origin || '-'}  ->  PRT  ->  ${ret || '-'}`;
+      } else if (job.checklist?.rtStatus === 'rechazado') {
+         routeText = `${job.origin || '-'}  ->  PRT (Rechazada)`;
       } else {
-        drawKV("Receptor", `${job.checklist?.receiverName || 'N/A'}`, 15, currentY, leftColWidth); currentY += 12;
-        drawKV("RUT", `${job.checklist?.receiverRut || 'N/A'}`, 15, currentY, leftColWidth); currentY += 12;
-        
-        if (job.checklist?.clientComments) {
-            docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
-            docPDF.text("COMENTARIOS:", 15, currentY);
-            docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
-            const commSplit = docPDF.splitTextToSize(cleanStr(job.checklist.clientComments), leftColWidth);
-            docPDF.text(commSplit, 15, currentY + 4);
-            currentY += (commSplit.length * 4) + 6;
+         routeText = `${job.origin || '-'}  ->  PRT`;
+      }
+    }
+    let routeH = drawKV("Ruta Asignada", routeText, 15, currentY, leftColWidth);
+    currentY += routeH + 8;
+
+    currentY = drawSectionTitle("2. Recepcion y Estado", currentY);
+    
+    const getDocStatus = (docKey) => {
+        const isOk = job.checklist?.docs?.[docKey];
+        const expDate = job.checklist?.docsExpiry?.[docKey];
+        if (!isOk) return 'FALTA';
+        if (expDate) {
+            const [y, m, d] = expDate.split('-');
+            return `AL DIA (Vence: ${d}/${m}/${y})`;
         }
+        return 'AL DIA';
+    };
 
-        if(job.checklist?.signatureData) {
-            docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
-            docPDF.text("FIRMA DE CONFORMIDAD:", 15, currentY);
-            docPDF.addImage(job.checklist.signatureData, 'PNG', 15, currentY + 2, 45, 25);
-            currentY += 30;
-        }
-      }
+    let hFuel = drawKV("Combustible", `${job.checklist?.fuelLevel || '0'}%`, 15, currentY, 45);
+    let hSoap = drawKV("Seguro SOAP", getDocStatus('soap'), 65, currentY, 45);
+    currentY += Math.max(hFuel, hSoap) + 6;
 
-      const frontPhotoStr = job.checklist?.photos?.front;
-      if (frontPhotoStr && typeof frontPhotoStr === 'string' && frontPhotoStr.startsWith('data:image')) {
-        try {
-          const dims = await getImageDims(frontPhotoStr); const ratio = dims.h / dims.w;
-          let imgW = 80; let imgH = imgW * ratio; if (imgH > 130) { imgH = 130; imgW = imgH / ratio; }
-          const rightX = 115; const rightY = startY + 6;
-          docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(rightX - 2, rightY - 8, imgW + 4, imgH + 12, 2, 2, 'S');
-          docPDF.setFillColor(...lightBg); docPDF.rect(rightX - 2, rightY - 8, imgW + 4, 8, 'F');
-          docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor);
-          docPDF.text("VISTA FRONTAL", rightX + (imgW/2), rightY - 3, { align: "center" });
-          docPDF.addImage(frontPhotoStr, 'JPEG', rightX, rightY + 2, imgW, imgH);
-        } catch (err) { console.error(err); }
-      }
+    let hPerm = drawKV("Permiso Circ.", getDocStatus('permiso'), 15, currentY, 45);
+    let hRev = drawKV("Rev. Tecnica", getDocStatus('revTecnica'), 65, currentY, 45);
+    currentY += Math.max(hPerm, hRev) + 6;
 
-      const addFooter = () => {
-         const pageCount = docPDF.internal.getNumberOfPages();
-         for(let i = 1; i <= pageCount; i++) {
-             docPDF.setPage(i); docPDF.setFontSize(8); docPDF.setTextColor(148, 163, 184);
-             docPDF.text(`Generado por LogisticAPP el ${new Date().toLocaleString('es-CL')} - Pagina ${i} de ${pageCount}`, 105, 290, null, null, "center");
-         }
-      }
+    let hGas = drawKV("Gases", getDocStatus('gases'), 15, currentY, 45);
+    currentY += hGas + 8;
 
-      if (job.checklist?.photos) {
-        const photos = job.checklist.photos;
-        const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
-        let photoY = 46; let currentCol = 1; let addedPage = false;
+    docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
+    docPDF.text("OBSERVACIONES:", 15, currentY);
+    docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
+    const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin observaciones registradas.'}`), leftColWidth);
+    docPDF.text(obsSplit, 15, currentY + 4);
+    currentY += (obsSplit.length * 4) + 6;
 
-        for (const key in photos) {
-          if (key === 'front') continue; 
-          if (photos[key] && typeof photos[key] === 'string' && photos[key].startsWith('data:image')) {
-            if (!addedPage) { docPDF.addPage(); drawHeader("ANEXO FOTOGRAFICO"); addedPage = true; }
-            try {
-              const dims = await getImageDims(photos[key]); const ratio = dims.h / dims.w;
-              let imgW = 85; let imgH = imgW * ratio; if (imgH > 95) { imgH = 95; imgW = imgH / ratio; }
-              const slotCenter = currentCol === 1 ? 55 : 155; const finalX = slotCenter - (imgW / 2);
-              if (photoY + imgH > 275) { docPDF.addPage(); photoY = 46; drawHeader("ANEXO FOTOGRAFICO (CONT.)"); }
-              
-              docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S');
-              docPDF.setFillColor(...lightBg); docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F');
-              docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor);
-              docPDF.text((labels[key] || key).toUpperCase(), slotCenter, photoY - 3, { align: "center" });
-              docPDF.addImage(photos[key], 'JPEG', finalX, photoY + 2, imgW, imgH);
-              if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 20; }
-            } catch (err) {}
-          }
-        }
-      }
-      addFooter();
+    if (job.checklist?.hasWaitTime) {
+      docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38);
+      const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth);
+      docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2;
+    }
+    if (job.checklist?.hasFuelCharge) {
+      docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(37, 99, 235);
+      const fcStr = docPDF.splitTextToSize(`CARGA DE COMBUSTIBLE: ${cleanStr(job.checklist.fuelChargeAmount || 'Sí')}`, leftColWidth);
+      docPDF.text(fcStr, 15, currentY); currentY += (fcStr.length * 4) + 2;
+    }
+    currentY += 8; 
 
-      const cleanPlate = job.plate || job.vin || 'SN';
-      const dateStrForFile = (job.scheduledDate || new Date().toISOString().split('T')[0]).replace(/\//g, '-');
-      const fileName = `Certificado.${dateStrForFile}.${(job.client || 'Cliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`; 
-      docPDF.save(fileName); 
-      setDownloadingId(null);
+    let sectionNum = 3;
+
+    if (job.tripType === 'revision') {
+       currentY = drawSectionTitle(`${sectionNum}. Resultado`, currentY);
+       if (job.checklist?.rtStatus === 'aprobado') {
+         docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(16); 
+         docPDF.text("APROBADO", 15, currentY + 6);
+         currentY += 18; 
+       } else {
+         docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(16); 
+         docPDF.text("RECHAZADO", 15, currentY + 6);
+         docPDF.setFontSize(10); docPDF.setTextColor(153, 27, 27);
+         const rejSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.checklist?.rtRejectReason || job.failedReason || 'No especificada'}`), leftColWidth);
+         docPDF.text(rejSplit, 15, currentY + 12);
+         currentY += 20 + (rejSplit.length * 4); 
+       }
+       sectionNum++;
+    }
+
+    currentY = drawSectionTitle(`${sectionNum}. Conformidad Entrega`, currentY);
+    if (job.checklist?.noReception) {
+      docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(9);
+      const nrSplit = docPDF.splitTextToSize("ENTREGA SIN RECEPCION (Confirmada por conductor en terreno)", leftColWidth);
+      docPDF.text(nrSplit, 15, currentY + 4); currentY += (nrSplit.length * 4) + 6;
+    } else {
+      drawKV("Receptor", `${job.checklist?.receiverName || 'N/A'}`, 15, currentY, leftColWidth); currentY += 12;
+      drawKV("RUT", `${job.checklist?.receiverRut || 'N/A'}`, 15, currentY, leftColWidth); currentY += 12;
       
+      if (job.checklist?.clientComments) {
+          docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
+          docPDF.text("COMENTARIOS:", 15, currentY);
+          docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
+          const commSplit = docPDF.splitTextToSize(cleanStr(job.checklist.clientComments), leftColWidth);
+          docPDF.text(commSplit, 15, currentY + 4);
+          currentY += (commSplit.length * 4) + 6;
+      }
+
+      if(job.checklist?.signatureData) {
+          docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
+          docPDF.text("FIRMA DE CONFORMIDAD:", 15, currentY);
+          docPDF.addImage(job.checklist.signatureData, 'PNG', 15, currentY + 2, 45, 25);
+          currentY += 30;
+      }
+    }
+
+    const frontPhotoStr = job.checklist?.photos?.front;
+    if (frontPhotoStr && typeof frontPhotoStr === 'string' && frontPhotoStr.startsWith('data:image')) {
+      try {
+        const dims = await getImageDims(frontPhotoStr); const ratio = dims.h / dims.w;
+        let imgW = 80; let imgH = imgW * ratio; if (imgH > 130) { imgH = 130; imgW = imgH / ratio; }
+        const rightX = 115; const rightY = startY + 6;
+        docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(rightX - 2, rightY - 8, imgW + 4, imgH + 12, 2, 2, 'S');
+        docPDF.setFillColor(...lightBg); docPDF.rect(rightX - 2, rightY - 8, imgW + 4, 8, 'F');
+        docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor);
+        docPDF.text("VISTA FRONTAL", rightX + (imgW/2), rightY - 3, { align: "center" });
+        docPDF.addImage(frontPhotoStr, 'JPEG', rightX, rightY + 2, imgW, imgH);
+      } catch (err) { console.error(err); }
+    }
+
+    const addFooter = () => {
+       const pageCount = docPDF.internal.getNumberOfPages();
+       for(let i = 1; i <= pageCount; i++) {
+           docPDF.setPage(i); docPDF.setFontSize(8); docPDF.setTextColor(148, 163, 184);
+           docPDF.text(`Generado por LogisticAPP el ${new Date().toLocaleString('es-CL')} - Pagina ${i} de ${pageCount}`, 105, 290, null, null, "center");
+       }
+    }
+
+    if (job.checklist?.photos) {
+      const photos = job.checklist.photos;
+      const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
+      let photoY = 46; let currentCol = 1; let addedPage = false;
+
+      for (const key in photos) {
+        if (key === 'front') continue; 
+        if (photos[key] && typeof photos[key] === 'string' && photos[key].startsWith('data:image')) {
+          if (!addedPage) { docPDF.addPage(); drawHeader("ANEXO FOTOGRAFICO"); addedPage = true; }
+          try {
+            const dims = await getImageDims(photos[key]); const ratio = dims.h / dims.w;
+            let imgW = 85; let imgH = imgW * ratio; if (imgH > 95) { imgH = 95; imgW = imgH / ratio; }
+            const slotCenter = currentCol === 1 ? 55 : 155; const finalX = slotCenter - (imgW / 2);
+            if (photoY + imgH > 275) { docPDF.addPage(); photoY = 46; drawHeader("ANEXO FOTOGRAFICO (CONT.)"); }
+            
+            docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S');
+            docPDF.setFillColor(...lightBg); docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F');
+            docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor);
+            docPDF.text((labels[key] || key).toUpperCase(), slotCenter, photoY - 3, { align: "center" });
+            docPDF.addImage(photos[key], 'JPEG', finalX, photoY + 2, imgW, imgH);
+            if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 20; }
+          } catch (err) {}
+        }
+      }
+    }
+    addFooter();
+
+    // Guardado del archivo
+    const cleanPlate = job.plate || job.vin || 'SN';
+    const dateStrForFile = (job.scheduledDate || new Date().toISOString().split('T')[0]).replace(/\//g, '-');
+    const fileName = `Certificado.${dateStrForFile}.${(job.client || 'Cliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`; 
+    docPDF.save(fileName); 
+    setDownloadingId(null); // Apaga el relojito
+    
     } catch (error) {
       console.error("Error crítico generando PDF en Portal:", error);
       alert("Hubo un error al descargar el PDF. Verifica tu conexión a internet e intenta de nuevo.");
-      setDownloadingId(null);
+      setDownloadingId(null); // Apaga el relojito en caso de error
     }
   };
+  // ----------------------------------------------
 
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // NUEVO: Estados para la Firma Masiva
   const [batchSignOpen, setBatchSignOpen] = useState(false);
   const [batchFormData, setBatchFormData] = useState({ name: '', rut: '', comments: '', signature: null, selectedIds: [] });
 
   if (loading) return <div className="min-h-screen bg-slate-50 flex items-center justify-center"><p className="font-bold text-slate-400 animate-pulse flex items-center gap-2"><Clock className="w-5 h-5"/> Cargando portal...</p></div>;
 
+  // NUEVO: Lógica de Filtro
   const filteredJobs = jobs.filter(j => {
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
@@ -742,29 +762,39 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
 
   const activeJobs = filteredJobs.filter(j => j.status === 'pending' || j.status === 'accepted');
   const historyJobs = filteredJobs.filter(j => j.status === 'completed' || j.status === 'failed').slice(0, 30);
+  
+  // NUEVO: Vehículos que tienen checklist guardado pero faltan por firmar
   const pendingSignatureJobs = activeJobs.filter(j => j.checklist && !j.checklist.clientSigned);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10 transition-colors duration-300 pt-20 sm:pt-24">
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10 transition-colors duration-300">
+      {/* SE ANCLA CON LA CLASE fixed-nav-bar PARA EVITAR DESPLAZAMIENTOS */}
       <header className="fixed-nav-bar bg-blue-600 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300">
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
+          {/* Logo de la app */}
           <div className="bg-white/20 p-1 sm:p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">
             <img src="/logo.png" alt="Logo App" className="w-7 h-7 sm:w-12 sm:h-12 object-contain" />
           </div>
+          
+          {/* Nombre de la aplicación */}
           <h1 className="font-alfa text-lg sm:text-3xl tracking-wide shrink-0 text-white" style={{ paddingTop: '2px' }}>
             LogisticAPP
           </h1>
+          
+          {/* Logo Logística TS SpA */}
           <div className="bg-white/20 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0 ml-0.5 sm:ml-1 overflow-hidden">
             <img src="/LogoLogistica.png" alt="Logística TS SpA" className="h-8 sm:h-15 object-contain" />
           </div>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+          {/* BOTÓN MODO OSCURO PARA CLIENTE */}
           {setDarkMode && (
             <button onClick={() => setDarkMode(!darkMode)} className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors shadow-sm border border-white/10">
               {darkMode ? <Sun className="w-5 h-5 text-yellow-300"/> : <Moon className="w-5 h-5 text-white"/>}
             </button>
           )}
+
           {onBack && (
             <button onClick={onBack} className="bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-xl text-sm font-bold text-white transition-colors border border-red-400 shadow-sm flex items-center gap-1.5 z-10 shrink-0 ml-2">
               <LogOut className="w-4 h-4"/> <span className="hidden sm:inline">Volver</span>
@@ -773,13 +803,14 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto p-4 pt-6 space-y-8">
+      <main className="max-w-5xl mx-auto p-4 pt-20 sm:pt-24 space-y-8">
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center relative overflow-hidden max-w-2xl mx-auto">
           <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-500"></div>
           <h2 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-1">Portal de Seguimiento</h2>
           <p className="text-2xl font-black text-slate-800">{clientName}</p>
         </div>
 
+        {/* BARRA DE BÚSQUEDA */}
         <div className="relative max-w-2xl mx-auto">
            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
              <Search className="w-5 h-5 text-slate-400" />
@@ -787,6 +818,7 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
            <input type="text" placeholder="Buscar por patente, marca o modelo..." className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 shadow-sm transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
 
+        {/* NUEVO: BANNER DE FIRMA MASIVA */}
         {pendingSignatureJobs.length > 0 && (
           <div className="bg-blue-600 rounded-3xl p-5 shadow-xl text-white flex flex-col sm:flex-row items-center justify-between gap-4 animate-in zoom-in duration-300 border-4 border-blue-400 max-w-2xl mx-auto">
              <div>
@@ -802,6 +834,7 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
           </div>
         )}
 
+        {/* Sección 1: En Curso */}
         <div>
           <h3 className="font-extrabold text-slate-700 mb-4 flex items-center gap-2"><Navigation className="w-5 h-5 text-blue-600"/> Vehículos en Tránsito ({activeJobs.length})</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -830,16 +863,21 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
                 </div>
                 
                 <div className="relative pl-8 space-y-6 before:absolute before:inset-y-2 before:left-[11px] before:w-0.5 before:bg-slate-100 flex-1">
+                  {/* PASO 1: Nombre del Conductor si está aceptado */}
                   <div className="relative"><div className="absolute -left-8 bg-blue-500 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center"><CheckCircle className="w-3 h-3 text-white"/></div><p className="font-extrabold text-slate-800 text-sm">{isAccepted ? (job.assignedDrivers?.find(d => d.email === job.acceptedByEmail)?.name || "Conductor en camino") : "Buscando conductor..."}</p><p className="text-xs font-bold text-slate-500 mt-0.5">{isAccepted ? `Responsable del retiro en ${job.origin}` : `Esperando asignación para ${job.origin}`}</p></div>
                   
+                  {/* PASO 2: Vehículo en poder */}
                   <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step2Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step2Done && <CheckCircle className="w-3 h-3 text-white"/>}</div><p className={`font-extrabold text-sm ${step2Done ? 'text-slate-800' : 'text-slate-400'}`}>Vehículo en Tránsito</p><p className={`text-xs font-bold mt-0.5 ${step2Done ? 'text-blue-600' : 'text-slate-400'}`}>{step2Done ? 'El conductor tiene el vehículo en su poder' : 'Esperando retiro'}</p></div>
                   
+                  {/* PASO 3: Llegada */}
                   <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step3Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step3Done && <CheckCircle className="w-3 h-3 text-white"/>}</div><p className={`font-extrabold text-sm ${step3Done ? 'text-slate-800' : 'text-slate-400'}`}>{job.tripType === 'revision' ? 'En Planta de Revisión' : 'Llegada a Destino'}</p><p className={`text-xs font-bold mt-0.5 ${step3Done ? 'text-blue-600' : 'text-slate-400'}`}>{step3Done ? (job.tripType === 'revision' ? 'Realizando inspección técnica' : 'En proceso de entrega y checklist') : `Hacia ${job.tripType === 'revision' ? 'PRT' : job.destination}`}</p></div>
                   
+                  {/* PASO 4: Resultado PRT */}
                   {job.tripType === 'revision' && (
                   <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step4Done ? (job.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200'}`}>{step4Done && <CheckCircle className="w-3 h-3 text-white"/>}</div><p className={`font-extrabold text-sm ${step4Done ? (job.prt_result === 'rechazado' ? 'text-red-600' : 'text-green-600') : 'text-slate-400'}`}>Resultado de Revisión</p>{step4Done ? (<p className={`text-xs font-bold mt-0.5 ${job.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-600'}`}>{job.prt_result === 'rechazado' ? `Rechazado: ${job.prt_reason}` : 'Aprobado Exitosamente'}</p>) : (<p className="text-xs font-bold text-slate-400 mt-0.5">Esperando documento de la planta</p>)}</div>
                   )}
 
+                  {/* NUEVO PASO 5: Camino a Destino (Solo si la PRT ya se resolvió) */}
                   {job.tripType === 'revision' && step4Done && (
                   <div className="relative"><div className="absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center bg-blue-500"><div className="w-2 h-2 bg-white rounded-full animate-ping"></div></div><p className="font-extrabold text-sm text-slate-800">Camino a destino</p><p className="text-xs font-bold text-blue-600 mt-0.5">El vehículo va en ruta a su destino final</p></div>
                   )}
@@ -849,6 +887,7 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
           </div>
         </div>
 
+        {/* NUEVO DISEÑO COMPACTO DE HISTORIAL (Tarjeta Estilo Ticket) */}
         <div>
           <h3 className="font-extrabold text-slate-700 mb-4 flex items-center gap-2"><CheckCircle className="w-5 h-5 text-green-600"/> Últimos Finalizados</h3>
           
@@ -859,15 +898,19 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
               const isFailed = job.status === 'failed';
               return (
               <div key={job.id} className="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between relative pl-4 overflow-hidden hover:shadow-md transition-shadow h-[120px]">
+                {/* Borde lateral grueso y coloreado */}
                 <div className={`absolute top-0 left-0 bottom-0 w-2 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
                 
+                {/* Fila 1: Auto y Patente Grande */}
                 <div className="flex justify-between items-center mb-1">
                   <p className="text-sm font-black text-slate-800 leading-tight truncate pr-2">{job.brand} {job.model}</p>
                   <span className="bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-md text-xs font-black uppercase tracking-widest shrink-0">{job.plate || 'S/N'}</span>
                 </div>
                 
+                {/* Fila 2: Ruta */}
                 <p className="text-slate-500 text-[10px] font-bold uppercase mb-2 flex items-center gap-1 truncate opacity-90"><MapPin className="w-3.5 h-3.5 shrink-0"/> {job.origin} ➔ {job.tripType === 'revision' ? 'PRT' : job.destination}</p>
                 
+                {/* Fila 3: Resultado y Botón PDF */}
                 <div className="flex justify-between items-end mt-auto pt-2 border-t border-slate-50">
                   <div>
                     <p className={`text-[11px] font-black uppercase ${isFailed ? 'text-red-500' : 'text-green-600'}`}>
@@ -885,6 +928,7 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
         </div>
       </main>
 
+      {/* NUEVO: MODAL DE FIRMA MASIVA */}
       {batchSignOpen && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[95vh] flex flex-col relative overflow-hidden animate-in fade-in zoom-in-95">
@@ -961,14 +1005,13 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
     </div>
   );
 }
-
 function ClientSignView({ jobId, db }) {
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({ name: '', rut: '', comments: '', signature: null });
   const [fullScreenImage, setFullScreenImage] = useState(null); 
-  const [alertMessage, setAlertMessage] = useState(null);
+  const [alertMessage, setAlertMessage] = useState(null); // <-- NUEVO: ESTADO PARA ALERTA PERSONALIZADA
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'transport_jobs', jobId), (docSnap) => {
@@ -990,13 +1033,15 @@ function ClientSignView({ jobId, db }) {
   
   if (!job) return <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center font-bold text-red-500"><XCircle className="w-12 h-12 mb-4 text-red-400"/>Acta no encontrada.<br/><span className="text-sm text-slate-400 mt-2">Verifica el link o escanea nuevamente.</span></div>;
   
+  // NUEVO: PANTALLA DE SINCRONIZACIÓN. Si el conductor aún está subiendo las fotos, el cliente espera aquí.
   if (!job.checklist) return <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center font-bold text-slate-600"><Clock className="w-12 h-12 mb-4 text-blue-500 animate-spin mx-auto"/>Sincronizando datos...<br/><span className="text-sm text-slate-400 mt-2">Esperando a que el celular del conductor termine de enviar las fotografías. No cierres esta pantalla, la firma aparecerá automáticamente.</span></div>;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.signature) return setAlertMessage("Por favor, firme en el recuadro blanco.");
+    if (!formData.signature) return setAlertMessage("Por favor, firme en el recuadro blanco."); // <-- USA LA NUEVA ALERTA
     
     try {
+      // Unimos el checklist existente con los datos nuevos
       const updatedChecklist = {
         ...job.checklist,
         clientSigned: true,
@@ -1006,6 +1051,7 @@ function ClientSignView({ jobId, db }) {
         signatureData: formData.signature
       };
 
+      // Subimos el objeto completo a Firebase
       await updateDoc(doc(db, 'transport_jobs', jobId), {
         checklist: updatedChecklist
       });
@@ -1013,7 +1059,7 @@ function ClientSignView({ jobId, db }) {
       setSubmitted(true);
     } catch (error) { 
       console.error("Firebase Error:", error); 
-      setAlertMessage("Error al guardar la firma: " + error.message);
+      setAlertMessage("Error al guardar la firma: " + error.message); // <-- USA LA NUEVA ALERTA
     }
   };
 
@@ -1057,6 +1103,7 @@ function ClientSignView({ jobId, db }) {
           </div>
         )}
 
+        {/* MODAL DE FOTO EN PANTALLA COMPLETA */}
         {fullScreenImage && (
           <div className="fixed inset-0 bg-slate-900/95 z-[200] flex items-center justify-center p-4 backdrop-blur-sm cursor-zoom-out animate-in fade-in duration-200" onClick={() => setFullScreenImage(null)}>
             <button onClick={() => setFullScreenImage(null)} className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 p-2 rounded-full text-white transition-colors shadow-lg">
@@ -1081,6 +1128,7 @@ function ClientSignView({ jobId, db }) {
         </form>
       </main>
 
+      {/* NUEVO: MODAL DE ALERTA PERSONALIZADO CON TU MARCA */}
       {alertMessage && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 transform transition-all animate-in zoom-in-95 duration-150">
@@ -1103,6 +1151,7 @@ export default function App() {
   const clientTrack = params.get('client');
   const liveTrackId = params.get('track'); 
   
+  // NUEVO: Limpiamos la URL por si el escáner QR le agrega barras invertidas ("/") o espacios al final
   const rawSign = params.get('sign');
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
 
@@ -1124,6 +1173,7 @@ export default function App() {
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
   const [simulatedClient, setSimulatedClient] = useState('');
   
+  // NUEVO: Estados para Modo Oscuro, Conexión Offline y Tuerca
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
@@ -1133,6 +1183,7 @@ export default function App() {
 
   const [dialogConfig, setDialogConfig] = useState(null);
 
+  // NUEVO: Escuchador de conexión a Internet (Idea 7)
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -1141,6 +1192,7 @@ export default function App() {
     return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); };
   }, []);
 
+  // NUEVO: Aplicador del Modo Oscuro Global (Idea 9)
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -1150,7 +1202,6 @@ export default function App() {
       localStorage.setItem('darkMode', 'false');
     }
   }, [darkMode]);
-
   const showAlert = (message) => setDialogConfig({ type: 'alert', message });
   const showConfirm = (message, onConfirm) => setDialogConfig({ type: 'confirm', message, onConfirm });
   const closeDialog = () => setDialogConfig(null);
@@ -1196,6 +1247,7 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
     
+    // OPTIMIZACIÓN 1: Traer solo los últimos 200 trabajos (evita descargar historial antiguo)
     const qJobs = query(collection(db, 'transport_jobs'), orderBy('createdAt', 'desc'), limit(200));
     
     const unsubJobs = onSnapshot(qJobs, (snapshot) => {
@@ -1211,10 +1263,12 @@ export default function App() {
           }
         });
       }
+      // Ya vienen ordenados de Firebase, solo mapeamos
       setJobs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       isFirstLoad.current = false;
     });
 
+    // OPTIMIZACIÓN 2: Traer solo los últimos 300 gastos
     const qExpenses = query(collection(db, 'expenses'), orderBy('createdAt', 'desc'), limit(300));
 
     const unsubDrivers = onSnapshot(collection(db, 'drivers'), snap => setDrivers(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
@@ -1235,6 +1289,8 @@ export default function App() {
         font-family: 'Nunito', sans-serif; 
         background-color: #f8fafc; 
         transition: background-color 0.3s; 
+        
+        /* MAGIA APP NATIVA */
         overscroll-behavior-y: none;
         touch-action: manipulation;
         -webkit-tap-highlight-color: transparent;
@@ -1242,6 +1298,7 @@ export default function App() {
       
       .font-alfa { font-family: 'Alfa Slab One', serif; font-weight: 400; }
       
+      /* REGLAS MAESTRAS MODO OSCURO (Anula Tailwind) */
       .dark body { background-color: #020617 !important; color: #f8fafc !important; }
       .dark header.fixed-nav-bar { background-color: #0f172a !important; border-bottom: 1px solid #1e293b !important; }
       .dark .bg-white:not(canvas) { background-color: #0f172a !important; border-color: #1e293b !important; }
@@ -1260,11 +1317,13 @@ export default function App() {
       .dark .text-blue-800 { color: #93c5fd !important; }
       .dark .text-blue-600 { color: #60a5fa !important; }
 
+      /* CORRECCIÓN: FORZAR FONDO OSCURO EN LAS LISTAS DESPLEGABLES */
       .dark select, .dark option {
         background-color: #0f172a !important;
         color: #e2e8f0 !important;
       }
 
+      /* CLASE CUSTOM PARA CONGELAR LA BARRA DE NAVEGACIÓN SIN REBOTE */
       .fixed-nav-bar {
         position: fixed !important;
         top: 0 !important;
@@ -1275,6 +1334,7 @@ export default function App() {
     `}</style>
   );
 
+  // --- NUEVO: SI HAY UN CLIENTE EN LA URL, MOSTRAR PORTAL DE CLIENTE ---
   if (clientTrack) {
     return (
       <>
@@ -1283,7 +1343,9 @@ export default function App() {
       </>
     );
   }
+  // --------------------------------------------------------------------------------
 
+  // --- NUEVO: SI EL ADMIN ELIGE VISTA CLIENTE ---
   if (user && activeRole === 'client' && simulatedClient) {
     return (
       <>
@@ -1292,7 +1354,9 @@ export default function App() {
       </>
     );
   }
+  // --------------------------------------------------------------------------------
   
+  // --- NUEVO: VISTA DE FIRMA REMOTA DEL CLIENTE ---
   if (signTrackId) {
     return (
       <>
@@ -1301,6 +1365,7 @@ export default function App() {
       </>
     );
   }
+  // --------------------------------------------------------------------------------
   
   if (!user) {
     return (
@@ -1349,20 +1414,24 @@ export default function App() {
       {globalStyles}
       <header className="fixed-nav-bar bg-blue-600 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300">
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
+      {/* Logo de la app más pequeño en móvil */}
       <div className="bg-white/20 p-1 sm:p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">
         <img src="/logo.png" alt="Logo App" className="w-7 h-7 sm:w-12 sm:h-12 object-contain" />
       </div>
       
+      {/* Nombre de la aplicación adaptado para no chocar */}
       <h1 className="font-alfa text-lg sm:text-3xl tracking-wide shrink-0 text-white" style={{ paddingTop: '2px' }}>
         LogisticAPP
       </h1>
       
+      {/* Logo Logística TS SpA ajustado al nuevo tamaño */}
       <div className="bg-white/20 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0 ml-0.5 sm:ml-1 overflow-hidden">
         <img src="/LogoLogistica.png" alt="Logística TS SpA" className="h-8 sm:h-15 object-contain" />
       </div>
     </div>
         <div className="flex items-center gap-2 sm:gap-4">
           
+          {/* NUEVO: BOTÓN TUERCA (AJUSTES) */}
           <div className="relative">
             <button onClick={() => setSettingsOpen(!settingsOpen)} className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors shadow-sm border border-white/10">
               <Settings className="w-5 h-5 text-white" />
@@ -1374,12 +1443,14 @@ export default function App() {
                   <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider text-center">Ajustes de App</p>
                 </div>
                 <div className="p-4 space-y-5">
+                  {/* Estado de Red */}
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-bold text-slate-700">Señal de Red</span>
                     <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm border ${isOnline ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200 animate-pulse'}`}>
                       {isOnline ? <><Wifi className="w-3.5 h-3.5"/> Online</> : <><CloudOff className="w-3.5 h-3.5"/> Offline</>}
                     </div>
                   </div>
+                  {/* Switch Modo Oscuro */}
                   <div className="flex items-center justify-between border-t border-slate-100 pt-4">
                     <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
                       {darkMode ? <Moon className="w-4 h-4 text-blue-600"/> : <Sun className="w-4 h-4 text-amber-500"/>} Modo Oscuro
@@ -1530,6 +1601,7 @@ function LeaderboardView({ jobs, drivers, isAdminView }) {
   const [selectedDriverJobs, setSelectedDriverJobs] = useState(null);
   const now = new Date(); const firstOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
   
+  // Modificado: Ahora cuenta los completados Y las revisiones técnicas fallidas del mes
   const monthlyCompleted = jobs.filter(j => {
     if (!j.completedAt || j.completedAt < firstOfCurrentMonth) return false;
     return j.status === 'completed' || (j.status === 'failed' && j.tripType === 'revision');
@@ -1591,6 +1663,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
     e.preventDefault();
     const currentBalance = drivers.find(d => d.id === driverId)?.balance || 0;
     
+    // Si es conductor, bloquea si no hay saldo
     if (!isAdminView && type === 'expense' && amount > currentBalance) return showAlert("Saldo insuficiente.");
     
     const assocJobId = e.target.jobId?.value || '';
@@ -1601,18 +1674,21 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
       if (jb) detailString += ` (Asoc. a patente ${jb.plate || jb.vin || 'S/N'})`;
     }
 
+    // Lógica para saldos y negativos
     let newBalance = currentBalance;
-    let deductedAmount = amount; 
+    let deductedAmount = amount; // <-- NUEVO: Memoria de cuánto se descontó realmente
     
     if (type === 'assignment') {
        newBalance = currentBalance + amount;
     } else if (type === 'expense') {
        if (isAdminView) {
           if (assocJobId) {
+             // Si el admin asocia el gasto a un trabajo, el saldo puede quedar en negativo
              newBalance = currentBalance - amount;
           } else {
+             // Si es un gasto libre (sólo anotar), el saldo no baja de 0
              newBalance = Math.max(0, currentBalance - amount);
-             deductedAmount = currentBalance - newBalance; 
+             deductedAmount = currentBalance - newBalance; // Calcula cuánto se restó de verdad
           }
        } else {
           newBalance = currentBalance - amount;
@@ -1621,6 +1697,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
 
     try {
       await updateDoc(doc(db, 'drivers', driverId), { balance: newBalance });
+      // Guardamos también el "deductedAmount" en la base de datos
       await addDoc(collection(db, 'expenses'), { driverId, driverEmail: dEmail, driverName: dName, type, amount, detail: detailString, jobId: assocJobId, deductedAmount, createdAt: Date.now() });
       e.target.reset(); 
       showAlert(type === 'assignment' ? "Fondo asignado correctamente." : "Gasto registrado exitosamente.");
@@ -1654,6 +1731,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
       try {
         const d = drivers.find(x => x.id === exp.driverId);
         if (d) {
+           // Al eliminar, solo devuelve el dinero que REALMENTE se le descontó al conductor
            let amountToRestore = exp.type === 'assignment' ? -exp.amount : (exp.deductedAmount !== undefined ? exp.deductedAmount : exp.amount);
            await updateDoc(doc(db, 'drivers', d.id), { balance: (d.balance||0) + amountToRestore });
         }
@@ -1689,13 +1767,17 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
           } else if (expense.type === 'expense' || expense.type === 'return') {
              let oldDeducted = expense.deductedAmount !== undefined ? expense.deductedAmount : expense.amount;
              
+             // 1. Devolvemos el dinero que se había descontado originalmente
              currentDriverBalance += oldDeducted;
              
+             // 2. Aplicamos el nuevo descuento
              if (isAdminView && !expense.jobId && expense.type === 'expense') {
+                 // Si es gasto libre, vuelve a respetar el límite de 0
                  let balanceAfter = Math.max(0, currentDriverBalance - newAmount);
                  newlyDeducted = currentDriverBalance - balanceAfter;
                  currentDriverBalance = balanceAfter;
              } else {
+                 // Si es con trabajo, descuenta directo
                  currentDriverBalance -= newAmount;
                  newlyDeducted = newAmount;
              }
@@ -1897,8 +1979,9 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   const [jobToFail, setJobToFail] = useState(null);
   const [prtPromptJob, setPrtPromptJob] = useState(null); 
   const [historyClientFilter, setHistoryClientFilter] = useState(''); 
-  const [searchTerm, setSearchTerm] = useState(''); 
+  const [searchTerm, setSearchTerm] = useState(''); // <-- ESTADO BÚSQUEDA
 
+  // Función para actualizar la fase del traslado en vivo (SE DECLARA SOLO UNA VEZ)
   const updatePhase = async (job, phase, extra = {}) => {
     try { await updateDoc(doc(db, 'transport_jobs', job.id), { phase, ...extra }); } 
     catch (e) { console.error(e); showAlert("Error de conexión al actualizar fase."); }
@@ -1907,6 +1990,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   const now = new Date();
   const isAdminView = role === 'admin';
   
+  // LÓGICA DE FILTRADO Y BÚSQUEDA (SE DECLARA SOLO UNA VEZ)
   const filteredJobs = jobs.filter(job => {
     if (!isAdminView) {
       if (job.status === 'pending') {
@@ -1926,6 +2010,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       if (job.createdAt < firstOfCurrentMonth) return false;
     }
 
+    // Filtro de Búsqueda
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       const matchPlate = (job.plate || '').toLowerCase().includes(term);
@@ -2008,6 +2093,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   };
 
   const buildPDFDoc = async (job) => {
+    // CORRECCIÓN: Carga ultra-segura de jsPDF compatible con Vite
     const jsPDFModule = await import('jspdf');
     const JsPDFClass = jsPDFModule.default?.jsPDF || jsPDFModule.default || jsPDFModule.jsPDF;
     const docPDF = new JsPDFClass();
@@ -2152,6 +2238,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     let driverNameStr = job.checklist?.assignedDriverName || job.acceptedByEmail || "No registrado";
     if (job.acceptedByEmail) { const foundDriver = drivers?.find(d => d.email === job.acceptedByEmail); if (foundDriver) driverNameStr = foundDriver.name; }
 
+// === COLUMNA IZQUIERDA ===
     currentY = drawSectionTitle("1. Detalles del Vehiculo", currentY);
     let hC = drawKV("Cliente", `${job.client || 'Sin Cliente'}`, 15, currentY, 45);
     let hM = drawKV("Marca y Modelo", `${job.brand || '-'} ${job.model || '-'}`, 65, currentY, 45);
@@ -2408,6 +2495,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   
   return (
     <div className="pb-16">
+      {/* BARRA DE BÚSQUEDA GENERAL */}
       <div className="relative mb-6">
          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
            <Search className="w-5 h-5 text-slate-400" />
@@ -2426,6 +2514,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                   <button onClick={()=>setMenuOpenId(menuOpenId===j.id?null:j.id)} className="p-1.5 text-slate-400 hover:bg-slate-50 rounded-lg"><MoreVertical className="w-4 h-4"/></button>
                   {menuOpenId===j.id && (
                     <div className="absolute right-0 top-8 bg-white border shadow-2xl rounded-xl w-48 z-50 overflow-hidden text-xs">
+                      {/* NUEVO BOTÓN: COPIAR LINK DE PORTAL DE CLIENTE */}
                       <button onClick={() => {
                         const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
                         navigator.clipboard.writeText(`📍 Sigue en tiempo real todos los traslados de ${j.client || 'tu empresa'} aquí:\n${url}`);
@@ -2501,6 +2590,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       {historyJobs.length > 0 && (
         <div className="mt-8">
           <h3 className="font-extrabold text-lg text-slate-700 mb-4 border-b-2 border-slate-100 pb-2">Historial Simplificado</h3>
+          {/* AQUÍ ESTÁ LA MAGIA: Grilla de múltiples columnas */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {historyJobs.map(j => {
               const drv = drivers?.find(d => d.email === j.acceptedByEmail);
@@ -2548,6 +2638,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         </div>
       )}
 
+      {/* NUEVO: MODAL DE RECHAZO PRT RÁPIDO */}
       {prtPromptJob && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <form onSubmit={(e) => { e.preventDefault(); updatePhase(prtPromptJob, 'prt_done', { prt_result: 'rechazado', prt_reason: e.target.reason.value }); setPrtPromptJob(null); }} className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-xl border-t-8 border-red-500">
@@ -2564,7 +2655,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     </div>
   );
 }
-
 function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList, drivers, expenses }) {
   const isQuick = job.id === 'NEW_QUICK_JOB'; 
   const localStorageKey = `checklist_draft_${job.id}`;
@@ -2576,35 +2666,21 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState(defaultData);
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
-  const [qrOpen, setQrOpen] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false); // <-- NUEVO ESTADO PARA QR (Idea 8)
 
-  // NUEVO: Bandera para que la alerta no suene dos veces
-  const signatureReceived = useRef(false);
-
+  // NUEVO: Escucha en tiempo real si el cliente firma desde su celular
   useEffect(() => {
     if (isQuick || !job.id) return;
     const unsub = onSnapshot(doc(db, 'transport_jobs', job.id), (docSnap) => {
       const data = docSnap.data();
-      
-      // Si Firebase nos dice que el cliente firmó Y nosotros no lo sabíamos aún:
-      if (data?.checklist?.clientSigned && !signatureReceived.current) {
-        signatureReceived.current = true; // Bloqueamos para que solo avise 1 vez
-        
+      if (data?.checklist?.clientSigned) {
         setFormData(prev => ({
           ...prev,
-          clientSigned: true, // Registramos internamente que ya firmó
           signatureData: data.checklist.signatureData,
           receiverName: data.checklist.receiverName,
           receiverRut: data.checklist.receiverRut,
-          clientComments: data.checklist.clientComments || '',
-          noReception: false // Desmarcamos "Dejar sin firma" por seguridad
+          clientComments: data.checklist.clientComments || ''
         }));
-
-        // 1. Cerramos la pantalla del Código QR automáticamente
-        setQrOpen(false);
-        
-        // 2. Le avisamos al conductor que el cliente ya terminó
-        showAlert("✅ ¡El cliente ha firmado exitosamente! Sus datos y firma han sido cargados al acta automáticamente. Ya puedes hacer clic en Finalizar y Guardar.");
       }
     });
     return () => unsub();
@@ -2614,40 +2690,42 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     if (isQuick) return showAlert("⚠️ Para usar la Firma Remota en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
     
     try {
-      const cleanData = JSON.parse(JSON.stringify(formData));
-      
-      await updateDoc(doc(db, 'transport_jobs', job.id), { checklist: cleanData });
-      
       const url = `${window.location.href.split('?')[0]}?sign=${job.id}`;
       const mensaje = `¡Hola! Por favor firma el acta de recepción y revisa las fotografías del vehículo aquí:\n${url}`;
       
+      let copiadoExitoso = false;
+      // Copiamos inmediatamente para que Safari/iPhone no bloquee el botón
       if (navigator.clipboard && window.isSecureContext) {
         try {
           await navigator.clipboard.writeText(mensaje);
-          showAlert("✅ Link copiado. Envíalo al cliente por WhatsApp. La pantalla se actualizará sola cuando firme.");
-        } catch (clipboardErr) {
-          showAlert(`⚠️ Link generado. Cópialo manualmente:\n\n${url}`);
-        }
+          copiadoExitoso = true;
+        } catch (err) { console.warn(err); }
+      } 
+
+      // Guardado seguro limpiando vacíos
+      const cleanData = JSON.parse(JSON.stringify(formData));
+      updateDoc(doc(db, 'transport_jobs', job.id), { checklist: cleanData }).catch(e => console.error(e));
+      
+      if (copiadoExitoso) {
+        showAlert("✅ Link copiado. Envíalo al cliente por WhatsApp. La pantalla se actualizará sola cuando firme.");
       } else {
         showAlert(`⚠️ Link generado. Cópialo manualmente:\n\n${url}`);
       }
     } catch (e) {
-      console.error("Error al generar link:", e);
       showAlert(`Error: ${e.message}`);
     }
   };
 
   const handleOpenQR = async () => {
     if (isQuick) return showAlert("⚠️ Para usar el Código QR en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
-    if (!navigator.onLine) return showAlert("⚠️ Tu celular no tiene señal en este momento. El cliente no podrá descargar las fotos con el QR.");
+    if (!navigator.onLine) return showAlert("⚠️ Tu celular no tiene señal en este momento.");
     
     try {
+      setQrOpen(true); // Abrir rápido para evitar bloqueos
       const cleanData = JSON.parse(JSON.stringify(formData));
-      await updateDoc(doc(db, 'transport_jobs', job.id), { checklist: cleanData });
-      setQrOpen(true);
+      updateDoc(doc(db, 'transport_jobs', job.id), { checklist: cleanData }).catch(e=>console.error(e));
     } catch (e) {
-      console.error("Error al mostrar QR:", e);
-      showAlert(`Error: ${e.message}`);
+      showAlert(`Error al generar el QR: ${e.message}`);
     }
   };
 
@@ -2678,7 +2756,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     });
   };
 
-const handlePic = async (e, id) => {
+  const handlePic = async (e, id) => {
     const f=e.target.files[0]; if(!f)return;
     try {
       const dataUrl = await resizeImage(f, 500, 0.4); 
@@ -2702,13 +2780,15 @@ const handlePic = async (e, id) => {
     }
     
     const rawFd = { scheduledDate: new Date().toISOString().split('T')[0], client: d.client, brand: d.brand, model: d.model, vin: d.plateOrVin, plate: d.plateOrVin, origin: d.origin, destination: d.destination, status: 'completed', completedAt: Date.now(), checklist: d, tripType: job.tripType || 'traslado' };
-    
+    // TRUCO FIREBASE: Destruye cualquier valor 'undefined' dentro del objeto gigante para evitar el bloqueo del servidor
     const fd = JSON.parse(JSON.stringify(rawFd));
-
+    
     try {
+      // --- PARTE 2: AUTOMATIZAR MÚLTIPLES GASTOS (COMBUSTIBLE + PRT) ---
       let totalToDeduct = 0;
       const expensesToRegister = [];
 
+      // Función interna para limpiar números y añadir a la lista
       const processExpense = (amountStr, detailStr) => {
         const num = Number(String(amountStr).replace(/[^0-9]/g, ''));
         if (num > 0) {
@@ -2717,24 +2797,29 @@ const handlePic = async (e, id) => {
         }
       };
 
+      // 1. Leer Gasto de Combustible
       if (d.hasFuelCharge && d.fuelChargeAmount) {
         processExpense(d.fuelChargeAmount, `Carga Combustible (Patente: ${d.plateOrVin || 'S/N'})`);
       }
       
+      // 2. Leer Gastos PRT (Solo si es Revisión Técnica)
       if (job.tripType === 'revision') {
         if (job.rtData?.revision && d.prtCostRevision) processExpense(d.prtCostRevision, `Valor Revisión Técnica (Patente: ${d.plateOrVin || 'S/N'})`);
         if (job.rtData?.inspeccion && d.prtCostInspeccion) processExpense(d.prtCostInspeccion, `Valor Inspección Visual (Patente: ${d.plateOrVin || 'S/N'})`);
         if (job.rtData?.frenos && d.prtCostFrenos) processExpense(d.prtCostFrenos, `Valor Cert. Frenos (Patente: ${d.plateOrVin || 'S/N'})`);
       }
 
+      // Si hubo algún gasto, lo procesamos
       if (totalToDeduct > 0) {
         const currentDriver = drivers?.find(drv => drv.email === currentUserEmail);
         if (currentDriver) {
           const currentBalance = currentDriver.balance || 0;
           const newBalance = currentBalance - totalToDeduct;
 
+          // A. Descontar del saldo del conductor TODO sumado
           await updateDoc(doc(db, 'drivers', currentDriver.id), { balance: newBalance });
 
+          // B. Registrar CADA gasto individualmente en la pestaña Finanzas
           for (const exp of expensesToRegister) {
             await addDoc(collection(db, 'expenses'), {
               driverId: currentDriver.id,
@@ -2750,6 +2835,7 @@ const handlePic = async (e, id) => {
           }
         }
       }
+      // ----------------------------------------------------
 
       if(isQuick) { 
           fd.assignedDriverName="Auto-creado"; fd.acceptedByEmail=currentUserEmail; 
@@ -2769,13 +2855,12 @@ const handlePic = async (e, id) => {
              fd.failedReason = d.rtRejectReason || 'Revisión Técnica Rechazada';
              
              const cloneJob = {
-               scheduledDate: d.scheduledDate || null, client: d.client || '', brand: d.brand || '', model: d.model || '', vin: d.plateOrVin || '', plate: d.plateOrVin || '', origin: d.origin || '', destination: d.destination || '',
-               tripType: job.tripType || 'traslado', rtData: job.rtData || null,
-               assignedDrivers: job.assignedDrivers || [], assignedEmails: job.assignedEmails || [],
-               status: 'pending', createdAt: Date.now(), checklist: null
+                scheduledDate: d.scheduledDate || null, client: d.client || '', brand: d.brand || '', model: d.model || '', vin: d.plateOrVin || '', plate: d.plateOrVin || '', origin: d.origin || '', destination: d.destination || '',
+                tripType: job.tripType || 'traslado', rtData: job.rtData || null,
+                assignedDrivers: job.assignedDrivers || [], assignedEmails: job.assignedEmails || [],
+                status: 'pending', createdAt: Date.now(), checklist: null
              };
-             const cleanClone = JSON.parse(JSON.stringify(cloneJob));
-             await addDoc(collection(db, 'transport_jobs'), cleanClone);
+             await addDoc(collection(db, 'transport_jobs'), cloneJob);
           }
           await updateDoc(doc(db,'transport_jobs',job.id), fd); 
       }
@@ -2788,7 +2873,7 @@ const handlePic = async (e, id) => {
       onComplete();
     } catch(error) { 
       console.error("Firebase Error:", error);
-      showAlert(`Hubo un error al guardar: ${error.message}`); 
+      showAlert("Hubo un error al guardar. Verifica tu conexión a internet."); 
     }
   };
 
@@ -2863,11 +2948,11 @@ const handlePic = async (e, id) => {
               <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-slate-800 mb-4">Combustible: <span className="text-blue-600">{formData.fuelLevel}%</span></h3>
               <input type="range" min="0" max="100" step="5" value={formData.fuelLevel} onChange={(e) => setF('fuelLevel', e.target.value)} className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer" style={{background: `linear-gradient(to right, ${formData.fuelLevel < 30 ? '#ef4444' : formData.fuelLevel < 80 ? '#eab308' : '#22c55e'} ${formData.fuelLevel}%, #e2e8f0 ${formData.fuelLevel}%)`}} />
             </div>
-            {/* --- BANNER DE FONDO ASIGNADO --- */}
+            {/* --- BANNER DE FONDO ASIGNADO (Corregido) --- */}
             <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mt-6 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="bg-blue-100 p-2 rounded-lg">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08-.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
                 <div>
                   <p className="text-xs font-bold text-blue-600 uppercase">Fondo Asignado al Traslado</p>
@@ -2884,7 +2969,7 @@ const handlePic = async (e, id) => {
               </div>
             </div>
             
-            {/* --- GASTOS DE REVISIÓN TÉCNICA CONDICIONALES --- */}
+            {/* --- NUEVO: GASTOS DE REVISIÓN TÉCNICA CONDICIONALES --- */}
             {job.tripType === 'revision' && (job.rtData?.revision || job.rtData?.inspeccion || job.rtData?.frenos) && (
               <div className="bg-indigo-50 border-2 border-indigo-200 rounded-xl p-4 mt-4 shadow-sm">
                 <h3 className="text-sm font-extrabold text-indigo-800 mb-3 flex items-center gap-2">
@@ -2912,6 +2997,7 @@ const handlePic = async (e, id) => {
                 </div>
               </div>
             )}
+            {/* ----------------------------------------------------------------- */}
 
             <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Documentos a bordo</h3>
             <div className="grid grid-cols-2 gap-3 pt-2">
@@ -2941,7 +3027,7 @@ const handlePic = async (e, id) => {
             <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Observaciones</h3>
             <textarea className="w-full border-2 border-slate-200 p-3 rounded-xl mt-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500 min-h-[80px]" placeholder="Escribe aquí si hay algún daño, rayón o comentario relevante..." value={formData.observations || ''} onChange={(e) => setF('observations', e.target.value)} />
             
-            {/* SECCIÓN ADICIONALES (Espera y Combustible) */}
+            {/* SECCIÓN NUEVA: ADICIONALES (Espera y Combustible) */}
             <div className="flex flex-col gap-3 mt-4 p-4 bg-slate-50 rounded-xl border-2 border-slate-100">
               {/* Tiempo de Espera */}
               <div className="flex flex-col gap-2">
@@ -2978,7 +3064,7 @@ const handlePic = async (e, id) => {
                 <label key={p.id} className={`p-1 border-2 rounded-2xl text-center cursor-pointer relative overflow-hidden h-20 flex flex-col justify-center items-center ${formData.photos[p.id]?'bg-green-50 border-green-400':'border-dashed'}`}>
                   <input type="file" className="hidden" accept="image/*" onChange={e=>handlePic(e,p.id)}/>
                   {formData.photos[p.id] ? (
-                     <div className="absolute inset-0 w-full h-full"><img src={formData.photos[p.id]} alt="foto" className="w-full h-full object-cover opacity-60"/><div className="absolute inset-0 flex items-center justify-center pointer-events-none"><CheckCircle className="w-6 h-6 text-green-600 bg-white rounded-full"/></div></div>
+                     <div className="absolute inset-0 w-full h-full"><img src={formData.photos[p.id]} alt="foto" className="w-full h-full object-cover opacity-60"/><div className="absolute inset-0 flex items-center justify-center"><CheckCircle className="w-6 h-6 text-green-600 bg-white rounded-full"/></div></div>
                   ) : (
                     <><Camera className="w-5 h-5 text-slate-400 mb-0.5"/> <span className="text-[10px] font-bold text-slate-500 uppercase">{p.l}</span></>
                   )}
@@ -2986,7 +3072,7 @@ const handlePic = async (e, id) => {
               ))}
             </div>
             
-            <button type="button" onClick={()=>setStep(2)} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mt-6 text-sm shadow-md">Siguiente Paso</button>
+            <button type="button" onClick={()=>setStep(2)} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mt-6 text-sm">Siguiente Paso</button>
           </div>
         ) : (
           <form onSubmit={submit} className="space-y-4">
@@ -3011,6 +3097,7 @@ const handlePic = async (e, id) => {
                  </div>
                )}
 
+               {/* NUEVO: MODAL PARA CÓDIGO QR MEJORADO */}
                {qrOpen && (
                   <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
                     <div className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 max-w-sm w-full text-center relative animate-in zoom-in-95 border border-slate-100">
@@ -3019,9 +3106,11 @@ const handlePic = async (e, id) => {
                       <p className="text-xs font-bold text-slate-500 mb-5">El cliente debe apuntar con su cámara a este código.</p>
                       
                       <div className="bg-white p-3 rounded-2xl border-4 border-slate-100 shadow-inner inline-block">
+                        {/* Usamos QuickChart que es más confiable y no guarda caché erróneo */}
                         <img src={`https://quickchart.io/qr?size=250&margin=1&text=${encodeURIComponent(`${window.location.href.split('?')[0]}?sign=${job.id}`)}`} alt="QR Signature" className="w-48 h-48 mx-auto" />
                       </div>
                       
+                      {/* Mostramos el código por si el escáner falla */}
                       <div className="mt-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
                         <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">O ingresa manualmente a:</p>
                         <p className="text-[11px] font-extrabold text-blue-600 break-all select-all">{`${window.location.href.split('?')[0]}?sign=${job.id}`}</p>
@@ -3037,6 +3126,7 @@ const handlePic = async (e, id) => {
                    <input required={!formData.noReception} value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
                    <input required={!formData.noReception} value={formData.receiverRut} onChange={e=>setF('receiverRut',e.target.value)} placeholder="RUT Receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
                    
+                   {/* NUEVO: Muestra los comentarios si el cliente dejó alguno por el link remoto */}
                    {formData.clientComments && (
                      <div className="bg-slate-100 p-3 rounded-xl border border-slate-200">
                        <p className="text-[10px] font-extrabold text-slate-500 uppercase">Comentarios del Cliente:</p>
@@ -3056,7 +3146,7 @@ const handlePic = async (e, id) => {
               {formData.location ? "📍 GPS Capturado Exitosamente" : "📍 Tocar para Capturar GPS Actual"}
             </button>
 
-            <div className="flex gap-2 pt-4 border-t"><button type="button" onClick={()=>setStep(1)} className="bg-slate-100 p-3 rounded-xl font-bold text-sm flex-1 hover:bg-slate-200">Atrás</button><button type="submit" className="bg-green-600 hover:bg-green-700 text-white p-3 rounded-xl font-bold text-sm flex-[2] shadow-md">Finalizar y Guardar</button></div>
+            <div className="flex gap-2 pt-4 border-t"><button type="button" onClick={()=>setStep(1)} className="bg-slate-100 p-3 rounded-xl font-bold text-sm flex-1">Atrás</button><button type="submit" className="bg-green-600 text-white p-3 rounded-xl font-bold text-sm flex-[2]">Finalizar y Guardar</button></div>
           </form>
         )}
       </div>
