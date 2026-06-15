@@ -2349,8 +2349,14 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   });
 
   const handleAcceptJob = async (job) => {
-    try { await updateDoc(doc(db, 'transport_jobs', job.id), { status: 'accepted', acceptedByEmail: currentUserEmail }); } 
-    catch (e) { console.error(e); }
+    try { 
+      await updateDoc(doc(db, 'transport_jobs', job.id), { 
+        status: 'accepted', 
+        phase: 'claimed',
+        acceptedByEmail: currentUserEmail || '' 
+      }); 
+    } 
+    catch (e) { console.error(e); showAlert("Error al aceptar: " + e.message); }
   };
 
   const handleDeleteJob = async (jobId) => {
@@ -2363,19 +2369,22 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     try {
       if (job.tripType === 'revision' && reason === 'RECHAZO_RT_AUTOMATICO') {
           const cloneJob = {
-              scheduledDate: job.scheduledDate, client: job.client, brand: job.brand, model: job.model, vin: job.vin, plate: job.plate,
-              origin: job.origin, destination: job.destination, tripType: job.tripType, rtData: job.rtData,
+              scheduledDate: job.scheduledDate || null, client: job.client || '', brand: job.brand || '', model: job.model || '', vin: job.vin || '', plate: job.plate || '',
+              origin: job.origin || '', destination: job.destination || '', tripType: job.tripType || 'traslado', rtData: job.rtData || null,
               assignedDrivers: job.assignedDrivers || [], assignedEmails: job.assignedEmails || [],
               status: 'pending', createdAt: Date.now(), checklist: null
           };
-          await addDoc(collection(db, 'transport_jobs'), cloneJob);
+          await addDoc(collection(db, 'transport_jobs'), JSON.parse(JSON.stringify(cloneJob)));
       }
-      await updateDoc(doc(db, 'transport_jobs', job.id), { 
-        status: 'failed', failedReason: reason === 'RECHAZO_RT_AUTOMATICO' ? job.checklist?.rtRejectReason || 'Revisión Técnica Rechazada' : reason, 
-        completedAt: Date.now(), acceptedByEmail: job.acceptedByEmail || currentUserEmail
-      });
-      setJobToFail(null); showAlert(reason === 'RECHAZO_RT_AUTOMATICO' ? "Revisión guardada como rechazada y se ha creado un nuevo traslado pendiente." : "Trabajo marcado como fallido.");
-    } catch (e) { console.error(e); }
+      await updateDoc(doc(db, 'transport_jobs', job.id), JSON.parse(JSON.stringify({ 
+        status: 'failed', 
+        failedReason: reason === 'RECHAZO_RT_AUTOMATICO' ? (job.checklist?.rtRejectReason || 'Revisión Técnica Rechazada') : reason, 
+        completedAt: Date.now(), 
+        acceptedByEmail: job.acceptedByEmail || currentUserEmail || 'Admin'
+      })));
+      setJobToFail(null); 
+      showAlert(reason === 'RECHAZO_RT_AUTOMATICO' ? "Revisión rechazada. Se creó un nuevo traslado pendiente." : "Trabajo marcado como fallido o cancelado.");
+    } catch (e) { console.error(e); showAlert("Error técnico: " + e.message); }
   };
 
   const getRouteStr = (j) => {
@@ -3423,8 +3432,8 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
                  <>
                    <div className="flex items-center gap-2 mb-2"><div className="h-px bg-slate-200 flex-1"></div><span className="text-xs font-bold text-slate-400 uppercase">O llenar manualmente</span><div className="h-px bg-slate-200 flex-1"></div></div>
                    
-                   <input required={!formData.noReception} value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
-                   <input required={!formData.noReception} value={formData.receiverRut} onChange={e=>setF('receiverRut',e.target.value)} placeholder="RUT Receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
+                   <input value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
+                   <input value={formData.receiverRut} onChange={e=>setF('receiverRut',e.target.value)} placeholder="RUT Receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
                    
                    {/* NUEVO: Muestra los comentarios si el cliente dejó alguno por el link remoto */}
                    {formData.clientComments && (
