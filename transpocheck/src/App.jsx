@@ -25,10 +25,8 @@ const db = getFirestore(app);
 // NUEVO: Variable global de la versión de la App (Cámbiala cuando actualices el código)
 const APP_VERSION = "v1.2.0";
 
-// NUEVO: Activamos la Persistencia Offline Multi-Pestaña.
-enableMultiTabIndexedDbPersistence(db).catch((err) => {
-  console.warn("Modo offline limitado:", err.code);
-});
+// Persistencia offline desactivada temporalmente para evitar el bloqueo 
+// de la base de datos al probar la app en múltiples pestañas a la vez.
 
 const googleProvider = new GoogleAuthProvider();
 
@@ -871,7 +869,7 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
                 <div className="relative pl-8 space-y-6 before:absolute before:inset-y-2 before:left-[11px] before:w-0.5 before:bg-slate-100 flex-1">
                   {/* PASO 1: Dinámico (Gris si busca, Azul si está asignado o en camino) */}
                   <div className="relative">
-                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center transition-colors ${darkMode ? 'border-slate-900' : 'border-white'} ${isAccepted || job.assignedDrivers?.length > 0 ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center transition-colors ${typeof darkMode !== 'undefined' && darkMode ? 'border-slate-900' : 'border-white'} ${isAccepted || job.assignedDrivers?.length > 0 ? 'bg-blue-500' : 'bg-slate-200'}`}>
                       {(isAccepted || job.assignedDrivers?.length > 0) && <CheckCircle className="w-3 h-3 text-white"/>}
                     </div>
                     <p className={`font-extrabold text-sm ${isAccepted || job.assignedDrivers?.length > 0 ? 'text-slate-800' : 'text-slate-400'}`}>
@@ -884,7 +882,7 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
                   
                   {/* PASO 2: Vehículo en poder */}
                   <div className="relative">
-                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center transition-colors ${darkMode ? 'border-slate-900' : 'border-white'} ${step2Done ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center transition-colors ${typeof darkMode !== 'undefined' && darkMode ? 'border-slate-900' : 'border-white'} ${step2Done ? 'bg-blue-500' : 'bg-slate-200'}`}>
                       {step2Done && <CheckCircle className="w-3 h-3 text-white"/>}
                     </div>
                     <p className={`font-extrabold text-sm ${step2Done ? 'text-slate-800' : 'text-slate-400'}`}>Vehículo en Tránsito</p>
@@ -893,7 +891,7 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
                   
                   {/* PASO 3: Llegada */}
                   <div className="relative">
-                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center transition-colors ${darkMode ? 'border-slate-900' : 'border-white'} ${step3Done ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center transition-colors ${typeof darkMode !== 'undefined' && darkMode ? 'border-slate-900' : 'border-white'} ${step3Done ? 'bg-blue-500' : 'bg-slate-200'}`}>
                       {step3Done && <CheckCircle className="w-3 h-3 text-white"/>}
                     </div>
                     <p className={`font-extrabold text-sm ${step3Done ? 'text-slate-800' : 'text-slate-400'}`}>{job.tripType === 'revision' ? 'En Planta de Revisión' : 'Llegada a Destino'}</p>
@@ -903,7 +901,7 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
                   {/* PASO 4: Resultado PRT */}
                   {job.tripType === 'revision' && (
                   <div className="relative">
-                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center transition-colors ${darkMode ? 'border-slate-900' : 'border-white'} ${step4Done ? (job.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200'}`}>
+                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center transition-colors ${typeof darkMode !== 'undefined' && darkMode ? 'border-slate-900' : 'border-white'} ${step4Done ? (job.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200'}`}>
                       {step4Done && <CheckCircle className="w-3 h-3 text-white"/>}
                     </div>
                     <p className={`font-extrabold text-sm ${step4Done ? (job.prt_result === 'rechazado' ? 'text-red-600' : 'text-green-600') : 'text-slate-400'}`}>Resultado de Revisión</p>
@@ -914,7 +912,7 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
                   {/* PASO 5: Camino a Destino */}
                   {job.tripType === 'revision' && step4Done && (
                   <div className="relative">
-                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center bg-blue-500 ${darkMode ? 'border-slate-900' : 'border-white'}`}>
+                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center bg-blue-500 ${typeof darkMode !== 'undefined' && darkMode ? 'border-slate-900' : 'border-white'}`}>
                       <div className="w-2 h-2 bg-white rounded-full animate-ping"></div>
                     </div>
                     <p className="font-extrabold text-sm text-slate-800">Camino a destino</p>
@@ -2389,8 +2387,17 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   });
 
   const handleAcceptJob = async (job) => {
-    try { await updateDoc(doc(db, 'transport_jobs', job.id), { status: 'accepted', acceptedByEmail: currentUserEmail }); } 
-    catch (e) { console.error(e); }
+    try { 
+      await updateDoc(doc(db, 'transport_jobs', job.id), { 
+        status: 'accepted', 
+        phase: 'claimed',
+        acceptedByEmail: currentUserEmail || '' 
+      }); 
+    } 
+    catch (e) { 
+      console.error(e); 
+      showAlert(`Error al aceptar: ${e.message}`); 
+    }
   };
 
   const handleDeleteJob = async (jobId) => {
