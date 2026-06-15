@@ -866,23 +866,23 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
                   </div>
                 </div>
                 
-                <div className="relative pl-8 space-y-6 before:absolute before:inset-y-2 before:left-[11px] before:w-0.5 before:bg-slate-100 flex-1">
+                <<div className="relative pl-8 space-y-6 before:absolute before:inset-y-2 before:left-[11px] before:w-0.5 before:bg-slate-100 flex-1">
                   {/* PASO 1: Dinámico (Gris si busca, Azul si está asignado o en camino) */}
                   <div className="relative">
-                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center transition-colors ${typeof darkMode !== 'undefined' && darkMode ? 'border-slate-900' : 'border-white'} ${isAccepted || job.assignedDrivers?.length > 0 ? 'bg-blue-500' : 'bg-slate-200'}`}>
-                      {(isAccepted || job.assignedDrivers?.length > 0) && <CheckCircle className="w-3 h-3 text-white"/>}
+                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${isAccepted ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                      {isAccepted && <CheckCircle className="w-3 h-3 text-white"/>}
                     </div>
-                    <p className={`font-extrabold text-sm ${isAccepted || job.assignedDrivers?.length > 0 ? 'text-slate-800' : 'text-slate-400'}`}>
-                      {isAccepted ? (job.assignedDrivers?.find(d => d.email === job.acceptedByEmail)?.name || "Conductor en camino") : (job.assignedDrivers?.length > 0 ? "Conductor Asignado" : "Buscando conductor...")}
+                    <p className={`font-extrabold text-sm ${isAccepted ? 'text-slate-800' : 'text-slate-400'}`}>
+                      {isAccepted ? (job.assignedDrivers?.find(d => d.email === job.acceptedByEmail)?.name || "Conductor en camino") : "Buscando conductor..."}
                     </p>
-                    <p className={`text-xs font-bold mt-0.5 ${isAccepted || job.assignedDrivers?.length > 0 ? 'text-slate-500' : 'text-slate-400'}`}>
-                      {isAccepted ? `Responsable del retiro en ${job.origin}` : (job.assignedDrivers?.length > 0 ? `Esperando que el conductor acepte` : `Esperando asignación para ${job.origin}`)}
+                    <p className={`text-xs font-bold mt-0.5 ${isAccepted ? 'text-slate-500' : 'text-slate-400'}`}>
+                      {isAccepted ? `Responsable del retiro en ${job.origin}` : `Esperando asignación para ${job.origin}`}
                     </p>
                   </div>
                   
                   {/* PASO 2: Vehículo en poder */}
                   <div className="relative">
-                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center transition-colors ${typeof darkMode !== 'undefined' && darkMode ? 'border-slate-900' : 'border-white'} ${step2Done ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step2Done ? 'bg-blue-500' : 'bg-slate-200'}`}>
                       {step2Done && <CheckCircle className="w-3 h-3 text-white"/>}
                     </div>
                     <p className={`font-extrabold text-sm ${step2Done ? 'text-slate-800' : 'text-slate-400'}`}>Vehículo en Tránsito</p>
@@ -891,7 +891,7 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
                   
                   {/* PASO 3: Llegada */}
                   <div className="relative">
-                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center transition-colors ${typeof darkMode !== 'undefined' && darkMode ? 'border-slate-900' : 'border-white'} ${step3Done ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step3Done ? 'bg-blue-500' : 'bg-slate-200'}`}>
                       {step3Done && <CheckCircle className="w-3 h-3 text-white"/>}
                     </div>
                     <p className={`font-extrabold text-sm ${step3Done ? 'text-slate-800' : 'text-slate-400'}`}>{job.tripType === 'revision' ? 'En Planta de Revisión' : 'Llegada a Destino'}</p>
@@ -901,7 +901,7 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
                   {/* PASO 4: Resultado PRT */}
                   {job.tripType === 'revision' && (
                   <div className="relative">
-                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center transition-colors ${typeof darkMode !== 'undefined' && darkMode ? 'border-slate-900' : 'border-white'} ${step4Done ? (job.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200'}`}>
+                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step4Done ? (job.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200'}`}>
                       {step4Done && <CheckCircle className="w-3 h-3 text-white"/>}
                     </div>
                     <p className={`font-extrabold text-sm ${step4Done ? (job.prt_result === 'rechazado' ? 'text-red-600' : 'text-green-600') : 'text-slate-400'}`}>Resultado de Revisión</p>
@@ -909,10 +909,10 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
                   </div>
                   )}
 
-                  {/* PASO 5: Camino a Destino */}
+                  {/* PASO 5: Camino a Destino (Solo si la PRT ya se resolvió) */}
                   {job.tripType === 'revision' && step4Done && (
                   <div className="relative">
-                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center bg-blue-500 ${typeof darkMode !== 'undefined' && darkMode ? 'border-slate-900' : 'border-white'}`}>
+                    <div className="absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center bg-blue-500">
                       <div className="w-2 h-2 bg-white rounded-full animate-ping"></div>
                     </div>
                     <p className="font-extrabold text-sm text-slate-800">Camino a destino</p>
@@ -2394,10 +2394,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         acceptedByEmail: currentUserEmail || '' 
       }); 
     } 
-    catch (e) { 
-      console.error(e); 
-      showAlert(`Error al aceptar: ${e.message}`); 
-    }
+    catch (e) { console.error(e); showAlert("Error de conexión al aceptar el traslado."); }
   };
 
   const handleDeleteJob = async (jobId) => {
@@ -2410,19 +2407,25 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     try {
       if (job.tripType === 'revision' && reason === 'RECHAZO_RT_AUTOMATICO') {
           const cloneJob = {
-              scheduledDate: job.scheduledDate, client: job.client, brand: job.brand, model: job.model, vin: job.vin, plate: job.plate,
-              origin: job.origin, destination: job.destination, tripType: job.tripType, rtData: job.rtData,
+              scheduledDate: job.scheduledDate || null, client: job.client || '', brand: job.brand || '', model: job.model || '', vin: job.vin || '', plate: job.plate || '',
+              origin: job.origin || '', destination: job.destination || '', tripType: job.tripType || 'traslado', rtData: job.rtData || null,
               assignedDrivers: job.assignedDrivers || [], assignedEmails: job.assignedEmails || [],
               status: 'pending', createdAt: Date.now(), checklist: null
           };
           await addDoc(collection(db, 'transport_jobs'), cloneJob);
       }
       await updateDoc(doc(db, 'transport_jobs', job.id), { 
-        status: 'failed', failedReason: reason === 'RECHAZO_RT_AUTOMATICO' ? job.checklist?.rtRejectReason || 'Revisión Técnica Rechazada' : reason, 
-        completedAt: Date.now(), acceptedByEmail: job.acceptedByEmail || currentUserEmail
+        status: 'failed', 
+        failedReason: reason === 'RECHAZO_RT_AUTOMATICO' ? (job.checklist?.rtRejectReason || 'Revisión Técnica Rechazada') : reason, 
+        completedAt: Date.now(), 
+        acceptedByEmail: job.acceptedByEmail || currentUserEmail || 'Admin'
       });
-      setJobToFail(null); showAlert(reason === 'RECHAZO_RT_AUTOMATICO' ? "Revisión guardada como rechazada y se ha creado un nuevo traslado pendiente." : "Trabajo marcado como fallido.");
-    } catch (e) { console.error(e); }
+      setJobToFail(null); 
+      showAlert(reason === 'RECHAZO_RT_AUTOMATICO' ? "Revisión rechazada. Se creó un nuevo traslado pendiente." : "Trabajo marcado como fallido o cancelado.");
+    } catch (e) { 
+      console.error(e); 
+      showAlert(`Error: ${e.message}`); 
+    }
   };
 
   const getRouteStr = (j) => {
