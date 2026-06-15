@@ -2741,10 +2741,77 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
   };
 
   const handlePic = async (e, id) => {
-    const f=e.target.files[0]; if(!f)return;
+    const f = e.target.files[0]; 
+    if(!f) return;
+    
     try {
-      const dataUrl = await resizeImage(f, 500, 0.4); 
+      // 1. Achicamos la imagen (800px da mejor precisión para la IA)
+      const dataUrl = await resizeImage(f, 800, 0.6); 
+      
+      // 2. Módulo de IA: Consultamos a Roboflow en tiempo real
+      try {
+        const base64Data = dataUrl.split(',')[1];
+        const response = await fetch(
+          "https://detect.roboflow.com/car-damage-detection-t0g92/1?api_key=QvWTIuwyzGMUxh7Q3TGY",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: base64Data
+          }
+        );
+        
+        const result = await response.json();
+        const predictions = result.predictions || [];
+
+        // 3. Si la IA encontró daños, dibujamos los cuadros amarillos
+        if (predictions.length > 0) {
+          const imgEl = new Image();
+          imgEl.src = dataUrl;
+          
+          imgEl.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = imgEl.width;
+            canvas.height = imgEl.height;
+            const ctx = canvas.getContext('2d');
+            
+            // Dibujamos la foto original de fondo
+            ctx.drawImage(imgEl, 0, 0);
+
+            // Configuramos el "marcador" amarillo brillante
+            ctx.lineWidth = 5;
+            ctx.font = "bold 16px Arial";
+
+            // Dibujamos caja por caja detectada
+            predictions.forEach(p => {
+              // Roboflow entrega el (x,y) desde el centro. Lo convertimos a top-left.
+              const tlX = p.x - p.width / 2;
+              const tlY = p.y - p.height / 2;
+
+              ctx.strokeStyle = "#eab308"; // Amarillo brillante
+              ctx.fillStyle = "rgba(234, 179, 8, 0.25)"; // Relleno semi-transparente
+              
+              ctx.strokeRect(tlX, tlY, p.width, p.height);
+              ctx.fillRect(tlX, tlY, p.width, p.height);
+
+              // Etiqueta de qué encontró y % de seguridad
+              ctx.fillStyle = "#eab308";
+              ctx.fillText(`${p.class} ${(p.confidence * 100).toFixed(0)}%`, tlX, tlY - 8);
+            });
+
+            // Guardamos la foto editada con los marcadores IA
+            setF('photos', {...formData.photos, [id]: canvas.toDataURL('image/jpeg', 0.7)});
+            showAlert(`🤖 Asistencia IA: Se detectaron ${predictions.length} anomalía(s) en la foto. Revisa los recuadros amarillos.`);
+          };
+          return; // Salimos de la función para no sobreescribir la foto normal
+        }
+      } catch (apiError) {
+        console.error("La IA falló o no hay internet para detectarlo:", apiError);
+        // Fallo silencioso: si no hay internet o falla la API, sigue adelante normal.
+      }
+
+      // 4. Si la IA no encontró nada o falló la red, guardamos la imagen normal limpia
       setF('photos', {...formData.photos, [id]: dataUrl}); 
+
     } catch(err){ 
       console.error("Error al procesar la foto:", err);
       showAlert("Error al procesar la foto. Intenta con una imagen más pequeña."); 
