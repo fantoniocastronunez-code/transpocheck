@@ -2686,16 +2686,30 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     if (isQuick) return showAlert("⚠️ Para usar la Firma Remota en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
     
     try {
-      await setDoc(doc(db, 'transport_jobs', job.id), { checklist: formData }, { merge: true });
+      // 1. TRUCO FIREBASE: Limpiamos cualquier dato vacío (undefined) para que Firebase no crashee
+      const cleanData = JSON.parse(JSON.stringify(formData));
       
-      // Se crea la URL limpia de forma absoluta
+      // 2. Usamos updateDoc en lugar de setDoc para evitar bloqueos de reglas de seguridad
+      await updateDoc(doc(db, 'transport_jobs', job.id), { checklist: cleanData });
+      
+      // 3. Generamos la URL
       const url = `${window.location.href.split('?')[0]}?sign=${job.id}`;
-      navigator.clipboard.writeText(`¡Hola! Por favor firma el acta de recepción y revisa las fotografías del vehículo aquí:\n${url}`);
+      const mensaje = `¡Hola! Por favor firma el acta de recepción y revisa las fotografías del vehículo aquí:\n${url}`;
       
-      showAlert("✅ Link copiado. Envíalo al cliente por WhatsApp. La pantalla se actualizará sola cuando firme.");
+      // 4. Sistema de copiado seguro (Si el celular bloquea el copiado, muestra el link en la pantalla)
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(mensaje);
+          showAlert("✅ Link copiado. Envíalo al cliente por WhatsApp. La pantalla se actualizará sola cuando firme.");
+        } catch (clipboardErr) {
+          showAlert(`⚠️ Link generado. Cópialo manualmente:\n\n${url}`);
+        }
+      } else {
+        showAlert(`⚠️ Link generado. Cópialo manualmente:\n\n${url}`);
+      }
     } catch (e) {
-      console.error(e);
-      showAlert("Error al generar el link. Revisa tu conexión.");
+      console.error("Error al generar link:", e);
+      showAlert(`Error: ${e.message}`);
     }
   };
 
@@ -2705,11 +2719,17 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     if (!navigator.onLine) return showAlert("⚠️ Tu celular no tiene señal en este momento. El cliente no podrá descargar las fotos con el QR. Usa 'Compartir Link' y envíalo cuando recuperes la conexión.");
     
     try {
-      await setDoc(doc(db, 'transport_jobs', job.id), { checklist: formData }, { merge: true });
+      // 1. TRUCO FIREBASE: Limpiamos los undefined
+      const cleanData = JSON.parse(JSON.stringify(formData));
+      
+      // 2. Guardamos de forma segura
+      await updateDoc(doc(db, 'transport_jobs', job.id), { checklist: cleanData });
+      
+      // 3. Abrimos el modal
       setQrOpen(true);
     } catch (e) {
-      console.error(e);
-      showAlert("Error al generar el QR. Revisa tu conexión.");
+      console.error("Error al mostrar QR:", e);
+      showAlert(`Error: ${e.message}`);
     }
   };
 
@@ -2818,6 +2838,186 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     }
   };
 
+  function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList, drivers, expenses }) {
+  const isQuick = job.id === 'NEW_QUICK_JOB'; 
+  const localStorageKey = `checklist_draft_${job.id}`;
+
+  const defaultData = {
+    client: job.client||'', manualClient: '', brand: job.brand||'', model: job.model||'', plateOrVin: job.plate||job.vin||'', origin: job.origin||'', destination: job.destination||'', fuelLevel: 50, photos: { front:false, left:false, right:false, back:false, tire:false, dashboard:false, det1:false, det2:false, det3:false, det4:false }, docs: { soap:false, permiso:false, revTecnica:false, gases:false }, observations: '', receiverName: '', receiverRut: '', noReception: false, signatureData: null, location: null,
+    rtStatus: job.prt_result || 'aprobado', rtRejectReason: job.prt_reason || '', rtReturnOption: 'origin', rtReturnDestination: '' 
+  };
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState(defaultData);
+  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
+
+  useEffect(() => {
+    if (isQuick || !job.id) return;
+    const unsub = onSnapshot(doc(db, 'transport_jobs', job.id), (docSnap) => {
+      const data = docSnap.data();
+      if (data?.checklist?.clientSigned) {
+        setFormData(prev => ({
+          ...prev,
+          signatureData: data.checklist.signatureData,
+          receiverName: data.checklist.receiverName,
+          receiverRut: data.checklist.receiverRut,
+          clientComments: data.checklist.clientComments || ''
+        }));
+      }
+    });
+    return () => unsub();
+  }, [job.id, isQuick, db]);
+
+  // Función para generar y mandar el link de firma (A PRUEBA DE FALLOS)
+  const handleRemoteSignRequest = async () => {
+    if (isQuick) return showAlert("⚠️ Para usar la Firma Remota en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
+    
+    try {
+      // TRUCO FIREBASE: Limpiamos cualquier dato vacío (undefined)
+      const cleanData = JSON.parse(JSON.stringify(formData));
+      
+      await updateDoc(doc(db, 'transport_jobs', job.id), { checklist: cleanData });
+      
+      const url = `${window.location.href.split('?')[0]}?sign=${job.id}`;
+      const mensaje = `¡Hola! Por favor firma el acta de recepción y revisa las fotografías del vehículo aquí:\n${url}`;
+      
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(mensaje);
+          showAlert("✅ Link copiado. Envíalo al cliente por WhatsApp. La pantalla se actualizará sola cuando firme.");
+        } catch (clipboardErr) {
+          showAlert(`⚠️ Link generado. Cópialo manualmente:\n\n${url}`);
+        }
+      } else {
+        showAlert(`⚠️ Link generado. Cópialo manualmente:\n\n${url}`);
+      }
+    } catch (e) {
+      console.error("Error al generar link:", e);
+      showAlert(`Error: ${e.message}`);
+    }
+  };
+
+  // Función para guardar datos antes de mostrar el QR (A PRUEBA DE FALLOS)
+  const handleOpenQR = async () => {
+    if (isQuick) return showAlert("⚠️ Para usar el Código QR en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
+    if (!navigator.onLine) return showAlert("⚠️ Tu celular no tiene señal en este momento. El cliente no podrá descargar las fotos con el QR.");
+    
+    try {
+      const cleanData = JSON.parse(JSON.stringify(formData));
+      await updateDoc(doc(db, 'transport_jobs', job.id), { checklist: cleanData });
+      setQrOpen(true);
+    } catch (e) {
+      console.error("Error al mostrar QR:", e);
+      showAlert(`Error: ${e.message}`);
+    }
+  };
+
+  useEffect(() => {
+    const savedDraft = localStorage.getItem(localStorageKey);
+    if (savedDraft) {
+      try {
+        const parsedData = JSON.parse(savedDraft);
+        setFormData(parsedData.formData);
+        setStep(parsedData.step || 1);
+        setIsDraftLoaded(true);
+      } catch (e) { console.error("Error al leer borrador", e); }
+    }
+  }, [localStorageKey]);
+
+  useEffect(() => {
+    localStorage.setItem(localStorageKey, JSON.stringify({ step, formData }));
+  }, [step, formData, localStorageKey]);
+
+  const setF = (f, v) => setFormData(p => ({...p, [f]:v}));
+
+  const clearDraft = () => {
+    showConfirm("¿Eliminar borrador y empezar de nuevo?", () => {
+      localStorage.removeItem(localStorageKey);
+      setFormData(defaultData);
+      setStep(1);
+      setIsDraftLoaded(false);
+    });
+  };
+
+  // MANEJO DE FOTO CON INTELIGENCIA ARTIFICIAL (ROBOFLOW API)
+  const handlePic = async (e, id) => {
+    const f = e.target.files[0]; 
+    if(!f) return;
+    
+    try {
+      // Achicamos la imagen (800px da mejor precisión para la IA)
+      const dataUrl = await resizeImage(f, 800, 0.6); 
+      
+      // Módulo de IA: Consultamos a Roboflow en tiempo real
+      try {
+        const base64Data = dataUrl.split(',')[1];
+        const response = await fetch(
+          "https://detect.roboflow.com/car-damage-detection-t0g92/1?api_key=QvWTIuwyzGMUxh7Q3TGY",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: base64Data
+          }
+        );
+        
+        const result = await response.json();
+        const predictions = result.predictions || [];
+
+        // Si la IA encontró daños, dibujamos los cuadros amarillos
+        if (predictions.length > 0) {
+          const imgEl = new Image();
+          imgEl.src = dataUrl;
+          
+          imgEl.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = imgEl.width;
+            canvas.height = imgEl.height;
+            const ctx = canvas.getContext('2d');
+            
+            // Dibujamos la foto original de fondo
+            ctx.drawImage(imgEl, 0, 0);
+
+            // Configuramos el "marcador" amarillo brillante
+            ctx.lineWidth = 5;
+            ctx.font = "bold 16px Arial";
+
+            // Dibujamos caja por caja detectada
+            predictions.forEach(p => {
+              const tlX = p.x - p.width / 2;
+              const tlY = p.y - p.height / 2;
+
+              ctx.strokeStyle = "#eab308"; // Amarillo brillante
+              ctx.fillStyle = "rgba(234, 179, 8, 0.25)"; // Relleno semi-transparente
+              
+              ctx.strokeRect(tlX, tlY, p.width, p.height);
+              ctx.fillRect(tlX, tlY, p.width, p.height);
+
+              // Etiqueta de qué encontró y % de seguridad
+              ctx.fillStyle = "#eab308";
+              ctx.fillText(`${p.class} ${(p.confidence * 100).toFixed(0)}%`, tlX, tlY - 8);
+            });
+
+            // Guardamos la foto editada con los marcadores IA
+            setF('photos', {...formData.photos, [id]: canvas.toDataURL('image/jpeg', 0.7)});
+            showAlert(`🤖 Asistencia IA: Se detectaron ${predictions.length} anomalía(s) en la foto. Revisa los recuadros amarillos.`);
+          };
+          return; // Salimos de la función para no sobreescribir la foto normal
+        }
+      } catch (apiError) {
+        console.error("La IA falló o no hay internet para detectarlo:", apiError);
+        // Fallo silencioso: si no hay internet o falla la API, sigue adelante normal.
+      }
+
+      // Si la IA no encontró nada o falló la red, guardamos la imagen normal limpia
+      setF('photos', {...formData.photos, [id]: dataUrl}); 
+
+    } catch(err){ 
+      console.error("Error al procesar la foto:", err);
+      showAlert("Error al procesar la foto. Intenta con una imagen más pequeña."); 
+    }
+  };
+
+  // FUNCIÓN SUBMIT PRINCIPAL (A PRUEBA DE FALLOS CON LIMPIEZA DE UNDEFINED)
   const submit = async (e) => {
     e.preventDefault();
     if (!formData.noReception && !formData.signatureData) return showAlert("La firma del receptor es mandatoria.");
@@ -2830,8 +3030,11 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
       d.receiverRut="N/A"; 
     }
     
-    const fd = { scheduledDate: new Date().toISOString().split('T')[0], client: d.client, brand: d.brand, model: d.model, vin: d.plateOrVin, plate: d.plateOrVin, origin: d.origin, destination: d.destination, status: 'completed', completedAt: Date.now(), checklist: d, tripType: job.tripType || 'traslado' };
+    const rawFd = { scheduledDate: new Date().toISOString().split('T')[0], client: d.client, brand: d.brand, model: d.model, vin: d.plateOrVin, plate: d.plateOrVin, origin: d.origin, destination: d.destination, status: 'completed', completedAt: Date.now(), checklist: d, tripType: job.tripType || 'traslado' };
     
+    // TRUCO FIREBASE: Destruye cualquier valor 'undefined' dentro del objeto gigante para evitar el bloqueo del servidor
+    const fd = JSON.parse(JSON.stringify(rawFd));
+
     try {
       // --- PARTE 2: AUTOMATIZAR MÚLTIPLES GASTOS (COMBUSTIBLE + PRT) ---
       let totalToDeduct = 0;
@@ -2904,12 +3107,14 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
              fd.failedReason = d.rtRejectReason || 'Revisión Técnica Rechazada';
              
              const cloneJob = {
-                scheduledDate: d.scheduledDate || null, client: d.client || '', brand: d.brand || '', model: d.model || '', vin: d.plateOrVin || '', plate: d.plateOrVin || '', origin: d.origin || '', destination: d.destination || '',
-                tripType: job.tripType || 'traslado', rtData: job.rtData || null,
-                assignedDrivers: job.assignedDrivers || [], assignedEmails: job.assignedEmails || [],
-                status: 'pending', createdAt: Date.now(), checklist: null
+               scheduledDate: d.scheduledDate || null, client: d.client || '', brand: d.brand || '', model: d.model || '', vin: d.plateOrVin || '', plate: d.plateOrVin || '', origin: d.origin || '', destination: d.destination || '',
+               tripType: job.tripType || 'traslado', rtData: job.rtData || null,
+               assignedDrivers: job.assignedDrivers || [], assignedEmails: job.assignedEmails || [],
+               status: 'pending', createdAt: Date.now(), checklist: null
              };
-             await addDoc(collection(db, 'transport_jobs'), cloneJob);
+             // Limpiamos también el documento clonado por precaución
+             const cleanClone = JSON.parse(JSON.stringify(cloneJob));
+             await addDoc(collection(db, 'transport_jobs'), cleanClone);
           }
           await updateDoc(doc(db,'transport_jobs',job.id), fd); 
       }
@@ -2922,7 +3127,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
       onComplete();
     } catch(error) { 
       console.error("Firebase Error:", error);
-      showAlert("Hubo un error al guardar. Verifica tu conexión a internet."); 
+      showAlert(`Hubo un error al guardar: ${error.message}`); 
     }
   };
 
@@ -2997,11 +3202,11 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
               <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-slate-800 mb-4">Combustible: <span className="text-blue-600">{formData.fuelLevel}%</span></h3>
               <input type="range" min="0" max="100" step="5" value={formData.fuelLevel} onChange={(e) => setF('fuelLevel', e.target.value)} className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer" style={{background: `linear-gradient(to right, ${formData.fuelLevel < 30 ? '#ef4444' : formData.fuelLevel < 80 ? '#eab308' : '#22c55e'} ${formData.fuelLevel}%, #e2e8f0 ${formData.fuelLevel}%)`}} />
             </div>
-            {/* --- BANNER DE FONDO ASIGNADO (Corregido) --- */}
+            {/* --- BANNER DE FONDO ASIGNADO --- */}
             <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mt-6 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="bg-blue-100 p-2 rounded-lg">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08-.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
                 <div>
                   <p className="text-xs font-bold text-blue-600 uppercase">Fondo Asignado al Traslado</p>
@@ -3018,7 +3223,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
               </div>
             </div>
             
-            {/* --- NUEVO: GASTOS DE REVISIÓN TÉCNICA CONDICIONALES --- */}
+            {/* --- GASTOS DE REVISIÓN TÉCNICA CONDICIONALES --- */}
             {job.tripType === 'revision' && (job.rtData?.revision || job.rtData?.inspeccion || job.rtData?.frenos) && (
               <div className="bg-indigo-50 border-2 border-indigo-200 rounded-xl p-4 mt-4 shadow-sm">
                 <h3 className="text-sm font-extrabold text-indigo-800 mb-3 flex items-center gap-2">
@@ -3046,7 +3251,6 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
                 </div>
               </div>
             )}
-            {/* ----------------------------------------------------------------- */}
 
             <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Documentos a bordo</h3>
             <div className="grid grid-cols-2 gap-3 pt-2">
@@ -3076,7 +3280,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
             <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Observaciones</h3>
             <textarea className="w-full border-2 border-slate-200 p-3 rounded-xl mt-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500 min-h-[80px]" placeholder="Escribe aquí si hay algún daño, rayón o comentario relevante..." value={formData.observations || ''} onChange={(e) => setF('observations', e.target.value)} />
             
-            {/* SECCIÓN NUEVA: ADICIONALES (Espera y Combustible) */}
+            {/* SECCIÓN ADICIONALES (Espera y Combustible) */}
             <div className="flex flex-col gap-3 mt-4 p-4 bg-slate-50 rounded-xl border-2 border-slate-100">
               {/* Tiempo de Espera */}
               <div className="flex flex-col gap-2">
@@ -3113,7 +3317,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
                 <label key={p.id} className={`p-1 border-2 rounded-2xl text-center cursor-pointer relative overflow-hidden h-20 flex flex-col justify-center items-center ${formData.photos[p.id]?'bg-green-50 border-green-400':'border-dashed'}`}>
                   <input type="file" className="hidden" accept="image/*" onChange={e=>handlePic(e,p.id)}/>
                   {formData.photos[p.id] ? (
-                     <div className="absolute inset-0 w-full h-full"><img src={formData.photos[p.id]} alt="foto" className="w-full h-full object-cover opacity-60"/><div className="absolute inset-0 flex items-center justify-center"><CheckCircle className="w-6 h-6 text-green-600 bg-white rounded-full"/></div></div>
+                     <div className="absolute inset-0 w-full h-full"><img src={formData.photos[p.id]} alt="foto" className="w-full h-full object-cover opacity-60"/><div className="absolute inset-0 flex items-center justify-center pointer-events-none"><CheckCircle className="w-6 h-6 text-green-600 bg-white rounded-full"/></div></div>
                   ) : (
                     <><Camera className="w-5 h-5 text-slate-400 mb-0.5"/> <span className="text-[10px] font-bold text-slate-500 uppercase">{p.l}</span></>
                   )}
@@ -3121,7 +3325,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
               ))}
             </div>
             
-            <button type="button" onClick={()=>setStep(2)} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mt-6 text-sm">Siguiente Paso</button>
+            <button type="button" onClick={()=>setStep(2)} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mt-6 text-sm shadow-md">Siguiente Paso</button>
           </div>
         ) : (
           <form onSubmit={submit} className="space-y-4">
@@ -3146,7 +3350,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
                  </div>
                )}
 
-               {/* NUEVO: MODAL PARA CÓDIGO QR MEJORADO */}
+               {/* MODAL PARA CÓDIGO QR MEJORADO */}
                {qrOpen && (
                   <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
                     <div className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 max-w-sm w-full text-center relative animate-in zoom-in-95 border border-slate-100">
@@ -3155,11 +3359,9 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
                       <p className="text-xs font-bold text-slate-500 mb-5">El cliente debe apuntar con su cámara a este código.</p>
                       
                       <div className="bg-white p-3 rounded-2xl border-4 border-slate-100 shadow-inner inline-block">
-                        {/* Usamos QuickChart que es más confiable y no guarda caché erróneo */}
                         <img src={`https://quickchart.io/qr?size=250&margin=1&text=${encodeURIComponent(`${window.location.href.split('?')[0]}?sign=${job.id}`)}`} alt="QR Signature" className="w-48 h-48 mx-auto" />
                       </div>
                       
-                      {/* Mostramos el código por si el escáner falla */}
                       <div className="mt-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
                         <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">O ingresa manualmente a:</p>
                         <p className="text-[11px] font-extrabold text-blue-600 break-all select-all">{`${window.location.href.split('?')[0]}?sign=${job.id}`}</p>
@@ -3175,7 +3377,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
                    <input required={!formData.noReception} value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
                    <input required={!formData.noReception} value={formData.receiverRut} onChange={e=>setF('receiverRut',e.target.value)} placeholder="RUT Receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
                    
-                   {/* NUEVO: Muestra los comentarios si el cliente dejó alguno por el link remoto */}
+                   {/* Muestra los comentarios si el cliente dejó alguno por el link remoto */}
                    {formData.clientComments && (
                      <div className="bg-slate-100 p-3 rounded-xl border border-slate-200">
                        <p className="text-[10px] font-extrabold text-slate-500 uppercase">Comentarios del Cliente:</p>
@@ -3195,7 +3397,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
               {formData.location ? "📍 GPS Capturado Exitosamente" : "📍 Tocar para Capturar GPS Actual"}
             </button>
 
-            <div className="flex gap-2 pt-4 border-t"><button type="button" onClick={()=>setStep(1)} className="bg-slate-100 p-3 rounded-xl font-bold text-sm flex-1">Atrás</button><button type="submit" className="bg-green-600 text-white p-3 rounded-xl font-bold text-sm flex-[2]">Finalizar y Guardar</button></div>
+            <div className="flex gap-2 pt-4 border-t"><button type="button" onClick={()=>setStep(1)} className="bg-slate-100 p-3 rounded-xl font-bold text-sm flex-1 hover:bg-slate-200">Atrás</button><button type="submit" className="bg-green-600 hover:bg-green-700 text-white p-3 rounded-xl font-bold text-sm flex-[2] shadow-md">Finalizar y Guardar</button></div>
           </form>
         )}
       </div>
