@@ -22,8 +22,11 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// CORRECCIÓN: Usar persistencia Multi-Pestaña soluciona el error donde el Portal de Cliente no se actualizaba en tiempo real si el admin estaba en otra pestaña.
-enableMultiTabIndexedDbPersistence(db).catch((err) => {
+// NUEVO: Variable global de la versión de la App (Cámbiala cuando actualices el código)
+const APP_VERSION = "v1.2.0";
+
+// Activamos la Persistencia Offline. La app funcionará sin internet leyendo el caché local.
+enableIndexedDbPersistence(db).catch((err) => {
   console.warn("Modo offline limitado:", err.code);
 });
 
@@ -777,9 +780,12 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
           </div>
           
           {/* Nombre de la aplicación */}
-          <h1 className="font-alfa text-lg sm:text-3xl tracking-wide shrink-0 text-white" style={{ paddingTop: '2px' }}>
-            LogisticAPP
-          </h1>
+          <div className="flex flex-col justify-center">
+            <h1 className="font-alfa text-lg sm:text-3xl tracking-wide shrink-0 text-white leading-none" style={{ paddingTop: '2px' }}>
+              LogisticAPP
+            </h1>
+            <span className="text-[9px] sm:text-[10px] font-bold text-blue-200 mt-0.5 tracking-widest">{APP_VERSION}</span>
+          </div>
           
           {/* Logo Logística TS SpA */}
           <div className="bg-white/20 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0 ml-0.5 sm:ml-1 overflow-hidden">
@@ -1414,8 +1420,9 @@ function ClientSignView({ jobId, db }) {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans pb-10">
-      <header className="bg-blue-600 text-white p-4 shadow-md text-center">
-        <h1 className="font-black text-xl tracking-wide">Acta de Recepción</h1>
+      <header className="bg-blue-600 text-white p-4 shadow-md text-center flex flex-col items-center justify-center relative">
+        <h1 className="font-black text-xl tracking-wide leading-none">Acta de Recepción</h1>
+        <span className="text-[10px] font-bold text-blue-200 mt-1 uppercase tracking-widest">{APP_VERSION}</span>
       </header>
 
       <main className="max-w-md mx-auto p-4 pt-6 space-y-6">
