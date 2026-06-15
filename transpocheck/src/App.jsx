@@ -3026,47 +3026,44 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     return () => unsub();
   }, [job.id, isQuick, db]);
 
-  const handleRemoteSignRequest = async () => {
+  const handleRemoteSignRequest = () => {
     if (isQuick) return showAlert("⚠️ Para usar la Firma Remota en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
     
-    try {
-      const url = `${window.location.href.split('?')[0]}?sign=${job.id}`;
-      const mensaje = `¡Hola! Por favor firma el acta de recepción y revisa las fotografías del vehículo aquí:\n${url}`;
-      
-      let copiadoExitoso = false;
-      // Copiamos inmediatamente para que Safari/iPhone no bloquee el botón
-      if (navigator.clipboard && window.isSecureContext) {
-        try {
-          await navigator.clipboard.writeText(mensaje);
-          copiadoExitoso = true;
-        } catch (err) { console.warn(err); }
-      } 
+    const url = `${window.location.href.split('?')[0]}?sign=${job.id}`;
+    const mensaje = `¡Hola! Por favor firma el acta de recepción y revisa las fotografías del vehículo aquí:\n${url}`;
+    
+    let copiadoExitoso = false;
+    // Ejecución sincrónica nativa (Obligatorio en móviles para evitar bloqueo de seguridad)
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(mensaje).catch(e => console.warn(e));
+      copiadoExitoso = true;
+    } else {
+      // Truco maestro de Javascript antiguo si el celular bloquea la API moderna
+      const textArea = document.createElement("textarea");
+      textArea.value = mensaje;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try { document.execCommand('copy'); copiadoExitoso = true; } catch (err) { console.error(err); }
+      document.body.removeChild(textArea);
+    } 
 
-      // Guardado seguro limpiando vacíos
-      const cleanData = JSON.parse(JSON.stringify(formData));
-      updateDoc(doc(db, 'transport_jobs', job.id), { checklist: cleanData }).catch(e => console.error(e));
-      
+    const cleanData = JSON.parse(JSON.stringify(formData));
+    updateDoc(doc(db, 'transport_jobs', job.id), { checklist: cleanData }).then(() => {
       if (copiadoExitoso) {
         showAlert("✅ Link copiado. Envíalo al cliente por WhatsApp. La pantalla se actualizará sola cuando firme.");
       } else {
         showAlert(`⚠️ Link generado. Cópialo manualmente:\n\n${url}`);
       }
-    } catch (e) {
-      showAlert(`Error: ${e.message}`);
-    }
+    }).catch(e => showAlert(`Error de conexión: ${e.message}`));
   };
 
-  const handleOpenQR = async () => {
+  const handleOpenQR = () => {
     if (isQuick) return showAlert("⚠️ Para usar el Código QR en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
     if (!navigator.onLine) return showAlert("⚠️ Tu celular no tiene señal en este momento.");
     
-    try {
-      setQrOpen(true); // Abrir rápido para evitar bloqueos
-      const cleanData = JSON.parse(JSON.stringify(formData));
-      updateDoc(doc(db, 'transport_jobs', job.id), { checklist: cleanData }).catch(e=>console.error(e));
-    } catch (e) {
-      showAlert(`Error al generar el QR: ${e.message}`);
-    }
+    setQrOpen(true); 
+    const cleanData = JSON.parse(JSON.stringify(formData));
+    updateDoc(doc(db, 'transport_jobs', job.id), { checklist: cleanData }).catch(e=>console.error(e));
   };
 
   useEffect(() => {
@@ -3109,7 +3106,10 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!formData.noReception && !formData.signatureData) return showAlert("La firma del receptor es mandatoria.");
+    if (!formData.noReception) {
+      if (!formData.receiverName || !formData.receiverRut) return showAlert("Debes ingresar el Nombre y RUT del receptor, o marcar 'Dejar sin firma'.");
+      if (!formData.signatureData) return showAlert("La firma del receptor es mandatoria.");
+    }
     
     let d = {...formData}; 
     d.client = d.client === 'OTRO' ? d.manualClient : d.client; 
@@ -3463,8 +3463,8 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
                  <>
                    <div className="flex items-center gap-2 mb-2"><div className="h-px bg-slate-200 flex-1"></div><span className="text-xs font-bold text-slate-400 uppercase">O llenar manualmente</span><div className="h-px bg-slate-200 flex-1"></div></div>
                    
-                   <input required={!formData.noReception} value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
-                   <input required={!formData.noReception} value={formData.receiverRut} onChange={e=>setF('receiverRut',e.target.value)} placeholder="RUT Receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
+                   <input value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
+                   <input value={formData.receiverRut} onChange={e=>setF('receiverRut',e.target.value)} placeholder="RUT Receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
                    
                    {/* NUEVO: Muestra los comentarios si el cliente dejó alguno por el link remoto */}
                    {formData.clientComments && (
