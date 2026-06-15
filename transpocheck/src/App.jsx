@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, enableMultiTabIndexedDbPersistence, collection, addDoc, onSnapshot, updateDoc, setDoc, doc, deleteDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
-// Eliminamos la importación global de jsPDF para que la app cargue más rápido (Lazy Loading)
 import { 
   Car, MapPin, Camera, CheckCircle, FileText, Download, 
   Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, Edit2, Bell, Share2, X, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Save, Search,
@@ -22,11 +21,15 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// NUEVO: Variable global de la versión de la App (Cámbiala cuando actualices el código)
 const APP_VERSION = "v1.2.0";
 
-// Persistencia offline desactivada temporalmente para evitar el bloqueo 
-// de la base de datos al probar la app en múltiples pestañas a la vez.
+// Persistencia offline comentada temporalmente para evitar que Firebase bloquee
+// la base de datos al probar la app en múltiples pestañas a la vez.
+/*
+enableMultiTabIndexedDbPersistence(db).catch((err) => {
+  console.warn("Modo offline limitado:", err.code);
+});
+*/
 
 const googleProvider = new GoogleAuthProvider();
 
@@ -63,7 +66,7 @@ const SignaturePad = ({ onSave, onClear, initialData }) => {
     if (type === 'stop') {
       setIsDrawing(false);
       if (onSave) onSave(canvas.toDataURL());
-      return; // Salir antes de leer coordenadas vacías (Evita el crash en móviles)
+      return; 
     }
 
     const rect = canvas.getBoundingClientRect();
@@ -91,7 +94,6 @@ const SignaturePad = ({ onSave, onClear, initialData }) => {
   );
 };
 
-// Se reduce la resolución máxima y la calidad para evitar el bloqueo por peso en Firestore
 const resizeImage = (file, maxWidth = 500, quality = 0.4) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -133,7 +135,6 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
   const [revA_inspeccion, setRevA_inspeccion] = useState(jobToEdit?.rtData?.inspeccion || false);
   const [revA_frenos, setRevA_frenos] = useState(jobToEdit?.rtData?.frenos || false);
   const [revB_tipo, setRevB_tipo] = useState(jobToEdit?.rtData?.tipoB || 'completa');
-  // NUEVO: Estado Reactivo para las tarjetas de conductores
   const [selectedDriversUI, setSelectedDriversUI] = useState(() => jobToEdit?.assignedEmails ? drivers.filter(d => jobToEdit.assignedEmails.includes(d.email)).map(d => d.id) : []);
   
   const todayStr = new Date().toISOString().split('T')[0];
@@ -167,7 +168,7 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
     const jobData = {
       scheduledDate: formData.get('scheduledDate'), client: finalClient, brand, model,
       vin: plate, plate, origin: formData.get('origin'), destination: formData.get('destination'),
-      tripType, rtData: rtData || null, // Protección anti-crash
+      tripType, rtData: rtData || null, 
       assignedDrivers: assignedDriversList.map(d => ({id: d.id, name: d.name, email: d.email})), assignedEmails: assignedDriversList.map(d => d.email)
     };
 
@@ -267,10 +268,8 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
                 const isSelected = selectedDriversUI.includes(d.id);
                 return (
                 <label key={d.id} className="relative flex cursor-pointer group">
-                  {/* El input oculto envía los datos, pero el evento onChange actualiza la UI visual instantáneamente */}
                   <input type="checkbox" name="assignedDriverId" value={d.id} checked={isSelected} onChange={() => setSelectedDriversUI(prev => prev.includes(d.id) ? prev.filter(id => id !== d.id) : [...prev, d.id])} className="sr-only" />
                   
-                  {/* Tarjeta interactiva conectada a React */}
                   <div className={`w-full flex items-center p-3 bg-white border-2 rounded-2xl transition-all ${isSelected ? 'border-blue-600 bg-blue-50' : 'border-slate-200 group-hover:border-blue-300'}`}>
                     <div className={`p-2.5 rounded-xl transition-colors shrink-0 ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
                       <User className="w-5 h-5" />
@@ -444,10 +443,11 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
     </div>
   );
 }
+
 function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [downloadingId, setDownloadingId] = useState(null); // <-- NUEVO ESTADO PARA EL SPINNER
+  const [downloadingId, setDownloadingId] = useState(null);
 
   useEffect(() => {
     const q = query(collection(db, 'transport_jobs'), where('client', '==', clientName));
@@ -463,296 +463,285 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
     return () => unsub();
   }, [clientName, db]);
 
-  // --- MOTOR GENERADOR DE PDF PARA EL CLIENTE ---
   const handleDownloadPDF = async (job) => {
     if (!job.checklist && job.status !== 'failed') return alert("Este traslado no tiene un checklist registrado.");
     
     try {
-      setDownloadingId(job.id); // Enciende el relojito de carga
+      setDownloadingId(job.id);
       
-      // CORRECCIÓN: Carga ultra-segura de jsPDF compatible con Vite
       const jsPDFModule = await import('jspdf');
-    const JsPDFClass = jsPDFModule.default?.jsPDF || jsPDFModule.default || jsPDFModule.jsPDF;
-    const docPDF = new JsPDFClass();
-    const cleanStr = (str) => {
-      if (!str) return '';
-      return String(str).replace(/➔/g, '->').replace(/•/g, '-').replace(/[^\x20-\x7E\xA0-\xFF]/g, '');
-    };
+      const JsPDFClass = jsPDFModule.default?.jsPDF || jsPDFModule.default || jsPDFModule.jsPDF;
+      const docPDF = new JsPDFClass();
+      
+      const cleanStr = (str) => {
+        if (!str) return '';
+        return String(str).replace(/➔/g, '->').replace(/•/g, '-').replace(/[^\x20-\x7E\xA0-\xFF]/g, '');
+      };
 
-    const getImageDims = (src) => new Promise(resolve => { 
-      const img = new Image(); 
-      img.onload = () => resolve({ w: img.width, h: img.height }); 
-      img.onerror = () => resolve({ w: 85, h: 60 }); 
-      img.src = src; 
-    });
-
-    const primaryColor = [30, 41, 59]; const secondaryColor = [100, 116, 139]; const accentColor = [37, 99, 235];
-    const lightBg = [248, 250, 252]; const borderColor = [226, 232, 240];
-
-    const loadSimpleLogo = async (src) => {
-      return new Promise((resolve) => {
-        const img = new Image(); img.src = src; img.crossOrigin = "Anonymous";
-        img.onload = () => {
-          const tempCanvas = document.createElement('canvas');
-          tempCanvas.width = img.width; tempCanvas.height = img.height;
-          const ctx = tempCanvas.getContext('2d'); ctx.drawImage(img, 0, 0, img.width, img.height);
-          resolve({ data: tempCanvas.toDataURL('image/png'), w: img.width, h: img.height });
-        };
-        img.onerror = () => resolve(null);
-        setTimeout(() => resolve(null), 1500); 
+      const getImageDims = (src) => new Promise(resolve => { 
+        const img = new Image(); 
+        img.onload = () => resolve({ w: img.width, h: img.height }); 
+        img.onerror = () => resolve({ w: 85, h: 60 }); 
+        img.src = src; 
       });
-    };
 
-    const [logoApp, logoLogistica] = await Promise.all([loadSimpleLogo('/logo.png'), loadSimpleLogo('/LogoLogistica.png')]);
+      const primaryColor = [30, 41, 59]; const secondaryColor = [100, 116, 139]; const accentColor = [37, 99, 235];
+      const lightBg = [248, 250, 252]; const borderColor = [226, 232, 240];
 
-    const drawHeader = (titleText) => {
-      docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 40, 'F');
-      docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(18); docPDF.setFont("helvetica", "bold");
-      docPDF.text(cleanStr(titleText), 105, 18, null, null, "center");
+      const loadSimpleLogo = async (src) => {
+        return new Promise((resolve) => {
+          const img = new Image(); img.src = src; img.crossOrigin = "Anonymous";
+          img.onload = () => {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = img.width; tempCanvas.height = img.height;
+            const ctx = tempCanvas.getContext('2d'); ctx.drawImage(img, 0, 0, img.width, img.height);
+            resolve({ data: tempCanvas.toDataURL('image/png'), w: img.width, h: img.height });
+          };
+          img.onerror = () => resolve(null);
+          setTimeout(() => resolve(null), 1500); 
+        });
+      };
+
+      const [logoApp, logoLogistica] = await Promise.all([loadSimpleLogo('/logo.png'), loadSimpleLogo('/LogoLogistica.png')]);
+
+      const drawHeader = (titleText) => {
+        docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 40, 'F');
+        docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(18); docPDF.setFont("helvetica", "bold");
+        docPDF.text(cleanStr(titleText), 105, 18, null, null, "center");
+        
+        const dateTxt = typeof formatDateDisplay === 'function' && job.scheduledDate ? formatDateDisplay(job.scheduledDate) : (job.scheduledDate || '-');
+        docPDF.setFontSize(9); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(148, 163, 184);
+        docPDF.text(`FECHA TRASLADO: ${dateTxt}`, 105, 26, null, null, "center");
+
+        docPDF.setFontSize(11); docPDF.setFont("times", "bolditalic"); docPDF.setTextColor(255, 255, 255);
+        if (logoLogistica) {
+          const ratio = logoLogistica.h / logoLogistica.w; let imgW = 35; let imgH = imgW * ratio;
+          if (imgH > 24) { imgH = 24; imgW = imgH / ratio; }
+          docPDF.addImage(logoLogistica.data, 'PNG', 27 - (imgW/2), 19 - (imgH/2), imgW, imgH);
+          docPDF.text("Logística TS SpA", 27, 34, null, null, "center");
+        }
+        if (logoApp) {
+          const ratio = logoApp.h / logoApp.w; let imgW = 20; let imgH = imgW * ratio;
+          if (imgH > 24) { imgH = 24; imgW = imgH / ratio; }
+          docPDF.addImage(logoApp.data, 'PNG', 183 - (imgW/2), 19 - (imgH/2), imgW, imgH);
+          docPDF.text("LogisticAPP", 183, 34, null, null, "center");
+        }
+      };
+
+      let pdfTitle = job.tripType === 'revision' ? "CERTIFICADO DE REVISION TECNICA" : (job.tripType === 'viaje' ? "TRASLADO A REGIONES" : "CHECKLIST DE TRASLADO");
+      drawHeader(pdfTitle);
+
+      let currentY = 50;
+      if (job.tripType === 'revision' && job.checklist?.rtStatus) {
+          const isApproved = job.checklist.rtStatus === 'aprobado';
+          const statusText = isApproved ? "APROBADO" : "RECHAZADO";
+          docPDF.setFillColor(isApproved ? 220 : 254, isApproved ? 252 : 226, isApproved ? 231 : 226);
+          docPDF.rect(0, 40, 210, 12, 'F');
+          docPDF.setFontSize(16); docPDF.setFont("helvetica", "bold");
+          docPDF.setTextColor(isApproved ? 22 : 220, isApproved ? 163 : 38, isApproved ? 74 : 38); 
+          docPDF.text(statusText, 195, 48, null, null, "right");
+          currentY = 60; 
+      }
+
+      const startY = currentY; const leftColWidth = 90;
+      const drawSectionTitle = (title, y) => {
+        docPDF.setFillColor(...lightBg); docPDF.rect(15, y - 6, leftColWidth, 10, 'F');
+        docPDF.setDrawColor(...accentColor); docPDF.setLineWidth(1); docPDF.line(15, y - 6, 15, y + 4);
+        docPDF.setTextColor(...primaryColor); docPDF.setFontSize(10); docPDF.setFont("helvetica", "bold");
+        docPDF.text(cleanStr(title).toUpperCase(), 20, y+1);
+        return y + 10;
+      };
+
+      const drawKV = (label, value, x, y, maxW = 40) => {
+        docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
+        docPDF.text(cleanStr(label).toUpperCase(), x, y);
+        docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
+        const splitValue = docPDF.splitTextToSize(cleanStr(value), maxW); docPDF.text(splitValue, x, y + 4);
+        return splitValue.length * 4;
+      };
+
+      let driverNameStr = job.checklist?.assignedDriverName || job.acceptedByEmail || "Conductor";
+
+      currentY = drawSectionTitle("1. Detalles del Vehiculo", currentY);
+      let hC = drawKV("Cliente", `${job.client || 'Sin Cliente'}`, 15, currentY, 45);
+      let hM = drawKV("Marca y Modelo", `${job.brand || '-'} ${job.model || '-'}`, 65, currentY, 45);
+      currentY += Math.max(hC, hM) + 6;
+
+      let hP = drawKV("Patente / VIN", `${job.plate || job.vin || '-'}`, 15, currentY, 45);
+      let hD = drawKV("Conductor", driverNameStr, 65, currentY, 45);
+      currentY += Math.max(hP, hD) + 6;
       
-      // Intentamos usar tu función global si está disponible, si no, fallback
-      const dateTxt = typeof formatDateDisplay === 'function' && job.scheduledDate ? formatDateDisplay(job.scheduledDate) : (job.scheduledDate || '-');
-      docPDF.setFontSize(9); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(148, 163, 184);
-      docPDF.text(`FECHA TRASLADO: ${dateTxt}`, 105, 26, null, null, "center");
-
-      docPDF.setFontSize(11); docPDF.setFont("times", "bolditalic"); docPDF.setTextColor(255, 255, 255);
-      if (logoLogistica) {
-        const ratio = logoLogistica.h / logoLogistica.w; let imgW = 35; let imgH = imgW * ratio;
-        if (imgH > 24) { imgH = 24; imgW = imgH / ratio; }
-        docPDF.addImage(logoLogistica.data, 'PNG', 27 - (imgW/2), 19 - (imgH/2), imgW, imgH);
-        docPDF.text("Logística TS SpA", 27, 34, null, null, "center");
+      let routeText = `${job.origin || '-'}  ->  ${job.destination || '-'}`;
+      if (job.tripType === 'revision') {
+        if (job.checklist?.rtStatus === 'aprobado') {
+           const ret = job.checklist.rtReturnOption === 'other' ? job.checklist.rtReturnDestination : job.origin;
+           routeText = `${job.origin || '-'}  ->  PRT  ->  ${ret || '-'}`;
+        } else if (job.checklist?.rtStatus === 'rechazado') {
+           routeText = `${job.origin || '-'}  ->  PRT (Rechazada)`;
+        } else {
+           routeText = `${job.origin || '-'}  ->  PRT`;
+        }
       }
-      if (logoApp) {
-        const ratio = logoApp.h / logoApp.w; let imgW = 20; let imgH = imgW * ratio;
-        if (imgH > 24) { imgH = 24; imgW = imgH / ratio; }
-        docPDF.addImage(logoApp.data, 'PNG', 183 - (imgW/2), 19 - (imgH/2), imgW, imgH);
-        docPDF.text("LogisticAPP", 183, 34, null, null, "center");
-      }
-    };
+      let routeH = drawKV("Ruta Asignada", routeText, 15, currentY, leftColWidth);
+      currentY += routeH + 8;
 
-    let pdfTitle = job.tripType === 'revision' ? "CERTIFICADO DE REVISION TECNICA" : (job.tripType === 'viaje' ? "TRASLADO A REGIONES" : "CHECKLIST DE TRASLADO");
-    drawHeader(pdfTitle);
+      currentY = drawSectionTitle("2. Recepcion y Estado", currentY);
+      
+      const getDocStatus = (docKey) => {
+          const isOk = job.checklist?.docs?.[docKey];
+          const expDate = job.checklist?.docsExpiry?.[docKey];
+          if (!isOk) return 'FALTA';
+          if (expDate) {
+              const [y, m, d] = expDate.split('-');
+              return `AL DIA (Vence: ${d}/${m}/${y})`;
+          }
+          return 'AL DIA';
+      };
 
-    let currentY = 50;
-    if (job.tripType === 'revision' && job.checklist?.rtStatus) {
-        const isApproved = job.checklist.rtStatus === 'aprobado';
-        const statusText = isApproved ? "APROBADO" : "RECHAZADO";
-        docPDF.setFillColor(isApproved ? 220 : 254, isApproved ? 252 : 226, isApproved ? 231 : 226);
-        docPDF.rect(0, 40, 210, 12, 'F');
-        docPDF.setFontSize(16); docPDF.setFont("helvetica", "bold");
-        docPDF.setTextColor(isApproved ? 22 : 220, isApproved ? 163 : 38, isApproved ? 74 : 38); 
-        docPDF.text(statusText, 195, 48, null, null, "right");
-        currentY = 60; 
-    }
+      let hFuel = drawKV("Combustible", `${job.checklist?.fuelLevel || '0'}%`, 15, currentY, 45);
+      let hSoap = drawKV("Seguro SOAP", getDocStatus('soap'), 65, currentY, 45);
+      currentY += Math.max(hFuel, hSoap) + 6;
 
-    const startY = currentY; const leftColWidth = 90;
-    const drawSectionTitle = (title, y) => {
-      docPDF.setFillColor(...lightBg); docPDF.rect(15, y - 6, leftColWidth, 10, 'F');
-      docPDF.setDrawColor(...accentColor); docPDF.setLineWidth(1); docPDF.line(15, y - 6, 15, y + 4);
-      docPDF.setTextColor(...primaryColor); docPDF.setFontSize(10); docPDF.setFont("helvetica", "bold");
-      docPDF.text(cleanStr(title).toUpperCase(), 20, y+1);
-      return y + 10;
-    };
+      let hPerm = drawKV("Permiso Circ.", getDocStatus('permiso'), 15, currentY, 45);
+      let hRev = drawKV("Rev. Tecnica", getDocStatus('revTecnica'), 65, currentY, 45);
+      currentY += Math.max(hPerm, hRev) + 6;
 
-    const drawKV = (label, value, x, y, maxW = 40) => {
+      let hGas = drawKV("Gases", getDocStatus('gases'), 15, currentY, 45);
+      currentY += hGas + 8;
+
       docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
-      docPDF.text(cleanStr(label).toUpperCase(), x, y);
+      docPDF.text("OBSERVACIONES:", 15, currentY);
       docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
-      const splitValue = docPDF.splitTextToSize(cleanStr(value), maxW); docPDF.text(splitValue, x, y + 4);
-      return splitValue.length * 4;
-    };
+      const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin observaciones registradas.'}`), leftColWidth);
+      docPDF.text(obsSplit, 15, currentY + 4);
+      currentY += (obsSplit.length * 4) + 6;
 
-    // Rescatar nombre de conductor (El cliente no tiene la base de datos de drivers, así que la armamos de lo que esté guardado en el Job)
-    let driverNameStr = job.checklist?.assignedDriverName || job.acceptedByEmail || "Conductor";
-    if (job.assignedDrivers && job.assignedDrivers.length > 0) {
-       const found = job.assignedDrivers.find(d => d.email === job.acceptedByEmail);
-       if (found) driverNameStr = found.name;
-    }
+      if (job.checklist?.hasWaitTime) {
+        docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38);
+        const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth);
+        docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2;
+      }
+      if (job.checklist?.hasFuelCharge) {
+        docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(37, 99, 235);
+        const fcStr = docPDF.splitTextToSize(`CARGA DE COMBUSTIBLE: ${cleanStr(job.checklist.fuelChargeAmount || 'Sí')}`, leftColWidth);
+        docPDF.text(fcStr, 15, currentY); currentY += (fcStr.length * 4) + 2;
+      }
+      currentY += 8; 
 
-    currentY = drawSectionTitle("1. Detalles del Vehiculo", currentY);
-    let hC = drawKV("Cliente", `${job.client || 'Sin Cliente'}`, 15, currentY, 45);
-    let hM = drawKV("Marca y Modelo", `${job.brand || '-'} ${job.model || '-'}`, 65, currentY, 45);
-    currentY += Math.max(hC, hM) + 6;
+      let sectionNum = 3;
 
-    let hP = drawKV("Patente / VIN", `${job.plate || job.vin || '-'}`, 15, currentY, 45);
-    let hD = drawKV("Conductor", driverNameStr, 65, currentY, 45);
-    currentY += Math.max(hP, hD) + 6;
-    
-    let routeText = `${job.origin || '-'}  ->  ${job.destination || '-'}`;
-    if (job.tripType === 'revision') {
-      if (job.checklist?.rtStatus === 'aprobado') {
-         const ret = job.checklist.rtReturnOption === 'other' ? job.checklist.rtReturnDestination : job.origin;
-         routeText = `${job.origin || '-'}  ->  PRT  ->  ${ret || '-'}`;
-      } else if (job.checklist?.rtStatus === 'rechazado') {
-         routeText = `${job.origin || '-'}  ->  PRT (Rechazada)`;
+      if (job.tripType === 'revision') {
+         currentY = drawSectionTitle(`${sectionNum}. Resultado`, currentY);
+         if (job.checklist?.rtStatus === 'aprobado') {
+           docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(16); 
+           docPDF.text("APROBADO", 15, currentY + 6);
+           currentY += 18; 
+         } else {
+           docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(16); 
+           docPDF.text("RECHAZADO", 15, currentY + 6);
+           docPDF.setFontSize(10); docPDF.setTextColor(153, 27, 27);
+           const rejSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.checklist?.rtRejectReason || job.failedReason || 'No especificada'}`), leftColWidth);
+           docPDF.text(rejSplit, 15, currentY + 12);
+           currentY += 20 + (rejSplit.length * 4); 
+         }
+         sectionNum++;
+      }
+
+      currentY = drawSectionTitle(`${sectionNum}. Conformidad Entrega`, currentY);
+      if (job.checklist?.noReception) {
+        docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(9);
+        const nrSplit = docPDF.splitTextToSize("ENTREGA SIN RECEPCION (Confirmada por conductor en terreno)", leftColWidth);
+        docPDF.text(nrSplit, 15, currentY + 4); currentY += (nrSplit.length * 4) + 6;
       } else {
-         routeText = `${job.origin || '-'}  ->  PRT`;
-      }
-    }
-    let routeH = drawKV("Ruta Asignada", routeText, 15, currentY, leftColWidth);
-    currentY += routeH + 8;
-
-    currentY = drawSectionTitle("2. Recepcion y Estado", currentY);
-    
-    const getDocStatus = (docKey) => {
-        const isOk = job.checklist?.docs?.[docKey];
-        const expDate = job.checklist?.docsExpiry?.[docKey];
-        if (!isOk) return 'FALTA';
-        if (expDate) {
-            const [y, m, d] = expDate.split('-');
-            return `AL DIA (Vence: ${d}/${m}/${y})`;
+        drawKV("Receptor", `${job.checklist?.receiverName || 'N/A'}`, 15, currentY, leftColWidth); currentY += 12;
+        drawKV("RUT", `${job.checklist?.receiverRut || 'N/A'}`, 15, currentY, leftColWidth); currentY += 12;
+        
+        if (job.checklist?.clientComments) {
+            docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
+            docPDF.text("COMENTARIOS:", 15, currentY);
+            docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
+            const commSplit = docPDF.splitTextToSize(cleanStr(job.checklist.clientComments), leftColWidth);
+            docPDF.text(commSplit, 15, currentY + 4);
+            currentY += (commSplit.length * 4) + 6;
         }
-        return 'AL DIA';
-    };
 
-    let hFuel = drawKV("Combustible", `${job.checklist?.fuelLevel || '0'}%`, 15, currentY, 45);
-    let hSoap = drawKV("Seguro SOAP", getDocStatus('soap'), 65, currentY, 45);
-    currentY += Math.max(hFuel, hSoap) + 6;
+        if(job.checklist?.signatureData) {
+            docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
+            docPDF.text("FIRMA DE CONFORMIDAD:", 15, currentY);
+            docPDF.addImage(job.checklist.signatureData, 'PNG', 15, currentY + 2, 45, 25);
+            currentY += 30;
+        }
+      }
 
-    let hPerm = drawKV("Permiso Circ.", getDocStatus('permiso'), 15, currentY, 45);
-    let hRev = drawKV("Rev. Tecnica", getDocStatus('revTecnica'), 65, currentY, 45);
-    currentY += Math.max(hPerm, hRev) + 6;
+      const frontPhotoStr = job.checklist?.photos?.front;
+      if (frontPhotoStr && typeof frontPhotoStr === 'string' && frontPhotoStr.startsWith('data:image')) {
+        try {
+          const dims = await getImageDims(frontPhotoStr); const ratio = dims.h / dims.w;
+          let imgW = 80; let imgH = imgW * ratio; if (imgH > 130) { imgH = 130; imgW = imgH / ratio; }
+          const rightX = 115; const rightY = startY + 6;
+          docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(rightX - 2, rightY - 8, imgW + 4, imgH + 12, 2, 2, 'S');
+          docPDF.setFillColor(...lightBg); docPDF.rect(rightX - 2, rightY - 8, imgW + 4, 8, 'F');
+          docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor);
+          docPDF.text("VISTA FRONTAL", rightX + (imgW/2), rightY - 3, { align: "center" });
+          docPDF.addImage(frontPhotoStr, 'JPEG', rightX, rightY + 2, imgW, imgH);
+        } catch (err) { console.error(err); }
+      }
 
-    let hGas = drawKV("Gases", getDocStatus('gases'), 15, currentY, 45);
-    currentY += hGas + 8;
+      const addFooter = () => {
+         const pageCount = docPDF.internal.getNumberOfPages();
+         for(let i = 1; i <= pageCount; i++) {
+             docPDF.setPage(i); docPDF.setFontSize(8); docPDF.setTextColor(148, 163, 184);
+             docPDF.text(`Generado por LogisticAPP el ${new Date().toLocaleString('es-CL')} - Pagina ${i} de ${pageCount}`, 105, 290, null, null, "center");
+         }
+      }
 
-    docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
-    docPDF.text("OBSERVACIONES:", 15, currentY);
-    docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
-    const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin observaciones registradas.'}`), leftColWidth);
-    docPDF.text(obsSplit, 15, currentY + 4);
-    currentY += (obsSplit.length * 4) + 6;
+      if (job.checklist?.photos) {
+        const photos = job.checklist.photos;
+        const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
+        let photoY = 46; let currentCol = 1; let addedPage = false;
 
-    if (job.checklist?.hasWaitTime) {
-      docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38);
-      const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth);
-      docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2;
-    }
-    if (job.checklist?.hasFuelCharge) {
-      docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(37, 99, 235);
-      const fcStr = docPDF.splitTextToSize(`CARGA DE COMBUSTIBLE: ${cleanStr(job.checklist.fuelChargeAmount || 'Sí')}`, leftColWidth);
-      docPDF.text(fcStr, 15, currentY); currentY += (fcStr.length * 4) + 2;
-    }
-    currentY += 8; 
+        for (const key in photos) {
+          if (key === 'front') continue; 
+          if (photos[key] && typeof photos[key] === 'string' && photos[key].startsWith('data:image')) {
+            if (!addedPage) { docPDF.addPage(); drawHeader("ANEXO FOTOGRAFICO"); addedPage = true; }
+            try {
+              const dims = await getImageDims(photos[key]); const ratio = dims.h / dims.w;
+              let imgW = 85; let imgH = imgW * ratio; if (imgH > 95) { imgH = 95; imgW = imgH / ratio; }
+              const slotCenter = currentCol === 1 ? 55 : 155; const finalX = slotCenter - (imgW / 2);
+              if (photoY + imgH > 275) { docPDF.addPage(); photoY = 46; drawHeader("ANEXO FOTOGRAFICO (CONT.)"); }
+              
+              docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S');
+              docPDF.setFillColor(...lightBg); docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F');
+              docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor);
+              docPDF.text((labels[key] || key).toUpperCase(), slotCenter, photoY - 3, { align: "center" });
+              docPDF.addImage(photos[key], 'JPEG', finalX, photoY + 2, imgW, imgH);
+              if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 20; }
+            } catch (err) {}
+          }
+        }
+      }
+      addFooter();
 
-    let sectionNum = 3;
-
-    if (job.tripType === 'revision') {
-       currentY = drawSectionTitle(`${sectionNum}. Resultado`, currentY);
-       if (job.checklist?.rtStatus === 'aprobado') {
-         docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(16); 
-         docPDF.text("APROBADO", 15, currentY + 6);
-         currentY += 18; 
-       } else {
-         docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(16); 
-         docPDF.text("RECHAZADO", 15, currentY + 6);
-         docPDF.setFontSize(10); docPDF.setTextColor(153, 27, 27);
-         const rejSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.checklist?.rtRejectReason || job.failedReason || 'No especificada'}`), leftColWidth);
-         docPDF.text(rejSplit, 15, currentY + 12);
-         currentY += 20 + (rejSplit.length * 4); 
-       }
-       sectionNum++;
-    }
-
-    currentY = drawSectionTitle(`${sectionNum}. Conformidad Entrega`, currentY);
-    if (job.checklist?.noReception) {
-      docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(9);
-      const nrSplit = docPDF.splitTextToSize("ENTREGA SIN RECEPCION (Confirmada por conductor en terreno)", leftColWidth);
-      docPDF.text(nrSplit, 15, currentY + 4); currentY += (nrSplit.length * 4) + 6;
-    } else {
-      drawKV("Receptor", `${job.checklist?.receiverName || 'N/A'}`, 15, currentY, leftColWidth); currentY += 12;
-      drawKV("RUT", `${job.checklist?.receiverRut || 'N/A'}`, 15, currentY, leftColWidth); currentY += 12;
+      const cleanPlate = job.plate || job.vin || 'SN';
+      const dateStrForFile = (job.scheduledDate || new Date().toISOString().split('T')[0]).replace(/\//g, '-');
+      const fileName = `Certificado.${dateStrForFile}.${(job.client || 'Cliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`; 
+      docPDF.save(fileName); 
+      setDownloadingId(null);
       
-      if (job.checklist?.clientComments) {
-          docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
-          docPDF.text("COMENTARIOS:", 15, currentY);
-          docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
-          const commSplit = docPDF.splitTextToSize(cleanStr(job.checklist.clientComments), leftColWidth);
-          docPDF.text(commSplit, 15, currentY + 4);
-          currentY += (commSplit.length * 4) + 6;
-      }
-
-      if(job.checklist?.signatureData) {
-          docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
-          docPDF.text("FIRMA DE CONFORMIDAD:", 15, currentY);
-          docPDF.addImage(job.checklist.signatureData, 'PNG', 15, currentY + 2, 45, 25);
-          currentY += 30;
-      }
-    }
-
-    const frontPhotoStr = job.checklist?.photos?.front;
-    if (frontPhotoStr && typeof frontPhotoStr === 'string' && frontPhotoStr.startsWith('data:image')) {
-      try {
-        const dims = await getImageDims(frontPhotoStr); const ratio = dims.h / dims.w;
-        let imgW = 80; let imgH = imgW * ratio; if (imgH > 130) { imgH = 130; imgW = imgH / ratio; }
-        const rightX = 115; const rightY = startY + 6;
-        docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(rightX - 2, rightY - 8, imgW + 4, imgH + 12, 2, 2, 'S');
-        docPDF.setFillColor(...lightBg); docPDF.rect(rightX - 2, rightY - 8, imgW + 4, 8, 'F');
-        docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor);
-        docPDF.text("VISTA FRONTAL", rightX + (imgW/2), rightY - 3, { align: "center" });
-        docPDF.addImage(frontPhotoStr, 'JPEG', rightX, rightY + 2, imgW, imgH);
-      } catch (err) { console.error(err); }
-    }
-
-    const addFooter = () => {
-       const pageCount = docPDF.internal.getNumberOfPages();
-       for(let i = 1; i <= pageCount; i++) {
-           docPDF.setPage(i); docPDF.setFontSize(8); docPDF.setTextColor(148, 163, 184);
-           docPDF.text(`Generado por LogisticAPP el ${new Date().toLocaleString('es-CL')} - Pagina ${i} de ${pageCount}`, 105, 290, null, null, "center");
-       }
-    }
-
-    if (job.checklist?.photos) {
-      const photos = job.checklist.photos;
-      const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
-      let photoY = 46; let currentCol = 1; let addedPage = false;
-
-      for (const key in photos) {
-        if (key === 'front') continue; 
-        if (photos[key] && typeof photos[key] === 'string' && photos[key].startsWith('data:image')) {
-          if (!addedPage) { docPDF.addPage(); drawHeader("ANEXO FOTOGRAFICO"); addedPage = true; }
-          try {
-            const dims = await getImageDims(photos[key]); const ratio = dims.h / dims.w;
-            let imgW = 85; let imgH = imgW * ratio; if (imgH > 95) { imgH = 95; imgW = imgH / ratio; }
-            const slotCenter = currentCol === 1 ? 55 : 155; const finalX = slotCenter - (imgW / 2);
-            if (photoY + imgH > 275) { docPDF.addPage(); photoY = 46; drawHeader("ANEXO FOTOGRAFICO (CONT.)"); }
-            
-            docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S');
-            docPDF.setFillColor(...lightBg); docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F');
-            docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor);
-            docPDF.text((labels[key] || key).toUpperCase(), slotCenter, photoY - 3, { align: "center" });
-            docPDF.addImage(photos[key], 'JPEG', finalX, photoY + 2, imgW, imgH);
-            if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 20; }
-          } catch (err) {}
-        }
-      }
-    }
-    addFooter();
-
-    // Guardado del archivo
-    const cleanPlate = job.plate || job.vin || 'SN';
-    const dateStrForFile = (job.scheduledDate || new Date().toISOString().split('T')[0]).replace(/\//g, '-');
-    const fileName = `Certificado.${dateStrForFile}.${(job.client || 'Cliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`; 
-    docPDF.save(fileName); 
-    setDownloadingId(null); // Apaga el relojito
-    
     } catch (error) {
-      console.error("Error crítico generando PDF en Portal:", error);
+      console.error("Error crítico generando PDF:", error);
       alert("Hubo un error al descargar el PDF. Verifica tu conexión a internet e intenta de nuevo.");
-      setDownloadingId(null); // Apaga el relojito en caso de error
+      setDownloadingId(null);
     }
   };
-  // ----------------------------------------------
 
   const [searchTerm, setSearchTerm] = useState('');
   
-  // NUEVO: Estados para la Firma Masiva
   const [batchSignOpen, setBatchSignOpen] = useState(false);
   const [batchFormData, setBatchFormData] = useState({ name: '', rut: '', comments: '', signature: null, selectedIds: [] });
 
   if (loading) return <div className="min-h-screen bg-slate-50 flex items-center justify-center"><p className="font-bold text-slate-400 animate-pulse flex items-center gap-2"><Clock className="w-5 h-5"/> Cargando portal...</p></div>;
 
-  // NUEVO: Lógica de Filtro
   const filteredJobs = jobs.filter(j => {
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
@@ -764,20 +753,16 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
   const activeJobs = filteredJobs.filter(j => j.status === 'pending' || j.status === 'accepted');
   const historyJobs = filteredJobs.filter(j => j.status === 'completed' || j.status === 'failed').slice(0, 30);
   
-  // NUEVO: Vehículos que tienen checklist guardado pero faltan por firmar
   const pendingSignatureJobs = activeJobs.filter(j => j.checklist && !j.checklist.clientSigned);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10 transition-colors duration-300">
-      {/* SE ANCLA CON LA CLASE fixed-nav-bar PARA EVITAR DESPLAZAMIENTOS */}
       <header className="fixed-nav-bar bg-blue-600 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300">
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
-          {/* Logo de la app */}
           <div className="bg-white/20 p-1 sm:p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">
             <img src="/logo.png" alt="Logo App" className="w-7 h-7 sm:w-12 sm:h-12 object-contain" />
           </div>
           
-          {/* Nombre de la aplicación */}
           <div className="flex flex-col justify-center">
             <h1 className="font-alfa text-lg sm:text-3xl tracking-wide shrink-0 text-white leading-none" style={{ paddingTop: '2px' }}>
               LogisticAPP
@@ -785,14 +770,12 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
             <span className="text-[9px] sm:text-[10px] font-bold text-blue-200 mt-0.5 tracking-widest">{APP_VERSION}</span>
           </div>
           
-          {/* Logo Logística TS SpA */}
           <div className="bg-white/20 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0 ml-0.5 sm:ml-1 overflow-hidden">
             <img src="/LogoLogistica.png" alt="Logística TS SpA" className="h-8 sm:h-15 object-contain" />
           </div>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-          {/* BOTÓN MODO OSCURO PARA CLIENTE */}
           {setDarkMode && (
             <button onClick={() => setDarkMode(!darkMode)} className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors shadow-sm border border-white/10">
               {darkMode ? <Sun className="w-5 h-5 text-yellow-300"/> : <Moon className="w-5 h-5 text-white"/>}
@@ -814,7 +797,6 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
           <p className="text-2xl font-black text-slate-800">{clientName}</p>
         </div>
 
-        {/* BARRA DE BÚSQUEDA */}
         <div className="relative max-w-2xl mx-auto">
            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
              <Search className="w-5 h-5 text-slate-400" />
@@ -822,7 +804,6 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
            <input type="text" placeholder="Buscar por patente, marca o modelo..." className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 shadow-sm transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
 
-        {/* NUEVO: BANNER DE FIRMA MASIVA */}
         {pendingSignatureJobs.length > 0 && (
           <div className="bg-blue-600 rounded-3xl p-5 shadow-xl text-white flex flex-col sm:flex-row items-center justify-between gap-4 animate-in zoom-in duration-300 border-4 border-blue-400 max-w-2xl mx-auto">
              <div>
@@ -838,7 +819,6 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
           </div>
         )}
 
-        {/* Sección 1: En Curso */}
         <div>
           <h3 className="font-extrabold text-slate-700 mb-4 flex items-center gap-2"><Navigation className="w-5 h-5 text-blue-600"/> Vehículos en Tránsito ({activeJobs.length})</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -866,10 +846,9 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
                   </div>
                 </div>
                 
-                <<div className="relative pl-8 space-y-6 before:absolute before:inset-y-2 before:left-[11px] before:w-0.5 before:bg-slate-100 flex-1">
-                  {/* PASO 1: Dinámico (Gris si busca, Azul si está asignado o en camino) */}
+                <div className="relative pl-8 space-y-6 before:absolute before:inset-y-2 before:left-[11px] before:w-0.5 before:bg-slate-100 flex-1">
                   <div className="relative">
-                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${isAccepted ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center transition-colors ${typeof darkMode !== 'undefined' && darkMode ? 'border-slate-900' : 'border-white'} ${isAccepted ? 'bg-blue-500' : 'bg-slate-200'}`}>
                       {isAccepted && <CheckCircle className="w-3 h-3 text-white"/>}
                     </div>
                     <p className={`font-extrabold text-sm ${isAccepted ? 'text-slate-800' : 'text-slate-400'}`}>
@@ -880,28 +859,25 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
                     </p>
                   </div>
                   
-                  {/* PASO 2: Vehículo en poder */}
                   <div className="relative">
-                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step2Done ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center transition-colors ${typeof darkMode !== 'undefined' && darkMode ? 'border-slate-900' : 'border-white'} ${step2Done ? 'bg-blue-500' : 'bg-slate-200'}`}>
                       {step2Done && <CheckCircle className="w-3 h-3 text-white"/>}
                     </div>
                     <p className={`font-extrabold text-sm ${step2Done ? 'text-slate-800' : 'text-slate-400'}`}>Vehículo en Tránsito</p>
                     <p className={`text-xs font-bold mt-0.5 ${step2Done ? 'text-blue-600' : 'text-slate-400'}`}>{step2Done ? 'El conductor tiene el vehículo en su poder' : 'Esperando retiro'}</p>
                   </div>
                   
-                  {/* PASO 3: Llegada */}
                   <div className="relative">
-                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step3Done ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center transition-colors ${typeof darkMode !== 'undefined' && darkMode ? 'border-slate-900' : 'border-white'} ${step3Done ? 'bg-blue-500' : 'bg-slate-200'}`}>
                       {step3Done && <CheckCircle className="w-3 h-3 text-white"/>}
                     </div>
                     <p className={`font-extrabold text-sm ${step3Done ? 'text-slate-800' : 'text-slate-400'}`}>{job.tripType === 'revision' ? 'En Planta de Revisión' : 'Llegada a Destino'}</p>
                     <p className={`text-xs font-bold mt-0.5 ${step3Done ? 'text-blue-600' : 'text-slate-400'}`}>{step3Done ? (job.tripType === 'revision' ? 'Realizando inspección técnica' : 'En proceso de entrega y checklist') : `Hacia ${job.tripType === 'revision' ? 'PRT' : job.destination}`}</p>
                   </div>
                   
-                  {/* PASO 4: Resultado PRT */}
                   {job.tripType === 'revision' && (
                   <div className="relative">
-                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step4Done ? (job.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200'}`}>
+                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center transition-colors ${typeof darkMode !== 'undefined' && darkMode ? 'border-slate-900' : 'border-white'} ${step4Done ? (job.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200'}`}>
                       {step4Done && <CheckCircle className="w-3 h-3 text-white"/>}
                     </div>
                     <p className={`font-extrabold text-sm ${step4Done ? (job.prt_result === 'rechazado' ? 'text-red-600' : 'text-green-600') : 'text-slate-400'}`}>Resultado de Revisión</p>
@@ -909,10 +885,9 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
                   </div>
                   )}
 
-                  {/* PASO 5: Camino a Destino (Solo si la PRT ya se resolvió) */}
                   {job.tripType === 'revision' && step4Done && (
                   <div className="relative">
-                    <div className="absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center bg-blue-500">
+                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center bg-blue-500 ${typeof darkMode !== 'undefined' && darkMode ? 'border-slate-900' : 'border-white'}`}>
                       <div className="w-2 h-2 bg-white rounded-full animate-ping"></div>
                     </div>
                     <p className="font-extrabold text-sm text-slate-800">Camino a destino</p>
@@ -925,7 +900,6 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
           </div>
         </div>
 
-        {/* NUEVO DISEÑO COMPACTO DE HISTORIAL (Tarjeta Estilo Ticket) */}
         <div>
           <h3 className="font-extrabold text-slate-700 mb-4 flex items-center gap-2"><CheckCircle className="w-5 h-5 text-green-600"/> Últimos Finalizados</h3>
           
@@ -936,19 +910,15 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
               const isFailed = job.status === 'failed';
               return (
               <div key={job.id} className="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between relative pl-4 overflow-hidden hover:shadow-md transition-shadow h-[120px]">
-                {/* Borde lateral grueso y coloreado */}
                 <div className={`absolute top-0 left-0 bottom-0 w-2 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
                 
-                {/* Fila 1: Auto y Patente Grande */}
                 <div className="flex justify-between items-center mb-1">
                   <p className="text-sm font-black text-slate-800 leading-tight truncate pr-2">{job.brand} {job.model}</p>
                   <span className="bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-md text-xs font-black uppercase tracking-widest shrink-0">{job.plate || 'S/N'}</span>
                 </div>
                 
-                {/* Fila 2: Ruta */}
                 <p className="text-slate-500 text-[10px] font-bold uppercase mb-2 flex items-center gap-1 truncate opacity-90"><MapPin className="w-3.5 h-3.5 shrink-0"/> {job.origin} ➔ {job.tripType === 'revision' ? 'PRT' : job.destination}</p>
                 
-                {/* Fila 3: Resultado y Botón PDF */}
                 <div className="flex justify-between items-end mt-auto pt-2 border-t border-slate-50">
                   <div>
                     <p className={`text-[11px] font-black uppercase ${isFailed ? 'text-red-500' : 'text-green-600'}`}>
@@ -966,7 +936,6 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
         </div>
       </main>
 
-      {/* NUEVO: MODAL DE FIRMA MASIVA */}
       {batchSignOpen && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[95vh] flex flex-col relative overflow-hidden animate-in fade-in zoom-in-95">
@@ -1039,9 +1008,11 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
           </div>
         </div>
       )}
+
     </div>
   );
 }
+
 function ClientSignView({ jobId, db }) {
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -1049,14 +1020,13 @@ function ClientSignView({ jobId, db }) {
   const [formData, setFormData] = useState({ name: '', rut: '', comments: '', signature: null });
   const [fullScreenImage, setFullScreenImage] = useState(null); 
   const [alertMessage, setAlertMessage] = useState(null);
-  const [downloadingId, setDownloadingId] = useState(null); // <-- ESTADO PARA EL BOTON DE DESCARGA
+  const [downloadingId, setDownloadingId] = useState(null);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'transport_jobs', jobId), (docSnap) => {
       if (docSnap.exists()) {
         const jobData = { id: docSnap.id, ...docSnap.data() };
         setJob(jobData);
-        // Si el cliente recarga la página y ya había firmado, saltamos al final
         if (jobData.checklist?.clientSigned) {
             setSubmitted(true);
         }
@@ -1076,15 +1046,13 @@ function ClientSignView({ jobId, db }) {
   
   if (!job) return <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center font-bold text-red-500"><XCircle className="w-12 h-12 mb-4 text-red-400"/>Acta no encontrada.<br/><span className="text-sm text-slate-400 mt-2">Verifica el link o escanea nuevamente.</span></div>;
   
-  // NUEVO: PANTALLA DE SINCRONIZACIÓN. Si el conductor aún está subiendo las fotos, el cliente espera aquí.
   if (!job.checklist) return <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center font-bold text-slate-600"><Clock className="w-12 h-12 mb-4 text-blue-500 animate-spin mx-auto"/>Sincronizando datos...<br/><span className="text-sm text-slate-400 mt-2">Esperando a que el celular del conductor termine de enviar las fotografías. No cierres esta pantalla, la firma aparecerá automáticamente.</span></div>;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.signature) return setAlertMessage("Por favor, firme en el recuadro blanco."); // <-- USA LA NUEVA ALERTA
+    if (!formData.signature) return setAlertMessage("Por favor, firme en el recuadro blanco."); 
     
     try {
-      // Unimos el checklist existente con los datos nuevos
       const updatedChecklist = {
         ...job.checklist,
         clientSigned: true,
@@ -1094,7 +1062,6 @@ function ClientSignView({ jobId, db }) {
         signatureData: formData.signature
       };
 
-      // Subimos el objeto completo a Firebase
       await updateDoc(doc(db, 'transport_jobs', jobId), {
         checklist: updatedChecklist
       });
@@ -1102,7 +1069,7 @@ function ClientSignView({ jobId, db }) {
       setSubmitted(true);
     } catch (error) { 
       console.error("Firebase Error:", error); 
-      setAlertMessage("Error al guardar la firma: " + error.message); // <-- USA LA NUEVA ALERTA
+      setAlertMessage("Error al guardar la firma: " + error.message); 
     }
   };
 
@@ -1371,7 +1338,7 @@ function ClientSignView({ jobId, db }) {
       
     } catch (error) {
       console.error("Error crítico generando PDF:", error);
-      setAlertMessage("Hubo un error al descargar el PDF. Verifica tu conexión a internet e intenta de nuevo.");
+      alert("Hubo un error al descargar el PDF. Verifica tu conexión a internet e intenta de nuevo.");
       setDownloadingId(null);
     }
   };
@@ -1489,7 +1456,7 @@ export default function App() {
   const clientTrack = params.get('client');
   const liveTrackId = params.get('track'); 
   
-  // NUEVO: Limpiamos la URL por si el escáner QR le agrega barras invertidas ("/") o espacios al final
+  // Limpiamos la URL por si el escáner QR le agrega barras invertidas ("/") o espacios al final
   const rawSign = params.get('sign');
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
 
@@ -1511,7 +1478,6 @@ export default function App() {
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
   const [simulatedClient, setSimulatedClient] = useState('');
   
-  // NUEVO: Estados para Modo Oscuro, Conexión Offline y Tuerca
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
@@ -1521,7 +1487,6 @@ export default function App() {
 
   const [dialogConfig, setDialogConfig] = useState(null);
 
-  // NUEVO: Escuchador de conexión a Internet (Idea 7)
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -1530,7 +1495,6 @@ export default function App() {
     return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); };
   }, []);
 
-  // NUEVO: Aplicador del Modo Oscuro Global (Idea 9)
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -1540,6 +1504,7 @@ export default function App() {
       localStorage.setItem('darkMode', 'false');
     }
   }, [darkMode]);
+
   const showAlert = (message) => setDialogConfig({ type: 'alert', message });
   const showConfirm = (message, onConfirm) => setDialogConfig({ type: 'confirm', message, onConfirm });
   const closeDialog = () => setDialogConfig(null);
@@ -1585,7 +1550,6 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
     
-    // OPTIMIZACIÓN 1: Traer solo los últimos 200 trabajos (evita descargar historial antiguo)
     const qJobs = query(collection(db, 'transport_jobs'), orderBy('createdAt', 'desc'), limit(200));
     
     const unsubJobs = onSnapshot(qJobs, (snapshot) => {
@@ -1601,12 +1565,10 @@ export default function App() {
           }
         });
       }
-      // Ya vienen ordenados de Firebase, solo mapeamos
       setJobs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       isFirstLoad.current = false;
     });
 
-    // OPTIMIZACIÓN 2: Traer solo los últimos 300 gastos
     const qExpenses = query(collection(db, 'expenses'), orderBy('createdAt', 'desc'), limit(300));
 
     const unsubDrivers = onSnapshot(collection(db, 'drivers'), snap => setDrivers(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
@@ -1628,7 +1590,6 @@ export default function App() {
         background-color: #f8fafc; 
         transition: background-color 0.3s; 
         
-        /* MAGIA APP NATIVA */
         overscroll-behavior-y: none;
         touch-action: manipulation;
         -webkit-tap-highlight-color: transparent;
@@ -1636,7 +1597,6 @@ export default function App() {
       
       .font-alfa { font-family: 'Alfa Slab One', serif; font-weight: 400; }
       
-      /* REGLAS MAESTRAS MODO OSCURO (Anula Tailwind) */
       .dark body { background-color: #020617 !important; color: #f8fafc !important; }
       .dark header.fixed-nav-bar { background-color: #0f172a !important; border-bottom: 1px solid #1e293b !important; }
       .dark .bg-white:not(canvas) { background-color: #0f172a !important; border-color: #1e293b !important; }
@@ -1655,13 +1615,11 @@ export default function App() {
       .dark .text-blue-800 { color: #93c5fd !important; }
       .dark .text-blue-600 { color: #60a5fa !important; }
 
-      /* CORRECCIÓN: FORZAR FONDO OSCURO EN LAS LISTAS DESPLEGABLES */
       .dark select, .dark option {
         background-color: #0f172a !important;
         color: #e2e8f0 !important;
       }
 
-      /* CLASE CUSTOM PARA CONGELAR LA BARRA DE NAVEGACIÓN SIN REBOTE */
       .fixed-nav-bar {
         position: fixed !important;
         top: 0 !important;
@@ -1672,7 +1630,6 @@ export default function App() {
     `}</style>
   );
 
-  // --- NUEVO: SI HAY UN CLIENTE EN LA URL, MOSTRAR PORTAL DE CLIENTE ---
   if (clientTrack) {
     return (
       <>
@@ -1681,9 +1638,7 @@ export default function App() {
       </>
     );
   }
-  // --------------------------------------------------------------------------------
 
-  // --- NUEVO: SI EL ADMIN ELIGE VISTA CLIENTE ---
   if (user && activeRole === 'client' && simulatedClient) {
     return (
       <>
@@ -1692,9 +1647,7 @@ export default function App() {
       </>
     );
   }
-  // --------------------------------------------------------------------------------
   
-  // --- NUEVO: VISTA DE FIRMA REMOTA DEL CLIENTE ---
   if (signTrackId) {
     return (
       <>
@@ -1703,7 +1656,6 @@ export default function App() {
       </>
     );
   }
-  // --------------------------------------------------------------------------------
   
   if (!user) {
     return (
@@ -1752,24 +1704,20 @@ export default function App() {
       {globalStyles}
       <header className="fixed-nav-bar bg-blue-600 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300">
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
-      {/* Logo de la app más pequeño en móvil */}
       <div className="bg-white/20 p-1 sm:p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">
         <img src="/logo.png" alt="Logo App" className="w-7 h-7 sm:w-12 sm:h-12 object-contain" />
       </div>
       
-      {/* Nombre de la aplicación adaptado para no chocar */}
       <h1 className="font-alfa text-lg sm:text-3xl tracking-wide shrink-0 text-white" style={{ paddingTop: '2px' }}>
         LogisticAPP
       </h1>
       
-      {/* Logo Logística TS SpA ajustado al nuevo tamaño */}
       <div className="bg-white/20 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0 ml-0.5 sm:ml-1 overflow-hidden">
         <img src="/LogoLogistica.png" alt="Logística TS SpA" className="h-8 sm:h-15 object-contain" />
       </div>
     </div>
         <div className="flex items-center gap-2 sm:gap-4">
           
-          {/* NUEVO: BOTÓN TUERCA (AJUSTES) */}
           <div className="relative">
             <button onClick={() => setSettingsOpen(!settingsOpen)} className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors shadow-sm border border-white/10">
               <Settings className="w-5 h-5 text-white" />
@@ -1781,14 +1729,12 @@ export default function App() {
                   <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider text-center">Ajustes de App</p>
                 </div>
                 <div className="p-4 space-y-5">
-                  {/* Estado de Red */}
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-bold text-slate-700">Señal de Red</span>
                     <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm border ${isOnline ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200 animate-pulse'}`}>
                       {isOnline ? <><Wifi className="w-3.5 h-3.5"/> Online</> : <><CloudOff className="w-3.5 h-3.5"/> Offline</>}
                     </div>
                   </div>
-                  {/* Switch Modo Oscuro */}
                   <div className="flex items-center justify-between border-t border-slate-100 pt-4">
                     <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
                       {darkMode ? <Moon className="w-4 h-4 text-blue-600"/> : <Sun className="w-4 h-4 text-amber-500"/>} Modo Oscuro
@@ -1939,7 +1885,6 @@ function LeaderboardView({ jobs, drivers, isAdminView }) {
   const [selectedDriverJobs, setSelectedDriverJobs] = useState(null);
   const now = new Date(); const firstOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
   
-  // Modificado: Ahora cuenta los completados Y las revisiones técnicas fallidas del mes
   const monthlyCompleted = jobs.filter(j => {
     if (!j.completedAt || j.completedAt < firstOfCurrentMonth) return false;
     return j.status === 'completed' || (j.status === 'failed' && j.tripType === 'revision');
@@ -2001,7 +1946,6 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
     e.preventDefault();
     const currentBalance = drivers.find(d => d.id === driverId)?.balance || 0;
     
-    // Si es conductor, bloquea si no hay saldo
     if (!isAdminView && type === 'expense' && amount > currentBalance) return showAlert("Saldo insuficiente.");
     
     const assocJobId = e.target.jobId?.value || '';
@@ -2012,21 +1956,18 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
       if (jb) detailString += ` (Asoc. a patente ${jb.plate || jb.vin || 'S/N'})`;
     }
 
-    // Lógica para saldos y negativos
     let newBalance = currentBalance;
-    let deductedAmount = amount; // <-- NUEVO: Memoria de cuánto se descontó realmente
+    let deductedAmount = amount; 
     
     if (type === 'assignment') {
        newBalance = currentBalance + amount;
     } else if (type === 'expense') {
        if (isAdminView) {
           if (assocJobId) {
-             // Si el admin asocia el gasto a un trabajo, el saldo puede quedar en negativo
              newBalance = currentBalance - amount;
           } else {
-             // Si es un gasto libre (sólo anotar), el saldo no baja de 0
              newBalance = Math.max(0, currentBalance - amount);
-             deductedAmount = currentBalance - newBalance; // Calcula cuánto se restó de verdad
+             deductedAmount = currentBalance - newBalance; 
           }
        } else {
           newBalance = currentBalance - amount;
@@ -2035,7 +1976,6 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
 
     try {
       await updateDoc(doc(db, 'drivers', driverId), { balance: newBalance });
-      // Guardamos también el "deductedAmount" en la base de datos
       await addDoc(collection(db, 'expenses'), { driverId, driverEmail: dEmail, driverName: dName, type, amount, detail: detailString, jobId: assocJobId, deductedAmount, createdAt: Date.now() });
       e.target.reset(); 
       showAlert(type === 'assignment' ? "Fondo asignado correctamente." : "Gasto registrado exitosamente.");
@@ -2069,7 +2009,6 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
       try {
         const d = drivers.find(x => x.id === exp.driverId);
         if (d) {
-           // Al eliminar, solo devuelve el dinero que REALMENTE se le descontó al conductor
            let amountToRestore = exp.type === 'assignment' ? -exp.amount : (exp.deductedAmount !== undefined ? exp.deductedAmount : exp.amount);
            await updateDoc(doc(db, 'drivers', d.id), { balance: (d.balance||0) + amountToRestore });
         }
@@ -2104,18 +2043,12 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
              currentDriverBalance += amountDiff;
           } else if (expense.type === 'expense' || expense.type === 'return') {
              let oldDeducted = expense.deductedAmount !== undefined ? expense.deductedAmount : expense.amount;
-             
-             // 1. Devolvemos el dinero que se había descontado originalmente
              currentDriverBalance += oldDeducted;
-             
-             // 2. Aplicamos el nuevo descuento
              if (isAdminView && !expense.jobId && expense.type === 'expense') {
-                 // Si es gasto libre, vuelve a respetar el límite de 0
                  let balanceAfter = Math.max(0, currentDriverBalance - newAmount);
                  newlyDeducted = currentDriverBalance - balanceAfter;
                  currentDriverBalance = balanceAfter;
              } else {
-                 // Si es con trabajo, descuenta directo
                  currentDriverBalance -= newAmount;
                  newlyDeducted = newAmount;
              }
@@ -2317,9 +2250,8 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   const [jobToFail, setJobToFail] = useState(null);
   const [prtPromptJob, setPrtPromptJob] = useState(null); 
   const [historyClientFilter, setHistoryClientFilter] = useState(''); 
-  const [searchTerm, setSearchTerm] = useState(''); // <-- ESTADO BÚSQUEDA
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // Función para actualizar la fase del traslado en vivo (SE DECLARA SOLO UNA VEZ)
   const updatePhase = async (job, phase, extra = {}) => {
     try { await updateDoc(doc(db, 'transport_jobs', job.id), { phase, ...extra }); } 
     catch (e) { console.error(e); showAlert("Error de conexión al actualizar fase."); }
@@ -2328,7 +2260,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   const now = new Date();
   const isAdminView = role === 'admin';
   
-  // LÓGICA DE FILTRADO Y BÚSQUEDA (SE DECLARA SOLO UNA VEZ)
   const filteredJobs = jobs.filter(job => {
     if (!isAdminView) {
       if (job.status === 'pending') {
@@ -2348,7 +2279,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       if (job.createdAt < firstOfCurrentMonth) return false;
     }
 
-    // Filtro de Búsqueda
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       const matchPlate = (job.plate || '').toLowerCase().includes(term);
@@ -2394,7 +2324,10 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         acceptedByEmail: currentUserEmail || '' 
       }); 
     } 
-    catch (e) { console.error(e); showAlert("Error de conexión al aceptar el traslado."); }
+    catch (e) { 
+      console.error(e); 
+      showAlert(`Error al aceptar: ${e.message}`); 
+    }
   };
 
   const handleDeleteJob = async (jobId) => {
@@ -2412,19 +2345,23 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
               assignedDrivers: job.assignedDrivers || [], assignedEmails: job.assignedEmails || [],
               status: 'pending', createdAt: Date.now(), checklist: null
           };
-          await addDoc(collection(db, 'transport_jobs'), cloneJob);
+          const cleanClone = JSON.parse(JSON.stringify(cloneJob));
+          await addDoc(collection(db, 'transport_jobs'), cleanClone);
       }
-      await updateDoc(doc(db, 'transport_jobs', job.id), { 
+      
+      const payload = {
         status: 'failed', 
         failedReason: reason === 'RECHAZO_RT_AUTOMATICO' ? (job.checklist?.rtRejectReason || 'Revisión Técnica Rechazada') : reason, 
         completedAt: Date.now(), 
         acceptedByEmail: job.acceptedByEmail || currentUserEmail || 'Admin'
-      });
+      };
+      
+      await updateDoc(doc(db, 'transport_jobs', job.id), JSON.parse(JSON.stringify(payload)));
       setJobToFail(null); 
-      showAlert(reason === 'RECHAZO_RT_AUTOMATICO' ? "Revisión rechazada. Se creó un nuevo traslado pendiente." : "Trabajo marcado como fallido o cancelado.");
+      showAlert(reason === 'RECHAZO_RT_AUTOMATICO' ? "Revisión rechazada y clonada a Pendiente." : "Trabajo marcado como fallido o cancelado.");
     } catch (e) { 
       console.error(e); 
-      showAlert(`Error: ${e.message}`); 
+      showAlert(`Error técnico: ${e.message}`); 
     }
   };
 
@@ -2443,7 +2380,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   };
 
   const buildPDFDoc = async (job) => {
-    // CORRECCIÓN: Carga ultra-segura de jsPDF compatible con Vite
     const jsPDFModule = await import('jspdf');
     const JsPDFClass = jsPDFModule.default?.jsPDF || jsPDFModule.default || jsPDFModule.jsPDF;
     const docPDF = new JsPDFClass();
@@ -2588,7 +2524,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     let driverNameStr = job.checklist?.assignedDriverName || job.acceptedByEmail || "No registrado";
     if (job.acceptedByEmail) { const foundDriver = drivers?.find(d => d.email === job.acceptedByEmail); if (foundDriver) driverNameStr = foundDriver.name; }
 
-// === COLUMNA IZQUIERDA ===
     currentY = drawSectionTitle("1. Detalles del Vehiculo", currentY);
     let hC = drawKV("Cliente", `${job.client || 'Sin Cliente'}`, 15, currentY, 45);
     let hM = drawKV("Marca y Modelo", `${job.brand || '-'} ${job.model || '-'}`, 65, currentY, 45);
@@ -2855,16 +2790,25 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
 
       {activeJobs.length > 0 && (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
-          {activeJobs.map(j => (
-            <div key={j.id} className="bg-white rounded-3xl border p-5 flex flex-col shadow-sm relative">
+          {activeJobs.map(j => {
+            const isPending = j.status === 'pending';
+            const isAccepted = j.status === 'accepted';
+            const phase = j.phase || 'claimed'; 
+            
+            const step2Done = isAccepted && ['picked_up', 'arrived_destination', 'arrived_prt', 'prt_done'].includes(phase);
+            const step3Done = isAccepted && ['arrived_destination', 'arrived_prt', 'prt_done'].includes(phase);
+            const step4Done = isAccepted && phase === 'prt_done';
+
+            return (
+            <div key={j.id} className="bg-white rounded-3xl border p-5 flex flex-col shadow-sm relative overflow-hidden">
+              <div className={`absolute top-0 left-0 w-full h-1.5 ${isPending ? 'bg-amber-400' : 'bg-blue-500'}`}></div>
               <div className="flex justify-between items-center mb-3 border-b pb-3">
-                <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase ${j.status==='pending'?'bg-amber-100 text-amber-700':'bg-blue-100 text-blue-700'}`}>{j.status==='pending'?'Pendiente':'En Curso'}</span>
+                <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase ${isPending?'bg-amber-100 text-amber-700':'bg-blue-100 text-blue-700'}`}>{isPending?'Pendiente':'En Curso'}</span>
                 <div className="flex gap-1.5 items-center relative">
                   {isAdminView && <button onClick={()=>onEditJob(j)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg"><Edit2 className="w-4 h-4"/></button>}
                   <button onClick={()=>setMenuOpenId(menuOpenId===j.id?null:j.id)} className="p-1.5 text-slate-400 hover:bg-slate-50 rounded-lg"><MoreVertical className="w-4 h-4"/></button>
                   {menuOpenId===j.id && (
                     <div className="absolute right-0 top-8 bg-white border shadow-2xl rounded-xl w-48 z-50 overflow-hidden text-xs">
-                      {/* NUEVO BOTÓN: COPIAR LINK DE PORTAL DE CLIENTE */}
                       <button onClick={() => {
                         const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
                         navigator.clipboard.writeText(`📍 Sigue en tiempo real todos los traslados de ${j.client || 'tu empresa'} aquí:\n${url}`);
@@ -2900,47 +2844,76 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                 </p>
                 <p className="text-slate-400 mt-2">Patente/VIN: <span className="text-slate-700 bg-slate-100 px-2 py-0.5 rounded ml-1 uppercase">{j.plate || j.vin || 'N/A'}</span></p>
               </div>
+
+              {/* TIMELINE VISUAL EN JOBSLIST */}
+              <div className="relative pl-8 space-y-6 before:absolute before:inset-y-2 before:left-[11px] before:w-0.5 before:bg-slate-100 flex-1 mb-4 mt-2">
+                <div className="relative">
+                  <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center transition-colors border-white ${isAccepted ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                    {isAccepted && <CheckCircle className="w-3 h-3 text-white"/>}
+                  </div>
+                  <p className={`font-extrabold text-sm ${isAccepted ? 'text-slate-800' : 'text-slate-400'}`}>
+                    {isAccepted ? (j.assignedDrivers?.find(d => d.email === j.acceptedByEmail)?.name || "Conductor en camino") : "Buscando conductor..."}
+                  </p>
+                  <p className={`text-xs font-bold mt-0.5 ${isAccepted ? 'text-slate-500' : 'text-slate-400'}`}>
+                    {isAccepted ? `Responsable del retiro en ${j.origin}` : `Esperando asignación`}
+                  </p>
+                </div>
+                
+                <div className="relative">
+                  <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center transition-colors border-white ${step2Done ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                    {step2Done && <CheckCircle className="w-3 h-3 text-white"/>}
+                  </div>
+                  <p className={`font-extrabold text-sm ${step2Done ? 'text-slate-800' : 'text-slate-400'}`}>Vehículo en Tránsito</p>
+                </div>
+                
+                <div className="relative">
+                  <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center transition-colors border-white ${step3Done ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                    {step3Done && <CheckCircle className="w-3 h-3 text-white"/>}
+                  </div>
+                  <p className={`font-extrabold text-sm ${step3Done ? 'text-slate-800' : 'text-slate-400'}`}>{j.tripType === 'revision' ? 'En PRT' : 'Llegada a Destino'}</p>
+                </div>
+              </div>
+
               <div className="mt-auto pt-4 border-t flex flex-col gap-2">
-                {j.status === 'pending' && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && (
+                {isPending && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && (
                   <button onClick={()=>handleAcceptJob(j)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">Reclamar Traslado</button>
                 )}
 
-                {j.status === 'accepted' && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
+                {isAccepted && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
                   <>
-                    {(!j.phase || j.phase === 'claimed') && (
+                    {(!phase || phase === 'claimed') && (
                       <button onClick={()=>updatePhase(j, 'picked_up')} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">🚘 Vehículo en mi poder</button>
                     )}
 
-                    {j.phase === 'picked_up' && j.tripType !== 'revision' && (
+                    {phase === 'picked_up' && j.tripType !== 'revision' && (
                       <button onClick={()=>updatePhase(j, 'arrived_destination')} className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">📍 Llegué a Destino</button>
                     )}
 
-                    {j.phase === 'picked_up' && j.tripType === 'revision' && (
+                    {phase === 'picked_up' && j.tripType === 'revision' && (
                       <button onClick={()=>updatePhase(j, 'arrived_prt')} className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">📍 Llegué a la PRT</button>
                     )}
 
-                    {j.phase === 'arrived_prt' && (
+                    {phase === 'arrived_prt' && (
                       <div className="flex gap-2">
                          <button onClick={()=>updatePhase(j, 'prt_done', { prt_result: 'aprobado' })} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">✅ Aprobado</button>
                          <button onClick={()=>setPrtPromptJob(j)} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">❌ Rechazado</button>
                       </div>
                     )}
 
-                    {(j.phase === 'arrived_destination' || j.phase === 'prt_done') && (
+                    {(phase === 'arrived_destination' || phase === 'prt_done') && (
                       <button onClick={()=>onStartChecklist(j)} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">📸 Entregar / Checklist</button>
                     )}
                   </>
                 )}
               </div>
             </div>
-          ))}
+          )})}
         </div>
       )}
 
       {historyJobs.length > 0 && (
         <div className="mt-8">
           <h3 className="font-extrabold text-lg text-slate-700 mb-4 border-b-2 border-slate-100 pb-2">Historial Simplificado</h3>
-          {/* AQUÍ ESTÁ LA MAGIA: Grilla de múltiples columnas */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {historyJobs.map(j => {
               const drv = drivers?.find(d => d.email === j.acceptedByEmail);
@@ -2948,7 +2921,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
               const isFailed = j.status === 'failed';
               
               return (
-              <div key={j.id} className="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between relative pl-4 overflow-hidden hover:shadow-md transition-shadow">
+              <div key={j.id} className="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between relative pl-4 overflow-hidden hover:shadow-md transition-shadow h-[120px]">
                 <div className={`absolute top-0 left-0 bottom-0 w-2 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
                 
                 <div className="flex justify-between items-center mb-1.5">
@@ -2960,546 +2933,4 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                 
                 <div className="mb-3 flex justify-between items-center">
                    <div>
-                     <p className="text-blue-600 font-extrabold text-[10px] uppercase tracking-wide truncate">Conductor: <span className="text-slate-700">{driverName}</span></p>
-                     {isFailed && <p className="text-red-600 text-[10px] mt-0.5 font-bold line-clamp-1">Razón: {j.failedReason}</p>}
-                   </div>
-                   <p className="text-slate-400 font-bold text-[9px] text-right shrink-0 ml-2">{getDStr(j)}</p>
-                </div>
-                
-                <div className="flex gap-1.5 mt-auto pt-2 border-t border-slate-50">
-                  <button onClick={()=>cpyWapp(j)} className="flex-1 py-1.5 flex justify-center bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors" title="Copiar Texto"><Copy className="w-4 h-4"/></button>
-                  <button onClick={() => generatePDF(j)} className="flex-1 py-1.5 flex justify-center bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg transition-colors" title="Descargar PDF"><FileDown className="w-4 h-4"/></button>
-                  <button onClick={() => handleShareWhatsAppPDF(j)} className="flex-1 py-1.5 flex justify-center bg-green-50 text-green-700 hover:bg-green-100 rounded-lg transition-colors" title="Compartir PDF"><Share2 className="w-4 h-4"/></button>
-                  {isAdminView && <button onClick={()=>handleDeleteJob(j.id)} className="flex-1 py-1.5 flex justify-center bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Eliminar Historial"><Trash2 className="w-4 h-4"/></button>}
-                </div>
-              </div>
-            )})}
-          </div>
-        </div>
-      )}
-
-      {jobToFail && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-          <form onSubmit={(e) => { e.preventDefault(); handleFailJob(jobToFail, e.target.reason.value); }} className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-xl">
-            <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5"><XCircle className="text-red-500"/> ¿Por qué falló el traslado?</h3>
-            <textarea name="reason" required placeholder="Escribe el motivo del fallo o cancelación aquí..." className="w-full border-2 p-3 rounded-xl font-bold text-sm outline-none focus:border-red-500" rows="3"></textarea>
-            <div className="flex gap-3"><button type="button" onClick={()=>setJobToFail(null)} className="flex-1 py-2 bg-slate-100 rounded-xl font-bold text-sm text-slate-600">Volver</button><button type="submit" className="flex-[2] py-2 bg-red-600 text-white rounded-xl font-bold text-sm shadow-md">Confirmar Fallo</button></div>
-          </form>
-        </div>
-      )}
-
-      {/* NUEVO: MODAL DE RECHAZO PRT RÁPIDO */}
-      {prtPromptJob && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-          <form onSubmit={(e) => { e.preventDefault(); updatePhase(prtPromptJob, 'prt_done', { prt_result: 'rechazado', prt_reason: e.target.reason.value }); setPrtPromptJob(null); }} className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-xl border-t-8 border-red-500">
-            <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5"><XCircle className="text-red-500"/> Motivo del Rechazo PRT</h3>
-            <textarea name="reason" required placeholder="Escribe por qué rechazaron el vehículo en la planta..." className="w-full border-2 p-3 rounded-xl font-bold text-sm outline-none focus:border-red-500" rows="3"></textarea>
-            <div className="flex gap-3">
-              <button type="button" onClick={()=>setPrtPromptJob(null)} className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-sm text-slate-600 transition-colors">Cancelar</button>
-              <button type="submit" className="flex-[2] py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm shadow-md transition-colors">Guardar Rechazo</button>
-            </div>
-          </form>
-        </div>
-      )}
-
-    </div>
-  );
-}
-function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList, drivers, expenses }) {
-  const isQuick = job.id === 'NEW_QUICK_JOB'; 
-  const localStorageKey = `checklist_draft_${job.id}`;
-
-  const defaultData = {
-    client: job.client||'', manualClient: '', brand: job.brand||'', model: job.model||'', plateOrVin: job.plate||job.vin||'', origin: job.origin||'', destination: job.destination||'', fuelLevel: 50, photos: { front:false, left:false, right:false, back:false, tire:false, dashboard:false, det1:false, det2:false, det3:false, det4:false }, docs: { soap:false, permiso:false, revTecnica:false, gases:false }, observations: '', receiverName: '', receiverRut: '', noReception: false, signatureData: null, location: null,
-    rtStatus: job.prt_result || 'aprobado', rtRejectReason: job.prt_reason || '', rtReturnOption: 'origin', rtReturnDestination: '' 
-  };
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState(defaultData);
-  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
-  const [qrOpen, setQrOpen] = useState(false); // <-- NUEVO ESTADO PARA QR (Idea 8)
-
-  // NUEVO: Escucha en tiempo real si el cliente firma desde su celular
-  useEffect(() => {
-    if (isQuick || !job.id) return;
-    const unsub = onSnapshot(doc(db, 'transport_jobs', job.id), (docSnap) => {
-      const data = docSnap.data();
-      if (data?.checklist?.clientSigned) {
-        setFormData(prev => ({
-          ...prev,
-          signatureData: data.checklist.signatureData,
-          receiverName: data.checklist.receiverName,
-          receiverRut: data.checklist.receiverRut,
-          clientComments: data.checklist.clientComments || ''
-        }));
-      }
-    });
-    return () => unsub();
-  }, [job.id, isQuick, db]);
-
-  const handleRemoteSignRequest = () => {
-    if (isQuick) return showAlert("⚠️ Para usar la Firma Remota en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
-    
-    const url = `${window.location.href.split('?')[0]}?sign=${job.id}`;
-    const mensaje = `¡Hola! Por favor firma el acta de recepción y revisa las fotografías del vehículo aquí:\n${url}`;
-    
-    let copiadoExitoso = false;
-    // Ejecución sincrónica nativa (Obligatorio en móviles para evitar bloqueo de seguridad)
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(mensaje).catch(e => console.warn(e));
-      copiadoExitoso = true;
-    } else {
-      // Truco maestro de Javascript antiguo si el celular bloquea la API moderna
-      const textArea = document.createElement("textarea");
-      textArea.value = mensaje;
-      document.body.appendChild(textArea);
-      textArea.select();
-      try { document.execCommand('copy'); copiadoExitoso = true; } catch (err) { console.error(err); }
-      document.body.removeChild(textArea);
-    } 
-
-    const cleanData = JSON.parse(JSON.stringify(formData));
-    updateDoc(doc(db, 'transport_jobs', job.id), { checklist: cleanData }).then(() => {
-      if (copiadoExitoso) {
-        showAlert("✅ Link copiado. Envíalo al cliente por WhatsApp. La pantalla se actualizará sola cuando firme.");
-      } else {
-        showAlert(`⚠️ Link generado. Cópialo manualmente:\n\n${url}`);
-      }
-    }).catch(e => showAlert(`Error de conexión: ${e.message}`));
-  };
-
-  const handleOpenQR = () => {
-    if (isQuick) return showAlert("⚠️ Para usar el Código QR en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
-    if (!navigator.onLine) return showAlert("⚠️ Tu celular no tiene señal en este momento.");
-    
-    setQrOpen(true); 
-    const cleanData = JSON.parse(JSON.stringify(formData));
-    updateDoc(doc(db, 'transport_jobs', job.id), { checklist: cleanData }).catch(e=>console.error(e));
-  };
-
-  useEffect(() => {
-    const savedDraft = localStorage.getItem(localStorageKey);
-    if (savedDraft) {
-      try {
-        const parsedData = JSON.parse(savedDraft);
-        setFormData(parsedData.formData);
-        setStep(parsedData.step || 1);
-        setIsDraftLoaded(true);
-      } catch (e) { console.error("Error al leer borrador", e); }
-    }
-  }, [localStorageKey]);
-
-  useEffect(() => {
-    localStorage.setItem(localStorageKey, JSON.stringify({ step, formData }));
-  }, [step, formData, localStorageKey]);
-
-  const setF = (f, v) => setFormData(p => ({...p, [f]:v}));
-
-  const clearDraft = () => {
-    showConfirm("¿Eliminar borrador y empezar de nuevo?", () => {
-      localStorage.removeItem(localStorageKey);
-      setFormData(defaultData);
-      setStep(1);
-      setIsDraftLoaded(false);
-    });
-  };
-
-  const handlePic = async (e, id) => {
-    const f=e.target.files[0]; if(!f)return;
-    try {
-      const dataUrl = await resizeImage(f, 500, 0.4); 
-      setF('photos', {...formData.photos, [id]: dataUrl}); 
-    } catch(err){ 
-      console.error("Error al procesar la foto:", err);
-      showAlert("Error al procesar la foto. Intenta con una imagen más pequeña."); 
-    }
-  };
-
-  const submit = async (e) => {
-    e.preventDefault();
-    if (!formData.noReception) {
-      if (!formData.receiverName || !formData.receiverRut) return showAlert("Debes ingresar el Nombre y RUT del receptor, o marcar 'Dejar sin firma'.");
-      if (!formData.signatureData) return showAlert("La firma del receptor es mandatoria.");
-    }
-    
-    let d = {...formData}; 
-    d.client = d.client === 'OTRO' ? d.manualClient : d.client; 
-
-    if(d.noReception) { 
-      d.receiverName="ENTREGA SIN RECEPCIÓN"; 
-      d.receiverRut="N/A"; 
-    }
-    
-    const rawFd = { scheduledDate: new Date().toISOString().split('T')[0], client: d.client, brand: d.brand, model: d.model, vin: d.plateOrVin, plate: d.plateOrVin, origin: d.origin, destination: d.destination, status: 'completed', completedAt: Date.now(), checklist: d, tripType: job.tripType || 'traslado' };
-    // TRUCO FIREBASE: Destruye cualquier valor 'undefined' dentro del objeto gigante para evitar el bloqueo del servidor
-    const fd = JSON.parse(JSON.stringify(rawFd));
-    
-    try {
-      // --- PARTE 2: AUTOMATIZAR MÚLTIPLES GASTOS (COMBUSTIBLE + PRT) ---
-      let totalToDeduct = 0;
-      const expensesToRegister = [];
-
-      // Función interna para limpiar números y añadir a la lista
-      const processExpense = (amountStr, detailStr) => {
-        const num = Number(String(amountStr).replace(/[^0-9]/g, ''));
-        if (num > 0) {
-          totalToDeduct += num;
-          expensesToRegister.push({ amount: num, detail: detailStr });
-        }
-      };
-
-      // 1. Leer Gasto de Combustible
-      if (d.hasFuelCharge && d.fuelChargeAmount) {
-        processExpense(d.fuelChargeAmount, `Carga Combustible (Patente: ${d.plateOrVin || 'S/N'})`);
-      }
-      
-      // 2. Leer Gastos PRT (Solo si es Revisión Técnica)
-      if (job.tripType === 'revision') {
-        if (job.rtData?.revision && d.prtCostRevision) processExpense(d.prtCostRevision, `Valor Revisión Técnica (Patente: ${d.plateOrVin || 'S/N'})`);
-        if (job.rtData?.inspeccion && d.prtCostInspeccion) processExpense(d.prtCostInspeccion, `Valor Inspección Visual (Patente: ${d.plateOrVin || 'S/N'})`);
-        if (job.rtData?.frenos && d.prtCostFrenos) processExpense(d.prtCostFrenos, `Valor Cert. Frenos (Patente: ${d.plateOrVin || 'S/N'})`);
-      }
-
-      // Si hubo algún gasto, lo procesamos
-      if (totalToDeduct > 0) {
-        const currentDriver = drivers?.find(drv => drv.email === currentUserEmail);
-        if (currentDriver) {
-          const currentBalance = currentDriver.balance || 0;
-          const newBalance = currentBalance - totalToDeduct;
-
-          // A. Descontar del saldo del conductor TODO sumado
-          await updateDoc(doc(db, 'drivers', currentDriver.id), { balance: newBalance });
-
-          // B. Registrar CADA gasto individualmente en la pestaña Finanzas
-          for (const exp of expensesToRegister) {
-            await addDoc(collection(db, 'expenses'), {
-              driverId: currentDriver.id,
-              driverEmail: currentDriver.email,
-              driverName: currentDriver.name,
-              type: 'expense',
-              amount: exp.amount,
-              detail: exp.detail,
-              jobId: job.id === 'NEW_QUICK_JOB' ? '' : job.id,
-              deductedAmount: exp.amount,
-              createdAt: Date.now()
-            });
-          }
-        }
-      }
-      // ----------------------------------------------------
-
-      if(isQuick) { 
-          fd.assignedDriverName="Auto-creado"; fd.acceptedByEmail=currentUserEmail; 
-          if (d.plateOrVin) {
-              const vehRef = collection(db, 'vehicles');
-              const q = query(vehRef, where('plate', '==', d.plateOrVin.toUpperCase()));
-              const querySnapshot = await getDocs(q);
-              if (querySnapshot.empty) {
-                await addDoc(vehRef, { plate: d.plateOrVin.toUpperCase(), brand: d.brand, model: d.model, client: d.client, createdAt: Date.now() });
-              }
-          }
-          await addDoc(collection(db,'transport_jobs'), fd); 
-      }
-      else { 
-          if (job.tripType === 'revision' && d.rtStatus === 'rechazado') {
-             fd.status = 'failed';
-             fd.failedReason = d.rtRejectReason || 'Revisión Técnica Rechazada';
-             
-             const cloneJob = {
-                scheduledDate: d.scheduledDate || null, client: d.client || '', brand: d.brand || '', model: d.model || '', vin: d.plateOrVin || '', plate: d.plateOrVin || '', origin: d.origin || '', destination: d.destination || '',
-                tripType: job.tripType || 'traslado', rtData: job.rtData || null,
-                assignedDrivers: job.assignedDrivers || [], assignedEmails: job.assignedEmails || [],
-                status: 'pending', createdAt: Date.now(), checklist: null
-             };
-             await addDoc(collection(db, 'transport_jobs'), cloneJob);
-          }
-          await updateDoc(doc(db,'transport_jobs',job.id), fd); 
-      }
-      
-      if (job.tripType === 'revision' && d.rtStatus === 'rechazado') {
-          showAlert("Revisión guardada como RECHAZADA. Se ha creado un nuevo traslado pendiente.");
-      } else {
-          showAlert("✅ Checklist guardado correctamente."); 
-      }
-      onComplete();
-    } catch(error) { 
-      console.error("Firebase Error:", error);
-      showAlert("Hubo un error al guardar. Verifica tu conexión a internet."); 
-    }
-  };
-
-  return (
-    <div className="bg-white rounded-3xl shadow-xl border pb-10 relative">
-      {isDraftLoaded && (
-         <div className="absolute -top-12 left-0 right-0 flex justify-center items-center">
-            <div className="bg-amber-100 text-amber-800 text-xs px-3 py-1.5 rounded-full font-bold flex items-center gap-2 shadow-sm border border-amber-200">
-               <Save className="w-3.5 h-3.5"/> Borrador recuperado
-               <button onClick={clearDraft} className="ml-2 text-amber-600 underline">Limpiar</button>
-            </div>
-         </div>
-      )}
-
-      <div className="bg-blue-600 text-white p-5 flex justify-between items-center rounded-t-3xl"><h2 className="font-bold text-base"><FileText className="inline w-5 h-5 mr-1"/> Formulario Checklist</h2><button type="button" onClick={()=>showConfirm("¿Deseas salir? (Tu progreso quedará guardado localmente)", onCancel)} className="bg-blue-800 px-3 py-1 rounded-xl text-xs font-bold">Salir</button></div>
-      <div className="flex bg-slate-100 h-1"><div className={`bg-green-500 transition-all duration-300 ${step===1?'w-1/2':'w-full'}`}></div></div>
-      <div className="p-5">
-        {step === 1 ? (
-          <div className="space-y-4 text-sm">
-            
-            {isQuick ? (
-              <div className="space-y-2">
-                 <select value={formData.client} onChange={(e) => setF('client', e.target.value)} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 bg-white outline-none focus:border-blue-500">
-                    <option value="">Selecciona el Cliente...</option>
-                    {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
-                    <option value="OTRO">Otro (Ingreso Manual)</option>
-                 </select>
-                 {formData.client === 'OTRO' && <input value={formData.manualClient} onChange={e=>setF('manualClient',e.target.value)} placeholder="Escribe el nombre del cliente" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 mt-2"/>}
-              </div>
-            ) : (
-              <input value={formData.client} onChange={e=>setF('client',e.target.value)} placeholder="Cliente" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700" readOnly/>
-            )}
-            
-            <div className="grid grid-cols-2 gap-4">
-              <input value={formData.brand} onChange={e=>setF('brand',e.target.value)} placeholder="Marca" className="w-full border-2 border-slate-200 bg-white p-3 rounded-xl font-bold text-slate-800"/>
-              <input value={formData.model} onChange={e=>setF('model',e.target.value)} placeholder="Modelo" className="w-full border-2 border-slate-200 bg-white p-3 rounded-xl font-bold text-slate-800"/>
-            </div>
-            <input value={formData.plateOrVin} onChange={e=>setF('plateOrVin',e.target.value)} placeholder="Patente o VIN" className="w-full border-2 border-slate-300 bg-slate-100 p-3 rounded-xl font-black uppercase text-slate-800 shadow-inner mt-2"/>
-            
-            {job.tripType === 'revision' && (
-              <>
-                <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-blue-600">Resultado de la Revisión</h3>
-                <select value={formData.rtStatus} onChange={e=>setF('rtStatus', e.target.value)} className={`w-full border-2 p-4 rounded-xl outline-none font-extrabold text-sm ${formData.rtStatus === 'aprobado' ? 'border-green-200 bg-green-50 text-green-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
-                  <option value="aprobado">✅ APROBADO</option>
-                  <option value="rechazado">❌ RECHAZADO</option>
-                </select>
-                {formData.rtStatus === 'rechazado' && (
-                  <input value={formData.rtRejectReason} onChange={e=>setF('rtRejectReason', e.target.value)} placeholder="¿Cuál fue la razón del rechazo?" required className="w-full border-2 border-red-300 p-4 rounded-xl outline-none focus:border-red-500 font-bold text-red-900 bg-white mt-2" />
-                )}
-                {formData.rtStatus === 'aprobado' && (
-                  <div className="mt-4 p-4 border-2 border-green-200 bg-green-50 rounded-xl space-y-3">
-                    <p className="text-sm font-bold text-green-800">¿Hacia dónde se dirige el vehículo tras aprobar?</p>
-                    <div className="flex gap-4">
-                      <label className="flex items-center gap-2 cursor-pointer text-sm font-bold text-green-700">
-                        <input type="radio" name="rtReturnOption" value="origin" checked={formData.rtReturnOption === 'origin'} onChange={e=>setF('rtReturnOption', e.target.value)} className="w-4 h-4 accent-green-600"/>
-                        Volver al Origen
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer text-sm font-bold text-green-700">
-                        <input type="radio" name="rtReturnOption" value="other" checked={formData.rtReturnOption === 'other'} onChange={e=>setF('rtReturnOption', e.target.value)} className="w-4 h-4 accent-green-600"/>
-                        Otro Destino
-                      </label>
-                    </div>
-                    {formData.rtReturnOption === 'other' && (
-                      <input value={formData.rtReturnDestination} onChange={e=>setF('rtReturnDestination', e.target.value)} placeholder="Especifique el destino final..." required className="w-full border-2 border-green-300 p-3 rounded-xl outline-none focus:border-green-500 font-bold text-green-900 bg-white" />
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-
-            <div className="space-y-1 pt-2">
-              <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-slate-800 mb-4">Combustible: <span className="text-blue-600">{formData.fuelLevel}%</span></h3>
-              <input type="range" min="0" max="100" step="5" value={formData.fuelLevel} onChange={(e) => setF('fuelLevel', e.target.value)} className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer" style={{background: `linear-gradient(to right, ${formData.fuelLevel < 30 ? '#ef4444' : formData.fuelLevel < 80 ? '#eab308' : '#22c55e'} ${formData.fuelLevel}%, #e2e8f0 ${formData.fuelLevel}%)`}} />
-            </div>
-            {/* --- BANNER DE FONDO ASIGNADO (Corregido) --- */}
-            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mt-6 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="bg-blue-100 p-2 rounded-lg">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-blue-600 uppercase">Fondo Asignado al Traslado</p>
-                  <p className="text-[10px] font-bold text-slate-500">Patente: {job.plate || job.vin || 'N/A'}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-xl font-extrabold text-blue-700">
-                  {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(
-                    expenses?.filter(g => g.jobId === job.id && g.type === 'assignment')
-                            .reduce((acc, curr) => acc + Number(curr.amount || 0), 0) || 0
-                  )}
-                </p>
-              </div>
-            </div>
-            
-            {/* --- NUEVO: GASTOS DE REVISIÓN TÉCNICA CONDICIONALES --- */}
-            {job.tripType === 'revision' && (job.rtData?.revision || job.rtData?.inspeccion || job.rtData?.frenos) && (
-              <div className="bg-indigo-50 border-2 border-indigo-200 rounded-xl p-4 mt-4 shadow-sm">
-                <h3 className="text-sm font-extrabold text-indigo-800 mb-3 flex items-center gap-2">
-                  <Receipt className="w-4 h-4" /> Valores pagados en PRT
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {job.rtData?.revision && (
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11px] font-bold text-indigo-600 uppercase">Revisión Técnica ($)</label>
-                      <input type="text" placeholder="Ej: 20000" className="w-full border-2 border-indigo-100 p-2.5 rounded-xl font-bold text-sm outline-none focus:border-indigo-400 bg-white" value={formData.prtCostRevision || ''} onChange={e => setF('prtCostRevision', e.target.value)} />
-                    </div>
-                  )}
-                  {job.rtData?.inspeccion && (
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11px] font-bold text-indigo-600 uppercase">Inspección Visual ($)</label>
-                      <input type="text" placeholder="Ej: 5000" className="w-full border-2 border-indigo-100 p-2.5 rounded-xl font-bold text-sm outline-none focus:border-indigo-400 bg-white" value={formData.prtCostInspeccion || ''} onChange={e => setF('prtCostInspeccion', e.target.value)} />
-                    </div>
-                  )}
-                  {job.rtData?.frenos && (
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11px] font-bold text-indigo-600 uppercase">Certificado Frenos ($)</label>
-                      <input type="text" placeholder="Ej: 8000" className="w-full border-2 border-indigo-100 p-2.5 rounded-xl font-bold text-sm outline-none focus:border-indigo-400 bg-white" value={formData.prtCostFrenos || ''} onChange={e => setF('prtCostFrenos', e.target.value)} />
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            {/* ----------------------------------------------------------------- */}
-
-            <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Documentos a bordo</h3>
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              {[{ id: 'soap', label: 'SOAP' }, { id: 'permiso', label: 'Permiso' }, { id: 'revTecnica', label: 'Rev. Técnica' }, { id: 'gases', label: 'Gases' }].map(doc => (
-                <div key={doc.id} className="flex flex-col gap-1">
-                  <label className={`flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all ${formData.docs[doc.id] ? 'border-green-500 bg-green-50 text-green-800' : 'border-slate-200 bg-white text-slate-600'}`}>
-                    <input type="checkbox" className="w-4 h-4 text-green-600 rounded cursor-pointer" checked={formData.docs[doc.id]} onChange={(e) => setF('docs', { ...formData.docs, [doc.id]: e.target.checked })} />
-                    <span className="font-extrabold text-xs">{doc.label}</span>
-                  </label>
-                  
-                  {/* Desplegable de fecha de vencimiento (Opcional) */}
-                  {formData.docs[doc.id] && (
-                    <div className="animate-in fade-in slide-in-from-top-2 duration-200">
-                      <p className="text-[10px] font-bold text-slate-400 mb-1 ml-1">Vencimiento (Opcional):</p>
-                      <input 
-                        type="date" 
-                        value={formData.docsExpiry?.[doc.id] || ''} 
-                        onChange={(e) => setF('docsExpiry', { ...(formData.docsExpiry || {}), [doc.id]: e.target.value })}
-                        className="w-full border-2 border-green-200 bg-white p-2.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-green-500 transition-colors shadow-sm" 
-                      />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Observaciones</h3>
-            <textarea className="w-full border-2 border-slate-200 p-3 rounded-xl mt-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500 min-h-[80px]" placeholder="Escribe aquí si hay algún daño, rayón o comentario relevante..." value={formData.observations || ''} onChange={(e) => setF('observations', e.target.value)} />
-            
-            {/* SECCIÓN NUEVA: ADICIONALES (Espera y Combustible) */}
-            <div className="flex flex-col gap-3 mt-4 p-4 bg-slate-50 rounded-xl border-2 border-slate-100">
-              {/* Tiempo de Espera */}
-              <div className="flex flex-col gap-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="w-5 h-5 text-blue-600 rounded border-slate-300" checked={formData.hasWaitTime || false} onChange={(e) => setF('hasWaitTime', e.target.checked)} />
-                  <span className="font-extrabold text-sm text-slate-700">Tiempo de espera</span>
-                </label>
-                {formData.hasWaitTime && (
-                  <div className="animate-in fade-in slide-in-from-top-2 duration-200 pl-7">
-                    <input type="text" placeholder="Ej: 45 min, 2 hrs..." className="w-full border-2 border-slate-200 bg-white p-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 transition-colors shadow-sm" value={formData.waitTime || ''} onChange={(e) => setF('waitTime', e.target.value)} />
-                  </div>
-                )}
-              </div>
-
-              <div className="w-full h-px bg-slate-200 my-1"></div>
-
-              {/* Carga de Combustible */}
-              <div className="flex flex-col gap-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="w-5 h-5 text-blue-600 rounded border-slate-300" checked={formData.hasFuelCharge || false} onChange={(e) => setF('hasFuelCharge', e.target.checked)} />
-                  <span className="font-extrabold text-sm text-slate-700">Carga de combustible</span>
-                </label>
-                {formData.hasFuelCharge && (
-                  <div className="animate-in fade-in slide-in-from-top-2 duration-200 pl-7">
-                    <input type="text" placeholder="Monto cargado (Ej: $15.000)" className="w-full border-2 border-slate-200 bg-white p-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 transition-colors shadow-sm" value={formData.fuelChargeAmount || ''} onChange={(e) => setF('fuelChargeAmount', e.target.value)} />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Registro Fotográfico</h3>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pt-2">
-              {[{id:'front', l:'Frente'}, {id:'left', l:'Lat. Piloto'}, {id:'right', l:'Lat. Copiloto'}, {id:'back', l:'Atrás'}, {id:'tire', l:'Repuesto'}, {id:'dashboard', l:'Tablero'}, {id:'det1', l:'Detalle 1'}, {id:'det2', l:'Detalle 2'}, {id:'det3', l:'Detalle 3'}, {id:'det4', l:'Detalle 4'}].map(p => (
-                <label key={p.id} className={`p-1 border-2 rounded-2xl text-center cursor-pointer relative overflow-hidden h-20 flex flex-col justify-center items-center ${formData.photos[p.id]?'bg-green-50 border-green-400':'border-dashed'}`}>
-                  <input type="file" className="hidden" accept="image/*" onChange={e=>handlePic(e,p.id)}/>
-                  {formData.photos[p.id] ? (
-                     <div className="absolute inset-0 w-full h-full"><img src={formData.photos[p.id]} alt="foto" className="w-full h-full object-cover opacity-60"/><div className="absolute inset-0 flex items-center justify-center"><CheckCircle className="w-6 h-6 text-green-600 bg-white rounded-full"/></div></div>
-                  ) : (
-                    <><Camera className="w-5 h-5 text-slate-400 mb-0.5"/> <span className="text-[10px] font-bold text-slate-500 uppercase">{p.l}</span></>
-                  )}
-                </label>
-              ))}
-            </div>
-            
-            <button type="button" onClick={()=>setStep(2)} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mt-6 text-sm">Siguiente Paso</button>
-          </div>
-        ) : (
-          <form onSubmit={submit} className="space-y-4">
-             <>
-               <label className="flex items-center gap-3 p-4 bg-slate-800 rounded-2xl border-slate-900 border-2 cursor-pointer mb-4 shadow-md transition-colors hover:bg-slate-700">
-                  <input type="checkbox" checked={formData.noReception} onChange={e=>setF('noReception',e.target.checked)} className="w-6 h-6 cursor-pointer accent-blue-500 rounded"/> 
-                  <span className="font-extrabold text-sm text-white">Dejar sin firma (Local cerrado / PRT)</span>
-               </label>
-               
-               {!formData.noReception && (
-                 <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-5 mb-4">
-                    <h3 className="font-extrabold text-blue-800 mb-2 flex items-center gap-2"><Zap className="w-5 h-5"/> Firma Remota o QR (Recomendado)</h3>
-                    <p className="text-xs font-bold text-blue-600 mb-4">Envía el link al cliente o muéstrale el QR para que firme desde su propio celular.</p>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <button type="button" onClick={handleRemoteSignRequest} className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-md transition-colors flex justify-center items-center gap-2">
-                         <Share2 className="w-4 h-4"/> Compartir Link
-                      </button>
-                      <button type="button" onClick={handleOpenQR} className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl shadow-md transition-colors flex justify-center items-center gap-2">
-                         <QrCode className="w-4 h-4"/> Mostrar QR
-                      </button>
-                    </div>
-                 </div>
-               )}
-
-               {/* NUEVO: MODAL PARA CÓDIGO QR MEJORADO */}
-               {qrOpen && (
-                  <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-                    <div className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 max-w-sm w-full text-center relative animate-in zoom-in-95 border border-slate-100">
-                      <button type="button" onClick={() => setQrOpen(false)} className="absolute top-4 right-4 bg-slate-100 p-2 rounded-full hover:bg-slate-200 transition-colors"><X className="w-5 h-5 text-slate-700"/></button>
-                      <h3 className="text-xl font-black text-slate-800 mb-1">Escanea para Firmar</h3>
-                      <p className="text-xs font-bold text-slate-500 mb-5">El cliente debe apuntar con su cámara a este código.</p>
-                      
-                      <div className="bg-white p-3 rounded-2xl border-4 border-slate-100 shadow-inner inline-block">
-                        {/* Usamos QuickChart que es más confiable y no guarda caché erróneo */}
-                        <img src={`https://quickchart.io/qr?size=250&margin=1&text=${encodeURIComponent(`${window.location.href.split('?')[0]}?sign=${job.id}`)}`} alt="QR Signature" className="w-48 h-48 mx-auto" />
-                      </div>
-                      
-                      {/* Mostramos el código por si el escáner falla */}
-                      <div className="mt-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">O ingresa manualmente a:</p>
-                        <p className="text-[11px] font-extrabold text-blue-600 break-all select-all">{`${window.location.href.split('?')[0]}?sign=${job.id}`}</p>
-                      </div>
-                    </div>
-                  </div>
-               )}
-
-               {!formData.noReception && (
-                 <>
-                   <div className="flex items-center gap-2 mb-2"><div className="h-px bg-slate-200 flex-1"></div><span className="text-xs font-bold text-slate-400 uppercase">O llenar manualmente</span><div className="h-px bg-slate-200 flex-1"></div></div>
-                   
-                   <input value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
-                   <input value={formData.receiverRut} onChange={e=>setF('receiverRut',e.target.value)} placeholder="RUT Receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
-                   
-                   {/* NUEVO: Muestra los comentarios si el cliente dejó alguno por el link remoto */}
-                   {formData.clientComments && (
-                     <div className="bg-slate-100 p-3 rounded-xl border border-slate-200">
-                       <p className="text-[10px] font-extrabold text-slate-500 uppercase">Comentarios del Cliente:</p>
-                       <p className="text-sm font-bold text-slate-800 italic">"{formData.clientComments}"</p>
-                     </div>
-                   )}
-
-                   <div className="relative mt-2">
-                     {formData.signatureData && <div className="absolute top-2 right-2 bg-green-500 text-white text-[10px] px-2 py-1 rounded-full font-black flex items-center gap-1 z-10"><CheckCircle className="w-3 h-3"/> FIRMA CAPTURADA</div>}
-                     <SignaturePad initialData={formData.signatureData} onSave={d=>setF('signatureData',d)} onClear={()=>setF('signatureData',null)}/>
-                   </div>
-                 </>
-               )}
-             </>
-            
-            <button type="button" onClick={() => { if ("geolocation" in navigator) { navigator.geolocation.getCurrentPosition((pos) => setF('location', { lat: pos.coords.latitude, lng: pos.coords.longitude }), () => showAlert("Error GPS.")); } }} className={`px-4 py-4 rounded-2xl text-sm w-full font-extrabold shadow-sm mt-4 ${formData.location ? 'bg-green-100 text-green-700 border-2 border-green-200' : 'bg-slate-100 text-slate-700 border-2'}`}>
-              {formData.location ? "📍 GPS Capturado Exitosamente" : "📍 Tocar para Capturar GPS Actual"}
-            </button>
-
-            <div className="flex gap-2 pt-4 border-t"><button type="button" onClick={()=>setStep(1)} className="bg-slate-100 p-3 rounded-xl font-bold text-sm flex-1">Atrás</button><button type="submit" className="bg-green-600 text-white p-3 rounded-xl font-bold text-sm flex-[2]">Finalizar y Guardar</button></div>
-          </form>
-        )}
-      </div>
-    </div>
-  );
-}
+                     <p className="text-blue-600 font-extrabold text-[10px] uppercase tracking-wide truncate">ConSoy una IA basada en texto, así que no puedo hacer lo que me pides.
