@@ -4,9 +4,9 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signO
 import { getFirestore, enableIndexedDbPersistence, collection, addDoc, onSnapshot, updateDoc, setDoc, doc, deleteDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 // Eliminamos la importación global de jsPDF para que la app cargue más rápido (Lazy Loading)
 import { 
-  Car, MapPin, Camera, Fuel, CheckCircle, FileText, Download, 
-  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, ToggleLeft, ToggleRight, Edit2, Bell, Share2, X, Calendar, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Save, Search,
-  CloudOff, Wifi, QrCode, Sun, Moon, Settings // <-- NUEVOS ICONOS
+  Car, MapPin, Camera, CheckCircle, FileText, Download, 
+  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, Edit2, Bell, Share2, X, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Save, Search,
+  CloudOff, Wifi, QrCode, Sun, Moon, Settings 
 } from 'lucide-react';
 
 const firebaseConfig = {
@@ -1348,11 +1348,6 @@ export default function App() {
   }
   // --------------------------------------------------------------------------------
   
- // --- NUEVO: MAPA DE RASTREO EN VIVO ---
-  if (liveTrackId) {
-    return <LiveTrackingView jobId={liveTrackId} db={db} />;
-  }
-  
   // --- NUEVO: VISTA DE FIRMA REMOTA DEL CLIENTE ---
   if (signTrackId) {
     return (
@@ -1593,20 +1588,6 @@ export default function App() {
     </div>
   );
 }
-
-const getRouteStr = (j) => {
-  if (j.tripType === 'revision') {
-     if (j.checklist?.rtStatus === 'aprobado') {
-         const ret = j.checklist.rtReturnOption === 'other' ? j.checklist.rtReturnDestination : j.origin;
-         return `${j.origin} ➔ PRT ➔ ${ret || '-'}`;
-     }
-     if (j.checklist?.rtStatus === 'rechazado') {
-         return `${j.origin} ➔ PRT (Rechazada)`;
-     }
-     return `${j.origin} ➔ Planta de Revisión (PRT)`;
-  }
-  return `${j.origin} ➔ ${j.destination}`;
-};
 
 function LeaderboardView({ jobs, drivers, isAdminView }) {
   const [selectedDriverJobs, setSelectedDriverJobs] = useState(null);
