@@ -746,7 +746,7 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
   const pendingSignatureJobs = activeJobs.filter(j => j.checklist && !j.checklist.clientSigned);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10 transition-colors duration-300 pt-20 sm:pt-24">
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10 transition-colors duration-300">
       {/* SE ANCLA CON LA CLASE fixed-nav-bar PARA EVITAR DESPLAZAMIENTOS */}
       <header className="fixed-nav-bar bg-blue-600 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300">
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
@@ -782,7 +782,7 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto p-4 pt-6 space-y-8">
+      <main className="max-w-5xl mx-auto p-4 pt-20 sm:pt-24 space-y-8">
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center relative overflow-hidden max-w-2xl mx-auto">
           <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-500"></div>
           <h2 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-1">Portal de Seguimiento</h2>
@@ -1388,7 +1388,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-32 transition-colors duration-300 pt-20 sm:pt-24">
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-32 transition-colors duration-300">
       {globalStyles}
       <header className="fixed-nav-bar bg-blue-600 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300">
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
@@ -1476,7 +1476,7 @@ export default function App() {
       </header>
 
       {currentView === 'main' && mainTab === 'jobs' && (
-        <main className="max-w-5xl mx-auto p-4 pt-6">
+        <main className="max-w-5xl mx-auto p-4 pt-20 sm:pt-24">
           {activeRole === 'admin' ? (
             <>
               <div className="flex flex-wrap gap-2 mb-6 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
@@ -1520,7 +1520,7 @@ export default function App() {
       {currentView === 'main' && mainTab === 'expenses' && <ExpensesView role={activeRole} drivers={drivers} jobs={jobs} expenses={expenses} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />}
       
       {currentView === 'checklist' && selectedJob && (
-        <main className="max-w-2xl mx-auto p-4 pt-6 pb-24">
+        <main className="max-w-2xl mx-auto p-4 pt-20 sm:pt-24 pb-24">
           <ChecklistForm 
              job={selectedJob} db={db} currentUserEmail={currentUserEmail} 
              allClientsList={allClientsList}
@@ -1602,7 +1602,7 @@ function LeaderboardView({ jobs, drivers, isAdminView }) {
   const ranking = drivers.map(d => { const dj = monthlyCompleted.filter(j => j.acceptedByEmail === d.email); return { ...d, score: dj.length, jobs: dj }; }).sort((a, b) => b.score - a.score);
 
   return (
-    <main className="max-w-5xl mx-auto p-4 pt-6 pb-24">
+    <main className="max-w-5xl mx-auto p-4 pt-20 sm:pt-24 pb-24">
       <h2 className="text-2xl font-extrabold mb-6 flex items-center gap-2"><Trophy className="text-yellow-500"/> Ranking Mensual</h2>
       <div className="bg-white rounded-3xl border p-2 sm:p-4 shadow-sm">
         {ranking.length === 0 ? <p className="text-center py-6 text-sm font-bold text-slate-400">Sin datos de traslados este mes.</p> : ranking.map((dr, i) => (
@@ -1805,7 +1805,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
 
   if (isAdminView) {
     return (
-      <main className="max-w-5xl mx-auto p-4 pt-6 pb-24">
+      <main className="max-w-5xl mx-auto p-4 pt-20 sm:pt-24 pb-24">
         {editingExpense && <EditExpenseModal expense={editingExpense} onClose={() => setEditingExpense(null)} />}
         {viewingReceipt && <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[150] p-4"><div className="bg-white rounded-3xl p-4 w-full max-w-md relative"><button onClick={() => setViewingReceipt(null)} className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"><X className="w-5 h-5 text-slate-700"/></button><h3 className="font-extrabold text-slate-800 mb-4 ml-2">Comprobante</h3><img src={viewingReceipt} alt="Comprobante" className="w-full h-auto max-h-[70vh] object-contain rounded-xl shadow-sm" /></div></div>}
 
@@ -1874,7 +1874,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
   const hasPendingReturn = expenses.some(e => e.driverId === myDriver.id && e.type === 'pending_return');
 
   return (
-    <main className="max-w-md mx-auto p-4 pt-6 space-y-6 pb-24">
+    <main className="max-w-md mx-auto p-4 pt-20 sm:pt-24 space-y-6 pb-24">
       {viewingReceipt && <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[150] p-4"><div className="bg-white rounded-3xl p-4 w-full max-w-md relative"><button onClick={() => setViewingReceipt(null)} className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"><X className="w-5 h-5 text-slate-700"/></button><h3 className="font-extrabold text-slate-800 mb-4 ml-2">Comprobante</h3><img src={viewingReceipt} alt="Comprobante" className="w-full h-auto max-h-[70vh] object-contain rounded-xl shadow-sm" /></div></div>}
 
       {isReturnOpen && (
