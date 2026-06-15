@@ -2578,18 +2578,33 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
 
+  // NUEVO: Bandera para que la alerta no suene dos veces
+  const signatureReceived = useRef(false);
+
   useEffect(() => {
     if (isQuick || !job.id) return;
     const unsub = onSnapshot(doc(db, 'transport_jobs', job.id), (docSnap) => {
       const data = docSnap.data();
-      if (data?.checklist?.clientSigned) {
+      
+      // Si Firebase nos dice que el cliente firmó Y nosotros no lo sabíamos aún:
+      if (data?.checklist?.clientSigned && !signatureReceived.current) {
+        signatureReceived.current = true; // Bloqueamos para que solo avise 1 vez
+        
         setFormData(prev => ({
           ...prev,
+          clientSigned: true, // Registramos internamente que ya firmó
           signatureData: data.checklist.signatureData,
           receiverName: data.checklist.receiverName,
           receiverRut: data.checklist.receiverRut,
-          clientComments: data.checklist.clientComments || ''
+          clientComments: data.checklist.clientComments || '',
+          noReception: false // Desmarcamos "Dejar sin firma" por seguridad
         }));
+
+        // 1. Cerramos la pantalla del Código QR automáticamente
+        setQrOpen(false);
+        
+        // 2. Le avisamos al conductor que el cliente ya terminó
+        showAlert("✅ ¡El cliente ha firmado exitosamente! Sus datos y firma han sido cargados al acta automáticamente. Ya puedes hacer clic en Finalizar y Guardar.");
       }
     });
     return () => unsub();
