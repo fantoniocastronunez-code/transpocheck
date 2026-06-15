@@ -1296,6 +1296,12 @@ export default function App() {
       .dark .text-blue-800 { color: #93c5fd !important; }
       .dark .text-blue-600 { color: #60a5fa !important; }
 
+      /* CORRECCIÓN: FORZAR FONDO OSCURO EN LAS LISTAS DESPLEGABLES */
+      .dark select, .dark option {
+        background-color: #0f172a !important;
+        color: #e2e8f0 !important;
+      }
+
       /* CLASE CUSTOM PARA CONGELAR LA BARRA DE NAVEGACIÓN SIN REBOTE */
       .fixed-nav-bar {
         position: fixed !important;
