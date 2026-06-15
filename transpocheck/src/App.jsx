@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
-import { getFirestore, enableIndexedDbPersistence, collection, addDoc, onSnapshot, updateDoc, setDoc, doc, deleteDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
+import { getFirestore, enableMultiTabIndexedDbPersistence, collection, addDoc, onSnapshot, updateDoc, setDoc, doc, deleteDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 // Eliminamos la importación global de jsPDF para que la app cargue más rápido (Lazy Loading)
 import { 
   Car, MapPin, Camera, CheckCircle, FileText, Download, 
@@ -22,8 +22,8 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// NUEVO: Activamos la Persistencia Offline. La app funcionará sin internet leyendo el caché local.
-enableIndexedDbPersistence(db).catch((err) => {
+// CORRECCIÓN: Usar persistencia Multi-Pestaña soluciona el error donde el Portal de Cliente no se actualizaba en tiempo real si el admin estaba en otra pestaña.
+enableMultiTabIndexedDbPersistence(db).catch((err) => {
   console.warn("Modo offline limitado:", err.code);
 });
 
@@ -863,23 +863,57 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
                 </div>
                 
                 <div className="relative pl-8 space-y-6 before:absolute before:inset-y-2 before:left-[11px] before:w-0.5 before:bg-slate-100 flex-1">
-                  {/* PASO 1: Nombre del Conductor si está aceptado */}
-                  <div className="relative"><div className="absolute -left-8 bg-blue-500 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center"><CheckCircle className="w-3 h-3 text-white"/></div><p className="font-extrabold text-slate-800 text-sm">{isAccepted ? (job.assignedDrivers?.find(d => d.email === job.acceptedByEmail)?.name || "Conductor en camino") : "Buscando conductor..."}</p><p className="text-xs font-bold text-slate-500 mt-0.5">{isAccepted ? `Responsable del retiro en ${job.origin}` : `Esperando asignación para ${job.origin}`}</p></div>
+                  {/* PASO 1: Dinámico (Gris si busca, Azul si está asignado o en camino) */}
+                  <div className="relative">
+                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center transition-colors ${darkMode ? 'border-slate-900' : 'border-white'} ${isAccepted || job.assignedDrivers?.length > 0 ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                      {(isAccepted || job.assignedDrivers?.length > 0) && <CheckCircle className="w-3 h-3 text-white"/>}
+                    </div>
+                    <p className={`font-extrabold text-sm ${isAccepted || job.assignedDrivers?.length > 0 ? 'text-slate-800' : 'text-slate-400'}`}>
+                      {isAccepted ? (job.assignedDrivers?.find(d => d.email === job.acceptedByEmail)?.name || "Conductor en camino") : (job.assignedDrivers?.length > 0 ? "Conductor Asignado" : "Buscando conductor...")}
+                    </p>
+                    <p className={`text-xs font-bold mt-0.5 ${isAccepted || job.assignedDrivers?.length > 0 ? 'text-slate-500' : 'text-slate-400'}`}>
+                      {isAccepted ? `Responsable del retiro en ${job.origin}` : (job.assignedDrivers?.length > 0 ? `Esperando que el conductor acepte` : `Esperando asignación para ${job.origin}`)}
+                    </p>
+                  </div>
                   
                   {/* PASO 2: Vehículo en poder */}
-                  <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step2Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step2Done && <CheckCircle className="w-3 h-3 text-white"/>}</div><p className={`font-extrabold text-sm ${step2Done ? 'text-slate-800' : 'text-slate-400'}`}>Vehículo en Tránsito</p><p className={`text-xs font-bold mt-0.5 ${step2Done ? 'text-blue-600' : 'text-slate-400'}`}>{step2Done ? 'El conductor tiene el vehículo en su poder' : 'Esperando retiro'}</p></div>
+                  <div className="relative">
+                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center transition-colors ${darkMode ? 'border-slate-900' : 'border-white'} ${step2Done ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                      {step2Done && <CheckCircle className="w-3 h-3 text-white"/>}
+                    </div>
+                    <p className={`font-extrabold text-sm ${step2Done ? 'text-slate-800' : 'text-slate-400'}`}>Vehículo en Tránsito</p>
+                    <p className={`text-xs font-bold mt-0.5 ${step2Done ? 'text-blue-600' : 'text-slate-400'}`}>{step2Done ? 'El conductor tiene el vehículo en su poder' : 'Esperando retiro'}</p>
+                  </div>
                   
                   {/* PASO 3: Llegada */}
-                  <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step3Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step3Done && <CheckCircle className="w-3 h-3 text-white"/>}</div><p className={`font-extrabold text-sm ${step3Done ? 'text-slate-800' : 'text-slate-400'}`}>{job.tripType === 'revision' ? 'En Planta de Revisión' : 'Llegada a Destino'}</p><p className={`text-xs font-bold mt-0.5 ${step3Done ? 'text-blue-600' : 'text-slate-400'}`}>{step3Done ? (job.tripType === 'revision' ? 'Realizando inspección técnica' : 'En proceso de entrega y checklist') : `Hacia ${job.tripType === 'revision' ? 'PRT' : job.destination}`}</p></div>
+                  <div className="relative">
+                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center transition-colors ${darkMode ? 'border-slate-900' : 'border-white'} ${step3Done ? 'bg-blue-500' : 'bg-slate-200'}`}>
+                      {step3Done && <CheckCircle className="w-3 h-3 text-white"/>}
+                    </div>
+                    <p className={`font-extrabold text-sm ${step3Done ? 'text-slate-800' : 'text-slate-400'}`}>{job.tripType === 'revision' ? 'En Planta de Revisión' : 'Llegada a Destino'}</p>
+                    <p className={`text-xs font-bold mt-0.5 ${step3Done ? 'text-blue-600' : 'text-slate-400'}`}>{step3Done ? (job.tripType === 'revision' ? 'Realizando inspección técnica' : 'En proceso de entrega y checklist') : `Hacia ${job.tripType === 'revision' ? 'PRT' : job.destination}`}</p>
+                  </div>
                   
                   {/* PASO 4: Resultado PRT */}
                   {job.tripType === 'revision' && (
-                  <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step4Done ? (job.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200'}`}>{step4Done && <CheckCircle className="w-3 h-3 text-white"/>}</div><p className={`font-extrabold text-sm ${step4Done ? (job.prt_result === 'rechazado' ? 'text-red-600' : 'text-green-600') : 'text-slate-400'}`}>Resultado de Revisión</p>{step4Done ? (<p className={`text-xs font-bold mt-0.5 ${job.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-600'}`}>{job.prt_result === 'rechazado' ? `Rechazado: ${job.prt_reason}` : 'Aprobado Exitosamente'}</p>) : (<p className="text-xs font-bold text-slate-400 mt-0.5">Esperando documento de la planta</p>)}</div>
+                  <div className="relative">
+                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center transition-colors ${darkMode ? 'border-slate-900' : 'border-white'} ${step4Done ? (job.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200'}`}>
+                      {step4Done && <CheckCircle className="w-3 h-3 text-white"/>}
+                    </div>
+                    <p className={`font-extrabold text-sm ${step4Done ? (job.prt_result === 'rechazado' ? 'text-red-600' : 'text-green-600') : 'text-slate-400'}`}>Resultado de Revisión</p>
+                    {step4Done ? (<p className={`text-xs font-bold mt-0.5 ${job.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-600'}`}>{job.prt_result === 'rechazado' ? `Rechazado: ${job.prt_reason}` : 'Aprobado Exitosamente'}</p>) : (<p className="text-xs font-bold text-slate-400 mt-0.5">Esperando documento de la planta</p>)}
+                  </div>
                   )}
 
-                  {/* NUEVO PASO 5: Camino a Destino (Solo si la PRT ya se resolvió) */}
+                  {/* PASO 5: Camino a Destino */}
                   {job.tripType === 'revision' && step4Done && (
-                  <div className="relative"><div className="absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center bg-blue-500"><div className="w-2 h-2 bg-white rounded-full animate-ping"></div></div><p className="font-extrabold text-sm text-slate-800">Camino a destino</p><p className="text-xs font-bold text-blue-600 mt-0.5">El vehículo va en ruta a su destino final</p></div>
+                  <div className="relative">
+                    <div className={`absolute -left-8 w-6 h-6 rounded-full border-4 shadow-sm flex items-center justify-center bg-blue-500 ${darkMode ? 'border-slate-900' : 'border-white'}`}>
+                      <div className="w-2 h-2 bg-white rounded-full animate-ping"></div>
+                    </div>
+                    <p className="font-extrabold text-sm text-slate-800">Camino a destino</p>
+                    <p className="text-xs font-bold text-blue-600 mt-0.5">El vehículo va en ruta a su destino final</p>
+                  </div>
                   )}
                 </div>
               </div>
