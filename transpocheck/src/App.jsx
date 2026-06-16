@@ -2681,22 +2681,45 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     return () => unsub();
   }, [job.id, isQuick, db]);
 
-  // NUEVO: Función para generar y mandar el link de firma
+  // NUEVO: Función para generar y mandar el link de firma (Optimizado para Apple/Android)
   const handleRemoteSignRequest = async () => {
     if (isQuick) return showAlert("⚠️ Para usar la Firma Remota en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
     
+    const url = `${window.location.href.split('?')[0]}?sign=${job.id}`;
+    const textToShare = `¡Hola! Por favor firma el acta de recepción y revisa las fotografías del vehículo aquí:\n${url}`;
+
+    // 1. Intentar menú de compartir nativo (Abre WhatsApp directo en iOS/Android)
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Firma de Recepción', text: textToShare });
+        // Si comparte con éxito, guardamos en Firebase en segundo plano sin bloquear UI
+        setDoc(doc(db, 'transport_jobs', job.id), { checklist: formData }, { merge: true });
+        return;
+      } catch (err) { console.log("Menú de compartir cancelado o no soportado"); }
+    }
+
+    // 2. Fallback de Portapapeles (Ejecutado ANTES del await de Firebase para engañar a Safari)
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(textToShare);
+      } else {
+        // 3. Fallback fuerza bruta para iPhones viejos
+        const textArea = document.createElement("textarea");
+        textArea.value = textToShare;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        textArea.remove();
+      }
+      showAlert("✅ Link copiado al portapapeles. ¡Pégalo en WhatsApp!");
+    } catch (e) {
+      showAlert("Tu navegador bloquea el portapapeles automáticamente.");
+    }
+
+    // 4. Finalmente guardamos los datos en la base de datos
     try {
       await setDoc(doc(db, 'transport_jobs', job.id), { checklist: formData }, { merge: true });
-      
-      // Se crea la URL limpia de forma absoluta
-      const url = `${window.location.href.split('?')[0]}?sign=${job.id}`;
-      navigator.clipboard.writeText(`¡Hola! Por favor firma el acta de recepción y revisa las fotografías del vehículo aquí:\n${url}`);
-      
-      showAlert("✅ Link copiado. Envíalo al cliente por WhatsApp. La pantalla se actualizará sola cuando firme.");
-    } catch (e) {
-      console.error(e);
-      showAlert("Error al generar el link. Revisa tu conexión.");
-    }
+    } catch (e) { console.error("Error guardando progreso", e); }
   };
 
   // NUEVO: Función para guardar datos antes de mostrar el QR
