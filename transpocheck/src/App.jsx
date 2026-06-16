@@ -2903,7 +2903,15 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     const f=e.target.files[0]; if(!f)return;
     try {
       const dataUrl = await resizeImage(f, 500, 0.4); 
-      setF('photos', {...formData.photos, [id]: dataUrl}); 
+      setFormData(prev => {
+        const newData = { ...prev, photos: { ...prev.photos, [id]: dataUrl } };
+        // Si la foto era un detalle tocado en el auto, guardamos el pin y su coordenada
+        if (prev.pendingPin && prev.pendingPin.id === id) {
+          newData.detailPins = [...(prev.detailPins || []), prev.pendingPin];
+          newData.pendingPin = null;
+        }
+        return newData;
+      });
     } catch(err){ 
       console.error("Error al procesar la foto:", err);
       showAlert("Error al procesar la foto. Intenta con una imagen más pequeña."); 
@@ -3199,18 +3207,115 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
               </div>
             </div>
 
-            <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Registro Fotográfico</h3>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pt-2">
-              {[{id:'front', l:'Frente'}, {id:'left', l:'Lat. Piloto'}, {id:'right', l:'Lat. Copiloto'}, {id:'back', l:'Atrás'}, {id:'tire', l:'Repuesto'}, {id:'dashboard', l:'Tablero'}, {id:'det1', l:'Detalle 1'}, {id:'det2', l:'Detalle 2'}, {id:'det3', l:'Detalle 3'}, {id:'det4', l:'Detalle 4'}].map(p => (
-                <label key={p.id} className={`p-1 border-2 rounded-2xl text-center cursor-pointer relative overflow-hidden h-20 flex flex-col justify-center items-center ${formData.photos[p.id]?'bg-green-50 border-green-400':'border-dashed'}`}>
-                  <input type="file" className="hidden" accept="image/*" onChange={e=>handlePic(e,p.id)}/>
-                  {formData.photos[p.id] ? (
-                     <div className="absolute inset-0 w-full h-full"><img src={formData.photos[p.id]} alt="foto" className="w-full h-full object-cover opacity-60"/><div className="absolute inset-0 flex items-center justify-center"><CheckCircle className="w-6 h-6 text-green-600 bg-white rounded-full"/></div></div>
-                  ) : (
-                    <><Camera className="w-5 h-5 text-slate-400 mb-0.5"/> <span className="text-[10px] font-bold text-slate-500 uppercase">{p.l}</span></>
+            <div className="flex justify-between items-end border-b-2 border-slate-100 pb-2 mt-8 mb-4">
+              <h3 className="text-sm font-extrabold text-slate-800">Mapa Fotográfico</h3>
+              <select value={formData.vehicleType || 'auto'} onChange={e => setF('vehicleType', e.target.value)} className="bg-slate-100 border-2 border-slate-200 text-xs font-bold p-1.5 rounded-lg outline-none text-slate-700 cursor-pointer">
+                <option value="auto">🚙 Auto / SUV</option>
+                <option value="camioneta">🛻 Camioneta</option>
+                <option value="camion">🚚 Camión</option>
+              </select>
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-3xl border-2 border-slate-100 mb-4 select-none">
+              <p className="text-[10px] font-black text-slate-400 uppercase text-center mb-4 leading-relaxed">
+                Toca los recuadros para fotos generales.<br/>
+                <span className="text-blue-500">Toca directo sobre el dibujo del auto para registrar un daño (máx 4).</span>
+              </p>
+              
+              <div className="relative w-full max-w-[280px] h-[400px] mx-auto my-6">
+                
+                {/* VEHÍCULO INTERACTIVO CENTRAL */}
+                <div 
+                   className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 cursor-crosshair hover:opacity-90 transition-opacity drop-shadow-lg z-10"
+                   style={{ height: formData.vehicleType === 'camion' ? '260px' : '220px' }}
+                   onClick={(e) => {
+                     const availableDet = ['det1', 'det2', 'det3', 'det4'].find(d => !formData.photos[d]);
+                     if (!availableDet) return showAlert("Máximo de 4 fotos de detalles/daños alcanzado.");
+                     const rect = e.currentTarget.getBoundingClientRect();
+                     const x = ((e.clientX - rect.left) / rect.width) * 100;
+                     const y = ((e.clientY - rect.top) / rect.height) * 100;
+                     setF('pendingPin', { id: availableDet, x, y });
+                     document.getElementById(`pic-${availableDet}`).click();
+                   }}
+                >
+                  {/* Siluetas Dinámicas Generadas con CSS */}
+                  {(!formData.vehicleType || formData.vehicleType === 'auto') && (
+                    <div className="w-full h-full bg-slate-300 rounded-[40px] border-4 border-slate-400 relative overflow-hidden flex flex-col justify-between p-2 shadow-inner">
+                      <div className="w-4/5 h-1/5 bg-slate-800/30 mx-auto rounded-t-2xl rounded-b-sm mt-5"></div>
+                      <div className="w-4/5 h-12 bg-slate-800/30 mx-auto rounded-b-xl rounded-t-sm mb-3"></div>
+                    </div>
                   )}
+                  {formData.vehicleType === 'camioneta' && (
+                    <div className="w-full h-full relative flex flex-col">
+                      <div className="w-full h-[40%] bg-slate-300 rounded-t-[35px] rounded-b-md border-4 border-slate-400 p-2 flex flex-col justify-between shadow-inner">
+                        <div className="w-5/6 h-8 bg-slate-800/30 mx-auto rounded-t-xl rounded-b-sm mt-2"></div>
+                        <div className="w-5/6 h-4 bg-slate-800/30 mx-auto rounded-b-xl rounded-t-sm mb-1"></div>
+                      </div>
+                      <div className="w-[90%] h-[60%] mx-auto bg-slate-200 border-x-4 border-b-4 border-slate-400 rounded-b-xl mt-1 relative">
+                        <div className="absolute inset-2 border-2 border-slate-300 rounded-sm"></div>
+                      </div>
+                    </div>
+                  )}
+                  {formData.vehicleType === 'camion' && (
+                    <div className="w-full h-full relative flex flex-col">
+                      <div className="w-[105%] -ml-[2.5%] h-[20%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-300 p-1 flex flex-col justify-end shadow-inner">
+                        <div className="w-full h-1/2 bg-slate-800/40 rounded-t-md rounded-b-sm mb-1"></div>
+                      </div>
+                      <div className="w-full h-[78%] mx-auto bg-slate-200 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner">
+                        <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Renderizado de Pines de Daño/Detalle sobre el auto */}
+                  {(formData.detailPins || []).map(pin => (
+                    <div key={pin.id} className="absolute w-8 h-8 -ml-4 -mt-4 bg-red-500 rounded-full border-2 border-white shadow-xl flex items-center justify-center z-50 animate-in zoom-in" style={{ left: `${pin.x}%`, top: `${pin.y}%` }}>
+                      <img src={formData.photos[pin.id]} className="w-full h-full object-cover rounded-full opacity-90" alt="Detalle" />
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setF('photos', {...formData.photos, [pin.id]: false}); setF('detailPins', formData.detailPins.filter(p => p.id !== pin.id)); }} className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] hover:bg-red-700 shadow-md"><X className="w-3 h-3"/></button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* BOTONES DE FOTOS GENERALES UBICADOS ESPACIALMENTE */}
+                {/* FRENTE */}
+                <label className={`absolute top-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-20 bg-white transition-all ${formData.photos.front ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
+                  <input type="file" id="pic-front" className="hidden" accept="image/*" onChange={e=>handlePic(e,'front')}/>
+                  {formData.photos.front ? <><img src={formData.photos.front} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-1"/><span className="text-[9px] font-black text-slate-500 tracking-wide">FRENTE</span></>}
                 </label>
-              ))}
+
+                {/* ATRÁS */}
+                <label className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-20 bg-white transition-all ${formData.photos.back ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
+                  <input type="file" id="pic-back" className="hidden" accept="image/*" onChange={e=>handlePic(e,'back')}/>
+                  {formData.photos.back ? <><img src={formData.photos.back} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-1"/><span className="text-[9px] font-black text-slate-500 tracking-wide">ATRÁS</span></>}
+                </label>
+
+                {/* LATERAL PILOTO (IZQ) */}
+                <label className={`absolute top-1/2 left-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-20 bg-white transition-all ${formData.photos.left ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
+                  <input type="file" id="pic-left" className="hidden" accept="image/*" onChange={e=>handlePic(e,'left')}/>
+                  {formData.photos.left ? <><img src={formData.photos.left} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-0.5"/><span className="text-[8px] font-black text-slate-500 text-center leading-tight">LATERAL<br/>PILOTO</span></>}
+                </label>
+
+                {/* LATERAL COPILOTO (DER) */}
+                <label className={`absolute top-1/2 right-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-20 bg-white transition-all ${formData.photos.right ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
+                  <input type="file" id="pic-right" className="hidden" accept="image/*" onChange={e=>handlePic(e,'right')}/>
+                  {formData.photos.right ? <><img src={formData.photos.right} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-0.5"/><span className="text-[8px] font-black text-slate-500 text-center leading-tight">LATERAL<br/>COPILOTO</span></>}
+                </label>
+
+                {/* Inputs ocultos para los detalles fotográficos */}
+                {['det1','det2','det3','det4'].map(d => <input key={d} type="file" id={`pic-${d}`} className="hidden" accept="image/*" onChange={e=>handlePic(e,d)}/>)}
+
+              </div>
+
+              {/* Botones Flotantes Inferiores (Tablero, Repuesto) */}
+              <div className="flex justify-center gap-4 mt-6 border-t-2 border-slate-100 pt-4">
+                {[{id:'dashboard', l:'Tablero'}, {id:'tire', l:'Repuesto'}].map(p => (
+                   <label key={p.id} className={`w-28 h-12 rounded-xl border-2 flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white shadow-sm transition-all ${formData.photos[p.id] ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-slate-50'}`}>
+                     <input type="file" className="hidden" accept="image/*" onChange={e=>handlePic(e,p.id)}/>
+                     {formData.photos[p.id] ? <><img src={formData.photos[p.id]} className="absolute inset-0 w-full h-full object-cover opacity-30"/><CheckCircle className="w-5 h-5 text-green-500 relative z-10 bg-white rounded-full"/><span className="text-[10px] font-black text-green-800 relative z-10">{p.l}</span></> : <><Camera className="w-4 h-4 text-slate-400"/><span className="text-[10px] font-black text-slate-500 uppercase">{p.l}</span></>}
+                   </label>
+                ))}
+              </div>
+
             </div>
             
             <button type="button" onClick={()=>setStep(2)} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mt-6 text-sm">Siguiente Paso</button>
