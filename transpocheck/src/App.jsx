@@ -1660,7 +1660,7 @@ export default function App() {
                 </div>
                 {/* NUEVO: VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v1.4.5</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v1.5/p>
                 </div>
               </div>
             )}
