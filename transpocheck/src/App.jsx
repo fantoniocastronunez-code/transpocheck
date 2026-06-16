@@ -1479,6 +1479,10 @@ export default function App() {
                     </button>
                   </div>
                 </div>
+                {/* NUEVO: VERSIÓN DE LA APP */}
+                <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v1.2.0</p>
+                </div>
               </div>
             )}
           </div>
