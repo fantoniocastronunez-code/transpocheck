@@ -1059,12 +1059,36 @@ function ClientSignView({ jobId, db }) {
   };
 
   if (submitted || job.checklist.clientSigned) {
+    // Escuchamos en tiempo real si el conductor ya cerró el traslado desde su app
+    const isFinished = job.status === 'completed' || job.status === 'failed';
+
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
-        <div className="bg-white p-8 rounded-3xl shadow-xl max-w-sm w-full border-t-8 border-green-500">
-          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4"/>
-          <h2 className="text-2xl font-black text-slate-800 mb-2">¡Recepción Exitosa!</h2>
-          <p className="text-slate-500 font-bold text-sm">Tu firma y comentarios han sido enviados al conductor. Ya puedes cerrar esta ventana.</p>
+        <div className={`bg-white p-8 rounded-3xl shadow-xl max-w-sm w-full border-t-8 transition-colors duration-500 ${isFinished ? 'border-green-500' : 'border-blue-500'}`}>
+          {isFinished ? (
+            <>
+              <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4 animate-in zoom-in"/>
+              <h2 className="text-2xl font-black text-slate-800 mb-2">¡Traslado Finalizado!</h2>
+              <p className="text-slate-500 font-bold text-sm mb-6">El conductor ha cerrado el acta. Ya puedes descargar tu copia del checklist.</p>
+              
+              {/* Redirigimos al portal del cliente donde YA existe el motor para descargar PDF */}
+              <button onClick={() => window.location.href = `/?client=${encodeURIComponent(job.client)}`} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2">
+                <Download className="w-5 h-5"/> Descargar PDF
+              </button>
+            </>
+          ) : (
+            <>
+              <Clock className="w-16 h-16 text-blue-500 mx-auto mb-4 animate-pulse"/>
+              <h2 className="text-2xl font-black text-slate-800 mb-2">Firma Recibida</h2>
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mt-4 mb-4">
+                <p className="text-blue-700 font-bold text-sm flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-blue-300 border-t-blue-700 rounded-full animate-spin"></span>
+                  A LA ESPERA DE TERMINAR EL CHECKLIST
+                </p>
+              </div>
+              <p className="text-xs text-slate-400">Esta pantalla se actualizará automáticamente con el botón de descarga cuando el conductor finalice en su sistema.</p>
+            </>
+          )}
         </div>
       </div>
     );
@@ -2571,9 +2595,10 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                       </div>
                     )}
 
-                    {(j.phase === 'arrived_destination' || j.phase === 'prt_done') && (
-                      <button onClick={()=>onStartChecklist(j)} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">📸 Entregar / Checklist</button>
-                    )}
+                    {/* NUEVO: El botón de Checklist siempre está visible para pre-llenar, cambiando de color y texto al final del viaje */}
+                    <button onClick={()=>onStartChecklist(j)} className={`font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors ${(j.phase === 'arrived_destination' || j.phase === 'prt_done') ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-2 border-slate-200'}`}>
+                      📸 {(j.phase === 'arrived_destination' || j.phase === 'prt_done') ? 'Entregar / Cerrar Checklist' : 'Avanzar / Pre-llenar Checklist'}
+                    </button>
                   </>
                 )}
               </div>
