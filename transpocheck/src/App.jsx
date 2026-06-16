@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, enableIndexedDbPersistence, collection, addDoc, onSnapshot, updateDoc, setDoc, doc, deleteDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
+import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 // Eliminamos la importación global de jsPDF para que la app cargue más rápido (Lazy Loading)
 import { 
   Car, MapPin, Camera, CheckCircle, FileText, Download, 
@@ -21,6 +22,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+// Inicializamos FCM sólo si el navegador lo soporta (ej: para que no crashee en modo incógnito)
+let messaging = null;
+isSupported().then((supported) => {
+  if (supported) messaging = getMessaging(app);
+});
 
 // NUEVO: Activamos la Persistencia Offline. La app funcionará sin internet leyendo el caché local.
 enableIndexedDbPersistence(db).catch((err) => {
@@ -1360,14 +1367,25 @@ export default function App() {
   const showConfirm = (message, onConfirm) => setDialogConfig({ type: 'confirm', message, onConfirm });
   const closeDialog = () => setDialogConfig(null);
 
-  const requestNotificationPermission = () => {
+  const requestNotificationPermission = async () => {
     if (!("Notification" in window)) { showAlert("Tu navegador no soporta notificaciones."); return; }
-    Notification.requestPermission().then(permission => {
-      if (permission === "granted") {
-        setNotificationsEnabled(true);
-        triggerNotification("¡Notificaciones Activadas!", "Recibirás alertas de nuevos trabajos aquí.");
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+      setNotificationsEnabled(true);
+      triggerNotification("¡Notificaciones Activadas!", "Recibirás alertas inmediatas.");
+      
+      // Si aceptó, pedimos el Token Único de su celular a Firebase
+      if (messaging && user) {
+        try {
+          const token = await getToken(messaging, { vapidKey: 'BK8z3mxtN3JApx1nw-9cVLzsjp78ufh0qimwqsxJOTnRuMIbQ4HQgYWGkKJ8h9MWPpZYFC3WxbX9Y-jskpIaOHY' });
+          if (token) {
+            // Guardamos el token en la base de datos vinculado a su correo
+            const driverSnap = driversRef.current.find(d => d.email === user.email);
+            if (driverSnap) await updateDoc(doc(db, 'drivers', driverSnap.id), { fcmToken: token });
+          }
+        } catch (e) { console.warn("Error obteniendo FCM Token", e); }
       }
-    });
+    }
   };
 
   const triggerNotification = (title, body) => {
@@ -1384,7 +1402,15 @@ export default function App() {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      if ("Notification" in window && Notification.permission === "granted") setNotificationsEnabled(true);
+      if ("Notification" in window && Notification.permission === "granted") {
+        setNotificationsEnabled(true);
+        // Escuchamos los mensajes silenciosos cuando la app está abierta en la pantalla
+        if (messaging) {
+          onMessage(messaging, (payload) => {
+            triggerNotification(payload.notification.title, payload.notification.body);
+          });
+        }
+      }
     });
     return () => unsub();
   }, []);
@@ -1616,7 +1642,7 @@ export default function App() {
                 </div>
                 {/* NUEVO: VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v1.3.5</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v1.4</p>
                 </div>
               </div>
             )}
