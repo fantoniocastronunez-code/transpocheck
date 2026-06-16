@@ -58,23 +58,18 @@ const SignaturePad = ({ onSave, onClear, initialData }) => {
   const drawEvent = (e, type) => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    
-    if (type === 'stop') {
-      setIsDrawing(false);
-      if (onSave) onSave(canvas.toDataURL());
-      return; // Salir antes de leer coordenadas vacías (Evita el crash en móviles)
-    }
-
     const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches && e.touches.length > 0 ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches && e.touches.length > 0 ? e.touches[0].clientY : e.clientY;
-    if (clientX === undefined || clientY === undefined) return;
-
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     const x = clientX - rect.left;
     const y = clientY - rect.top;
     
     if (type === 'start') { ctx.beginPath(); ctx.moveTo(x, y); setIsDrawing(true); }
     if (type === 'draw' && isDrawing) { ctx.lineTo(x, y); ctx.stroke(); }
+    if (type === 'stop') {
+      setIsDrawing(false);
+      if (onSave) onSave(canvas.toDataURL());
+    }
   };
 
   return (
@@ -1011,18 +1006,12 @@ function ClientSignView({ jobId, db }) {
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({ name: '', rut: '', comments: '', signature: null });
   const [fullScreenImage, setFullScreenImage] = useState(null); 
-  const [alertMessage, setAlertMessage] = useState(null);
-  const [downloadingId, setDownloadingId] = useState(null); // <-- ESTADO PARA EL BOTON DE DESCARGA
+  const [alertMessage, setAlertMessage] = useState(null); // <-- NUEVO: ESTADO PARA ALERTA PERSONALIZADA
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'transport_jobs', jobId), (docSnap) => {
       if (docSnap.exists()) {
-        const jobData = { id: docSnap.id, ...docSnap.data() };
-        setJob(jobData);
-        // Si el cliente recarga la página y ya había firmado, saltamos al final
-        if (jobData.checklist?.clientSigned) {
-            setSubmitted(true);
-        }
+        setJob({ id: docSnap.id, ...docSnap.data() });
       } else {
         setJob(null);
       }
@@ -1069,307 +1058,13 @@ function ClientSignView({ jobId, db }) {
     }
   };
 
-  const handleDownloadPDF = async () => {
-    try {
-      setDownloadingId(job.id);
-      
-      const jsPDFModule = await import('jspdf');
-      const JsPDFClass = jsPDFModule.default?.jsPDF || jsPDFModule.default || jsPDFModule.jsPDF;
-      const docPDF = new JsPDFClass();
-      
-      const cleanStr = (str) => {
-        if (!str) return '';
-        return String(str).replace(/➔/g, '->').replace(/•/g, '-').replace(/[^\x20-\x7E\xA0-\xFF]/g, '');
-      };
-
-      const getImageDims = (src) => new Promise(resolve => { 
-        const img = new Image(); 
-        img.onload = () => resolve({ w: img.width, h: img.height }); 
-        img.onerror = () => resolve({ w: 85, h: 60 }); 
-        img.src = src; 
-      });
-
-      const primaryColor = [30, 41, 59]; const secondaryColor = [100, 116, 139]; const accentColor = [37, 99, 235];
-      const lightBg = [248, 250, 252]; const borderColor = [226, 232, 240];
-
-      const loadSimpleLogo = async (src) => {
-        return new Promise((resolve) => {
-          const img = new Image(); img.src = src; img.crossOrigin = "Anonymous";
-          img.onload = () => {
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = img.width; tempCanvas.height = img.height;
-            const ctx = tempCanvas.getContext('2d'); ctx.drawImage(img, 0, 0, img.width, img.height);
-            resolve({ data: tempCanvas.toDataURL('image/png'), w: img.width, h: img.height });
-          };
-          img.onerror = () => resolve(null);
-          setTimeout(() => resolve(null), 1500); 
-        });
-      };
-
-      const [logoApp, logoLogistica] = await Promise.all([loadSimpleLogo('/logo.png'), loadSimpleLogo('/LogoLogistica.png')]);
-
-      const drawHeader = (titleText) => {
-        docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 40, 'F');
-        docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(18); docPDF.setFont("helvetica", "bold");
-        docPDF.text(cleanStr(titleText), 105, 18, null, null, "center");
-        
-        const dateTxt = typeof formatDateDisplay === 'function' && job.scheduledDate ? formatDateDisplay(job.scheduledDate) : (job.scheduledDate || '-');
-        docPDF.setFontSize(9); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(148, 163, 184);
-        docPDF.text(`FECHA TRASLADO: ${dateTxt}`, 105, 26, null, null, "center");
-
-        docPDF.setFontSize(11); docPDF.setFont("times", "bolditalic"); docPDF.setTextColor(255, 255, 255);
-        if (logoLogistica) {
-          const ratio = logoLogistica.h / logoLogistica.w; let imgW = 35; let imgH = imgW * ratio;
-          if (imgH > 24) { imgH = 24; imgW = imgH / ratio; }
-          docPDF.addImage(logoLogistica.data, 'PNG', 27 - (imgW/2), 19 - (imgH/2), imgW, imgH);
-          docPDF.text("Logística TS SpA", 27, 34, null, null, "center");
-        }
-        if (logoApp) {
-          const ratio = logoApp.h / logoApp.w; let imgW = 20; let imgH = imgW * ratio;
-          if (imgH > 24) { imgH = 24; imgW = imgH / ratio; }
-          docPDF.addImage(logoApp.data, 'PNG', 183 - (imgW/2), 19 - (imgH/2), imgW, imgH);
-          docPDF.text("LogisticAPP", 183, 34, null, null, "center");
-        }
-      };
-
-      let pdfTitle = job.tripType === 'revision' ? "CERTIFICADO DE REVISION TECNICA" : (job.tripType === 'viaje' ? "TRASLADO A REGIONES" : "CHECKLIST DE TRASLADO");
-      drawHeader(pdfTitle);
-
-      let currentY = 50;
-      if (job.tripType === 'revision' && job.checklist?.rtStatus) {
-          const isApproved = job.checklist.rtStatus === 'aprobado';
-          const statusText = isApproved ? "APROBADO" : "RECHAZADO";
-          docPDF.setFillColor(isApproved ? 220 : 254, isApproved ? 252 : 226, isApproved ? 231 : 226);
-          docPDF.rect(0, 40, 210, 12, 'F');
-          docPDF.setFontSize(16); docPDF.setFont("helvetica", "bold");
-          docPDF.setTextColor(isApproved ? 22 : 220, isApproved ? 163 : 38, isApproved ? 74 : 38); 
-          docPDF.text(statusText, 195, 48, null, null, "right");
-          currentY = 60; 
-      }
-
-      const startY = currentY; const leftColWidth = 90;
-      const drawSectionTitle = (title, y) => {
-        docPDF.setFillColor(...lightBg); docPDF.rect(15, y - 6, leftColWidth, 10, 'F');
-        docPDF.setDrawColor(...accentColor); docPDF.setLineWidth(1); docPDF.line(15, y - 6, 15, y + 4);
-        docPDF.setTextColor(...primaryColor); docPDF.setFontSize(10); docPDF.setFont("helvetica", "bold");
-        docPDF.text(cleanStr(title).toUpperCase(), 20, y+1);
-        return y + 10;
-      };
-
-      const drawKV = (label, value, x, y, maxW = 40) => {
-        docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
-        docPDF.text(cleanStr(label).toUpperCase(), x, y);
-        docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
-        const splitValue = docPDF.splitTextToSize(cleanStr(value), maxW); docPDF.text(splitValue, x, y + 4);
-        return splitValue.length * 4;
-      };
-
-      let driverNameStr = job.checklist?.assignedDriverName || job.acceptedByEmail || "Conductor";
-
-      currentY = drawSectionTitle("1. Detalles del Vehiculo", currentY);
-      let hC = drawKV("Cliente", `${job.client || 'Sin Cliente'}`, 15, currentY, 45);
-      let hM = drawKV("Marca y Modelo", `${job.brand || '-'} ${job.model || '-'}`, 65, currentY, 45);
-      currentY += Math.max(hC, hM) + 6;
-
-      let hP = drawKV("Patente / VIN", `${job.plate || job.vin || '-'}`, 15, currentY, 45);
-      let hD = drawKV("Conductor", driverNameStr, 65, currentY, 45);
-      currentY += Math.max(hP, hD) + 6;
-      
-      let routeText = `${job.origin || '-'}  ->  ${job.destination || '-'}`;
-      if (job.tripType === 'revision') {
-        if (job.checklist?.rtStatus === 'aprobado') {
-           const ret = job.checklist.rtReturnOption === 'other' ? job.checklist.rtReturnDestination : job.origin;
-           routeText = `${job.origin || '-'}  ->  PRT  ->  ${ret || '-'}`;
-        } else if (job.checklist?.rtStatus === 'rechazado') {
-           routeText = `${job.origin || '-'}  ->  PRT (Rechazada)`;
-        } else {
-           routeText = `${job.origin || '-'}  ->  PRT`;
-        }
-      }
-      let routeH = drawKV("Ruta Asignada", routeText, 15, currentY, leftColWidth);
-      currentY += routeH + 8;
-
-      currentY = drawSectionTitle("2. Recepcion y Estado", currentY);
-      
-      const getDocStatus = (docKey) => {
-          const isOk = job.checklist?.docs?.[docKey];
-          const expDate = job.checklist?.docsExpiry?.[docKey];
-          if (!isOk) return 'FALTA';
-          if (expDate) {
-              const [y, m, d] = expDate.split('-');
-              return `AL DIA (Vence: ${d}/${m}/${y})`;
-          }
-          return 'AL DIA';
-      };
-
-      let hFuel = drawKV("Combustible", `${job.checklist?.fuelLevel || '0'}%`, 15, currentY, 45);
-      let hSoap = drawKV("Seguro SOAP", getDocStatus('soap'), 65, currentY, 45);
-      currentY += Math.max(hFuel, hSoap) + 6;
-
-      let hPerm = drawKV("Permiso Circ.", getDocStatus('permiso'), 15, currentY, 45);
-      let hRev = drawKV("Rev. Tecnica", getDocStatus('revTecnica'), 65, currentY, 45);
-      currentY += Math.max(hPerm, hRev) + 6;
-
-      let hGas = drawKV("Gases", getDocStatus('gases'), 15, currentY, 45);
-      currentY += hGas + 8;
-
-      docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
-      docPDF.text("OBSERVACIONES:", 15, currentY);
-      docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
-      const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin observaciones registradas.'}`), leftColWidth);
-      docPDF.text(obsSplit, 15, currentY + 4);
-      currentY += (obsSplit.length * 4) + 6;
-
-      if (job.checklist?.hasWaitTime) {
-        docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38);
-        const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth);
-        docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2;
-      }
-      if (job.checklist?.hasFuelCharge) {
-        docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(37, 99, 235);
-        const fcStr = docPDF.splitTextToSize(`CARGA DE COMBUSTIBLE: ${cleanStr(job.checklist.fuelChargeAmount || 'Sí')}`, leftColWidth);
-        docPDF.text(fcStr, 15, currentY); currentY += (fcStr.length * 4) + 2;
-      }
-      currentY += 8; 
-
-      let sectionNum = 3;
-
-      if (job.tripType === 'revision') {
-         currentY = drawSectionTitle(`${sectionNum}. Resultado`, currentY);
-         if (job.checklist?.rtStatus === 'aprobado') {
-           docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(16); 
-           docPDF.text("APROBADO", 15, currentY + 6);
-           currentY += 18; 
-         } else {
-           docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(16); 
-           docPDF.text("RECHAZADO", 15, currentY + 6);
-           docPDF.setFontSize(10); docPDF.setTextColor(153, 27, 27);
-           const rejSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.checklist?.rtRejectReason || job.failedReason || 'No especificada'}`), leftColWidth);
-           docPDF.text(rejSplit, 15, currentY + 12);
-           currentY += 20 + (rejSplit.length * 4); 
-         }
-         sectionNum++;
-      }
-
-      currentY = drawSectionTitle(`${sectionNum}. Conformidad Entrega`, currentY);
-      if (job.checklist?.noReception) {
-        docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(9);
-        const nrSplit = docPDF.splitTextToSize("ENTREGA SIN RECEPCION (Confirmada por conductor en terreno)", leftColWidth);
-        docPDF.text(nrSplit, 15, currentY + 4); currentY += (nrSplit.length * 4) + 6;
-      } else {
-        drawKV("Receptor", `${job.checklist?.receiverName || 'N/A'}`, 15, currentY, leftColWidth); currentY += 12;
-        drawKV("RUT", `${job.checklist?.receiverRut || 'N/A'}`, 15, currentY, leftColWidth); currentY += 12;
-        
-        if (job.checklist?.clientComments) {
-            docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
-            docPDF.text("COMENTARIOS:", 15, currentY);
-            docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
-            const commSplit = docPDF.splitTextToSize(cleanStr(job.checklist.clientComments), leftColWidth);
-            docPDF.text(commSplit, 15, currentY + 4);
-            currentY += (commSplit.length * 4) + 6;
-        }
-
-        if(job.checklist?.signatureData) {
-            docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
-            docPDF.text("FIRMA DE CONFORMIDAD:", 15, currentY);
-            docPDF.addImage(job.checklist.signatureData, 'PNG', 15, currentY + 2, 45, 25);
-            currentY += 30;
-        }
-      }
-
-      const frontPhotoStr = job.checklist?.photos?.front;
-      if (frontPhotoStr && typeof frontPhotoStr === 'string' && frontPhotoStr.startsWith('data:image')) {
-        try {
-          const dims = await getImageDims(frontPhotoStr); const ratio = dims.h / dims.w;
-          let imgW = 80; let imgH = imgW * ratio; if (imgH > 130) { imgH = 130; imgW = imgH / ratio; }
-          const rightX = 115; const rightY = startY + 6;
-          docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(rightX - 2, rightY - 8, imgW + 4, imgH + 12, 2, 2, 'S');
-          docPDF.setFillColor(...lightBg); docPDF.rect(rightX - 2, rightY - 8, imgW + 4, 8, 'F');
-          docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor);
-          docPDF.text("VISTA FRONTAL", rightX + (imgW/2), rightY - 3, { align: "center" });
-          docPDF.addImage(frontPhotoStr, 'JPEG', rightX, rightY + 2, imgW, imgH);
-        } catch (err) { console.error(err); }
-      }
-
-      const addFooter = () => {
-         const pageCount = docPDF.internal.getNumberOfPages();
-         for(let i = 1; i <= pageCount; i++) {
-             docPDF.setPage(i); docPDF.setFontSize(8); docPDF.setTextColor(148, 163, 184);
-             docPDF.text(`Generado por LogisticAPP el ${new Date().toLocaleString('es-CL')} - Pagina ${i} de ${pageCount}`, 105, 290, null, null, "center");
-         }
-      }
-
-      if (job.checklist?.photos) {
-        const photos = job.checklist.photos;
-        const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
-        let photoY = 46; let currentCol = 1; let addedPage = false;
-
-        for (const key in photos) {
-          if (key === 'front') continue; 
-          if (photos[key] && typeof photos[key] === 'string' && photos[key].startsWith('data:image')) {
-            if (!addedPage) { docPDF.addPage(); drawHeader("ANEXO FOTOGRAFICO"); addedPage = true; }
-            try {
-              const dims = await getImageDims(photos[key]); const ratio = dims.h / dims.w;
-              let imgW = 85; let imgH = imgW * ratio; if (imgH > 95) { imgH = 95; imgW = imgH / ratio; }
-              const slotCenter = currentCol === 1 ? 55 : 155; const finalX = slotCenter - (imgW / 2);
-              if (photoY + imgH > 275) { docPDF.addPage(); photoY = 46; drawHeader("ANEXO FOTOGRAFICO (CONT.)"); }
-              
-              docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S');
-              docPDF.setFillColor(...lightBg); docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F');
-              docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor);
-              docPDF.text((labels[key] || key).toUpperCase(), slotCenter, photoY - 3, { align: "center" });
-              docPDF.addImage(photos[key], 'JPEG', finalX, photoY + 2, imgW, imgH);
-              if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 20; }
-            } catch (err) {}
-          }
-        }
-      }
-      addFooter();
-
-      const cleanPlate = job.plate || job.vin || 'SN';
-      const dateStrForFile = (job.scheduledDate || new Date().toISOString().split('T')[0]).replace(/\//g, '-');
-      const fileName = `Certificado.${dateStrForFile}.${(job.client || 'Cliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`; 
-      docPDF.save(fileName); 
-      setDownloadingId(null);
-      
-    } catch (error) {
-      console.error("Error crítico generando PDF:", error);
-      setAlertMessage("Hubo un error al descargar el PDF. Verifica tu conexión a internet e intenta de nuevo.");
-      setDownloadingId(null);
-    }
-  };
-
   if (submitted || job.checklist.clientSigned) {
-    const isCompleted = job.status === 'completed' || job.status === 'failed';
-
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center animate-in fade-in">
-        <div className={`bg-white p-8 rounded-3xl shadow-xl max-w-sm w-full border-t-8 transition-colors duration-500 ${isCompleted ? 'border-green-500' : 'border-blue-500'}`}>
-          {isCompleted ? (
-            <>
-              <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4 animate-in zoom-in"/>
-              <h2 className="text-2xl font-black text-slate-800 mb-2">¡Recepción Exitosa!</h2>
-              <p className="text-slate-500 font-bold text-sm mb-6">El conductor ha finalizado el traslado. Ya puedes descargar tu acta.</p>
-              <button 
-                onClick={handleDownloadPDF} 
-                disabled={downloadingId !== null}
-                className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg transition-all disabled:opacity-50"
-              >
-                {downloadingId ? <Clock className="w-5 h-5 animate-spin"/> : <FileDown className="w-5 h-5"/>}
-                Descargar Acta PDF
-              </button>
-            </>
-          ) : (
-            <>
-              <Clock className="w-16 h-16 text-blue-500 mx-auto mb-4 animate-spin"/>
-              <h2 className="text-xl font-black text-slate-800 mb-2">Un momento...</h2>
-              <p className="text-slate-500 font-bold text-sm">Checklist en proceso de guardado.</p>
-              <div className="w-full bg-slate-100 h-2 rounded-full mt-6 overflow-hidden">
-                 <div className="bg-blue-500 h-full w-full animate-[progress_2s_ease-in-out_infinite] origin-left"></div>
-              </div>
-              <style>{`@keyframes progress { 0% { transform: scaleX(0); } 50% { transform: scaleX(1); } 100% { transform: scaleX(0); transform-origin: right; } }`}</style>
-            </>
-          )}
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
+        <div className="bg-white p-8 rounded-3xl shadow-xl max-w-sm w-full border-t-8 border-green-500">
+          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4"/>
+          <h2 className="text-2xl font-black text-slate-800 mb-2">¡Recepción Exitosa!</h2>
+          <p className="text-slate-500 font-bold text-sm">Tu firma y comentarios han sido enviados al conductor. Ya puedes cerrar esta ventana.</p>
         </div>
       </div>
     );
@@ -2349,14 +2044,8 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   });
 
   const handleAcceptJob = async (job) => {
-    try { 
-      await updateDoc(doc(db, 'transport_jobs', job.id), { 
-        status: 'accepted', 
-        phase: 'claimed',
-        acceptedByEmail: currentUserEmail || '' 
-      }); 
-    } 
-    catch (e) { console.error(e); showAlert("Error al aceptar: " + e.message); }
+    try { await updateDoc(doc(db, 'transport_jobs', job.id), { status: 'accepted', acceptedByEmail: currentUserEmail }); } 
+    catch (e) { console.error(e); }
   };
 
   const handleDeleteJob = async (jobId) => {
@@ -2369,22 +2058,19 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     try {
       if (job.tripType === 'revision' && reason === 'RECHAZO_RT_AUTOMATICO') {
           const cloneJob = {
-              scheduledDate: job.scheduledDate || null, client: job.client || '', brand: job.brand || '', model: job.model || '', vin: job.vin || '', plate: job.plate || '',
-              origin: job.origin || '', destination: job.destination || '', tripType: job.tripType || 'traslado', rtData: job.rtData || null,
+              scheduledDate: job.scheduledDate, client: job.client, brand: job.brand, model: job.model, vin: job.vin, plate: job.plate,
+              origin: job.origin, destination: job.destination, tripType: job.tripType, rtData: job.rtData,
               assignedDrivers: job.assignedDrivers || [], assignedEmails: job.assignedEmails || [],
               status: 'pending', createdAt: Date.now(), checklist: null
           };
-          await addDoc(collection(db, 'transport_jobs'), JSON.parse(JSON.stringify(cloneJob)));
+          await addDoc(collection(db, 'transport_jobs'), cloneJob);
       }
-      await updateDoc(doc(db, 'transport_jobs', job.id), JSON.parse(JSON.stringify({ 
-        status: 'failed', 
-        failedReason: reason === 'RECHAZO_RT_AUTOMATICO' ? (job.checklist?.rtRejectReason || 'Revisión Técnica Rechazada') : reason, 
-        completedAt: Date.now(), 
-        acceptedByEmail: job.acceptedByEmail || currentUserEmail || 'Admin'
-      })));
-      setJobToFail(null); 
-      showAlert(reason === 'RECHAZO_RT_AUTOMATICO' ? "Revisión rechazada. Se creó un nuevo traslado pendiente." : "Trabajo marcado como fallido o cancelado.");
-    } catch (e) { console.error(e); showAlert("Error técnico: " + e.message); }
+      await updateDoc(doc(db, 'transport_jobs', job.id), { 
+        status: 'failed', failedReason: reason === 'RECHAZO_RT_AUTOMATICO' ? job.checklist?.rtRejectReason || 'Revisión Técnica Rechazada' : reason, 
+        completedAt: Date.now(), acceptedByEmail: job.acceptedByEmail || currentUserEmail
+      });
+      setJobToFail(null); showAlert(reason === 'RECHAZO_RT_AUTOMATICO' ? "Revisión guardada como rechazada y se ha creado un nuevo traslado pendiente." : "Trabajo marcado como fallido.");
+    } catch (e) { console.error(e); }
   };
 
   const getRouteStr = (j) => {
@@ -2995,46 +2681,35 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     return () => unsub();
   }, [job.id, isQuick, db]);
 
+  // NUEVO: Función para generar y mandar el link de firma
   const handleRemoteSignRequest = async () => {
     if (isQuick) return showAlert("⚠️ Para usar la Firma Remota en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
     
     try {
+      await setDoc(doc(db, 'transport_jobs', job.id), { checklist: formData }, { merge: true });
+      
+      // Se crea la URL limpia de forma absoluta
       const url = `${window.location.href.split('?')[0]}?sign=${job.id}`;
-      const mensaje = `¡Hola! Por favor firma el acta de recepción y revisa las fotografías del vehículo aquí:\n${url}`;
+      navigator.clipboard.writeText(`¡Hola! Por favor firma el acta de recepción y revisa las fotografías del vehículo aquí:\n${url}`);
       
-      let copiadoExitoso = false;
-      // Copiamos inmediatamente para que Safari/iPhone no bloquee el botón
-      if (navigator.clipboard && window.isSecureContext) {
-        try {
-          await navigator.clipboard.writeText(mensaje);
-          copiadoExitoso = true;
-        } catch (err) { console.warn(err); }
-      } 
-
-      // Guardado seguro limpiando vacíos
-      const cleanData = JSON.parse(JSON.stringify(formData));
-      updateDoc(doc(db, 'transport_jobs', job.id), { checklist: cleanData }).catch(e => console.error(e));
-      
-      if (copiadoExitoso) {
-        showAlert("✅ Link copiado. Envíalo al cliente por WhatsApp. La pantalla se actualizará sola cuando firme.");
-      } else {
-        showAlert(`⚠️ Link generado. Cópialo manualmente:\n\n${url}`);
-      }
+      showAlert("✅ Link copiado. Envíalo al cliente por WhatsApp. La pantalla se actualizará sola cuando firme.");
     } catch (e) {
-      showAlert(`Error: ${e.message}`);
+      console.error(e);
+      showAlert("Error al generar el link. Revisa tu conexión.");
     }
   };
 
+  // NUEVO: Función para guardar datos antes de mostrar el QR
   const handleOpenQR = async () => {
     if (isQuick) return showAlert("⚠️ Para usar el Código QR en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
-    if (!navigator.onLine) return showAlert("⚠️ Tu celular no tiene señal en este momento.");
+    if (!navigator.onLine) return showAlert("⚠️ Tu celular no tiene señal en este momento. El cliente no podrá descargar las fotos con el QR. Usa 'Compartir Link' y envíalo cuando recuperes la conexión.");
     
     try {
-      setQrOpen(true); // Abrir rápido para evitar bloqueos
-      const cleanData = JSON.parse(JSON.stringify(formData));
-      updateDoc(doc(db, 'transport_jobs', job.id), { checklist: cleanData }).catch(e=>console.error(e));
+      await setDoc(doc(db, 'transport_jobs', job.id), { checklist: formData }, { merge: true });
+      setQrOpen(true);
     } catch (e) {
-      showAlert(`Error al generar el QR: ${e.message}`);
+      console.error(e);
+      showAlert("Error al generar el QR. Revisa tu conexión.");
     }
   };
 
@@ -3088,9 +2763,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
       d.receiverRut="N/A"; 
     }
     
-    const rawFd = { scheduledDate: new Date().toISOString().split('T')[0], client: d.client, brand: d.brand, model: d.model, vin: d.plateOrVin, plate: d.plateOrVin, origin: d.origin, destination: d.destination, status: 'completed', completedAt: Date.now(), checklist: d, tripType: job.tripType || 'traslado' };
-    // TRUCO FIREBASE: Destruye cualquier valor 'undefined' dentro del objeto gigante para evitar el bloqueo del servidor
-    const fd = JSON.parse(JSON.stringify(rawFd));
+    const fd = { scheduledDate: new Date().toISOString().split('T')[0], client: d.client, brand: d.brand, model: d.model, vin: d.plateOrVin, plate: d.plateOrVin, origin: d.origin, destination: d.destination, status: 'completed', completedAt: Date.now(), checklist: d, tripType: job.tripType || 'traslado' };
     
     try {
       // --- PARTE 2: AUTOMATIZAR MÚLTIPLES GASTOS (COMBUSTIBLE + PRT) ---
@@ -3432,8 +3105,8 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
                  <>
                    <div className="flex items-center gap-2 mb-2"><div className="h-px bg-slate-200 flex-1"></div><span className="text-xs font-bold text-slate-400 uppercase">O llenar manualmente</span><div className="h-px bg-slate-200 flex-1"></div></div>
                    
-                   <input value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
-                   <input value={formData.receiverRut} onChange={e=>setF('receiverRut',e.target.value)} placeholder="RUT Receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
+                   <input required={!formData.noReception} value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
+                   <input required={!formData.noReception} value={formData.receiverRut} onChange={e=>setF('receiverRut',e.target.value)} placeholder="RUT Receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
                    
                    {/* NUEVO: Muestra los comentarios si el cliente dejó alguno por el link remoto */}
                    {formData.clientComments && (
