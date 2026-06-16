@@ -186,6 +186,24 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
       }
       
       if (plate && !vehicles.find(v => v.plate === plate)) await addDoc(collection(db, 'vehicles'), { plate, brand, model, client: finalClient, createdAt: Date.now() });
+      
+      // --- NUEVO: LLAMADA A VERCEL PARA ENVIAR NOTIFICACIÓN PUSH REAL EN SEGUNDO PLANO ---
+      const driverTokens = assignedDriversList.map(d => d.fcmToken).filter(token => token);
+      if (driverTokens.length > 0) {
+        try {
+          fetch('/api/send-notification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tokens: driverTokens,
+              title: jobToEdit ? "🔄 Traslado Actualizado" : "📍 ¡Nuevo Traslado Asignado!",
+              body: `Vehículo: ${brand} ${model} (${plate || 'S/N'})\nDesde: ${jobData.origin}`
+            })
+          });
+        } catch (pushErr) { console.warn("Fallo el envío Push:", pushErr); }
+      }
+      // ----------------------------------------------------------------------------------
+
       onSuccess();
     } catch (error) { console.error(error); showAlert("Ocurrió un error guardando el trabajo."); }
   };
