@@ -1153,7 +1153,7 @@ function ClientSignView({ jobId, db }) {
         
         const addFooter = () => { const pageCount = docPDF.internal.getNumberOfPages(); for(let i = 1; i <= pageCount; i++) { docPDF.setPage(i); docPDF.setFontSize(8); docPDF.setTextColor(148, 163, 184); docPDF.text(`Generado por LogisticAPP el ${new Date().toLocaleString('es-CL')} - Pagina ${i} de ${pageCount}`, 105, 290, null, null, "center"); } }
         
-        if (job.checklist?.photos) { const photos = job.checklist.photos; const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' }; let photoY = 46; let currentCol = 1; let addedPage = false; for (const key in photos) { if (key === 'front') continue;  if (photos[key] && typeof photos[key] === 'string' && photos[key].startsWith('data:image')) { if (!addedPage) { docPDF.addPage(); drawHeader("ANEXO FOTOGRAFICO"); addedPage = true; } try { const dims = await getImageDims(photos[key]); const ratio = dims.h / dims.w; let imgW = 85; let imgH = imgW * ratio; if (imgH > 95) { imgH = 95; imgW = imgH / ratio; } const slotCenter = currentCol === 1 ? 55 : 155; const finalX = slotCenter - (imgW / 2); if (photoY + imgH > 275) { docPDF.addPage(); photoY = 46; drawHeader("ANEXO FOTOGRAFICO (CONT.)"); } docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S'); docPDF.setFillColor(...lightBg); docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F'); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor); docPDF.text((labels[key] || key).toUpperCase(), slotCenter, photoY - 3, { align: "center" }); docPDF.addImage(photos[key], 'JPEG', finalX, photoY + 2, imgW, imgH); if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 20; } } catch (err) {} } } }
+        if (job.checklist?.photos) { const photos = job.checklist.photos; const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', interior_front: 'Int. Adelante', interior_back: 'Int. Atras', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4', det5: 'Detalle 5', det6: 'Detalle 6', det7: 'Detalle 7', det8: 'Detalle 8' }; let photoY = 46; let currentCol = 1; let addedPage = false; for (const key in photos) { if (key === 'front') continue;  if (photos[key] && typeof photos[key] === 'string' && photos[key].startsWith('data:image')) { if (!addedPage) { docPDF.addPage(); drawHeader("ANEXO FOTOGRAFICO"); addedPage = true; } try { const dims = await getImageDims(photos[key]); const ratio = dims.h / dims.w; let imgW = 85; let imgH = imgW * ratio; if (imgH > 95) { imgH = 95; imgW = imgH / ratio; } const slotCenter = currentCol === 1 ? 55 : 155; const finalX = slotCenter - (imgW / 2); if (photoY + imgH > 275) { docPDF.addPage(); photoY = 46; drawHeader("ANEXO FOTOGRAFICO (CONT.)"); } docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S'); docPDF.setFillColor(...lightBg); docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F'); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor); docPDF.text((labels[key] || key).toUpperCase(), slotCenter, photoY - 3, { align: "center" }); docPDF.addImage(photos[key], 'JPEG', finalX, photoY + 2, imgW, imgH); if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 20; } } catch (err) {} } } }
         
         addFooter();
         const cleanPlate = job.plate || job.vin || 'SN';
@@ -1588,7 +1588,7 @@ export default function App() {
                 </div>
                 {/* NUEVO: VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v1.2.5</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v1.3</p>
                 </div>
               </div>
             )}
@@ -2530,7 +2530,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
 
     if (job.checklist?.photos) {
       const photos = job.checklist.photos;
-      const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4' };
+      const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', interior_front: 'Int. Adelante', interior_back: 'Int. Atras', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4', det5: 'Detalle 5', det6: 'Detalle 6', det7: 'Detalle 7', det8: 'Detalle 8' };
       let photoY = 46; let currentCol = 1; let addedPage = false;
 
       for (const key in photos) {
@@ -3219,7 +3219,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
             <div className="bg-slate-50 p-4 rounded-3xl border-2 border-slate-100 mb-4 select-none">
               <p className="text-[10px] font-black text-slate-400 uppercase text-center mb-4 leading-relaxed">
                 Toca los recuadros para fotos generales.<br/>
-                <span className="text-blue-500">Toca directo sobre el dibujo del auto para registrar un daño (máx 4).</span>
+                <span className="text-blue-500">Toca directo sobre el dibujo del auto para registrar un daño (máx 8).</span>
               </p>
               
               <div className="relative w-full max-w-[280px] h-[400px] mx-auto my-6">
@@ -3229,8 +3229,8 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
                    className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 cursor-crosshair hover:opacity-90 transition-opacity drop-shadow-lg z-10"
                    style={{ height: formData.vehicleType === 'camion' ? '260px' : '220px' }}
                    onClick={(e) => {
-                     const availableDet = ['det1', 'det2', 'det3', 'det4'].find(d => !formData.photos[d]);
-                     if (!availableDet) return showAlert("Máximo de 4 fotos de detalles/daños alcanzado.");
+                     const availableDet = ['det1', 'det2', 'det3', 'det4', 'det5', 'det6', 'det7', 'det8'].find(d => !formData.photos[d]);
+                     if (!availableDet) return showAlert("Máximo de 8 fotos de detalles/daños alcanzado.");
                      const rect = e.currentTarget.getBoundingClientRect();
                      const x = ((e.clientX - rect.left) / rect.width) * 100;
                      const y = ((e.clientY - rect.top) / rect.height) * 100;
@@ -3302,14 +3302,14 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
                 </label>
 
                 {/* Inputs ocultos para los detalles fotográficos */}
-                {['det1','det2','det3','det4'].map(d => <input key={d} type="file" id={`pic-${d}`} className="hidden" accept="image/*" onChange={e=>handlePic(e,d)}/>)}
+                {['det1','det2','det3','det4','det5','det6','det7','det8'].map(d => <input key={d} type="file" id={`pic-${d}`} className="hidden" accept="image/*" onChange={e=>handlePic(e,d)}/>)}
 
               </div>
 
-              {/* Botones Flotantes Inferiores (Tablero, Repuesto) */}
-              <div className="flex justify-center gap-4 mt-6 border-t-2 border-slate-100 pt-4">
-                {[{id:'dashboard', l:'Tablero'}, {id:'tire', l:'Repuesto'}].map(p => (
-                   <label key={p.id} className={`w-28 h-12 rounded-xl border-2 flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white shadow-sm transition-all ${formData.photos[p.id] ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-slate-50'}`}>
+              {/* Botones Flotantes Inferiores (Tablero, Repuesto, Interior) */}
+              <div className="grid grid-cols-2 gap-3 mt-6 border-t-2 border-slate-100 pt-4">
+                {[{id:'dashboard', l:'Tablero'}, {id:'tire', l:'Repuesto'}, {id:'interior_front', l:'Int. Adelante'}, {id:'interior_back', l:'Int. Atrás'}].map(p => (
+                   <label key={p.id} className={`w-full h-12 rounded-xl border-2 flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white shadow-sm transition-all ${formData.photos[p.id] ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-slate-50'}`}>
                      <input type="file" className="hidden" accept="image/*" onChange={e=>handlePic(e,p.id)}/>
                      {formData.photos[p.id] ? <><img src={formData.photos[p.id]} className="absolute inset-0 w-full h-full object-cover opacity-30"/><CheckCircle className="w-5 h-5 text-green-500 relative z-10 bg-white rounded-full"/><span className="text-[10px] font-black text-green-800 relative z-10">{p.l}</span></> : <><Camera className="w-4 h-4 text-slate-400"/><span className="text-[10px] font-black text-slate-500 uppercase">{p.l}</span></>}
                    </label>
