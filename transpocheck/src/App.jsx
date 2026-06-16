@@ -1682,7 +1682,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v1.6</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v1.7</p>
                 </div>
               </div>
             )}
@@ -1770,11 +1770,12 @@ export default function App() {
              allClientsList={allClientsList}
              drivers={drivers} expenses={expenses} 
              onCancel={() => { 
-                localStorage.removeItem('checklist_draft_' + selectedJob.id);
+                // Ya no eliminamos el borrador al presionar Salir, para que se mantenga en Firebase
                 setCurrentView('main');
              }} 
-             onComplete={() => { 
-                localStorage.removeItem('checklist_draft_' + selectedJob.id);
+             onComplete={async () => { 
+                // Limpiamos la base de datos de basura solo cuando el trabajo se finalizó con éxito
+                if (selectedJob.id !== 'NEW_QUICK_JOB') await updateDoc(doc(db, 'transport_jobs', selectedJob.id), { draft: null });
                 setSelectedJob(null); setCurrentView('main'); 
              }} 
              showAlert={showAlert} showConfirm={showConfirm} 
@@ -2962,11 +2963,24 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
   const [qrOpen, setQrOpen] = useState(false); // <-- NUEVO ESTADO PARA QR (Idea 8)
 
-  // NUEVO: Escucha en tiempo real si el cliente firma desde su celular
+  // LÓGICA DE BORRADORES Y FIRMA EN FIRESTORE (Reemplaza a localStorage)
   useEffect(() => {
     if (isQuick || !job.id) return;
+    let isFirstLoad = true;
     const unsub = onSnapshot(doc(db, 'transport_jobs', job.id), (docSnap) => {
       const data = docSnap.data();
+      
+      // 1. Cargar borrador si existe en Firebase (solo la primera vez al entrar al componente)
+      if (isFirstLoad) {
+        if (data?.draft) {
+          setFormData(data.draft.formData);
+          setStep(data.draft.step || 1);
+          setIsDraftLoaded(true);
+        }
+        isFirstLoad = false;
+      }
+
+      // 2. Escuchar siempre en tiempo real si el cliente firma desde su celular
       if (data?.checklist?.clientSigned) {
         setFormData(prev => ({
           ...prev,
@@ -2980,14 +2994,23 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     return () => unsub();
   }, [job.id, isQuick, db]);
 
-  // NUEVO: Función para generar y mandar el link de firma (Optimizado 100% a prueba de Apple/iOS)
+  // Guardado Automático de Borrador en Firestore (en vez de local)
+  useEffect(() => {
+    if (isQuick || !job.id) return;
+    const timer = setTimeout(() => {
+      updateDoc(doc(db, 'transport_jobs', job.id), { draft: { step, formData } }).catch(() => {});
+    }, 2000); // 2 segundos de retraso para no saturar la base de datos
+    return () => clearTimeout(timer);
+  }, [step, formData, job.id, isQuick, db]);
+
+  // Función para generar y mandar el link de firma (Optimizado 100% a prueba de Apple/iOS)
   const handleRemoteSignRequest = async () => {
     if (isQuick) return showAlert("⚠️ Para usar la Firma Remota en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
     
     const url = `${window.location.href.split('?')[0]}?sign=${job.id}`;
     const textToShare = `¡Hola! Por favor firma el acta de recepción y revisa las fotografías del vehículo aquí:\n${url}`;
 
-    // 1. COPIA SÍNCRONA INMEDIATA: Forzamos la copia antes de cualquier pausa asíncrona para que Safari no la bloquee.
+    // 1. COPIA SÍNCRONA INMEDIATA
     const textArea = document.createElement("textarea");
     textArea.value = textToShare;
     textArea.style.position = "fixed";
@@ -3000,12 +3023,11 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     // 2. Guardamos en Firebase de fondo (sin poner "await" para no pausar el hilo)
     setDoc(doc(db, 'transport_jobs', job.id), { checklist: formData }, { merge: true }).catch(console.error);
 
-    // 3. Disparamos el menú nativo de compartir (iOS/Android)
+    // 3. Disparamos el menú nativo de compartir
     if (navigator.share) {
       try {
         await navigator.share({ title: 'Firma de Recepción', text: textToShare });
       } catch (err) { 
-        // Si cancelan el menú, les notificamos que al menos se copió al portapapeles con éxito
         showAlert("✅ Link copiado al portapapeles automáticamente."); 
       }
     } else {
@@ -3013,7 +3035,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     }
   };
 
-  // NUEVO: Función para guardar datos antes de mostrar el QR
+  // Función para guardar datos antes de mostrar el QR
   const handleOpenQR = async () => {
     if (isQuick) return showAlert("⚠️ Para usar el Código QR en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
     if (!navigator.onLine) return showAlert("⚠️ Tu celular no tiene señal en este momento. El cliente no podrá descargar las fotos con el QR. Usa 'Compartir Link' y envíalo cuando recuperes la conexión.");
@@ -3027,27 +3049,11 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     }
   };
 
-  useEffect(() => {
-    const savedDraft = localStorage.getItem(localStorageKey);
-    if (savedDraft) {
-      try {
-        const parsedData = JSON.parse(savedDraft);
-        setFormData(parsedData.formData);
-        setStep(parsedData.step || 1);
-        setIsDraftLoaded(true);
-      } catch (e) { console.error("Error al leer borrador", e); }
-    }
-  }, [localStorageKey]);
-
-  useEffect(() => {
-    localStorage.setItem(localStorageKey, JSON.stringify({ step, formData }));
-  }, [step, formData, localStorageKey]);
-
   const setF = (f, v) => setFormData(p => ({...p, [f]:v}));
 
   const clearDraft = () => {
-    showConfirm("¿Eliminar borrador y empezar de nuevo?", () => {
-      localStorage.removeItem(localStorageKey);
+    showConfirm("¿Eliminar borrador y empezar de nuevo?", async () => {
+      if (!isQuick) await updateDoc(doc(db, 'transport_jobs', job.id), { draft: null });
       setFormData(defaultData);
       setStep(1);
       setIsDraftLoaded(false);
