@@ -1642,7 +1642,7 @@ export default function App() {
                 </div>
                 {/* NUEVO: VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v1.4</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v1.4.5</p>
                 </div>
               </div>
             )}
@@ -2690,10 +2690,22 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     const dateStr = getDStr(job);
     const dateShort = dateStr.substring(0, 5); 
     const text = `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`; 
-    navigator.clipboard.writeText(text).then(() => { 
+    
+    // Fallback seguro síncrono para iOS
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try { 
+      document.execCommand('copy'); 
       showAlert("✅ Formato copiado al portapapeles. Listo para pegar en WhatsApp."); 
-      setMenuOpenId(null); 
-    }).catch(() => showAlert("Tu navegador bloqueó el copiado automático.")); 
+    } catch (err) { 
+      showAlert("Tu navegador bloqueó el copiado automático."); 
+    }
+    document.body.removeChild(textArea);
+    setMenuOpenId(null); 
   };
   const cpyWapp = handleCopyWhatsApp; 
 
@@ -2749,11 +2761,19 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                   <button onClick={()=>setMenuOpenId(menuOpenId===j.id?null:j.id)} className="p-1.5 text-slate-400 hover:bg-slate-50 rounded-lg"><MoreVertical className="w-4 h-4"/></button>
                   {menuOpenId===j.id && (
                     <div className="absolute right-0 top-8 bg-white border shadow-2xl rounded-xl w-48 z-50 overflow-hidden text-xs">
-                      {/* NUEVO BOTÓN: COPIAR LINK DE PORTAL DE CLIENTE */}
+                      {/* NUEVO BOTÓN: COPIAR LINK DE PORTAL DE CLIENTE (Seguro iOS) */}
                       <button onClick={() => {
                         const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
-                        navigator.clipboard.writeText(`📍 Sigue en tiempo real todos los traslados de ${j.client || 'tu empresa'} aquí:\n${url}`);
-                        showAlert("✅ Portal de Cliente copiado. ¡Pégalo en WhatsApp!");
+                        const textToShare = `📍 Sigue en tiempo real todos los traslados de ${j.client || 'tu empresa'} aquí:\n${url}`;
+                        
+                        const textArea = document.createElement("textarea");
+                        textArea.value = textToShare;
+                        textArea.style.position = "fixed";
+                        document.body.appendChild(textArea);
+                        textArea.focus();
+                        textArea.select();
+                        try { document.execCommand('copy'); showAlert("✅ Portal de Cliente copiado. ¡Pégalo en WhatsApp!"); } catch(e) {}
+                        document.body.removeChild(textArea);
                         setMenuOpenId(null);
                       }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-blue-50 text-blue-600"><Navigation className="w-4 h-4"/> Portal Cliente</button>
                       
@@ -2922,45 +2942,37 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     return () => unsub();
   }, [job.id, isQuick, db]);
 
-  // NUEVO: Función para generar y mandar el link de firma (Optimizado para Apple/Android)
+  // NUEVO: Función para generar y mandar el link de firma (Optimizado 100% a prueba de Apple/iOS)
   const handleRemoteSignRequest = async () => {
     if (isQuick) return showAlert("⚠️ Para usar la Firma Remota en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
     
     const url = `${window.location.href.split('?')[0]}?sign=${job.id}`;
     const textToShare = `¡Hola! Por favor firma el acta de recepción y revisa las fotografías del vehículo aquí:\n${url}`;
 
-    // 1. Intentar menú de compartir nativo (Abre WhatsApp directo en iOS/Android)
+    // 1. COPIA SÍNCRONA INMEDIATA: Forzamos la copia antes de cualquier pausa asíncrona para que Safari no la bloquee.
+    const textArea = document.createElement("textarea");
+    textArea.value = textToShare;
+    textArea.style.position = "fixed";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try { document.execCommand('copy'); } catch (err) {}
+    document.body.removeChild(textArea);
+
+    // 2. Guardamos en Firebase de fondo (sin poner "await" para no pausar el hilo)
+    setDoc(doc(db, 'transport_jobs', job.id), { checklist: formData }, { merge: true }).catch(console.error);
+
+    // 3. Disparamos el menú nativo de compartir (iOS/Android)
     if (navigator.share) {
       try {
         await navigator.share({ title: 'Firma de Recepción', text: textToShare });
-        // Si comparte con éxito, guardamos en Firebase en segundo plano sin bloquear UI
-        setDoc(doc(db, 'transport_jobs', job.id), { checklist: formData }, { merge: true });
-        return;
-      } catch (err) { console.log("Menú de compartir cancelado o no soportado"); }
-    }
-
-    // 2. Fallback de Portapapeles (Ejecutado ANTES del await de Firebase para engañar a Safari)
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(textToShare);
-      } else {
-        // 3. Fallback fuerza bruta para iPhones viejos
-        const textArea = document.createElement("textarea");
-        textArea.value = textToShare;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand("copy");
-        textArea.remove();
+      } catch (err) { 
+        // Si cancelan el menú, les notificamos que al menos se copió al portapapeles con éxito
+        showAlert("✅ Link copiado al portapapeles automáticamente."); 
       }
+    } else {
       showAlert("✅ Link copiado al portapapeles. ¡Pégalo en WhatsApp!");
-    } catch (e) {
-      showAlert("Tu navegador bloquea el portapapeles automáticamente.");
     }
-
-    // 4. Finalmente guardamos los datos en la base de datos
-    try {
-      await setDoc(doc(db, 'transport_jobs', job.id), { checklist: formData }, { merge: true });
-    } catch (e) { console.error("Error guardando progreso", e); }
   };
 
   // NUEVO: Función para guardar datos antes de mostrar el QR
