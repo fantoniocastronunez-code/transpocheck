@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
-import { getFirestore, enableIndexedDbPersistence, collection, addDoc, onSnapshot, updateDoc, setDoc, doc, deleteDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
+import { getFirestore, enableMultiTabIndexedDbPersistence, collection, addDoc, onSnapshot, updateDoc, setDoc, doc, deleteDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 // Eliminamos la importación global de jsPDF para que la app cargue más rápido (Lazy Loading)
 import { 
@@ -29,9 +29,9 @@ isSupported().then((supported) => {
   if (supported) messaging = getMessaging(app);
 });
 
-// NUEVO: Activamos la Persistencia Offline. La app funcionará sin internet leyendo el caché local.
-enableIndexedDbPersistence(db).catch((err) => {
-  console.warn("Modo offline limitado:", err.code);
+// NUEVO: Activamos la Persistencia Offline Multi-Pestaña.
+enableMultiTabIndexedDbPersistence(db).catch((err) => {
+  console.warn("Modo offline limitado (Multi-tab):", err.code);
 });
 
 const googleProvider = new GoogleAuthProvider();
@@ -1475,6 +1475,8 @@ export default function App() {
       // Ya vienen ordenados de Firebase, solo mapeamos
       setJobs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       isFirstLoad.current = false;
+    }, (error) => {
+      console.error("Error en conexión en tiempo real Firebase:", error);
     });
 
     // OPTIMIZACIÓN 2: Traer solo los últimos 300 gastos
@@ -1682,7 +1684,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v1.7</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v1.7.5</p>
                 </div>
               </div>
             )}
