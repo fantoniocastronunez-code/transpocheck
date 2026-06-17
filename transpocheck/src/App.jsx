@@ -902,6 +902,27 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
                   <div className="relative"><div className="absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center bg-blue-500"><div className="w-2 h-2 bg-white rounded-full animate-ping"></div></div><p className="font-extrabold text-sm text-slate-800">Camino a destino</p><p className="text-xs font-bold text-blue-600 mt-0.5">El vehículo va en ruta a su destino final</p></div>
                   )}
                 </div>
+
+                {/* --- NUEVO: MAPA DE SEGUIMIENTO EN VIVO (LIVE TRACKING) --- */}
+                {job.liveLocation && job.phase === 'picked_up' && (
+                  <div className="mt-6 border-t border-slate-100 pt-5 animate-in fade-in duration-500">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs font-black text-blue-600 uppercase flex items-center gap-1.5"><Navigation className="w-4 h-4 animate-bounce"/> GPS en vivo</p>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1"><span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Conectado</p>
+                    </div>
+                    <div className="w-full h-48 bg-slate-100 rounded-2xl overflow-hidden border-2 border-slate-200 shadow-inner relative pointer-events-none">
+                      {/* El pointer-events-none evita que el usuario se quede atrapado haciendo zoom en el mapa al hacer scroll */}
+                      <iframe 
+                        width="100%" 
+                        height="100%" 
+                        frameBorder="0" 
+                        src={`https://maps.google.com/maps?q=${job.liveLocation.lat},${job.liveLocation.lng}&z=16&output=embed`}
+                      ></iframe>
+                    </div>
+                  </div>
+                )}
+                {/* ---------------------------------------------------------- */}
+
               </div>
             )})}
           </div>
@@ -1490,6 +1511,39 @@ export default function App() {
     return () => { unsubJobs(); unsubDrivers(); unsubExpenses(); unsubVehicles(); unsubClients(); };
   }, [user, activeRole, currentUserEmail, isRealAdmin]);
 
+  // --- NUEVO: MOTOR DE TRACKING GPS EN TIEMPO REAL ---
+  useEffect(() => {
+    if (!user || activeRole !== 'driver') return;
+    
+    // Buscamos si el conductor tiene algún traslado actualmente en tránsito
+    const activeJob = jobs.find(j => 
+      j.acceptedByEmail === currentUserEmail && 
+      j.status === 'accepted' && 
+      j.phase === 'picked_up'
+    );
+
+    let watchId;
+    if (activeJob && "geolocation" in navigator) {
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          // Guardamos la ubicación silenciosamente en Firebase
+          updateDoc(doc(db, 'transport_jobs', activeJob.id), {
+            liveLocation: { lat: latitude, lng: longitude, timestamp: Date.now() }
+          }).catch(e => console.warn("Error enviando GPS", e));
+        },
+        (error) => console.warn("Error GPS en vivo:", error),
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 } // Alta precisión
+      );
+    }
+
+    // Limpieza: apagar el GPS si el trabajo cambia de fase (ej: llega a destino)
+    return () => {
+      if (watchId) navigator.geolocation.clearWatch(watchId);
+    };
+  }, [jobs, user, activeRole, currentUserEmail, db]);
+  // ---------------------------------------------------
+
   const allClientsList = Array.from(new Set([...DEFAULT_CLIENTES, ...customClients.map(c => c.name)])).sort();
 
   const globalStyles = (
@@ -1684,7 +1738,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v1.7.5</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v1.7.5 GPS</p>
                 </div>
               </div>
             )}
@@ -2847,7 +2901,23 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                 <p className="text-slate-400 mt-2">Patente/VIN: <span className="text-slate-700 bg-slate-100 px-2 py-0.5 rounded ml-1 uppercase">{j.plate || j.vin || 'N/A'}</span></p>
               </div>
               <div className="mt-auto pt-4 border-t flex flex-col gap-2">
-                {j.status === 'pending' && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && (
+                {j.status === 'pend<p className="text-slate-400 mt-2">Patente/VIN: <span className="text-slate-700 bg-slate-100 px-2 py-0.5 rounded ml-1 uppercase">{j.plate || j.vin || 'N/A'}</span></p>
+              </div>
+
+              {/* --- NUEVO: MAPA PARA EL ADMIN/CONDUCTOR --- */}
+              {j.liveLocation && j.phase === 'picked_up' && (
+                <div className="mb-4 rounded-xl overflow-hidden border border-slate-200 h-32 pointer-events-none relative shadow-inner">
+                  <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md z-10 flex items-center gap-1.5 shadow-sm">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                    <span className="text-[8px] font-black text-slate-700 uppercase tracking-wider">En vivo</span>
+                  </div>
+                  <iframe width="100%" height="100%" frameBorder="0" src={`https://maps.google.com/maps?q=${j.liveLocation.lat},${j.liveLocation.lng}&z=15&output=embed`}></iframe>
+                </div>
+              )}
+              {/* ------------------------------------------- */}
+
+              <div className="mt-auto pt-4 border-t flex flex-col gap-2">
+                {j.status === 'pending' && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && (ing' && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && (
                   <button onClick={()=>handleAcceptJob(j)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">Reclamar Traslado</button>
                 )}
 
