@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron-remind-excel",
+      "schedule": "0 14 31,1,2 * *" 
+    },
+    {
+      "path": "/api/cron-clean-db",
+      "schedule": "0 5 3 * *"
+    }
+  ]
+}
