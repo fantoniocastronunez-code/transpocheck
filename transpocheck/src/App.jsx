@@ -3481,30 +3481,30 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
                 {/* BOTONES DE FOTOS GENERALES UBICADOS ESPACIALMENTE */}
                 {/* FRENTE */}
                 <label className={`absolute top-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-20 bg-white transition-all ${formData.photos.front ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
-                  <input type="file" id="pic-front" className="sr-only" accept="image/*" capture="environment" onChange={e=>handlePic(e,'front')}/>
+                  <input type="file" id="pic-front" className="sr-only" accept="image/*" onChange={e=>handlePic(e,'front')}/>
                   {formData.photos.front ? <><img src={formData.photos.front} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-1"/><span className="text-[9px] font-black text-slate-500 tracking-wide">FRENTE</span></>}
                 </label>
 
                 {/* ATRÁS */}
                 <label className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-20 bg-white transition-all ${formData.photos.back ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
-                  <input type="file" id="pic-back" className="sr-only" accept="image/*" capture="environment" onChange={e=>handlePic(e,'back')}/>
+                  <input type="file" id="pic-back" className="sr-only" accept="image/*" onChange={e=>handlePic(e,'back')}/>
                   {formData.photos.back ? <><img src={formData.photos.back} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-1"/><span className="text-[9px] font-black text-slate-500 tracking-wide">ATRÁS</span></>}
                 </label>
 
                 {/* LATERAL PILOTO (IZQ) */}
                 <label className={`absolute top-1/2 left-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-20 bg-white transition-all ${formData.photos.left ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
-                  <input type="file" id="pic-left" className="sr-only" accept="image/*" capture="environment" onChange={e=>handlePic(e,'left')}/>
+                  <input type="file" id="pic-left" className="sr-only" accept="image/*" onChange={e=>handlePic(e,'left')}/>
                   {formData.photos.left ? <><img src={formData.photos.left} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-0.5"/><span className="text-[8px] font-black text-slate-500 text-center leading-tight">LATERAL<br/>PILOTO</span></>}
                 </label>
 
                 {/* LATERAL COPILOTO (DER) */}
                 <label className={`absolute top-1/2 right-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-20 bg-white transition-all ${formData.photos.right ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
-                  <input type="file" id="pic-right" className="sr-only" accept="image/*" capture="environment" onChange={e=>handlePic(e,'right')}/>
+                  <input type="file" id="pic-right" className="sr-only" accept="image/*" onChange={e=>handlePic(e,'right')}/>
                   {formData.photos.right ? <><img src={formData.photos.right} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-0.5"/><span className="text-[8px] font-black text-slate-500 text-center leading-tight">LATERAL<br/>COPILOTO</span></>}
                 </label>
 
                 {/* Inputs ocultos para los detalles fotográficos (sr-only evita bloqueo de cámara en iOS) */}
-                {['det1','det2','det3','det4','det5','det6','det7','det8'].map(d => <input key={d} type="file" id={`pic-${d}`} className="sr-only" accept="image/*" capture="environment" onChange={e=>handlePic(e,d)}/>)}
+                {['det1','det2','det3','det4','det5','det6','det7','det8'].map(d => <input key={d} type="file" id={`pic-${d}`} className="sr-only" accept="image/*" onChange={e=>handlePic(e,d)}/>)}
 
               </div>
 
@@ -3512,7 +3512,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
               <div className="grid grid-cols-2 gap-3 mt-6 border-t-2 border-slate-100 pt-4">
                 {[{id:'dashboard', l:'Tablero'}, {id:'tire', l:'Repuesto'}, {id:'interior_front', l:'Int. Adelante'}, {id:'interior_back', l:'Int. Atrás'}].map(p => (
                    <label key={p.id} className={`w-full h-12 rounded-xl border-2 flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white shadow-sm transition-all ${formData.photos[p.id] ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-slate-50'}`}>
-                     <input type="file" className="sr-only" accept="image/*" capture="environment" onChange={e=>handlePic(e,p.id)}/>
+                     <input type="file" className="sr-only" accept="image/*" onChange={e=>handlePic(e,p.id)}/>
                      {formData.photos[p.id] ? <><img src={formData.photos[p.id]} className="absolute inset-0 w-full h-full object-cover opacity-30"/><CheckCircle className="w-5 h-5 text-green-500 relative z-10 bg-white rounded-full"/><span className="text-[10px] font-black text-green-800 relative z-10">{p.l}</span></> : <><Camera className="w-4 h-4 text-slate-400"/><span className="text-[10px] font-black text-slate-500 uppercase">{p.l}</span></>}
                    </label>
                 ))}
