@@ -53,7 +53,7 @@ const SignaturePad = ({ onSave, onClear, initialData }) => {
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    ctx.strokeStyle = '#000'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     
     if (initialData) {
       const img = new Image();
@@ -61,6 +61,30 @@ const SignaturePad = ({ onSave, onClear, initialData }) => {
       img.src = initialData;
     }
   }, [initialData]);
+
+  // NUEVO: Generador de Sello Forense Invisible mientras dibuja
+  const generateStampedSignature = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const pixelBuffer = new Uint32Array(ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer);
+    if (!pixelBuffer.some(color => color !== 0)) return null; // Previene guardar canvas en blanco
+
+    const offscreen = document.createElement('canvas');
+    offscreen.width = canvas.width; offscreen.height = canvas.height;
+    const offCtx = offscreen.getContext('2d');
+    
+    offCtx.fillStyle = '#ffffff'; offCtx.fillRect(0, 0, offscreen.width, offscreen.height);
+    offCtx.drawImage(canvas, 0, 0);
+    
+    const now = new Date();
+    const hash = Math.random().toString(36).substring(2, 8).toUpperCase() + now.getTime().toString().slice(-4);
+    const stampText = `Firma Digital • ID: ${hash} • ${now.toLocaleString('es-CL')}`;
+    
+    offCtx.font = "8px monospace"; offCtx.fillStyle = "#94a3b8"; offCtx.textAlign = "right";
+    offCtx.fillText(stampText, offscreen.width - 4, offscreen.height - 4);
+    
+    return offscreen.toDataURL('image/jpeg', 0.8);
+  };
 
   const drawEvent = (e, type) => {
     const canvas = canvasRef.current;
@@ -75,19 +99,23 @@ const SignaturePad = ({ onSave, onClear, initialData }) => {
     if (type === 'draw' && isDrawing) { ctx.lineTo(x, y); ctx.stroke(); }
     if (type === 'stop') {
       setIsDrawing(false);
-      if (onSave) onSave(canvas.toDataURL());
+      if (onSave) {
+        const stampedData = generateStampedSignature();
+        if (stampedData) onSave(stampedData);
+      }
     }
   };
 
   return (
-    <div className="border-2 border-dashed border-blue-200 rounded-2xl p-2 bg-white">
-      <canvas ref={canvasRef} width={300} height={150} className="w-full h-[150px] touch-none cursor-crosshair bg-white rounded-xl"
+    <div className="border-2 border-dashed border-blue-200 rounded-2xl p-2 bg-white relative overflow-hidden">
+      <p className="absolute top-3 left-3 text-[10px] font-black text-slate-200 uppercase tracking-widest pointer-events-none select-none">Área de Firma Segura</p>
+      <canvas ref={canvasRef} width={300} height={150} className="w-full h-[150px] touch-none cursor-crosshair bg-transparent rounded-xl relative z-10"
         onPointerDown={(e) => drawEvent(e, 'start')} onPointerMove={(e) => drawEvent(e, 'draw')}
         onPointerUp={(e) => drawEvent(e, 'stop')} onPointerOut={(e) => drawEvent(e, 'stop')}
         onTouchStart={(e) => drawEvent(e, 'start')} onTouchMove={(e) => drawEvent(e, 'draw')}
         onTouchEnd={(e) => drawEvent(e, 'stop')}
       />
-      <button type="button" onClick={() => { canvasRef.current.getContext('2d').clearRect(0,0,300,150); if(onClear) onClear(); }} className="mt-2 text-sm text-red-500 hover:text-red-600 font-bold px-3 py-1.5 bg-red-50 rounded-lg transition-colors">Limpiar firma</button>
+      <button type="button" onClick={() => { canvasRef.current.getContext('2d').clearRect(0,0,300,150); if(onClear) onClear(); }} className="mt-2 text-sm text-red-500 hover:text-red-600 font-bold px-3 py-2 bg-red-50 rounded-xl transition-colors w-full">Limpiar recuadro</button>
     </div>
   );
 };
@@ -1373,26 +1401,42 @@ export default function App() {
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
   const [simulatedClient, setSimulatedClient] = useState('');
   
-  // NUEVO: Estados para Modo Oscuro, Conexión Offline y Tuerca
+  // Estados para Modo Oscuro, Conexión Offline y Tuerca
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('darkMode') === 'true');
+  
+  // NUEVO: Lectura Inteligente del Tema del Sistema Operativo
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    if (saved !== null) return saved === 'true';
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
   
   const isFirstLoad = useRef(true);
   const driversRef = useRef([]);
-
   const [dialogConfig, setDialogConfig] = useState(null);
 
-  // NUEVO: Escuchador de conexión a Internet (Idea 7)
+  // Escuchador de conexión a Internet y Cambios de Tema OS
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-    return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); };
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleThemeChange = (e) => {
+      if (localStorage.getItem('darkMode') === null) setDarkMode(e.matches);
+    };
+    mediaQuery.addEventListener('change', handleThemeChange);
+
+    return () => { 
+      window.removeEventListener('online', handleOnline); 
+      window.removeEventListener('offline', handleOffline); 
+      mediaQuery.removeEventListener('change', handleThemeChange);
+    };
   }, []);
 
-  // NUEVO: Aplicador del Modo Oscuro Global (Idea 9)
+  // Aplicador del Modo Oscuro Global
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -1741,7 +1785,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v1.8</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v1.8.5</p>
                 </div>
               </div>
             )}
@@ -1861,6 +1905,22 @@ export default function App() {
              <span className="text-[10px] font-extrabold tracking-wide">Gastos</span>
           </button>
         </nav>
+      )}
+
+      {/* NUEVO: Bandeja Flotante de Trabajo Offline (Idea 3) */}
+      {!isOnline && user && (
+        <div className="fixed bottom-[88px] sm:bottom-[92px] left-1/2 transform -translate-x-1/2 z-[100] w-[92%] max-w-sm animate-in slide-in-from-bottom-5 duration-500">
+          <div className="bg-slate-800 text-white p-3.5 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-3">
+            <div className="bg-slate-700 p-2.5 rounded-full relative shrink-0">
+              <CloudOff className="w-5 h-5 text-amber-400" />
+              <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-amber-500 rounded-full animate-ping"></span>
+            </div>
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-widest text-amber-400 mb-0.5">Modo Sin Conexión</p>
+              <p className="text-[10px] font-bold text-slate-300 leading-tight">Trabajando con memoria caché local. Se sincronizará automáticamente al volver la red.</p>
+            </div>
+          </div>
+        </div>
       )}
 
       {dialogConfig && (
