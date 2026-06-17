@@ -1374,6 +1374,94 @@ function ClientSignView({ jobId, db }) {
   );
 }
 
+// --- NUEVO: PANTALLA DE RELEVO EN RUTA ---
+function RelayAcceptView({ jobId, db, currentUserEmail, drivers }) {
+  const [job, setJob] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [statusMsg, setStatusMsg] = useState('');
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'transport_jobs', jobId), (docSnap) => {
+      if (docSnap.exists()) setJob({ id: docSnap.id, ...docSnap.data() });
+      setLoading(false);
+    });
+    return () => unsub();
+  }, [jobId, db]);
+
+  const handleAcceptRelay = async () => {
+    setStatusMsg('Transfiriendo...');
+    try {
+      const myDriver = drivers.find(d => d.email === currentUserEmail);
+      const updatedEmails = job.assignedEmails || [];
+      if (!updatedEmails.includes(currentUserEmail)) updatedEmails.push(currentUserEmail);
+
+      const updatedDrivers = job.assignedDrivers || [];
+      if (!updatedDrivers.some(d => d.email === currentUserEmail) && myDriver) {
+         updatedDrivers.push({ id: myDriver.id, name: myDriver.name, email: myDriver.email });
+      }
+
+      // El sistema cambia al dueño actual y guarda un registro de quién se lo entregó a quién
+      await updateDoc(doc(db, 'transport_jobs', jobId), {
+        acceptedByEmail: currentUserEmail,
+        assignedEmails: updatedEmails,
+        assignedDrivers: updatedDrivers,
+        relayHistory: [
+          ...(job.relayHistory || []),
+          { from: job.acceptedByEmail, to: currentUserEmail, date: Date.now() }
+        ]
+      });
+      
+      window.location.href = '/'; // Redirigir al inicio para ver su nuevo trabajo
+    } catch (error) {
+      console.error(error);
+      setStatusMsg('Error al transferir: ' + error.message);
+    }
+  };
+
+  if (loading) return <div className="min-h-screen bg-slate-50 flex items-center justify-center font-bold text-slate-400"><Clock className="w-5 h-5 mr-2 animate-spin"/> Buscando traslado...</div>;
+  if (!job) return <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center font-bold text-red-500"><XCircle className="w-12 h-12 mb-4 text-red-400"/>Traslado no encontrado.</div>;
+  if (job.status === 'completed' || job.status === 'failed') return <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center font-bold text-slate-600"><CheckCircle className="w-12 h-12 mb-4 text-green-500"/>Este trabajo ya finalizó.</div>;
+
+  if (job.acceptedByEmail === currentUserEmail) {
+      return (
+        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
+          <Car className="w-12 h-12 mb-4 text-blue-500"/>
+          <h2 className="text-xl font-black text-slate-800">Ya tienes este vehículo</h2>
+          <button onClick={() => window.location.href='/'} className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-xl font-bold">Ir a mis trabajos</button>
+        </div>
+      );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 text-center">
+      <div className="bg-white p-8 rounded-3xl shadow-xl max-w-sm w-full border-t-8 border-purple-500 animate-in zoom-in-95">
+        <Users className="w-16 h-16 text-purple-500 mx-auto mb-4"/>
+        <h2 className="text-2xl font-black text-slate-800 mb-1">Relevo de Vehículo</h2>
+        <p className="text-sm font-bold text-slate-500 mb-6">Estás a punto de tomar el control de este traslado.</p>
+        
+        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-left mb-6">
+          <p className="text-[10px] font-black text-slate-400 uppercase">Vehículo a recibir</p>
+          <p className="font-extrabold text-slate-800 mb-2">{job.brand} {job.model} <span className="bg-white border px-1.5 py-0.5 rounded ml-1 uppercase">{job.plate || job.vin}</span></p>
+          
+          <p className="text-[10px] font-black text-slate-400 uppercase">Te lo entrega</p>
+          <p className="font-extrabold text-red-600 mb-2">{job.acceptedByEmail}</p>
+
+          <p className="text-[10px] font-black text-slate-400 uppercase">Ruta restante</p>
+          <p className="font-bold text-slate-700 text-xs">{job.origin} ➔ {job.destination}</p>
+        </div>
+
+        <button onClick={handleAcceptRelay} disabled={!!statusMsg} className="w-full bg-purple-600 hover:bg-purple-700 text-white font-black py-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+          {statusMsg || 'Aceptar y Tomar Control'}
+        </button>
+        <button onClick={() => window.location.href='/'} className="w-full mt-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl transition-colors">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  );
+}
+// ------------------------------------------------
+
 export default function App() {
   const params = new URLSearchParams(window.location.search);
   const clientTrack = params.get('client');
@@ -1382,6 +1470,10 @@ export default function App() {
   // NUEVO: Limpiamos la URL por si el escáner QR le agrega barras invertidas ("/") o espacios al final
   const rawSign = params.get('sign');
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
+
+  // NUEVO: Detector del código de Relevo (Traspaso en Ruta)
+  const rawRelay = params.get('relay');
+  const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
 
   const [user, setUser] = useState(null);
   const [jobs, setJobs] = useState([]);
@@ -1521,14 +1613,16 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
     
-    // OPTIMIZACIÓN 1: Traer solo los últimos 200 trabajos (evita descargar historial antiguo)
-    const qJobs = query(collection(db, 'transport_jobs'), orderBy('createdAt', 'desc'), limit(200));
-    
+    // OPTIMIZACIÓN 1: Traer solo los últimos 400 trabajos (evita descargar historial antiguo)
+    const qJobs = query(collection(db, 'transport_jobs'), orderBy('createdAt', 'desc'), limit(400));
+
     const unsubJobs = onSnapshot(qJobs, (snapshot) => {
       if (!isFirstLoad.current) {
         snapshot.docChanges().forEach((change) => {
           const d = change.doc.data();
-          if (change.type === 'added' && d.status === 'pending' && d.assignedEmails?.includes(currentUserEmail)) {
+          // Solo notifica si es realmente nuevo (creado hace menos de 2 minutos)
+          const isReallyNew = (Date.now() - (d.createdAt || 0)) < 120000;
+          if (change.type === 'added' && d.status === 'pending' && d.assignedEmails?.includes(currentUserEmail) && isReallyNew) {
              triggerNotification('📍 ¡Nuevo Traslado!', `CLIENTE: ${d.client || 'Sin Cliente'}\nMARCA: ${d.brand || '-'}\nMODELO: ${d.model || '-'}\nPATENTE: ${d.plate || d.vin || 'S/N'}\nDESDE: ${d.origin || '-'}\nHASTA: ${d.destination || '-'}`);
           }
           if (change.type === 'modified' && d.status === 'accepted' && isRealAdmin && activeRole === 'admin') {
@@ -1678,6 +1772,18 @@ export default function App() {
     );
   }
   // --------------------------------------------------------------------------------
+
+  // --- NUEVO: VISTA DE TRASPASO EN RUTA (RELEVO) ---
+  if (relayJobId && user) {
+    return (
+      <>
+        {globalStyles}
+        <RelayAcceptView jobId={relayJobId} db={db} currentUserEmail={user.email} drivers={drivers} />
+      </>
+    );
+  }
+  // Si no está logueado, seguirá hacia abajo para pedir Google, y conservará la URL para entrar a esta vista después
+  // --------------------------------------------------------------------------------
   
   if (!user) {
     return (
@@ -1785,7 +1891,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.1.9.1</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.1.9.2/p>
                 </div>
               </div>
             )}
@@ -2320,6 +2426,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [jobToFail, setJobToFail] = useState(null);
   const [prtPromptJob, setPrtPromptJob] = useState(null); 
+  const [relayPromptJob, setRelayPromptJob] = useState(null); // <-- NUEVO ESTADO RELEVO
   const [historyClientFilter, setHistoryClientFilter] = useState(''); 
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -2633,6 +2740,14 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                       window.open(`https://wa.me/?text=${encodeURIComponent(textToShare)}`, '_blank');
                       setMenuOpenId(null);
                     }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-green-50 text-green-600 border-t border-slate-50"><Share2 className="w-4 h-4"/> Notificar Receptor</button>
+                  )}
+
+                  {/* NUEVO: Botón de Traspaso en Ruta (Modo Posta) */}
+                  {isAccepted && (j.phase === 'picked_up' || !j.phase) && (
+                    <button onClick={() => {
+                      setRelayPromptJob(j); 
+                      setMenuOpenId(null);
+                    }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-purple-50 text-purple-600 border-t border-slate-50"><Users className="w-4 h-4"/> Traspaso a Compañero</button>
                   )}
 
                   <button onClick={()=>cpyWapp(j)} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-slate-50 border-t border-slate-50"><Copy className="w-4 h-4"/> Copiar Resumen</button>
@@ -3340,25 +3455,25 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
                 {/* BOTONES DE FOTOS GENERALES UBICADOS ESPACIALMENTE */}
                 {/* FRENTE */}
                 <label className={`absolute top-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-20 bg-white transition-all ${formData.photos.front ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
-                  <input type="file" id="pic-front" className="hidden" accept="image/*" onChange={e=>handlePic(e,'front')}/>
+                  <input type="file" id="pic-front" className="sr-only" accept="image/*" capture="environment" onChange={e=>handlePic(e,'front')}/>
                   {formData.photos.front ? <><img src={formData.photos.front} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-1"/><span className="text-[9px] font-black text-slate-500 tracking-wide">FRENTE</span></>}
                 </label>
 
                 {/* ATRÁS */}
                 <label className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-20 bg-white transition-all ${formData.photos.back ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
-                  <input type="file" id="pic-back" className="hidden" accept="image/*" onChange={e=>handlePic(e,'back')}/>
+                  <input type="file" id="pic-back" className="sr-only" accept="image/*" capture="environment" onChange={e=>handlePic(e,'back')}/>
                   {formData.photos.back ? <><img src={formData.photos.back} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-1"/><span className="text-[9px] font-black text-slate-500 tracking-wide">ATRÁS</span></>}
                 </label>
 
                 {/* LATERAL PILOTO (IZQ) */}
                 <label className={`absolute top-1/2 left-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-20 bg-white transition-all ${formData.photos.left ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
-                  <input type="file" id="pic-left" className="hidden" accept="image/*" onChange={e=>handlePic(e,'left')}/>
+                  <input type="file" id="pic-left" className="sr-only" accept="image/*" capture="environment" onChange={e=>handlePic(e,'left')}/>
                   {formData.photos.left ? <><img src={formData.photos.left} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-0.5"/><span className="text-[8px] font-black text-slate-500 text-center leading-tight">LATERAL<br/>PILOTO</span></>}
                 </label>
 
                 {/* LATERAL COPILOTO (DER) */}
                 <label className={`absolute top-1/2 right-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-20 bg-white transition-all ${formData.photos.right ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
-                  <input type="file" id="pic-right" className="hidden" accept="image/*" onChange={e=>handlePic(e,'right')}/>
+                  <input type="file" id="pic-right" className="sr-only" accept="image/*" capture="environment" onChange={e=>handlePic(e,'right')}/>
                   {formData.photos.right ? <><img src={formData.photos.right} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-0.5"/><span className="text-[8px] font-black text-slate-500 text-center leading-tight">LATERAL<br/>COPILOTO</span></>}
                 </label>
 
@@ -3371,7 +3486,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
               <div className="grid grid-cols-2 gap-3 mt-6 border-t-2 border-slate-100 pt-4">
                 {[{id:'dashboard', l:'Tablero'}, {id:'tire', l:'Repuesto'}, {id:'interior_front', l:'Int. Adelante'}, {id:'interior_back', l:'Int. Atrás'}].map(p => (
                    <label key={p.id} className={`w-full h-12 rounded-xl border-2 flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white shadow-sm transition-all ${formData.photos[p.id] ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-slate-50'}`}>
-                     <input type="file" className="hidden" accept="image/*" onChange={e=>handlePic(e,p.id)}/>
+                     <input type="file" className="sr-only" accept="image/*" capture="environment" onChange={e=>handlePic(e,p.id)}/>
                      {formData.photos[p.id] ? <><img src={formData.photos[p.id]} className="absolute inset-0 w-full h-full object-cover opacity-30"/><CheckCircle className="w-5 h-5 text-green-500 relative z-10 bg-white rounded-full"/><span className="text-[10px] font-black text-green-800 relative z-10">{p.l}</span></> : <><Camera className="w-4 h-4 text-slate-400"/><span className="text-[10px] font-black text-slate-500 uppercase">{p.l}</span></>}
                    </label>
                 ))}
