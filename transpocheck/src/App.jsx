@@ -49,25 +49,25 @@ const formatDateDisplay = (dateString) => {
 const SignaturePad = ({ onSave, onClear, initialData }) => {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     
     if (initialData) {
       const img = new Image();
-      img.onload = () => ctx.drawImage(img, 0, 0);
+      img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       img.src = initialData;
     }
   }, [initialData]);
 
-  // NUEVO: Generador de Sello Forense Invisible mientras dibuja
   const generateStampedSignature = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     const pixelBuffer = new Uint32Array(ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer);
-    if (!pixelBuffer.some(color => color !== 0)) return null; // Previene guardar canvas en blanco
+    if (!pixelBuffer.some(color => color !== 0)) return null;
 
     const offscreen = document.createElement('canvas');
     offscreen.width = canvas.width; offscreen.height = canvas.height;
@@ -80,8 +80,8 @@ const SignaturePad = ({ onSave, onClear, initialData }) => {
     const hash = Math.random().toString(36).substring(2, 8).toUpperCase() + now.getTime().toString().slice(-4);
     const stampText = `Firma Digital • ID: ${hash} • ${now.toLocaleString('es-CL')}`;
     
-    offCtx.font = "8px monospace"; offCtx.fillStyle = "#94a3b8"; offCtx.textAlign = "right";
-    offCtx.fillText(stampText, offscreen.width - 4, offscreen.height - 4);
+    offCtx.font = "14px monospace"; offCtx.fillStyle = "#94a3b8"; offCtx.textAlign = "right";
+    offCtx.fillText(stampText, offscreen.width - 8, offscreen.height - 8);
     
     return offscreen.toDataURL('image/jpeg', 0.8);
   };
@@ -92,8 +92,9 @@ const SignaturePad = ({ onSave, onClear, initialData }) => {
     const rect = canvas.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
+    
+    const x = (clientX - rect.left) * (canvas.width / rect.width);
+    const y = (clientY - rect.top) * (canvas.height / rect.height);
     
     if (type === 'start') { ctx.beginPath(); ctx.moveTo(x, y); setIsDrawing(true); }
     if (type === 'draw' && isDrawing) { ctx.lineTo(x, y); ctx.stroke(); }
@@ -107,15 +108,38 @@ const SignaturePad = ({ onSave, onClear, initialData }) => {
   };
 
   return (
-    <div className="border-2 border-dashed border-blue-200 rounded-2xl p-2 bg-white relative overflow-hidden">
-      <p className="absolute top-3 left-3 text-[10px] font-black text-slate-200 uppercase tracking-widest pointer-events-none select-none">Área de Firma Segura</p>
-      <canvas ref={canvasRef} width={300} height={150} className="w-full h-[150px] touch-none cursor-crosshair bg-transparent rounded-xl relative z-10"
-        onPointerDown={(e) => drawEvent(e, 'start')} onPointerMove={(e) => drawEvent(e, 'draw')}
-        onPointerUp={(e) => drawEvent(e, 'stop')} onPointerOut={(e) => drawEvent(e, 'stop')}
-        onTouchStart={(e) => drawEvent(e, 'start')} onTouchMove={(e) => drawEvent(e, 'draw')}
-        onTouchEnd={(e) => drawEvent(e, 'stop')}
-      />
-      <button type="button" onClick={() => { canvasRef.current.getContext('2d').clearRect(0,0,300,150); if(onClear) onClear(); }} className="mt-2 text-sm text-red-500 hover:text-red-600 font-bold px-3 py-2 bg-red-50 rounded-xl transition-colors w-full">Limpiar recuadro</button>
+    <div className={isFullscreen 
+      ? "fixed inset-0 z-[9999] bg-slate-900/95 backdrop-blur-md flex flex-col items-center justify-center p-4 sm:p-6 animate-in fade-in zoom-in-95 duration-200" 
+      : "border-2 border-dashed border-blue-200 rounded-2xl p-2 bg-white relative overflow-hidden"}>
+      
+      {isFullscreen && <h3 className="text-white font-black text-2xl mb-4 text-center">Dibuje su firma aquí</h3>}
+
+      <div className={`relative w-full ${isFullscreen ? 'max-w-2xl h-[65vh] sm:h-[50vh]' : 'h-[150px]'}`}>
+         {!isFullscreen && <p className="absolute top-3 left-3 text-[10px] font-black text-slate-200 uppercase tracking-widest pointer-events-none select-none">Área de Firma Segura</p>}
+         
+         <button type="button" onClick={() => setIsFullscreen(!isFullscreen)} className="absolute top-2 right-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black px-3 py-2 rounded-xl shadow-md z-20 transition-colors border border-slate-200 flex items-center gap-1">
+           {isFullscreen ? "↙️ Reducir pantalla" : "🔲 Ampliar pantalla"}
+         </button>
+
+         <canvas ref={canvasRef} width={600} height={300} className={`w-full h-full touch-none cursor-crosshair relative z-10 ${isFullscreen ? 'rounded-3xl shadow-2xl border-4 border-slate-200 bg-white' : 'rounded-xl bg-transparent'}`}
+           style={{ touchAction: 'none' }}
+           onPointerDown={(e) => drawEvent(e, 'start')} onPointerMove={(e) => drawEvent(e, 'draw')}
+           onPointerUp={(e) => drawEvent(e, 'stop')} onPointerOut={(e) => drawEvent(e, 'stop')}
+           onTouchStart={(e) => drawEvent(e, 'start')} onTouchMove={(e) => drawEvent(e, 'draw')}
+           onTouchEnd={(e) => drawEvent(e, 'stop')}
+         />
+      </div>
+
+      <div className={`flex gap-3 ${isFullscreen ? 'w-full max-w-2xl mt-6' : 'w-full mt-2'}`}>
+        <button type="button" onClick={() => { canvasRef.current.getContext('2d').clearRect(0,0,600,300); if(onClear) onClear(); }} className={`font-bold py-2 rounded-xl transition-colors shadow-sm border ${isFullscreen ? 'flex-1 bg-red-50 text-red-600 border-red-200 hover:bg-red-100 text-lg' : 'w-full text-sm text-red-500 hover:text-red-600 bg-red-50 border-transparent px-3'}`}>
+            Limpiar {isFullscreen ? 'Firma' : 'recuadro'}
+        </button>
+        {isFullscreen && (
+            <button type="button" onClick={() => setIsFullscreen(false)} className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-black py-2 rounded-xl shadow-lg shadow-blue-200 text-lg transition-colors">
+                Guardar y Cerrar
+            </button>
+        )}
+      </div>
     </div>
   );
 };
@@ -1891,7 +1915,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.1.9.4</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.1.9.4/p>
                 </div>
               </div>
             )}
