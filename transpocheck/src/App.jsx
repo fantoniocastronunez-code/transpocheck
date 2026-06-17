@@ -87,6 +87,12 @@ const SignaturePad = ({ onSave, onClear, initialData }) => {
   };
 
   const drawEvent = (e, type) => {
+    // Si la interacción es táctil, prevenimos el comportamiento por defecto del navegador
+    // para evitar que la pantalla haga scroll al intentar dibujar.
+    if (e.cancelable && type === 'start' && e.type === 'touchstart') {
+      e.preventDefault();
+    }
+
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     const rect = canvas.getBoundingClientRect();
@@ -118,7 +124,7 @@ const SignaturePad = ({ onSave, onClear, initialData }) => {
          {!isFullscreen && <p className="absolute top-3 left-3 text-[10px] font-black text-slate-200 uppercase tracking-widest pointer-events-none select-none">Área de Firma Segura</p>}
          
          <button type="button" onClick={() => setIsFullscreen(!isFullscreen)} className="absolute top-2 right-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black px-3 py-2 rounded-xl shadow-md z-20 transition-colors border border-slate-200 flex items-center gap-1">
-           {isFullscreen ? "↙️ Reducir pantalla" : "🔲 Ampliar pantalla"}
+           {isFullscreen ? "↙️ Reducir" : "🔲 Pantalla Completa"}
          </button>
 
          <canvas ref={canvasRef} width={600} height={300} className={`w-full h-full touch-none cursor-crosshair relative z-10 ${isFullscreen ? 'rounded-3xl shadow-2xl border-4 border-slate-200 bg-white' : 'rounded-xl bg-transparent'}`}
@@ -1915,7 +1921,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.1.9.5/p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.1.9.5</p>
                 </div>
               </div>
             )}
