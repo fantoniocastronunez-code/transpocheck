@@ -1891,7 +1891,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.1.9.2</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.1.9.3</p>
                 </div>
               </div>
             )}
@@ -2707,9 +2707,9 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     const step4Done = isAccepted && phase === 'prt_done';
 
     return (
-      <div key={j.id} className="bg-white rounded-3xl border border-slate-100 p-4 sm:p-5 flex flex-col shadow-sm relative hover:shadow-md transition-shadow">
-        <div className={`absolute top-0 left-0 w-full h-1.5 ${isPending ? 'bg-amber-400' : 'bg-blue-500'}`}></div>
-        <div className="flex justify-between items-start mb-4 border-b border-slate-100 pb-3">
+      <div key={j.id} className="bg-white rounded-3xl border border-slate-100 p-4 sm:p-5 flex flex-col shadow-sm relative hover:shadow-md transition-shadow overflow-hidden">
+        <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${isPending ? 'bg-amber-400' : 'bg-blue-500'}`}></div>
+        <div className="flex justify-between items-start mb-4 border-b border-slate-100 pb-3 pl-2">
           <div>
             <h2 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-0.5">En Traslado</h2>
             <p className="text-lg font-black text-slate-800 leading-tight">{j.brand} {j.model}</p>
@@ -2962,6 +2962,32 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
           </form>
         </div>
       )}
+
+      {/* NUEVO: MODAL QR PARA TRASPASO EN RUTA */}
+      {relayPromptJob && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+          <div className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 max-w-sm w-full text-center relative animate-in zoom-in-95 border border-slate-100">
+            <button type="button" onClick={() => setRelayPromptJob(null)} className="absolute top-4 right-4 bg-slate-100 p-2 rounded-full hover:bg-slate-200 transition-colors"><X className="w-5 h-5 text-slate-700"/></button>
+            <h3 className="text-xl font-black text-slate-800 mb-1">Traspaso a Compañero</h3>
+            <p className="text-xs font-bold text-slate-500 mb-5">Pide al otro conductor que escanee este código con la cámara de su celular para entregarle el auto.</p>
+            
+            <div className="bg-white p-3 rounded-2xl border-4 border-slate-100 shadow-inner inline-block">
+              {/* Generamos QR único que apunta al link de relay */}
+              <img src={`https://quickchart.io/qr?size=250&margin=1&text=${encodeURIComponent(`${window.location.origin}/?relay=${relayPromptJob.id}`)}`} alt="QR Relevo" className="w-48 h-48 mx-auto" />
+            </div>
+            
+            <div className="mt-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+              <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">O envíale el link por WhatsApp:</p>
+              <button onClick={() => {
+                 const link = `${window.location.origin}/?relay=${relayPromptJob.id}`;
+                 const text = `🔑 Toma mi relevo del vehículo ${relayPromptJob.plate || relayPromptJob.vin} abriendo este link: ${link}`;
+                 window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+              }} className="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl text-sm shadow-md transition-colors flex justify-center items-center gap-2"><Share2 className="w-4 h-4"/> Enviar Link a Compañero</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
