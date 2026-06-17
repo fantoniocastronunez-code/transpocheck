@@ -1511,37 +1511,33 @@ export default function App() {
     return () => { unsubJobs(); unsubDrivers(); unsubExpenses(); unsubVehicles(); unsubClients(); };
   }, [user, activeRole, currentUserEmail, isRealAdmin]);
 
-  // --- NUEVO: MOTOR DE TRACKING GPS EN TIEMPO REAL ---
+  // --- MOTOR DE TRACKING GPS EN TIEMPO REAL (OPTIMIZADO BATERÍA/iOS) ---
+  // 1. Aislamos el ID del trabajo para no re-renderizar todo cuando el GPS se mueve
+  const activeTrackingJobId = React.useMemo(() => {
+    if (!user || activeRole !== 'driver') return null;
+    const activeJob = jobs.find(j => j.acceptedByEmail === currentUserEmail && j.status === 'accepted' && j.phase === 'picked_up');
+    return activeJob ? activeJob.id : null;
+  }, [jobs, user, activeRole, currentUserEmail]);
+
+  // 2. Encendemos el GPS SOLAMENTE cuando el ID cambia (inicia o termina el viaje)
   useEffect(() => {
-    if (!user || activeRole !== 'driver') return;
-    
-    // Buscamos si el conductor tiene algún traslado actualmente en tránsito
-    const activeJob = jobs.find(j => 
-      j.acceptedByEmail === currentUserEmail && 
-      j.status === 'accepted' && 
-      j.phase === 'picked_up'
+    if (!activeTrackingJobId || !("geolocation" in navigator)) return;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        updateDoc(doc(db, 'transport_jobs', activeTrackingJobId), {
+          liveLocation: { lat: latitude, lng: longitude, timestamp: Date.now() }
+        }).catch(e => console.warn("Error enviando GPS", e));
+      },
+      (error) => console.warn("Error GPS en vivo:", error),
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
     );
 
-    let watchId;
-    if (activeJob && "geolocation" in navigator) {
-      watchId = navigator.geolocation.watchPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          // Guardamos la ubicación silenciosamente en Firebase
-          updateDoc(doc(db, 'transport_jobs', activeJob.id), {
-            liveLocation: { lat: latitude, lng: longitude, timestamp: Date.now() }
-          }).catch(e => console.warn("Error enviando GPS", e));
-        },
-        (error) => console.warn("Error GPS en vivo:", error),
-        { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 } // Alta precisión
-      );
-    }
-
-    // Limpieza: apagar el GPS si el trabajo cambia de fase (ej: llega a destino)
     return () => {
-      if (watchId) navigator.geolocation.clearWatch(watchId);
+      navigator.geolocation.clearWatch(watchId);
     };
-  }, [jobs, user, activeRole, currentUserEmail, db]);
+  }, [activeTrackingJobId, db]);
   // ---------------------------------------------------
 
   const allClientsList = Array.from(new Set([...DEFAULT_CLIENTES, ...customClients.map(c => c.name)])).sort();
@@ -1595,6 +1591,13 @@ export default function App() {
         left: 0 !important;
         right: 0 !important;
         z-index: 50 !important;
+      }
+
+      /* PREVENIR AUTO-ZOOM EN iPHONE (IOS SAFARI) AL ESCRIBIR EN INPUTS */
+      @media screen and (max-width: 768px) {
+        input, select, textarea { 
+          font-size: 16px !important; 
+        }
       }
     `}</style>
   );
@@ -1738,7 +1741,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v1.7.5 GPS</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v1.8</p>
                 </div>
               </div>
             )}
@@ -3531,8 +3534,8 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
                   {formData.photos.right ? <><img src={formData.photos.right} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-0.5"/><span className="text-[8px] font-black text-slate-500 text-center leading-tight">LATERAL<br/>COPILOTO</span></>}
                 </label>
 
-                {/* Inputs ocultos para los detalles fotográficos */}
-                {['det1','det2','det3','det4','det5','det6','det7','det8'].map(d => <input key={d} type="file" id={`pic-${d}`} className="hidden" accept="image/*" onChange={e=>handlePic(e,d)}/>)}
+                {/* Inputs ocultos para los detalles fotográficos (sr-only evita bloqueo de cámara en iOS) */}
+                {['det1','det2','det3','det4','det5','det6','det7','det8'].map(d => <input key={d} type="file" id={`pic-${d}`} className="sr-only" accept="image/*" capture="environment" onChange={e=>handlePic(e,d)}/>)}
 
               </div>
 
