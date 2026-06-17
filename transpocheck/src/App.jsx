@@ -7,7 +7,7 @@ import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messagi
 import { 
   Car, MapPin, Camera, CheckCircle, FileText, Download, 
   Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, Edit2, Bell, Share2, X, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Save, Search,
-  CloudOff, Wifi, QrCode, Sun, Moon, Settings 
+  CloudOff, Wifi, QrCode, Sun, Moon, Settings, ChevronUp, ChevronDown
 } from 'lucide-react';
 
 const firebaseConfig = {
@@ -1785,7 +1785,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v1.9</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.1.9.1</p>
                 </div>
               </div>
             )}
@@ -2322,6 +2322,10 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   const [prtPromptJob, setPrtPromptJob] = useState(null); 
   const [historyClientFilter, setHistoryClientFilter] = useState(''); 
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // NUEVO: Estados para los paneles desplegables
+  const [isPendingOpen, setIsPendingOpen] = useState(true);
+  const [isInProgressOpen, setIsInProgressOpen] = useState(true);
 
   const updatePhase = async (job, phase, extra = {}) => {
     try { await updateDoc(doc(db, 'transport_jobs', job.id), { phase, ...extra }); } 
@@ -2383,6 +2387,17 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
      if (historyClientFilter === 'OTRO') return !allClientsList.includes(j.client);
      return j.client === historyClientFilter;
   });
+
+  // NUEVO: Separar los finalizados de hoy de los históricos
+  const isToday = (timestamp) => {
+      if (!timestamp) return false;
+      const d = new Date(timestamp);
+      const today = new Date();
+      return d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+  };
+
+  const todayHistoryJobs = historyJobs.filter(j => isToday(j.completedAt || j.createdAt));
+  const olderHistoryJobs = historyJobs.filter(j => !isToday(j.completedAt || j.createdAt));
 
   const pendingJobsList = activeJobs.filter(j => j.status === 'pending');
   const inProgressJobsList = activeJobs.filter(j => j.status === 'accepted');
@@ -2719,39 +2734,95 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
          <input type="text" placeholder="Buscar por patente, marca, modelo o cliente..." className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 shadow-sm transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
       </div>
 
-      {/* VISTA KANBAN (Idea 8) */}
+      {/* VISTA KANBAN CON COLUMNAS DESPLEGABLES */}
       <div className="flex flex-col md:flex-row gap-6 items-start">
         
         {/* COLUMNA 1: PENDIENTES */}
-        <div className="w-full md:w-1/3 flex flex-col gap-4 bg-slate-100/50 md:bg-transparent p-0 md:p-4 rounded-3xl md:border md:border-slate-200/60">
-          <div className="flex justify-between items-center mb-1 md:mb-2 px-2 md:px-0">
-            <h3 className="font-extrabold text-slate-700 flex items-center gap-2"><Clock className="w-5 h-5 text-amber-500"/> Pendientes</h3>
-            <span className="bg-amber-100 text-amber-700 text-xs font-black px-2 py-0.5 rounded-full">{pendingJobsList.length}</span>
+        <div className="w-full md:w-1/2 flex flex-col bg-slate-100/50 md:bg-transparent rounded-3xl md:border md:border-slate-200/60 overflow-hidden">
+          <button onClick={() => setIsPendingOpen(!isPendingOpen)} className="w-full flex justify-between items-center p-4 bg-slate-100 md:bg-transparent hover:bg-slate-200/50 transition-colors">
+            <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-amber-500"/> 
+                <h3 className="font-extrabold text-slate-700">Pendientes</h3>
+                <span className="bg-amber-100 text-amber-700 text-xs font-black px-2 py-0.5 rounded-full">{pendingJobsList.length}</span>
+            </div>
+            {isPendingOpen ? <ChevronUp className="w-5 h-5 text-slate-400"/> : <ChevronDown className="w-5 h-5 text-slate-400"/>}
+          </button>
+          
+          <div className={`transition-all duration-300 ${isPendingOpen ? 'opacity-100 max-h-[5000px] p-4 pt-0 md:pt-4' : 'opacity-0 max-h-0 overflow-hidden'}`}>
+            <div className="flex flex-col gap-4">
+              {pendingJobsList.map(j => renderActiveJobCard(j))}
+              {pendingJobsList.length === 0 && <p className="text-center text-sm font-bold text-slate-400 py-8 border-2 border-dashed border-slate-200 rounded-2xl">Sin pendientes</p>}
+            </div>
           </div>
-          {pendingJobsList.map(j => renderActiveJobCard(j))}
-          {pendingJobsList.length === 0 && <p className="text-center text-sm font-bold text-slate-400 py-8 border-2 border-dashed border-slate-200 rounded-2xl mx-2 md:mx-0">Sin pendientes</p>}
         </div>
 
         {/* COLUMNA 2: EN CURSO */}
-        <div className="w-full md:w-1/3 flex flex-col gap-4 bg-blue-50/50 md:bg-transparent p-0 md:p-4 rounded-3xl md:border md:border-blue-100/60 mt-6 md:mt-0">
-          <div className="flex justify-between items-center mb-1 md:mb-2 px-2 md:px-0">
-            <h3 className="font-extrabold text-slate-800 flex items-center gap-2"><Navigation className="w-5 h-5 text-blue-600"/> En Curso</h3>
-            <span className="bg-blue-100 text-blue-700 text-xs font-black px-2 py-0.5 rounded-full">{inProgressJobsList.length}</span>
+        <div className="w-full md:w-1/2 flex flex-col bg-blue-50/50 md:bg-transparent rounded-3xl md:border md:border-blue-100/60 overflow-hidden mt-2 md:mt-0">
+          <button onClick={() => setIsInProgressOpen(!isInProgressOpen)} className="w-full flex justify-between items-center p-4 bg-blue-50 md:bg-transparent hover:bg-blue-100/50 transition-colors">
+            <div className="flex items-center gap-2">
+                <Navigation className="w-5 h-5 text-blue-600"/> 
+                <h3 className="font-extrabold text-slate-800">En Curso</h3>
+                <span className="bg-blue-100 text-blue-700 text-xs font-black px-2 py-0.5 rounded-full">{inProgressJobsList.length}</span>
+            </div>
+            {isInProgressOpen ? <ChevronUp className="w-5 h-5 text-slate-400"/> : <ChevronDown className="w-5 h-5 text-slate-400"/>}
+          </button>
+          
+          <div className={`transition-all duration-300 ${isInProgressOpen ? 'opacity-100 max-h-[5000px] p-4 pt-0 md:pt-4' : 'opacity-0 max-h-0 overflow-hidden'}`}>
+            <div className="flex flex-col gap-4">
+              {inProgressJobsList.map(j => renderActiveJobCard(j))}
+              {inProgressJobsList.length === 0 && <p className="text-center text-sm font-bold text-blue-400 py-8 border-2 border-dashed border-blue-200 rounded-2xl">Ningún vehículo en ruta</p>}
+            </div>
           </div>
-          {inProgressJobsList.map(j => renderActiveJobCard(j))}
-          {inProgressJobsList.length === 0 && <p className="text-center text-sm font-bold text-blue-300 py-8 border-2 border-dashed border-blue-200 rounded-2xl mx-2 md:mx-0">Ningún vehículo en ruta</p>}
         </div>
 
-        {/* COLUMNA 3: FINALIZADOS */}
-        <div className="w-full md:w-1/3 flex flex-col gap-4 bg-slate-100/50 md:bg-transparent p-0 md:p-4 rounded-3xl md:border md:border-slate-200/60 mt-6 md:mt-0">
-          <div className="flex justify-between items-center mb-1 md:mb-2 px-2 md:px-0">
-            <h3 className="font-extrabold text-slate-700 flex items-center gap-2"><CheckCircle className="w-5 h-5 text-green-600"/> Finalizados</h3>
-            <span className="bg-green-100 text-green-700 text-xs font-black px-2 py-0.5 rounded-full">{historyJobs.length}</span>
-          </div>
-          {historyJobs.map(j => renderHistoryJobCard(j))}
-          {historyJobs.length === 0 && <p className="text-center text-sm font-bold text-slate-400 py-8 border-2 border-dashed border-slate-200 rounded-2xl mx-2 md:mx-0">Historial vacío</p>}
-        </div>
+      </div>
 
+      {/* COLUMNA 3: FINALIZADOS (AHORA ABAJO) */}
+      <div className="mt-10">
+          <h3 className="font-extrabold text-slate-700 flex items-center gap-2 mb-4 border-b-2 border-slate-100 pb-2">
+              <CheckCircle className="w-5 h-5 text-green-600"/> Finalizados de Hoy
+              <span className="bg-green-100 text-green-700 text-xs font-black px-2 py-0.5 rounded-full">{todayHistoryJobs.length}</span>
+          </h3>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+              {todayHistoryJobs.map(j => renderHistoryJobCard(j))}
+              {todayHistoryJobs.length === 0 && <p className="text-sm font-bold text-slate-400 col-span-full">Aún no hay traslados completados hoy.</p>}
+          </div>
+
+          {olderHistoryJobs.length > 0 && (
+              <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                  <div className="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
+                      <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">Historial Anterior</h4>
+                      <span className="bg-slate-200 text-slate-600 text-[10px] font-black px-2 py-0.5 rounded-full">{olderHistoryJobs.length} registros</span>
+                  </div>
+                  <div className="divide-y divide-slate-100 max-h-[500px] overflow-y-auto">
+                      {olderHistoryJobs.map(j => {
+                          const isFailed = j.status === 'failed';
+                          return (
+                              <div key={j.id} className="p-2 sm:p-3 hover:bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between transition-colors gap-2 sm:gap-0">
+                                  <div className="flex items-center gap-2 overflow-hidden">
+                                      <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                                      <div className="flex flex-col min-w-0">
+                                          <div className="flex items-center gap-2">
+                                              <p className="text-xs font-black text-slate-800 truncate">{j.brand} {j.model}</p>
+                                              <span className="text-[9px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-black uppercase">{j.plate || j.vin || 'S/N'}</span>
+                                          </div>
+                                          <p className="text-[10px] font-bold text-slate-500 truncate">{j.origin} ➔ {j.destination}</p>
+                                      </div>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
+                                      <span className="text-[9px] font-bold text-slate-400 mr-2">{new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL')}</span>
+                                      <button onClick={()=>cpyWapp(j)} className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md transition-colors"><Copy className="w-3.5 h-3.5"/></button>
+                                      <button onClick={() => generatePDF(j)} className="p-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-md transition-colors"><FileDown className="w-3.5 h-3.5"/></button>
+                                      <button onClick={() => handleShareWhatsAppPDF(j)} className="p-1.5 bg-green-50 text-green-700 hover:bg-green-100 rounded-md transition-colors"><Share2 className="w-3.5 h-3.5"/></button>
+                                      {isAdminView && <button onClick={()=>handleDeleteJob(j.id)} className="p-1.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-md transition-colors"><Trash2 className="w-3.5 h-3.5"/></button>}
+                                  </div>
+                              </div>
+                          );
+                      })}
+                  </div>
+              </div>
+          )}
       </div>
 
       {jobToFail && (
