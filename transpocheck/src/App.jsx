@@ -1785,7 +1785,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v1.8.5</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v1.9</p>
                 </div>
               </div>
             )}
@@ -2321,9 +2321,8 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   const [jobToFail, setJobToFail] = useState(null);
   const [prtPromptJob, setPrtPromptJob] = useState(null); 
   const [historyClientFilter, setHistoryClientFilter] = useState(''); 
-  const [searchTerm, setSearchTerm] = useState(''); // <-- ESTADO BÚSQUEDA
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // Función para actualizar la fase del traslado en vivo (SE DECLARA SOLO UNA VEZ)
   const updatePhase = async (job, phase, extra = {}) => {
     try { await updateDoc(doc(db, 'transport_jobs', job.id), { phase, ...extra }); } 
     catch (e) { console.error(e); showAlert("Error de conexión al actualizar fase."); }
@@ -2332,7 +2331,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   const now = new Date();
   const isAdminView = role === 'admin';
   
-  // LÓGICA DE FILTRADO Y BÚSQUEDA (SE DECLARA SOLO UNA VEZ)
   const filteredJobs = jobs.filter(job => {
     if (!isAdminView) {
       if (job.status === 'pending') {
@@ -2352,7 +2350,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       if (job.createdAt < firstOfCurrentMonth) return false;
     }
 
-    // Filtro de Búsqueda
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       const matchPlate = (job.plate || '').toLowerCase().includes(term);
@@ -2361,7 +2358,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       const matchClient = (job.client || '').toLowerCase().includes(term);
       if (!matchPlate && !matchBrand && !matchModel && !matchClient) return false;
     }
-
     return true;
   });
 
@@ -2370,9 +2366,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     const driverOrder = { accepted: 1, pending: 2, completed: 3, failed: 3 };
     const order = isAdminView ? adminOrder : driverOrder;
     if (order[a.status] !== order[b.status]) return order[a.status] - order[b.status];
-    
     if (a.status === 'completed' || a.status === 'failed') return (b.completedAt || b.createdAt) - (a.completedAt || a.createdAt);
-    
     const getValidTime = (dateStr, fallback) => {
        if (!dateStr) return fallback || 0;
        const time = new Date(dateStr).getTime();
@@ -2389,6 +2383,9 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
      if (historyClientFilter === 'OTRO') return !allClientsList.includes(j.client);
      return j.client === historyClientFilter;
   });
+
+  const pendingJobsList = activeJobs.filter(j => j.status === 'pending');
+  const inProgressJobsList = activeJobs.filter(j => j.status === 'accepted');
 
   const handleAcceptJob = async (job) => {
     try { await updateDoc(doc(db, 'transport_jobs', job.id), { status: 'accepted', acceptedByEmail: currentUserEmail }); } 
@@ -2435,400 +2432,100 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   };
 
   const buildPDFDoc = async (job) => {
-    // CORRECCIÓN: Carga ultra-segura de jsPDF compatible con Vite
     const jsPDFModule = await import('jspdf');
     const JsPDFClass = jsPDFModule.default?.jsPDF || jsPDFModule.default || jsPDFModule.jsPDF;
     const docPDF = new JsPDFClass();
-
-    const cleanStr = (str) => {
-      if (!str) return '';
-      return String(str)
-        .replace(/➔/g, '->')
-        .replace(/•/g, '-')
-        .replace(/[^\x20-\x7E\xA0-\xFF]/g, '');
-    };
-
-    const getImageDims = (src) => new Promise(resolve => { 
-      const img = new Image(); 
-      img.onload = () => resolve({ w: img.width, h: img.height }); 
-      img.onerror = () => resolve({ w: 85, h: 60 }); 
-      img.src = src; 
-    });
-
-    const primaryColor = [30, 41, 59];
-    const secondaryColor = [100, 116, 139];
-    const accentColor = [37, 99, 235];
-    const lightBg = [248, 250, 252];
-    const borderColor = [226, 232, 240];
-
-    const loadSimpleLogo = async (src) => {
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.src = src;
-        img.crossOrigin = "Anonymous";
-        img.onload = () => {
-          const tempCanvas = document.createElement('canvas');
-          tempCanvas.width = img.width;
-          tempCanvas.height = img.height;
-          const ctx = tempCanvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, img.width, img.height);
-          resolve({ data: tempCanvas.toDataURL('image/png'), w: img.width, h: img.height });
-        };
-        img.onerror = () => resolve(null);
-        setTimeout(() => resolve(null), 1500); 
-      });
-    };
-
-    const [logoApp, logoLogistica] = await Promise.all([
-      loadSimpleLogo('/logo.png'),
-      loadSimpleLogo('/LogoLogistica.png')
-    ]);
+    const cleanStr = (str) => { if (!str) return ''; return String(str).replace(/➔/g, '->').replace(/•/g, '-').replace(/[^\x20-\x7E\xA0-\xFF]/g, ''); };
+    const getImageDims = (src) => new Promise(resolve => { const img = new Image(); img.onload = () => resolve({ w: img.width, h: img.height }); img.onerror = () => resolve({ w: 85, h: 60 }); img.src = src; });
+    const primaryColor = [30, 41, 59]; const secondaryColor = [100, 116, 139]; const accentColor = [37, 99, 235]; const lightBg = [248, 250, 252]; const borderColor = [226, 232, 240];
+    const loadSimpleLogo = async (src) => { return new Promise((resolve) => { const img = new Image(); img.src = src; img.crossOrigin = "Anonymous"; img.onload = () => { const tempCanvas = document.createElement('canvas'); tempCanvas.width = img.width; tempCanvas.height = img.height; const ctx = tempCanvas.getContext('2d'); ctx.drawImage(img, 0, 0, img.width, img.height); resolve({ data: tempCanvas.toDataURL('image/png'), w: img.width, h: img.height }); }; img.onerror = () => resolve(null); setTimeout(() => resolve(null), 1500); }); };
+    const [logoApp, logoLogistica] = await Promise.all([ loadSimpleLogo('/logo.png'), loadSimpleLogo('/LogoLogistica.png') ]);
 
     const drawHeader = (titleText) => {
-      docPDF.setFillColor(...primaryColor);
-      docPDF.rect(0, 0, 210, 40, 'F');
-
-      docPDF.setTextColor(255, 255, 255);
-      docPDF.setFontSize(18);
-      docPDF.setFont("helvetica", "bold");
+      docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 40, 'F');
+      docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(18); docPDF.setFont("helvetica", "bold");
       docPDF.text(cleanStr(titleText), 105, 18, null, null, "center");
-
-      docPDF.setFontSize(9);
-      docPDF.setFont("helvetica", "normal");
-      docPDF.setTextColor(148, 163, 184);
+      docPDF.setFontSize(9); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(148, 163, 184);
       docPDF.text(`FECHA TRASLADO: ${formatDateDisplay(job.scheduledDate) || '-'}`, 105, 26, null, null, "center");
-
-      docPDF.setFontSize(11);
-      docPDF.setFont("times", "bolditalic");
-      docPDF.setTextColor(255, 255, 255);
-      
-      if (logoLogistica) {
-        const ratio = logoLogistica.h / logoLogistica.w;
-        let imgW = 35;
-        let imgH = imgW * ratio;
-        if (imgH > 24) { imgH = 24; imgW = imgH / ratio; }
-        
-        docPDF.addImage(logoLogistica.data, 'PNG', 27 - (imgW/2), 19 - (imgH/2), imgW, imgH);
-        docPDF.text("Logística TS SpA", 27, 34, null, null, "center");
-      }
-      
-      if (logoApp) {
-        const ratio = logoApp.h / logoApp.w;
-        let imgW = 20; 
-        let imgH = imgW * ratio;
-        if (imgH > 24) { imgH = 24; imgW = imgH / ratio; }
-
-        docPDF.addImage(logoApp.data, 'PNG', 183 - (imgW/2), 19 - (imgH/2), imgW, imgH);
-        docPDF.text("LogisticAPP", 183, 34, null, null, "center");
-      }
-
+      docPDF.setFontSize(11); docPDF.setFont("times", "bolditalic"); docPDF.setTextColor(255, 255, 255);
+      if (logoLogistica) { const ratio = logoLogistica.h / logoLogistica.w; let imgW = 35; let imgH = imgW * ratio; if (imgH > 24) { imgH = 24; imgW = imgH / ratio; } docPDF.addImage(logoLogistica.data, 'PNG', 27 - (imgW/2), 19 - (imgH/2), imgW, imgH); docPDF.text("Logística TS SpA", 27, 34, null, null, "center"); }
+      if (logoApp) { const ratio = logoApp.h / logoApp.w; let imgW = 20; let imgH = imgW * ratio; if (imgH > 24) { imgH = 24; imgW = imgH / ratio; } docPDF.addImage(logoApp.data, 'PNG', 183 - (imgW/2), 19 - (imgH/2), imgW, imgH); docPDF.text("LogisticAPP", 183, 34, null, null, "center"); }
       docPDF.setFont("helvetica", "normal");
     };
 
     let pdfTitle = "CHECKLIST DE TRASLADO";
     if (job.tripType === 'revision') pdfTitle = "CERTIFICADO DE REVISION TECNICA";
     if (job.tripType === 'viaje') pdfTitle = "TRASLADO A REGIONES";
-
     drawHeader(pdfTitle);
-
     let currentY = 50;
 
     if (job.tripType === 'revision' && job.checklist?.rtStatus) {
         const isApproved = job.checklist.rtStatus === 'aprobado';
         const statusText = isApproved ? "APROBADO" : "RECHAZADO";
-        
         docPDF.setFillColor(isApproved ? 220 : 254, isApproved ? 252 : 226, isApproved ? 231 : 226);
         docPDF.rect(0, 40, 210, 12, 'F');
-        
-        docPDF.setFontSize(16);
-        docPDF.setFont("helvetica", "bold");
+        docPDF.setFontSize(16); docPDF.setFont("helvetica", "bold");
         docPDF.setTextColor(isApproved ? 22 : 220, isApproved ? 163 : 38, isApproved ? 74 : 38); 
         docPDF.text(statusText, 195, 48, null, null, "right");
-        
         currentY = 60; 
     }
 
-    const startY = currentY;
-    const leftColWidth = 90;
-
-    const drawSectionTitle = (title, y) => {
-      docPDF.setFillColor(...lightBg);
-      docPDF.rect(15, y - 6, leftColWidth, 10, 'F');
-      docPDF.setDrawColor(...accentColor);
-      docPDF.setLineWidth(1);
-      docPDF.line(15, y - 6, 15, y + 4);
-      docPDF.setTextColor(...primaryColor);
-      docPDF.setFontSize(10);
-      docPDF.setFont("helvetica", "bold");
-      docPDF.text(cleanStr(title).toUpperCase(), 20, y+1);
-      return y + 10;
-    };
-
-    const drawKV = (label, value, x, y, maxW = 40) => {
-      docPDF.setFontSize(8);
-      docPDF.setFont("helvetica", "normal");
-      docPDF.setTextColor(...secondaryColor);
-      docPDF.text(cleanStr(label).toUpperCase(), x, y);
-      docPDF.setFontSize(9);
-      docPDF.setFont("helvetica", "bold");
-      docPDF.setTextColor(...primaryColor);
-      const splitValue = docPDF.splitTextToSize(cleanStr(value), maxW);
-      docPDF.text(splitValue, x, y + 4);
-      return splitValue.length * 4;
-    };
+    const startY = currentY; const leftColWidth = 90;
+    const drawSectionTitle = (title, y) => { docPDF.setFillColor(...lightBg); docPDF.rect(15, y - 6, leftColWidth, 10, 'F'); docPDF.setDrawColor(...accentColor); docPDF.setLineWidth(1); docPDF.line(15, y - 6, 15, y + 4); docPDF.setTextColor(...primaryColor); docPDF.setFontSize(10); docPDF.setFont("helvetica", "bold"); docPDF.text(cleanStr(title).toUpperCase(), 20, y+1); return y + 10; };
+    const drawKV = (label, value, x, y, maxW = 40) => { docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text(cleanStr(label).toUpperCase(), x, y); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor); const splitValue = docPDF.splitTextToSize(cleanStr(value), maxW); docPDF.text(splitValue, x, y + 4); return splitValue.length * 4; };
 
     let driverNameStr = job.checklist?.assignedDriverName || job.acceptedByEmail || "No registrado";
     if (job.acceptedByEmail) { const foundDriver = drivers?.find(d => d.email === job.acceptedByEmail); if (foundDriver) driverNameStr = foundDriver.name; }
 
-// === COLUMNA IZQUIERDA ===
     currentY = drawSectionTitle("1. Detalles del Vehiculo", currentY);
     let hC = drawKV("Cliente", `${job.client || 'Sin Cliente'}`, 15, currentY, 45);
     let hM = drawKV("Marca y Modelo", `${job.brand || '-'} ${job.model || '-'}`, 65, currentY, 45);
     currentY += Math.max(hC, hM) + 6;
-
     let hP = drawKV("Patente / VIN", `${job.plate || job.vin || '-'}`, 15, currentY, 45);
     let hD = drawKV("Conductor", driverNameStr, 65, currentY, 45);
     currentY += Math.max(hP, hD) + 6;
     
     let routeText = `${job.origin || '-'}  ->  ${job.destination || '-'}`;
-    if (job.tripType === 'revision') {
-      if (job.checklist?.rtStatus === 'aprobado') {
-         const ret = job.checklist.rtReturnOption === 'other' ? job.checklist.rtReturnDestination : job.origin;
-         routeText = `${job.origin || '-'}  ->  PRT  ->  ${ret || '-'}`;
-      } else if (job.checklist?.rtStatus === 'rechazado') {
-         routeText = `${job.origin || '-'}  ->  PRT (Rechazada)`;
-      } else {
-         routeText = `${job.origin || '-'}  ->  PRT`;
-      }
-    }
+    if (job.tripType === 'revision') { if (job.checklist?.rtStatus === 'aprobado') { const ret = job.checklist.rtReturnOption === 'other' ? job.checklist.rtReturnDestination : job.origin; routeText = `${job.origin || '-'}  ->  PRT  ->  ${ret || '-'}`; } else if (job.checklist?.rtStatus === 'rechazado') { routeText = `${job.origin || '-'}  ->  PRT (Rechazada)`; } else { routeText = `${job.origin || '-'}  ->  PRT`; } }
     let routeH = drawKV("Ruta Asignada", routeText, 15, currentY, leftColWidth);
     currentY += routeH + 8;
 
     currentY = drawSectionTitle("2. Recepcion y Estado", currentY);
-    
-    const getDocStatus = (docKey) => {
-        const isOk = job.checklist?.docs?.[docKey];
-        const expDate = job.checklist?.docsExpiry?.[docKey];
-        if (!isOk) return 'FALTA';
-        if (expDate) {
-            const [y, m, d] = expDate.split('-');
-            return `AL DIA (Vence: ${d}/${m}/${y})`;
-        }
-        return 'AL DIA';
-    };
-
+    const getDocStatus = (docKey) => { const isOk = job.checklist?.docs?.[docKey]; const expDate = job.checklist?.docsExpiry?.[docKey]; if (!isOk) return 'FALTA'; if (expDate) { const [y, m, d] = expDate.split('-'); return `AL DIA (Vence: ${d}/${m}/${y})`; } return 'AL DIA'; };
     let hFuel = drawKV("Combustible", `${job.checklist?.fuelLevel || '0'}%`, 15, currentY, 45);
     let hSoap = drawKV("Seguro SOAP", getDocStatus('soap'), 65, currentY, 45);
     currentY += Math.max(hFuel, hSoap) + 6;
-
     let hPerm = drawKV("Permiso Circ.", getDocStatus('permiso'), 15, currentY, 45);
     let hRev = drawKV("Rev. Tecnica", getDocStatus('revTecnica'), 65, currentY, 45);
     currentY += Math.max(hPerm, hRev) + 6;
-
     let hGas = drawKV("Gases", getDocStatus('gases'), 15, currentY, 45);
     currentY += hGas + 8;
 
-    docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
-    docPDF.text("OBSERVACIONES:", 15, currentY);
-    docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
-    const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin observaciones registradas.'}`), leftColWidth);
-    docPDF.text(obsSplit, 15, currentY + 4);
-    currentY += (obsSplit.length * 4) + 8;
-
-    if (job.checklist?.hasWaitTime) {
-      docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38);
-      const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth);
-      docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2;
-    }
-    
-    if (job.checklist?.hasFuelCharge) {
-      docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(37, 99, 235);
-      const fcStr = docPDF.splitTextToSize(`CARGA DE COMBUSTIBLE: ${cleanStr(job.checklist.fuelChargeAmount || 'Sí')}`, leftColWidth);
-      docPDF.text(fcStr, 15, currentY); currentY += (fcStr.length * 4) + 2;
-    }
+    docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("OBSERVACIONES:", 15, currentY); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor); const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin observaciones registradas.'}`), leftColWidth); docPDF.text(obsSplit, 15, currentY + 4); currentY += (obsSplit.length * 4) + 8;
+    if (job.checklist?.hasWaitTime) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38); const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth); docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2; }
+    if (job.checklist?.hasFuelCharge) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(37, 99, 235); const fcStr = docPDF.splitTextToSize(`CARGA DE COMBUSTIBLE: ${cleanStr(job.checklist.fuelChargeAmount || 'Sí')}`, leftColWidth); docPDF.text(fcStr, 15, currentY); currentY += (fcStr.length * 4) + 2; }
     currentY += 8;
 
     let sectionNum = 3;
-
-    if (job.tripType === 'revision') {
-       currentY = drawSectionTitle(`${sectionNum}. Resultado`, currentY);
-       if (job.checklist?.rtStatus === 'aprobado') {
-         docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(16); 
-         docPDF.text("APROBADO", 15, currentY + 6);
-         currentY += 18; 
-       } else {
-         docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(16); 
-         docPDF.text("RECHAZADO", 15, currentY + 6);
-         docPDF.setFontSize(10); docPDF.setTextColor(153, 27, 27);
-         const rejSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.checklist?.rtRejectReason || job.failedReason || 'No especificada'}`), leftColWidth);
-         docPDF.text(rejSplit, 15, currentY + 12);
-         currentY += 20 + (rejSplit.length * 4); 
-       }
-       sectionNum++;
-    }
+    if (job.tripType === 'revision') { currentY = drawSectionTitle(`${sectionNum}. Resultado`, currentY); if (job.checklist?.rtStatus === 'aprobado') { docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(16); docPDF.text("APROBADO", 15, currentY + 6); currentY += 18; } else { docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(16); docPDF.text("RECHAZADO", 15, currentY + 6); docPDF.setFontSize(10); docPDF.setTextColor(153, 27, 27); const rejSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.checklist?.rtRejectReason || job.failedReason || 'No especificada'}`), leftColWidth); docPDF.text(rejSplit, 15, currentY + 12); currentY += 20 + (rejSplit.length * 4); } sectionNum++; }
 
     currentY = drawSectionTitle(`${sectionNum}. Conformidad Entrega`, currentY);
-    if (job.checklist?.noReception) {
-      docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(9);
-      const nrSplit = docPDF.splitTextToSize("ENTREGA SIN RECEPCION (Confirmada por conductor en terreno)", leftColWidth);
-      docPDF.text(nrSplit, 15, currentY + 4);
-      currentY += (nrSplit.length * 4) + 6;
-    } else {
-      drawKV("Receptor", `${job.checklist?.receiverName || 'N/A'}`, 15, currentY, leftColWidth);
-      currentY += 12;
-      drawKV("RUT", `${job.checklist?.receiverRut || 'N/A'}`, 15, currentY, leftColWidth);
-      currentY += 12;
-      
-      if (job.checklist?.clientComments) {
-          docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
-          docPDF.text("COMENTARIOS:", 15, currentY);
-          docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
-          const commSplit = docPDF.splitTextToSize(cleanStr(job.checklist.clientComments), leftColWidth);
-          docPDF.text(commSplit, 15, currentY + 4);
-          currentY += (commSplit.length * 4) + 6;
-      }
-
-      if(job.checklist?.signatureData) {
-          docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
-          docPDF.text("FIRMA DE CONFORMIDAD:", 15, currentY);
-          docPDF.addImage(job.checklist.signatureData, 'PNG', 15, currentY + 2, 45, 25);
-          currentY += 30;
-      }
-    }
+    if (job.checklist?.noReception) { docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(9); const nrSplit = docPDF.splitTextToSize("ENTREGA SIN RECEPCION (Confirmada por conductor en terreno)", leftColWidth); docPDF.text(nrSplit, 15, currentY + 4); currentY += (nrSplit.length * 4) + 6; } else { drawKV("Receptor", `${job.checklist?.receiverName || 'N/A'}`, 15, currentY, leftColWidth); currentY += 12; drawKV("RUT", `${job.checklist?.receiverRut || 'N/A'}`, 15, currentY, leftColWidth); currentY += 12; if (job.checklist?.clientComments) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("COMENTARIOS:", 15, currentY); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor); const commSplit = docPDF.splitTextToSize(cleanStr(job.checklist.clientComments), leftColWidth); docPDF.text(commSplit, 15, currentY + 4); currentY += (commSplit.length * 4) + 6; } if(job.checklist?.signatureData) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("FIRMA DE CONFORMIDAD:", 15, currentY); docPDF.addImage(job.checklist.signatureData, 'PNG', 15, currentY + 2, 45, 25); currentY += 30; } }
     
-    if (job.checklist?.location) {
-      currentY += 2;
-      const { lat, lng } = job.checklist.location;
-      docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
-      docPDF.text(`UBICACION GPS:`, 15, currentY);
-      docPDF.setFontSize(9); docPDF.setTextColor(...accentColor);
-      docPDF.textWithLink('Clic aqui para ver mapa en Google', 15, currentY + 4, { url: `https://maps.google.com/?q=${lat},${lng}` });
-    }
+    if (job.checklist?.location) { currentY += 2; const { lat, lng } = job.checklist.location; docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text(`UBICACION GPS:`, 15, currentY); docPDF.setFontSize(9); docPDF.setTextColor(...accentColor); docPDF.textWithLink('Clic aqui para ver mapa en Google', 15, currentY + 4, { url: `https://maps.google.com/?q=${lat},${lng}` }); }
 
     const frontPhotoStr = job.checklist?.photos?.front;
-    if (frontPhotoStr && typeof frontPhotoStr === 'string' && frontPhotoStr.startsWith('data:image')) {
-      try {
-        const dims = await getImageDims(frontPhotoStr);
-        const ratio = dims.h / dims.w;
-        let imgW = 80; 
-        let imgH = imgW * ratio;
-        if (imgH > 130) { imgH = 130; imgW = imgH / ratio; }
+    if (frontPhotoStr && typeof frontPhotoStr === 'string' && frontPhotoStr.startsWith('data:image')) { try { const dims = await getImageDims(frontPhotoStr); const ratio = dims.h / dims.w; let imgW = 80; let imgH = imgW * ratio; if (imgH > 130) { imgH = 130; imgW = imgH / ratio; } const rightX = 115; const rightY = startY + 6; docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(rightX - 2, rightY - 8, imgW + 4, imgH + 12, 2, 2, 'S'); docPDF.setFillColor(...lightBg); docPDF.rect(rightX - 2, rightY - 8, imgW + 4, 8, 'F'); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor); docPDF.text("VISTA FRONTAL", rightX + (imgW/2), rightY - 3, { align: "center" }); docPDF.addImage(frontPhotoStr, 'JPEG', rightX, rightY + 2, imgW, imgH); } catch (err) { console.error("Error al incrustar foto frontal:", err); } }
 
-        const rightX = 115;
-        const rightY = startY + 6;
-
-        docPDF.setDrawColor(...borderColor);
-        docPDF.setLineWidth(0.5);
-        docPDF.roundedRect(rightX - 2, rightY - 8, imgW + 4, imgH + 12, 2, 2, 'S');
-
-        docPDF.setFillColor(...lightBg);
-        docPDF.rect(rightX - 2, rightY - 8, imgW + 4, 8, 'F');
-        docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor);
-        docPDF.text("VISTA FRONTAL", rightX + (imgW/2), rightY - 3, { align: "center" });
-
-        docPDF.addImage(frontPhotoStr, 'JPEG', rightX, rightY + 2, imgW, imgH);
-      } catch (err) { console.error("Error al incrustar foto frontal:", err); }
-    }
-
-    const addFooter = () => {
-       const pageCount = docPDF.internal.getNumberOfPages();
-       for(let i = 1; i <= pageCount; i++) {
-           docPDF.setPage(i);
-           docPDF.setFontSize(8);
-           docPDF.setTextColor(148, 163, 184);
-           docPDF.text(`Generado por LogisticAPP el ${new Date().toLocaleString('es-CL')} - Pagina ${i} de ${pageCount}`, 105, 290, null, null, "center");
-       }
-    }
+    const addFooter = () => { const pageCount = docPDF.internal.getNumberOfPages(); for(let i = 1; i <= pageCount; i++) { docPDF.setPage(i); docPDF.setFontSize(8); docPDF.setTextColor(148, 163, 184); docPDF.text(`Generado por LogisticAPP el ${new Date().toLocaleString('es-CL')} - Pagina ${i} de ${pageCount}`, 105, 290, null, null, "center"); } }
 
     if (job.checklist?.photos) {
       const photos = job.checklist.photos;
       const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', interior_front: 'Int. Adelante', interior_back: 'Int. Atras', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4', det5: 'Detalle 5', det6: 'Detalle 6', det7: 'Detalle 7', det8: 'Detalle 8' };
       let photoY = 46; let currentCol = 1; let addedPage = false;
-
       const detailPins = job.checklist.detailPins || [];
-      if (detailPins.length > 0) {
-        docPDF.addPage();
-        drawHeader("ESQUEMA DE DAÑOS Y DETALLES");
-        addedPage = true;
-        
-        const mapX = 75; const mapY = 50; const mapW = 60; const mapH = 100;
-        docPDF.setFillColor(248, 250, 252);
-        docPDF.roundedRect(mapX, mapY, mapW, mapH, 3, 3, 'F');
-        docPDF.setDrawColor(203, 213, 225);
-        docPDF.roundedRect(mapX, mapY, mapW, mapH, 3, 3, 'S');
-
-        const vType = job.checklist.vehicleType || 'auto';
-        const vx = mapX + 10; const vw = mapW - 20;
-        const vy = mapY + 10; const vh = mapH - 20;
-
-        docPDF.setFillColor(203, 213, 225);
-        docPDF.setDrawColor(148, 163, 184);
-        docPDF.setLineWidth(1);
-
-        if (vType === 'camioneta') {
-          docPDF.roundedRect(vx, vy, vw, vh*0.35, 3, 3, 'FD');
-          docPDF.setFillColor(71, 85, 105); docPDF.rect(vx+4, vy+4, vw-8, 6, 'F');
-          docPDF.setFillColor(226, 232, 240);
-          docPDF.roundedRect(vx+2, vy+vh*0.38, vw-4, vh*0.62, 2, 2, 'FD');
-        } else if (vType === 'camion') {
-          docPDF.setFillColor(191, 219, 254);
-          docPDF.roundedRect(vx-2, vy, vw+4, vh*0.2, 2, 2, 'FD');
-          docPDF.setFillColor(226, 232, 240);
-          docPDF.roundedRect(vx, vy+vh*0.22, vw, vh*0.78, 1, 1, 'FD');
-        } else {
-          docPDF.roundedRect(vx, vy, vw, vh, 6, 6, 'FD');
-          docPDF.setFillColor(71, 85, 105); docPDF.rect(vx+4, vy+8, vw-8, 8, 'F');
-          docPDF.rect(vx+4, vy+vh-12, vw-8, 6, 'F');
-        }
-
-        detailPins.forEach(pin => {
-          const px = vx + (vw * (pin.x / 100));
-          const py = vy + (vh * (pin.y / 100));
-          docPDF.setFillColor(239, 68, 68);
-          docPDF.circle(px, py, 3.5, 'F');
-          docPDF.setTextColor(255, 255, 255);
-          docPDF.setFontSize(8);
-          docPDF.text(pin.id.replace('det', ''), px, py + 1.2, {align: 'center', baseline: 'middle'});
-        });
-
-        docPDF.setFontSize(9); docPDF.setTextColor(100, 116, 139);
-        docPDF.text("Los numeros en rojo corresponden a las fotos de detalle del anexo:", 105, 165, null, null, "center");
-        photoY = 180;
-      }
-
-      for (const key in photos) {
-        if (key === 'front') continue; 
-
-        if (photos[key] && typeof photos[key] === 'string' && photos[key].startsWith('data:image')) {
-          if (!addedPage) {
-            docPDF.addPage();
-            drawHeader("ANEXO FOTOGRAFICO");
-            addedPage = true;
-          }
-          
-          try {
-            const dims = await getImageDims(photos[key]);
-            const ratio = dims.h / dims.w;
-            let imgW = 85; let imgH = imgW * ratio; if (imgH > 95) { imgH = 95; imgW = imgH / ratio; }
-            const slotCenter = currentCol === 1 ? 55 : 155; const finalX = slotCenter - (imgW / 2);
-
-            if (photoY + imgH > 275) { docPDF.addPage(); photoY = 46; drawHeader("ANEXO FOTOGRAFICO (CONT.)"); }
-
-            docPDF.setDrawColor(...borderColor);
-            docPDF.setLineWidth(0.5);
-            docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S');
-            
-            docPDF.setFillColor(...lightBg);
-            docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F');
-            docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor);
-            docPDF.text((labels[key] || key).toUpperCase(), slotCenter, photoY - 3, { align: "center" });
-
-            docPDF.addImage(photos[key], 'JPEG', finalX, photoY + 2, imgW, imgH);
-
-            if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 20; }
-          } catch (err) { console.error("Error al incrustar la foto:", key, err); }
-        }
-      }
+      if (detailPins.length > 0) { docPDF.addPage(); drawHeader("ESQUEMA DE DAÑOS Y DETALLES"); addedPage = true; const mapX = 75; const mapY = 50; const mapW = 60; const mapH = 100; docPDF.setFillColor(248, 250, 252); docPDF.roundedRect(mapX, mapY, mapW, mapH, 3, 3, 'F'); docPDF.setDrawColor(203, 213, 225); docPDF.roundedRect(mapX, mapY, mapW, mapH, 3, 3, 'S'); const vType = job.checklist.vehicleType || 'auto'; const vx = mapX + 10; const vw = mapW - 20; const vy = mapY + 10; const vh = mapH - 20; docPDF.setFillColor(203, 213, 225); docPDF.setDrawColor(148, 163, 184); docPDF.setLineWidth(1); if (vType === 'camioneta') { docPDF.roundedRect(vx, vy, vw, vh*0.35, 3, 3, 'FD'); docPDF.setFillColor(71, 85, 105); docPDF.rect(vx+4, vy+4, vw-8, 6, 'F'); docPDF.setFillColor(226, 232, 240); docPDF.roundedRect(vx+2, vy+vh*0.38, vw-4, vh*0.62, 2, 2, 'FD'); } else if (vType === 'camion') { docPDF.setFillColor(191, 219, 254); docPDF.roundedRect(vx-2, vy, vw+4, vh*0.2, 2, 2, 'FD'); docPDF.setFillColor(226, 232, 240); docPDF.roundedRect(vx, vy+vh*0.22, vw, vh*0.78, 1, 1, 'FD'); } else { docPDF.roundedRect(vx, vy, vw, vh, 6, 6, 'FD'); docPDF.setFillColor(71, 85, 105); docPDF.rect(vx+4, vy+8, vw-8, 8, 'F'); docPDF.rect(vx+4, vy+vh-12, vw-8, 6, 'F'); } detailPins.forEach(pin => { const px = vx + (vw * (pin.x / 100)); const py = vy + (vh * (pin.y / 100)); docPDF.setFillColor(239, 68, 68); docPDF.circle(px, py, 3.5, 'F'); docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(8); docPDF.text(pin.id.replace('det', ''), px, py + 1.2, {align: 'center', baseline: 'middle'}); }); docPDF.setFontSize(9); docPDF.setTextColor(100, 116, 139); docPDF.text("Los numeros en rojo corresponden a las fotos de detalle del anexo:", 105, 165, null, null, "center"); photoY = 180; }
+      for (const key in photos) { if (key === 'front') continue; if (photos[key] && typeof photos[key] === 'string' && photos[key].startsWith('data:image')) { if (!addedPage) { docPDF.addPage(); drawHeader("ANEXO FOTOGRAFICO"); addedPage = true; } try { const dims = await getImageDims(photos[key]); const ratio = dims.h / dims.w; let imgW = 85; let imgH = imgW * ratio; if (imgH > 95) { imgH = 95; imgW = imgH / ratio; } const slotCenter = currentCol === 1 ? 55 : 155; const finalX = slotCenter - (imgW / 2); if (photoY + imgH > 275) { docPDF.addPage(); photoY = 46; drawHeader("ANEXO FOTOGRAFICO (CONT.)"); } docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S'); docPDF.setFillColor(...lightBg); docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F'); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor); docPDF.text((labels[key] || key).toUpperCase(), slotCenter, photoY - 3, { align: "center" }); docPDF.addImage(photos[key], 'JPEG', finalX, photoY + 2, imgW, imgH); if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 20; } } catch (err) { console.error("Error al incrustar la foto:", key, err); } } }
     }
 
     addFooter();
@@ -2848,32 +2545,20 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     const dateStr = getDStr(job);
     const dateShort = dateStr.substring(0, 5); 
     const text = `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`; 
-    
-    // Fallback seguro síncrono para iOS
     const textArea = document.createElement("textarea");
     textArea.value = text;
     textArea.style.position = "fixed";
     document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
-    try { 
-      document.execCommand('copy'); 
-      showAlert("✅ Formato copiado al portapapeles. Listo para pegar en WhatsApp."); 
-    } catch (err) { 
-      showAlert("Tu navegador bloqueó el copiado automático."); 
-    }
+    try { document.execCommand('copy'); showAlert("✅ Formato copiado al portapapeles. Listo para pegar en WhatsApp."); } catch (err) { showAlert("Tu navegador bloqueó el copiado automático."); }
     document.body.removeChild(textArea);
     setMenuOpenId(null); 
   };
   const cpyWapp = handleCopyWhatsApp; 
 
   const generatePDF = async (job) => {
-    try { 
-      const docPDF = await buildPDFDoc(job); 
-      const cleanPlate = job.plate || job.vin || 'SN';
-      const fileName = `Check.${getDStr(job).replace(/\//g, '-')}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`; 
-      docPDF.save(fileName); 
-    } catch(e) { console.error(e); showAlert("Hubo un error al generar PDF."); }
+    try { const docPDF = await buildPDFDoc(job); const cleanPlate = job.plate || job.vin || 'SN'; const fileName = `Check.${getDStr(job).replace(/\//g, '-')}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`; docPDF.save(fileName); } catch(e) { console.error(e); showAlert("Hubo un error al generar PDF."); }
   };
 
   const handleShareWhatsAppPDF = async (job) => {
@@ -2882,25 +2567,151 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       const dateShort = getDStr(job).substring(0, 5);
       const cleanPlate = job.plate || job.vin || 'SN';
       const fileName = `Check.${dateStrForFile}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`;
-      
       const text = `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`;
-      
       const docPDF = await buildPDFDoc(job); 
       const pdfBlob = docPDF.output('blob'); 
       const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-      
-      if (navigator.canShare && navigator.canShare({ files: [file] })) { 
-        await navigator.share({ title: fileName, text: text, files: [file] }); 
-      } else { 
-        showAlert("Tu dispositivo no soporta compartir el archivo directamente. Descárgalo primero."); 
-        handleCopyWhatsApp(job); 
-      }
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ title: fileName, text: text, files: [file] }); } else { showAlert("Tu dispositivo no soporta compartir el archivo directamente. Descárgalo primero."); handleCopyWhatsApp(job); }
     } catch (e) { console.error(e); }  
   };
-  
+
+  // --- TARJETAS MODULARES PARA KANBAN ---
+  const renderActiveJobCard = (j) => {
+    const isPending = j.status === 'pending';
+    const isAccepted = j.status === 'accepted';
+    const phase = j.phase || 'claimed'; 
+    const step2Done = isAccepted && ['picked_up', 'arrived_destination', 'arrived_prt', 'prt_done'].includes(phase);
+    const step3Done = isAccepted && ['arrived_destination', 'arrived_prt', 'prt_done'].includes(phase);
+    const step4Done = isAccepted && phase === 'prt_done';
+
+    return (
+      <div key={j.id} className="bg-white rounded-3xl border border-slate-100 p-4 sm:p-5 flex flex-col shadow-sm relative hover:shadow-md transition-shadow">
+        <div className={`absolute top-0 left-0 w-full h-1.5 ${isPending ? 'bg-amber-400' : 'bg-blue-500'}`}></div>
+        <div className="flex justify-between items-start mb-4 border-b border-slate-100 pb-3">
+          <div>
+            <h2 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-0.5">En Traslado</h2>
+            <p className="text-lg font-black text-slate-800 leading-tight">{j.brand} {j.model}</p>
+            <p className="text-[10px] font-bold text-slate-400 mt-1">{j.client}</p>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <span className="bg-slate-800 text-white px-2.5 py-1 rounded-md text-xs font-black uppercase tracking-widest shadow-sm">{j.plate || j.vin || 'S/N'}</span>
+            <div className="relative">
+              {isAdminView && <button onClick={()=>onEditJob(j)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg inline-block mr-1"><Edit2 className="w-4 h-4"/></button>}
+              <button onClick={()=>setMenuOpenId(menuOpenId===j.id?null:j.id)} className="p-1.5 text-slate-400 hover:bg-slate-50 rounded-lg inline-block"><MoreVertical className="w-4 h-4"/></button>
+              {menuOpenId===j.id && (
+                <div className="absolute right-0 top-8 bg-white border shadow-2xl rounded-xl w-48 z-50 overflow-hidden text-xs">
+                  <button onClick={() => {
+                    const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
+                    const textToShare = `📍 Sigue en tiempo real todos los traslados de ${j.client || 'tu empresa'} aquí:\n${url}`;
+                    const textArea = document.createElement("textarea");
+                    textArea.value = textToShare; textArea.style.position = "fixed"; document.body.appendChild(textArea);
+                    textArea.focus(); textArea.select();
+                    try { document.execCommand('copy'); showAlert("✅ Portal de Cliente copiado. ¡Pégalo en WhatsApp!"); } catch(e) {}
+                    document.body.removeChild(textArea); setMenuOpenId(null);
+                  }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-blue-50 text-blue-600"><Navigation className="w-4 h-4"/> Portal Cliente</button>
+                  
+                  {/* IDEA 10: Botón Notificar Receptor WhatsApp */}
+                  {isAccepted && (
+                    <button onClick={() => {
+                      const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
+                      const textToShare = `📍 Hola! El vehículo patente ${j.plate || j.vin || 'S/N'} va en camino a ${j.destination || 'su destino'}. Puedes seguir el traslado en tiempo real aquí:\n${url}`;
+                      window.open(`https://wa.me/?text=${encodeURIComponent(textToShare)}`, '_blank');
+                      setMenuOpenId(null);
+                    }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-green-50 text-green-600 border-t border-slate-50"><Share2 className="w-4 h-4"/> Notificar Receptor</button>
+                  )}
+
+                  <button onClick={()=>cpyWapp(j)} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-slate-50 border-t border-slate-50"><Copy className="w-4 h-4"/> Copiar Resumen</button>
+                  <button onClick={()=>{setJobToFail(j);setMenuOpenId(null);}} className="w-full text-left p-3 font-bold flex gap-2 text-red-600 hover:bg-red-50 border-t border-slate-50"><XCircle className="w-4 h-4"/> Cancelar / Falló</button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {j.tripType === 'revision' && <div className="mb-3 bg-amber-50 border border-amber-200 p-2 rounded-xl text-center"><span className="text-[10px] font-black text-amber-700 uppercase">REVISIÓN TÉCNICA (TIPO {j.rtData?.type})</span></div>}
+        {j.tripType === 'viaje' && <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-2 mb-3 text-center text-xs font-bold text-indigo-700 uppercase">A Regiones</div>}
+
+        <div className="relative pl-7 space-y-5 before:absolute before:inset-y-2 before:left-[10px] before:w-0.5 before:bg-slate-100 flex-1 mb-5">
+          <div className="relative"><div className="absolute -left-7 bg-blue-500 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center"><CheckCircle className="w-2.5 h-2.5 text-white"/></div><p className="font-extrabold text-slate-800 text-[11px] leading-tight">{isAccepted ? (j.assignedDrivers?.find(d => d.email === j.acceptedByEmail)?.name || "Conductor") : "Buscando conductor"}</p><p className="text-[9px] font-bold text-slate-500">{isAccepted ? `Retira en ${j.origin}` : `Para ${j.origin}`}</p></div>
+          <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step2Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step2Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-[11px] leading-tight ${step2Done ? 'text-slate-800' : 'text-slate-400'}`}>Vehículo en Tránsito</p></div>
+          <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step3Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step3Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-[11px] leading-tight ${step3Done ? 'text-slate-800' : 'text-slate-400'}`}>{j.tripType === 'revision' ? 'En PRT' : 'Llegada a Destino'}</p><p className={`text-[9px] font-bold ${step3Done ? 'text-blue-600' : 'text-slate-400'}`}>{j.tripType === 'revision' ? 'Planta' : j.destination}</p></div>
+          
+          {j.tripType === 'revision' && (
+            <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step4Done ? (j.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200'}`}>{step4Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-[11px] leading-tight ${step4Done ? (j.prt_result === 'rechazado' ? 'text-red-600' : 'text-green-600') : 'text-slate-400'}`}>Resultado Revisión</p>{step4Done && <p className={`text-[9px] font-bold ${j.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-600'}`}>{j.prt_result === 'rechazado' ? `Rechazado` : 'Aprobado'}</p>}</div>
+          )}
+          {j.tripType === 'revision' && step4Done && (
+            <div className="relative"><div className="absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center bg-blue-500"><div className="w-1.5 h-1.5 bg-white rounded-full animate-ping"></div></div><p className="font-extrabold text-[11px] text-slate-800 leading-tight">Camino a destino</p></div>
+          )}
+        </div>
+
+        {j.liveLocation && j.phase === 'picked_up' && (
+          <div className="mb-4 rounded-xl overflow-hidden border border-slate-200 h-28 pointer-events-none relative shadow-inner">
+            <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md z-10 flex items-center gap-1.5 shadow-sm"><span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span><span className="text-[8px] font-black text-slate-700 uppercase tracking-wider">En vivo</span></div>
+            <iframe width="100%" height="100%" frameBorder="0" src={`http://googleusercontent.com/maps.google.com/maps?q=${j.liveLocation.lat},${j.liveLocation.lng}&z=15&output=embed`}></iframe>
+          </div>
+        )}
+
+        <div className="mt-auto pt-3 border-t border-slate-100 flex flex-col gap-2">
+          {isPending && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && (
+            <button onClick={()=>handleAcceptJob(j)} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors">Reclamar Traslado</button>
+          )}
+
+          {isAccepted && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
+            <>
+              {(!j.phase || j.phase === 'claimed') && <button onClick={()=>updatePhase(j, 'picked_up')} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors">🚘 Vehículo en mi poder</button>}
+              {j.phase === 'picked_up' && j.tripType !== 'revision' && <button onClick={()=>updatePhase(j, 'arrived_destination')} className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors">📍 Llegué a Destino</button>}
+              {j.phase === 'picked_up' && j.tripType === 'revision' && <button onClick={()=>updatePhase(j, 'arrived_prt')} className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors">📍 Llegué a PRT</button>}
+              
+              {j.phase === 'arrived_prt' && (
+                <div className="flex gap-2">
+                  <button onClick={()=>updatePhase(j, 'prt_done', { prt_result: 'aprobado' })} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors">✅ Aprobado</button>
+                  <button onClick={()=>setPrtPromptJob(j)} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors">❌ Rechazado</button>
+                </div>
+              )}
+
+              <button onClick={()=>onStartChecklist(j)} className={`w-full font-bold py-2 rounded-xl text-xs shadow-sm transition-colors ${(j.phase === 'arrived_destination' || j.phase === 'prt_done') ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'}`}>
+                📸 {(j.phase === 'arrived_destination' || j.phase === 'prt_done') ? 'Cerrar Checklist' : 'Pre-llenar Checklist'}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderHistoryJobCard = (j) => {
+    const drv = drivers?.find(d => d.email === j.acceptedByEmail);
+    const driverName = drv ? drv.name : (j.checklist?.assignedDriverName || j.acceptedByEmail || 'No registrado');
+    const isFailed = j.status === 'failed';
+    
+    return (
+      <div key={j.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between relative pl-5 overflow-hidden hover:shadow-md transition-shadow">
+        <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
+        <div className="flex justify-between items-center mb-1">
+          <p className="text-sm font-black text-slate-800 leading-tight truncate pr-2">{j.brand} {j.model}</p>
+          <span className="bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest shrink-0">{j.plate || 'S/N'}</span>
+        </div>
+        <p className="text-slate-500 text-[10px] font-bold uppercase mb-2 flex items-center gap-1 truncate"><MapPin className="w-3 h-3 shrink-0"/> {j.origin} ➔ {j.tripType === 'revision' ? 'PRT' : j.destination}</p>
+        <div className="mb-3">
+           <p className="text-blue-600 font-extrabold text-[10px] uppercase tracking-wide truncate">Conductor: <span className="text-slate-700">{driverName}</span></p>
+           {isFailed && <p className="text-red-600 text-[10px] mt-0.5 font-bold line-clamp-1">Razón: {j.failedReason}</p>}
+        </div>
+        <div className="flex justify-between items-end border-t border-slate-50 pt-2 mb-2">
+          <p className={`text-[10px] font-black uppercase ${isFailed ? 'text-red-500' : 'text-green-600'}`}>{isFailed ? 'RECHAZADO' : 'ENTREGADO'}</p>
+          <p className="text-slate-400 font-bold text-[9px]">{getDStr(j)}</p>
+        </div>
+        <div className="flex gap-1.5 mt-auto">
+          <button onClick={()=>cpyWapp(j)} className="flex-1 py-1.5 flex justify-center bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"><Copy className="w-3.5 h-3.5"/></button>
+          <button onClick={() => generatePDF(j)} className="flex-1 py-1.5 flex justify-center bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg transition-colors"><FileDown className="w-3.5 h-3.5"/></button>
+          <button onClick={() => handleShareWhatsAppPDF(j)} className="flex-1 py-1.5 flex justify-center bg-green-50 text-green-700 hover:bg-green-100 rounded-lg transition-colors"><Share2 className="w-3.5 h-3.5"/></button>
+          {isAdminView && <button onClick={()=>handleDeleteJob(j.id)} className="flex-1 py-1.5 flex justify-center bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5"/></button>}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="pb-16">
-      {/* BARRA DE BÚSQUEDA GENERAL */}
       <div className="relative mb-6">
          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
            <Search className="w-5 h-5 text-slate-400" />
@@ -2908,152 +2719,40 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
          <input type="text" placeholder="Buscar por patente, marca, modelo o cliente..." className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 shadow-sm transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
       </div>
 
-      {activeJobs.length > 0 && (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
-          {activeJobs.map(j => (
-            <div key={j.id} className="bg-white rounded-3xl border p-5 flex flex-col shadow-sm relative">
-              <div className="flex justify-between items-center mb-3 border-b pb-3">
-                <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase ${j.status==='pending'?'bg-amber-100 text-amber-700':'bg-blue-100 text-blue-700'}`}>{j.status==='pending'?'Pendiente':'En Curso'}</span>
-                <div className="flex gap-1.5 items-center relative">
-                  {isAdminView && <button onClick={()=>onEditJob(j)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg"><Edit2 className="w-4 h-4"/></button>}
-                  <button onClick={()=>setMenuOpenId(menuOpenId===j.id?null:j.id)} className="p-1.5 text-slate-400 hover:bg-slate-50 rounded-lg"><MoreVertical className="w-4 h-4"/></button>
-                  {menuOpenId===j.id && (
-                    <div className="absolute right-0 top-8 bg-white border shadow-2xl rounded-xl w-48 z-50 overflow-hidden text-xs">
-                      {/* NUEVO BOTÓN: COPIAR LINK DE PORTAL DE CLIENTE (Seguro iOS) */}
-                      <button onClick={() => {
-                        const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
-                        const textToShare = `📍 Sigue en tiempo real todos los traslados de ${j.client || 'tu empresa'} aquí:\n${url}`;
-                        
-                        const textArea = document.createElement("textarea");
-                        textArea.value = textToShare;
-                        textArea.style.position = "fixed";
-                        document.body.appendChild(textArea);
-                        textArea.focus();
-                        textArea.select();
-                        try { document.execCommand('copy'); showAlert("✅ Portal de Cliente copiado. ¡Pégalo en WhatsApp!"); } catch(e) {}
-                        document.body.removeChild(textArea);
-                        setMenuOpenId(null);
-                      }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-blue-50 text-blue-600"><Navigation className="w-4 h-4"/> Portal Cliente</button>
-                      
-                      <button onClick={()=>cpyWapp(j)} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-slate-50 border-t"><Copy className="w-4 h-4"/> Copiar Resumen</button>
-                      <button onClick={()=>{setJobToFail(j);setMenuOpenId(null);}} className="w-full text-left p-3 font-bold flex gap-2 text-red-600 hover:bg-red-50 border-t"><XCircle className="w-4 h-4"/> Cancelar / Falló</button>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <h3 className="font-extrabold text-lg text-slate-800 leading-tight">{j.brand} {j.model}</h3>
-              <p className="text-xs font-bold text-slate-400 mb-3">{j.client}</p>
-              
-              {j.tripType === 'revision' && (
-                <div className="mb-3 bg-amber-50 border border-amber-200 p-2 rounded-xl text-center">
-                  <span className="text-[10px] font-black text-amber-700 uppercase">REVISIÓN TÉCNICA (TIPO {j.rtData?.type})</span>
-                </div>
-              )}
-              {j.tripType === 'viaje' && <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-2 mb-3 text-center text-xs font-bold text-indigo-700 uppercase">A Regiones</div>}
-              
-              <div className="space-y-1 text-xs font-bold text-slate-600 mb-4">
-                <p className="flex items-start gap-1"><MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5"/> <span className="flex-1">{j.origin}</span></p>
-                <p className="flex items-start gap-1"><Navigation className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5"/> 
-                  <span className="flex-1">
-                    {j.tripType === 'revision' ? (
-                        j.checklist?.rtStatus === 'aprobado' ? `PRT ➔ ${j.checklist.rtReturnOption === 'other' ? j.checklist.rtReturnDestination : j.origin}` :
-                        j.checklist?.rtStatus === 'rechazado' ? 'PRT (Rechazada)' : 'Planta de Revisión (PRT)'
-                    ) : j.destination}
-                  </span>
-                </p>
-                <p className="text-slate-400 mt-2">Patente/VIN: <span className="text-slate-700 bg-slate-100 px-2 py-0.5 rounded ml-1 uppercase">{j.plate || j.vin || 'N/A'}</span></p>
-              </div>
-
-              {/* --- NUEVO: MAPA PARA EL ADMIN/CONDUCTOR --- */}
-              {j.liveLocation && j.phase === 'picked_up' && (
-                <div className="mb-4 rounded-xl overflow-hidden border border-slate-200 h-32 pointer-events-none relative shadow-inner">
-                  <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md z-10 flex items-center gap-1.5 shadow-sm">
-                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-                    <span className="text-[8px] font-black text-slate-700 uppercase tracking-wider">En vivo</span>
-                  </div>
-                  <iframe width="100%" height="100%" frameBorder="0" src={`https://maps.google.com/maps?q=${j.liveLocation.lat},${j.liveLocation.lng}&z=15&output=embed`}></iframe>
-                </div>
-              )}
-              {/* ------------------------------------------- */}
-
-              <div className="mt-auto pt-4 border-t flex flex-col gap-2">
-                {j.status === 'pending' && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && (
-                  <button onClick={()=>handleAcceptJob(j)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">Reclamar Traslado</button>
-                )}
-
-                {j.status === 'accepted' && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
-                  <>
-                    {(!j.phase || j.phase === 'claimed') && (
-                      <button onClick={()=>updatePhase(j, 'picked_up')} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">🚘 Vehículo en mi poder</button>
-                    )}
-
-                    {j.phase === 'picked_up' && j.tripType !== 'revision' && (
-                      <button onClick={()=>updatePhase(j, 'arrived_destination')} className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">📍 Llegué a Destino</button>
-                    )}
-
-                    {j.phase === 'picked_up' && j.tripType === 'revision' && (
-                      <button onClick={()=>updatePhase(j, 'arrived_prt')} className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">📍 Llegué a la PRT</button>
-                    )}
-
-                    {j.phase === 'arrived_prt' && (
-                      <div className="flex gap-2">
-                         <button onClick={()=>updatePhase(j, 'prt_done', { prt_result: 'aprobado' })} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">✅ Aprobado</button>
-                         <button onClick={()=>setPrtPromptJob(j)} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">❌ Rechazado</button>
-                      </div>
-                    )}
-
-                    {/* NUEVO: El botón de Checklist siempre está visible para pre-llenar, cambiando de color y texto al final del viaje */}
-                    <button onClick={()=>onStartChecklist(j)} className={`font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors ${(j.phase === 'arrived_destination' || j.phase === 'prt_done') ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-2 border-slate-200'}`}>
-                      📸 {(j.phase === 'arrived_destination' || j.phase === 'prt_done') ? 'Entregar / Cerrar Checklist' : 'Avanzar / Pre-llenar Checklist'}
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {historyJobs.length > 0 && (
-        <div className="mt-8">
-          <h3 className="font-extrabold text-lg text-slate-700 mb-4 border-b-2 border-slate-100 pb-2">Historial Simplificado</h3>
-          {/* AQUÍ ESTÁ LA MAGIA: Grilla de múltiples columnas */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {historyJobs.map(j => {
-              const drv = drivers?.find(d => d.email === j.acceptedByEmail);
-              const driverName = drv ? drv.name : (j.checklist?.assignedDriverName || j.acceptedByEmail || 'No registrado');
-              const isFailed = j.status === 'failed';
-              
-              return (
-              <div key={j.id} className="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between relative pl-4 overflow-hidden hover:shadow-md transition-shadow">
-                <div className={`absolute top-0 left-0 bottom-0 w-2 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                
-                <div className="flex justify-between items-center mb-1.5">
-                  <p className="text-sm font-black text-slate-800 leading-tight truncate pr-2">{j.brand} {j.model}</p>
-                  <span className="bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-md text-xs font-black uppercase tracking-widest shrink-0">{j.plate || 'S/N'}</span>
-                </div>
-                
-                <p className="text-slate-500 text-[10px] font-bold uppercase mb-2 flex items-center gap-1 truncate opacity-90"><MapPin className="w-3.5 h-3.5 shrink-0"/> {j.origin} ➔ {j.tripType === 'revision' ? 'PRT' : j.destination}</p>
-                
-                <div className="mb-3 flex justify-between items-center">
-                   <div>
-                     <p className="text-blue-600 font-extrabold text-[10px] uppercase tracking-wide truncate">Conductor: <span className="text-slate-700">{driverName}</span></p>
-                     {isFailed && <p className="text-red-600 text-[10px] mt-0.5 font-bold line-clamp-1">Razón: {j.failedReason}</p>}
-                   </div>
-                   <p className="text-slate-400 font-bold text-[9px] text-right shrink-0 ml-2">{getDStr(j)}</p>
-                </div>
-                
-                <div className="flex gap-1.5 mt-auto pt-2 border-t border-slate-50">
-                  <button onClick={()=>cpyWapp(j)} className="flex-1 py-1.5 flex justify-center bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors" title="Copiar Texto"><Copy className="w-4 h-4"/></button>
-                  <button onClick={() => generatePDF(j)} className="flex-1 py-1.5 flex justify-center bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg transition-colors" title="Descargar PDF"><FileDown className="w-4 h-4"/></button>
-                  <button onClick={() => handleShareWhatsAppPDF(j)} className="flex-1 py-1.5 flex justify-center bg-green-50 text-green-700 hover:bg-green-100 rounded-lg transition-colors" title="Compartir PDF"><Share2 className="w-4 h-4"/></button>
-                  {isAdminView && <button onClick={()=>handleDeleteJob(j.id)} className="flex-1 py-1.5 flex justify-center bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Eliminar Historial"><Trash2 className="w-4 h-4"/></button>}
-                </div>
-              </div>
-            )})}
+      {/* VISTA KANBAN (Idea 8) */}
+      <div className="flex flex-col md:flex-row gap-6 items-start">
+        
+        {/* COLUMNA 1: PENDIENTES */}
+        <div className="w-full md:w-1/3 flex flex-col gap-4 bg-slate-100/50 md:bg-transparent p-0 md:p-4 rounded-3xl md:border md:border-slate-200/60">
+          <div className="flex justify-between items-center mb-1 md:mb-2 px-2 md:px-0">
+            <h3 className="font-extrabold text-slate-700 flex items-center gap-2"><Clock className="w-5 h-5 text-amber-500"/> Pendientes</h3>
+            <span className="bg-amber-100 text-amber-700 text-xs font-black px-2 py-0.5 rounded-full">{pendingJobsList.length}</span>
           </div>
+          {pendingJobsList.map(j => renderActiveJobCard(j))}
+          {pendingJobsList.length === 0 && <p className="text-center text-sm font-bold text-slate-400 py-8 border-2 border-dashed border-slate-200 rounded-2xl mx-2 md:mx-0">Sin pendientes</p>}
         </div>
-      )}
+
+        {/* COLUMNA 2: EN CURSO */}
+        <div className="w-full md:w-1/3 flex flex-col gap-4 bg-blue-50/50 md:bg-transparent p-0 md:p-4 rounded-3xl md:border md:border-blue-100/60 mt-6 md:mt-0">
+          <div className="flex justify-between items-center mb-1 md:mb-2 px-2 md:px-0">
+            <h3 className="font-extrabold text-slate-800 flex items-center gap-2"><Navigation className="w-5 h-5 text-blue-600"/> En Curso</h3>
+            <span className="bg-blue-100 text-blue-700 text-xs font-black px-2 py-0.5 rounded-full">{inProgressJobsList.length}</span>
+          </div>
+          {inProgressJobsList.map(j => renderActiveJobCard(j))}
+          {inProgressJobsList.length === 0 && <p className="text-center text-sm font-bold text-blue-300 py-8 border-2 border-dashed border-blue-200 rounded-2xl mx-2 md:mx-0">Ningún vehículo en ruta</p>}
+        </div>
+
+        {/* COLUMNA 3: FINALIZADOS */}
+        <div className="w-full md:w-1/3 flex flex-col gap-4 bg-slate-100/50 md:bg-transparent p-0 md:p-4 rounded-3xl md:border md:border-slate-200/60 mt-6 md:mt-0">
+          <div className="flex justify-between items-center mb-1 md:mb-2 px-2 md:px-0">
+            <h3 className="font-extrabold text-slate-700 flex items-center gap-2"><CheckCircle className="w-5 h-5 text-green-600"/> Finalizados</h3>
+            <span className="bg-green-100 text-green-700 text-xs font-black px-2 py-0.5 rounded-full">{historyJobs.length}</span>
+          </div>
+          {historyJobs.map(j => renderHistoryJobCard(j))}
+          {historyJobs.length === 0 && <p className="text-center text-sm font-bold text-slate-400 py-8 border-2 border-dashed border-slate-200 rounded-2xl mx-2 md:mx-0">Historial vacío</p>}
+        </div>
+
+      </div>
 
       {jobToFail && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
@@ -3065,7 +2764,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         </div>
       )}
 
-      {/* NUEVO: MODAL DE RECHAZO PRT RÁPIDO */}
       {prtPromptJob && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <form onSubmit={(e) => { e.preventDefault(); updatePhase(prtPromptJob, 'prt_done', { prt_result: 'rechazado', prt_reason: e.target.reason.value }); setPrtPromptJob(null); }} className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-xl border-t-8 border-red-500">
@@ -3078,7 +2776,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
           </form>
         </div>
       )}
-
     </div>
   );
 }
