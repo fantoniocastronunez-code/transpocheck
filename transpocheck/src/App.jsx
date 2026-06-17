@@ -916,7 +916,7 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
                         width="100%" 
                         height="100%" 
                         frameBorder="0" 
-                        src={`https://maps.google.com/maps?q=${job.liveLocation.lat},${job.liveLocation.lng}&z=16&output=embed`}
+                        src={`https://maps.google.com/maps?q=${job.liveLocation.lat},${job.liveLocation.lng}&z=15&output=embed`}
                       ></iframe>
                     </div>
                   </div>
@@ -2900,9 +2900,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                 </p>
                 <p className="text-slate-400 mt-2">Patente/VIN: <span className="text-slate-700 bg-slate-100 px-2 py-0.5 rounded ml-1 uppercase">{j.plate || j.vin || 'N/A'}</span></p>
               </div>
-              <div className="mt-auto pt-4 border-t flex flex-col gap-2">
-                {j.status === 'pend<p className="text-slate-400 mt-2">Patente/VIN: <span className="text-slate-700 bg-slate-100 px-2 py-0.5 rounded ml-1 uppercase">{j.plate || j.vin || 'N/A'}</span></p>
-              </div>
 
               {/* --- NUEVO: MAPA PARA EL ADMIN/CONDUCTOR --- */}
               {j.liveLocation && j.phase === 'picked_up' && (
@@ -2917,7 +2914,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
               {/* ------------------------------------------- */}
 
               <div className="mt-auto pt-4 border-t flex flex-col gap-2">
-                {j.status === 'pending' && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && (ing' && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && (
+                {j.status === 'pending' && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && (
                   <button onClick={()=>handleAcceptJob(j)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-md transition-colors">Reclamar Traslado</button>
                 )}
 
