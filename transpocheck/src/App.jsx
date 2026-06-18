@@ -3,6 +3,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, enableMultiTabIndexedDbPersistence, collection, addDoc, onSnapshot, updateDoc, setDoc, doc, deleteDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
+import Tesseract from 'tesseract.js'; // NUEVO: Motor de lectura de patentes
 // Eliminamos la importación global de jsPDF para que la app cargue más rápido (Lazy Loading)
 import { 
   Car, MapPin, Camera, CheckCircle, FileText, Download, 
@@ -1921,7 +1922,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.1.9.6</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.1.9.7</p>
                 </div>
               </div>
             )}
@@ -2436,8 +2437,100 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
   );
 }
 
+// --- NUEVO: COMPONENTE ESCÁNER DE PATENTES CON OCR ---
+function PatenteScanner({ job, onCancel, onSuccess, onSendToAdmin }) {
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const [statusMsg, setStatusMsg] = useState('Encuadra la patente en el recuadro verde');
+  const [capturedImg, setCapturedImg] = useState(null);
+  const [scanFailed, setScanFailed] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    let stream = null;
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      .then(s => { stream = s; if (videoRef.current) videoRef.current.srcObject = s; })
+      .catch(err => setStatusMsg('Sin acceso a la cámara.'));
+    return () => { if (stream) stream.getTracks().forEach(t => t.stop()); };
+  }, []);
+
+  const handleScan = async () => {
+    setIsProcessing(true);
+    setStatusMsg('Analizando imagen con IA...');
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+    setCapturedImg(dataUrl);
+
+    try {
+      const { data: { text } } = await Tesseract.recognize(dataUrl, 'spa');
+      const cleanText = text.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+      const expected = (job.plate || job.vin || '').replace(/[^A-Z0-9]/gi, '').toUpperCase();
+
+      if (expected && cleanText.includes(expected)) {
+        setStatusMsg('✅ ¡Coincidencia Perfecta!');
+        setTimeout(onSuccess, 1500);
+      } else {
+        setStatusMsg(`❌ No detectado. Leído: ${cleanText.substring(0, 10) || 'Nada claro'}`);
+        setScanFailed(true);
+        setIsProcessing(false);
+      }
+    } catch (e) {
+      setStatusMsg('❌ Error leyendo la imagen');
+      setScanFailed(true);
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-slate-900 z-[300] flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white rounded-3xl overflow-hidden shadow-2xl relative animate-in zoom-in-95">
+         <div className="p-4 bg-slate-800 text-white flex justify-between items-center">
+           <h3 className="font-black text-lg">Validar Vehículo</h3>
+           <button onClick={onCancel} className="bg-white/20 p-1.5 rounded-full hover:bg-white/30 transition-colors"><X className="w-5 h-5"/></button>
+         </div>
+         
+         {!capturedImg ? (
+           <div className="relative w-full h-64 bg-black overflow-hidden">
+             <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover opacity-80" />
+             <div className="absolute inset-0 border-[40px] border-slate-900/60 pointer-events-none flex items-center justify-center">
+                <div className="w-full h-20 border-4 border-green-400 rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.4)]"></div>
+             </div>
+           </div>
+         ) : (
+           <img src={capturedImg} className="w-full h-64 object-cover" alt="Captura" />
+         )}
+         <canvas ref={canvasRef} className="hidden" />
+
+         <div className="p-5 text-center space-y-4">
+           <p className="text-sm font-bold text-slate-600">{statusMsg}</p>
+           <p className="text-xs text-slate-400">Patente asignada: <span className="font-black text-slate-800 text-sm px-2 py-0.5 bg-slate-100 rounded border">{job.plate || job.vin}</span></p>
+
+           {!scanFailed ? (
+             <button onClick={handleScan} disabled={isProcessing} className="w-full bg-blue-600 text-white font-black py-3 rounded-xl shadow-lg disabled:opacity-50 flex justify-center items-center gap-2 transition-colors hover:bg-blue-700">
+               {isProcessing ? <Clock className="w-5 h-5 animate-spin"/> : <Camera className="w-5 h-5"/>}
+               {isProcessing ? 'Procesando...' : 'Escanear Patente'}
+             </button>
+           ) : (
+             <div className="flex gap-2">
+               <button onClick={() => { setCapturedImg(null); setScanFailed(false); setStatusMsg('Encuadra la patente en el recuadro verde'); }} className="flex-1 bg-slate-100 text-slate-700 font-bold py-3 rounded-xl text-sm transition-colors hover:bg-slate-200">Reintentar</button>
+               <button onClick={() => onSendToAdmin(capturedImg)} className="flex-[2] bg-amber-500 text-white font-bold py-3 rounded-xl text-sm shadow-md transition-colors hover:bg-amber-600">Pedir Autorización Manual</button>
+             </div>
+           )}
+         </div>
+      </div>
+    </div>
+  );
+}
+// --------------------------------------------------------
+
 function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, currentUserEmail, showAlert, showConfirm, allClientsList }) {
   const [menuOpenId, setMenuOpenId] = useState(null);
+  const [scanningJob, setScanningJob] = useState(null); // NUEVO: Estado del Escáner de Validación
+  const [approvalJobView, setApprovalJobView] = useState(null); // NUEVO: Vista Admin para autorizar discrepancias
   const [jobToFail, setJobToFail] = useState(null);
   const [prtPromptJob, setPrtPromptJob] = useState(null); 
   const [relayPromptJob, setRelayPromptJob] = useState(null); // <-- NUEVO ESTADO RELEVO
@@ -2796,8 +2889,23 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         )}
 
         <div className="mt-auto pt-3 border-t border-slate-100 flex flex-col gap-2">
-          {isPending && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && (
-            <button onClick={()=>handleAcceptJob(j)} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors">Reclamar Traslado</button>
+          {/* LÓGICA NUEVA DE RECLAMO Y VALIDACIÓN */}
+          {isPending && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && !j.adminApprovalPending && (
+            <button onClick={() => setScanningJob(j)} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm flex items-center justify-center gap-2 transition-colors">
+              <Camera className="w-4 h-4"/> Escanear Patente y Reclamar
+            </button>
+          )}
+          
+          {/* Estado intermedio: Esperando Admin */}
+          {isPending && j.adminApprovalPending && !isAdminView && (
+             <div className="w-full bg-amber-50 text-amber-600 border border-amber-200 font-bold py-2 rounded-xl text-xs text-center flex items-center justify-center gap-1"><Clock className="w-3.5 h-3.5 animate-spin"/> Esperando autorización Central</div>
+          )}
+
+          {/* Botón exclusivo para el Admin cuando la lectura falló */}
+          {isPending && j.adminApprovalPending && isAdminView && (
+             <button onClick={() => setApprovalJobView(j)} className="w-full bg-red-500 hover:bg-red-600 text-white font-black py-2 rounded-xl text-xs shadow-sm animate-pulse transition-colors flex items-center justify-center gap-2">
+               ⚠️ Autorizar Retiro Manual
+             </button>
           )}
 
           {isAccepted && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
@@ -3000,6 +3108,60 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
             </div>
           </div>
         </div>
+      )}
+
+      {/* --- NUEVO: MODALES DE VALIDACIÓN DE IDENTIDAD Y APROBACIÓN ADMIN --- */}
+      {scanningJob && (
+        <PatenteScanner 
+          job={scanningJob} 
+          onCancel={() => setScanningJob(null)}
+          onSuccess={() => {
+            handleAcceptJob(scanningJob); // Reclama el trabajo si hay éxito
+            setScanningJob(null);
+            showAlert("¡Vehículo verificado! Tienes el vehículo en tu poder.");
+          }}
+          onSendToAdmin={async (imgBase64) => {
+            try {
+              // Escribe en Firebase que requiere atención humana
+              await updateDoc(doc(db, 'transport_jobs', scanningJob.id), {
+                adminApprovalPending: true,
+                approvalRequestDriverEmail: currentUserEmail,
+                approvalRequestImage: imgBase64
+              });
+              setScanningJob(null);
+              showAlert("Evidencia enviada. Espera que la central autorice el retiro en el sistema.");
+            } catch(e) { console.error(e); }
+          }}
+        />
+      )}
+
+      {approvalJobView && (
+         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+            <div className="bg-white rounded-3xl p-6 w-full max-w-sm animate-in zoom-in-95">
+               <h3 className="text-lg font-black text-red-600 mb-2 flex items-center gap-2"><AlertCircle className="w-5 h-5"/> Solicitud de Retiro Manual</h3>
+               <p className="text-sm text-slate-600 mb-4 leading-tight">El conductor <b className="text-slate-800">{approvalJobView.approvalRequestDriverEmail}</b> no logró escanear automáticamente la patente <span className="bg-slate-100 border px-1 rounded font-black">{approvalJobView.plate || approvalJobView.vin}</span>.</p>
+               
+               <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Evidencia capturada en terreno:</p>
+               <img src={approvalJobView.approvalRequestImage} className="w-full h-48 object-cover rounded-xl mb-6 border-4 border-slate-100 shadow-inner" alt="Evidencia"/>
+               
+               <div className="flex gap-2">
+                 <button onClick={async () => {
+                    await updateDoc(doc(db, 'transport_jobs', approvalJobView.id), {
+                      adminApprovalPending: false, approvalRequestDriverEmail: null, approvalRequestImage: null
+                    });
+                    setApprovalJobView(null);
+                 }} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-bold text-sm transition-colors">Rechazar / Reasignar</button>
+                 
+                 <button onClick={async () => {
+                    await updateDoc(doc(db, 'transport_jobs', approvalJobView.id), {
+                      status: 'accepted', acceptedByEmail: approvalJobView.approvalRequestDriverEmail, adminApprovalPending: false, approvalRequestImage: null
+                    });
+                    setApprovalJobView(null);
+                    showAlert("Retiro autorizado manualmente para el conductor.");
+                 }} className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-black text-sm shadow-md transition-colors">Aprobar Retiro</button>
+               </div>
+            </div>
+         </div>
       )}
 
     </div>
