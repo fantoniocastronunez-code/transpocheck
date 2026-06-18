@@ -2818,10 +2818,9 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${isPending ? 'bg-amber-400' : 'bg-blue-500'}`}></div>
         
         {/* --- NUEVO ENCABEZADO: PATENTE GIGANTE --- */}
-        <div className="flex justify-between items-start mb-5 border-b border-slate-100 pb-5 pl-2">
-          <div className="flex flex-col gap-1 w-full">
+        <div className="flex justify-between items-start mb-5 border-b border-slate-100 pb-4 pl-2">
+          <div className="flex flex-col gap-3 w-full">
             <div className="flex justify-between items-start w-full">
-              
               {/* Bloque de Patente Estilo Placa */}
               <div className="bg-slate-800 border-2 border-slate-600 rounded-xl px-4 py-1.5 shadow-md flex items-center justify-center">
                 <span className="text-2xl sm:text-3xl font-black text-white uppercase tracking-[0.15em] leading-none">
@@ -2833,41 +2832,49 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
               <div className="flex items-center gap-1 relative shrink-0">
                 {isAdminView && <button onClick={()=>onEditJob(j)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition-colors"><Edit2 className="w-5 h-5"/></button>}
                 <button onClick={()=>setMenuOpenId(menuOpenId===j.id?null:j.id)} className="p-2 text-slate-400 hover:bg-slate-50 rounded-xl transition-colors"><MoreVertical className="w-5 h-5"/></button>
-              {menuOpenId===j.id && (
-                <div className="absolute right-0 top-8 bg-white border shadow-2xl rounded-xl w-48 z-50 overflow-hidden text-xs">
-                  <button onClick={() => {
-                    const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
-                    const textToShare = `📍 Sigue en tiempo real todos los traslados de ${j.client || 'tu empresa'} aquí:\n${url}`;
-                    const textArea = document.createElement("textarea");
-                    textArea.value = textToShare; textArea.style.position = "fixed"; document.body.appendChild(textArea);
-                    textArea.focus(); textArea.select();
-                    try { document.execCommand('copy'); showAlert("✅ Portal de Cliente copiado. ¡Pégalo en WhatsApp!"); } catch(e) {}
-                    document.body.removeChild(textArea); setMenuOpenId(null);
-                  }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-blue-50 text-blue-600"><Navigation className="w-4 h-4"/> Portal Cliente</button>
-                  
-                  {/* IDEA 10: Botón Notificar Receptor WhatsApp */}
-                  {isAccepted && (
+                {menuOpenId===j.id && (
+                  <div className="absolute right-0 top-10 bg-white border shadow-2xl rounded-xl w-48 z-50 overflow-hidden text-xs">
                     <button onClick={() => {
                       const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
-                      const textToShare = `📍 Hola! El vehículo patente ${j.plate || j.vin || 'S/N'} va en camino a ${j.destination || 'su destino'}. Puedes seguir el traslado en tiempo real aquí:\n${url}`;
-                      window.open(`https://wa.me/?text=${encodeURIComponent(textToShare)}`, '_blank');
-                      setMenuOpenId(null);
-                    }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-green-50 text-green-600 border-t border-slate-50"><Share2 className="w-4 h-4"/> Notificar Receptor</button>
-                  )}
+                      const textToShare = `📍 Sigue en tiempo real todos los traslados de ${j.client || 'tu empresa'} aquí:\n${url}`;
+                      const textArea = document.createElement("textarea");
+                      textArea.value = textToShare; textArea.style.position = "fixed"; document.body.appendChild(textArea);
+                      textArea.focus(); textArea.select();
+                      try { document.execCommand('copy'); showAlert("✅ Portal de Cliente copiado. ¡Pégalo en WhatsApp!"); } catch(e) {}
+                      document.body.removeChild(textArea); setMenuOpenId(null);
+                    }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-blue-50 text-blue-600"><Navigation className="w-4 h-4"/> Portal Cliente</button>
+                    
+                    {/* IDEA 10: Botón Notificar Receptor WhatsApp */}
+                    {isAccepted && (
+                      <button onClick={() => {
+                        const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
+                        const textToShare = `📍 Hola! El vehículo patente ${j.plate || j.vin || 'S/N'} va en camino a ${j.destination || 'su destino'}. Puedes seguir el traslado en tiempo real aquí:\n${url}`;
+                        window.open(`https://wa.me/?text=${encodeURIComponent(textToShare)}`, '_blank');
+                        setMenuOpenId(null);
+                      }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-green-50 text-green-600 border-t border-slate-50"><Share2 className="w-4 h-4"/> Notificar Receptor</button>
+                    )}
 
-                  {/* NUEVO: Botón de Traspaso en Ruta (Modo Posta) */}
-                  {isAccepted && (j.phase === 'picked_up' || !j.phase) && (
-                    <button onClick={() => {
-                      setRelayPromptJob(j); 
-                      setMenuOpenId(null);
-                    }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-purple-50 text-purple-600 border-t border-slate-50"><Users className="w-4 h-4"/> Traspaso a Compañero</button>
-                  )}
+                    {/* NUEVO: Botón de Traspaso en Ruta (Modo Posta) */}
+                    {isAccepted && (j.phase === 'picked_up' || !j.phase) && (
+                      <button onClick={() => {
+                        setRelayPromptJob(j); 
+                        setMenuOpenId(null);
+                      }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-purple-50 text-purple-600 border-t border-slate-50"><Users className="w-4 h-4"/> Traspaso a Compañero</button>
+                    )}
 
-                  <button onClick={()=>cpyWapp(j)} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-slate-50 border-t border-slate-50"><Copy className="w-4 h-4"/> Copiar Resumen</button>
-                  <button onClick={()=>{setJobToFail(j);setMenuOpenId(null);}} className="w-full text-left p-3 font-bold flex gap-2 text-red-600 hover:bg-red-50 border-t border-slate-50"><XCircle className="w-4 h-4"/> Cancelar / Falló</button>
-                </div>
-              )}
+                    <button onClick={()=>cpyWapp(j)} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-slate-50 border-t border-slate-50"><Copy className="w-4 h-4"/> Copiar Resumen</button>
+                    <button onClick={()=>{setJobToFail(j);setMenuOpenId(null);}} className="w-full text-left p-3 font-bold flex gap-2 text-red-600 hover:bg-red-50 border-t border-slate-50"><XCircle className="w-4 h-4"/> Cancelar / Falló</button>
+                  </div>
+                )}
+              </div>
             </div>
+            
+            {/* Información de Marca, Modelo y Cliente restaurada */}
+            <div>
+              <p className="text-xl font-black text-slate-800 leading-tight mt-1">{j.brand} {j.model}</p>
+              <p className="text-xs font-bold text-slate-500 mt-0.5 uppercase tracking-wide">{j.client}</p>
+            </div>
+            
           </div>
         </div>
 
