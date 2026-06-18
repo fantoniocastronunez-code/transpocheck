@@ -1923,7 +1923,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.1.9.7</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.1.9.9</p>
                 </div>
               </div>
             )}
@@ -2904,23 +2904,11 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         )}
 
         <div className="mt-auto pt-3 border-t border-slate-100 flex flex-col gap-2">
-          {/* LÓGICA NUEVA DE RECLAMO Y VALIDACIÓN */}
-          {isPending && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && !j.adminApprovalPending && (
-            <button onClick={() => setScanningJob(j)} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm flex items-center justify-center gap-2 transition-colors">
-              <Camera className="w-4 h-4"/> Escanear Patente y Reclamar
+          {/* Botón directo para reclamar el traslado al instante */}
+          {isPending && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && (
+            <button onClick={() => handleAcceptJob(j)} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm flex items-center justify-center gap-2 transition-colors">
+              <CheckCircle className="w-4 h-4"/> Aceptar Traslado
             </button>
-          )}
-          
-          {/* Estado intermedio: Esperando Admin */}
-          {isPending && j.adminApprovalPending && !isAdminView && (
-             <div className="w-full bg-amber-50 text-amber-600 border border-amber-200 font-bold py-2 rounded-xl text-xs text-center flex items-center justify-center gap-1"><Clock className="w-3.5 h-3.5 animate-spin"/> Esperando autorización Central</div>
-          )}
-
-          {/* Botón exclusivo para el Admin cuando la lectura falló */}
-          {isPending && j.adminApprovalPending && isAdminView && (
-             <button onClick={() => setApprovalJobView(j)} className="w-full bg-red-500 hover:bg-red-600 text-white font-black py-2 rounded-xl text-xs shadow-sm animate-pulse transition-colors flex items-center justify-center gap-2">
-               ⚠️ Autorizar Retiro Manual
-             </button>
           )}
 
           {isAccepted && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
@@ -3125,70 +3113,19 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         </div>
       )}
 
-      {/* --- NUEVO: MODALES DE VALIDACIÓN DE IDENTIDAD Y APROBACIÓN ADMIN --- */}
-      {scanningJob && (
-        <PatenteScanner 
-          job={scanningJob} 
-          onCancel={() => setScanningJob(null)}
-          onSuccess={() => {
-            handleAcceptJob(scanningJob); // Reclama el trabajo si hay éxito
-            setScanningJob(null);
-            showAlert("¡Vehículo verificado! Tienes el vehículo en tu poder.");
-          }}
-          onSendToAdmin={async (imgBase64) => {
-            try {
-              // Escribe en Firebase que requiere atención humana
-              await updateDoc(doc(db, 'transport_jobs', scanningJob.id), {
-                adminApprovalPending: true,
-                approvalRequestDriverEmail: currentUserEmail,
-                approvalRequestImage: imgBase64
-              });
-              setScanningJob(null);
-              showAlert("Evidencia enviada. Espera que la central autorice el retiro en el sistema.");
-            } catch(e) { console.error(e); }
-          }}
-        />
-      )}
-
-      {approvalJobView && (
-         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-            <div className="bg-white rounded-3xl p-6 w-full max-w-sm animate-in zoom-in-95">
-               <h3 className="text-lg font-black text-red-600 mb-2 flex items-center gap-2"><AlertCircle className="w-5 h-5"/> Solicitud de Retiro Manual</h3>
-               <p className="text-sm text-slate-600 mb-4 leading-tight">El conductor <b className="text-slate-800">{approvalJobView.approvalRequestDriverEmail}</b> no logró escanear automáticamente la patente <span className="bg-slate-100 border px-1 rounded font-black">{approvalJobView.plate || approvalJobView.vin}</span>.</p>
-               
-               <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Evidencia capturada en terreno:</p>
-               <img src={approvalJobView.approvalRequestImage} className="w-full h-48 object-cover rounded-xl mb-6 border-4 border-slate-100 shadow-inner" alt="Evidencia"/>
-               
-               <div className="flex gap-2">
-                 <button onClick={async () => {
-                    await updateDoc(doc(db, 'transport_jobs', approvalJobView.id), {
-                      adminApprovalPending: false, approvalRequestDriverEmail: null, approvalRequestImage: null
-                    });
-                    setApprovalJobView(null);
-                 }} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-bold text-sm transition-colors">Rechazar / Reasignar</button>
-                 
-                 <button onClick={async () => {
-                    await updateDoc(doc(db, 'transport_jobs', approvalJobView.id), {
-                      status: 'accepted', acceptedByEmail: approvalJobView.approvalRequestDriverEmail, adminApprovalPending: false, approvalRequestImage: null
-                    });
-                    setApprovalJobView(null);
-                    showAlert("Retiro autorizado manualmente para el conductor.");
-                 }} className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-black text-sm shadow-md transition-colors">Aprobar Retiro</button>
-               </div>
-            </div>
-         </div>
-      )}
-
-    </div>
+      </div>
   );
 }
 function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList, drivers, expenses }) {
   const isQuick = job.id === 'NEW_QUICK_JOB'; 
   const localStorageKey = `checklist_draft_${job.id}`;
 
+  // Sincroniza automáticamente lo seleccionado en la tarjeta de traslado del flujo principal
   const defaultData = {
     client: job.client||'', manualClient: '', brand: job.brand||'', model: job.model||'', plateOrVin: job.plate||job.vin||'', origin: job.origin||'', destination: job.destination||'', fuelLevel: 50, photos: { front:false, left:false, right:false, back:false, tire:false, dashboard:false, det1:false, det2:false, det3:false, det4:false }, docs: { soap:false, permiso:false, revTecnica:false, gases:false }, observations: '', receiverName: '', receiverRut: '', noReception: false, signatureData: null, location: null,
-    rtStatus: job.prt_result || 'aprobado', rtRejectReason: job.prt_reason || '', rtReturnOption: 'origin', rtReturnDestination: '' 
+    rtStatus: job.prt_result ? job.prt_result : 'aprobado', 
+    rtRejectReason: job.prt_reason ? job.prt_reason : '', 
+    rtReturnOption: 'origin', rtReturnDestination: '' 
   };
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState(defaultData);
@@ -3423,7 +3360,8 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
       onComplete();
     } catch(error) { 
       console.error("Firebase Error:", error);
-      showAlert("Hubo un error al guardar. Verifica tu conexión a internet."); 
+      // AHORA MOSTRARÁ EL ERROR REAL DE FIREBASE EN LA PANTALLA
+      showAlert(`Error de base de datos: ${error.message}`); 
     }
   };
 
