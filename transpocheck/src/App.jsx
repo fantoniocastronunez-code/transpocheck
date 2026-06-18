@@ -1104,6 +1104,21 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
 
     </div>
   );
+}FormData.signature} onSave={d=>setBatchFormData({...batchFormData, signature: d})} onClear={()=>setBatchFormData({...batchFormData, signature: null})} />
+                 </div>
+              </form>
+            </div>
+            
+            <div className="p-4 bg-slate-50 border-t border-slate-100">
+              <button type="submit" form="batch-sign-form" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg transition-colors text-lg">Confirmar Lote ({batchFormData.selectedIds.length})</button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
 }
 function ClientSignView({ jobId, db }) {
   const [job, setJob] = useState(null);
