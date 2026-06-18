@@ -2817,13 +2817,14 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       <div key={j.id} className="bg-white rounded-3xl border border-slate-100 p-4 sm:p-5 flex flex-col shadow-sm relative hover:shadow-md transition-shadow overflow-hidden">
         <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${isPending ? 'bg-amber-400' : 'bg-blue-500'}`}></div>
         
-        {/* --- NUEVO ENCABEZADO: PATENTE GIGANTE --- */}
+        {/* --- NUEVO ENCABEZADO: PATENTE/VIN COMPLETO --- */}
         <div className="flex justify-between items-start mb-5 border-b border-slate-100 pb-4 pl-2">
           <div className="flex flex-col gap-3 w-full">
-            <div className="flex justify-between items-start w-full">
-              {/* Bloque de Patente Estilo Placa */}
-              <div className="bg-slate-800 border-2 border-slate-600 rounded-xl px-4 py-1.5 shadow-md flex items-center justify-center">
-                <span className="text-2xl sm:text-3xl font-black text-white uppercase tracking-[0.15em] leading-none">
+            <div className="flex justify-between items-start w-full gap-2">
+              
+              {/* Bloque de Patente: Se adapta y salta de línea si es un VIN largo */}
+              <div className="bg-slate-800 border-2 border-slate-600 rounded-lg px-3 py-1.5 shadow-md shrink">
+                <span className="text-sm sm:text-base font-black text-white uppercase tracking-wider leading-tight break-all">
                   {j.plate || j.vin || 'S/N'}
                 </span>
               </div>
