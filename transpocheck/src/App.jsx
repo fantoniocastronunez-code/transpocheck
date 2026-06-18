@@ -2362,7 +2362,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
 
             {returnMethod === 'transferencia' ? (
               <label className={`block w-full border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-colors relative overflow-hidden ${returnReceipt ? 'border-green-400 bg-green-50' : 'border-slate-300 hover:bg-slate-50'}`}>
-                <input type="file" accept="image/*" className="hidden" onChange={async e=>{const f=e.target.files[0];if(!f)return;try{const dataUrl = await resizeImage(f, 800, 0.7); setReturnReceipt(dataUrl);}catch(e){showAlert("Error procesando foto");}}} />
+                <input type="file" accept="image/*" className="hidden" onChange={async e=>{const f=e.target.files[0];if(!f)return;try{const dataUrl = await resizeImage(f, 500, 0.4); setReturnReceipt(dataUrl);}catch(e){showAlert("Error procesando foto");}}} />
                 {returnReceipt ? (
                    <div className="relative z-10"><CheckCircle className="w-10 h-10 text-green-500 mx-auto mb-2 bg-white rounded-full"/><p className="text-sm font-extrabold text-green-700 mb-2">Comprobante Cargado</p><img src={returnReceipt} className="h-28 object-contain mx-auto rounded-lg shadow-sm border border-green-200" alt="preview"/><p className="text-xs font-bold text-slate-500 mt-3 underline">Cambiar foto</p></div>
                 ) : (
@@ -3232,7 +3232,8 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
   const handlePic = async (e, id) => {
     const f=e.target.files[0]; if(!f)return;
     try {
-      const dataUrl = await resizeImage(f, 500, 0.4); 
+      // Reducimos a 350px y calidad 30% para evitar el límite de 1MB de Firebase
+const dataUrl = await resizeImage(f, 350, 0.3); 
       setFormData(prev => {
         const newData = { ...prev, photos: { ...prev.photos, [id]: dataUrl } };
         // Si la foto era un detalle tocado en el auto, guardamos el pin y su coordenada
