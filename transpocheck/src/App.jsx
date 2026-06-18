@@ -1921,7 +1921,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.1.9.5</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.1.9.6</p>
                 </div>
               </div>
             )}
@@ -2141,8 +2141,10 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
     e.preventDefault();
     const currentBalance = drivers.find(d => d.id === driverId)?.balance || 0;
     
-    // Si es conductor, bloquea si no hay saldo
-    if (!isAdminView && type === 'expense' && amount > currentBalance) return showAlert("Saldo insuficiente.");
+    // REGLA: Si es conductor, bloquea la rendición si supera su saldo asignado
+    if (!isAdminView && type === 'expense' && amount > currentBalance) {
+        return showAlert(`Saldo insuficiente. Tienes ${formatMoney(currentBalance)}. Solicita asignación de dinero al administrador para rendir este monto.`);
+    }
     
     const assocJobId = e.target.jobId?.value || '';
     let detailString = detail || (type === 'assignment' ? 'Asignación de fondos' : 'Gasto registrado por Admin');
@@ -2154,23 +2156,13 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
 
     // Lógica para saldos y negativos
     let newBalance = currentBalance;
-    let deductedAmount = amount; // <-- NUEVO: Memoria de cuánto se descontó realmente
+    let deductedAmount = amount; 
     
     if (type === 'assignment') {
        newBalance = currentBalance + amount;
     } else if (type === 'expense') {
-       if (isAdminView) {
-          if (assocJobId) {
-             // Si el admin asocia el gasto a un trabajo, el saldo puede quedar en negativo
-             newBalance = currentBalance - amount;
-          } else {
-             // Si es un gasto libre (sólo anotar), el saldo no baja de 0
-             newBalance = Math.max(0, currentBalance - amount);
-             deductedAmount = currentBalance - newBalance; // Calcula cuánto se restó de verdad
-          }
-       } else {
-          newBalance = currentBalance - amount;
-       }
+       // REGLA: Los Admins siempre pueden dejar el saldo en negativo. Los conductores no (ya fueron bloqueados arriba).
+       newBalance = currentBalance - amount;
     }
 
     try {
@@ -2248,17 +2240,9 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
              // 1. Devolvemos el dinero que se había descontado originalmente
              currentDriverBalance += oldDeducted;
              
-             // 2. Aplicamos el nuevo descuento
-             if (isAdminView && !expense.jobId && expense.type === 'expense') {
-                 // Si es gasto libre, vuelve a respetar el límite de 0
-                 let balanceAfter = Math.max(0, currentDriverBalance - newAmount);
-                 newlyDeducted = currentDriverBalance - balanceAfter;
-                 currentDriverBalance = balanceAfter;
-             } else {
-                 // Si es con trabajo, descuenta directo
-                 currentDriverBalance -= newAmount;
-                 newlyDeducted = newAmount;
-             }
+             // 2. Aplicamos el nuevo descuento. Como es Admin editando, puede quedar negativo.
+             currentDriverBalance -= newAmount;
+             newlyDeducted = newAmount;
           }
           await updateDoc(doc(db, 'drivers', expense.driverId), { balance: currentDriverBalance });
         }
@@ -2882,27 +2866,8 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       {/* VISTA KANBAN CON COLUMNAS DESPLEGABLES */}
       <div className="flex flex-col md:flex-row gap-6 items-start">
         
-        {/* COLUMNA 1: PENDIENTES */}
-        <div className="w-full md:w-1/2 flex flex-col bg-slate-100/50 md:bg-transparent rounded-3xl md:border md:border-slate-200/60 overflow-hidden">
-          <button onClick={() => setIsPendingOpen(!isPendingOpen)} className="w-full flex justify-between items-center p-4 bg-slate-100 md:bg-transparent hover:bg-slate-200/50 transition-colors">
-            <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-amber-500"/> 
-                <h3 className="font-extrabold text-slate-700">Pendientes</h3>
-                <span className="bg-amber-100 text-amber-700 text-xs font-black px-2 py-0.5 rounded-full">{pendingJobsList.length}</span>
-            </div>
-            {isPendingOpen ? <ChevronUp className="w-5 h-5 text-slate-400"/> : <ChevronDown className="w-5 h-5 text-slate-400"/>}
-          </button>
-          
-          <div className={`transition-all duration-300 ${isPendingOpen ? 'opacity-100 max-h-[5000px] p-4 pt-0 md:pt-4' : 'opacity-0 max-h-0 overflow-hidden'}`}>
-            <div className="flex flex-col gap-4">
-              {pendingJobsList.map(j => renderActiveJobCard(j))}
-              {pendingJobsList.length === 0 && <p className="text-center text-sm font-bold text-slate-400 py-8 border-2 border-dashed border-slate-200 rounded-2xl">Sin pendientes</p>}
-            </div>
-          </div>
-        </div>
-
-        {/* COLUMNA 2: EN CURSO */}
-        <div className="w-full md:w-1/2 flex flex-col bg-blue-50/50 md:bg-transparent rounded-3xl md:border md:border-blue-100/60 overflow-hidden mt-2 md:mt-0">
+        {/* COLUMNA 1: EN CURSO */}
+        <div className="w-full md:w-1/2 flex flex-col bg-blue-50/50 md:bg-transparent rounded-3xl md:border md:border-blue-100/60 overflow-hidden">
           <button onClick={() => setIsInProgressOpen(!isInProgressOpen)} className="w-full flex justify-between items-center p-4 bg-blue-50 md:bg-transparent hover:bg-blue-100/50 transition-colors">
             <div className="flex items-center gap-2">
                 <Navigation className="w-5 h-5 text-blue-600"/> 
@@ -2916,6 +2881,25 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
             <div className="flex flex-col gap-4">
               {inProgressJobsList.map(j => renderActiveJobCard(j))}
               {inProgressJobsList.length === 0 && <p className="text-center text-sm font-bold text-blue-400 py-8 border-2 border-dashed border-blue-200 rounded-2xl">Ningún vehículo en ruta</p>}
+            </div>
+          </div>
+        </div>
+
+        {/* COLUMNA 2: PENDIENTES */}
+        <div className="w-full md:w-1/2 flex flex-col bg-slate-100/50 md:bg-transparent rounded-3xl md:border md:border-slate-200/60 overflow-hidden mt-2 md:mt-0">
+          <button onClick={() => setIsPendingOpen(!isPendingOpen)} className="w-full flex justify-between items-center p-4 bg-slate-100 md:bg-transparent hover:bg-slate-200/50 transition-colors">
+            <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-amber-500"/> 
+                <h3 className="font-extrabold text-slate-700">Pendientes</h3>
+                <span className="bg-amber-100 text-amber-700 text-xs font-black px-2 py-0.5 rounded-full">{pendingJobsList.length}</span>
+            </div>
+            {isPendingOpen ? <ChevronUp className="w-5 h-5 text-slate-400"/> : <ChevronDown className="w-5 h-5 text-slate-400"/>}
+          </button>
+          
+          <div className={`transition-all duration-300 ${isPendingOpen ? 'opacity-100 max-h-[5000px] p-4 pt-0 md:pt-4' : 'opacity-0 max-h-0 overflow-hidden'}`}>
+            <div className="flex flex-col gap-4">
+              {pendingJobsList.map(j => renderActiveJobCard(j))}
+              {pendingJobsList.length === 0 && <p className="text-center text-sm font-bold text-slate-400 py-8 border-2 border-dashed border-slate-200 rounded-2xl">Sin pendientes</p>}
             </div>
           </div>
         </div>
@@ -3193,8 +3177,16 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
       // Si hubo algún gasto, lo procesamos
       if (totalToDeduct > 0) {
         const currentDriver = drivers?.find(drv => drv.email === currentUserEmail);
+        const isAdminUser = ['fcastro@logisticats.cl', 'hcastro@logisticats.cl'].includes(currentUserEmail);
+
         if (currentDriver) {
           const currentBalance = currentDriver.balance || 0;
+          
+          // REGLA: Si es conductor y el gasto supera su fondo, BLOQUEAR envío del checklist
+          if (!isAdminUser && totalToDeduct > currentBalance) {
+              return showAlert(`No puedes enviar el checklist. Intentas rendir ${formatMoney(totalToDeduct)} en gastos, pero tu fondo actual es de solo ${formatMoney(currentBalance)}. Pide a la central que te asigne más dinero e intenta de nuevo.`);
+          }
+
           const newBalance = currentBalance - totalToDeduct;
 
           // A. Descontar del saldo del conductor TODO sumado
