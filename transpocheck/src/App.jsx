@@ -2816,17 +2816,23 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     return (
       <div key={j.id} className="bg-white rounded-3xl border border-slate-100 p-4 sm:p-5 flex flex-col shadow-sm relative hover:shadow-md transition-shadow overflow-hidden">
         <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${isPending ? 'bg-amber-400' : 'bg-blue-500'}`}></div>
-        <div className="flex justify-between items-start mb-4 border-b border-slate-100 pb-3 pl-2">
-          <div>
-            <h2 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-0.5">En Traslado</h2>
-            <p className="text-lg font-black text-slate-800 leading-tight">{j.brand} {j.model}</p>
-            <p className="text-[10px] font-bold text-slate-400 mt-1">{j.client}</p>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <span className="bg-slate-800 text-white px-2.5 py-1 rounded-md text-xs font-black uppercase tracking-widest shadow-sm">{j.plate || j.vin || 'S/N'}</span>
-            <div className="relative">
-              {isAdminView && <button onClick={()=>onEditJob(j)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg inline-block mr-1"><Edit2 className="w-4 h-4"/></button>}
-              <button onClick={()=>setMenuOpenId(menuOpenId===j.id?null:j.id)} className="p-1.5 text-slate-400 hover:bg-slate-50 rounded-lg inline-block"><MoreVertical className="w-4 h-4"/></button>
+        
+        {/* --- NUEVO ENCABEZADO: PATENTE GIGANTE --- */}
+        <div className="flex justify-between items-start mb-5 border-b border-slate-100 pb-5 pl-2">
+          <div className="flex flex-col gap-1 w-full">
+            <div className="flex justify-between items-start w-full">
+              
+              {/* Bloque de Patente Estilo Placa */}
+              <div className="bg-slate-800 border-2 border-slate-600 rounded-xl px-4 py-1.5 shadow-md flex items-center justify-center">
+                <span className="text-2xl sm:text-3xl font-black text-white uppercase tracking-[0.15em] leading-none">
+                  {j.plate || j.vin || 'S/N'}
+                </span>
+              </div>
+              
+              {/* Botones de Acción (Editar y Menú) alineados a la derecha */}
+              <div className="flex items-center gap-1 relative shrink-0">
+                {isAdminView && <button onClick={()=>onEditJob(j)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition-colors"><Edit2 className="w-5 h-5"/></button>}
+                <button onClick={()=>setMenuOpenId(menuOpenId===j.id?null:j.id)} className="p-2 text-slate-400 hover:bg-slate-50 rounded-xl transition-colors"><MoreVertical className="w-5 h-5"/></button>
               {menuOpenId===j.id && (
                 <div className="absolute right-0 top-8 bg-white border shadow-2xl rounded-xl w-48 z-50 overflow-hidden text-xs">
                   <button onClick={() => {
