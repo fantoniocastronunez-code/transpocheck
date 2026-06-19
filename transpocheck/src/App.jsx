@@ -1575,7 +1575,12 @@ export default function App() {
   const closeDialog = () => setDialogConfig(null);
 
   const requestNotificationPermission = async () => {
-    if (!("Notification" in window)) { showAlert("Tu navegador no soporta notificaciones push."); return; }
+    if (!("Notification" in window)) { 
+      // Detectamos que estamos dentro del APK (WebView) y no en Chrome web
+      showAlert("Estás usando la versión App (APK). Las notificaciones son gestionadas directamente por el sistema Android."); 
+      setNotificationsEnabled(true); // Ponemos el botón en verde "Activas" para no confundir al chofer
+      return; 
+    }
     try {
       const permission = await Notification.requestPermission();
       if (permission === "granted") {
@@ -1920,10 +1925,28 @@ export default function App() {
                       <span className="px-2.5 py-1 bg-green-100 text-green-700 rounded-lg text-[10px] font-black uppercase tracking-wider">Activas</span>
                     )}
                   </div>
+
+                  {/* --- NUEVO: BOTÓN MATA-CACHÉ (ESPECIAL PARA XIAOMI/PWA) --- */}
+                  <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+                    <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-blue-600"/> Recargar App
+                    </span>
+                    <button onClick={() => {
+                        if ('caches' in window) {
+                          caches.keys().then((names) => {
+                            names.forEach(name => caches.delete(name));
+                          });
+                        }
+                        window.location.reload(true);
+                    }} className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm transition-colors">
+                      FORZAR
+                    </button>
+                  </div>
+
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.1.9.9</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.1</p>
                 </div>
               </div>
             )}
