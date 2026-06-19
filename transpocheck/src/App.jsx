@@ -207,8 +207,12 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
     }
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleCreateOrUpdateJob = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     const formData = new FormData(e.target);
     const selectedDriverIds = formData.getAll('assignedDriverId');
     if (selectedDriverIds.length === 0) return showAlert("Debes seleccionar al menos un conductor.");
@@ -265,6 +269,7 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
 
       onSuccess();
     } catch (error) { console.error(error); showAlert("Ocurrió un error guardando el trabajo."); }
+    finally { setIsSubmitting(false); }
   };
 
   return (
@@ -365,7 +370,7 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
         </div>
         <div className="flex gap-3 pt-2">
           {jobToEdit && <button type="button" onClick={onCancelEdit} className="w-1/3 bg-slate-200 hover:bg-slate-300 text-slate-700 px-8 py-3 rounded-2xl font-extrabold text-sm sm:text-lg transition-colors">Cancelar</button>}
-          <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-extrabold text-sm sm:text-lg transition-colors shadow-lg shadow-blue-200">{jobToEdit ? 'Actualizar Trabajo' : 'Guardar y Asignar'}</button>
+          <button type="submit" disabled={isSubmitting} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-extrabold text-sm sm:text-lg transition-colors shadow-lg shadow-blue-200 disabled:opacity-50">{isSubmitting ? 'Procesando...' : (jobToEdit ? 'Actualizar Trabajo' : 'Guardar y Asignar')}</button>
         </div>
       </form>
     </div>
@@ -2161,9 +2166,12 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
   const [adminTxType, setAdminTxType] = useState('assignment'); 
 
   const activeOrPendingJobs = jobs?.filter(j => j.status === 'pending' || j.status === 'accepted') || [];
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const addExp = async (e, type, amount, detail, driverId, dName, dEmail) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     const currentBalance = drivers.find(d => d.id === driverId)?.balance || 0;
     
     // REGLA: Si es conductor, bloquea la rendición si supera su saldo asignado
@@ -2197,6 +2205,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
       e.target.reset(); 
       showAlert(type === 'assignment' ? "Fondo asignado correctamente." : "Gasto registrado exitosamente.");
     } catch (err) { console.error(err); }
+    finally { setIsSubmitting(false); }
   };
 
   const submitReturn = async () => {
@@ -2327,7 +2336,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
                        <option value="">{adminTxType === 'assignment' ? "Asociar a un Trabajo (Opcional)" : "Trabajo activo (Opcional, permite saldo negativo)"}</option>
                        {activeOrPendingJobs.map(j => <option key={j.id} value={j.id}>{j.client} - {j.brand} ({j.plate || j.vin || 'S/N'})</option>)}
                     </select>
-                    <button className={`w-full py-2 rounded-xl font-bold text-sm transition-colors text-white ${adminTxType === 'assignment' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}>Confirmar {adminTxType === 'assignment' ? 'Fondo' : 'Gasto'}</button>
+                    <button disabled={isSubmitting} className={`w-full py-2 rounded-xl font-bold text-sm transition-colors text-white disabled:opacity-50 ${adminTxType === 'assignment' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}>{isSubmitting ? 'Procesando...' : `Confirmar ${adminTxType === 'assignment' ? 'Fondo' : 'Gasto'}`}</button>
                   </form>
                 )}
               </div>
@@ -2414,7 +2423,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
         <form onSubmit={e=>addExp(e,'expense',Number(e.target.amount.value), e.target.detail.value, myDriver.id, myDriver.name, myDriver.email)} className="space-y-4">
           <input type="text" name="detail" placeholder="¿En qué gastaste? (Ej. Peaje)" required className="w-full border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-sm text-slate-700" />
           <input type="number" name="amount" placeholder="Monto ($)" required className="w-full border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-sm text-slate-700" />
-          <button type="submit" disabled={myBalance <= 0 || hasPendingReturn} className={`w-full py-3 rounded-xl font-extrabold text-sm transition-all ${myBalance > 0 && !hasPendingReturn ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>Guardar Gasto</button>
+          <button type="submit" disabled={myBalance <= 0 || hasPendingReturn || isSubmitting} className={`w-full py-3 rounded-xl font-extrabold text-sm transition-all ${myBalance > 0 && !hasPendingReturn && !isSubmitting ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>{isSubmitting ? 'Procesando...' : 'Guardar Gasto'}</button>
         </form>
       </div>
       
@@ -3272,9 +3281,13 @@ const dataUrl = await resizeImage(f, 350, 0.3);
     }
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const submit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!formData.noReception && !formData.signatureData) return showAlert("La firma del receptor es mandatoria.");
+    setIsSubmitting(true);
     
     let d = {...formData}; 
     d.client = d.client === 'OTRO' ? d.manualClient : d.client; 
@@ -3386,7 +3399,7 @@ const dataUrl = await resizeImage(f, 350, 0.3);
       console.error("Firebase Error:", error);
       // AHORA MOSTRARÁ EL ERROR REAL DE FIREBASE EN LA PANTALLA
       showAlert(`Error de base de datos: ${error.message}`); 
-    }
+    } finally { setIsSubmitting(false); }
   };
 
   return (
@@ -3755,7 +3768,7 @@ const dataUrl = await resizeImage(f, 350, 0.3);
               {formData.location ? "📍 GPS Capturado Exitosamente" : "📍 Tocar para Capturar GPS Actual"}
             </button>
 
-            <div className="flex gap-2 pt-4 border-t"><button type="button" onClick={()=>setStep(1)} className="bg-slate-100 p-3 rounded-xl font-bold text-sm flex-1">Atrás</button><button type="submit" className="bg-green-600 text-white p-3 rounded-xl font-bold text-sm flex-[2]">Finalizar y Guardar</button></div>
+            <div className="flex gap-2 pt-4 border-t"><button type="button" onClick={()=>setStep(1)} className="bg-slate-100 p-3 rounded-xl font-bold text-sm flex-1">Atrás</button><button type="submit" disabled={isSubmitting} className="bg-green-600 text-white p-3 rounded-xl font-bold text-sm flex-[2] disabled:opacity-50">{isSubmitting ? 'Guardando...' : 'Finalizar y Guardar'}</button></div>
           </form>
         )}
       </div>
