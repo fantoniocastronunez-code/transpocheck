@@ -1951,7 +1951,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.2.2</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.2.3</p>
                 </div>
               </div>
             )}
@@ -2037,6 +2037,7 @@ export default function App() {
           <ChecklistForm 
              job={selectedJob} db={db} currentUserEmail={currentUserEmail} 
              allClientsList={allClientsList}
+             vehicles={vehicles}
              drivers={drivers} expenses={expenses} 
              onCancel={() => { 
                 // Ya no eliminamos el borrador al presionar Salir, para que se mantenga en Firebase
@@ -2567,6 +2568,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   const [jobToFail, setJobToFail] = useState(null);
   const [prtPromptJob, setPrtPromptJob] = useState(null); 
   const [relayPromptJob, setRelayPromptJob] = useState(null); // <-- NUEVO ESTADO RELEVO
+  const [forceCloseJob, setForceCloseJob] = useState(null); // <-- NUEVO ESTADO FORZAR CIERRE
   const [historyClientFilter, setHistoryClientFilter] = useState(''); 
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -2895,6 +2897,13 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                         setMenuOpenId(null);
                       }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-purple-50 text-purple-600 border-t border-slate-50"><Users className="w-4 h-4"/> Traspaso a Compañero</button>
                     )}
+                    
+                    {/* NUEVO: Botón de Cierre Forzado para el Admin */}
+                    {isAdminView && (
+                      <button onClick={() => { setForceCloseJob(j); setMenuOpenId(null); }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-emerald-50 text-emerald-600 border-t border-slate-50">
+                        <CheckCircle className="w-4 h-4"/> Forzar Cierre
+                      </button>
+                    )}
 
                     <button onClick={()=>cpyWapp(j)} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-slate-50 border-t border-slate-50"><Copy className="w-4 h-4"/> Copiar Resumen</button>
                     <button onClick={()=>{setJobToFail(j);setMenuOpenId(null);}} className="w-full text-left p-3 font-bold flex gap-2 text-red-600 hover:bg-red-50 border-t border-slate-50"><XCircle className="w-4 h-4"/> Cancelar / Falló</button>
@@ -3145,16 +3154,72 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         </div>
       )}
 
+      {/* NUEVO: MODAL DE CIERRE FORZADO PARA EL ADMIN */}
+      {forceCloseJob && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+           <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl flex flex-col max-h-[80vh] animate-in zoom-in-95">
+              <div className="flex justify-between items-center mb-4">
+                 <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-2"><CheckCircle className="w-5 h-5 text-emerald-500"/> Asignar y Finalizar</h3>
+                 <button onClick={()=>setForceCloseJob(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4"/></button>
+              </div>
+              <p className="text-sm font-bold text-slate-500 mb-4 pb-4 border-b border-slate-100">Selecciona al conductor que realizó este traslado. El acta se cerrará automáticamente a su nombre (como entrega sin recepción).</p>
+              
+              <div className="overflow-y-auto space-y-2 flex-1 pr-1">
+                 {drivers.map(d => (
+                    <button key={d.id} onClick={async () => {
+                       showConfirm(`¿Guardar el traslado de la patente ${forceCloseJob.plate || forceCloseJob.vin} a nombre de ${d.name}?`, async () => {
+                          try {
+                             // Creamos el checklist exactamente igual a como lo haría el chofer marcando "Dejar sin firma"
+                             const mockChecklist = {
+                                client: forceCloseJob.client || '', brand: forceCloseJob.brand || '', model: forceCloseJob.model || '', 
+                                plateOrVin: forceCloseJob.plate || forceCloseJob.vin || '', origin: forceCloseJob.origin || '', 
+                                destination: forceCloseJob.destination || '', fuelLevel: 50, photos: {}, docs: {}, 
+                                observations: 'Sin observaciones registradas.', 
+                                receiverName: 'ENTREGA SIN RECEPCIÓN', receiverRut: 'N/A', noReception: true, signatureData: null, 
+                                assignedDriverName: d.name
+                             };
+                             await updateDoc(doc(db, 'transport_jobs', forceCloseJob.id), {
+                                status: 'completed',
+                                completedAt: Date.now(),
+                                acceptedByEmail: d.email,
+                                assignedDrivers: [{id: d.id, name: d.name, email: d.email}],
+                                assignedEmails: [d.email],
+                                checklist: mockChecklist,
+                                phase: forceCloseJob.tripType === 'revision' ? 'prt_done' : 'arrived_destination',
+                                prt_result: forceCloseJob.tripType === 'revision' ? (forceCloseJob.prt_result || 'aprobado') : null
+                             });
+                             setForceCloseJob(null);
+                             showAlert(`✅ Traslado cerrado exitosamente a nombre de ${d.name}.`);
+                          } catch (e) { console.error(e); showAlert("Error al forzar el cierre."); }
+                       });
+                    }} className="w-full text-left p-3 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-200 border border-slate-100 rounded-xl transition-colors">
+                       <p className="font-extrabold text-slate-800">{d.name}</p>
+                       <p className="text-[10px] font-bold text-slate-400">{d.email}</p>
+                    </button>
+                 ))}
+              </div>
+           </div>
+        </div>
+      )}
+
       </div>
   );
 }
-function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList, drivers, expenses }) {
+function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList, drivers, expenses, vehicles }) {
   const isQuick = job.id === 'NEW_QUICK_JOB'; 
   const localStorageKey = `checklist_draft_${job.id}`;
 
+  // BUSCAMOS SI LA PATENTE YA TIENE DATOS DE DOCUMENTOS GUARDADOS EN LA FLOTA
+  const matchedVehicle = vehicles?.find(v => v.plate === (job.plate || job.vin)?.toUpperCase());
+  const initialDocs = matchedVehicle?.docs || { soap:false, permiso:false, revTecnica:false, gases:false };
+  const initialDocsExpiry = matchedVehicle?.docsExpiry || {};
+
   // Sincroniza automáticamente lo seleccionado en la tarjeta de traslado del flujo principal
   const defaultData = {
-    client: job.client||'', manualClient: '', brand: job.brand||'', model: job.model||'', plateOrVin: job.plate||job.vin||'', origin: job.origin||'', destination: job.destination||'', fuelLevel: 50, photos: { front:false, left:false, right:false, back:false, tire:false, dashboard:false, det1:false, det2:false, det3:false, det4:false }, docs: { soap:false, permiso:false, revTecnica:false, gases:false }, observations: '', receiverName: '', receiverRut: '', noReception: false, signatureData: null, location: null,
+    client: job.client||'', manualClient: '', brand: job.brand||'', model: job.model||'', plateOrVin: job.plate||job.vin||'', origin: job.origin||'', destination: job.destination||'', fuelLevel: 50, photos: { front:false, left:false, right:false, back:false, tire:false, dashboard:false, det1:false, det2:false, det3:false, det4:false }, 
+    docs: job.checklist?.docs || initialDocs, 
+    docsExpiry: job.checklist?.docsExpiry || initialDocsExpiry, 
+    observations: '', receiverName: '', receiverRut: '', noReception: false, signatureData: null, location: null,
     rtStatus: job.prt_result ? job.prt_result : 'aprobado', 
     rtRejectReason: job.prt_reason ? job.prt_reason : '', 
     rtReturnOption: 'origin', rtReturnDestination: '' 
@@ -3361,16 +3426,33 @@ const dataUrl = await resizeImage(f, 350, 0.3);
       }
       // ----------------------------------------------------
 
+      // --- NUEVO: GUARDAR FECHAS DE VENCIMIENTO Y DOCS EN EL PERFIL DEL VEHÍCULO ---
+      if (d.plateOrVin) {
+          const plateUpper = d.plateOrVin.toUpperCase();
+          const vehRef = collection(db, 'vehicles');
+          const q = query(vehRef, where('plate', '==', plateUpper));
+          const querySnapshot = await getDocs(q);
+          
+          if (!querySnapshot.empty) {
+              // Actualizar vehículo existente con las nuevas fechas
+              const vehDocId = querySnapshot.docs[0].id;
+              await updateDoc(doc(db, 'vehicles', vehDocId), {
+                  docs: d.docs,
+                  docsExpiry: d.docsExpiry || {}
+              });
+          } else {
+              // Crear vehículo nuevo si no existía, guardando las fechas al tiro
+              await addDoc(vehRef, { 
+                  plate: plateUpper, brand: d.brand, model: d.model, client: d.client, 
+                  docs: d.docs, docsExpiry: d.docsExpiry || {}, 
+                  createdAt: Date.now() 
+              });
+          }
+      }
+      // ----------------------------------------------------------------------------
+
       if(isQuick) { 
           fd.assignedDriverName="Auto-creado"; fd.acceptedByEmail=currentUserEmail; 
-          if (d.plateOrVin) {
-              const vehRef = collection(db, 'vehicles');
-              const q = query(vehRef, where('plate', '==', d.plateOrVin.toUpperCase()));
-              const querySnapshot = await getDocs(q);
-              if (querySnapshot.empty) {
-                await addDoc(vehRef, { plate: d.plateOrVin.toUpperCase(), brand: d.brand, model: d.model, client: d.client, createdAt: Date.now() });
-              }
-          }
           await addDoc(collection(db,'transport_jobs'), fd); 
       }
       else { 
