@@ -816,17 +816,7 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
     const cleanPlate = job.plate || job.vin || 'SN';
     const dateStrForFile = (job.scheduledDate || new Date().toISOString().split('T')[0]).replace(/\//g, '-');
     const fileName = `Certificado.${dateStrForFile}.${(job.client || 'Cliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`; 
-    
-    // --- FIX PARA DESCARGA EN APK ---
-    const pdfBase64 = docPDF.output('datauristring');
-    const link = document.createElement('a');
-    link.href = pdfBase64;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    // --------------------------------
-    
+    docPDF.save(fileName); 
     setDownloadingId(null); // Apaga el relojito
     
     } catch (error) {
@@ -1308,17 +1298,7 @@ function ClientSignView({ jobId, db }) {
         const cleanPlate = job.plate || job.vin || 'SN';
         const dateStrForFile = (job.scheduledDate || new Date().toISOString().split('T')[0]).replace(/\//g, '-');
         const fileName = `Certificado.${dateStrForFile}.${(job.client || 'Cliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`; 
-        
-        // --- FIX PARA DESCARGA EN APK ---
-        const pdfBase64 = docPDF.output('datauristring');
-        const link = document.createElement('a');
-        link.href = pdfBase64;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        // --------------------------------
-
+        docPDF.save(fileName); 
         setIsDownloading(false);
       } catch (error) {
         console.error(error);
@@ -1971,7 +1951,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.2.1</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.2.2</p>
                 </div>
               </div>
             )}
@@ -2833,30 +2813,14 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
-    try { document.execCommand('copy'); } catch (err) {}
+    try { document.execCommand('copy'); showAlert("✅ Formato copiado al portapapeles. Listo para pegar en WhatsApp."); } catch (err) { showAlert("Tu navegador bloqueó el copiado automático."); }
     document.body.removeChild(textArea);
-    setMenuOpenId(null);
-    // FORZAR APERTURA DE WHATSAPP DIRECTO
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank'); 
+    setMenuOpenId(null); 
   };
   const cpyWapp = handleCopyWhatsApp; 
 
   const generatePDF = async (job) => {
-    try { 
-      const docPDF = await buildPDFDoc(job); 
-      const cleanPlate = job.plate || job.vin || 'SN'; 
-      const fileName = `Check.${getDStr(job).replace(/\//g, '-')}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`; 
-      
-      // --- FIX PARA DESCARGA EN APK ---
-      const pdfBase64 = docPDF.output('datauristring');
-      const link = document.createElement('a');
-      link.href = pdfBase64;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      // --------------------------------
-    } catch(e) { console.error(e); showAlert("Hubo un error al generar PDF."); }
+    try { const docPDF = await buildPDFDoc(job); const cleanPlate = job.plate || job.vin || 'SN'; const fileName = `Check.${getDStr(job).replace(/\//g, '-')}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`; docPDF.save(fileName); } catch(e) { console.error(e); showAlert("Hubo un error al generar PDF."); }
   };
 
   const handleShareWhatsAppPDF = async (job) => {
@@ -2866,49 +2830,11 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       const cleanPlate = job.plate || job.vin || 'SN';
       const fileName = `Check.${dateStrForFile}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`;
       const text = `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`;
-      
-      showAlert("⏳ Generando PDF, un momento...");
       const docPDF = await buildPDFDoc(job); 
       const pdfBlob = docPDF.output('blob'); 
       const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-      
-      let sharedSuccess = false;
-      if (navigator.canShare && navigator.canShare({ files: [file] })) { 
-        try {
-          await navigator.share({ title: fileName, text: text, files: [file] }); 
-          sharedSuccess = true;
-        } catch (err) { console.warn("APK bloqueó compartir archivo"); }
-      } 
-      
-      // SI FALLA (COMO EN LA APK), DESCARGAMOS EL PDF Y ABRIMOS WHATSAPP DIRECTO
-      if (!sharedSuccess) { 
-        // --- FIX PARA DESCARGA EN APK ---
-        const pdfBase64 = docPDF.output('datauristring');
-        const link = document.createElement('a');
-        link.href = pdfBase64;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        // --------------------------------
-        
-        // Copiamos el texto al portapapeles en silencio
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        textArea.style.position = "fixed";
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        try { document.execCommand('copy'); } catch (err) {}
-        document.body.removeChild(textArea);
-        
-        showAlert("📥 El PDF se descargó en tu celular. Abriendo WhatsApp para que lo adjuntes...");
-        
-        setTimeout(() => {
-          window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-        }, 2500);
-      }
-    } catch (e) { console.error(e); showAlert("Error al generar PDF"); }  
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ title: fileName, text: text, files: [file] }); } else { showAlert("Tu dispositivo no soporta compartir el archivo directamente. Descárgalo primero."); handleCopyWhatsApp(job); }
+    } catch (e) { console.error(e); }  
   };
 
   // --- TARJETAS MODULARES PARA KANBAN ---
@@ -3278,14 +3204,14 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     return () => clearTimeout(timer);
   }, [step, formData, job.id, isQuick, db]);
 
-  // Función para generar y mandar el link de firma (A prueba de APKs)
+  // Función para generar y mandar el link de firma (Optimizado 100% a prueba de Apple/iOS)
   const handleRemoteSignRequest = async () => {
     if (isQuick) return showAlert("⚠️ Para usar la Firma Remota en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
     
     const url = `${window.location.href.split('?')[0]}?sign=${job.id}`;
     const textToShare = `¡Hola! Por favor firma el acta de recepción y revisa las fotografías del vehículo aquí:\n${url}`;
 
-    // 1. COPIA SÍNCRONA AL PORTAPAPELES
+    // 1. COPIA SÍNCRONA INMEDIATA
     const textArea = document.createElement("textarea");
     textArea.value = textToShare;
     textArea.style.position = "fixed";
@@ -3295,12 +3221,19 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     try { document.execCommand('copy'); } catch (err) {}
     document.body.removeChild(textArea);
 
-    // 2. Guardamos en Firebase
+    // 2. Guardamos en Firebase de fondo (sin poner "await" para no pausar el hilo)
     setDoc(doc(db, 'transport_jobs', job.id), { checklist: formData }, { merge: true }).catch(console.error);
 
-    // 3. Forzar apertura directa en WhatsApp
-    window.open(`https://wa.me/?text=${encodeURIComponent(textToShare)}`, '_blank');
-    showAlert("✅ Abriendo WhatsApp... (Si no se abre, el link ya está copiado, sólo entra y pégalo)");
+    // 3. Disparamos el menú nativo de compartir
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Firma de Recepción', text: textToShare });
+      } catch (err) { 
+        showAlert("✅ Link copiado al portapapeles automáticamente."); 
+      }
+    } else {
+      showAlert("✅ Link copiado al portapapeles. ¡Pégalo en WhatsApp!");
+    }
   };
 
   // Función para guardar datos antes de mostrar el QR
