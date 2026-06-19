@@ -3230,6 +3230,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
   const [formData, setFormData] = useState(defaultData);
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
   const [qrOpen, setQrOpen] = useState(false); // <-- NUEVO ESTADO PARA QR (Idea 8)
+  const [fullScreenImage, setFullScreenImage] = useState(null); // <-- NUEVO: ESTADO PARA VER FOTOS EN GRANDE
 
   // LÓGICA DE BORRADORES Y FIRMA EN FIRESTORE (Reemplaza a localStorage)
   useEffect(() => {
@@ -3903,6 +3904,17 @@ const dataUrl = await resizeImage(f, 350, 0.3);
           </form>
         )}
       </div>
+
+      {/* NUEVO: MODAL DE FOTO EN PANTALLA COMPLETA PARA EL CONDUCTOR */}
+      {fullScreenImage && (
+        <div className="fixed inset-0 bg-slate-900/95 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm cursor-zoom-out animate-in fade-in duration-200" onClick={() => setFullScreenImage(null)}>
+          <button onClick={() => setFullScreenImage(null)} className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 p-2 rounded-full text-white transition-colors shadow-lg">
+            <X className="w-6 h-6" />
+          </button>
+          <img src={fullScreenImage} alt="Evidencia Ampliada" className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
+
     </div>
   );
 }
