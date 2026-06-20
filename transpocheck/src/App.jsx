@@ -3885,6 +3885,8 @@ const dataUrl = await resizeImage(f, 350, 0.3);
                   <option value="camion_doble">🚚 Camión Doble Cab.</option>
                   <option value="camion_2ejes">🚛 Camión (2 Ejes)</option>
                   <option value="camion_3ejes">🚛 Camión (3 Ejes)</option>
+                  <option value="camion_8x4">🚚 Camión Rigid (8x4)</option>
+                  <option value="carro_arrastre">🛒 Carro de Arrastre</option>
                 </select>
               </div>
 
@@ -4010,34 +4012,86 @@ const dataUrl = await resizeImage(f, 350, 0.3);
                         </div>
                       </div>
                     )}
-                    {(formData.vehicleType === 'camion_2ejes' || formData.vehicleType === 'camion_3ejes') && (
+                    {(formData.vehicleType === 'camion_2ejes' || formData.vehicleType === 'camion_3ejes' || formData.vehicleType === 'camion_8x4' || formData.vehicleType === 'carro_arrastre') && (
                       <div className="w-full h-full relative flex flex-col items-center">
-                        <div className="absolute top-[8%] -left-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
-                        <div className="absolute top-[8%] -right-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
-                        {formData.vehicleType === 'camion_2ejes' && (
+                        
+                        {/* RENDERIZADO DEL CAMIÓN 8x4 */}
+                        {formData.vehicleType === 'camion_8x4' && (
                           <>
-                            <div className="absolute bottom-[17%] -left-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
-                            <div className="absolute bottom-[17%] -right-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
-                            <div className="absolute bottom-[5%] -left-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
-                            <div className="absolute bottom-[5%] -right-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                            {/* Dirección Doble Frontal */}
+                            <div className="absolute top-[10%] -left-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                            <div className="absolute top-[10%] -right-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                            <div className="absolute top-[22%] -left-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                            <div className="absolute top-[22%] -right-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                            {/* Tracción Doble Trasera */}
+                            <div className="absolute bottom-[20%] -left-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                            <div className="absolute bottom-[20%] -right-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                            <div className="absolute bottom-[7%] -left-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                            <div className="absolute bottom-[7%] -right-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                            
+                            <div className="w-[105%] h-[20%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-400 p-1 flex flex-col justify-end shadow-inner z-10 relative">
+                              <div className="w-full h-1/2 bg-slate-800/50 rounded-t-md rounded-b-sm mb-1"></div>
+                            </div>
+                            <div className="w-full h-[78%] mx-auto bg-slate-200 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
+                              <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
+                            </div>
                           </>
                         )}
-                        {formData.vehicleType === 'camion_3ejes' && (
+                        
+                        {/* RENDERIZADO DEL CARRO DE ARRASTRE */}
+                        {formData.vehicleType === 'carro_arrastre' && (
+                          <div className="w-full h-full relative overflow-hidden flex justify-center items-center">
+                            {/* Cuerpo del carro */}
+                            <div className="w-[90%] h-[80%] bg-slate-300 rounded-md border-4 border-slate-400 relative overflow-hidden shadow-inner flex justify-center items-center z-10">
+                                {/* Contorno interior táctil */}
+                                <div className="w-[90%] h-[90%] border-2 border-slate-300/50 rounded-sm"></div>
+                            </div>
+
+                            {/* Eje 1 (Delantero) */}
+                            <div className="absolute top-[48%] left-1/2 -translate-x-1/2 w-[105%] -ml-[2.5%] h-2 bg-slate-800/80 rounded-sm flex justify-between z-0">
+                                <div className="w-4 h-4 rounded-full bg-slate-800 -ml-1"></div>
+                                <div className="w-4 h-4 rounded-full bg-slate-800 -mr-1"></div>
+                            </div>
+
+                            {/* Eje 2 (Trasero) */}
+                            <div className="absolute top-[52%] left-1/2 -translate-x-1/2 w-[105%] -ml-[2.5%] h-2 bg-slate-800/80 rounded-sm flex justify-between z-0">
+                                <div className="w-4 h-4 rounded-full bg-slate-800 -ml-1"></div>
+                                <div className="w-4 h-4 rounded-full bg-slate-800 -mr-1"></div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Camiones de 2 y 3 ejes (Mantener los originales) */}
+                        {(formData.vehicleType === 'camion_2ejes' || formData.vehicleType === 'camion_3ejes') && (
                           <>
-                            <div className="absolute bottom-[27%] -left-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
-                            <div className="absolute bottom-[27%] -right-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
-                            <div className="absolute bottom-[16%] -left-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
-                            <div className="absolute bottom-[16%] -right-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
-                            <div className="absolute bottom-[5%] -left-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
-                            <div className="absolute bottom-[5%] -right-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                             <div className="absolute top-[8%] -left-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                             <div className="absolute top-[8%] -right-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                             {formData.vehicleType === 'camion_2ejes' && (
+                              <>
+                                <div className="absolute bottom-[17%] -left-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                                <div className="absolute bottom-[17%] -right-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                                <div className="absolute bottom-[5%] -left-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                                <div className="absolute bottom-[5%] -right-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                              </>
+                            )}
+                            {formData.vehicleType === 'camion_3ejes' && (
+                              <>
+                                <div className="absolute bottom-[27%] -left-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                                <div className="absolute bottom-[27%] -right-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                                <div className="absolute bottom-[16%] -left-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                                <div className="absolute bottom-[16%] -right-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                                <div className="absolute bottom-[5%] -left-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                                <div className="absolute bottom-[5%] -right-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                              </>
+                            )}
+                            <div className="w-[105%] h-[20%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-400 p-1 flex flex-col justify-end shadow-inner z-10 relative">
+                              <div className="w-full h-1/2 bg-slate-800/50 rounded-t-md rounded-b-sm mb-1"></div>
+                            </div>
+                            <div className="w-full h-[78%] mx-auto bg-slate-200 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
+                              <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
+                            </div>
                           </>
                         )}
-                        <div className="w-[105%] h-[20%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-400 p-1 flex flex-col justify-end shadow-inner z-10 relative">
-                          <div className="w-full h-1/2 bg-slate-800/50 rounded-t-md rounded-b-sm mb-1"></div>
-                        </div>
-                        <div className="w-full h-[78%] mx-auto bg-slate-200 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
-                          <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
-                        </div>
                       </div>
                     )}
 
