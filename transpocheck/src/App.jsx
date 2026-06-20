@@ -434,17 +434,25 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
 
       {configSubTab === 'vehicles' && (
         <div className="grid md:grid-cols-2 gap-6">
-          <form onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const client = fd.get('client') === 'OTRO' ? fd.get('manualClient') : fd.get('client'); try { if(editingVehicle){ await updateDoc(doc(db, 'vehicles', editingVehicle.id), { client, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase() }); setEditingVehicle(null); showAlert("Vehículo actualizado."); } else { await addDoc(collection(db, 'vehicles'), { client, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase(), createdAt: Date.now() }); showAlert("Vehículo guardado."); } e.target.reset(); } catch (error) { console.error(error); } }} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+          <form key={editingVehicle ? editingVehicle.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const client = fd.get('client') === 'OTRO' ? fd.get('manualClient') : fd.get('client'); const vehicleType = fd.get('vehicleType'); try { if(editingVehicle){ await updateDoc(doc(db, 'vehicles', editingVehicle.id), { client, vehicleType, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase() }); setEditingVehicle(null); showAlert("Vehículo actualizado."); } else { await addDoc(collection(db, 'vehicles'), { client, vehicleType, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase(), createdAt: Date.now() }); showAlert("Vehículo guardado."); } e.target.reset(); } catch (error) { console.error(error); } }} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
             <h3 className="font-extrabold flex items-center gap-2"><Truck className="text-blue-600"/> {editingVehicle ? 'Editar Vehículo' : 'Nuevo Vehículo'}</h3>
             <select name="client" defaultValue={editingVehicle?.client || ''} className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-semibold outline-none focus:border-blue-500 bg-white">
               <option value="">Cliente...</option>
               {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
-              <option value="OTRO">Otro (Se debe escribir manualmente)</option>
+      0       <option value="OTRO">Otro (Se debe escribir manualmente)</option>
             </select>
             <input name="manualClient" placeholder="Si es OTRO, escribe el cliente aquí" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
             <input name="brand" defaultValue={editingVehicle?.brand} placeholder="Marca (Ej. Chevrolet)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
             <input name="model" defaultValue={editingVehicle?.model} placeholder="Modelo (Ej. NPR 816)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
             <input name="plate" defaultValue={editingVehicle?.plate} placeholder="Patente" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm uppercase outline-none focus:border-blue-500 font-bold text-slate-800"/>
+            <select name="vehicleType" defaultValue={editingVehicle?.vehicleType || 'auto'} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700 bg-white">
+               <option value="auto">🚙 Auto / SUV</option>
+               <option value="camioneta">🛻 Camioneta</option>
+               <option value="camion">🚚 Camión Simple</option>
+               <option value="camion_doble">🚚 Camión Doble Cabina</option>
+               <option value="camion_2ejes">🚛 Camión (2 Ejes traseros)</option>
+               <option value="camion_3ejes">🚛 Camión (3 Ejes traseros)</option>
+            </select>
             <div className="flex gap-2">
               {editingVehicle && <button type="button" onClick={()=>setEditingVehicle(null)} className="bg-slate-100 p-3 rounded-xl font-bold text-sm w-1/3 hover:bg-slate-200 transition-colors">Cancelar</button>}
               <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-lg transition-colors shadow-lg shadow-blue-200">Guardar Vehículo</button>
@@ -471,6 +479,7 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
                     <p className="text-sm font-extrabold text-slate-800">{v.brand} {v.model}</p>
                     <p className="text-xs font-bold text-blue-600">{v.plate}</p>
                     <p className="text-[10px] font-bold text-slate-400 mt-1">{v.client || 'Sin cliente'}</p>
+                    {v.vehicleType && <p className="text-[9px] font-black bg-slate-200 text-slate-600 px-2 py-0.5 rounded-md mt-1 w-fit uppercase">Tipo: {v.vehicleType.replace('_', ' ')}</p>}
                   </div>
                   <div className="flex gap-1">
                     <button onClick={() => setEditingVehicle(v)} className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors shadow-sm"><Edit2 className="w-4 h-4"/></button>
