@@ -3,7 +3,6 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, enableMultiTabIndexedDbPersistence, collection, addDoc, onSnapshot, updateDoc, setDoc, doc, deleteDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
-import Tesseract from 'tesseract.js'; // NUEVO: Motor de lectura de patentes
 // Eliminamos la importación global de jsPDF para que la app cargue más rápido (Lazy Loading)
 import { 
   Car, MapPin, Camera, CheckCircle, FileText, Download, 
@@ -2568,100 +2567,9 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
   );
 }
 
-// --- NUEVO: COMPONENTE ESCÁNER DE PATENTES CON OCR ---
-function PatenteScanner({ job, onCancel, onSuccess, onSendToAdmin }) {
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const [statusMsg, setStatusMsg] = useState('Encuadra la patente en el recuadro verde');
-  const [capturedImg, setCapturedImg] = useState(null);
-  const [scanFailed, setScanFailed] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  useEffect(() => {
-    let stream = null;
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-      .then(s => { stream = s; if (videoRef.current) videoRef.current.srcObject = s; })
-      .catch(err => setStatusMsg('Sin acceso a la cámara.'));
-    return () => { if (stream) stream.getTracks().forEach(t => t.stop()); };
-  }, []);
-
-  const handleScan = async () => {
-    setIsProcessing(true);
-    setStatusMsg('Analizando imagen con IA...');
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-    setCapturedImg(dataUrl);
-
-    try {
-      const { data: { text } } = await Tesseract.recognize(dataUrl, 'spa');
-      const cleanText = text.replace(/[^A-Z0-9]/gi, '').toUpperCase();
-      const expected = (job.plate || job.vin || '').replace(/[^A-Z0-9]/gi, '').toUpperCase();
-
-      if (expected && cleanText.includes(expected)) {
-        setStatusMsg('✅ ¡Coincidencia Perfecta!');
-        setTimeout(onSuccess, 1500);
-      } else {
-        setStatusMsg(`❌ No detectado. Leído: ${cleanText.substring(0, 10) || 'Nada claro'}`);
-        setScanFailed(true);
-        setIsProcessing(false);
-      }
-    } catch (e) {
-      setStatusMsg('❌ Error leyendo la imagen');
-      setScanFailed(true);
-      setIsProcessing(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-slate-900 z-[300] flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-3xl overflow-hidden shadow-2xl relative animate-in zoom-in-95">
-         <div className="p-4 bg-slate-800 text-white flex justify-between items-center">
-           <h3 className="font-black text-lg">Validar Vehículo</h3>
-           <button onClick={onCancel} className="bg-white/20 p-1.5 rounded-full hover:bg-white/30 transition-colors"><X className="w-5 h-5"/></button>
-         </div>
-         
-         {!capturedImg ? (
-           <div className="relative w-full h-64 bg-black overflow-hidden">
-             <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover opacity-80" />
-             <div className="absolute inset-0 border-[40px] border-slate-900/60 pointer-events-none flex items-center justify-center">
-                <div className="w-full h-20 border-4 border-green-400 rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.4)]"></div>
-             </div>
-           </div>
-         ) : (
-           <img src={capturedImg} className="w-full h-64 object-cover" alt="Captura" />
-         )}
-         <canvas ref={canvasRef} className="hidden" />
-
-         <div className="p-5 text-center space-y-4">
-           <p className="text-sm font-bold text-slate-600">{statusMsg}</p>
-           <p className="text-xs text-slate-400">Patente asignada: <span className="font-black text-slate-800 text-sm px-2 py-0.5 bg-slate-100 rounded border">{job.plate || job.vin}</span></p>
-
-           {!scanFailed ? (
-             <button onClick={handleScan} disabled={isProcessing} className="w-full bg-blue-600 text-white font-black py-3 rounded-xl shadow-lg disabled:opacity-50 flex justify-center items-center gap-2 transition-colors hover:bg-blue-700">
-               {isProcessing ? <Clock className="w-5 h-5 animate-spin"/> : <Camera className="w-5 h-5"/>}
-               {isProcessing ? 'Procesando...' : 'Escanear Patente'}
-             </button>
-           ) : (
-             <div className="flex gap-2">
-               <button onClick={() => { setCapturedImg(null); setScanFailed(false); setStatusMsg('Encuadra la patente en el recuadro verde'); }} className="flex-1 bg-slate-100 text-slate-700 font-bold py-3 rounded-xl text-sm transition-colors hover:bg-slate-200">Reintentar</button>
-               <button onClick={() => onSendToAdmin(capturedImg)} className="flex-[2] bg-amber-500 text-white font-bold py-3 rounded-xl text-sm shadow-md transition-colors hover:bg-amber-600">Pedir Autorización Manual</button>
-             </div>
-           )}
-         </div>
-      </div>
-    </div>
-  );
-}
-// --------------------------------------------------------
 
 function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, currentUserEmail, showAlert, showConfirm, allClientsList }) {
   const [menuOpenId, setMenuOpenId] = useState(null);
-  const [scanningJob, setScanningJob] = useState(null); // NUEVO: Estado del Escáner de Validación
-  const [approvalJobView, setApprovalJobView] = useState(null); // NUEVO: Vista Admin para autorizar discrepancias
   const [jobToFail, setJobToFail] = useState(null);
   const [prtPromptJob, setPrtPromptJob] = useState(null); 
   const [relayPromptJob, setRelayPromptJob] = useState(null); // <-- NUEVO ESTADO RELEVO
