@@ -3959,12 +3959,26 @@ const dataUrl = await resizeImage(f, 350, 0.3);
                     </div>
                   )}
                   {formData.vehicleType === 'furgon_pequeno' && (
-                    <div className="w-full h-full bg-slate-200 rounded-[25px] border-4 border-slate-400 relative flex flex-col justify-between p-2 shadow-inner z-10">
-                      <div className="w-[85%] h-[15%] bg-slate-800/40 mx-auto rounded-t-xl rounded-b-sm mt-3"></div>
-                      <div className="flex-1 w-[90%] mx-auto bg-slate-300 border-2 border-slate-400 rounded-sm my-2 flex items-center justify-center">
-                        <div className="w-1/2 h-full border-r-2 border-slate-400 opacity-50"></div>
+                    <div className="w-full h-full relative flex flex-col items-center z-10">
+                      {/* Nariz corta característica (Capó tipo Partner/Berlingo) */}
+                      <div className="w-[80%] h-[18%] bg-slate-300 rounded-t-[35px] border-x-4 border-t-4 border-slate-400 shadow-inner z-0"></div>
+                      
+                      {/* Cabina y zona de carga unificada (El cajón) */}
+                      <div className="w-[100%] h-[82%] bg-slate-200 rounded-t-[15px] rounded-b-[20px] border-4 border-slate-400 shadow-inner flex flex-col p-1.5 z-10 -mt-2">
+                        {/* Parabrisas curvo frontal */}
+                        <div className="w-[90%] h-[20%] bg-slate-800/40 mx-auto rounded-t-[15px] rounded-b-sm mb-1.5 shadow-sm"></div>
+                        
+                        {/* Techo y caja trasera */}
+                        <div className="flex-1 w-[95%] mx-auto bg-slate-300 border-2 border-slate-400/30 rounded-md relative flex justify-center overflow-hidden">
+                          {/* Línea central que marca las puertas traseras asimétricas/simétricas */}
+                          <div className="w-1/2 h-full border-r-2 border-slate-400/50"></div>
+                          
+                          {/* Nervaduras del techo típicas de los utilitarios pequeños */}
+                          <div className="absolute top-1/4 w-full border-t-2 border-slate-400/20"></div>
+                          <div className="absolute top-2/4 w-full border-t-2 border-slate-400/20"></div>
+                          <div className="absolute top-3/4 w-full border-t-2 border-slate-400/20"></div>
+                        </div>
                       </div>
-                      <div className="w-[85%] h-8 bg-slate-800/40 mx-auto rounded-b-xl rounded-t-sm mb-2"></div>
                     </div>
                   )}
                   {formData.vehicleType === 'furgon_grande' && (
