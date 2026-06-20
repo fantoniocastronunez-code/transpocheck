@@ -3968,14 +3968,19 @@ const dataUrl = await resizeImage(f, 350, 0.3);
                     </div>
                   )}
                   {formData.vehicleType === 'furgon_grande' && (
-                    <div className="w-full h-full relative flex flex-col z-10">
-                      <div className="w-[100%] h-[25%] bg-slate-300 rounded-t-[30px] rounded-b-sm border-x-4 border-t-4 border-slate-400 p-1 flex flex-col justify-end shadow-inner">
-                        <div className="w-4/5 h-[65%] bg-slate-800/40 mx-auto rounded-t-xl rounded-b-sm mb-1"></div>
-                      </div>
-                      <div className="w-[104%] -ml-[2%] h-[75%] bg-slate-200 border-4 border-slate-400 rounded-sm relative overflow-hidden shadow-inner flex justify-center py-2">
-                         <div className="w-full h-full border-t-2 border-slate-300 rounded-sm flex">
-                           <div className="w-1/2 h-full border-r-2 border-slate-400"></div>
-                         </div>
+                    <div className="w-full h-full bg-slate-200 rounded-t-[35px] rounded-b-[10px] border-4 border-slate-400 relative flex flex-col justify-start p-2 shadow-inner z-10">
+                      {/* Parabrisas delantero curvo */}
+                      <div className="w-[85%] h-[15%] bg-slate-800/40 mx-auto rounded-t-[20px] rounded-b-sm mt-1"></div>
+                      
+                      {/* Techo unificado continuo con nervaduras típicas de Sprinter/Boxer */}
+                      <div className="flex-1 w-[90%] mx-auto bg-slate-300 border-2 border-slate-400/30 rounded-sm mt-3 mb-1 flex items-center justify-center relative overflow-hidden shadow-sm">
+                        {/* Línea central que baja hasta las dos puertas traseras */}
+                        <div className="w-1/2 h-full border-r-2 border-slate-400/40"></div>
+                        
+                        {/* Nervaduras del techo (líneas horizontales) */}
+                        <div className="absolute top-1/4 w-full border-t border-slate-400/20"></div>
+                        <div className="absolute top-2/4 w-full border-t border-slate-400/20"></div>
+                        <div className="absolute top-3/4 w-full border-t border-slate-400/20"></div>
                       </div>
                     </div>
                   )}
