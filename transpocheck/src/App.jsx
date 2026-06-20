@@ -320,7 +320,8 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
              <select value={vehicleType} onChange={e=>setVehicleType(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl col-span-2 outline-none focus:border-blue-500 font-bold text-slate-700 bg-white">
                <option value="auto">🚙 Auto / SUV</option>
                <option value="camioneta">🛻 Camioneta</option>
-               <option value="camion">🚚 Camión Corto</option>
+               <option value="camion">🚚 Camión Simple</option>
+               <option value="camion_doble">🚚 Camión Doble Cabina</option>
                <option value="camion_2ejes">🚛 Camión (2 Ejes traseros)</option>
                <option value="camion_3ejes">🚛 Camión (3 Ejes traseros)</option>
              </select>
@@ -3848,10 +3849,11 @@ const dataUrl = await resizeImage(f, 350, 0.3);
 
             <div className="flex justify-between items-end border-b-2 border-slate-100 pb-2 mt-8 mb-4">
               <h3 className="text-sm font-extrabold text-slate-800">Mapa Fotográfico</h3>
-              <select value={formData.vehicleType || 'auto'} onChange={e => setF('vehicleType', e.target.value)} className="bg-slate-100 border-2 border-slate-200 text-[10px] font-bold p-1.5 rounded-lg outline-none text-slate-700 cursor-pointer max-w-[130px]">
+              <select value={formData.vehicleType || 'auto'} onChange={e => setF('vehicleType', e.target.value)} className="bg-slate-100 border-2 border-slate-200 text-[10px] font-bold p-1.5 rounded-lg outline-none text-slate-700 cursor-pointer max-w-[140px]">
                 <option value="auto">🚙 Auto/SUV</option>
                 <option value="camioneta">🛻 Camioneta</option>
-                <option value="camion">🚚 Camión Corto</option>
+                <option value="camion">🚚 Camión Simple</option>
+                <option value="camion_doble">🚚 Camión Doble Cab.</option>
                 <option value="camion_2ejes">🚛 Camión (2 Ejes)</option>
                 <option value="camion_3ejes">🚛 Camión (3 Ejes)</option>
               </select>
@@ -3944,6 +3946,20 @@ const dataUrl = await resizeImage(f, 350, 0.3);
                         <div className="w-full h-1/2 bg-slate-800/40 rounded-t-md rounded-b-sm mb-1"></div>
                       </div>
                       <div className="w-full h-[78%] mx-auto bg-slate-200 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
+                        <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
+                      </div>
+                    </div>
+                  )}
+                  {/* NUEVO: CAMIÓN DOBLE CABINA */}
+                  {formData.vehicleType === 'camion_doble' && (
+                    <div className="w-full h-full relative flex flex-col">
+                      <div className="w-[105%] -ml-[2.5%] h-[32%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-300 p-1 flex flex-col justify-end gap-1 shadow-inner z-10 relative">
+                        {/* Ventana Frontal */}
+                        <div className="w-full h-[40%] bg-slate-800/40 rounded-t-md"></div>
+                        {/* Ventana Trasera (Doble Cabina) */}
+                        <div className="w-full h-[35%] bg-slate-800/40 rounded-sm mb-0.5"></div>
+                      </div>
+                      <div className="w-full h-[66%] mx-auto bg-slate-200 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
                         <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
                       </div>
                     </div>
