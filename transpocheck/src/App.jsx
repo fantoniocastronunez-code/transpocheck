@@ -8,7 +8,7 @@ import Tesseract from 'tesseract.js'; // NUEVO: Motor de lectura de patentes
 import { 
   Car, MapPin, Camera, CheckCircle, FileText, Download, 
   Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, Edit2, Bell, Share2, X, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Save, Search,
-  CloudOff, Wifi, QrCode, Sun, Moon, Settings, ChevronUp, ChevronDown
+  CloudOff, Wifi, QrCode, Sun, Moon, Settings, ChevronUp, ChevronDown, ChevronRight 
 } from 'lucide-react';
 
 const firebaseConfig = {
@@ -850,10 +850,23 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
   // NUEVO: Vehículos que tienen checklist guardado pero faltan por firmar
   const pendingSignatureJobs = activeJobs.filter(j => j.checklist && !j.checklist.clientSigned);
 
+  // NUEVO: Branding Dinámico por Cliente
+  const branding = React.useMemo(() => {
+    const name = (clientName || '').toUpperCase();
+    if (name.includes('KOVACS')) return { primary: 'bg-red-600', text: 'text-red-600', fill: 'bg-red-500', light: 'bg-red-50' };
+    if (name.includes('SALFA')) return { primary: 'bg-emerald-600', text: 'text-emerald-600', fill: 'bg-emerald-500', light: 'bg-emerald-50' };
+    if (name.includes('GRANDLEASING')) return { primary: 'bg-slate-900', text: 'text-slate-800', fill: 'bg-slate-800', light: 'bg-slate-100' };
+    if (name.includes('ENEX')) return { primary: 'bg-sky-600', text: 'text-sky-600', fill: 'bg-sky-500', light: 'bg-sky-50' };
+    // Predeterminado
+    return { primary: 'bg-blue-600', text: 'text-blue-600', fill: 'bg-blue-500', light: 'bg-blue-50' };
+  }, [clientName]);
+  
+  const initials = clientName ? clientName.substring(0, 2).toUpperCase() : 'CL';
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10 transition-colors duration-300">
       {/* SE ANCLA CON LA CLASE fixed-nav-bar PARA EVITAR DESPLAZAMIENTOS */}
-      <header className="fixed-nav-bar bg-blue-600 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300">
+      <header className={`fixed-nav-bar ${branding.primary} text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300`}>
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
           {/* Logo de la app */}
           <div className="bg-white/20 p-1 sm:p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">
@@ -889,7 +902,10 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
 
       <main className="max-w-5xl mx-auto p-4 pt-20 sm:pt-24 space-y-8">
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center relative overflow-hidden max-w-2xl mx-auto">
-          <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-500"></div>
+          <div className={`absolute top-0 left-0 w-full h-1.5 ${branding.fill}`}></div>
+          <div className={`mx-auto w-14 h-14 ${branding.light} rounded-2xl flex items-center justify-center mb-3 shadow-inner border border-slate-100`}>
+             <span className={`text-xl font-black ${branding.text}`}>{initials}</span>
+          </div>
           <h2 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-1">Portal de Seguimiento</h2>
           <p className="text-2xl font-black text-slate-800">{clientName}</p>
         </div>
@@ -1497,6 +1513,66 @@ function RelayAcceptView({ jobId, db, currentUserEmail, drivers }) {
     </div>
   );
 }
+// --- NUEVO: COMPONENTE DE DESLIZAMIENTO PARA CONDUCTORES ---
+const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600" }) => {
+  const [sliderLeft, setSliderLeft] = useState(0);
+  const [isConfirmed, setIsConfirmed] = useState(false);
+  const containerRef = useRef(null);
+  const startX = useRef(0);
+
+  const handleStart = (clientX) => {
+    if (isConfirmed) return;
+    startX.current = clientX - sliderLeft;
+  };
+
+  const handleMove = (clientX) => {
+    if (isConfirmed || !startX.current) return;
+    const containerWidth = containerRef.current.offsetWidth;
+    const maxLeft = containerWidth - 48; // Ancho del botón interno
+    let newLeft = clientX - startX.current;
+    if (newLeft < 0) newLeft = 0;
+    if (newLeft > maxLeft) newLeft = maxLeft;
+    setSliderLeft(newLeft);
+  };
+
+  const handleEnd = () => {
+    if (isConfirmed || !startX.current) return;
+    const maxLeft = containerRef.current.offsetWidth - 48;
+    if (sliderLeft > maxLeft * 0.75) { // Confirmar si pasa el 75%
+      setSliderLeft(maxLeft);
+      setIsConfirmed(true);
+      setTimeout(() => onConfirm(), 300); // Pequeño delay para la animación
+    } else {
+      setSliderLeft(0); // Regresa al inicio si no lo completó
+    }
+    startX.current = 0;
+  };
+
+  return (
+    <div ref={containerRef} className="relative w-full h-12 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 select-none" style={{ touchAction: 'none' }}>
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+         <span className={`text-xs font-extrabold ${isConfirmed ? 'text-white z-10' : 'text-slate-500'}`}>
+            {isConfirmed ? '¡Confirmado!' : text}
+         </span>
+      </div>
+      <div className={`absolute top-0 left-0 h-full ${colorClass} transition-opacity duration-200`} style={{ width: `${sliderLeft + 24}px`, opacity: isConfirmed ? 1 : 0.3 }} />
+      <div 
+        className={`absolute top-1 bottom-1 w-10 rounded-lg flex items-center justify-center cursor-grab shadow-sm transition-colors z-10 ${isConfirmed ? 'bg-white text-green-600' : `${colorClass} text-white`}`}
+        style={{ left: `${sliderLeft + 4}px`, transition: startX.current ? 'none' : 'left 0.2s ease-out' }}
+        onTouchStart={e => handleStart(e.touches[0].clientX)}
+        onTouchMove={e => handleMove(e.touches[0].clientX)}
+        onTouchEnd={handleEnd}
+        onMouseDown={e => handleStart(e.clientX)}
+        onMouseMove={e => startX.current && handleMove(e.clientX)}
+        onMouseUp={handleEnd}
+        onMouseLeave={handleEnd}
+      >
+        {isConfirmed ? <CheckCircle className="w-4 h-4"/> : (icon || <ChevronRight className="w-4 h-4"/>)}
+      </div>
+    </div>
+  );
+};
+// -----------------------------------------------------------
 // ------------------------------------------------
 
 export default function App() {
@@ -1951,7 +2027,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.2.4</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.2.5</p>
                 </div>
               </div>
             )}
@@ -2966,18 +3042,16 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         )}
 
         <div className="mt-auto pt-3 border-t border-slate-100 flex flex-col gap-2">
-          {/* Botón directo para reclamar el traslado al instante */}
+          {/* Botón directo deslizable para reclamar el traslado */}
           {isPending && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && (
-            <button onClick={() => handleAcceptJob(j)} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm flex items-center justify-center gap-2 transition-colors">
-              <CheckCircle className="w-4 h-4"/> Aceptar Traslado
-            </button>
+            <SwipeButton onConfirm={() => handleAcceptJob(j)} text="Desliza para Aceptar" colorClass="bg-blue-600" />
           )}
 
           {isAccepted && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
             <>
-              {(!j.phase || j.phase === 'claimed') && <button onClick={()=>updatePhase(j, 'picked_up')} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors">🚘 Vehículo en mi poder</button>}
-              {j.phase === 'picked_up' && j.tripType !== 'revision' && <button onClick={()=>updatePhase(j, 'arrived_destination')} className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors">📍 Llegué a Destino</button>}
-              {j.phase === 'picked_up' && j.tripType === 'revision' && <button onClick={()=>updatePhase(j, 'arrived_prt')} className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors">📍 Llegué a PRT</button>}
+              {(!j.phase || j.phase === 'claimed') && <SwipeButton onConfirm={()=>updatePhase(j, 'picked_up')} text="Desliza: Vehículo en mi poder" icon={<Car className="w-4 h-4"/>} colorClass="bg-indigo-600" />}
+              {j.phase === 'picked_up' && j.tripType !== 'revision' && <SwipeButton onConfirm={()=>updatePhase(j, 'arrived_destination')} text="Desliza: Llegué a Destino" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" />}
+              {j.phase === 'picked_up' && j.tripType === 'revision' && <SwipeButton onConfirm={()=>updatePhase(j, 'arrived_prt')} text="Desliza: Llegué a PRT" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" />}
               
               {j.phase === 'arrived_prt' && (
                 <div className="flex gap-2">
@@ -3234,14 +3308,14 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
   const matchedVehicle = vehicles?.find(v => v.plate === (job.plate || job.vin)?.toUpperCase());
   const initialDocs = matchedVehicle?.docs || { soap:false, permiso:false, revTecnica:false, gases:false };
   const initialDocsExpiry = matchedVehicle?.docsExpiry || {};
-  const initialReminders = matchedVehicle?.internalReminders || []; // <-- NUEVO
+  const initialReminders = matchedVehicle?.internalReminders || []; 
 
   // Sincroniza automáticamente lo seleccionado en la tarjeta de traslado del flujo principal
   const defaultData = {
     client: job.client||'', manualClient: '', brand: job.brand||'', model: job.model||'', plateOrVin: job.plate||job.vin||'', origin: job.origin||'', destination: job.destination||'', fuelLevel: 50, photos: { front:false, left:false, right:false, back:false, tire:false, dashboard:false, det1:false, det2:false, det3:false, det4:false }, 
     docs: job.checklist?.docs || initialDocs, 
     docsExpiry: job.checklist?.docsExpiry || initialDocsExpiry, 
-    internalReminders: job.checklist?.internalReminders || initialReminders, // <-- NUEVO
+    internalReminders: job.checklist?.internalReminders || initialReminders, 
     observations: '', receiverName: '', receiverRut: '', noReception: false, signatureData: null, location: null,
     rtStatus: job.prt_result ? job.prt_result : 'aprobado', 
     rtRejectReason: job.prt_reason ? job.prt_reason : '', 
@@ -3463,7 +3537,7 @@ const dataUrl = await resizeImage(f, 350, 0.3);
       }
       // ----------------------------------------------------
 
-      // --- NUEVO: GUARDAR FECHAS DE VENCIMIENTO Y DOCS EN EL PERFIL DEL VEHÍCULO ---
+      // --- NUEVO: GUARDAR FECHAS Y ALERTAS EN EL PERFIL DEL VEHÍCULO ---
       if (d.plateOrVin) {
           const plateUpper = d.plateOrVin.toUpperCase();
           const vehRef = collection(db, 'vehicles');
@@ -3697,7 +3771,13 @@ const dataUrl = await resizeImage(f, 350, 0.3);
                                 <input type="file" accept="image/*" className="hidden" disabled={rem.resolved} onChange={async e => { const f=e.target.files[0]; if(!f)return; try{ const dUrl = await resizeImage(f, 400, 0.4); handleReminderChange(idx, 'photo', dUrl); }catch(err){}}}/>
                                 {rem.photo ? '📸 Foto Guardada' : '📸 Adjuntar Foto'}
                             </label>
-                            {rem.photo && <button type="button" onClick={()=>setFullScreenImage(rem.photo)} className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors border border-blue-200"><Eye className="w-4 h-4"/></button>}
+                            
+                            {/* EL BOTÓN AHORA ABRE UNA VENTANA NATIVA DE NAVEGADOR PARA EVITAR CONFLICTOS CON EL MODAL PADRE */}
+                            {rem.photo && <button type="button" onClick={() => {
+                                const w = window.open(""); 
+                                w.document.write(`<img src="${rem.photo}" style="width:100%;max-width:800px;margin:auto;display:block;padding-top:20px;"/>`);
+                            }} className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors border border-blue-200"><Eye className="w-4 h-4"/></button>}
+                            
                             <button type="button" onClick={()=>removeReminder(idx)} className="p-2 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg transition-colors border border-red-200"><Trash2 className="w-4 h-4"/></button>
                         </div>
                     </div>
