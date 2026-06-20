@@ -1513,11 +1513,20 @@ function RelayAcceptView({ jobId, db, currentUserEmail, drivers }) {
   );
 }
 // --- NUEVO: COMPONENTE DE DESLIZAMIENTO PARA CONDUCTORES ---
-const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600" }) => {
+const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600", isProcessing = false }) => {
   const [sliderLeft, setSliderLeft] = useState(0);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const containerRef = useRef(null);
   const startX = useRef(0);
+
+  // Si está procesando, bloqueamos el botón y mostramos el relojito
+  if (isProcessing) {
+    return (
+      <button disabled className={`w-full h-12 rounded-xl flex items-center justify-center gap-2 font-extrabold text-white opacity-70 cursor-not-allowed ${colorClass}`}>
+        <Clock className="w-5 h-5 animate-spin"/> Procesando...
+      </button>
+    );
+  }
 
   const handleStart = (clientX) => {
     if (isConfirmed) return;
@@ -2026,7 +2035,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.2.5</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.2.6</p>
                 </div>
               </div>
             )}
@@ -2284,9 +2293,13 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
     finally { setIsSubmitting(false); }
   };
 
+  const [isSubmittingReturn, setIsSubmittingReturn] = useState(false);
+
   const submitReturn = async () => {
     if (returnMethod === 'transferencia' && !returnReceipt) return showAlert("Sube la foto de la transferencia.");
     if (!myDriver?.balance) return;
+    if (isSubmittingReturn) return;
+    setIsSubmittingReturn(true);
     
     let det = returnMethod === 'efectivo' ? 'Rendición en Efectivo (En revisión)' : 'Rendición de Vuelto (En revisión)';
     
@@ -2294,6 +2307,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
       await addDoc(collection(db, 'expenses'), { driverId: myDriver.id, driverEmail: myDriver.email, driverName: myDriver.name, type: 'pending_return', amount: myDriver.balance, detail: det, receiptImage: returnReceipt, createdAt: Date.now() });
       setIsReturnOpen(false); setReturnReceipt(null); showAlert("Rendición enviada. Esperando validación de Admin.");
     } catch(e) {}
+    finally { setIsSubmittingReturn(false); }
   };
 
   const approveReturn = async (exp) => {
@@ -2502,7 +2516,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-center"><p className="text-sm font-bold text-slate-600">Se registrará que entregaste el dinero en mano.</p></div>
             )}
 
-            <div className="flex gap-4 mt-6"><button onClick={() => { setIsReturnOpen(false); setReturnReceipt(null); }} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-600">Cancelar</button><button onClick={submitReturn} className="flex-[2] py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-extrabold transition-all shadow-lg shadow-green-200">Confirmar</button></div>
+            <div className="flex gap-4 mt-6"><button onClick={() => { setIsReturnOpen(false); setReturnReceipt(null); }} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-600">Cancelar</button><button onClick={submitReturn} disabled={isSubmittingReturn} className="flex-[2] py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-extrabold transition-all shadow-lg shadow-green-200 disabled:opacity-50">{isSubmittingReturn ? 'Enviando...' : 'Confirmar'}</button></div>
           </div>
         </div>
       )}
@@ -2580,10 +2594,14 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   // NUEVO: Estados para los paneles desplegables
   const [isPendingOpen, setIsPendingOpen] = useState(true);
   const [isInProgressOpen, setIsInProgressOpen] = useState(true);
+  const [processingId, setProcessingId] = useState(null); // <-- NUEVO: CANDADO DE BOTONES
 
   const updatePhase = async (job, phase, extra = {}) => {
+    if (processingId) return;
+    setProcessingId(`${job.id}-${phase}`);
     try { await updateDoc(doc(db, 'transport_jobs', job.id), { phase, ...extra }); } 
     catch (e) { console.error(e); showAlert("Error de conexión al actualizar fase."); }
+    finally { setProcessingId(null); }
   }; 
   
   const now = new Date();
@@ -2657,8 +2675,11 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   const inProgressJobsList = activeJobs.filter(j => j.status === 'accepted');
 
   const handleAcceptJob = async (job) => {
+    if (processingId) return;
+    setProcessingId(`${job.id}-accept`);
     try { await updateDoc(doc(db, 'transport_jobs', job.id), { status: 'accepted', acceptedByEmail: currentUserEmail }); } 
     catch (e) { console.error(e); }
+    finally { setProcessingId(null); }
   };
 
   const handleDeleteJob = async (jobId) => {
@@ -2827,10 +2848,15 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   const cpyWapp = handleCopyWhatsApp; 
 
   const generatePDF = async (job) => {
+    if (processingId) return;
+    setProcessingId(`${job.id}-pdf`);
     try { const docPDF = await buildPDFDoc(job); const cleanPlate = job.plate || job.vin || 'SN'; const fileName = `Check.${getDStr(job).replace(/\//g, '-')}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`; docPDF.save(fileName); } catch(e) { console.error(e); showAlert("Hubo un error al generar PDF."); }
+    finally { setProcessingId(null); }
   };
 
   const handleShareWhatsAppPDF = async (job) => {
+    if (processingId) return;
+    setProcessingId(`${job.id}-wapp`);
     try {
       const dateStrForFile = getDStr(job).replace(/\//g, '-');
       const dateShort = getDStr(job).substring(0, 5);
@@ -2841,7 +2867,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       const pdfBlob = docPDF.output('blob'); 
       const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ title: fileName, text: text, files: [file] }); } else { showAlert("Tu dispositivo no soporta compartir el archivo directamente. Descárgalo primero."); handleCopyWhatsApp(job); }
-    } catch (e) { console.error(e); }  
+    } catch (e) { console.error(e); } finally { setProcessingId(null); }
   };
 
   // --- TARJETAS MODULARES PARA KANBAN ---
@@ -2952,19 +2978,21 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         <div className="mt-auto pt-3 border-t border-slate-100 flex flex-col gap-2">
           {/* Botón directo deslizable para reclamar el traslado */}
           {isPending && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && (
-            <SwipeButton onConfirm={() => handleAcceptJob(j)} text="Desliza para Aceptar" colorClass="bg-blue-600" />
+            <SwipeButton onConfirm={() => handleAcceptJob(j)} text="Desliza para Aceptar" colorClass="bg-blue-600" isProcessing={processingId === `${j.id}-accept`} />
           )}
 
           {isAccepted && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
             <>
-              {(!j.phase || j.phase === 'claimed') && <SwipeButton onConfirm={()=>updatePhase(j, 'picked_up')} text="Desliza: Vehículo en mi poder" icon={<Car className="w-4 h-4"/>} colorClass="bg-indigo-600" />}
-              {j.phase === 'picked_up' && j.tripType !== 'revision' && <SwipeButton onConfirm={()=>updatePhase(j, 'arrived_destination')} text="Desliza: Llegué a Destino" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" />}
-              {j.phase === 'picked_up' && j.tripType === 'revision' && <SwipeButton onConfirm={()=>updatePhase(j, 'arrived_prt')} text="Desliza: Llegué a PRT" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" />}
+              {(!j.phase || j.phase === 'claimed') && <SwipeButton onConfirm={()=>updatePhase(j, 'picked_up')} text="Desliza: Vehículo en mi poder" icon={<Car className="w-4 h-4"/>} colorClass="bg-indigo-600" isProcessing={processingId === `${j.id}-picked_up`} />}
+              {j.phase === 'picked_up' && j.tripType !== 'revision' && <SwipeButton onConfirm={()=>updatePhase(j, 'arrived_destination')} text="Desliza: Llegué a Destino" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />}
+              {j.phase === 'picked_up' && j.tripType === 'revision' && <SwipeButton onConfirm={()=>updatePhase(j, 'arrived_prt')} text="Desliza: Llegué a PRT" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_prt`} />}
               
               {j.phase === 'arrived_prt' && (
                 <div className="flex gap-2">
-                  <button onClick={()=>updatePhase(j, 'prt_done', { prt_result: 'aprobado' })} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors">✅ Aprobado</button>
-                  <button onClick={()=>setPrtPromptJob(j)} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors">❌ Rechazado</button>
+                  <button onClick={()=>updatePhase(j, 'prt_done', { prt_result: 'aprobado' })} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-1 disabled:opacity-50">
+                     {processingId === `${j.id}-prt_done` ? <Clock className="w-3 h-3 animate-spin"/> : '✅'} {processingId === `${j.id}-prt_done` ? 'Guardando...' : 'Aprobado'}
+                  </button>
+                  <button onClick={()=>setPrtPromptJob(j)} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors disabled:opacity-50">❌ Rechazado</button>
                 </div>
               )}
 
@@ -3001,8 +3029,8 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         </div>
         <div className="flex gap-1.5 mt-auto">
           <button onClick={()=>cpyWapp(j)} className="flex-1 py-1.5 flex justify-center bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"><Copy className="w-3.5 h-3.5"/></button>
-          <button onClick={() => generatePDF(j)} className="flex-1 py-1.5 flex justify-center bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg transition-colors"><FileDown className="w-3.5 h-3.5"/></button>
-          <button onClick={() => handleShareWhatsAppPDF(j)} className="flex-1 py-1.5 flex justify-center bg-green-50 text-green-700 hover:bg-green-100 rounded-lg transition-colors"><Share2 className="w-3.5 h-3.5"/></button>
+          <button onClick={() => generatePDF(j)} disabled={processingId === `${j.id}-pdf`} className="flex-1 py-1.5 flex justify-center bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50">{processingId === `${j.id}-pdf` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : <FileDown className="w-3.5 h-3.5"/>}</button>
+          <button onClick={() => handleShareWhatsAppPDF(j)} disabled={processingId === `${j.id}-wapp`} className="flex-1 py-1.5 flex justify-center bg-green-50 text-green-700 hover:bg-green-100 rounded-lg transition-colors disabled:opacity-50">{processingId === `${j.id}-wapp` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : <Share2 className="w-3.5 h-3.5"/>}</button>
           {isAdminView && <button onClick={()=>handleDeleteJob(j.id)} className="flex-1 py-1.5 flex justify-center bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5"/></button>}
         </div>
       </div>
@@ -3275,50 +3303,49 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     return () => clearTimeout(timer);
   }, [step, formData, job.id, isQuick, db]);
 
-  // Función para generar y mandar el link de firma (Optimizado 100% a prueba de Apple/iOS)
+  const [processingAction, setProcessingAction] = useState(null); // <-- NUEVO: CANDADO DE QR/LINK
+
+  // Función para generar y mandar el link de firma
   const handleRemoteSignRequest = async () => {
     if (isQuick) return showAlert("⚠️ Para usar la Firma Remota en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
-    
-    const url = `${window.location.href.split('?')[0]}?sign=${job.id}`;
-    const textToShare = `¡Hola! Por favor firma el acta de recepción y revisa las fotografías del vehículo aquí:\n${url}`;
+    setProcessingAction('wapp');
+    try {
+      const url = `${window.location.href.split('?')[0]}?sign=${job.id}`;
+      const textToShare = `¡Hola! Por favor firma el acta de recepción y revisa las fotografías del vehículo aquí:\n${url}`;
 
-    // 1. COPIA SÍNCRONA INMEDIATA
-    const textArea = document.createElement("textarea");
-    textArea.value = textToShare;
-    textArea.style.position = "fixed";
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    try { document.execCommand('copy'); } catch (err) {}
-    document.body.removeChild(textArea);
+      const textArea = document.createElement("textarea");
+      textArea.value = textToShare;
+      textArea.style.position = "fixed";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try { document.execCommand('copy'); } catch (err) {}
+      document.body.removeChild(textArea);
 
-    // 2. Guardamos en Firebase de fondo (sin poner "await" para no pausar el hilo)
-    setDoc(doc(db, 'transport_jobs', job.id), { checklist: formData }, { merge: true }).catch(console.error);
+      await setDoc(doc(db, 'transport_jobs', job.id), { checklist: formData }, { merge: true });
 
-    // 3. Disparamos el menú nativo de compartir
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: 'Firma de Recepción', text: textToShare });
-      } catch (err) { 
-        showAlert("✅ Link copiado al portapapeles automáticamente."); 
+      if (navigator.share) {
+        try { await navigator.share({ title: 'Firma de Recepción', text: textToShare }); } catch (err) { showAlert("✅ Link copiado al portapapeles automáticamente."); }
+      } else {
+        showAlert("✅ Link copiado al portapapeles. ¡Pégalo en WhatsApp!");
       }
-    } else {
-      showAlert("✅ Link copiado al portapapeles. ¡Pégalo en WhatsApp!");
-    }
+    } catch (e) { console.error(e); }
+    finally { setProcessingAction(null); }
   };
 
   // Función para guardar datos antes de mostrar el QR
   const handleOpenQR = async () => {
     if (isQuick) return showAlert("⚠️ Para usar el Código QR en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
-    if (!navigator.onLine) return showAlert("⚠️ Tu celular no tiene señal en este momento. El cliente no podrá descargar las fotos con el QR. Usa 'Compartir Link' y envíalo cuando recuperes la conexión.");
+    if (!navigator.onLine) return showAlert("⚠️ Tu celular no tiene señal en este momento. Usa 'Compartir Link' y envíalo cuando recuperes la conexión.");
     
+    setProcessingAction('qr');
     try {
       await setDoc(doc(db, 'transport_jobs', job.id), { checklist: formData }, { merge: true });
       setQrOpen(true);
     } catch (e) {
       console.error(e);
       showAlert("Error al generar el QR. Revisa tu conexión.");
-    }
+    } finally { setProcessingAction(null); }
   };
 
   const setF = (f, v) => setFormData(p => ({...p, [f]:v}));
@@ -3850,11 +3877,13 @@ const dataUrl = await resizeImage(f, 350, 0.3);
                     <h3 className="font-extrabold text-blue-800 mb-2 flex items-center gap-2"><Zap className="w-5 h-5"/> Firma Remota o QR (Recomendado)</h3>
                     <p className="text-xs font-bold text-blue-600 mb-4">Envía el link al cliente o muéstrale el QR para que firme desde su propio celular.</p>
                     <div className="flex flex-col sm:flex-row gap-2">
-                      <button type="button" onClick={handleRemoteSignRequest} className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-md transition-colors flex justify-center items-center gap-2">
-                         <Share2 className="w-4 h-4"/> Compartir Link
+                      <button type="button" onClick={handleRemoteSignRequest} disabled={processingAction === 'wapp'} className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-md transition-colors flex justify-center items-center gap-2 disabled:opacity-50">
+                         {processingAction === 'wapp' ? <Clock className="w-4 h-4 animate-spin"/> : <Share2 className="w-4 h-4"/>} 
+                         {processingAction === 'wapp' ? 'Cargando...' : 'Compartir Link'}
                       </button>
-                      <button type="button" onClick={handleOpenQR} className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl shadow-md transition-colors flex justify-center items-center gap-2">
-                         <QrCode className="w-4 h-4"/> Mostrar QR
+                      <button type="button" onClick={handleOpenQR} disabled={processingAction === 'qr'} className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl shadow-md transition-colors flex justify-center items-center gap-2 disabled:opacity-50">
+                         {processingAction === 'qr' ? <Clock className="w-4 h-4 animate-spin"/> : <QrCode className="w-4 h-4"/>} 
+                         {processingAction === 'qr' ? 'Generando...' : 'Mostrar QR'}
                       </button>
                     </div>
                  </div>
