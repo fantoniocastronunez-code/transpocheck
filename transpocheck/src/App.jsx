@@ -4091,13 +4091,74 @@ const dataUrl = await resizeImage(f, 350, 0.3);
             <div className="space-y-4 animate-in fade-in duration-200">
               
               {/* COMBUSTIBLE AHORA ESTÁ AQUÍ */}
-              <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Nivel de Combustible</h3>
-              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 shadow-sm">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Estanque actual</span>
-                  <span className="text-lg font-black text-blue-600">{formData.fuelLevel}%</span>
+              <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Combustible a Bordo</h3>
+              
+              <div className="bg-white p-5 rounded-3xl border-2 border-slate-100 shadow-sm relative">
+                <div className="flex justify-between items-center mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2.5 rounded-xl transition-colors ${formData.fuelLevel < 30 ? 'bg-red-50' : 'bg-slate-50'}`}>
+                      <Fuel className={`w-6 h-6 ${formData.fuelLevel < 30 ? 'text-red-500 animate-pulse' : 'text-slate-500'}`} />
+                    </div>
+                    <div>
+                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Estanque</p>
+                       <p className={`text-2xl font-black leading-none transition-colors ${formData.fuelLevel < 30 ? 'text-red-600' : formData.fuelLevel <= 50 ? 'text-amber-500' : 'text-green-600'}`}>
+                         {formData.fuelLevel}%
+                       </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                     <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-lg transition-colors ${formData.fuelLevel == 0 ? 'bg-red-100 text-red-700' : formData.fuelLevel <= 25 ? 'bg-red-50 text-red-600' : formData.fuelLevel <= 50 ? 'bg-amber-50 text-amber-600' : formData.fuelLevel <= 75 ? 'bg-green-50 text-green-600' : 'bg-green-100 text-green-700'}`}>
+                       {formData.fuelLevel == 0 ? 'Vacío' : formData.fuelLevel <= 25 ? 'Reserva' : formData.fuelLevel <= 50 ? 'Medio' : formData.fuelLevel <= 75 ? '3/4' : 'Lleno'}
+                     </span>
+                  </div>
                 </div>
-                <input type="range" min="0" max="100" step="5" value={formData.fuelLevel} onChange={(e) => setF('fuelLevel', e.target.value)} className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer" style={{background: `linear-gradient(to right, ${formData.fuelLevel < 30 ? '#ef4444' : formData.fuelLevel < 80 ? '#eab308' : '#22c55e'} ${formData.fuelLevel}%, #e2e8f0 ${formData.fuelLevel}%)`}} />
+
+                <div className="relative pt-2 pb-2">
+                  {/* Letras E y F flotantes */}
+                  <div className="flex justify-between text-[11px] font-black px-1 mb-2">
+                    <span className="text-red-500">E</span>
+                    <span className="text-slate-300">1/4</span>
+                    <span className="text-slate-300">1/2</span>
+                    <span className="text-slate-300">3/4</span>
+                    <span className="text-green-500">F</span>
+                  </div>
+                  
+                  <div className="relative h-10 w-full group">
+                      {/* Slider Nativo Invisible para mantener la función táctil/arrastre intacta */}
+                      <input 
+                        type="range" 
+                        min="0" max="100" step="5" 
+                        value={formData.fuelLevel} 
+                        onChange={(e) => setF('fuelLevel', e.target.value)} 
+                        className="absolute z-20 w-full h-full opacity-0 cursor-pointer inset-0 m-0" 
+                      />
+                      
+                      {/* Pista Gráfica (Fondo) */}
+                      <div className="absolute inset-y-2 inset-x-0 bg-slate-100 rounded-full overflow-hidden shadow-inner border border-slate-200 pointer-events-none">
+                        {/* Marcas de cuartos (rayitas divisorias blancas) */}
+                        <div className="absolute inset-0 flex justify-between px-[25%] z-10">
+                           <div className="w-0.5 h-full bg-white/80"></div>
+                           <div className="w-0.5 h-full bg-white/80"></div>
+                           <div className="w-0.5 h-full bg-white/80"></div>
+                        </div>
+                        
+                        {/* Relleno animado con color dinámico y franjas de peligro si está bajo */}
+                        <div 
+                          className={`h-full transition-all duration-300 ease-out flex items-center justify-end pr-2 relative ${
+                             formData.fuelLevel < 30 
+                               ? 'bg-[repeating-linear-gradient(45deg,#ef4444,#ef4444_10px,#dc2626_10px,#dc2626_20px)]' 
+                               : formData.fuelLevel <= 50 
+                               ? 'bg-amber-400' 
+                               : 'bg-green-500'
+                          }`}
+                          style={{ width: `${formData.fuelLevel}%` }}
+                        >
+                           {/* Pequeño destello (brillo) en la punta para simular efecto 3D/Luz */}
+                           <div className="w-1.5 h-3 bg-white/50 rounded-full relative z-20"></div>
+                        </div>
+                      </div>
+                  </div>
+                </div>
               </div>
 
               <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 mt-6 text-slate-800 uppercase tracking-wider">Viáticos y Esperas</h3>
