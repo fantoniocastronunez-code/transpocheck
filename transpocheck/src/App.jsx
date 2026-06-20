@@ -4280,18 +4280,21 @@ const dataUrl = await resizeImage(f, 350, 0.3);
           {/* BOTONERA NAVEGACIÓN INFERIOR DINÁMICA */}
           <div className="flex gap-3 pt-4 border-t border-slate-100 mt-6">
             {step > 1 && (
-              <button type="button" onClick={() => setStep(step - 1)} className="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-4 py-3 rounded-xl text-sm w-1/3 transition-colors">
+              <button type="button" onClick={() => setStep(step - 1)} className="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-4 py-3 rounded-xl text-sm w-1/3 active:scale-[0.97] transition-all duration-200">
                 Atrás
               </button>
             )}
             
             {step < 6 ? (
-              <button type="button" onClick={() => setStep(step + 1)} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 rounded-xl text-sm shadow-md transition-colors">
-                Siguiente Paso ➔
+              <button type="button" onClick={() => setStep(step + 1)} className="group flex-1 bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 rounded-xl text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0 transition-all duration-200 flex justify-center items-center gap-2 relative overflow-hidden">
+                <span className="relative z-10">Siguiente Paso</span>
+                <span className="relative z-10 transform group-hover:translate-x-1.5 transition-transform duration-300">➔</span>
+                {/* Efecto de destello de luz (Shine) */}
+                <div className="absolute inset-0 h-full w-full translate-x-[-100%] group-hover:translate-x-[100%] bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-in-out"></div>
               </button>
             ) : (
-              <button type="submit" disabled={isSubmitting} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-black py-3 rounded-xl text-sm shadow-lg disabled:opacity-50 transition-colors">
-                {isSubmitting ? 'Guardando...' : '🏁 Finalizar y Guardar'}
+              <button type="submit" disabled={isSubmitting} className="group flex-1 bg-green-600 hover:bg-green-700 text-white font-black py-3 rounded-xl text-sm shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0 disabled:opacity-50 disabled:hover:translate-y-0 disabled:active:scale-100 transition-all duration-200 flex justify-center items-center gap-2">
+                {isSubmitting ? 'Guardando...' : <><span className="group-hover:animate-bounce">🏁</span> Finalizar y Guardar</>}
               </button>
             )}
           </div>
