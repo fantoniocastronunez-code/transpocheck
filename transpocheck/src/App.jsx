@@ -2876,33 +2876,14 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     const [logoApp, logoLogistica] = await Promise.all([ loadSimpleLogo('/logo.png'), loadSimpleLogo('/LogoLogistica.png') ]);
 
     const drawHeader = (titleText) => {
-      docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 45, 'F');
-      
-      // Simulación de Código de Barras Decorativo
-      docPDF.setDrawColor(255, 255, 255);
-      for(let i=0; i<30; i+=2) { 
-        docPDF.setLineWidth(Math.random() * 1.2); 
-        docPDF.line(160 + i, 12, 160 + i, 22); 
-      }
-      
-      docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(22); docPDF.setFont("helvetica", "bold");
-      docPDF.text(cleanStr(titleText), 15, 22);
-      
+      docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 40, 'F');
+      docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(18); docPDF.setFont("helvetica", "bold");
+      docPDF.text(cleanStr(titleText), 105, 18, null, null, "center");
       docPDF.setFontSize(9); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(148, 163, 184);
-      docPDF.text(`ID TRASLADO: ${job.id.substring(0,8).toUpperCase()}  |  FECHA: ${formatDateDisplay(job.scheduledDate) || '-'}`, 15, 30);
-      
-      // Logos corporativos sutiles
-      docPDF.setFontSize(10); docPDF.setFont("times", "bolditalic"); docPDF.setTextColor(255, 255, 255);
-      if (logoLogistica) { const ratio = logoLogistica.h / logoLogistica.w; let imgW = 25; let imgH = imgW * ratio; if (imgH > 18) { imgH = 18; imgW = imgH / ratio; } docPDF.addImage(logoLogistica.data, 'PNG', 130 - (imgW/2), 17 - (imgH/2), imgW, imgH); docPDF.text("Logística TS", 130, 28, null, null, "center"); }
-      if (logoApp) { const ratio = logoApp.h / logoApp.w; let imgW = 15; let imgH = imgW * ratio; if (imgH > 18) { imgH = 18; imgW = imgH / ratio; } docPDF.addImage(logoApp.data, 'PNG', 195 - (imgW/2), 17 - (imgH/2), imgW, imgH); docPDF.text("LogApp", 195, 28, null, null, "center"); }
-      
-      // MARCA DE AGUA (Watermark Diagonal)
-      if (job.status === 'completed' || job.status === 'failed') {
-        docPDF.setTextColor(240, 245, 250);
-        docPDF.setFontSize(65);
-        docPDF.setFont("helvetica", "bold");
-        docPDF.text(job.status === 'failed' ? "CANCELADO / FALLIDO" : "ACTA CERRADA", 105, 160, { angle: 45, align: "center" });
-      }
+      docPDF.text(`FECHA TRASLADO: ${formatDateDisplay(job.scheduledDate) || '-'}`, 105, 26, null, null, "center");
+      docPDF.setFontSize(11); docPDF.setFont("times", "bolditalic"); docPDF.setTextColor(255, 255, 255);
+      if (logoLogistica) { const ratio = logoLogistica.h / logoLogistica.w; let imgW = 35; let imgH = imgW * ratio; if (imgH > 24) { imgH = 24; imgW = imgH / ratio; } docPDF.addImage(logoLogistica.data, 'PNG', 27 - (imgW/2), 19 - (imgH/2), imgW, imgH); docPDF.text("Logística TS SpA", 27, 34, null, null, "center"); }
+      if (logoApp) { const ratio = logoApp.h / logoApp.w; let imgW = 20; let imgH = imgW * ratio; if (imgH > 24) { imgH = 24; imgW = imgH / ratio; } docPDF.addImage(logoApp.data, 'PNG', 183 - (imgW/2), 19 - (imgH/2), imgW, imgH); docPDF.text("LogisticAPP", 183, 34, null, null, "center"); }
       docPDF.setFont("helvetica", "normal");
     };
 
