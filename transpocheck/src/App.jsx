@@ -3737,7 +3737,7 @@ const dataUrl = await resizeImage(f, 350, 0.3);
             { id: 2, label: '📄 Docs' },
             { id: 3, label: '💬 Notas' },
             { id: 4, label: '📸 Fotos' },
-            { id: 5, label: '🛣️ Ruta' },
+            { id: 5, label: '⛽ Comb. & Espera' },
             { id: 6, label: '✍️ Entrega' }
           ].map(t => (
             <button key={t.id} type="button" onClick={() => setStep(t.id)} className={`px-3 py-2 rounded-xl text-xs font-black tracking-wide whitespace-nowrap transition-all shrink-0 ${step === t.id ? 'bg-blue-600 text-white shadow-md shadow-blue-100' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
@@ -3748,7 +3748,7 @@ const dataUrl = await resizeImage(f, 350, 0.3);
 
         <form onSubmit={submit} className="space-y-5 text-sm">
           
-          {/* PESTAÑA 1: DATOS Y COMBUSTIBLE */}
+          {/* PESTAÑA 1: DATOS */}
           {step === 1 && (
             <div className="space-y-4 animate-in fade-in duration-200">
               {isQuick ? (
@@ -3771,7 +3771,7 @@ const dataUrl = await resizeImage(f, 350, 0.3);
               <input value={formData.plateOrVin} onChange={e=>setF('plateOrVin',e.target.value)} placeholder="Patente o VIN" className="w-full border-2 border-slate-300 bg-slate-100 p-3 rounded-xl font-black uppercase text-slate-800 shadow-inner mt-2"/>
               
               {job.tripType === 'revision' && (
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3 mt-4">
                   <h3 className="text-sm font-extrabold text-blue-600 uppercase tracking-wider">Resultado de la Revisión</h3>
                   <select value={formData.rtStatus} onChange={e=>setF('rtStatus', e.target.value)} className={`w-full border-2 p-3.5 rounded-xl outline-none font-extrabold text-sm ${formData.rtStatus === 'aprobado' ? 'border-green-200 bg-green-50 text-green-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
                     <option value="aprobado">✅ APROBADO</option>
@@ -3800,11 +3800,6 @@ const dataUrl = await resizeImage(f, 350, 0.3);
                   )}
                 </div>
               )}
-
-              <div className="space-y-1 pt-2">
-                <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 mt-4 text-slate-800">Nivel de Combustible: <span className="text-blue-600">{formData.fuelLevel}%</span></h3>
-                <input type="range" min="0" max="100" step="5" value={formData.fuelLevel} onChange={(e) => setF('fuelLevel', e.target.value)} className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer mt-2" style={{background: `linear-gradient(to right, ${formData.fuelLevel < 30 ? '#ef4444' : formData.fuelLevel < 80 ? '#eab308' : '#22c55e'} ${formData.fuelLevel}%, #e2e8f0 ${formData.fuelLevel}%)`}} />
-              </div>
             </div>
           )}
 
@@ -4091,10 +4086,21 @@ const dataUrl = await resizeImage(f, 350, 0.3);
             </div>
           )}
 
-          {/* PESTAÑA 5: EVENTOS EN RUTA */}
+          {/* PESTAÑA 5: EVENTOS EN RUTA Y COMBUSTIBLE */}
           {step === 5 && (
             <div className="space-y-4 animate-in fade-in duration-200">
-              <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Viáticos y Esperas</h3>
+              
+              {/* COMBUSTIBLE AHORA ESTÁ AQUÍ */}
+              <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Nivel de Combustible</h3>
+              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 shadow-sm">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Estanque actual</span>
+                  <span className="text-lg font-black text-blue-600">{formData.fuelLevel}%</span>
+                </div>
+                <input type="range" min="0" max="100" step="5" value={formData.fuelLevel} onChange={(e) => setF('fuelLevel', e.target.value)} className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer" style={{background: `linear-gradient(to right, ${formData.fuelLevel < 30 ? '#ef4444' : formData.fuelLevel < 80 ? '#eab308' : '#22c55e'} ${formData.fuelLevel}%, #e2e8f0 ${formData.fuelLevel}%)`}} />
+              </div>
+
+              <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 mt-6 text-slate-800 uppercase tracking-wider">Viáticos y Esperas</h3>
               
               <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
                 <div className="flex items-center gap-3">
