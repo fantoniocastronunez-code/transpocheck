@@ -86,27 +86,44 @@ const SignaturePad = ({ onSave, onClear, initialData }) => {
     return offscreen.toDataURL('image/jpeg', 0.8);
   };
 
-  const drawEvent = (e, type) => {
-    // Si la interacción es táctil, prevenimos el comportamiento por defecto del navegador
-    // para evitar que la pantalla haga scroll al intentar dibujar.
-    if (e.cancelable && type === 'start' && e.type === 'touchstart') {
-      e.preventDefault();
-    }
+  const lastPoint = useRef(null);
 
+  const drawEvent = (e, type) => {
+    if (e.cancelable && type === 'start' && e.type === 'touchstart') e.preventDefault();
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     const rect = canvas.getBoundingClientRect();
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    
     const x = (clientX - rect.left) * (canvas.width / rect.width);
     const y = (clientY - rect.top) * (canvas.height / rect.height);
+    const time = Date.now();
     
-    if (type === 'start') { ctx.beginPath(); ctx.moveTo(x, y); setIsDrawing(true); }
-    if (type === 'draw' && isDrawing) { ctx.lineTo(x, y); ctx.stroke(); }
+    if (type === 'start') { 
+      setIsDrawing(true); 
+      lastPoint.current = { x, y, time }; 
+    }
+    if (type === 'draw' && isDrawing && lastPoint.current) { 
+      // Tinta sensible a la velocidad
+      const dx = x - lastPoint.current.x;
+      const dy = y - lastPoint.current.y;
+      const dt = time - lastPoint.current.time || 1;
+      const speed = Math.sqrt(dx * dx + dy * dy) / dt;
+      
+      // Ajuste de grosor (más rápido = trazo más fino)
+      ctx.lineWidth = Math.max(1.5, 6 - speed * 1.5);
+      
+      ctx.beginPath(); 
+      ctx.moveTo(lastPoint.current.x, lastPoint.current.y); 
+      ctx.lineTo(x, y); 
+      ctx.stroke(); 
+      lastPoint.current = { x, y, time };
+    }
     if (type === 'stop') {
       setIsDrawing(false);
+      lastPoint.current = null;
       if (onSave) {
+        if (navigator.vibrate) navigator.vibrate(20); // Micro-Vibración al terminar el trazo
         const stampedData = generateStampedSignature();
         if (stampedData) onSave(stampedData);
       }
@@ -491,20 +508,30 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
                 if (!fleetFilter) return true;
                 if (fleetFilter === 'OTRO') return !allClientsList.includes(v.client);
                 return v.client === fleetFilter;
-              }).map(v=>(
-                <div key={v.id} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-xl group transition-all">
-                  <div>
-                    <p className="text-sm font-extrabold text-slate-800">{v.brand} {v.model}</p>
-                    <p className="text-xs font-bold text-blue-600">{v.plate}</p>
-                    <p className="text-[10px] font-bold text-slate-400 mt-1">{v.client || 'Sin cliente'}</p>
-                    {v.vehicleType && <p className="text-[9px] font-black bg-slate-200 text-slate-600 px-2 py-0.5 rounded-md mt-1 w-fit uppercase">Tipo: {v.vehicleType.replace('_', ' ')}</p>}
+              }).map(v=>{
+                // Estilo Billetera Digital dinámico
+                const grad = v.client?.includes('Kovacs') ? 'from-red-600 to-red-800' : v.client?.includes('Salfa') ? 'from-emerald-600 to-emerald-800' : v.client?.includes('Grandleasing') ? 'from-slate-700 to-slate-900' : 'from-blue-600 to-blue-800';
+                return (
+                <div key={v.id} className={`relative overflow-hidden p-4 rounded-2xl shadow-md bg-gradient-to-br ${grad} text-white group transition-all hover:scale-[1.02]`}>
+                  <div className="absolute top-0 right-0 p-4 opacity-10"><Truck className="w-20 h-20"/></div>
+                  <div className="flex justify-between items-start relative z-10">
+                    <div>
+                      <p className="text-[10px] font-black text-white/70 uppercase tracking-widest">{v.client || 'Sin cliente'}</p>
+                      <p className="text-lg font-black truncate max-w-[180px]">{v.brand} {v.model}</p>
+                      {v.vehicleType && <span className="inline-block mt-1 text-[9px] font-black bg-white/20 px-2 py-0.5 rounded-md uppercase backdrop-blur-md border border-white/10">{v.vehicleType.replace('_', ' ')}</span>}
+                    </div>
+                    {/* Chapa Metálica */}
+                    <div className="bg-gradient-to-b from-slate-100 to-slate-300 border border-slate-400 shadow-inner px-3 py-1 rounded-lg shrink-0 flex flex-col items-center">
+                       <span className="text-[6px] text-slate-500 font-black tracking-widest uppercase">Chile</span>
+                       <p className="text-sm font-black text-slate-800 tracking-widest">{v.plate}</p>
+                    </div>
                   </div>
-                  <div className="flex gap-1">
-                    <button onClick={() => setEditingVehicle(v)} className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors shadow-sm"><Edit2 className="w-4 h-4"/></button>
-                    <button onClick={()=>showConfirm("¿Eliminar este vehículo de la base de datos?", async () => {try { await deleteDoc(doc(db, 'vehicles', v.id)); } catch (e) { console.error(e); }})} className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors shadow-sm"><Trash2 className="w-4 h-4"/></button>
+                  <div className="flex gap-2 mt-4 relative z-10 justify-end border-t border-white/10 pt-3">
+                    <button onClick={() => setEditingVehicle(v)} className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors backdrop-blur-sm"><Edit2 className="w-4 h-4 text-white"/></button>
+                    <button onClick={()=>showConfirm("¿Eliminar vehículo?", async () => {try { await deleteDoc(doc(db, 'vehicles', v.id)); } catch (e) {}})} className="p-1.5 bg-red-500/80 hover:bg-red-500 rounded-lg transition-colors backdrop-blur-sm"><Trash2 className="w-4 h-4 text-white"/></button>
                   </div>
                 </div>
-              ))}
+              )})}
               {vehicles.length === 0 && <p className="text-sm font-semibold text-slate-400">No hay vehículos registrados</p>}
             </div>
           </div>
@@ -924,7 +951,25 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
     return { primary: 'bg-blue-600', text: 'text-blue-600', fill: 'bg-blue-500', light: 'bg-blue-50' };
   }, [clientName]);
 
-  if (loading) return <div className="min-h-screen bg-slate-50 flex items-center justify-center"><p className="font-bold text-slate-400 animate-pulse flex items-center gap-2"><Clock className="w-5 h-5"/> Cargando portal...</p></div>;
+  if (loading) return (
+    <div className="min-h-screen bg-slate-50 p-4 pt-24 space-y-6 max-w-5xl mx-auto">
+      {/* Esqueleto de Encabezado */}
+      <div className="bg-white p-6 rounded-3xl border border-slate-100 max-w-2xl mx-auto h-32 flex flex-col items-center justify-center animate-pulse shadow-sm">
+         <div className="w-14 h-14 bg-slate-200 rounded-2xl mb-3"></div>
+         <div className="h-4 bg-slate-200 rounded w-1/3 mb-2"></div>
+         <div className="h-6 bg-slate-200 rounded w-1/2"></div>
+      </div>
+      {/* Esqueletos de Tarjetas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="bg-white p-5 rounded-3xl border border-slate-100 h-48 animate-pulse shadow-sm flex flex-col justify-between">
+            <div className="flex justify-between items-start"><div className="h-5 bg-slate-200 rounded w-1/2"></div><div className="h-6 w-20 bg-slate-200 rounded-lg"></div></div>
+            <div className="space-y-3"><div className="h-3 bg-slate-200 rounded w-3/4"></div><div className="h-3 bg-slate-200 rounded w-1/2"></div></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   // NUEVO: Lógica de Filtro
   const filteredJobs = jobs.filter(j => {
@@ -1643,12 +1688,14 @@ const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600", isProc
   const handleEnd = () => {
     if (isConfirmed || !startX.current) return;
     const maxLeft = containerRef.current.offsetWidth - 48;
-    if (sliderLeft > maxLeft * 0.75) { // Confirmar si pasa el 75%
+    if (sliderLeft > maxLeft * 0.75) { 
       setSliderLeft(maxLeft);
       setIsConfirmed(true);
-      setTimeout(() => onConfirm(), 300); // Pequeño delay para la animación
+      // Feedback Háptico de triple vibración rápida de éxito
+      if (navigator.vibrate) navigator.vibrate([30, 40, 30]); 
+      setTimeout(() => onConfirm(), 300); 
     } else {
-      setSliderLeft(0); // Regresa al inicio si no lo completó
+      setSliderLeft(0); 
     }
     startX.current = 0;
   };
@@ -2132,7 +2179,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.3</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.4</p>
                 </div>
               </div>
             )}
@@ -2829,14 +2876,33 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     const [logoApp, logoLogistica] = await Promise.all([ loadSimpleLogo('/logo.png'), loadSimpleLogo('/LogoLogistica.png') ]);
 
     const drawHeader = (titleText) => {
-      docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 40, 'F');
-      docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(18); docPDF.setFont("helvetica", "bold");
-      docPDF.text(cleanStr(titleText), 105, 18, null, null, "center");
+      docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 45, 'F');
+      
+      // Simulación de Código de Barras Decorativo
+      docPDF.setDrawColor(255, 255, 255);
+      for(let i=0; i<30; i+=2) { 
+        docPDF.setLineWidth(Math.random() * 1.2); 
+        docPDF.line(160 + i, 12, 160 + i, 22); 
+      }
+      
+      docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(22); docPDF.setFont("helvetica", "bold");
+      docPDF.text(cleanStr(titleText), 15, 22);
+      
       docPDF.setFontSize(9); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(148, 163, 184);
-      docPDF.text(`FECHA TRASLADO: ${formatDateDisplay(job.scheduledDate) || '-'}`, 105, 26, null, null, "center");
-      docPDF.setFontSize(11); docPDF.setFont("times", "bolditalic"); docPDF.setTextColor(255, 255, 255);
-      if (logoLogistica) { const ratio = logoLogistica.h / logoLogistica.w; let imgW = 35; let imgH = imgW * ratio; if (imgH > 24) { imgH = 24; imgW = imgH / ratio; } docPDF.addImage(logoLogistica.data, 'PNG', 27 - (imgW/2), 19 - (imgH/2), imgW, imgH); docPDF.text("Logística TS SpA", 27, 34, null, null, "center"); }
-      if (logoApp) { const ratio = logoApp.h / logoApp.w; let imgW = 20; let imgH = imgW * ratio; if (imgH > 24) { imgH = 24; imgW = imgH / ratio; } docPDF.addImage(logoApp.data, 'PNG', 183 - (imgW/2), 19 - (imgH/2), imgW, imgH); docPDF.text("LogisticAPP", 183, 34, null, null, "center"); }
+      docPDF.text(`ID TRASLADO: ${job.id.substring(0,8).toUpperCase()}  |  FECHA: ${formatDateDisplay(job.scheduledDate) || '-'}`, 15, 30);
+      
+      // Logos corporativos sutiles
+      docPDF.setFontSize(10); docPDF.setFont("times", "bolditalic"); docPDF.setTextColor(255, 255, 255);
+      if (logoLogistica) { const ratio = logoLogistica.h / logoLogistica.w; let imgW = 25; let imgH = imgW * ratio; if (imgH > 18) { imgH = 18; imgW = imgH / ratio; } docPDF.addImage(logoLogistica.data, 'PNG', 130 - (imgW/2), 17 - (imgH/2), imgW, imgH); docPDF.text("Logística TS", 130, 28, null, null, "center"); }
+      if (logoApp) { const ratio = logoApp.h / logoApp.w; let imgW = 15; let imgH = imgW * ratio; if (imgH > 18) { imgH = 18; imgW = imgH / ratio; } docPDF.addImage(logoApp.data, 'PNG', 195 - (imgW/2), 17 - (imgH/2), imgW, imgH); docPDF.text("LogApp", 195, 28, null, null, "center"); }
+      
+      // MARCA DE AGUA (Watermark Diagonal)
+      if (job.status === 'completed' || job.status === 'failed') {
+        docPDF.setTextColor(240, 245, 250);
+        docPDF.setFontSize(65);
+        docPDF.setFont("helvetica", "bold");
+        docPDF.text(job.status === 'failed' ? "CANCELADO / FALLIDO" : "ACTA CERRADA", 105, 160, { angle: 45, align: "center" });
+      }
       docPDF.setFont("helvetica", "normal");
     };
 
@@ -3658,7 +3724,30 @@ const dataUrl = await resizeImage(f, 350, 0.3);
       )}
 
       <div className="bg-blue-600 text-white p-5 flex justify-between items-center rounded-t-3xl"><h2 className="font-bold text-base"><FileText className="inline w-5 h-5 mr-1"/> Formulario Checklist</h2><button type="button" onClick={()=>showConfirm("¿Deseas salir? (Tu progreso quedará guardado localmente)", onCancel)} className="bg-blue-800 px-3 py-1 rounded-xl text-xs font-bold">Salir</button></div>
-      <div className="flex bg-slate-100 h-1"><div className={`bg-green-500 transition-all duration-300 ${step===1?'w-1/2':'w-full'}`}></div></div>
+      
+      {/* Barra Pegajosa Flotante Dinámica */}
+      <div className="sticky top-[64px] sm:top-[80px] z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 px-5 py-3 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)]">
+         <div className="flex justify-between items-center mb-1.5">
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Progreso del Acta</span>
+            {/* Cálculo de progreso al vuelo */}
+            <span className="text-xs font-black text-blue-600">
+               {(() => {
+                 let p = 0;
+                 if (formData.brand && formData.model && formData.plateOrVin) p += 25;
+                 if (formData.fuelLevel !== undefined) p += 25;
+                 if (Object.values(formData.photos).filter(v => v).length >= 2) p += 25;
+                 if (formData.signatureData || formData.noReception) p += 25;
+                 return p;
+               })()}%
+            </span>
+         </div>
+         <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+            <div className="bg-blue-500 h-full transition-all duration-500 ease-out" style={{width: `${
+                 (formData.brand ? 25 : 0) + (formData.fuelLevel !== undefined ? 25 : 0) + (Object.values(formData.photos).filter(v => v).length >= 2 ? 25 : 0) + (formData.signatureData || formData.noReception ? 25 : 0)
+            }%`}}></div>
+         </div>
+      </div>
+
       <div className="p-5">
         {step === 1 ? (
           <div className="space-y-4 text-sm">
