@@ -7,7 +7,7 @@ import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messagi
 import { 
   Car, MapPin, Camera, CheckCircle, FileText, Download, 
   Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, Edit2, Bell, Share2, X, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Save, Search,
-  CloudOff, Wifi, QrCode, Sun, Moon, Settings, ChevronUp, ChevronDown, ChevronRight 
+  CloudOff, Wifi, QrCode, Sun, Moon, Settings, ChevronUp, ChevronDown, ChevronRight, Fuel
 } from 'lucide-react';
 
 const firebaseConfig = {
@@ -526,6 +526,44 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
     </div>
   );
 }
+const WaitTimerBadge = ({ arrivedAt }) => {
+  const [mins, setMins] = useState(Math.floor((Date.now() - arrivedAt) / 60000));
+  useEffect(() => {
+    const int = setInterval(() => setMins(Math.floor((Date.now() - arrivedAt) / 60000)), 60000);
+    return () => clearInterval(int);
+  }, [arrivedAt]);
+  
+  if (mins > 15) {
+    return (
+      <div className="mt-4 bg-red-50 border-2 border-red-500 p-4 rounded-2xl flex items-center gap-3 animate-in zoom-in shadow-sm">
+        <AlertCircle className="w-6 h-6 text-red-600 shrink-0 animate-pulse"/>
+        <p className="text-sm font-bold text-red-800">
+          El conductor lleva <span className="font-black text-red-600 text-lg">{mins} min</span> esperando la entrega de este vehículo.
+        </p>
+      </div>
+  );
+}
+
+const WaitTimerBadge = ({ arrivedAt }) => {
+  const [mins, setMins] = useState(Math.floor((Date.now() - arrivedAt) / 60000));
+  useEffect(() => {
+    const int = setInterval(() => setMins(Math.floor((Date.now() - arrivedAt) / 60000)), 60000);
+    return () => clearInterval(int);
+  }, [arrivedAt]);
+  
+  if (mins > 15) {
+    return (
+      <div className="mt-4 bg-red-50 border-2 border-red-500 p-4 rounded-2xl flex items-center gap-3 animate-in zoom-in shadow-sm">
+        <AlertCircle className="w-6 h-6 text-red-600 shrink-0 animate-pulse"/>
+        <p className="text-sm font-bold text-red-800">
+          El conductor lleva <span className="font-black text-red-600 text-lg">{mins} min</span> esperando la entrega de este vehículo.
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -705,10 +743,15 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
     docPDF.text(obsSplit, 15, currentY + 4);
     currentY += (obsSplit.length * 4) + 6;
 
-    if (job.checklist?.hasWaitTime) {
+    if (job.waitTimeMinutes && job.waitTimeMinutes > 20) {
       docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38);
-      const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth);
+      const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA EN ORIGEN: ${job.waitTimeMinutes} minutos`, leftColWidth);
       docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2;
+    } else if (job.checklist?.hasWaitTime) {
+      docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38); 
+      const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth); 
+      docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2; 
+    }
     }
     if (job.checklist?.hasFuelCharge) {
       docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(37, 99, 235);
@@ -970,8 +1013,8 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
                   {/* PASO 1: Nombre del Conductor */}
                   <div className="relative"><div className="absolute -left-8 bg-blue-500 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 transition-transform duration-300 hover:scale-110"><CheckCircle className="w-3 h-3 text-white"/></div><p className="font-extrabold text-slate-800 text-sm">{isAccepted ? (job.assignedDrivers?.find(d => d.email === job.acceptedByEmail)?.name || "Conductor en camino") : "Buscando conductor..."}</p><p className="text-xs font-bold text-slate-500 mt-0.5">{isAccepted ? `Responsable del retiro en ${job.origin}` : `Esperando asignación para ${job.origin}`}</p></div>
                   
-                  {/* PASO 2: Vehículo en poder */}
-                  <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 transition-all duration-500 ${step2Done ? 'bg-blue-500 scale-110' : 'bg-slate-200'}`}>{step2Done && <CheckCircle className="w-3 h-3 text-white animate-in zoom-in"/>}</div><p className={`font-extrabold text-sm transition-colors duration-500 ${step2Done ? 'text-slate-800' : 'text-slate-400'}`}>Vehículo en Tránsito</p><p className={`text-xs font-bold mt-0.5 transition-colors duration-500 ${step2Done ? 'text-blue-600' : 'text-slate-400'}`}>{step2Done ? 'El conductor tiene el vehículo en su poder' : 'Esperando retiro'}</p></div>
+                  {/* PASO 2: Vehículo en poder (Con estado "Esperando retiro") */}
+                  <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 transition-all duration-500 ${step2Done ? 'bg-blue-500 scale-110' : (phase === 'arrived_pickup' ? 'bg-amber-400 scale-110' : 'bg-slate-200')}`}>{step2Done && <CheckCircle className="w-3 h-3 text-white animate-in zoom-in"/>}</div><p className={`font-extrabold text-sm transition-colors duration-500 ${step2Done ? 'text-slate-800' : (phase === 'arrived_pickup' ? 'text-amber-600' : 'text-slate-400')}`}>{phase === 'arrived_pickup' ? 'Esperando entrega en origen...' : 'Vehículo en Tránsito'}</p><p className={`text-xs font-bold mt-0.5 transition-colors duration-500 ${step2Done ? 'text-blue-600' : (phase === 'arrived_pickup' ? 'text-amber-500' : 'text-slate-400')}`}>{step2Done ? 'El conductor tiene el vehículo en su poder' : (phase === 'arrived_pickup' ? 'El conductor ya está en el punto de retiro' : 'Esperando llegada del conductor')}</p></div>
                   
                   {/* PASO 3: Llegada */}
                   <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 transition-all duration-500 ${step3Done ? 'bg-blue-500 scale-110' : 'bg-slate-200'}`}>{step3Done && <CheckCircle className="w-3 h-3 text-white animate-in zoom-in"/>}</div><p className={`font-extrabold text-sm transition-colors duration-500 ${step3Done ? 'text-slate-800' : 'text-slate-400'}`}>{job.tripType === 'revision' ? 'En Planta de Revisión' : 'Llegada a Destino'}</p><p className={`text-xs font-bold mt-0.5 transition-colors duration-500 ${step3Done ? 'text-blue-600' : 'text-slate-400'}`}>{step3Done ? (job.tripType === 'revision' ? 'Realizando inspección técnica' : 'En proceso de entrega y checklist') : `Hacia ${job.tripType === 'revision' ? 'PRT' : job.destination}`}</p></div>
@@ -986,6 +1029,9 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
                   <div className="relative"><div className="absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 bg-blue-500 scale-110"><div className="w-2 h-2 bg-white rounded-full animate-ping"></div></div><p className="font-extrabold text-sm text-slate-800">Camino a destino</p><p className="text-xs font-bold text-blue-600 mt-0.5">El vehículo va en ruta a su destino final</p></div>
                   )}
                 </div>
+
+                {/* ALERTA DE TIEMPO DE ESPERA EN VIVO PARA EL CLIENTE */}
+                {job.phase === 'arrived_pickup' && job.arrivedPickupAt && <WaitTimerBadge arrivedAt={job.arrivedPickupAt} />}
 
                 {/* --- NUEVO: MAPA DE SEGUIMIENTO EN VIVO (LIVE TRACKING) --- */}
                 {job.liveLocation && job.phase === 'picked_up' && (
@@ -1269,7 +1315,20 @@ function ClientSignView({ jobId, db }) {
         
         docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("OBSERVACIONES:", 15, currentY); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor); const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin observaciones registradas.'}`), leftColWidth); docPDF.text(obsSplit, 15, currentY + 4); currentY += (obsSplit.length * 4) + 6;
         
-        if (job.checklist?.hasWaitTime) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38); const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth); docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2; }
+        if (job.waitTimeMinutes && job.waitTimeMinutes > 20) {
+      docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38);
+      const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA EN ORIGEN: ${job.waitTimeMinutes} minutos`, leftColWidth);
+      docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2;
+    } else if (job.checklist?.hasWaitTime) {
+      docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38); 
+      const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth); 
+      docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2; 
+    }
+    } else if (job.checklist?.hasWaitTime) {
+      docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38); 
+      const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth); 
+      docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2; 
+    }
         if (job.checklist?.hasFuelCharge) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(37, 99, 235); const fcStr = docPDF.splitTextToSize(`CARGA DE COMBUSTIBLE: ${cleanStr(job.checklist.fuelChargeAmount || 'Sí')}`, leftColWidth); docPDF.text(fcStr, 15, currentY); currentY += (fcStr.length * 4) + 2; }
         currentY += 8; 
         
@@ -2797,7 +2856,15 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     currentY += hGas + 8;
 
     docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("OBSERVACIONES:", 15, currentY); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor); const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin observaciones registradas.'}`), leftColWidth); docPDF.text(obsSplit, 15, currentY + 4); currentY += (obsSplit.length * 4) + 8;
-    if (job.checklist?.hasWaitTime) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38); const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth); docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2; }
+    if (job.waitTimeMinutes && job.waitTimeMinutes > 20) {
+      docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38);
+      const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA EN ORIGEN: ${job.waitTimeMinutes} minutos`, leftColWidth);
+      docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2;
+    } else if (job.checklist?.hasWaitTime) {
+      docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38); 
+      const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth); 
+      docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2; 
+    }
     if (job.checklist?.hasFuelCharge) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(37, 99, 235); const fcStr = docPDF.splitTextToSize(`CARGA DE COMBUSTIBLE: ${cleanStr(job.checklist.fuelChargeAmount || 'Sí')}`, leftColWidth); docPDF.text(fcStr, 15, currentY); currentY += (fcStr.length * 4) + 2; }
     currentY += 8;
 
@@ -2988,7 +3055,11 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
 
           {isAccepted && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
             <>
-              {(!j.phase || j.phase === 'claimed') && <SwipeButton onConfirm={()=>updatePhase(j, 'picked_up')} text="Desliza: Vehículo en mi poder" icon={<Car className="w-4 h-4"/>} colorClass="bg-indigo-600" isProcessing={processingId === `${j.id}-picked_up`} />}
+              {(!j.phase || j.phase === 'claimed') && <SwipeButton onConfirm={()=>updatePhase(j, 'arrived_pickup', { arrivedPickupAt: Date.now() })} text="Desliza: Llegué a retirar" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-amber-500" isProcessing={processingId === `${j.id}-arrived_pickup`} />}
+              {j.phase === 'arrived_pickup' && <SwipeButton onConfirm={()=>{
+                const waitMins = j.arrivedPickupAt ? Math.floor((Date.now() - j.arrivedPickupAt) / 60000) : 0;
+                updatePhase(j, 'picked_up', { pickedUpAt: Date.now(), waitTimeMinutes: waitMins });
+              }} text="Desliza: Vehículo en mi poder" icon={<Car className="w-4 h-4"/>} colorClass="bg-indigo-600" isProcessing={processingId === `${j.id}-picked_up`} />}
               {j.phase === 'picked_up' && j.tripType !== 'revision' && <SwipeButton onConfirm={()=>updatePhase(j, 'arrived_destination')} text="Desliza: Llegué a Destino" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />}
               {j.phase === 'picked_up' && j.tripType === 'revision' && <SwipeButton onConfirm={()=>updatePhase(j, 'arrived_prt')} text="Desliza: Llegué a PRT" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_prt`} />}
               
@@ -3726,35 +3797,46 @@ const dataUrl = await resizeImage(f, 350, 0.3);
                 <button type="button" onClick={addReminder} className="w-full py-3 bg-amber-200 hover:bg-amber-300 text-amber-800 font-black text-xs uppercase tracking-widest rounded-xl transition-colors border border-amber-300 shadow-sm">+ Agregar Nuevo Aviso</button>
             </div>
             
-            {/* SECCIÓN NUEVA: ADICIONALES (Espera y Combustible) */}
-            <div className="flex flex-col gap-3 mt-4 p-4 bg-slate-50 rounded-xl border-2 border-slate-100">
-              {/* Tiempo de Espera */}
+            {/* --- SECCIÓN EVENTOS DE RUTA (Espera Automática y Combustible) --- */}
+            <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Eventos de Ruta</h3>
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              
+              {/* 1. TIEMPO DE ESPERA (CÁLCULO AUTOMÁTICO) */}
               <div className="flex flex-col gap-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="w-5 h-5 text-blue-600 rounded border-slate-300" checked={formData.hasWaitTime || false} onChange={(e) => setF('hasWaitTime', e.target.checked)} />
-                  <span className="font-extrabold text-sm text-slate-700">Tiempo de espera</span>
-                </label>
-                {formData.hasWaitTime && (
-                  <div className="animate-in fade-in slide-in-from-top-2 duration-200 pl-7">
-                    <input type="text" placeholder="Ej: 45 min, 2 hrs..." className="w-full border-2 border-slate-200 bg-white p-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 transition-colors shadow-sm" value={formData.waitTime || ''} onChange={(e) => setF('waitTime', e.target.value)} />
+                <div className={`flex flex-col items-center justify-center gap-1.5 h-24 rounded-2xl border-2 select-none shadow-sm transition-colors ${job.waitTimeMinutes >= 1 ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
+                  <Clock className="w-5 h-5"/>
+                  <span className="font-black text-xs uppercase tracking-wider text-center leading-tight">Espera<br/>Registrada</span>
+                </div>
+                {job.waitTimeMinutes >= 1 && (
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="bg-amber-100 border border-amber-200 p-2 rounded-xl flex flex-col gap-1 shadow-inner">
+                      <p className="text-[9px] font-extrabold text-amber-800 uppercase tracking-widest text-center">Calculado</p>
+                      <div className="w-full bg-white border border-amber-200 p-1.5 rounded-lg text-xs font-black text-amber-900 text-center">{job.waitTimeMinutes} min</div>
+                    </div>
                   </div>
                 )}
               </div>
 
-              <div className="w-full h-px bg-slate-200 my-1"></div>
-
-              {/* Carga de Combustible */}
+              {/* 2. CARGA DE COMBUSTIBLE (TÁCTIL) */}
               <div className="flex flex-col gap-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="w-5 h-5 text-blue-600 rounded border-slate-300" checked={formData.hasFuelCharge || false} onChange={(e) => setF('hasFuelCharge', e.target.checked)} />
-                  <span className="font-extrabold text-sm text-slate-700">Carga de combustible</span>
-                </label>
+                <button 
+                  type="button" 
+                  onClick={() => setF('hasFuelCharge', !formData.hasFuelCharge)} 
+                  className={`flex flex-col items-center justify-center gap-1.5 h-24 rounded-2xl border-2 active:scale-95 transition-all duration-200 select-none shadow-sm ${formData.hasFuelCharge ? 'border-blue-500 bg-blue-500 text-white shadow-blue-200' : 'border-slate-200 bg-slate-50 text-slate-400 hover:bg-slate-100 hover:border-slate-300'}`}
+                >
+                  {formData.hasFuelCharge ? <CheckCircle className="w-6 h-6 animate-in zoom-in"/> : <Fuel className="w-5 h-5"/>}
+                  <span className="font-black text-xs uppercase tracking-wider text-center leading-tight">Carga<br/>Combust.</span>
+                </button>
                 {formData.hasFuelCharge && (
-                  <div className="animate-in fade-in slide-in-from-top-2 duration-200 pl-7">
-                    <input type="text" placeholder="Monto cargado (Ej: $15.000)" className="w-full border-2 border-slate-200 bg-white p-2.5 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 transition-colors shadow-sm" value={formData.fuelChargeAmount || ''} onChange={(e) => setF('fuelChargeAmount', e.target.value)} />
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="bg-blue-50 border border-blue-200 p-2 rounded-xl flex flex-col gap-1 shadow-inner">
+                      <p className="text-[9px] font-extrabold text-blue-700 uppercase tracking-widest text-center">Monto ($)</p>
+                      <input type="number" placeholder="Ej: 15000" value={formData.fuelChargeAmount || ''} onChange={(e) => setF('fuelChargeAmount', e.target.value)} className="w-full bg-white border border-blue-200 p-1.5 rounded-lg text-xs font-black text-slate-700 outline-none focus:border-blue-500 text-center" />
+                    </div>
                   </div>
                 )}
               </div>
+
             </div>
 
             <div className="flex justify-between items-end border-b-2 border-slate-100 pb-2 mt-8 mb-4">
