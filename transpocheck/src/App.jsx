@@ -4022,19 +4022,34 @@ const dataUrl = await resizeImage(f, 350, 0.3);
                   {/* CAMIONES CON EJES VISIBLES (2 Y 3 EJES) */}
                   {(formData.vehicleType === 'camion_2ejes' || formData.vehicleType === 'camion_3ejes') && (
                     <div className="w-full h-full relative flex flex-col items-center">
-                      {/* Ruedas Delanteras (Dirección) */}
+                      {/* Eje Delantero Común (Direccional) */}
                       <div className="absolute top-[8%] -left-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
                       <div className="absolute top-[8%] -right-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
 
-                      {/* Ruedas Traseras - Eje 1 */}
-                      <div className="absolute bottom-[20%] -left-3 w-4 h-12 bg-slate-800 rounded-sm shadow-md"></div>
-                      <div className="absolute bottom-[20%] -right-3 w-4 h-12 bg-slate-800 rounded-sm shadow-md"></div>
+                      {/* CONFIGURACIÓN 6x4: 2 Ejes Traseros Juntos */}
+                      {formData.vehicleType === 'camion_2ejes' && (
+                        <>
+                          {/* Eje Trasero tracción 1 */}
+                          <div className="absolute bottom-[17%] -left-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                          <div className="absolute bottom-[17%] -right-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                          {/* Eje Trasero tracción 2 (Pegado al anterior) */}
+                          <div className="absolute bottom-[5%] -left-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                          <div className="absolute bottom-[5%] -right-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                        </>
+                      )}
 
-                      {/* Ruedas Traseras - Eje 2 (Solo para 3 ejes) */}
+                      {/* CONFIGURACIÓN TRIDEM TRASERO: 3 Ejes Traseros Juntos */}
                       {formData.vehicleType === 'camion_3ejes' && (
                         <>
-                          <div className="absolute bottom-[2%] -left-3 w-4 h-12 bg-slate-800 rounded-sm shadow-md"></div>
-                          <div className="absolute bottom-[2%] -right-3 w-4 h-12 bg-slate-800 rounded-sm shadow-md"></div>
+                          {/* Eje Trasero 1 */}
+                          <div className="absolute bottom-[27%] -left-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                          <div className="absolute bottom-[27%] -right-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                          {/* Eje Trasero 2 */}
+                          <div className="absolute bottom-[16%] -left-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                          <div className="absolute bottom-[16%] -right-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                          {/* Eje Trasero 3 */}
+                          <div className="absolute bottom-[5%] -left-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                          <div className="absolute bottom-[5%] -right-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
                         </>
                       )}
 
