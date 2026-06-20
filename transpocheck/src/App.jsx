@@ -4015,7 +4015,7 @@ const dataUrl = await resizeImage(f, 350, 0.3);
                       <div className="border-r-2 border-b-2 border-dashed border-blue-500 rounded-tl-[40px]"></div>
                       <div className="border-b-2 border-dashed border-blue-500 rounded-tr-[40px]"></div>
                       <div className="border-r-2 border-b-2 border-dashed border-blue-500"></div>
-                      <div className="border-b-2 border-dashed border-blue-500"></div>
+                     <div className="border-b-2 border-dashed border-blue-500"></div>
                       <div className="border-r-2 border-dashed border-blue-500 rounded-bl-[40px]"></div>
                       <div className="border-dashed border-blue-500 rounded-br-[40px]"></div>
                     </div>
@@ -4068,229 +4068,251 @@ const dataUrl = await resizeImage(f, 350, 0.3);
                       </div>
                     </div>
                   )}
-                  {formData.vehicleType === 'camioneta' && (
-                    <div className="w-full h-full relative flex flex-col">
-                      <div className="w-full h-[40%] bg-slate-300 rounded-t-[35px] rounded-b-md border-4 border-slate-400 p-2 flex flex-col justify-between shadow-inner">
-                        <div className="w-5/6 h-8 bg-slate-800/30 mx-auto rounded-t-xl rounded-b-sm mt-2"></div>
-                        <div className="w-5/6 h-4 bg-slate-800/30 mx-auto rounded-b-xl rounded-t-sm mb-1"></div>
+                    {formData.vehicleType === 'camioneta' && (
+                      <div className="w-full h-full relative flex flex-col">
+                        <div className="w-full h-[40%] bg-slate-300 rounded-t-[35px] rounded-b-md border-4 border-slate-400 p-2 flex flex-col justify-between shadow-inner">
+                          <div className="w-5/6 h-8 bg-slate-800/30 mx-auto rounded-t-xl rounded-b-sm mt-2"></div>
+                          <div className="w-5/6 h-4 bg-slate-800/30 mx-auto rounded-b-xl rounded-t-sm mb-1"></div>
+                        </div>
+                        <div className="w-[90%] h-[60%] mx-auto bg-slate-200 border-x-4 border-b-4 border-slate-400 rounded-b-xl mt-1 relative">
+                          <div className="absolute inset-2 border-2 border-slate-300 rounded-sm"></div>
+                        </div>
                       </div>
-                      <div className="w-[90%] h-[60%] mx-auto bg-slate-200 border-x-4 border-b-4 border-slate-400 rounded-b-xl mt-1 relative">
-                        <div className="absolute inset-2 border-2 border-slate-300 rounded-sm"></div>
+                    )}
+                    {formData.vehicleType === 'camion' && (
+                      <div className="w-full h-full relative flex flex-col">
+                        <div className="w-[105%] -ml-[2.5%] h-[20%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-300 p-1 flex flex-col justify-end shadow-inner z-10 relative">
+                          <div className="w-full h-1/2 bg-slate-800/40 rounded-t-md rounded-b-sm mb-1"></div>
+                        </div>
+                        <div className="w-full h-[78%] mx-auto bg-slate-200 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
+                          <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  {formData.vehicleType === 'camion' && (
-                    <div className="w-full h-full relative flex flex-col">
-                      <div className="w-[105%] -ml-[2.5%] h-[20%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-300 p-1 flex flex-col justify-end shadow-inner z-10 relative">
-                        <div className="w-full h-1/2 bg-slate-800/40 rounded-t-md rounded-b-sm mb-1"></div>
+                    )}
+                    {formData.vehicleType === 'camion_doble' && (
+                      <div className="w-full h-full relative flex flex-col">
+                        <div className="w-[105%] -ml-[2.5%] h-[32%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-300 p-1 flex flex-col justify-end gap-1 shadow-inner z-10 relative">
+                          <div className="w-full h-[40%] bg-slate-800/40 rounded-t-md"></div>
+                          <div className="w-full h-[35%] bg-slate-800/40 rounded-sm mb-0.5"></div>
+                        </div>
+                        <div className="w-full h-[66%] mx-auto bg-slate-200 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
+                          <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
+                        </div>
                       </div>
-                      <div className="w-full h-[78%] mx-auto bg-slate-200 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
-                        <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
+                    )}
+                    {(formData.vehicleType === 'camion_2ejes' || formData.vehicleType === 'camion_3ejes') && (
+                      <div className="w-full h-full relative flex flex-col items-center">
+                        <div className="absolute top-[8%] -left-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                        <div className="absolute top-[8%] -right-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                        {formData.vehicleType === 'camion_2ejes' && (
+                          <>
+                            <div className="absolute bottom-[17%] -left-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                            <div className="absolute bottom-[17%] -right-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                            <div className="absolute bottom-[5%] -left-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                            <div className="absolute bottom-[5%] -right-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                          </>
+                        )}
+                        {formData.vehicleType === 'camion_3ejes' && (
+                          <>
+                            <div className="absolute bottom-[27%] -left-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                            <div className="absolute bottom-[27%] -right-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                            <div className="absolute bottom-[16%] -left-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                            <div className="absolute bottom-[16%] -right-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                            <div className="absolute bottom-[5%] -left-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                            <div className="absolute bottom-[5%] -right-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                          </>
+                        )}
+                        <div className="w-[105%] h-[20%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-400 p-1 flex flex-col justify-end shadow-inner z-10 relative">
+                          <div className="w-full h-1/2 bg-slate-800/50 rounded-t-md rounded-b-sm mb-1"></div>
+                        </div>
+                        <div className="w-full h-[78%] mx-auto bg-slate-200 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
+                          <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                  {/* NUEVO: CAMIÓN DOBLE CABINA */}
-                  {formData.vehicleType === 'camion_doble' && (
-                    <div className="w-full h-full relative flex flex-col">
-                      <div className="w-[105%] -ml-[2.5%] h-[32%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-300 p-1 flex flex-col justify-end gap-1 shadow-inner z-10 relative">
-                        {/* Ventana Frontal */}
-                        <div className="w-full h-[40%] bg-slate-800/40 rounded-t-md"></div>
-                        {/* Ventana Trasera (Doble Cabina) */}
-                        <div className="w-full h-[35%] bg-slate-800/40 rounded-sm mb-0.5"></div>
-                      </div>
-                      <div className="w-full h-[66%] mx-auto bg-slate-200 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
-                        <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
-                      </div>
-                    </div>
-                  )}
-                  {/* CAMIONES CON EJES VISIBLES (2 Y 3 EJES) */}
-                  {(formData.vehicleType === 'camion_2ejes' || formData.vehicleType === 'camion_3ejes') && (
-                    <div className="w-full h-full relative flex flex-col items-center">
-                      {/* Eje Delantero Común (Direccional) */}
-                      <div className="absolute top-[8%] -left-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
-                      <div className="absolute top-[8%] -right-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                    )}
 
-                      {/* CONFIGURACIÓN 6x4: 2 Ejes Traseros Juntos */}
-                      {formData.vehicleType === 'camion_2ejes' && (
-                        <>
-                          {/* Eje Trasero tracción 1 */}
-                          <div className="absolute bottom-[17%] -left-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
-                          <div className="absolute bottom-[17%] -right-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
-                          {/* Eje Trasero tracción 2 (Pegado al anterior) */}
-                          <div className="absolute bottom-[5%] -left-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
-                          <div className="absolute bottom-[5%] -right-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
-                        </>
-                      )}
-
-                      {/* CONFIGURACIÓN TRIDEM TRASERO: 3 Ejes Traseros Juntos */}
-                      {formData.vehicleType === 'camion_3ejes' && (
-                        <>
-                          {/* Eje Trasero 1 */}
-                          <div className="absolute bottom-[27%] -left-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
-                          <div className="absolute bottom-[27%] -right-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
-                          {/* Eje Trasero 2 */}
-                          <div className="absolute bottom-[16%] -left-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
-                          <div className="absolute bottom-[16%] -right-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
-                          {/* Eje Trasero 3 */}
-                          <div className="absolute bottom-[5%] -left-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
-                          <div className="absolute bottom-[5%] -right-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
-                        </>
-                      )}
-
-                      {/* Cabina Frontal */}
-                      <div className="w-[105%] h-[20%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-400 p-1 flex flex-col justify-end shadow-inner z-10 relative">
-                        <div className="w-full h-1/2 bg-slate-800/50 rounded-t-md rounded-b-sm mb-1"></div>
+                    {(formData.detailPins || []).map(pin => (
+                      <div key={pin.id} className="absolute w-8 h-8 -ml-4 -mt-4 bg-red-500 rounded-full border-2 border-white shadow-xl flex items-center justify-center z-50 animate-in zoom-in" style={{ left: `${pin.x}%`, top: `${pin.y}%` }}>
+                        <img src={formData.photos[pin.id]} className="w-full h-full object-cover rounded-full opacity-90" alt="Detalle" />
+                        <button type="button" onClick={(e) => { e.stopPropagation(); setF('photos', {...formData.photos, [pin.id]: false}); setF('detailPins', formData.detailPins.filter(p => p.id !== pin.id)); }} className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] hover:bg-red-700 shadow-md"><X className="w-3 h-3"/></button>
                       </div>
-                      
-                      {/* Chasis Trasero / Carga */}
-                      <div className="w-full h-[78%] mx-auto bg-slate-200 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
-                        <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
-                      </div>
-                    </div>
-                  )}
+                    ))}
+                  </div>
 
-                  {/* Renderizado de Pines de Daño/Detalle sobre el auto */}
-                  {(formData.detailPins || []).map(pin => (
-                    <div key={pin.id} className="absolute w-8 h-8 -ml-4 -mt-4 bg-red-500 rounded-full border-2 border-white shadow-xl flex items-center justify-center z-50 animate-in zoom-in" style={{ left: `${pin.x}%`, top: `${pin.y}%` }}>
-                      <img src={formData.photos[pin.id]} className="w-full h-full object-cover rounded-full opacity-90" alt="Detalle" />
-                      <button type="button" onClick={(e) => { e.stopPropagation(); setF('photos', {...formData.photos, [pin.id]: false}); setF('detailPins', formData.detailPins.filter(p => p.id !== pin.id)); }} className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] hover:bg-red-700 shadow-md"><X className="w-3 h-3"/></button>
-                    </div>
-                  ))}
+                  {/* FOTOS GENERALES */}
+                  <label className={`absolute top-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-20 bg-white transition-all ${formData.photos.front ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
+                    <input type="file" id="pic-front" className="sr-only" accept="image/*" onChange={e=>handlePic(e,'front')}/>
+                    {formData.photos.front ? <><img src={formData.photos.front} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-1"/><span className="text-[9px] font-black text-slate-500 tracking-wide">FRENTE</span></>}
+                  </label>
+
+                  <label className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-20 bg-white transition-all ${formData.photos.back ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
+                    <input type="file" id="pic-back" className="sr-only" accept="image/*" onChange={e=>handlePic(e,'back')}/>
+                    {formData.photos.back ? <><img src={formData.photos.back} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-1"/><span className="text-[9px] font-black text-slate-500 tracking-wide">ATRÁS</span></>}
+                  </label>
+
+                  <label className={`absolute top-1/2 left-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-20 bg-white transition-all ${formData.photos.left ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
+                    <input type="file" id="pic-left" className="sr-only" accept="image/*" onChange={e=>handlePic(e,'left')}/>
+                    {formData.photos.left ? <><img src={formData.photos.left} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-0.5"/><span className="text-[8px] font-black text-slate-500 text-center leading-tight">LATERAL<br/>PILOTO</span></>}
+                  </label>
+
+                  <label className={`absolute top-1/2 right-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-20 bg-white transition-all ${formData.photos.right ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
+                    <input type="file" id="pic-right" className="sr-only" accept="image/*" onChange={e=>handlePic(e,'right')}/>
+                    {formData.photos.right ? <><img src={formData.photos.right} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-0.5"/><span className="text-[8px] font-black text-slate-500 text-center leading-tight">LATERAL<br/>COPILOTO</span></>}
+                  </label>
+
+                  {['det1','det2','det3','det4','det5','det6','det7','det8'].map(d => <input key={d} type="file" id={`pic-${d}`} className="sr-only" accept="image/*" onChange={e=>handlePic(e,d)}/>)}
                 </div>
 
-                {/* BOTONES DE FOTOS GENERALES UBICADOS ESPACIALMENTE */}
-                {/* FRENTE */}
-                <label className={`absolute top-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-20 bg-white transition-all ${formData.photos.front ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
-                  <input type="file" id="pic-front" className="sr-only" accept="image/*" onChange={e=>handlePic(e,'front')}/>
-                  {formData.photos.front ? <><img src={formData.photos.front} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-1"/><span className="text-[9px] font-black text-slate-500 tracking-wide">FRENTE</span></>}
-                </label>
-
-                {/* ATRÁS */}
-                <label className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-20 bg-white transition-all ${formData.photos.back ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
-                  <input type="file" id="pic-back" className="sr-only" accept="image/*" onChange={e=>handlePic(e,'back')}/>
-                  {formData.photos.back ? <><img src={formData.photos.back} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-1"/><span className="text-[9px] font-black text-slate-500 tracking-wide">ATRÁS</span></>}
-                </label>
-
-                {/* LATERAL PILOTO (IZQ) */}
-                <label className={`absolute top-1/2 left-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-20 bg-white transition-all ${formData.photos.left ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
-                  <input type="file" id="pic-left" className="sr-only" accept="image/*" onChange={e=>handlePic(e,'left')}/>
-                  {formData.photos.left ? <><img src={formData.photos.left} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-0.5"/><span className="text-[8px] font-black text-slate-500 text-center leading-tight">LATERAL<br/>PILOTO</span></>}
-                </label>
-
-                {/* LATERAL COPILOTO (DER) */}
-                <label className={`absolute top-1/2 right-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-20 bg-white transition-all ${formData.photos.right ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
-                  <input type="file" id="pic-right" className="sr-only" accept="image/*" onChange={e=>handlePic(e,'right')}/>
-                  {formData.photos.right ? <><img src={formData.photos.right} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-0.5"/><span className="text-[8px] font-black text-slate-500 text-center leading-tight">LATERAL<br/>COPILOTO</span></>}
-                </label>
-
-                {/* Inputs ocultos para los detalles fotográficos (sr-only evita bloqueo de cámara en iOS) */}
-                {['det1','det2','det3','det4','det5','det6','det7','det8'].map(d => <input key={d} type="file" id={`pic-${d}`} className="sr-only" accept="image/*" onChange={e=>handlePic(e,d)}/>)}
-
+                {/* Botones Flotantes Inferiores */}
+                <div className="grid grid-cols-2 gap-3 mt-6 border-t-2 border-slate-100 pt-4">
+                  {[{id:'dashboard', l:'Tablero'}, {id:'tire', l:'Repuesto'}, {id:'interior_front', l:'Int. Adelante'}, {id:'interior_back', l:'Int. Atrás'}].map(p => (
+                     <label key={p.id} className={`w-full h-12 rounded-xl border-2 flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white shadow-sm transition-all ${formData.photos[p.id] ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-slate-50'}`}>
+                       <input type="file" className="sr-only" accept="image/*" onChange={e=>handlePic(e,p.id)}/>
+                       {formData.photos[p.id] ? <><img src={formData.photos[p.id]} className="absolute inset-0 w-full h-full object-cover opacity-30"/><CheckCircle className="w-5 h-5 text-green-500 relative z-10 bg-white rounded-full"/><span className="text-[10px] font-black text-green-800 relative z-10">{p.l}</span></> : <><Camera className="w-4 h-4 text-slate-400"/><span className="text-[10px] font-black text-slate-500 uppercase">{p.l}</span></>}
+                     </label>
+                  ))}
+                </div>
               </div>
-
-              {/* Botones Flotantes Inferiores (Tablero, Repuesto, Interior) */}
-              <div className="grid grid-cols-2 gap-3 mt-6 border-t-2 border-slate-100 pt-4">
-                {[{id:'dashboard', l:'Tablero'}, {id:'tire', l:'Repuesto'}, {id:'interior_front', l:'Int. Adelante'}, {id:'interior_back', l:'Int. Atrás'}].map(p => (
-                   <label key={p.id} className={`w-full h-12 rounded-xl border-2 flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white shadow-sm transition-all ${formData.photos[p.id] ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-slate-50'}`}>
-                     <input type="file" className="sr-only" accept="image/*" onChange={e=>handlePic(e,p.id)}/>
-                     {formData.photos[p.id] ? <><img src={formData.photos[p.id]} className="absolute inset-0 w-full h-full object-cover opacity-30"/><CheckCircle className="w-5 h-5 text-green-500 relative z-10 bg-white rounded-full"/><span className="text-[10px] font-black text-green-800 relative z-10">{p.l}</span></> : <><Camera className="w-4 h-4 text-slate-400"/><span className="text-[10px] font-black text-slate-500 uppercase">{p.l}</span></>}
-                   </label>
-                ))}
-              </div>
-
             </div>
-            
-            <button type="button" onClick={()=>setStep(2)} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mt-6 text-sm">Siguiente Paso</button>
-          </div>
-        ) : (
-          <form onSubmit={submit} className="space-y-4">
-             <>
-               <label className="flex items-center gap-3 p-4 bg-slate-800 rounded-2xl border-slate-900 border-2 cursor-pointer mb-4 shadow-md transition-colors hover:bg-slate-700">
-                  <input type="checkbox" checked={formData.noReception} onChange={e=>setF('noReception',e.target.checked)} className="w-6 h-6 cursor-pointer accent-blue-500 rounded"/> 
-                  <span className="font-extrabold text-sm text-white">Dejar sin firma (Local cerrado / PRT)</span>
-               </label>
+          )}
+
+          {/* PESTAÑA 5: EVENTOS EN RUTA */}
+          {step === 5 && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Viáticos y Esperas</h3>
+              
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="bg-blue-100 p-2 rounded-lg text-blue-600"><Wallet className="w-5 h-5"/></div>
+                  <div>
+                    <p className="text-xs font-bold text-blue-600 uppercase leading-none">Fondo Asignado</p>
+                    <p className="text-[10px] font-bold text-slate-500 mt-1">Patente: {job.plate || job.vin || 'N/A'}</p>
+                  </div>
+                </div>
+                <p className="text-xl font-extrabold text-blue-700">
+                  {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(
+                    expenses?.filter(g => g.jobId === job.id && g.type === 'assignment').reduce((acc, curr) => acc + Number(curr.amount || 0), 0) || 0
+                  )}
+                </p>
+              </div>
+
+              {job.tripType === 'revision' && (job.rtData?.revision || job.rtData?.inspeccion || job.rtData?.frenos) && (
+                <div className="bg-indigo-50 border-2 border-indigo-200 rounded-xl p-4 shadow-sm space-y-3">
+                  <h3 className="text-xs font-extrabold text-indigo-800 uppercase tracking-wider flex items-center gap-1.5"><Receipt className="w-4 h-4"/> Valores pagados en Planta (PRT)</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {job.rtData?.revision && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-black text-indigo-600 uppercase">Revisión Técnica ($)</label>
+                        <input type="number" placeholder="Ej: 20000" className="w-full border-2 border-indigo-100 p-2 rounded-xl font-bold text-sm bg-white" value={formData.prtCostRevision || ''} onChange={e => setF('prtCostRevision', e.target.value)} />
+                      </div>
+                    )}
+                    {job.rtData?.inspeccion && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-black text-indigo-600 uppercase">Inspección Visual ($)</label>
+                        <input type="number" placeholder="Ej: 5000" className="w-full border-2 border-indigo-100 p-2 rounded-xl font-bold text-sm bg-white" value={formData.prtCostInspeccion || ''} onChange={e => setF('prtCostInspeccion', e.target.value)} />
+                      </div>
+                    )}
+                    {job.rtData?.frenos && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-black text-indigo-600 uppercase">Certificado Frenos ($)</label>
+                        <input type="number" placeholder="Ej: 8000" className="w-full border-2 border-indigo-100 p-2 rounded-xl font-bold text-sm bg-white" value={formData.prtCostFrenos || ''} onChange={e => setF('prtCostFrenos', e.target.value)} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <div className={`flex flex-col items-center justify-center gap-1.5 h-24 rounded-2xl border-2 select-none shadow-sm ${job.waitTimeMinutes >= 1 ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
+                  <Clock className="w-5 h-5"/>
+                  <span className="font-black text-xs uppercase tracking-wider text-center leading-tight">Espera: {job.waitTimeMinutes || 0} min</span>
+                </div>
+
+                <button type="button" onClick={() => setF('hasFuelCharge', !formData.hasFuelCharge)} className={`flex flex-col items-center justify-center gap-1.5 h-24 rounded-2xl border-2 active:scale-95 transition-all select-none shadow-sm ${formData.hasFuelCharge ? 'border-blue-500 bg-blue-500 text-white shadow-blue-100' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
+                  {formData.hasFuelCharge ? <CheckCircle className="w-5 h-5 animate-in zoom-in"/> : <Fuel className="w-5 h-5"/>}
+                  <span className="font-black text-xs uppercase tracking-wider text-center leading-tight">Carga Combust.</span>
+                </button>
+              </div>
+
+              {formData.hasFuelCharge && (
+                <div className="animate-in fade-in slide-in-from-top-2 border rounded-xl p-3 bg-slate-50 shadow-inner max-w-sm mx-auto">
+                  <p className="text-[10px] font-black text-blue-700 uppercase tracking-wider text-center mb-1">Monto Rendición Gasolinera ($)</p>
+                  <input type="number" placeholder="Ej: 15000" value={formData.fuelChargeAmount || ''} onChange={(e) => setF('fuelChargeAmount', e.target.value)} className="w-full bg-white border p-2 rounded-xl text-center text-sm font-bold outline-none" />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* PESTAÑA 6: ENTREGA Y FIRMAS */}
+          {step === 6 && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Cierre y Conformidad</h3>
+              
+              <label className="flex items-center gap-3 p-4 bg-slate-800 rounded-2xl border-slate-900 border-2 cursor-pointer shadow-md transition-colors hover:bg-slate-700">
+                 <input type="checkbox" checked={formData.noReception} onChange={e=>setF('noReception',e.target.checked)} className="w-6 h-6 cursor-pointer accent-blue-500 rounded"/> 
+                 <span className="font-extrabold text-sm text-white">Dejar sin firma (Local cerrado / PRT)</span>
+              </label>
                
                {!formData.noReception && (
-                 <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-5 mb-4">
-                    <h3 className="font-extrabold text-blue-800 mb-2 flex items-center gap-2"><Zap className="w-5 h-5"/> Firma Remota o QR (Recomendado)</h3>
-                    <p className="text-xs font-bold text-blue-600 mb-4">Envía el link al cliente o muéstrale el QR para que firme desde su propio celular.</p>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <button type="button" onClick={handleRemoteSignRequest} disabled={processingAction === 'wapp'} className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-md transition-colors flex justify-center items-center gap-2 disabled:opacity-50">
-                         {processingAction === 'wapp' ? <Clock className="w-4 h-4 animate-spin"/> : <Share2 className="w-4 h-4"/>} 
-                         {processingAction === 'wapp' ? 'Cargando...' : 'Compartir Link'}
+                 <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4">
+                    <h3 className="font-extrabold text-blue-800 mb-1 flex items-center gap-2"><Zap className="w-5 h-5"/> Firma Remota o QR</h3>
+                    <p className="text-[11px] font-bold text-blue-600 mb-3">Envía el link al cliente o muéstrale el QR para que firme desde su celular.</p>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={handleRemoteSignRequest} disabled={processingAction === 'wapp'} className="flex-[2] py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-sm flex justify-center items-center gap-1.5 text-xs transition-colors">
+                         {processingAction === 'wapp' ? <Clock className="w-4 h-4 animate-spin"/> : <Share2 className="w-4 h-4"/>} {processingAction === 'wapp' ? 'Cargando...' : 'Compartir Link'}
                       </button>
-                      <button type="button" onClick={handleOpenQR} disabled={processingAction === 'qr'} className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl shadow-md transition-colors flex justify-center items-center gap-2 disabled:opacity-50">
-                         {processingAction === 'qr' ? <Clock className="w-4 h-4 animate-spin"/> : <QrCode className="w-4 h-4"/>} 
-                         {processingAction === 'qr' ? 'Generando...' : 'Mostrar QR'}
+                      <button type="button" onClick={handleOpenQR} disabled={processingAction === 'qr'} className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl shadow-sm flex justify-center items-center gap-1.5 text-xs transition-colors">
+                         {processingAction === 'qr' ? <Clock className="w-4 h-4 animate-spin"/> : <QrCode className="w-4 h-4"/>} {processingAction === 'qr' ? 'QR' : 'Mostrar QR'}
                       </button>
                     </div>
                  </div>
                )}
 
-               {/* NUEVO: MODAL PARA CÓDIGO QR MEJORADO */}
-               {qrOpen && (
-                  <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-                    <div className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 max-w-sm w-full text-center relative animate-in zoom-in-95 border border-slate-100">
-                      <button type="button" onClick={() => setQrOpen(false)} className="absolute top-4 right-4 bg-slate-100 p-2 rounded-full hover:bg-slate-200 transition-colors"><X className="w-5 h-5 text-slate-700"/></button>
-                      <h3 className="text-xl font-black text-slate-800 mb-1">Escanea para Firmar</h3>
-                      <p className="text-xs font-bold text-slate-500 mb-5">El cliente debe apuntar con su cámara a este código.</p>
-                      
-                      <div className="bg-white p-3 rounded-2xl border-4 border-slate-100 shadow-inner inline-block">
-                        {/* Usamos QuickChart que es más confiable y no guarda caché erróneo */}
-                        <img src={`https://quickchart.io/qr?size=250&margin=1&text=${encodeURIComponent(`${window.location.href.split('?')[0]}?sign=${job.id}`)}`} alt="QR Signature" className="w-48 h-48 mx-auto" />
-                      </div>
-                      
-                      {/* Mostramos el código por si el escáner falla */}
-                      <div className="mt-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">O ingresa manualmente a:</p>
-                        <p className="text-[11px] font-extrabold text-blue-600 break-all select-all">{`${window.location.href.split('?')[0]}?sign=${job.id}`}</p>
-                      </div>
-                    </div>
-                  </div>
-               )}
-
                {!formData.noReception && (
-                 <>
-                   <div className="flex items-center gap-2 mb-2"><div className="h-px bg-slate-200 flex-1"></div><span className="text-xs font-bold text-slate-400 uppercase">O llenar manualmente</span><div className="h-px bg-slate-200 flex-1"></div></div>
+                 <div className="space-y-3">
+                   <div className="flex items-center gap-2 my-2"><div className="h-px bg-slate-200 flex-1"></div><span className="text-[10px] font-bold text-slate-400 uppercase">O llenar manualmente</span><div className="h-px bg-slate-200 flex-1"></div></div>
                    
                    <input required={!formData.noReception} value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
                    <input required={!formData.noReception} value={formData.receiverRut} onChange={e=>setF('receiverRut',e.target.value)} placeholder="RUT Receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
                    
-                   {/* NUEVO: Muestra los comentarios si el cliente dejó alguno por el link remoto */}
                    {formData.clientComments && (
-                     <div className="bg-slate-100 p-3 rounded-xl border border-slate-200">
-                       <p className="text-[10px] font-extrabold text-slate-500 uppercase">Comentarios del Cliente:</p>
-                       <p className="text-sm font-bold text-slate-800 italic">"{formData.clientComments}"</p>
+                     <div className="bg-slate-100 p-2.5 rounded-xl border">
+                       <p className="text-[9px] font-extrabold text-slate-500 uppercase">Comentarios del Receptor:</p>
+                       <p className="text-xs font-bold text-slate-800 italic">"{formData.clientComments}"</p>
                      </div>
                    )}
 
-                   <div className="relative mt-2">
-                     {formData.signatureData && <div className="absolute top-2 right-2 bg-green-500 text-white text-[10px] px-2 py-1 rounded-full font-black flex items-center gap-1 z-10"><CheckCircle className="w-3 h-3"/> FIRMA CAPTURADA</div>}
+                   <div className="relative mt-1">
+                     {formData.signatureData && <div className="absolute top-2 right-2 bg-green-500 text-white text-[9px] px-2 py-0.5 rounded-full font-black flex items-center gap-1 z-10"><CheckCircle className="w-3 h-3"/> CAPTURADA</div>}
                      <SignaturePad initialData={formData.signatureData} onSave={d=>setF('signatureData',d)} onClear={()=>setF('signatureData',null)}/>
                    </div>
-                 </>
+                 </div>
                )}
-             </>
+              
+              <button type="button" onClick={() => { if ("geolocation" in navigator) { navigator.geolocation.getCurrentPosition((pos) => setF('location', { lat: pos.coords.latitude, lng: pos.coords.longitude }), () => showAlert("Error GPS.")); } }} className={`px-4 py-3.5 rounded-2xl text-xs w-full font-extrabold shadow-sm mt-2 border-2 ${formData.location ? 'bg-green-100 text-green-700 border-green-200' : 'bg-slate-50 text-slate-600'}`}>
+                {formData.location ? "📍 Ubicación Geográfica Certificada" : "📍 Capturar Coordenadas GPS de Entrega"}
+              </button>
+            </div>
+          )}
+
+          {/* BOTONERA NAVEGACIÓN INFERIOR DINÁMICA */}
+          <div className="flex gap-3 pt-4 border-t border-slate-100 mt-6">
+            {step > 1 && (
+              <button type="button" onClick={() => setStep(step - 1)} className="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-4 py-3 rounded-xl text-sm w-1/3 transition-colors">
+                Atrás
+              </button>
+            )}
             
-            <button type="button" onClick={() => { if ("geolocation" in navigator) { navigator.geolocation.getCurrentPosition((pos) => setF('location', { lat: pos.coords.latitude, lng: pos.coords.longitude }), () => showAlert("Error GPS.")); } }} className={`px-4 py-4 rounded-2xl text-sm w-full font-extrabold shadow-sm mt-4 ${formData.location ? 'bg-green-100 text-green-700 border-2 border-green-200' : 'bg-slate-100 text-slate-700 border-2'}`}>
-              {formData.location ? "📍 GPS Capturado Exitosamente" : "📍 Tocar para Capturar GPS Actual"}
-            </button>
+            {step < 6 ? (
+              <button type="button" onClick={() => setStep(step + 1)} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 rounded-xl text-sm shadow-md transition-colors">
+                Siguiente Paso ➔
+              </button>
+            ) : (
+              <button type="submit" disabled={isSubmitting} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-black py-3 rounded-xl text-sm shadow-lg disabled:opacity-50 transition-colors">
+                {isSubmitting ? 'Guardando...' : '🏁 Finalizar y Guardar'}
+              </button>
+            )}
+          </div>
 
-            <div className="flex gap-2 pt-4 border-t"><button type="button" onClick={()=>setStep(1)} className="bg-slate-100 p-3 rounded-xl font-bold text-sm flex-1">Atrás</button><button type="submit" disabled={isSubmitting} className="bg-green-600 text-white p-3 rounded-xl font-bold text-sm flex-[2] disabled:opacity-50">{isSubmitting ? 'Guardando...' : 'Finalizar y Guardar'}</button></div>
-          </form>
-        )}
+        </form>
       </div>
-
-      {/* NUEVO: MODAL DE FOTO EN PANTALLA COMPLETA PARA EL CONDUCTOR */}
-      {fullScreenImage && (
-        <div className="fixed inset-0 bg-slate-900/95 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm cursor-zoom-out animate-in fade-in duration-200" onClick={() => setFullScreenImage(null)}>
-          <button onClick={() => setFullScreenImage(null)} className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 p-2 rounded-full text-white transition-colors shadow-lg">
-            <X className="w-6 h-6" />
-          </button>
-          <img src={fullScreenImage} alt="Evidencia Ampliada" className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
-        </div>
-      )}
-
-    </div>
-  );
-}
