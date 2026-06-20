@@ -541,7 +541,10 @@ const WaitTimerBadge = ({ arrivedAt, role = 'client' }) => {
   // Formato 00:00
   const timeString = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   
-  // A los 15 minutos cambia la alerta a rojo
+  // --- NUEVA CONDICIÓN: Si es cliente y lleva menos de 20 minutos, ocultar por completo ---
+  if (role === 'client' && mins < 20) return null;
+
+  // A los 15 minutos cambia la alerta a rojo para conductores/admin (el cliente saldrá directo en rojo a los 20)
   const isWarning = mins >= 15;
   const bgClass = isWarning ? 'bg-red-50 border-red-500' : 'bg-amber-50 border-amber-400';
   const iconClass = isWarning ? 'text-red-600' : 'text-amber-500';
@@ -3039,7 +3042,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         {j.liveLocation && j.phase === 'picked_up' && (
           <div className="mb-4 rounded-xl overflow-hidden border border-slate-200 h-28 pointer-events-none relative shadow-inner">
             <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md z-10 flex items-center gap-1.5 shadow-sm"><span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span><span className="text-[8px] font-black text-slate-700 uppercase tracking-wider">En vivo</span></div>
-            <iframe width="100%" height="100%" frameBorder="0" src={`http://googleusercontent.com/maps.google.com/maps?q=${j.liveLocation.lat},${j.liveLocation.lng}&z=15&output=embed`}></iframe>
+            <iframe width="100%" height="100%" frameBorder="0" src={`https://maps.google.com/maps?q=${j.liveLocation.lat},${j.liveLocation.lng}&z=15&output=embed`}></iframe>
           </div>
         )}
 
