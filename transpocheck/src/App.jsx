@@ -3848,27 +3848,68 @@ const dataUrl = await resizeImage(f, 350, 0.3);
             </div>
 
             <div className="bg-slate-50 p-4 rounded-3xl border-2 border-slate-100 mb-4 select-none">
-              <p className="text-[10px] font-black text-slate-400 uppercase text-center mb-4 leading-relaxed">
-                Toca los recuadros para fotos generales.<br/>
-                <span className="text-blue-500">Toca directo sobre el dibujo del auto para registrar un daño (máx 8).</span>
-              </p>
+              <div className="flex justify-between items-center mb-4 min-h-[40px]">
+                {!formData.zoomZone ? (
+                  <p className="text-[10px] font-black text-slate-400 uppercase leading-relaxed w-full text-center">
+                    Toca los recuadros para fotos generales.<br/>
+                    <span className="text-blue-500 text-xs">Toca un cuadrante del auto para acercar.</span>
+                  </p>
+                ) : (
+                  <div className="w-full flex items-center justify-between bg-blue-50 p-2 rounded-xl border border-blue-200 animate-in fade-in">
+                    <p className="text-[11px] font-black text-blue-700 uppercase animate-pulse flex items-center gap-1"><Search className="w-4 h-4"/> Toca el daño exacto</p>
+                    <button type="button" onClick={() => setF('zoomZone', null)} className="bg-white px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 shadow-sm border border-slate-200 flex items-center gap-1 hover:bg-slate-100 transition-colors"><X className="w-3 h-3"/> Volver</button>
+                  </div>
+                )}
+              </div>
               
               <div className="relative w-full max-w-[280px] h-[400px] mx-auto my-6">
                 
-                {/* VEHÍCULO INTERACTIVO CENTRAL */}
+                {/* VEHÍCULO INTERACTIVO CENTRAL CON ZOOM */}
                 <div 
-                   className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 cursor-crosshair hover:opacity-90 transition-opacity drop-shadow-lg z-10"
+                   className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 cursor-crosshair transition-all duration-300 ease-out drop-shadow-lg ${
+                     !formData.zoomZone ? 'scale-100 z-10 hover:opacity-90' : 
+                     formData.zoomZone === 'tl' ? 'scale-[1.8] origin-top-left z-50' :
+                     formData.zoomZone === 'tr' ? 'scale-[1.8] origin-top-right z-50' :
+                     formData.zoomZone === 'ml' ? 'scale-[1.8] origin-left z-50' :
+                     formData.zoomZone === 'mr' ? 'scale-[1.8] origin-right z-50' :
+                     formData.zoomZone === 'bl' ? 'scale-[1.8] origin-bottom-left z-50' :
+                     'scale-[1.8] origin-bottom-right z-50'
+                   }`}
                    style={{ height: formData.vehicleType === 'camion' ? '260px' : '220px' }}
                    onClick={(e) => {
-                     const availableDet = ['det1', 'det2', 'det3', 'det4', 'det5', 'det6', 'det7', 'det8'].find(d => !formData.photos[d]);
-                     if (!availableDet) return showAlert("Máximo de 8 fotos de detalles/daños alcanzado.");
                      const rect = e.currentTarget.getBoundingClientRect();
                      const x = ((e.clientX - rect.left) / rect.width) * 100;
                      const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+                     if (!formData.zoomZone) {
+                       // Selecciona cuadrante (2 columnas x 3 filas)
+                       let zone = y < 33 ? 't' : y < 66 ? 'm' : 'b';
+                       zone += x < 50 ? 'l' : 'r';
+                       setF('zoomZone', zone);
+                       return;
+                     }
+
+                     // Si ya tiene zoom, coloca el PIN de daño
+                     const availableDet = ['det1', 'det2', 'det3', 'det4', 'det5', 'det6', 'det7', 'det8'].find(d => !formData.photos[d]);
+                     if (!availableDet) return showAlert("Máximo de 8 fotos de detalles/daños alcanzado.");
+                     
                      setF('pendingPin', { id: availableDet, x, y });
                      document.getElementById(`pic-${availableDet}`).click();
+                     setF('zoomZone', null); // Resetea el zoom al terminar
                    }}
                 >
+                  {/* REJILLA VISUAL DE ZONAS (Solo visible sin zoom) */}
+                  {!formData.zoomZone && (
+                    <div className="absolute inset-0 grid grid-cols-2 grid-rows-3 pointer-events-none z-40 opacity-40 mix-blend-multiply">
+                      <div className="border-r-2 border-b-2 border-dashed border-blue-500 rounded-tl-[40px]"></div>
+                      <div className="border-b-2 border-dashed border-blue-500 rounded-tr-[40px]"></div>
+                      <div className="border-r-2 border-b-2 border-dashed border-blue-500"></div>
+                      <div className="border-b-2 border-dashed border-blue-500"></div>
+                      <div className="border-r-2 border-dashed border-blue-500 rounded-bl-[40px]"></div>
+                      <div className="border-dashed border-blue-500 rounded-br-[40px]"></div>
+                    </div>
+                  )}
+
                   {/* Siluetas Dinámicas Generadas con CSS */}
                   {(!formData.vehicleType || formData.vehicleType === 'auto') && (
                     <div className="w-full h-full bg-slate-300 rounded-[40px] border-4 border-slate-400 relative overflow-hidden flex flex-col justify-between p-2 shadow-inner">
