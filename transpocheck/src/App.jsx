@@ -329,6 +329,8 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
              <select value={vehicleType} onChange={e=>setVehicleType(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl col-span-2 outline-none focus:border-blue-500 font-bold text-slate-700 bg-white">
                <option value="auto">🚙 Auto / SUV</option>
                <option value="camioneta">🛻 Camioneta</option>
+               <option value="furgon_pequeno">🚐 Furgón Pequeño</option>
+               <option value="furgon_grande">🚐 Furgón Grande</option>
                <option value="camion">🚚 Camión Simple</option>
                <option value="camion_doble">🚚 Camión Doble Cabina</option>
                <option value="camion_2ejes">🚛 Camión (2 Ejes traseros)</option>
@@ -462,6 +464,8 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
             <select name="vehicleType" defaultValue={editingVehicle?.vehicleType || 'auto'} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700 bg-white">
                <option value="auto">🚙 Auto / SUV</option>
                <option value="camioneta">🛻 Camioneta</option>
+               <option value="furgon_pequeno">🚐 Furgón Pequeño</option>
+               <option value="furgon_grande">🚐 Furgón Grande</option>
                <option value="camion">🚚 Camión Simple</option>
                <option value="camion_doble">🚚 Camión Doble Cabina</option>
                <option value="camion_2ejes">🚛 Camión (2 Ejes traseros)</option>
@@ -2128,7 +2132,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.2.9</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.3</p>
                 </div>
               </div>
             )}
@@ -3875,6 +3879,8 @@ const dataUrl = await resizeImage(f, 350, 0.3);
               <select value={formData.vehicleType || 'auto'} onChange={e => setF('vehicleType', e.target.value)} className="bg-slate-100 border-2 border-slate-200 text-[10px] font-bold p-1.5 rounded-lg outline-none text-slate-700 cursor-pointer max-w-[140px]">
                 <option value="auto">🚙 Auto/SUV</option>
                 <option value="camioneta">🛻 Camioneta</option>
+                <option value="furgon_pequeno">🚐 Furgón Peq.</option>
+                <option value="furgon_grande">🚐 Furgón Grande</option>
                 <option value="camion">🚚 Camión Simple</option>
                 <option value="camion_doble">🚚 Camión Doble Cab.</option>
                 <option value="camion_2ejes">🚛 Camión (2 Ejes)</option>
@@ -3910,7 +3916,7 @@ const dataUrl = await resizeImage(f, 350, 0.3);
                      formData.zoomZone === 'bl' ? 'scale-[1.8] origin-bottom-left z-50' :
                      'scale-[1.8] origin-bottom-right z-50'
                    }`}
-                   style={{ height: formData.vehicleType === 'camion' ? '260px' : '220px' }}
+                   style={{ height: formData.vehicleType?.includes('camion') || formData.vehicleType === 'furgon_grande' ? '260px' : '220px' }}
                    onClick={(e) => {
                      const rect = e.currentTarget.getBoundingClientRect();
                      const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -3950,6 +3956,27 @@ const dataUrl = await resizeImage(f, 350, 0.3);
                     <div className="w-full h-full bg-slate-300 rounded-[40px] border-4 border-slate-400 relative overflow-hidden flex flex-col justify-between p-2 shadow-inner">
                       <div className="w-4/5 h-1/5 bg-slate-800/30 mx-auto rounded-t-2xl rounded-b-sm mt-5"></div>
                       <div className="w-4/5 h-12 bg-slate-800/30 mx-auto rounded-b-xl rounded-t-sm mb-3"></div>
+                    </div>
+                  )}
+                  {formData.vehicleType === 'furgon_pequeno' && (
+                    <div className="w-full h-full bg-slate-200 rounded-[25px] border-4 border-slate-400 relative flex flex-col justify-between p-2 shadow-inner z-10">
+                      <div className="w-[85%] h-[15%] bg-slate-800/40 mx-auto rounded-t-xl rounded-b-sm mt-3"></div>
+                      <div className="flex-1 w-[90%] mx-auto bg-slate-300 border-2 border-slate-400 rounded-sm my-2 flex items-center justify-center">
+                        <div className="w-1/2 h-full border-r-2 border-slate-400 opacity-50"></div>
+                      </div>
+                      <div className="w-[85%] h-8 bg-slate-800/40 mx-auto rounded-b-xl rounded-t-sm mb-2"></div>
+                    </div>
+                  )}
+                  {formData.vehicleType === 'furgon_grande' && (
+                    <div className="w-full h-full relative flex flex-col z-10">
+                      <div className="w-[100%] h-[25%] bg-slate-300 rounded-t-[30px] rounded-b-sm border-x-4 border-t-4 border-slate-400 p-1 flex flex-col justify-end shadow-inner">
+                        <div className="w-4/5 h-[65%] bg-slate-800/40 mx-auto rounded-t-xl rounded-b-sm mb-1"></div>
+                      </div>
+                      <div className="w-[104%] -ml-[2%] h-[75%] bg-slate-200 border-4 border-slate-400 rounded-sm relative overflow-hidden shadow-inner flex justify-center py-2">
+                         <div className="w-full h-full border-t-2 border-slate-300 rounded-sm flex">
+                           <div className="w-1/2 h-full border-r-2 border-slate-400"></div>
+                         </div>
+                      </div>
                     </div>
                   )}
                   {formData.vehicleType === 'camioneta' && (
