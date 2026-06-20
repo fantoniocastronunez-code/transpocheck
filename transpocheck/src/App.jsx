@@ -526,23 +526,6 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
     </div>
   );
 }
-const WaitTimerBadge = ({ arrivedAt }) => {
-  const [mins, setMins] = useState(Math.floor((Date.now() - arrivedAt) / 60000));
-  useEffect(() => {
-    const int = setInterval(() => setMins(Math.floor((Date.now() - arrivedAt) / 60000)), 60000);
-    return () => clearInterval(int);
-  }, [arrivedAt]);
-  
-  if (mins > 15) {
-    return (
-      <div className="mt-4 bg-red-50 border-2 border-red-500 p-4 rounded-2xl flex items-center gap-3 animate-in zoom-in shadow-sm">
-        <AlertCircle className="w-6 h-6 text-red-600 shrink-0 animate-pulse"/>
-        <p className="text-sm font-bold text-red-800">
-          El conductor lleva <span className="font-black text-red-600 text-lg">{mins} min</span> esperando la entrega de este vehículo.
-        </p>
-      </div>
-  );
-}
 
 const WaitTimerBadge = ({ arrivedAt }) => {
   const [mins, setMins] = useState(Math.floor((Date.now() - arrivedAt) / 60000));
@@ -752,7 +735,7 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
       const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth); 
       docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2; 
     }
-    }
+
     if (job.checklist?.hasFuelCharge) {
       docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(37, 99, 235);
       const fcStr = docPDF.splitTextToSize(`CARGA DE COMBUSTIBLE: ${cleanStr(job.checklist.fuelChargeAmount || 'Sí')}`, leftColWidth);
@@ -861,7 +844,7 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
     docPDF.save(fileName); 
     setDownloadingId(null); // Apaga el relojito
     
-  } catch (error) {
+    } catch (error) {
       console.error("Error crítico generando PDF en Portal:", error);
       alert("Hubo un error al descargar el PDF. Verifica tu conexión a internet e intenta de nuevo.");
       setDownloadingId(null); // Apaga el relojito en caso de error
@@ -2094,7 +2077,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.2.7</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.2.8</p>
                 </div>
               </div>
             )}
@@ -2861,7 +2844,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2; 
     }
     if (job.checklist?.hasFuelCharge) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(37, 99, 235); const fcStr = docPDF.splitTextToSize(`CARGA DE COMBUSTIBLE: ${cleanStr(job.checklist.fuelChargeAmount || 'Sí')}`, leftColWidth); docPDF.text(fcStr, 15, currentY); currentY += (fcStr.length * 4) + 2; }
-    currentY += 8;
 
     let sectionNum = 3;
     if (job.tripType === 'revision') { currentY = drawSectionTitle(`${sectionNum}. Resultado`, currentY); if (job.checklist?.rtStatus === 'aprobado') { docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(16); docPDF.text("APROBADO", 15, currentY + 6); currentY += 18; } else { docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(16); docPDF.text("RECHAZADO", 15, currentY + 6); docPDF.setFontSize(10); docPDF.setTextColor(153, 27, 27); const rejSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.checklist?.rtRejectReason || job.failedReason || 'No especificada'}`), leftColWidth); docPDF.text(rejSplit, 15, currentY + 12); currentY += 20 + (rejSplit.length * 4); } sectionNum++; }
