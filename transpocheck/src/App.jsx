@@ -3730,344 +3730,259 @@ const dataUrl = await resizeImage(f, 350, 0.3);
       </div>
 
       <div className="p-5">
-        {step === 1 ? (
-          <div className="space-y-4 text-sm">
-            
-            {isQuick ? (
-              <div className="space-y-2">
-                 <select value={formData.client} onChange={(e) => setF('client', e.target.value)} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 bg-white outline-none focus:border-blue-500">
-                    <option value="">Selecciona el Cliente...</option>
-                    {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
-                    <option value="OTRO">Otro (Ingreso Manual)</option>
-                 </select>
-                 {formData.client === 'OTRO' && <input value={formData.manualClient} onChange={e=>setF('manualClient',e.target.value)} placeholder="Escribe el nombre del cliente" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 mt-2"/>}
+        {/* Barra superior de pestañas táctiles e interactivas */}
+        <div className="flex gap-1.5 overflow-x-auto pb-3 mb-5 border-b border-slate-100 scrollbar-none">
+          {[
+            { id: 1, label: '📋 Datos' },
+            { id: 2, label: '📄 Docs' },
+            { id: 3, label: '💬 Notas' },
+            { id: 4, label: '📸 Fotos' },
+            { id: 5, label: '🛣️ Ruta' },
+            { id: 6, label: '✍️ Entrega' }
+          ].map(t => (
+            <button key={t.id} type="button" onClick={() => setStep(t.id)} className={`px-3 py-2 rounded-xl text-xs font-black tracking-wide whitespace-nowrap transition-all shrink-0 ${step === t.id ? 'bg-blue-600 text-white shadow-md shadow-blue-100' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        <form onSubmit={submit} className="space-y-5 text-sm">
+          
+          {/* PESTAÑA 1: DATOS Y COMBUSTIBLE */}
+          {step === 1 && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              {isQuick ? (
+                <div className="space-y-2">
+                   <select value={formData.client} onChange={(e) => setF('client', e.target.value)} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 bg-white outline-none focus:border-blue-500">
+                      <option value="">Selecciona el Cliente...</option>
+                      {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
+                      <option value="OTRO">Otro (Ingreso Manual)</option>
+                   </select>
+                   {formData.client === 'OTRO' && <input value={formData.manualClient} onChange={e=>setF('manualClient',e.target.value)} placeholder="Escribe el nombre del cliente" className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 mt-2"/>}
+                </div>
+              ) : (
+                <input value={formData.client} onChange={e=>setF('client',e.target.value)} placeholder="Cliente" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 bg-slate-50" readOnly/>
+              )}
+              
+              <div className="grid grid-cols-2 gap-4">
+                <input value={formData.brand} onChange={e=>setF('brand',e.target.value)} placeholder="Marca" className="w-full border-2 border-slate-200 bg-white p-3 rounded-xl font-bold text-slate-800"/>
+                <input value={formData.model} onChange={e=>setF('model',e.target.value)} placeholder="Modelo" className="w-full border-2 border-slate-200 bg-white p-3 rounded-xl font-bold text-slate-800"/>
               </div>
-            ) : (
-              <input value={formData.client} onChange={e=>setF('client',e.target.value)} placeholder="Cliente" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700" readOnly/>
-            )}
-            
-            <div className="grid grid-cols-2 gap-4">
-              <input value={formData.brand} onChange={e=>setF('brand',e.target.value)} placeholder="Marca" className="w-full border-2 border-slate-200 bg-white p-3 rounded-xl font-bold text-slate-800"/>
-              <input value={formData.model} onChange={e=>setF('model',e.target.value)} placeholder="Modelo" className="w-full border-2 border-slate-200 bg-white p-3 rounded-xl font-bold text-slate-800"/>
-            </div>
-            <input value={formData.plateOrVin} onChange={e=>setF('plateOrVin',e.target.value)} placeholder="Patente o VIN" className="w-full border-2 border-slate-300 bg-slate-100 p-3 rounded-xl font-black uppercase text-slate-800 shadow-inner mt-2"/>
-            
-            {job.tripType === 'revision' && (
-              <>
-                <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-blue-600">Resultado de la Revisión</h3>
-                <select value={formData.rtStatus} onChange={e=>setF('rtStatus', e.target.value)} className={`w-full border-2 p-4 rounded-xl outline-none font-extrabold text-sm ${formData.rtStatus === 'aprobado' ? 'border-green-200 bg-green-50 text-green-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
-                  <option value="aprobado">✅ APROBADO</option>
-                  <option value="rechazado">❌ RECHAZADO</option>
-                </select>
-                {formData.rtStatus === 'rechazado' && (
-                  <input value={formData.rtRejectReason} onChange={e=>setF('rtRejectReason', e.target.value)} placeholder="¿Cuál fue la razón del rechazo?" required className="w-full border-2 border-red-300 p-4 rounded-xl outline-none focus:border-red-500 font-bold text-red-900 bg-white mt-2" />
-                )}
-                {formData.rtStatus === 'aprobado' && (
-                  <div className="mt-4 p-4 border-2 border-green-200 bg-green-50 rounded-xl space-y-3">
-                    <p className="text-sm font-bold text-green-800">¿Hacia dónde se dirige el vehículo tras aprobar?</p>
-                    <div className="flex gap-4">
-                      <label className="flex items-center gap-2 cursor-pointer text-sm font-bold text-green-700">
-                        <input type="radio" name="rtReturnOption" value="origin" checked={formData.rtReturnOption === 'origin'} onChange={e=>setF('rtReturnOption', e.target.value)} className="w-4 h-4 accent-green-600"/>
-                        Volver al Origen
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer text-sm font-bold text-green-700">
-                        <input type="radio" name="rtReturnOption" value="other" checked={formData.rtReturnOption === 'other'} onChange={e=>setF('rtReturnOption', e.target.value)} className="w-4 h-4 accent-green-600"/>
-                        Otro Destino
-                      </label>
+              <input value={formData.plateOrVin} onChange={e=>setF('plateOrVin',e.target.value)} placeholder="Patente o VIN" className="w-full border-2 border-slate-300 bg-slate-100 p-3 rounded-xl font-black uppercase text-slate-800 shadow-inner mt-2"/>
+              
+              {job.tripType === 'revision' && (
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
+                  <h3 className="text-sm font-extrabold text-blue-600 uppercase tracking-wider">Resultado de la Revisión</h3>
+                  <select value={formData.rtStatus} onChange={e=>setF('rtStatus', e.target.value)} className={`w-full border-2 p-3.5 rounded-xl outline-none font-extrabold text-sm ${formData.rtStatus === 'aprobado' ? 'border-green-200 bg-green-50 text-green-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
+                    <option value="aprobado">✅ APROBADO</option>
+                    <option value="rechazado">❌ RECHAZADO</option>
+                  </select>
+                  {formData.rtStatus === 'rechazado' && (
+                    <input value={formData.rtRejectReason} onChange={e=>setF('rtRejectReason', e.target.value)} placeholder="¿Cuál fue la razón del rechazo?" required={formData.rtStatus === 'rechazado'} className="w-full border-2 border-red-300 p-3 rounded-xl outline-none focus:border-red-500 font-bold text-red-900 bg-white mt-2" />
+                  )}
+                  {formData.rtStatus === 'aprobado' && (
+                    <div className="mt-2 p-3 border border-green-200 bg-white rounded-xl space-y-2">
+                      <p className="text-xs font-bold text-green-800">¿Hacia dónde se dirige el vehículo tras aprobar?</p>
+                      <div className="flex gap-4">
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-green-700">
+                          <input type="radio" name="rtReturnOption" value="origin" checked={formData.rtReturnOption === 'origin'} onChange={e=>setF('rtReturnOption', e.target.value)} className="w-4 h-4 accent-green-600"/>
+                          Volver al Origen
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-green-700">
+                          <input type="radio" name="rtReturnOption" value="other" checked={formData.rtReturnOption === 'other'} onChange={e=>setF('rtReturnOption', e.target.value)} className="w-4 h-4 accent-green-600"/>
+                          Otro Destino
+                        </label>
+                      </div>
+                      {formData.rtReturnOption === 'other' && (
+                        <input value={formData.rtReturnDestination} onChange={e=>setF('rtReturnDestination', e.target.value)} placeholder="Especifique el destino final..." required={formData.rtReturnOption === 'other'} className="w-full border-2 border-green-300 p-2.5 rounded-xl outline-none focus:border-green-500 font-bold text-green-900 bg-white" />
+                      )}
                     </div>
-                    {formData.rtReturnOption === 'other' && (
-                      <input value={formData.rtReturnDestination} onChange={e=>setF('rtReturnDestination', e.target.value)} placeholder="Especifique el destino final..." required className="w-full border-2 border-green-300 p-3 rounded-xl outline-none focus:border-green-500 font-bold text-green-900 bg-white" />
+                  )}
+                </div>
+              )}
+
+              <div className="space-y-1 pt-2">
+                <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 mt-4 text-slate-800">Nivel de Combustible: <span className="text-blue-600">{formData.fuelLevel}%</span></h3>
+                <input type="range" min="0" max="100" step="5" value={formData.fuelLevel} onChange={(e) => setF('fuelLevel', e.target.value)} className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer mt-2" style={{background: `linear-gradient(to right, ${formData.fuelLevel < 30 ? '#ef4444' : formData.fuelLevel < 80 ? '#eab308' : '#22c55e'} ${formData.fuelLevel}%, #e2e8f0 ${formData.fuelLevel}%)`}} />
+              </div>
+            </div>
+          )}
+
+          {/* PESTAÑA 2: DOCUMENTOS */}
+          {step === 2 && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Documentos del Vehículo</h3>
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                {[{ id: 'soap', label: 'SOAP', icon: <FileText className="w-5 h-5"/> }, { id: 'permiso', label: 'Permiso Circ.', icon: <MapPin className="w-5 h-5"/> }, { id: 'revTecnica', label: 'Rev. Técnica', icon: <CheckCircle className="w-5 h-5"/> }, { id: 'gases', label: 'Gases', icon: <CloudOff className="w-5 h-5"/> }].map(doc => (
+                  <div key={doc.id} className="flex flex-col gap-2">
+                    <button 
+                      type="button" 
+                      onClick={() => setF('docs', { ...formData.docs, [doc.id]: !formData.docs[doc.id] })} 
+                      className={`flex flex-col items-center justify-center gap-1.5 h-24 rounded-2xl border-2 active:scale-95 transition-all duration-200 select-none shadow-sm ${formData.docs[doc.id] ? 'border-green-500 bg-green-500 text-white shadow-green-200' : 'border-slate-200 bg-slate-50 text-slate-400 hover:bg-slate-100 hover:border-slate-300'}`}
+                    >
+                      {formData.docs[doc.id] ? <CheckCircle className="w-6 h-6 animate-in zoom-in"/> : doc.icon}
+                      <span className="font-black text-xs uppercase tracking-wider">{doc.label}</span>
+                    </button>
+                    {formData.docs[doc.id] && (
+                      <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div className="bg-green-50 border border-green-200 p-2 rounded-xl flex flex-col gap-1 shadow-inner">
+                          <p className="text-[9px] font-extrabold text-green-700 uppercase tracking-widest text-center">Vencimiento</p>
+                          <input type="date" value={formData.docsExpiry?.[doc.id] || ''} onChange={(e) => setF('docsExpiry', { ...(formData.docsExpiry || {}), [doc.id]: e.target.value })} className="w-full bg-white border border-green-200 p-1.5 rounded-lg text-xs font-black text-slate-700 outline-none focus:border-green-500 text-center" />
+                        </div>
+                      </div>
                     )}
                   </div>
-                )}
-              </>
-            )}
-
-            <div className="space-y-1 pt-2">
-              <h3 className="text-lg font-extrabold border-b-2 border-slate-100 pb-2 mt-8 text-slate-800 mb-4">Combustible: <span className="text-blue-600">{formData.fuelLevel}%</span></h3>
-              <input type="range" min="0" max="100" step="5" value={formData.fuelLevel} onChange={(e) => setF('fuelLevel', e.target.value)} className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer" style={{background: `linear-gradient(to right, ${formData.fuelLevel < 30 ? '#ef4444' : formData.fuelLevel < 80 ? '#eab308' : '#22c55e'} ${formData.fuelLevel}%, #e2e8f0 ${formData.fuelLevel}%)`}} />
-            </div>
-            {/* --- BANNER DE FONDO ASIGNADO (Corregido) --- */}
-            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mt-6 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="bg-blue-100 p-2 rounded-lg">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-blue-600 uppercase">Fondo Asignado al Traslado</p>
-                  <p className="text-[10px] font-bold text-slate-500">Patente: {job.plate || job.vin || 'N/A'}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-xl font-extrabold text-blue-700">
-                  {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(
-                    expenses?.filter(g => g.jobId === job.id && g.type === 'assignment')
-                            .reduce((acc, curr) => acc + Number(curr.amount || 0), 0) || 0
-                  )}
-                </p>
-              </div>
-            </div>
-            
-            {/* --- NUEVO: GASTOS DE REVISIÓN TÉCNICA CONDICIONALES --- */}
-            {job.tripType === 'revision' && (job.rtData?.revision || job.rtData?.inspeccion || job.rtData?.frenos) && (
-              <div className="bg-indigo-50 border-2 border-indigo-200 rounded-xl p-4 mt-4 shadow-sm">
-                <h3 className="text-sm font-extrabold text-indigo-800 mb-3 flex items-center gap-2">
-                  <Receipt className="w-4 h-4" /> Valores pagados en PRT
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {job.rtData?.revision && (
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11px] font-bold text-indigo-600 uppercase">Revisión Técnica ($)</label>
-                      <input type="text" placeholder="Ej: 20000" className="w-full border-2 border-indigo-100 p-2.5 rounded-xl font-bold text-sm outline-none focus:border-indigo-400 bg-white" value={formData.prtCostRevision || ''} onChange={e => setF('prtCostRevision', e.target.value)} />
-                    </div>
-                  )}
-                  {job.rtData?.inspeccion && (
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11px] font-bold text-indigo-600 uppercase">Inspección Visual ($)</label>
-                      <input type="text" placeholder="Ej: 5000" className="w-full border-2 border-indigo-100 p-2.5 rounded-xl font-bold text-sm outline-none focus:border-indigo-400 bg-white" value={formData.prtCostInspeccion || ''} onChange={e => setF('prtCostInspeccion', e.target.value)} />
-                    </div>
-                  )}
-                  {job.rtData?.frenos && (
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[11px] font-bold text-indigo-600 uppercase">Certificado Frenos ($)</label>
-                      <input type="text" placeholder="Ej: 8000" className="w-full border-2 border-indigo-100 p-2.5 rounded-xl font-bold text-sm outline-none focus:border-indigo-400 bg-white" value={formData.prtCostFrenos || ''} onChange={e => setF('prtCostFrenos', e.target.value)} />
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            {/* ----------------------------------------------------------------- */}
-
-            <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Documentos a bordo</h3>
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              {[{ id: 'soap', label: 'SOAP', icon: <FileText className="w-5 h-5"/> }, { id: 'permiso', label: 'Permiso', icon: <MapPin className="w-5 h-5"/> }, { id: 'revTecnica', label: 'Revisión', icon: <CheckCircle className="w-5 h-5"/> }, { id: 'gases', label: 'Gases', icon: <CloudOff className="w-5 h-5"/> }].map(doc => (
-                <div key={doc.id} className="flex flex-col gap-2">
-                  <button 
-                    type="button" 
-                    onClick={() => setF('docs', { ...formData.docs, [doc.id]: !formData.docs[doc.id] })} 
-                    className={`flex flex-col items-center justify-center gap-1.5 h-24 rounded-2xl border-2 active:scale-95 transition-all duration-200 select-none shadow-sm ${formData.docs[doc.id] ? 'border-green-500 bg-green-500 text-white shadow-green-200' : 'border-slate-200 bg-slate-50 text-slate-400 hover:bg-slate-100 hover:border-slate-300'}`}
-                  >
-                    {formData.docs[doc.id] ? <CheckCircle className="w-6 h-6 animate-in zoom-in"/> : doc.icon}
-                    <span className="font-black text-xs uppercase tracking-wider">{doc.label}</span>
-                  </button>
-                  
-                  {/* Desplegable de fecha de vencimiento con diseño mejorado */}
-                  {formData.docs[doc.id] && (
-                    <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                      <div className="bg-green-50 border border-green-200 p-2 rounded-xl flex flex-col gap-1 shadow-inner">
-                        <p className="text-[9px] font-extrabold text-green-700 uppercase tracking-widest text-center">Vencimiento</p>
-                        <input type="date" value={formData.docsExpiry?.[doc.id] || ''} onChange={(e) => setF('docsExpiry', { ...(formData.docsExpiry || {}), [doc.id]: e.target.value })} className="w-full bg-white border border-green-200 p-1.5 rounded-lg text-xs font-black text-slate-700 outline-none focus:border-green-500 text-center" />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Observaciones</h3>
-            <textarea className="w-full border-2 border-slate-200 p-3 rounded-xl mt-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500 min-h-[80px]" placeholder="Escribe aquí si hay algún daño, rayón o comentario relevante..." value={formData.observations || ''} onChange={(e) => setF('observations', e.target.value)} />
-
-            {/* --- SECCIÓN NUEVA: RECORDATORIOS INTERNOS (NO SALEN EN PDF) --- */}
-            <div className="bg-amber-50 p-4 rounded-2xl border-2 border-amber-200 mt-6 shadow-sm">
-                <h3 className="text-sm font-extrabold text-amber-800 mb-1 flex items-center gap-2"><AlertCircle className="w-4 h-4"/> Alertas Internas de Patente</h3>
-                <p className="text-[10px] font-bold text-amber-700 mb-4 leading-tight">Avisos privados que no salen en el PDF. Sirven como historial para el próximo conductor.</p>
-                
-                {(formData.internalReminders || []).map((rem, idx) => (
-                    <div key={rem.id} className={`p-3 rounded-xl border-2 mb-3 bg-white transition-all ${rem.resolved ? 'border-green-300 opacity-60 grayscale-[50%]' : 'border-amber-300 shadow-sm'}`}>
-                        <div className="flex justify-between items-center mb-2">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Aviso #{idx + 1}</span>
-                            <label className="flex items-center gap-1.5 cursor-pointer text-xs font-bold text-green-700 bg-green-50 px-2 py-1 rounded-lg border border-green-200 transition-colors">
-                                <input type="checkbox" className="w-4 h-4 accent-green-600 rounded cursor-pointer" checked={rem.resolved} onChange={e => handleReminderChange(idx, 'resolved', e.target.checked)}/>
-                                Solucionado
-                            </label>
-                        </div>
-                        <textarea disabled={rem.resolved} value={rem.text} onChange={e => handleReminderChange(idx, 'text', e.target.value)} placeholder="Ej: Triángulo roto, falta gata, rueda repuesto baja..." className="w-full border-2 border-slate-100 p-2.5 rounded-lg text-sm font-bold outline-none focus:border-amber-500 mb-2 disabled:bg-slate-50 text-slate-700 resize-none min-h-[60px]"/>
-                        
-                        <div className="flex items-center gap-2">
-                            <label className={`flex-1 py-2 text-center rounded-lg border-2 border-dashed cursor-pointer text-[10px] font-extrabold transition-colors uppercase tracking-wide ${rem.photo ? 'bg-green-50 border-green-400 text-green-700' : 'bg-slate-50 border-slate-300 hover:bg-slate-100 text-slate-500'}`}>
-                                <input type="file" accept="image/*" className="hidden" disabled={rem.resolved} onChange={async e => { const f=e.target.files[0]; if(!f)return; try{ const dUrl = await resizeImage(f, 400, 0.4); handleReminderChange(idx, 'photo', dUrl); }catch(err){}}}/>
-                                {rem.photo ? '📸 Foto Guardada' : '📸 Adjuntar Foto'}
-                            </label>
-                            
-                            {/* EL BOTÓN AHORA ABRE UNA VENTANA NATIVA DE NAVEGADOR PARA EVITAR CONFLICTOS CON EL MODAL PADRE */}
-                            {rem.photo && <button type="button" onClick={() => {
-                                const w = window.open(""); 
-                                w.document.write(`<img src="${rem.photo}" style="width:100%;max-width:800px;margin:auto;display:block;padding-top:20px;"/>`);
-                            }} className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors border border-blue-200"><Eye className="w-4 h-4"/></button>}
-                            
-                            <button type="button" onClick={()=>removeReminder(idx)} className="p-2 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg transition-colors border border-red-200"><Trash2 className="w-4 h-4"/></button>
-                        </div>
-                    </div>
                 ))}
-                <button type="button" onClick={addReminder} className="w-full py-3 bg-amber-200 hover:bg-amber-300 text-amber-800 font-black text-xs uppercase tracking-widest rounded-xl transition-colors border border-amber-300 shadow-sm">+ Agregar Nuevo Aviso</button>
-            </div>
-            
-            {/* --- SECCIÓN EVENTOS DE RUTA (Espera Automática y Combustible) --- */}
-            <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Eventos de Ruta</h3>
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              
-              {/* 1. TIEMPO DE ESPERA (CÁLCULO AUTOMÁTICO) */}
-              <div className="flex flex-col gap-2">
-                <div className={`flex flex-col items-center justify-center gap-1.5 h-24 rounded-2xl border-2 select-none shadow-sm transition-colors ${job.waitTimeMinutes >= 1 ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
-                  <Clock className="w-5 h-5"/>
-                  <span className="font-black text-xs uppercase tracking-wider text-center leading-tight">Espera<br/>Registrada</span>
-                </div>
-                {job.waitTimeMinutes >= 1 && (
-                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                    <div className="bg-amber-100 border border-amber-200 p-2 rounded-xl flex flex-col gap-1 shadow-inner">
-                      <p className="text-[9px] font-extrabold text-amber-800 uppercase tracking-widest text-center">Calculado</p>
-                      <div className="w-full bg-white border border-amber-200 p-1.5 rounded-lg text-xs font-black text-amber-900 text-center">{job.waitTimeMinutes} min</div>
-                    </div>
-                  </div>
-                )}
               </div>
-
-              {/* 2. CARGA DE COMBUSTIBLE (TÁCTIL) */}
-              <div className="flex flex-col gap-2">
-                <button 
-                  type="button" 
-                  onClick={() => setF('hasFuelCharge', !formData.hasFuelCharge)} 
-                  className={`flex flex-col items-center justify-center gap-1.5 h-24 rounded-2xl border-2 active:scale-95 transition-all duration-200 select-none shadow-sm ${formData.hasFuelCharge ? 'border-blue-500 bg-blue-500 text-white shadow-blue-200' : 'border-slate-200 bg-slate-50 text-slate-400 hover:bg-slate-100 hover:border-slate-300'}`}
-                >
-                  {formData.hasFuelCharge ? <CheckCircle className="w-6 h-6 animate-in zoom-in"/> : <Fuel className="w-5 h-5"/>}
-                  <span className="font-black text-xs uppercase tracking-wider text-center leading-tight">Carga<br/>Combust.</span>
-                </button>
-                {formData.hasFuelCharge && (
-                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                    <div className="bg-blue-50 border border-blue-200 p-2 rounded-xl flex flex-col gap-1 shadow-inner">
-                      <p className="text-[9px] font-extrabold text-blue-700 uppercase tracking-widest text-center">Monto ($)</p>
-                      <input type="number" placeholder="Ej: 15000" value={formData.fuelChargeAmount || ''} onChange={(e) => setF('fuelChargeAmount', e.target.value)} className="w-full bg-white border border-blue-200 p-1.5 rounded-lg text-xs font-black text-slate-700 outline-none focus:border-blue-500 text-center" />
-                    </div>
-                  </div>
-                )}
-              </div>
-
             </div>
+          )}
 
-            <div className="flex justify-between items-end border-b-2 border-slate-100 pb-2 mt-8 mb-4">
-              <h3 className="text-sm font-extrabold text-slate-800">Mapa Fotográfico</h3>
-              <select value={formData.vehicleType || 'auto'} onChange={e => setF('vehicleType', e.target.value)} className="bg-slate-100 border-2 border-slate-200 text-[10px] font-bold p-1.5 rounded-lg outline-none text-slate-700 cursor-pointer max-w-[140px]">
-                <option value="auto">🚙 Auto/SUV</option>
-                <option value="camioneta">🛻 Camioneta</option>
-                <option value="furgon_pequeno">🚐 Furgón Peq.</option>
-                <option value="furgon_grande">🚐 Furgón Grande</option>
-                <option value="camion">🚚 Camión Simple</option>
-                <option value="camion_doble">🚚 Camión Doble Cab.</option>
-                <option value="camion_2ejes">🚛 Camión (2 Ejes)</option>
-                <option value="camion_3ejes">🚛 Camión (3 Ejes)</option>
-              </select>
-            </div>
+          {/* PESTAÑA 3: OBSERVACIONES Y ALERTAS INTERNAS */}
+          {step === 3 && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Observaciones Generales</h3>
+              <textarea className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 min-h-[90px]" placeholder="Escribe aquí si hay algún daño, rayón o comentario del estado visual del vehículo..." value={formData.observations || ''} onChange={(e) => setF('observations', e.target.value)} />
 
-            <div className="bg-slate-50 p-4 rounded-3xl border-2 border-slate-100 mb-4 select-none">
-              <div className="flex justify-between items-center mb-4 min-h-[40px]">
-                {!formData.zoomZone ? (
-                  <p className="text-[10px] font-black text-slate-400 uppercase leading-relaxed w-full text-center">
-                    Toca los recuadros para fotos generales.<br/>
-                    <span className="text-blue-500 text-xs">Toca un cuadrante del auto para acercar.</span>
-                  </p>
-                ) : (
-                  <div className="w-full flex items-center justify-between bg-blue-50 p-2 rounded-xl border border-blue-200 animate-in fade-in">
-                    <p className="text-[11px] font-black text-blue-700 uppercase animate-pulse flex items-center gap-1"><Search className="w-4 h-4"/> Toca el daño exacto</p>
-                    <button type="button" onClick={() => setF('zoomZone', null)} className="bg-white px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 shadow-sm border border-slate-200 flex items-center gap-1 hover:bg-slate-100 transition-colors"><X className="w-3 h-3"/> Volver</button>
-                  </div>
-                )}
-              </div>
-              
-              <div className="relative w-full max-w-[280px] h-[400px] mx-auto my-6">
-                
-                {/* VEHÍCULO INTERACTIVO CENTRAL CON ZOOM */}
-                <div 
-                   className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 cursor-crosshair transition-all duration-300 ease-out drop-shadow-lg ${
-                     !formData.zoomZone ? 'scale-100 z-10 hover:opacity-90' : 
-                     formData.zoomZone === 'tl' ? 'scale-[1.8] origin-top-left z-50' :
-                     formData.zoomZone === 'tr' ? 'scale-[1.8] origin-top-right z-50' :
-                     formData.zoomZone === 'ml' ? 'scale-[1.8] origin-left z-50' :
-                     formData.zoomZone === 'mr' ? 'scale-[1.8] origin-right z-50' :
-                     formData.zoomZone === 'bl' ? 'scale-[1.8] origin-bottom-left z-50' :
-                     'scale-[1.8] origin-bottom-right z-50'
-                   }`}
-                   style={{ height: formData.vehicleType?.includes('camion') || formData.vehicleType === 'furgon_grande' ? '260px' : '220px' }}
-                   onClick={(e) => {
-                     const rect = e.currentTarget.getBoundingClientRect();
-                     const x = ((e.clientX - rect.left) / rect.width) * 100;
-                     const y = ((e.clientY - rect.top) / rect.height) * 100;
-
-                     if (!formData.zoomZone) {
-                       // Selecciona cuadrante (2 columnas x 3 filas)
-                       let zone = y < 33 ? 't' : y < 66 ? 'm' : 'b';
-                       zone += x < 50 ? 'l' : 'r';
-                       setF('zoomZone', zone);
-                       return;
-                     }
-
-                     // Si ya tiene zoom, coloca el PIN de daño
-                     const availableDet = ['det1', 'det2', 'det3', 'det4', 'det5', 'det6', 'det7', 'det8'].find(d => !formData.photos[d]);
-                     if (!availableDet) return showAlert("Máximo de 8 fotos de detalles/daños alcanzado.");
-                     
-                     setF('pendingPin', { id: availableDet, x, y });
-                     document.getElementById(`pic-${availableDet}`).click();
-                     setF('zoomZone', null); // Resetea el zoom al terminar
-                   }}
-                >
-                  {/* REJILLA VISUAL DE ZONAS (Solo visible sin zoom) */}
-                  {!formData.zoomZone && (
-                    <div className="absolute inset-0 grid grid-cols-2 grid-rows-3 pointer-events-none z-40 opacity-40 mix-blend-multiply">
-                      <div className="border-r-2 border-b-2 border-dashed border-blue-500 rounded-tl-[40px]"></div>
-                      <div className="border-b-2 border-dashed border-blue-500 rounded-tr-[40px]"></div>
-                      <div className="border-r-2 border-b-2 border-dashed border-blue-500"></div>
-                     <div className="border-b-2 border-dashed border-blue-500"></div>
-                      <div className="border-r-2 border-dashed border-blue-500 rounded-bl-[40px]"></div>
-                      <div className="border-dashed border-blue-500 rounded-br-[40px]"></div>
-                    </div>
-                  )}
-
-                  {/* Siluetas Dinámicas Generadas con CSS */}
-                  {(!formData.vehicleType || formData.vehicleType === 'auto') && (
-                    <div className="w-full h-full bg-slate-300 rounded-[40px] border-4 border-slate-400 relative overflow-hidden flex flex-col justify-between p-2 shadow-inner">
-                      <div className="w-4/5 h-1/5 bg-slate-800/30 mx-auto rounded-t-2xl rounded-b-sm mt-5"></div>
-                      <div className="w-4/5 h-12 bg-slate-800/30 mx-auto rounded-b-xl rounded-t-sm mb-3"></div>
-                    </div>
-                  )}
-                  {formData.vehicleType === 'furgon_pequeno' && (
-                    <div className="w-full h-full relative flex flex-col items-center z-10">
-                      {/* Nariz corta característica (Capó tipo Partner/Berlingo) */}
-                      <div className="w-[80%] h-[18%] bg-slate-300 rounded-t-[35px] border-x-4 border-t-4 border-slate-400 shadow-inner z-0"></div>
-                      
-                      {/* Cabina y zona de carga unificada (El cajón) */}
-                      <div className="w-[100%] h-[82%] bg-slate-200 rounded-t-[15px] rounded-b-[20px] border-4 border-slate-400 shadow-inner flex flex-col p-1.5 z-10 -mt-2">
-                        {/* Parabrisas curvo frontal */}
-                        <div className="w-[90%] h-[20%] bg-slate-800/40 mx-auto rounded-t-[15px] rounded-b-sm mb-1.5 shadow-sm"></div>
-                        
-                        {/* Techo y caja trasera */}
-                        <div className="flex-1 w-[95%] mx-auto bg-slate-300 border-2 border-slate-400/30 rounded-md relative flex justify-center overflow-hidden">
-                          {/* Línea central que marca las puertas traseras asimétricas/simétricas */}
-                          <div className="w-1/2 h-full border-r-2 border-slate-400/50"></div>
+              <div className="bg-amber-50 p-4 rounded-2xl border-2 border-amber-200 mt-4 shadow-sm">
+                  <h3 className="text-sm font-extrabold text-amber-800 mb-1 flex items-center gap-2"><AlertCircle className="w-4 h-4"/> Alertas Internas de Patente</h3>
+                  <p className="text-[10px] font-bold text-amber-700 mb-4 leading-tight">Avisos privados que no salen en el PDF. Sirven como historial para el próximo traslado.</p>
+                  
+                  {(formData.internalReminders || []).map((rem, idx) => (
+                      <div key={rem.id} className={`p-3 rounded-xl border-2 mb-3 bg-white transition-all ${rem.resolved ? 'border-green-300 opacity-60 grayscale-[50%]' : 'border-amber-300 shadow-sm'}`}>
+                          <div className="flex justify-between items-center mb-2">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Aviso #{idx + 1}</span>
+                              <label className="flex items-center gap-1.5 cursor-pointer text-xs font-bold text-green-700 bg-green-50 px-2 py-1 rounded-lg border border-green-200 transition-colors">
+                                  <input type="checkbox" className="w-4 h-4 accent-green-600 rounded cursor-pointer" checked={rem.resolved} onChange={e => handleReminderChange(idx, 'resolved', e.target.checked)}/>
+                                  Solucionado
+                              </label>
+                          </div>
+                          <textarea disabled={rem.resolved} value={rem.text} onChange={e => handleReminderChange(idx, 'text', e.target.value)} placeholder="Ej: Triángulo roto, falta gata, rueda repuesto baja..." className="w-full border-2 border-slate-100 p-2.5 rounded-lg text-sm font-bold outline-none focus:border-amber-500 mb-2 disabled:bg-slate-50 text-slate-700 resize-none min-h-[60px]"/>
                           
-                          {/* Nervaduras del techo típicas de los utilitarios pequeños */}
-                          <div className="absolute top-1/4 w-full border-t-2 border-slate-400/20"></div>
-                          <div className="absolute top-2/4 w-full border-t-2 border-slate-400/20"></div>
-                          <div className="absolute top-3/4 w-full border-t-2 border-slate-400/20"></div>
+                          <div className="flex items-center gap-2">
+                              <label className={`flex-1 py-2 text-center rounded-lg border-2 border-dashed cursor-pointer text-[10px] font-extrabold transition-colors uppercase tracking-wide ${rem.photo ? 'bg-green-50 border-green-400 text-green-700' : 'bg-slate-50 border-slate-300 hover:bg-slate-100 text-slate-500'}`}>
+                                  <input type="file" accept="image/*" className="hidden" disabled={rem.resolved} onChange={async e => { const f=e.target.files[0]; if(!f)return; try{ const dUrl = await resizeImage(f, 400, 0.4); handleReminderChange(idx, 'photo', dUrl); }catch(err){}}}/>
+                                  {rem.photo ? '📸 Foto Guardada' : '📸 Adjuntar Foto'}
+                              </label>
+                              {rem.photo && <button type="button" onClick={() => {
+                                  const w = window.open(""); 
+                                  w.document.write(`<img src="${rem.photo}" style="width:100%;max-width:800px;margin:auto;display:block;padding-top:20px;"/>`);
+                              }} className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors border border-blue-200"><Eye className="w-4 h-4"/></button>}
+                              <button type="button" onClick={()=>removeReminder(idx)} className="p-2 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg transition-colors border border-red-200"><Trash2 className="w-4 h-4"/></button>
+                          </div>
+                      </div>
+                  ))}
+                  <button type="button" onClick={addReminder} className="w-full py-3 bg-amber-200 hover:bg-amber-300 text-amber-800 font-black text-xs uppercase tracking-widest rounded-xl transition-colors border border-amber-300 shadow-sm">+ Agregar Nuevo Aviso</button>
+              </div>
+            </div>
+          )}
+
+          {/* PESTAÑA 4: FOTOS (MAPA FOTOGRÁFICO INTERACTIVO) */}
+          {step === 4 && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              <div className="flex justify-between items-end border-b border-slate-100 pb-2 mb-2">
+                <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Croquis Pericial de Daños</h3>
+                <select value={formData.vehicleType || 'auto'} onChange={e => setF('vehicleType', e.target.value)} className="bg-slate-100 border-2 border-slate-200 text-[10px] font-bold p-1.5 rounded-lg outline-none text-slate-700 cursor-pointer max-w-[140px]">
+                  <option value="auto">🚙 Auto/SUV</option>
+                  <option value="camioneta">🛻 Camioneta</option>
+                  <option value="furgon_pequeno">🚐 Furgón Peq.</option>
+                  <option value="furgon_grande">🚐 Furgón Grande</option>
+                  <option value="camion">🚚 Camión Simple</option>
+                  <option value="camion_doble">🚚 Camión Doble Cab.</option>
+                  <option value="camion_2ejes">🚛 Camión (2 Ejes)</option>
+                  <option value="camion_3ejes">🚛 Camión (3 Ejes)</option>
+                </select>
+              </div>
+
+              <div className="bg-slate-50 p-4 rounded-3xl border-2 border-slate-100 mb-4 select-none relative">
+                <div className="flex justify-between items-center mb-4 min-h-[40px]">
+                  {!formData.zoomZone ? (
+                    <p className="text-[10px] font-black text-slate-400 uppercase leading-relaxed w-full text-center">
+                      Toca los recuadros para fotos generales.<br/>
+                      <span className="text-blue-500 text-xs">Toca un cuadrante del auto para acercar y marcar.</span>
+                    </p>
+                  ) : (
+                    <div className="w-full flex items-center justify-between bg-blue-50 p-2 rounded-xl border border-blue-200 animate-in fade-in">
+                      <p className="text-[11px] font-black text-blue-700 uppercase animate-pulse flex items-center gap-1"><Search className="w-4 h-4"/> Toca el daño exacto</p>
+                      <button type="button" onClick={() => setF('zoomZone', null)} className="bg-white px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 shadow-sm border border-slate-200 flex items-center gap-1 hover:bg-slate-100 transition-colors"><X className="w-3 h-3"/> Volver</button>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="relative w-full max-w-[280px] h-[400px] mx-auto my-6">
+                  {/* VEHÍCULO INTERACTIVO CENTRAL CON ZOOM */}
+                  <div 
+                     className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 cursor-crosshair transition-all duration-300 ease-out drop-shadow-lg ${
+                       !formData.zoomZone ? 'scale-100 z-10 hover:opacity-90' : 
+                       formData.zoomZone === 'tl' ? 'scale-[1.8] origin-top-left z-50' :
+                       formData.zoomZone === 'tr' ? 'scale-[1.8] origin-top-right z-50' :
+                       formData.zoomZone === 'ml' ? 'scale-[1.8] origin-left z-50' :
+                       formData.zoomZone === 'mr' ? 'scale-[1.8] origin-right z-50' :
+                       formData.zoomZone === 'bl' ? 'scale-[1.8] origin-bottom-left z-50' :
+                       'scale-[1.8] origin-bottom-right z-50'
+                     }`}
+                     style={{ height: formData.vehicleType?.includes('camion') || formData.vehicleType === 'furgon_grande' ? '260px' : '220px' }}
+                     onClick={(e) => {
+                       const rect = e.currentTarget.getBoundingClientRect();
+                       const x = ((e.clientX - rect.left) / rect.width) * 100;
+                       const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+                       if (!formData.zoomZone) {
+                         let zone = y < 33 ? 't' : y < 66 ? 'm' : 'b';
+                         zone += x < 50 ? 'l' : 'r';
+                         setF('zoomZone', zone);
+                         return;
+                       }
+
+                       const availableDet = ['det1', 'det2', 'det3', 'det4', 'det5', 'det6', 'det7', 'det8'].find(d => !formData.photos[d]);
+                       if (!availableDet) return showAlert("Máximo de 8 fotos de detalles/daños alcanzado.");
+                       
+                       setF('pendingPin', { id: availableDet, x, y });
+                       document.getElementById(`pic-${availableDet}`).click();
+                       setF('zoomZone', null);
+                     }}
+                  >
+                    {!formData.zoomZone && (
+                      <div className="absolute inset-0 grid grid-cols-2 grid-rows-3 pointer-events-none z-40 opacity-40 mix-blend-multiply">
+                        <div className="border-r-2 border-b-2 border-dashed border-blue-500 rounded-tl-[40px]"></div>
+                        <div className="border-b-2 border-dashed border-blue-500 rounded-tr-[40px]"></div>
+                        <div className="border-r-2 border-b-2 border-dashed border-blue-500"></div>
+                        <div className="border-b-2 border-dashed border-blue-500"></div>
+                        <div className="border-r-2 border-dashed border-blue-500 rounded-bl-[40px]"></div>
+                        <div className="border-dashed border-blue-500 rounded-br-[40px]"></div>
+                      </div>
+                    )}
+
+                    {(!formData.vehicleType || formData.vehicleType === 'auto') && (
+                      <div className="w-full h-full bg-slate-300 rounded-[40px] border-4 border-slate-400 relative overflow-hidden flex flex-col justify-between p-2 shadow-inner">
+                        <div className="w-4/5 h-1/5 bg-slate-800/30 mx-auto rounded-t-2xl rounded-b-sm mt-5"></div>
+                        <div className="w-4/5 h-12 bg-slate-800/30 mx-auto rounded-b-xl rounded-t-sm mb-3"></div>
+                      </div>
+                    )}
+                    {formData.vehicleType === 'furgon_pequeno' && (
+                      <div className="w-full h-full relative flex flex-col items-center z-10">
+                        <div className="w-[80%] h-[18%] bg-slate-300 rounded-t-[35px] border-x-4 border-t-4 border-slate-400 shadow-inner z-0"></div>
+                        <div className="w-[100%] h-[82%] bg-slate-200 rounded-t-[15px] rounded-b-[20px] border-4 border-slate-400 shadow-inner flex flex-col p-1.5 z-10 -mt-2">
+                          <div className="w-[90%] h-[20%] bg-slate-800/40 mx-auto rounded-t-[15px] rounded-b-sm mb-1.5 shadow-sm"></div>
+                          <div className="flex-1 w-[95%] mx-auto bg-slate-300 border-2 border-slate-400/30 rounded-md relative flex justify-center overflow-hidden">
+                            <div className="w-1/2 h-full border-r-2 border-slate-400/50"></div>
+                            <div className="absolute top-1/4 w-full border-t-2 border-slate-400/20"></div>
+                            <div className="absolute top-2/4 w-full border-t-2 border-slate-400/20"></div>
+                            <div className="absolute top-3/4 w-full border-t-2 border-slate-400/20"></div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                  {formData.vehicleType === 'furgon_grande' && (
-                    <div className="w-full h-full bg-slate-200 rounded-t-[35px] rounded-b-[10px] border-4 border-slate-400 relative flex flex-col justify-start p-2 shadow-inner z-10">
-                      {/* Parabrisas delantero curvo */}
-                      <div className="w-[85%] h-[15%] bg-slate-800/40 mx-auto rounded-t-[20px] rounded-b-sm mt-1"></div>
-                      
-                      {/* Techo unificado continuo con nervaduras típicas de Sprinter/Boxer */}
-                      <div className="flex-1 w-[90%] mx-auto bg-slate-300 border-2 border-slate-400/30 rounded-sm mt-3 mb-1 flex items-center justify-center relative overflow-hidden shadow-sm">
-                        {/* Línea central que baja hasta las dos puertas traseras */}
-                        <div className="w-1/2 h-full border-r-2 border-slate-400/40"></div>
-                        
-                        {/* Nervaduras del techo (líneas horizontales) */}
-                        <div className="absolute top-1/4 w-full border-t border-slate-400/20"></div>
-                        <div className="absolute top-2/4 w-full border-t border-slate-400/20"></div>
-                        <div className="absolute top-3/4 w-full border-t border-slate-400/20"></div>
+                    )}
+                    {formData.vehicleType === 'furgon_grande' && (
+                      <div className="w-full h-full bg-slate-200 rounded-t-[35px] rounded-b-[10px] border-4 border-slate-400 relative flex flex-col justify-start p-2 shadow-inner z-10">
+                        <div className="w-[85%] h-[15%] bg-slate-800/40 mx-auto rounded-t-[20px] rounded-b-sm mt-1"></div>
+                        <div className="flex-1 w-[90%] mx-auto bg-slate-300 border-2 border-slate-400/30 rounded-sm mt-3 mb-1 flex items-center justify-center relative overflow-hidden shadow-sm">
+                          <div className="w-1/2 h-full border-r-2 border-slate-400/40"></div>
+                          <div className="absolute top-1/4 w-full border-t border-slate-400/20"></div>
+                          <div className="absolute top-2/4 w-full border-t border-slate-400/20"></div>
+                          <div className="absolute top-3/4 w-full border-t border-slate-400/20"></div>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                     {formData.vehicleType === 'camioneta' && (
                       <div className="w-full h-full relative flex flex-col">
                         <div className="w-full h-[40%] bg-slate-300 rounded-t-[35px] rounded-b-md border-4 border-slate-400 p-2 flex flex-col justify-between shadow-inner">
@@ -4316,3 +4231,17 @@ const dataUrl = await resizeImage(f, 350, 0.3);
 
         </form>
       </div>
+
+      {/* NUEVO: MODAL DE FOTO EN PANTALLA COMPLETA PARA EL CONDUCTOR */}
+      {fullScreenImage && (
+        <div className="fixed inset-0 bg-slate-900/95 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm cursor-zoom-out animate-in fade-in duration-200" onClick={() => setFullScreenImage(null)}>
+          <button onClick={() => setFullScreenImage(null)} className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 p-2 rounded-full text-white transition-colors shadow-lg">
+            <X className="w-6 h-6" />
+          </button>
+          <img src={fullScreenImage} alt="Evidencia Ampliada" className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
+
+    </div>
+  );
+}
