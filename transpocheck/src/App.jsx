@@ -861,7 +861,7 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
     docPDF.save(fileName); 
     setDownloadingId(null); // Apaga el relojito
     
-    }catch (error) {
+    };catch (error) {
       console.error("Error crítico generando PDF en Portal:", error);
       alert("Hubo un error al descargar el PDF. Verifica tu conexión a internet e intenta de nuevo.");
       setDownloadingId(null); // Apaga el relojito en caso de error
