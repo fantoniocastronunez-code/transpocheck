@@ -858,6 +858,17 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
   const [batchSignOpen, setBatchSignOpen] = useState(false);
   const [batchFormData, setBatchFormData] = useState({ name: '', rut: '', comments: '', signature: null, selectedIds: [] });
 
+  // REPARACIÓN ERROR 310: El Hook se mueve arriba del Return
+  const branding = React.useMemo(() => {
+    const name = (clientName || '').toUpperCase();
+    if (name.includes('KOVACS')) return { primary: 'bg-red-600', text: 'text-red-600', fill: 'bg-red-500', light: 'bg-red-50' };
+    if (name.includes('SALFA')) return { primary: 'bg-emerald-600', text: 'text-emerald-600', fill: 'bg-emerald-500', light: 'bg-emerald-50' };
+    if (name.includes('GRANDLEASING')) return { primary: 'bg-slate-900', text: 'text-slate-800', fill: 'bg-slate-800', light: 'bg-slate-100' };
+    if (name.includes('ENEX')) return { primary: 'bg-sky-600', text: 'text-sky-600', fill: 'bg-sky-500', light: 'bg-sky-50' };
+    // Predeterminado
+    return { primary: 'bg-blue-600', text: 'text-blue-600', fill: 'bg-blue-500', light: 'bg-blue-50' };
+  }, [clientName]);
+
   if (loading) return <div className="min-h-screen bg-slate-50 flex items-center justify-center"><p className="font-bold text-slate-400 animate-pulse flex items-center gap-2"><Clock className="w-5 h-5"/> Cargando portal...</p></div>;
 
   // NUEVO: Lógica de Filtro
@@ -874,17 +885,6 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
   
   // NUEVO: Vehículos que tienen checklist guardado pero faltan por firmar
   const pendingSignatureJobs = activeJobs.filter(j => j.checklist && !j.checklist.clientSigned);
-
-  // NUEVO: Branding Dinámico por Cliente
-  const branding = React.useMemo(() => {
-    const name = (clientName || '').toUpperCase();
-    if (name.includes('KOVACS')) return { primary: 'bg-red-600', text: 'text-red-600', fill: 'bg-red-500', light: 'bg-red-50' };
-    if (name.includes('SALFA')) return { primary: 'bg-emerald-600', text: 'text-emerald-600', fill: 'bg-emerald-500', light: 'bg-emerald-50' };
-    if (name.includes('GRANDLEASING')) return { primary: 'bg-slate-900', text: 'text-slate-800', fill: 'bg-slate-800', light: 'bg-slate-100' };
-    if (name.includes('ENEX')) return { primary: 'bg-sky-600', text: 'text-sky-600', fill: 'bg-sky-500', light: 'bg-sky-50' };
-    // Predeterminado
-    return { primary: 'bg-blue-600', text: 'text-blue-600', fill: 'bg-blue-500', light: 'bg-blue-50' };
-  }, [clientName]);
   
   const initials = clientName ? clientName.substring(0, 2).toUpperCase() : 'CL';
 
