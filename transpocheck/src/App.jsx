@@ -961,24 +961,29 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
                   </div>
                 </div>
                 
-                <div className="relative pl-8 space-y-6 before:absolute before:inset-y-2 before:left-[11px] before:w-0.5 before:bg-slate-100 flex-1">
-                  {/* PASO 1: Nombre del Conductor si está aceptado */}
-                  <div className="relative"><div className="absolute -left-8 bg-blue-500 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center"><CheckCircle className="w-3 h-3 text-white"/></div><p className="font-extrabold text-slate-800 text-sm">{isAccepted ? (job.assignedDrivers?.find(d => d.email === job.acceptedByEmail)?.name || "Conductor en camino") : "Buscando conductor..."}</p><p className="text-xs font-bold text-slate-500 mt-0.5">{isAccepted ? `Responsable del retiro en ${job.origin}` : `Esperando asignación para ${job.origin}`}</p></div>
+                <div className="relative pl-8 space-y-6 flex-1 mt-2">
+                  {/* LÍNEAS DE TIEMPO ANIMADAS (Fondo gris y Relleno azul) */}
+                  <div className="absolute top-2 bottom-4 left-[11px] w-0.5 bg-slate-100 rounded-full"></div>
+                  <div className="absolute top-2 left-[11px] w-0.5 bg-blue-500 rounded-full transition-all duration-1000 ease-out" 
+                       style={{ height: step4Done ? '100%' : step3Done ? '66%' : step2Done ? '33%' : isAccepted ? '10%' : '0%' }}></div>
+
+                  {/* PASO 1: Nombre del Conductor */}
+                  <div className="relative"><div className="absolute -left-8 bg-blue-500 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 transition-transform duration-300 hover:scale-110"><CheckCircle className="w-3 h-3 text-white"/></div><p className="font-extrabold text-slate-800 text-sm">{isAccepted ? (job.assignedDrivers?.find(d => d.email === job.acceptedByEmail)?.name || "Conductor en camino") : "Buscando conductor..."}</p><p className="text-xs font-bold text-slate-500 mt-0.5">{isAccepted ? `Responsable del retiro en ${job.origin}` : `Esperando asignación para ${job.origin}`}</p></div>
                   
                   {/* PASO 2: Vehículo en poder */}
-                  <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step2Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step2Done && <CheckCircle className="w-3 h-3 text-white"/>}</div><p className={`font-extrabold text-sm ${step2Done ? 'text-slate-800' : 'text-slate-400'}`}>Vehículo en Tránsito</p><p className={`text-xs font-bold mt-0.5 ${step2Done ? 'text-blue-600' : 'text-slate-400'}`}>{step2Done ? 'El conductor tiene el vehículo en su poder' : 'Esperando retiro'}</p></div>
+                  <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 transition-all duration-500 ${step2Done ? 'bg-blue-500 scale-110' : 'bg-slate-200'}`}>{step2Done && <CheckCircle className="w-3 h-3 text-white animate-in zoom-in"/>}</div><p className={`font-extrabold text-sm transition-colors duration-500 ${step2Done ? 'text-slate-800' : 'text-slate-400'}`}>Vehículo en Tránsito</p><p className={`text-xs font-bold mt-0.5 transition-colors duration-500 ${step2Done ? 'text-blue-600' : 'text-slate-400'}`}>{step2Done ? 'El conductor tiene el vehículo en su poder' : 'Esperando retiro'}</p></div>
                   
                   {/* PASO 3: Llegada */}
-                  <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step3Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step3Done && <CheckCircle className="w-3 h-3 text-white"/>}</div><p className={`font-extrabold text-sm ${step3Done ? 'text-slate-800' : 'text-slate-400'}`}>{job.tripType === 'revision' ? 'En Planta de Revisión' : 'Llegada a Destino'}</p><p className={`text-xs font-bold mt-0.5 ${step3Done ? 'text-blue-600' : 'text-slate-400'}`}>{step3Done ? (job.tripType === 'revision' ? 'Realizando inspección técnica' : 'En proceso de entrega y checklist') : `Hacia ${job.tripType === 'revision' ? 'PRT' : job.destination}`}</p></div>
+                  <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 transition-all duration-500 ${step3Done ? 'bg-blue-500 scale-110' : 'bg-slate-200'}`}>{step3Done && <CheckCircle className="w-3 h-3 text-white animate-in zoom-in"/>}</div><p className={`font-extrabold text-sm transition-colors duration-500 ${step3Done ? 'text-slate-800' : 'text-slate-400'}`}>{job.tripType === 'revision' ? 'En Planta de Revisión' : 'Llegada a Destino'}</p><p className={`text-xs font-bold mt-0.5 transition-colors duration-500 ${step3Done ? 'text-blue-600' : 'text-slate-400'}`}>{step3Done ? (job.tripType === 'revision' ? 'Realizando inspección técnica' : 'En proceso de entrega y checklist') : `Hacia ${job.tripType === 'revision' ? 'PRT' : job.destination}`}</p></div>
                   
                   {/* PASO 4: Resultado PRT */}
                   {job.tripType === 'revision' && (
-                  <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step4Done ? (job.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200'}`}>{step4Done && <CheckCircle className="w-3 h-3 text-white"/>}</div><p className={`font-extrabold text-sm ${step4Done ? (job.prt_result === 'rechazado' ? 'text-red-600' : 'text-green-600') : 'text-slate-400'}`}>Resultado de Revisión</p>{step4Done ? (<p className={`text-xs font-bold mt-0.5 ${job.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-600'}`}>{job.prt_result === 'rechazado' ? `Rechazado: ${job.prt_reason}` : 'Aprobado Exitosamente'}</p>) : (<p className="text-xs font-bold text-slate-400 mt-0.5">Esperando documento de la planta</p>)}</div>
+                  <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 transition-all duration-500 ${step4Done ? (job.prt_result === 'rechazado' ? 'bg-red-500 scale-110' : 'bg-green-500 scale-110') : 'bg-slate-200'}`}>{step4Done && <CheckCircle className="w-3 h-3 text-white animate-in zoom-in"/>}</div><p className={`font-extrabold text-sm transition-colors duration-500 ${step4Done ? (job.prt_result === 'rechazado' ? 'text-red-600' : 'text-green-600') : 'text-slate-400'}`}>Resultado de Revisión</p>{step4Done ? (<p className={`text-xs font-bold mt-0.5 ${job.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-600'}`}>{job.prt_result === 'rechazado' ? `Rechazado: ${job.prt_reason}` : 'Aprobado Exitosamente'}</p>) : (<p className="text-xs font-bold text-slate-400 mt-0.5">Esperando documento de la planta</p>)}</div>
                   )}
 
                   {/* NUEVO PASO 5: Camino a Destino (Solo si la PRT ya se resolvió) */}
                   {job.tripType === 'revision' && step4Done && (
-                  <div className="relative"><div className="absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center bg-blue-500"><div className="w-2 h-2 bg-white rounded-full animate-ping"></div></div><p className="font-extrabold text-sm text-slate-800">Camino a destino</p><p className="text-xs font-bold text-blue-600 mt-0.5">El vehículo va en ruta a su destino final</p></div>
+                  <div className="relative"><div className="absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 bg-blue-500 scale-110"><div className="w-2 h-2 bg-white rounded-full animate-ping"></div></div><p className="font-extrabold text-sm text-slate-800">Camino a destino</p><p className="text-xs font-bold text-blue-600 mt-0.5">El vehículo va en ruta a su destino final</p></div>
                   )}
                 </div>
 
@@ -2035,7 +2040,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.2.6</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.2.7</p>
                 </div>
               </div>
             )}
@@ -2097,8 +2102,8 @@ export default function App() {
                 </div>
               )}
               
-              {adminTab === 'newJob' && <NewJobForm key={editingJob ? editingJob.id : 'new'} jobToEdit={editingJob} onCancelEdit={() => {setEditingJob(null); setAdminTab('dashboard');}} allClientsList={allClientsList} vehicles={vehicles} drivers={drivers} db={db} showAlert={showAlert} onSuccess={() => setAdminTab('dashboard')} />}
-              {adminTab === 'config' && <ConfigView allClientsList={allClientsList} customClients={customClients} vehicles={vehicles} drivers={drivers} db={db} showAlert={showAlert} showConfirm={showConfirm} />}
+              {adminTab === 'newJob' && <div className="animate-in zoom-in-[0.98] slide-in-from-bottom-8 duration-500 ease-out"><NewJobForm key={editingJob ? editingJob.id : 'new'} jobToEdit={editingJob} onCancelEdit={() => {setEditingJob(null); setAdminTab('dashboard');}} allClientsList={allClientsList} vehicles={vehicles} drivers={drivers} db={db} showAlert={showAlert} onSuccess={() => setAdminTab('dashboard')} /></div>}
+              {adminTab === 'config' && <div className="animate-in zoom-in-[0.98] duration-300"><ConfigView allClientsList={allClientsList} customClients={customClients} vehicles={vehicles} drivers={drivers} db={db} showAlert={showAlert} showConfirm={showConfirm} /></div>}
             </>
           ) : (
             <div className="space-y-6">
@@ -2117,7 +2122,7 @@ export default function App() {
       {currentView === 'main' && mainTab === 'expenses' && <ExpensesView role={activeRole} drivers={drivers} jobs={jobs} expenses={expenses} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />}
       
       {currentView === 'checklist' && selectedJob && (
-        <main className="max-w-2xl mx-auto p-4 pt-20 sm:pt-24 pb-24">
+        <main className="max-w-2xl mx-auto p-4 pt-20 sm:pt-24 pb-24 animate-in zoom-in-[0.98] slide-in-from-bottom-8 duration-500 ease-out">
           <ChecklistForm 
              job={selectedJob} db={db} currentUserEmail={currentUserEmail} 
              allClientsList={allClientsList}
@@ -2880,7 +2885,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     const step4Done = isAccepted && phase === 'prt_done';
 
     return (
-      <div key={j.id} className="bg-white rounded-3xl border border-slate-100 p-4 sm:p-5 flex flex-col shadow-sm relative hover:shadow-md transition-shadow overflow-hidden">
+      <div key={j.id} className="bg-white rounded-3xl border border-slate-100 p-4 sm:p-5 flex flex-col shadow-sm relative hover:shadow-xl hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 overflow-hidden cursor-default">
         <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${isPending ? 'bg-amber-400' : 'bg-blue-500'}`}></div>
         
         {/* --- NUEVO ENCABEZADO: PATENTE/VIN COMPLETO --- */}
@@ -3012,7 +3017,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     const isFailed = j.status === 'failed';
     
     return (
-      <div key={j.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between relative pl-5 overflow-hidden hover:shadow-md transition-shadow">
+      <div key={j.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between relative pl-5 overflow-hidden hover:shadow-xl hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-default">
         <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
         <div className="flex justify-between items-center mb-1">
           <p className="text-sm font-black text-slate-800 leading-tight truncate pr-2">{j.brand} {j.model}</p>
@@ -3659,23 +3664,24 @@ const dataUrl = await resizeImage(f, 350, 0.3);
 
             <h3 className="text-sm font-extrabold border-b-2 border-slate-100 pb-2 mt-6 text-slate-800">Documentos a bordo</h3>
             <div className="grid grid-cols-2 gap-3 pt-2">
-              {[{ id: 'soap', label: 'SOAP' }, { id: 'permiso', label: 'Permiso' }, { id: 'revTecnica', label: 'Rev. Técnica' }, { id: 'gases', label: 'Gases' }].map(doc => (
-                <div key={doc.id} className="flex flex-col gap-1">
-                  <label className={`flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all ${formData.docs[doc.id] ? 'border-green-500 bg-green-50 text-green-800' : 'border-slate-200 bg-white text-slate-600'}`}>
-                    <input type="checkbox" className="w-4 h-4 text-green-600 rounded cursor-pointer" checked={formData.docs[doc.id]} onChange={(e) => setF('docs', { ...formData.docs, [doc.id]: e.target.checked })} />
-                    <span className="font-extrabold text-xs">{doc.label}</span>
-                  </label>
+              {[{ id: 'soap', label: 'SOAP', icon: <FileText className="w-5 h-5"/> }, { id: 'permiso', label: 'Permiso', icon: <MapPin className="w-5 h-5"/> }, { id: 'revTecnica', label: 'Revisión', icon: <CheckCircle className="w-5 h-5"/> }, { id: 'gases', label: 'Gases', icon: <CloudOff className="w-5 h-5"/> }].map(doc => (
+                <div key={doc.id} className="flex flex-col gap-2">
+                  <button 
+                    type="button" 
+                    onClick={() => setF('docs', { ...formData.docs, [doc.id]: !formData.docs[doc.id] })} 
+                    className={`flex flex-col items-center justify-center gap-1.5 h-24 rounded-2xl border-2 active:scale-95 transition-all duration-200 select-none shadow-sm ${formData.docs[doc.id] ? 'border-green-500 bg-green-500 text-white shadow-green-200' : 'border-slate-200 bg-slate-50 text-slate-400 hover:bg-slate-100 hover:border-slate-300'}`}
+                  >
+                    {formData.docs[doc.id] ? <CheckCircle className="w-6 h-6 animate-in zoom-in"/> : doc.icon}
+                    <span className="font-black text-xs uppercase tracking-wider">{doc.label}</span>
+                  </button>
                   
-                  {/* Desplegable de fecha de vencimiento (Opcional) */}
+                  {/* Desplegable de fecha de vencimiento con diseño mejorado */}
                   {formData.docs[doc.id] && (
-                    <div className="animate-in fade-in slide-in-from-top-2 duration-200">
-                      <p className="text-[10px] font-bold text-slate-400 mb-1 ml-1">Vencimiento (Opcional):</p>
-                      <input 
-                        type="date" 
-                        value={formData.docsExpiry?.[doc.id] || ''} 
-                        onChange={(e) => setF('docsExpiry', { ...(formData.docsExpiry || {}), [doc.id]: e.target.value })}
-                        className="w-full border-2 border-green-200 bg-white p-2.5 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-green-500 transition-colors shadow-sm" 
-                      />
+                    <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                      <div className="bg-green-50 border border-green-200 p-2 rounded-xl flex flex-col gap-1 shadow-inner">
+                        <p className="text-[9px] font-extrabold text-green-700 uppercase tracking-widest text-center">Vencimiento</p>
+                        <input type="date" value={formData.docsExpiry?.[doc.id] || ''} onChange={(e) => setF('docsExpiry', { ...(formData.docsExpiry || {}), [doc.id]: e.target.value })} className="w-full bg-white border border-green-200 p-1.5 rounded-lg text-xs font-black text-slate-700 outline-none focus:border-green-500 text-center" />
+                      </div>
                     </div>
                   )}
                 </div>
