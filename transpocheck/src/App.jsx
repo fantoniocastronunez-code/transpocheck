@@ -185,6 +185,7 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
   const [model, setModel] = useState(jobToEdit?.model || '');
   const [plate, setPlate] = useState(jobToEdit?.plate || jobToEdit?.vin || '');
   const [tripType, setTripType] = useState(jobToEdit?.tripType || 'traslado');
+  const [vehicleType, setVehicleType] = useState(jobToEdit?.vehicleType || 'auto');
   
   const [revType, setRevType] = useState(jobToEdit?.rtData?.type || 'A');
   const [revA_gases, setRevA_gases] = useState(jobToEdit?.rtData?.gases || false);
@@ -230,7 +231,7 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
     const jobData = {
       scheduledDate: formData.get('scheduledDate'), client: finalClient, brand, model,
       vin: plate, plate, origin: formData.get('origin'), destination: formData.get('destination'),
-      tripType, rtData: rtData || null, // Protección anti-crash
+      tripType, vehicleType, rtData: rtData || null, // Protección anti-crash
       assignedDrivers: assignedDriversList.map(d => ({id: d.id, name: d.name, email: d.email})), assignedEmails: assignedDriversList.map(d => d.email)
     };
 
@@ -316,6 +317,13 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
              <input value={plate} onChange={handlePlateChange} type="text" placeholder="Patente o VIN" className="w-full border-2 border-slate-300 p-3 text-sm rounded-xl col-span-2 uppercase outline-none focus:border-blue-500 font-black bg-slate-100 text-slate-800 shadow-inner" />
              <input value={brand} onChange={e=>setBrand(e.target.value)} type="text" placeholder="Marca" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-800" />
              <input value={model} onChange={e=>setModel(e.target.value)} type="text" placeholder="Modelo" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-800" />
+             <select value={vehicleType} onChange={e=>setVehicleType(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl col-span-2 outline-none focus:border-blue-500 font-bold text-slate-700 bg-white">
+               <option value="auto">🚙 Auto / SUV</option>
+               <option value="camioneta">🛻 Camioneta</option>
+               <option value="camion">🚚 Camión Corto</option>
+               <option value="camion_2ejes">🚛 Camión (2 Ejes traseros)</option>
+               <option value="camion_3ejes">🚛 Camión (3 Ejes traseros)</option>
+             </select>
            </div>
         </div>
         
@@ -3323,7 +3331,7 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
 
   // Sincroniza automáticamente lo seleccionado en la tarjeta de traslado del flujo principal
   const defaultData = {
-    client: job.client||'', manualClient: '', brand: job.brand||'', model: job.model||'', plateOrVin: job.plate||job.vin||'', origin: job.origin||'', destination: job.destination||'', fuelLevel: 50, photos: { front:false, left:false, right:false, back:false, tire:false, dashboard:false, det1:false, det2:false, det3:false, det4:false }, 
+    client: job.client||'', manualClient: '', brand: job.brand||'', model: job.model||'', plateOrVin: job.plate||job.vin||'', origin: job.origin||'', destination: job.destination||'', vehicleType: job.vehicleType||'auto', fuelLevel: 50, photos: { front:false, left:false, right:false, back:false, tire:false, dashboard:false, det1:false, det2:false, det3:false, det4:false }, 
     docs: job.checklist?.docs || initialDocs, 
     docsExpiry: job.checklist?.docsExpiry || initialDocsExpiry, 
     internalReminders: job.checklist?.internalReminders || initialReminders, 
@@ -3840,10 +3848,12 @@ const dataUrl = await resizeImage(f, 350, 0.3);
 
             <div className="flex justify-between items-end border-b-2 border-slate-100 pb-2 mt-8 mb-4">
               <h3 className="text-sm font-extrabold text-slate-800">Mapa Fotográfico</h3>
-              <select value={formData.vehicleType || 'auto'} onChange={e => setF('vehicleType', e.target.value)} className="bg-slate-100 border-2 border-slate-200 text-xs font-bold p-1.5 rounded-lg outline-none text-slate-700 cursor-pointer">
-                <option value="auto">🚙 Auto / SUV</option>
+              <select value={formData.vehicleType || 'auto'} onChange={e => setF('vehicleType', e.target.value)} className="bg-slate-100 border-2 border-slate-200 text-[10px] font-bold p-1.5 rounded-lg outline-none text-slate-700 cursor-pointer max-w-[130px]">
+                <option value="auto">🚙 Auto/SUV</option>
                 <option value="camioneta">🛻 Camioneta</option>
-                <option value="camion">🚚 Camión</option>
+                <option value="camion">🚚 Camión Corto</option>
+                <option value="camion_2ejes">🚛 Camión (2 Ejes)</option>
+                <option value="camion_3ejes">🚛 Camión (3 Ejes)</option>
               </select>
             </div>
 
@@ -3930,10 +3940,40 @@ const dataUrl = await resizeImage(f, 350, 0.3);
                   )}
                   {formData.vehicleType === 'camion' && (
                     <div className="w-full h-full relative flex flex-col">
-                      <div className="w-[105%] -ml-[2.5%] h-[20%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-300 p-1 flex flex-col justify-end shadow-inner">
+                      <div className="w-[105%] -ml-[2.5%] h-[20%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-300 p-1 flex flex-col justify-end shadow-inner z-10 relative">
                         <div className="w-full h-1/2 bg-slate-800/40 rounded-t-md rounded-b-sm mb-1"></div>
                       </div>
-                      <div className="w-full h-[78%] mx-auto bg-slate-200 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner">
+                      <div className="w-full h-[78%] mx-auto bg-slate-200 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
+                        <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
+                      </div>
+                    </div>
+                  )}
+                  {/* CAMIONES CON EJES VISIBLES (2 Y 3 EJES) */}
+                  {(formData.vehicleType === 'camion_2ejes' || formData.vehicleType === 'camion_3ejes') && (
+                    <div className="w-full h-full relative flex flex-col items-center">
+                      {/* Ruedas Delanteras (Dirección) */}
+                      <div className="absolute top-[8%] -left-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                      <div className="absolute top-[8%] -right-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+
+                      {/* Ruedas Traseras - Eje 1 */}
+                      <div className="absolute bottom-[20%] -left-3 w-4 h-12 bg-slate-800 rounded-sm shadow-md"></div>
+                      <div className="absolute bottom-[20%] -right-3 w-4 h-12 bg-slate-800 rounded-sm shadow-md"></div>
+
+                      {/* Ruedas Traseras - Eje 2 (Solo para 3 ejes) */}
+                      {formData.vehicleType === 'camion_3ejes' && (
+                        <>
+                          <div className="absolute bottom-[2%] -left-3 w-4 h-12 bg-slate-800 rounded-sm shadow-md"></div>
+                          <div className="absolute bottom-[2%] -right-3 w-4 h-12 bg-slate-800 rounded-sm shadow-md"></div>
+                        </>
+                      )}
+
+                      {/* Cabina Frontal */}
+                      <div className="w-[105%] h-[20%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-400 p-1 flex flex-col justify-end shadow-inner z-10 relative">
+                        <div className="w-full h-1/2 bg-slate-800/50 rounded-t-md rounded-b-sm mb-1"></div>
+                      </div>
+                      
+                      {/* Chasis Trasero / Carga */}
+                      <div className="w-full h-[78%] mx-auto bg-slate-200 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
                         <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
                       </div>
                     </div>
