@@ -198,11 +198,20 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
   
   const todayStr = new Date().toISOString().split('T')[0];
 
+  // NUEVO CEREBRO: Auto-completar tipo de vehículo si ya existe en la flota
+  useEffect(() => {
+    if (brand && model && vehicles.length > 0) {
+      const match = vehicles.find(v => v.brand?.toLowerCase() === brand.toLowerCase() && v.model?.toLowerCase() === model.toLowerCase() && v.vehicleType);
+      if (match) setVehicleType(match.vehicleType);
+    }
+  }, [brand, model, vehicles]);
+
   const handlePlateChange = (e) => {
     const val = e.target.value.toUpperCase(); setPlate(val);
     const v = vehicles.find(x => x.plate === val);
     if (v) {
       setBrand(v.brand); setModel(v.model);
+      if (v.vehicleType) setVehicleType(v.vehicleType); // Recuperamos el tipo de la base
       if (allClientsList.includes(v.client)) setSelectedClient(v.client); else { setSelectedClient('OTRO'); setManualClient(v.client); }
     }
   };
@@ -248,7 +257,7 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
          showAlert(`Trabajo asignado exitosamente.`);
       }
       
-      if (plate && !vehicles.find(v => v.plate === plate)) await addDoc(collection(db, 'vehicles'), { plate, brand, model, client: finalClient, createdAt: Date.now() });
+      if (plate && !vehicles.find(v => v.plate === plate)) await addDoc(collection(db, 'vehicles'), { plate, vehicleType, brand, model, client: finalClient, createdAt: Date.now() });
       
       // --- NUEVO: LLAMADA A VERCEL PARA ENVIAR NOTIFICACIÓN PUSH REAL EN SEGUNDO PLANO ---
       const driverTokens = assignedDriversList.map(d => d.fcmToken).filter(token => token);
@@ -443,7 +452,12 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
             </select>
             <input name="manualClient" placeholder="Si es OTRO, escribe el cliente aquí" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
             <input name="brand" defaultValue={editingVehicle?.brand} placeholder="Marca (Ej. Chevrolet)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
-            <input name="model" defaultValue={editingVehicle?.model} placeholder="Modelo (Ej. NPR 816)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+            <input name="model" defaultValue={editingVehicle?.model} placeholder="Modelo (Ej. NPR 816)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold" onChange={(e) => {
+              const b = e.target.form.brand.value.trim().toLowerCase();
+              const m = e.target.value.trim().toLowerCase();
+              const match = vehicles.find(v => v.brand?.toLowerCase() === b && v.model?.toLowerCase() === m && v.vehicleType);
+              if (match && e.target.form.vehicleType) e.target.form.vehicleType.value = match.vehicleType;
+            }}/>
             <input name="plate" defaultValue={editingVehicle?.plate} placeholder="Patente" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm uppercase outline-none focus:border-blue-500 font-bold text-slate-800"/>
             <select name="vehicleType" defaultValue={editingVehicle?.vehicleType || 'auto'} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700 bg-white">
                <option value="auto">🚙 Auto / SUV</option>
