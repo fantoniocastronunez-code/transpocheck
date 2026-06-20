@@ -527,24 +527,40 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
   );
 }
 
-const WaitTimerBadge = ({ arrivedAt }) => {
-  const [mins, setMins] = useState(Math.floor((Date.now() - arrivedAt) / 60000));
+const WaitTimerBadge = ({ arrivedAt, role = 'client' }) => {
+  // Calculamos los segundos en lugar de los minutos para un reloj fluido
+  const [time, setTime] = useState(Math.floor((Date.now() - arrivedAt) / 1000));
+
   useEffect(() => {
-    const int = setInterval(() => setMins(Math.floor((Date.now() - arrivedAt) / 60000)), 60000);
+    const int = setInterval(() => setTime(Math.floor((Date.now() - arrivedAt) / 1000)), 1000);
     return () => clearInterval(int);
   }, [arrivedAt]);
+
+  const mins = Math.floor(time / 60);
+  const secs = time % 60;
+  // Formato 00:00
+  const timeString = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   
-  if (mins > 15) {
-    return (
-      <div className="mt-4 bg-red-50 border-2 border-red-500 p-4 rounded-2xl flex items-center gap-3 animate-in zoom-in shadow-sm">
-        <AlertCircle className="w-6 h-6 text-red-600 shrink-0 animate-pulse"/>
-        <p className="text-sm font-bold text-red-800">
-          El conductor lleva <span className="font-black text-red-600 text-lg">{mins} min</span> esperando la entrega de este vehículo.
+  // A los 15 minutos cambia la alerta a rojo
+  const isWarning = mins >= 15;
+  const bgClass = isWarning ? 'bg-red-50 border-red-500' : 'bg-amber-50 border-amber-400';
+  const iconClass = isWarning ? 'text-red-600' : 'text-amber-500';
+  const textClass = isWarning ? 'text-red-800' : 'text-amber-800';
+  const timeClass = isWarning ? 'text-red-600' : 'text-amber-600';
+
+  return (
+    <div className={`mt-4 mb-2 border-2 p-4 rounded-2xl flex items-center gap-4 animate-in zoom-in shadow-sm transition-colors duration-500 ${bgClass}`}>
+      <Clock className={`w-8 h-8 shrink-0 ${iconClass} animate-pulse`}/>
+      <div className="flex-1">
+        <p className={`text-[10px] font-extrabold uppercase tracking-widest ${textClass}`}>
+          {role === 'driver' ? 'Llevas esperando:' : role === 'admin' ? 'Conductor esperando:' : 'El conductor te espera hace:'}
+        </p>
+        <p className={`font-black text-3xl ${timeClass} font-mono tracking-widest leading-none mt-1`}>
+          {timeString}
         </p>
       </div>
-    );
-  }
-  return null;
+    </div>
+  );
 };
 
 function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
@@ -1014,7 +1030,7 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
                 </div>
 
                 {/* ALERTA DE TIEMPO DE ESPERA EN VIVO PARA EL CLIENTE */}
-                {job.phase === 'arrived_pickup' && job.arrivedPickupAt && <WaitTimerBadge arrivedAt={job.arrivedPickupAt} />}
+                {job.phase === 'arrived_pickup' && job.arrivedPickupAt && <WaitTimerBadge arrivedAt={job.arrivedPickupAt} role="client" />}
 
                 {/* --- NUEVO: MAPA DE SEGUIMIENTO EN VIVO (LIVE TRACKING) --- */}
                 {job.liveLocation && job.phase === 'picked_up' && (
@@ -2077,7 +2093,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.2.8</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.2.9</p>
                 </div>
               </div>
             )}
@@ -3016,6 +3032,9 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
             <div className="relative"><div className="absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center bg-blue-500"><div className="w-1.5 h-1.5 bg-white rounded-full animate-ping"></div></div><p className="font-extrabold text-[11px] text-slate-800 leading-tight">Camino a destino</p></div>
           )}
         </div>
+
+        {/* ALERTA DE TIEMPO DE ESPERA EN VIVO PARA EL CONDUCTOR/ADMIN */}
+        {j.phase === 'arrived_pickup' && j.arrivedPickupAt && <WaitTimerBadge arrivedAt={j.arrivedPickupAt} role={role} />}
 
         {j.liveLocation && j.phase === 'picked_up' && (
           <div className="mb-4 rounded-xl overflow-hidden border border-slate-200 h-28 pointer-events-none relative shadow-inner">
