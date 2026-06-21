@@ -329,19 +329,29 @@ const LicensePlateBadge = ({ text, className = "" }) => {
   const part3 = cleanText.substring(4, 6);
 
   return (
-    <div className={`inline-flex flex-col items-center justify-center bg-white border-[2px] border-slate-900 rounded-lg px-2 shadow-sm relative shrink-0 ${className}`} style={{ minWidth: '100px', paddingBottom: '3px', paddingTop: '2px' }}>
-       <div className="flex items-center gap-1 text-slate-900 text-lg leading-none tracking-wider" style={{ fontFamily: "'FE-Font', 'Arial', sans-serif" }}>
+    <div 
+      className={`inline-flex flex-col items-center justify-center border-[3px] rounded-[8px] px-2.5 shadow-md relative shrink-0 select-none ${className}`} 
+      style={{ 
+        minWidth: '135px', 
+        paddingBottom: '4px', 
+        paddingTop: '4px',
+        backgroundColor: '#f8f9fa', /* Blanco grisáceo "lata" inalterable */
+        borderColor: '#000000',     /* Borde negro puro */
+        color: '#000000'            /* Texto negro inalterable */
+      }}
+    >
+       <div className="flex items-center gap-1.5 leading-none tracking-wider" style={{ fontFamily: "'FE-Font', 'Arial', sans-serif", fontSize: '26px' }}>
           <span>{part1}</span>
-          <span className="text-[10px] leading-none mb-1">•</span>
+          <span className="leading-none mb-1 text-black" style={{ fontSize: '14px' }}>•</span>
           <span>{part2}</span>
-          {/* Escudo chileno vectorial exacto al de las placas */}
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mx-0.5">
-            <path d="M12 2L4 5V11C4 16.5 7.5 21.5 12 23C16.5 21.5 20 16.5 20 11V5L12 2Z" fill="#0f172a"/>
-            <path d="M12 16L9 18L10 14.5L7 12H10.5L12 8.5L13.5 12H17L14 14.5L15 18L12 16Z" fill="white"/>
+          {/* Escudo chileno vectorial ampliado y con relleno coincidente con el fondo */}
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mx-0.5">
+            <path d="M12 2L4 5V11C4 16.5 7.5 21.5 12 23C16.5 21.5 20 16.5 20 11V5L12 2Z" fill="#000000"/>
+            <path d="M12 16L9 18L10 14.5L7 12H10.5L12 8.5L13.5 12H17L14 14.5L15 18L12 16Z" fill="#f8f9fa"/>
           </svg>
           <span>{part3}</span>
        </div>
-       <span className="text-[5px] font-black text-slate-800 uppercase leading-none mt-0.5" style={{ letterSpacing: '0.45em', marginLeft: '0.45em' }}>
+       <span className="font-black uppercase leading-none mt-0.5" style={{ fontSize: '7px', letterSpacing: '0.45em', marginLeft: '0.45em', color: '#000000' }}>
          CHILE
        </span>
     </div>
