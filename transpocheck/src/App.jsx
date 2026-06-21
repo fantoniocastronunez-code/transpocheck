@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, onAuthStateChanged, signOut } from 'firebase/auth';
-import { getFirestore, enableMultiTabIndexedDbPersistence, collection, addDoc, onSnapshot, updateDoc, setDoc, doc, deleteDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
+import { getFirestore, enableMultiTabIndexedDbPersistence, collection, addDoc, onSnapshot, updateDoc, setDoc, doc, deleteDoc, getDocs, query, where, orderBy, limit, deleteField } from 'firebase/firestore';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 // Eliminamos la importación global de jsPDF para que la app cargue más rápido (Lazy Loading)
 import { 
@@ -2057,6 +2057,7 @@ export default function App() {
   // Estados para Modo Oscuro, Conexión Offline y Tuerca
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [jobLimit, setJobLimit] = useState(20); // <-- NUEVO: Control de Paginación Dinámica
   
   // NUEVO: Lectura Inteligente del Tema del Sistema Operativo
   const [darkMode, setDarkMode] = useState(() => {
@@ -2202,11 +2203,24 @@ export default function App() {
   }, [user, activeRole, myDriver, isOnline, currentUserEmail, db]);
   // --------------------------------------------------------------
 
+  // --- NUEVO: RECOLECTOR DE BASURA (TRASH COLLECTOR) EN SEGUNDO PLANO ---
+  // Elimina fotos Base64 de la memoria local de aquellos traslados que ya se completaron
+  useEffect(() => {
+    const cleanupDrafts = async () => {
+      const finishedWithDrafts = jobs.filter(j => (j.status === 'completed' || j.status === 'failed') && j.draft);
+      for (const j of finishedWithDrafts) {
+         try { await updateDoc(doc(db, 'transport_jobs', j.id), { draft: deleteField() }); } 
+         catch (e) { /* Ignorar si falla, lo intentará luego */ }
+      }
+    };
+    if (jobs.length > 0) cleanupDrafts();
+  }, [jobs, db]);
+
   useEffect(() => {
     if (!user) return;
     
-    // OPTIMIZACIÓN 1: Traer solo los últimos 400 trabajos (evita descargar historial antiguo)
-    const qJobs = query(collection(db, 'transport_jobs'), orderBy('createdAt', 'desc'), limit(400));
+    // APLICADA MEJORA: Paginación dinámica con límite variable (jobLimit)
+    const qJobs = query(collection(db, 'transport_jobs'), orderBy('createdAt', 'desc'), limit(jobLimit));
 
     const unsubJobs = onSnapshot(qJobs, (snapshot) => {
       if (!isFirstLoad.current) {
@@ -2239,7 +2253,7 @@ export default function App() {
     const unsubClients = onSnapshot(collection(db, 'clients'), snap => setCustomClients(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
 
     return () => { unsubJobs(); unsubDrivers(); unsubExpenses(); unsubVehicles(); unsubClients(); };
-  }, [user, activeRole, currentUserEmail, isRealAdmin]);
+  }, [user, activeRole, currentUserEmail, isRealAdmin, jobLimit]);
 
   // --- MOTOR DE TRACKING GPS EN TIEMPO REAL (OPTIMIZADO BATERÍA/iOS) ---
   // 1. Aislamos el ID del trabajo para no re-renderizar todo cuando el GPS se mueve
@@ -2608,6 +2622,7 @@ export default function App() {
                     onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} 
                     onEditJob={(j) => { setEditingJob(j); setAdminTab('newJob'); }} 
                     db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} allClientsList={allClientsList}
+                    onLoadMore={() => setJobLimit(prev => prev + 20)}
                   />
                 </div>
               )}
@@ -2622,6 +2637,7 @@ export default function App() {
                  jobs={jobs} drivers={drivers} role="driver" 
                  onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} 
                  db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} allClientsList={allClientsList}
+                 onLoadMore={() => setJobLimit(prev => prev + 20)}
               />
             </div>
           )}
@@ -3097,7 +3113,7 @@ function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, sho
 }
 
 
-function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, currentUserEmail, showAlert, showConfirm, allClientsList }) {
+function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, currentUserEmail, showAlert, showConfirm, allClientsList, onLoadMore }) {
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [jobToFail, setJobToFail] = useState(null);
   const [prtPromptJob, setPrtPromptJob] = useState(null); 
@@ -3715,9 +3731,14 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                           );
                       })}
                   </div>
+                  {/* NUEVO BOTÓN: CARGAR MÁS TRASLADOS */}
+                  <button onClick={onLoadMore} className="w-full bg-slate-50 hover:bg-slate-100 text-blue-600 font-bold text-sm py-4 transition-colors border-t border-slate-200 shadow-inner">
+                      Cargar más traslados antiguos...
+                  </button>
               </div>
           )}
       </div>
+
 
       {jobToFail && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
