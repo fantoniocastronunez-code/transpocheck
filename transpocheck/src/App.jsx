@@ -330,29 +330,29 @@ const LicensePlateBadge = ({ text, className = "" }) => {
 
   return (
     <div 
-      className={`inline-flex flex-col items-center justify-center border-[3px] rounded-[6px] shadow-md relative shrink-0 select-none overflow-hidden ${className}`} 
+      className={`inline-flex flex-col items-center justify-center border-[2px] rounded-[6px] shadow-sm relative shrink-0 select-none overflow-hidden ${className}`} 
       style={{ 
         width: '110px',          /* Ancho exacto */
         height: '40px',          /* Proporción exacta chilena (360x130mm = 2.76) */
         backgroundColor: '#f8f9fa', /* Blanco grisáceo "lata" inalterable */
-        borderColor: '#000000',     /* Borde negro puro */
+        borderColor: '#000000',     /* Borde negro puro (ajustado a 2px para dar espacio interno) */
         color: '#000000'            /* Texto negro inalterable */
       }}
     >
-       {/* Contenedor principal de los números centrado ligeramente más arriba para dejar espacio a "CHILE" */}
-       <div className="flex items-center justify-center w-full" style={{ fontFamily: "'FE-Font', 'Arial', sans-serif", fontSize: '24px', lineHeight: '1', gap: '3px', marginTop: '-4px' }}>
+       {/* Contenedor de números al 54% de la altura de la placa (aprox 21px) */}
+       <div className="flex items-center justify-center w-full" style={{ fontFamily: "'FE-Font', 'Arial', sans-serif", fontSize: '20px', lineHeight: '1', gap: '3px', marginTop: '-5px' }}>
           <span>{part1}</span>
-          <span className="text-black" style={{ fontSize: '10px', transform: 'translateY(-2px)' }}>•</span>
+          <span className="text-black" style={{ fontSize: '8px', transform: 'translateY(-2px)' }}>•</span>
           <span>{part2}</span>
-          {/* Escudo chileno vectorial proporcionado */}
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mx-[1px]" style={{ transform: 'translateY(-1px)' }}>
+          {/* Escudo chileno escalado proporcionalmente */}
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mx-[1px]" style={{ transform: 'translateY(-1px)' }}>
             <path d="M12 2L4 5V11C4 16.5 7.5 21.5 12 23C16.5 21.5 20 16.5 20 11V5L12 2Z" fill="#000000"/>
             <path d="M12 16L9 18L10 14.5L7 12H10.5L12 8.5L13.5 12H17L14 14.5L15 18L12 16Z" fill="#f8f9fa"/>
           </svg>
           <span>{part3}</span>
        </div>
-       {/* Palabra CHILE anclada milimétricamente abajo */}
-       <span className="font-black uppercase leading-none absolute bottom-[3px]" style={{ fontSize: '6.5px', letterSpacing: '0.4em', color: '#000000', marginLeft: '0.4em' }}>
+       {/* Palabra CHILE reducida sutilmente para balancear */}
+       <span className="font-black uppercase leading-none absolute bottom-[3px]" style={{ fontSize: '5.5px', letterSpacing: '0.4em', color: '#000000', marginLeft: '0.4em' }}>
          CHILE
        </span>
     </div>
