@@ -310,6 +310,43 @@ const CustomClientSelector = ({ value, onChange, clients, placeholder }) => {
     </div>
   );
 };
+
+// --- NUEVO COMPONENTE: PATENTE METÁLICA CHILENA ---
+const LicensePlateBadge = ({ text, className = "" }) => {
+  const cleanText = (text || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+
+  // Si no son exactamente 6 caracteres (ej. es un VIN largo o un "S/N"), usa el diseño oscuro clásico
+  if (cleanText.length !== 6) {
+    return (
+      <span className={`bg-slate-800 text-white px-2 py-1 rounded-md text-xs font-black tracking-widest shrink-0 ${className}`}>
+        {text || 'S/N'}
+      </span>
+    );
+  }
+
+  const part1 = cleanText.substring(0, 2);
+  const part2 = cleanText.substring(2, 4);
+  const part3 = cleanText.substring(4, 6);
+
+  return (
+    <div className={`inline-flex flex-col items-center justify-center bg-white border-[2px] border-slate-900 rounded-lg px-2 shadow-sm relative shrink-0 ${className}`} style={{ minWidth: '100px', paddingBottom: '3px', paddingTop: '2px' }}>
+       <div className="flex items-center gap-1 text-slate-900 text-lg leading-none tracking-wider" style={{ fontFamily: "'FE-Font', 'Arial', sans-serif" }}>
+          <span>{part1}</span>
+          <span className="text-[10px] leading-none mb-1">•</span>
+          <span>{part2}</span>
+          {/* Escudo chileno vectorial exacto al de las placas */}
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mx-0.5">
+            <path d="M12 2L4 5V11C4 16.5 7.5 21.5 12 23C16.5 21.5 20 16.5 20 11V5L12 2Z" fill="#0f172a"/>
+            <path d="M12 16L9 18L10 14.5L7 12H10.5L12 8.5L13.5 12H17L14 14.5L15 18L12 16Z" fill="white"/>
+          </svg>
+          <span>{part3}</span>
+       </div>
+       <span className="text-[5px] font-black text-slate-800 uppercase leading-none mt-0.5" style={{ letterSpacing: '0.45em', marginLeft: '0.45em' }}>
+         CHILE
+       </span>
+    </div>
+  );
+};
 // --------------------------------------------------------
 
 function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers, db, showAlert, onSuccess }) {
@@ -675,10 +712,7 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
                       <p className="text-lg font-black truncate max-w-[180px]">{v.brand} {v.model}</p>
                       {v.vehicleType && <span className="inline-block mt-1 text-[9px] font-black bg-white/20 px-2 py-0.5 rounded-md uppercase backdrop-blur-md border border-white/10">{v.vehicleType.replace('_', ' ')}</span>}
                     </div>
-                    <div className="bg-gradient-to-b from-slate-100 to-slate-300 border border-slate-400 shadow-inner px-3 py-1 rounded-lg shrink-0 flex flex-col items-center">
-                       <span className="text-[6px] text-slate-500 font-black tracking-widest uppercase">Chile</span>
-                       <p className="text-sm font-black text-slate-800 tracking-widest">{v.plate}</p>
-                    </div>
+                    <LicensePlateBadge text={v.plate} />
                   </div>
                   <div className="flex gap-2 mt-4 relative z-10 justify-end border-t border-white/10 pt-3">
                     <button onClick={() => setEditingVehicle(v)} className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors backdrop-blur-sm"><Edit2 className="w-4 h-4 text-white"/></button>
@@ -1298,9 +1332,7 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
                     <h2 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">En Traslado</h2>
                     <p className="text-xl font-black text-slate-800 leading-none">{job.brand} {job.model}</p>
                   </div>
-                  <div className="bg-slate-800 text-white px-3 py-1.5 rounded-lg shadow-sm shrink-0">
-                    <p className="text-sm font-black uppercase tracking-widest">{job.plate || job.vin || 'S/N'}</p>
-                  </div>
+                  <LicensePlateBadge text={job.plate || job.vin} />
                 </div>
                 
                 <div className="relative pl-8 space-y-6 flex-1 mt-2">
@@ -1374,7 +1406,7 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
                 {/* Fila 1: Auto y Patente Grande */}
                 <div className="flex justify-between items-center mb-1">
                   <p className="text-sm font-black text-slate-800 leading-tight truncate pr-2">{job.brand} {job.model}</p>
-                  <span className="bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-md text-xs font-black uppercase tracking-widest shrink-0">{job.plate || 'S/N'}</span>
+                  <LicensePlateBadge text={job.plate || job.vin} />
                 </div>
                 
                 {/* Fila 2: Ruta */}
@@ -1723,10 +1755,12 @@ function ClientSignView({ jobId, db }) {
       </header>
 
       <main className="max-w-md mx-auto p-4 pt-6 space-y-6">
-        <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-200">
-           <p className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest mb-1">Vehículo a recibir</p>
-           <h2 className="text-2xl font-black text-slate-800">{job.brand} {job.model}</h2>
-           <p className="text-sm font-bold text-slate-500 uppercase mt-1">Patente: <span className="bg-slate-100 text-slate-800 px-2 py-0.5 rounded">{job.plate || job.vin}</span></p>
+        <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-200 flex justify-between items-center">
+          <div>
+             <p className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest mb-1">Vehículo a recibir</p>
+             <h2 className="text-xl sm:text-2xl font-black text-slate-800">{job.brand} {job.model}</h2>
+          </div>
+          <LicensePlateBadge text={job.plate || job.vin} />
         </div>
 
         {hasPhotos && (
@@ -1850,8 +1884,11 @@ function RelayAcceptView({ jobId, db, currentUserEmail, drivers }) {
         <p className="text-sm font-bold text-slate-500 mb-6">Estás a punto de tomar el control de este traslado.</p>
         
         <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-left mb-6">
-          <p className="text-[10px] font-black text-slate-400 uppercase">Vehículo a recibir</p>
-          <p className="font-extrabold text-slate-800 mb-2">{job.brand} {job.model} <span className="bg-white border px-1.5 py-0.5 rounded ml-1 uppercase">{job.plate || job.vin}</span></p>
+          <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Vehículo a recibir</p>
+          <div className="flex justify-between items-center mb-4">
+            <p className="font-extrabold text-slate-800 text-lg">{job.brand} {job.model}</p>
+            <LicensePlateBadge text={job.plate || job.vin} />
+          </div>
           
           <p className="text-[10px] font-black text-slate-400 uppercase">Te lo entrega</p>
           <p className="font-extrabold text-red-600 mb-2">{job.acceptedByEmail}</p>
@@ -2289,6 +2326,14 @@ export default function App() {
   const globalStyles = (
     <style>{`
       @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Alfa+Slab+One&display=swap');
+      
+      @font-face {
+        font-family: 'FE-Font';
+        src: url('https://raw.githubusercontent.com/kreativekorp/open-din-schriften/master/FE-Font/FE-Font.woff2') format('woff2'),
+             url('https://raw.githubusercontent.com/kreativekorp/open-din-schriften/master/FE-Font/FE-Font.woff') format('woff');
+        font-weight: normal;
+        font-style: normal;
+      }
       
       body { 
         font-family: 'Nunito', sans-serif; 
@@ -3426,12 +3471,8 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
           <div className="flex flex-col gap-3 w-full">
             <div className="flex justify-between items-start w-full gap-2">
               
-              {/* Bloque de Patente: Se adapta y salta de línea si es un VIN largo */}
-              <div className="bg-slate-800 border-2 border-slate-600 rounded-lg px-3 py-1.5 shadow-md shrink">
-                <span className="text-sm sm:text-base font-black text-white uppercase tracking-wider leading-tight break-all">
-                  {j.plate || j.vin || 'S/N'}
-                </span>
-              </div>
+              {/* Bloque de Patente: Adaptable y con diseño visual chileno */}
+              <LicensePlateBadge text={j.plate || j.vin} />
               
               {/* Botones de Acción (Editar y Menú) alineados a la derecha */}
               <div className="flex items-center gap-1 relative shrink-0">
@@ -3559,9 +3600,9 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     return (
       <div key={j.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between relative pl-5 overflow-hidden hover:shadow-xl hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-default">
         <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
-        <div className="flex justify-between items-center mb-1">
+        <div className="flex justify-between items-center mb-2">
           <p className="text-sm font-black text-slate-800 leading-tight truncate pr-2">{j.brand} {j.model}</p>
-          <span className="bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest shrink-0">{j.plate || 'S/N'}</span>
+          <LicensePlateBadge text={j.plate || j.vin} />
         </div>
         <p className="text-slate-500 text-[10px] font-bold uppercase mb-2 flex items-center gap-1 truncate"><MapPin className="w-3 h-3 shrink-0"/> {j.origin} ➔ {j.tripType === 'revision' ? 'PRT' : j.destination}</p>
         <div className="mb-3">
