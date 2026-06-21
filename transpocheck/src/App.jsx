@@ -2340,8 +2340,8 @@ export default function App() {
       
       @font-face {
         font-family: 'FE-Font';
-        src: url('https://raw.githubusercontent.com/kreativekorp/open-din-schriften/master/FE-Font/FE-Font.woff2') format('woff2'),
-             url('https://raw.githubusercontent.com/kreativekorp/open-din-schriften/master/FE-Font/FE-Font.woff') format('woff');
+        src: url('https://cdn.jsdelivr.net/gh/kreativekorp/open-din-schriften@master/FE-Font/FE-Font.woff2') format('woff2'),
+             url('https://cdn.jsdelivr.net/gh/kreativekorp/open-din-schriften@master/FE-Font/FE-Font.woff') format('woff');
         font-weight: normal;
         font-style: normal;
       }
