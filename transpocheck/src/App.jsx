@@ -2377,26 +2377,55 @@ export default function App() {
     setCurrentView('checklist');
   };
 
-  // --- DETECCIÓN DE ONBOARDING DEL CONDUCTOR ---
+  // --- CEREBRO DE AUTO-REGISTRO Y CONTROL DE ONBOARDING ESTRICTO ---
   const myDriver = user ? drivers.find(d => d.email === currentUserEmail) : null;
+
+  // Si ingresa alguien en rol de conductor pero no está en la base de datos, lo registramos al vuelo
+  useEffect(() => {
+    if (user && activeRole === 'driver' && drivers.length > 0 && !myDriver && isOnline) {
+      addDoc(collection(db, 'drivers'), {
+        name: user.displayName || 'Conductor Nuevo',
+        email: currentUserEmail,
+        balance: 0,
+        licenses: [],
+        licenseExpiry: '',
+        createdAt: Date.now()
+      }).catch(e => console.error("Error en auto-registro:", e));
+    }
+  }, [user, activeRole, drivers, myDriver, isOnline]);
+
+  // Evaluamos si faltan documentos (Cualquiera de las 5 fotos obligatorias)
   const needsOnboarding = myDriver && (!myDriver.photo || !myDriver.idFront || !myDriver.idBack || !myDriver.licenseFront || !myDriver.licenseBack);
 
-  // Si es chofer, le faltan datos, y NO es un admin superusuario, le bloqueamos el acceso.
-  if (activeRole === 'driver' && needsOnboarding && !isRealAdmin) {
+  // Activamos el bloqueo estricto en el rol de conductor si faltan datos O si el perfil apenas se está creando (sin excepciones de Admin)
+  if (activeRole === 'driver' && (needsOnboarding || !myDriver)) {
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10 transition-colors duration-300">
+      <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10 transition-colors duration-300 dark:bg-slate-950">
         {globalStyles}
         <header className="fixed-nav-bar bg-blue-600 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20">
-           <div className="flex items-center gap-3"><div className="bg-white/20 p-1.5 rounded-xl"><img src="/logo.png" className="w-8 h-8"/></div><h1 className="font-alfa text-2xl text-white">Registro</h1></div>
-           <button onClick={() => signOut(auth)} className="bg-white/10 hover:bg-white/20 p-2.5 rounded-xl text-white transition-colors"><LogOut className="w-5 h-5" /></button>
+           <div className="flex items-center gap-3">
+             <div className="bg-white/20 p-1.5 rounded-xl"><img src="/logo.png" className="w-8 h-8 object-contain"/></div>
+             <h1 className="font-alfa text-xl text-white">Verificación Obligatoria</h1>
+           </div>
+           <button onClick={() => { setActiveRole('admin'); setRoleMenuOpen(false); }} className="bg-white/10 hover:bg-white/20 p-2.5 rounded-xl text-white transition-colors flex items-center gap-2 text-xs font-bold">
+             <LogOut className="w-4 h-4" /> Salir a Admin
+           </button>
         </header>
         <main className="max-w-md mx-auto p-4 pt-24 sm:pt-28 pb-10">
-           <DriverOnboarding driver={myDriver} db={db} />
+           {myDriver ? (
+             <DriverOnboarding driver={myDriver} db={db} />
+           ) : (
+             <div className="bg-white p-6 rounded-3xl border text-center space-y-4 shadow-sm">
+               <Clock className="w-12 h-12 text-blue-500 animate-spin mx-auto" />
+               <p className="font-black text-slate-800 text-lg">Creando credenciales de seguridad...</p>
+               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Estableciendo conexión segura con la base de datos de conductores</p>
+             </div>
+           )}
         </main>
       </div>
     );
   }
-  // ----------------------------------------------
+  // -----------------------------------------------------------------
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-32 transition-colors duration-300">
