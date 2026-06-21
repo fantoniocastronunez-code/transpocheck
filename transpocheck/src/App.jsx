@@ -537,6 +537,8 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [editingClient, setEditingClient] = useState(null);
   const [fleetFilter, setFleetFilter] = useState('');
+  // NUEVO: Estado reactivo para almacenar la foto del conductor en base64
+  const [driverPhoto, setDriverPhoto] = useState(null);
   
   return (
     <div className="space-y-6">
@@ -580,12 +582,12 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
 
       {configSubTab === 'vehicles' && (
         <div className="grid md:grid-cols-2 gap-6">
-          <form key={editingVehicle ? editingVehicle.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const client = fd.get('client') === 'OTRO' ? fd.get('manualClient') : fd.get('client'); const vehicleType = fd.get('vehicleType'); try { if(editingVehicle){ await updateDoc(doc(db, 'vehicles', editingVehicle.id), { client, vehicleType, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase() }); setEditingVehicle(null); showAlert("Vehículo actualizado."); } else { await addDoc(collection(db, 'vehicles'), { client, vehicleType, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase(), createdAt: Date.now() }); showAlert("Vehículo guardado."); } e.target.reset(); } catch (error) { console.error(error); } }} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+          <form key={editingVehicle ? editingVehicle.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const client = fd.get('client') === 'OTRO' ? fd.get('manualClient') : fd.get('client'); const vehicleType = fd.get('vehicleType'); try { if(editingVehicle){ await updateDoc(doc(db, 'vehicles', editingVehicle.id), { client, vehicleType, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase() }); setEditingVehicle(null); showAlert("Vehículo actualizado."); } else { await addDoc(collection(db, 'vehicles'), { client, vehicleType, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase(), createdAt: Date.now() }); showAlert("Vehículo guardado."); } e.target.reset(); } catch (error) { error; } }} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
             <h3 className="font-extrabold flex items-center gap-2"><Truck className="text-blue-600"/> {editingVehicle ? 'Editar Vehículo' : 'Nuevo Vehículo'}</h3>
             <select name="client" defaultValue={editingVehicle?.client || ''} className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-semibold outline-none focus:border-blue-500 bg-white">
               <option value="">Cliente...</option>
               {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
-      0       <option value="OTRO">Otro (Se debe escribir manualmente)</option>
+              <option value="OTRO">Otro (Se debe escribir manualmente)</option>
             </select>
             <input name="manualClient" placeholder="Si es OTRO, escribe el cliente aquí" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
             <input name="brand" defaultValue={editingVehicle?.brand} placeholder="Marca (Ej. Chevrolet)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
@@ -627,8 +629,7 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
                 if (fleetFilter === 'OTRO') return !allClientsList.includes(v.client);
                 return v.client === fleetFilter;
               }).map(v=>{
-                // Estilo Billetera Digital dinámico
-                const grad = v.client?.includes('Kovacs') ? 'from-red-600 to-red-800' : v.client?.includes('Salfa') ? 'from-emerald-600 to-emerald-800' : v.client?.includes('Grandleasing') ? 'from-slate-700 to-slate-900' : 'from-blue-600 to-blue-800';
+                const grad = v.client?.toUpperCase().includes('KOVACS') ? 'from-red-600 to-red-800' : v.client?.toUpperCase().includes('SALFA') ? 'from-emerald-600 to-emerald-800' : v.client?.toUpperCase().includes('GRANDLEASING') ? 'from-slate-700 to-slate-900' : 'from-blue-600 to-blue-800';
                 return (
                 <div key={v.id} className={`relative overflow-hidden p-4 rounded-2xl shadow-md bg-gradient-to-br ${grad} text-white group transition-all hover:scale-[1.02]`}>
                   <div className="absolute top-0 right-0 p-4 opacity-10"><Truck className="w-20 h-20"/></div>
@@ -638,7 +639,6 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
                       <p className="text-lg font-black truncate max-w-[180px]">{v.brand} {v.model}</p>
                       {v.vehicleType && <span className="inline-block mt-1 text-[9px] font-black bg-white/20 px-2 py-0.5 rounded-md uppercase backdrop-blur-md border border-white/10">{v.vehicleType.replace('_', ' ')}</span>}
                     </div>
-                    {/* Chapa Metálica */}
                     <div className="bg-gradient-to-b from-slate-100 to-slate-300 border border-slate-400 shadow-inner px-3 py-1 rounded-lg shrink-0 flex flex-col items-center">
                        <span className="text-[6px] text-slate-500 font-black tracking-widest uppercase">Chile</span>
                        <p className="text-sm font-black text-slate-800 tracking-widest">{v.plate}</p>
@@ -658,8 +658,32 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
 
       {configSubTab === 'drivers' && (
         <div className="grid md:grid-cols-2 gap-6">
-          <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry') }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); showAlert("Conductor actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); showAlert("Conductor creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+          <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry'), photo: driverPhoto }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); setDriverPhoto(null); showAlert("Conductor actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); setDriverPhoto(null); showAlert("Conductor creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
             <h3 className="font-extrabold text-slate-800 flex items-center gap-2"><User className="text-blue-600"/> {editingDriver ? 'Editar Conductor' : 'Nuevo Conductor'}</h3>
+            
+            {/* NUEVO SUBIDOR DE FOTO AVATAR COMPRIMIDO */}
+            <div className="flex flex-col items-center justify-center gap-2 pb-2">
+              <label className="relative w-20 h-20 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center cursor-pointer overflow-hidden bg-slate-50 dark:bg-slate-900 group hover:border-blue-500 transition-colors shadow-inner">
+                <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                  const file = e.target.files[0];
+                  if (!file) return;
+                  try {
+                    const dataUrl = await resizeImage(file, 160, 0.4); // Resolución pequeña optimizada para avatar
+                    setDriverPhoto(dataUrl);
+                  } catch (err) { showAlert("Error procesando foto."); }
+                }} />
+                {driverPhoto ? (
+                  <img src={driverPhoto} alt="Previsualización" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="text-center flex flex-col items-center justify-center">
+                    <Camera className="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider mt-1">Subir Foto</span>
+                  </div>
+                )}
+              </label>
+              {driverPhoto && <button type="button" onClick={() => setDriverPhoto(null)} className="text-[10px] font-bold text-red-500 hover:underline">Quitar foto</button>}
+            </div>
+
             <input name="driverName" defaultValue={editingDriver?.name} placeholder="Nombre completo" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
             <input name="driverEmail" defaultValue={editingDriver?.email} placeholder="Correo Gmail del conductor" required type="email" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
             
@@ -680,23 +704,36 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
             </div>
 
             <div className="flex gap-3 pt-2 border-t">
-              {editingDriver && <button type="button" onClick={() => setEditingDriver(null)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>}
+              {editingDriver && <button type="button" onClick={() => { setEditingDriver(null); setDriverPhoto(null); }} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>}
               <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-sm transition-colors shadow-lg shadow-blue-200">{editingDriver ? 'Guardar Cambios' : 'Crear Conductor'}</button>
             </div>
           </form>
+          
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 max-h-[75vh] overflow-y-auto">
             <h3 className="font-extrabold text-slate-800 mb-4">Directorio</h3>
             <div className="space-y-2">
               {drivers.length === 0 ? <p className="text-sm font-semibold text-slate-400">Directorio vacío</p> : drivers.map(d=>(
                 <div key={d.id} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-xl group transition-all">
-                  <div>
-                    <p className="text-sm font-extrabold text-slate-800">{d.name}</p>
-                    <p className="text-xs font-bold text-slate-400">{d.email}</p>
-                    {d.licenses && d.licenses.length > 0 && <p className="text-[9px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md mt-1 w-fit">Licencias: {d.licenses.join(', ')}</p>}
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    
+                    {/* RENDERIZADO DE FOTO REAL EN LISTADO O FALLBACK CON ICONO */}
+                    <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 bg-white flex items-center justify-center shadow-sm">
+                      {d.photo ? (
+                        <img src={d.photo} alt={d.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-5 h-5 text-slate-400" />
+                      )}
+                    </div>
+
+                    <div className="truncate">
+                      <p className="text-sm font-extrabold text-slate-800 truncate">{d.name}</p>
+                      <p className="text-xs font-bold text-slate-400 truncate">{d.email}</p>
+                      {d.licenses && d.licenses.length > 0 && <p className="text-[9px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md mt-1 w-fit">Licencias: {d.licenses.join(', ')}</p>}
+                    </div>
                   </div>
-                  <div className="flex gap-1">
-                     <button onClick={() => setEditingDriver(d)} className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors shadow-sm" title="Editar Conductor"><Edit2 className="w-4 h-4"/></button>
-                     <button onClick={() => showConfirm("¿Eliminar conductor?", async()=>await deleteDoc(doc(db,'drivers',d.id)))} className="p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors shadow-sm"><Trash2 className="w-4 h-4"/></button>
+                  <div className="flex gap-1 shrink-0 ml-2">
+                     <button onClick={() => { setEditingDriver(d); setDriverPhoto(d.photo || null); }} className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors shadow-sm" title="Editar Conductor"><Edit2 className="w-4 h-4"/></button>
+                     <button onClick={() => showConfirm("¿Eliminar conductor?", async()=>await deleteDoc(doc(db,'drivers',d.id)))} className="p-2 bg-red-100 hover:bg-red-200 text-red-500 rounded-lg transition-colors shadow-sm"><Trash2 className="w-4 h-4"/></button>
                   </div>
                 </div>
               ))}
@@ -1147,16 +1184,16 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center relative overflow-hidden max-w-2xl mx-auto">
           <div className={`absolute top-0 left-0 w-full h-1.5 ${branding.fill}`}></div>
           
-          {/* Tarjeta de Contenedor de Logo Premium */}
-          <div className="mx-auto w-20 h-20 bg-white dark:bg-slate-900 rounded-3xl flex items-center justify-center mb-3 shadow-md border border-slate-200 dark:border-slate-700 p-2 overflow-hidden">
+          {/* Tarjeta de Contenedor de Logo Premium Ampliada */}
+          <div className="mx-auto w-36 h-36 bg-white dark:bg-slate-900 rounded-[28px] flex items-center justify-center mb-4 shadow-md border border-slate-200 dark:border-slate-700 p-3 overflow-hidden transition-all duration-300">
              <img
                src={`/logos/${clientName ? clientName.toLowerCase().replace(/[^a-z0-9]/g, '') : ''}.png`}
                alt={clientName}
                className="w-full h-full object-contain bg-white"
                onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
              />
-             {/* Fallback Seguro: Iniciales de respaldo con color dinámico si no hay foto */}
-             <div className={`w-full h-full flex items-center justify-center text-2xl font-black ${branding.text} ${branding.light} rounded-2xl`} style={{ display: 'none' }}>
+             {/* Fallback Seguro: Iniciales de respaldo escaladas a tamaño gigante */}
+             <div className={`w-full h-full flex items-center justify-center text-5xl font-black ${branding.text} ${branding.light} rounded-2xl`} style={{ display: 'none' }}>
                {initials}
              </div>
           </div>
