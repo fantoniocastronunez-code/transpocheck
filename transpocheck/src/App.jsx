@@ -1278,12 +1278,12 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center relative overflow-hidden max-w-2xl mx-auto">
           <div className={`absolute top-0 left-0 w-full h-1.5 ${branding.fill}`}></div>
           
-          {/* Tarjeta de Contenedor de Logo Premium Ampliada */}
-          <div className="mx-auto w-36 h-36 bg-white dark:bg-slate-900 rounded-[28px] flex items-center justify-center mb-4 shadow-md border border-slate-200 dark:border-slate-700 p-3 overflow-hidden transition-all duration-300">
+          {/* Tarjeta de Contenedor de Logo Premium Ampliada (Fondo Blanco Forzado) */}
+          <div className="mx-auto w-36 h-36 rounded-[28px] flex items-center justify-center mb-4 shadow-md border overflow-hidden transition-all duration-300 p-3" style={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0' }}>
              <img
                src={`/logos/${clientName ? clientName.toLowerCase().replace(/[^a-z0-9]/g, '') : ''}.png`}
                alt={clientName}
-               className="w-full h-full object-contain bg-white"
+               className="w-full h-full object-contain"
                onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
              />
              {/* Fallback Seguro: Iniciales de respaldo escaladas a tamaño gigante */}
@@ -2620,7 +2620,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.5 15</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.5 16</p>
                 </div>
               </div>
             )}
