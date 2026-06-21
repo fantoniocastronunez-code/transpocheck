@@ -2620,7 +2620,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.5 16</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.5 17</p>
                 </div>
               </div>
             )}
@@ -3542,16 +3542,16 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
           </div>
 
           {/* NUEVO: BLOQUE DE RUTA LOGÍSTICA DESTACADO */}
-          <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/80 mb-4 mt-1">
+          <div className="bg-slate-100 p-3 rounded-2xl border-2 border-slate-200 mb-4 mt-1 shadow-inner">
             <div className="flex items-center justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-0.5">Desde</span>
-                <p className="text-sm font-extrabold text-slate-800 dark:text-slate-200 truncate">{j.origin || 'Por definir'}</p>
+                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-0.5">Desde</span>
+                <p className="text-sm font-extrabold text-slate-800 truncate">{j.origin || 'Por definir'}</p>
               </div>
-              <div className="text-slate-400 dark:text-slate-600 font-black text-sm px-2">➔</div>
+              <div className="text-slate-400 font-black text-sm px-2">➔</div>
               <div className="flex-1 min-w-0 text-right">
-                <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-0.5">Hasta</span>
-                <p className="text-sm font-extrabold text-blue-600 dark:text-blue-400 truncate">
+                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-0.5">Hasta</span>
+                <p className="text-sm font-extrabold text-blue-600 truncate">
                   {j.tripType === 'revision' ? 'Planta PRT' : (j.destination || 'Por definir')}
                 </p>
               </div>
