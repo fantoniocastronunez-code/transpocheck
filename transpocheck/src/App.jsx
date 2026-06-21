@@ -2620,7 +2620,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.5</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.5 15</p>
                 </div>
               </div>
             )}
@@ -3535,14 +3535,30 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
             
             {/* Información de Marca, Modelo y Cliente restaurada */}
             <div>
-              <p className="text-xl font-black text-slate-800 leading-tight mt-1">{j.brand} {j.model}</p>
-              <p className="text-xs font-bold text-slate-500 mt-0.5 uppercase tracking-wide">{j.client}</p>
+                <p className="text-xl font-black text-slate-800 leading-tight mt-1">{j.brand} {j.model}</p>
+                <p className="text-xs font-bold text-slate-500 mt-0.5 uppercase tracking-wide">{j.client}</p>
+              </div>
             </div>
-            
           </div>
-        </div>
 
-        {j.tripType === 'revision' && <div className="mb-3 bg-amber-50 border border-amber-200 p-2 rounded-xl text-center"><span className="text-[10px] font-black text-amber-700 uppercase">REVISIÓN TÉCNICA (TIPO {j.rtData?.type})</span></div>}
+          {/* NUEVO: BLOQUE DE RUTA LOGÍSTICA DESTACADO */}
+          <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800/80 mb-4 mt-1">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-0.5">Desde</span>
+                <p className="text-sm font-extrabold text-slate-800 dark:text-slate-200 truncate">{j.origin || 'Por definir'}</p>
+              </div>
+              <div className="text-slate-400 dark:text-slate-600 font-black text-sm px-2">➔</div>
+              <div className="flex-1 min-w-0 text-right">
+                <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-0.5">Hasta</span>
+                <p className="text-sm font-extrabold text-blue-600 dark:text-blue-400 truncate">
+                  {j.tripType === 'revision' ? 'Planta PRT' : (j.destination || 'Por definir')}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {j.tripType === 'revision' && <div className="mb-3 bg-amber-50 border border-amber-200 p-2 rounded-xl text-center"><span className="text-[10px] font-black text-amber-700 uppercase">REVISIÓN TÉCNICA (TIPO {j.rtData?.type})</span></div>}
         {j.tripType === 'viaje' && <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-2 mb-3 text-center text-xs font-bold text-indigo-700 uppercase">A Regiones</div>}
 
         <div className="relative pl-7 space-y-5 before:absolute before:inset-y-2 before:left-[10px] before:w-0.5 before:bg-slate-100 flex-1 mb-5">
@@ -3615,7 +3631,12 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
           <p className="text-sm font-black text-slate-800 leading-tight truncate pr-2">{j.brand} {j.model}</p>
           <LicensePlateBadge text={j.plate || j.vin} />
         </div>
-        <p className="text-slate-500 text-[10px] font-bold uppercase mb-2 flex items-center gap-1 truncate"><MapPin className="w-3 h-3 shrink-0"/> {j.origin} ➔ {j.tripType === 'revision' ? 'PRT' : j.destination}</p>
+        {/* NUEVO: DISEÑO COMPACTO DE HISTORIAL MEJORADO */}
+        <div className="my-2 bg-slate-50 dark:bg-slate-900/40 p-2 rounded-xl border border-slate-100 dark:border-slate-800/60 text-xs font-black flex items-center justify-between gap-1">
+          <span className="truncate text-slate-700 dark:text-slate-300 max-w-[45%]"><MapPin className="inline w-3.5 h-3.5 mr-1 -mt-0.5 text-slate-400 shrink-0"/>{j.origin}</span>
+          <span className="text-slate-400 font-bold shrink-0">➔</span>
+          <span className="truncate text-blue-600 dark:text-blue-400 max-w-[45%] text-right">{j.tripType === 'revision' ? 'PRT' : j.destination}</span>
+        </div>
         <div className="mb-3">
            <p className="text-blue-600 font-extrabold text-[10px] uppercase tracking-wide truncate">Conductor: <span className="text-slate-700">{driverName}</span></p>
            {isFailed && <p className="text-red-600 text-[10px] mt-0.5 font-bold line-clamp-1">Razón: {j.failedReason}</p>}
