@@ -2379,25 +2379,40 @@ export default function App() {
 
   // --- CEREBRO DE AUTO-REGISTRO Y CONTROL DE ONBOARDING ESTRICTO ---
   const myDriver = user ? drivers.find(d => d.email === currentUserEmail) : null;
+  const registeringRef = useRef(false);
 
-  // Si ingresa alguien en rol de conductor pero no está en la base de datos, lo registramos al vuelo
+  // Si ingresa alguien en rol de conductor pero no está en la base de datos, lo registramos al vuelo de forma segura
   useEffect(() => {
-    if (user && activeRole === 'driver' && drivers.length > 0 && !myDriver && isOnline) {
-      addDoc(collection(db, 'drivers'), {
-        name: user.displayName || 'Conductor Nuevo',
-        email: currentUserEmail,
-        balance: 0,
-        licenses: [],
-        licenseExpiry: '',
-        createdAt: Date.now()
-      }).catch(e => console.error("Error en auto-registro:", e));
+    if (user && activeRole === 'driver' && !myDriver && isOnline && !registeringRef.current) {
+      const timer = setTimeout(() => {
+        const stillNoDriver = !driversRef.current.find(d => d.email === currentUserEmail);
+        if (stillNoDriver) {
+          registeringRef.current = true;
+          addDoc(collection(db, 'drivers'), {
+            name: user.displayName || 'Conductor Nuevo',
+            email: currentUserEmail,
+            balance: 0,
+            licenses: [],
+            licenseExpiry: '',
+            createdAt: Date.now()
+          }).then(() => { registeringRef.current = false; })
+            .catch(e => { console.error("Error auto-registro:", e); registeringRef.current = false; });
+        }
+      }, 2500); // Damos 2.5 segs exactos para que Firebase cargue y evitamos duplicados
+      return () => clearTimeout(timer);
     }
-  }, [user, activeRole, drivers, myDriver, isOnline]);
+  }, [user, activeRole, myDriver, isOnline, currentUserEmail, db]);
 
-  // Evaluamos si faltan documentos (Cualquiera de las 5 fotos obligatorias)
-  const needsOnboarding = myDriver && (!myDriver.photo || !myDriver.idFront || !myDriver.idBack || !myDriver.licenseFront || !myDriver.licenseBack);
+  // Evaluamos estrictamente si falta CUALQUIER documento vital
+  const needsOnboarding = myDriver && (
+    !myDriver.photo || myDriver.photo === "" || 
+    !myDriver.idFront || myDriver.idFront === "" || 
+    !myDriver.idBack || myDriver.idBack === "" || 
+    !myDriver.licenseFront || myDriver.licenseFront === "" || 
+    !myDriver.licenseBack || myDriver.licenseBack === ""
+  );
 
-  // Activamos el bloqueo estricto en el rol de conductor si faltan datos O si el perfil apenas se está creando (sin excepciones de Admin)
+  // BLOQUEO ABSOLUTO: Nadie en modo "Conductor" pasa a la app sin sus 5 fotos
   if (activeRole === 'driver' && (needsOnboarding || !myDriver)) {
     return (
       <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10 transition-colors duration-300 dark:bg-slate-950">
@@ -2407,18 +2422,24 @@ export default function App() {
              <div className="bg-white/20 p-1.5 rounded-xl"><img src="/logo.png" className="w-8 h-8 object-contain"/></div>
              <h1 className="font-alfa text-xl text-white">Verificación Obligatoria</h1>
            </div>
-           <button onClick={() => { setActiveRole('admin'); setRoleMenuOpen(false); }} className="bg-white/10 hover:bg-white/20 p-2.5 rounded-xl text-white transition-colors flex items-center gap-2 text-xs font-bold">
-             <LogOut className="w-4 h-4" /> Salir a Admin
-           </button>
+           {isRealAdmin && (
+             <button onClick={() => { setActiveRole('admin'); setRoleMenuOpen(false); }} className="bg-white/10 hover:bg-white/20 p-2.5 rounded-xl text-white transition-colors flex items-center gap-2 text-xs font-bold">
+               <LogOut className="w-4 h-4" /> Salir a Admin
+             </button>
+           )}
         </header>
         <main className="max-w-md mx-auto p-4 pt-24 sm:pt-28 pb-10">
            {myDriver ? (
              <DriverOnboarding driver={myDriver} db={db} />
            ) : (
-             <div className="bg-white p-6 rounded-3xl border text-center space-y-4 shadow-sm">
-               <Clock className="w-12 h-12 text-blue-500 animate-spin mx-auto" />
-               <p className="font-black text-slate-800 text-lg">Creando credenciales de seguridad...</p>
-               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Estableciendo conexión segura con la base de datos de conductores</p>
+             <div className="bg-white p-8 rounded-3xl border text-center space-y-5 shadow-lg border-slate-100">
+               <div className="relative w-20 h-20 mx-auto">
+                 <div className="absolute inset-0 border-4 border-blue-100 rounded-full"></div>
+                 <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+                 <User className="absolute inset-0 m-auto w-8 h-8 text-blue-600" />
+               </div>
+               <p className="font-black text-slate-800 text-xl">Creando credenciales...</p>
+               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider leading-relaxed">Estableciendo conexión segura con la central logística</p>
              </div>
            )}
         </main>
