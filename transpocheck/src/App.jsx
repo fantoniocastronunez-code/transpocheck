@@ -537,9 +537,21 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [editingClient, setEditingClient] = useState(null);
   const [fleetFilter, setFleetFilter] = useState('');
-  // NUEVO: Estado reactivo para almacenar la foto del conductor en base64
   const [driverPhoto, setDriverPhoto] = useState(null);
+  // NUEVO: Estado para abrir la galería de documentos de un conductor
+  const [viewingDocsFor, setViewingDocsFor] = useState(null);
   
+  const DocImage = ({ label, src }) => (
+     <div className="space-y-1">
+        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{label}</p>
+        {src ? (
+           <img src={src} className="w-full h-40 object-contain rounded-xl border border-slate-200 bg-slate-50 shadow-inner" alt={label} />
+        ) : (
+           <div className="w-full h-40 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 text-xs font-bold">Pendiente</div>
+        )}
+     </div>
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex gap-2 pb-2">
@@ -661,14 +673,13 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
           <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry'), photo: driverPhoto }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); setDriverPhoto(null); showAlert("Conductor actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); setDriverPhoto(null); showAlert("Conductor creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
             <h3 className="font-extrabold text-slate-800 flex items-center gap-2"><User className="text-blue-600"/> {editingDriver ? 'Editar Conductor' : 'Nuevo Conductor'}</h3>
             
-            {/* NUEVO SUBIDOR DE FOTO AVATAR COMPRIMIDO */}
             <div className="flex flex-col items-center justify-center gap-2 pb-2">
               <label className="relative w-20 h-20 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center cursor-pointer overflow-hidden bg-slate-50 dark:bg-slate-900 group hover:border-blue-500 transition-colors shadow-inner">
                 <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                   const file = e.target.files[0];
                   if (!file) return;
                   try {
-                    const dataUrl = await resizeImage(file, 160, 0.4); // Resolución pequeña optimizada para avatar
+                    const dataUrl = await resizeImage(file, 160, 0.4);
                     setDriverPhoto(dataUrl);
                   } catch (err) { showAlert("Error procesando foto."); }
                 }} />
@@ -715,8 +726,6 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
               {drivers.length === 0 ? <p className="text-sm font-semibold text-slate-400">Directorio vacío</p> : drivers.map(d=>(
                 <div key={d.id} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-xl group transition-all">
                   <div className="flex items-center gap-3 overflow-hidden">
-                    
-                    {/* RENDERIZADO DE FOTO REAL EN LISTADO O FALLBACK CON ICONO */}
                     <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 bg-white flex items-center justify-center shadow-sm">
                       {d.photo ? (
                         <img src={d.photo} alt={d.name} className="w-full h-full object-cover" />
@@ -732,6 +741,7 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0 ml-2">
+                     <button onClick={() => setViewingDocsFor(d)} className="p-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-600 rounded-lg transition-colors shadow-sm" title="Ver Documentos"><FileText className="w-4 h-4"/></button>
                      <button onClick={() => { setEditingDriver(d); setDriverPhoto(d.photo || null); }} className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors shadow-sm" title="Editar Conductor"><Edit2 className="w-4 h-4"/></button>
                      <button onClick={() => showConfirm("¿Eliminar conductor?", async()=>await deleteDoc(doc(db,'drivers',d.id)))} className="p-2 bg-red-100 hover:bg-red-200 text-red-500 rounded-lg transition-colors shadow-sm"><Trash2 className="w-4 h-4"/></button>
                   </div>
@@ -741,6 +751,29 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
           </div>
         </div>
       )}
+
+      {/* NUEVO: MODAL PARA QUE EL ADMIN VEA TODOS LOS DOCUMENTOS DEL CONDUCTOR */}
+      {viewingDocsFor && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95">
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <div>
+                <h3 className="text-lg font-black text-slate-800">Documentos del Conductor</h3>
+                <p className="text-xs font-bold text-slate-500">{viewingDocsFor.name} ({viewingDocsFor.email})</p>
+              </div>
+              <button onClick={() => setViewingDocsFor(null)} className="p-2 bg-slate-200 hover:bg-slate-300 rounded-full transition-colors"><X className="w-5 h-5"/></button>
+            </div>
+            <div className="p-4 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-4">
+               <DocImage label="Foto Perfil" src={viewingDocsFor.photo} />
+               <DocImage label="Carnet (Frente)" src={viewingDocsFor.idFront} />
+               <DocImage label="Carnet (Reverso)" src={viewingDocsFor.idBack} />
+               <DocImage label="Licencia (Frente)" src={viewingDocsFor.licenseFront} />
+               <DocImage label="Licencia (Reverso)" src={viewingDocsFor.licenseBack} />
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
@@ -1892,6 +1925,86 @@ const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600", isProc
   );
 };
 // -----------------------------------------------------------
+
+// --- NUEVO COMPONENTE: ONBOARDING DE CONDUCTORES ---
+function DriverOnboarding({ driver, db }) {
+  const [docs, setDocs] = useState({ 
+    photo: driver.photo || null, 
+    idFront: driver.idFront || null, 
+    idBack: driver.idBack || null, 
+    licenseFront: driver.licenseFront || null, 
+    licenseBack: driver.licenseBack || null 
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleUpload = async (e, field) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      // Comprimimos a 800px para que los textos de los carnets sigan siendo legibles
+      const compressed = await resizeImage(file, 800, 0.5);
+      setDocs(prev => ({ ...prev, [field]: compressed }));
+    } catch (error) {
+      alert("Error al procesar la imagen. Intente de nuevo.");
+    }
+  };
+
+  const isComplete = docs.photo && docs.idFront && docs.idBack && docs.licenseFront && docs.licenseBack;
+
+  const submitDocs = async () => {
+    if (!isComplete) return;
+    setIsSubmitting(true);
+    try {
+      await updateDoc(doc(db, 'drivers', driver.id), docs);
+      // Firebase onSnapshot actualizará el estado global y desbloqueará la app automáticamente
+    } catch (error) {
+      alert("Error guardando los documentos.");
+      setIsSubmitting(false);
+    }
+  };
+
+  const uploadBtn = (field, label) => (
+    <label className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer shadow-sm ${docs[field] ? 'bg-green-50 border-green-400' : 'bg-white border-slate-200 hover:border-blue-400'}`}>
+      <div className="flex items-center gap-3">
+         <div className={`p-2.5 rounded-full shadow-inner ${docs[field] ? 'bg-green-500 text-white' : 'bg-blue-100 text-blue-600'}`}>
+            {docs[field] ? <CheckCircle className="w-5 h-5"/> : <Camera className="w-5 h-5"/>}
+         </div>
+         <span className={`font-bold text-sm ${docs[field] ? 'text-green-700' : 'text-slate-700'}`}>{label}</span>
+      </div>
+      <input type="file" accept="image/*" className="hidden" onChange={(e) => handleUpload(e, field)} />
+      {docs[field] ? (
+         <img src={docs[field]} alt="OK" className="w-10 h-10 object-cover rounded-lg border border-green-200 shadow-sm" />
+      ) : (
+         <span className="text-[10px] font-black uppercase text-blue-500 tracking-widest bg-blue-50 px-2 py-1 rounded-md">Subir</span>
+      )}
+    </label>
+  );
+
+  return (
+    <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-2xl border border-slate-100 space-y-6 max-w-md mx-auto animate-in zoom-in-95 duration-500">
+      <div className="text-center space-y-2">
+        <div className="bg-blue-600 w-16 h-16 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-blue-200 mb-4"><User className="w-8 h-8 text-white"/></div>
+        <h2 className="text-2xl font-black text-slate-800">Completa tu Perfil</h2>
+        <p className="text-sm font-bold text-slate-500">Por normativa de la empresa, debes subir las fotografías de tu documentación para acceder a la ruta.</p>
+      </div>
+
+      <div className="space-y-3">
+         {uploadBtn('photo', 'Foto de Perfil (Selfie)')}
+         {uploadBtn('idFront', 'Carnet de Identidad (Frente)')}
+         {uploadBtn('idBack', 'Carnet de Identidad (Reverso)')}
+         {uploadBtn('licenseFront', 'Licencia de Conducir (Frente)')}
+         {uploadBtn('licenseBack', 'Licencia de Conducir (Reverso)')}
+      </div>
+
+      <div className="pt-4 border-t border-slate-100">
+         <button onClick={submitDocs} disabled={!isComplete || isSubmitting} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg transition-all disabled:opacity-50 disabled:shadow-none flex justify-center items-center gap-2 text-lg">
+            {isSubmitting ? 'Guardando Perfil...' : 'Comenzar a Trabajar ➔'}
+         </button>
+         {!isComplete && <p className="text-[10px] font-bold text-slate-400 text-center mt-3 uppercase tracking-widest">Debes subir las 5 fotos para continuar</p>}
+      </div>
+    </div>
+  );
+}
 // ------------------------------------------------
 
 export default function App() {
@@ -2263,6 +2376,27 @@ export default function App() {
     setSelectedJob({ id: 'NEW_QUICK_JOB', client: '', brand: '', model: '', plate: '', vin: '', origin: '', destination: '', tripType: 'traslado', scheduledDate: today });
     setCurrentView('checklist');
   };
+
+  // --- DETECCIÓN DE ONBOARDING DEL CONDUCTOR ---
+  const myDriver = user ? drivers.find(d => d.email === currentUserEmail) : null;
+  const needsOnboarding = myDriver && (!myDriver.photo || !myDriver.idFront || !myDriver.idBack || !myDriver.licenseFront || !myDriver.licenseBack);
+
+  // Si es chofer, le faltan datos, y NO es un admin superusuario, le bloqueamos el acceso.
+  if (activeRole === 'driver' && needsOnboarding && !isRealAdmin) {
+    return (
+      <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10 transition-colors duration-300">
+        {globalStyles}
+        <header className="fixed-nav-bar bg-blue-600 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20">
+           <div className="flex items-center gap-3"><div className="bg-white/20 p-1.5 rounded-xl"><img src="/logo.png" className="w-8 h-8"/></div><h1 className="font-alfa text-2xl text-white">Registro</h1></div>
+           <button onClick={() => signOut(auth)} className="bg-white/10 hover:bg-white/20 p-2.5 rounded-xl text-white transition-colors"><LogOut className="w-5 h-5" /></button>
+        </header>
+        <main className="max-w-md mx-auto p-4 pt-24 sm:pt-28 pb-10">
+           <DriverOnboarding driver={myDriver} db={db} />
+        </main>
+      </div>
+    );
+  }
+  // ----------------------------------------------
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-32 transition-colors duration-300">
