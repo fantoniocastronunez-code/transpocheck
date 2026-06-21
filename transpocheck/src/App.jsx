@@ -537,23 +537,47 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [editingClient, setEditingClient] = useState(null);
   const [fleetFilter, setFleetFilter] = useState('');
-  const [driverPhoto, setDriverPhoto] = useState(null);
-  // NUEVO: Estado para abrir la galería de documentos de un conductor
-  const [viewingDocsFor, setViewingDocsFor] = useState(null);
   
-  const DocImage = ({ label, src }) => (
-     <div className="space-y-1">
-        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{label}</p>
-        {src ? (
-           <img src={src} className="w-full h-40 object-contain rounded-xl border border-slate-200 bg-slate-50 shadow-inner" alt={label} />
-        ) : (
-           <div className="w-full h-40 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 text-xs font-bold">Pendiente</div>
-        )}
-     </div>
+  // --- NUEVO: ESTADO CONSOLIDADO PARA DOCUMENTOS DEL PERFIL ---
+  const [driverDocs, setDriverDocs] = useState({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null });
+  const [fullScreenDoc, setFullScreenDoc] = useState(null); // Para ver el carnet/licencia en grande
+
+  // Función unificada para cargar cualquier tipo de documento en el panel Admin
+  const handleDocUpload = async (e, field, size) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const dataUrl = await resizeImage(file, size, 0.4);
+      setDriverDocs(prev => ({ ...prev, [field]: dataUrl }));
+    } catch (err) { showAlert("Error procesando foto."); }
+  };
+
+  // Mini-Componente para los recuadros de documentos
+  const DocUploader = ({ field, label }) => (
+    <div className="flex flex-col gap-1">
+        <span className="text-[9px] font-extrabold text-slate-500 uppercase">{label}</span>
+        <div className="relative h-20 w-full border-2 border-dashed border-slate-300 rounded-xl overflow-hidden bg-slate-50 group hover:border-blue-400 transition-colors flex items-center justify-center">
+            <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer z-20" onChange={(e) => handleDocUpload(e, field, 800)} />
+            {driverDocs[field] ? (
+                <>
+                    <img src={driverDocs[field]} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
+                        <span className="text-white text-xs font-bold flex flex-col items-center"><Camera className="w-4 h-4 mb-1"/> Cambiar</span>
+                    </div>
+                    <button type="button" onClick={(e) => { e.preventDefault(); setFullScreenDoc(driverDocs[field]); }} className="absolute top-1 right-1 bg-white p-1.5 rounded-lg shadow-md z-30 hover:bg-slate-100"><Eye className="w-3.5 h-3.5 text-blue-600"/></button>
+                </>
+            ) : (
+                <div className="text-center text-slate-400 group-hover:text-blue-500 flex flex-col items-center">
+                    <Camera className="w-5 h-5 mb-1" />
+                    <span className="text-[9px] font-black uppercase">Subir</span>
+                </div>
+            )}
+        </div>
+    </div>
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
       <div className="flex gap-2 pb-2">
          <button onClick={()=>setConfigSubTab('clients')} className={`px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='clients'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Clientes</button>
          <button onClick={()=>setConfigSubTab('vehicles')} className={`px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='vehicles'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Vehículos</button>
@@ -670,36 +694,40 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
 
       {configSubTab === 'drivers' && (
         <div className="grid md:grid-cols-2 gap-6">
-          <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry'), photo: driverPhoto }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); setDriverPhoto(null); showAlert("Conductor actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); setDriverPhoto(null); showAlert("Conductor creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
-            <h3 className="font-extrabold text-slate-800 flex items-center gap-2"><User className="text-blue-600"/> {editingDriver ? 'Editar Conductor' : 'Nuevo Conductor'}</h3>
+          <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry'), ...driverDocs }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); showAlert("Perfil actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); showAlert("Conductor creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+            <h3 className="font-extrabold text-slate-800 flex items-center gap-2"><User className="text-blue-600"/> {editingDriver ? 'Perfil del Conductor' : 'Nuevo Conductor'}</h3>
             
             <div className="flex flex-col items-center justify-center gap-2 pb-2">
               <label className="relative w-20 h-20 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center cursor-pointer overflow-hidden bg-slate-50 dark:bg-slate-900 group hover:border-blue-500 transition-colors shadow-inner">
-                <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                  const file = e.target.files[0];
-                  if (!file) return;
-                  try {
-                    const dataUrl = await resizeImage(file, 160, 0.4);
-                    setDriverPhoto(dataUrl);
-                  } catch (err) { showAlert("Error procesando foto."); }
-                }} />
-                {driverPhoto ? (
-                  <img src={driverPhoto} alt="Previsualización" className="w-full h-full object-cover" />
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleDocUpload(e, 'photo', 160)} />
+                {driverDocs.photo ? (
+                  <img src={driverDocs.photo} alt="Previsualización" className="w-full h-full object-cover" />
                 ) : (
                   <div className="text-center flex flex-col items-center justify-center">
                     <Camera className="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-colors" />
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider mt-1">Subir Foto</span>
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider mt-1">Selfie</span>
                   </div>
                 )}
               </label>
-              {driverPhoto && <button type="button" onClick={() => setDriverPhoto(null)} className="text-[10px] font-bold text-red-500 hover:underline">Quitar foto</button>}
+              {driverDocs.photo && <button type="button" onClick={() => setDriverDocs(prev => ({...prev, photo: null}))} className="text-[10px] font-bold text-red-500 hover:underline">Quitar foto</button>}
             </div>
 
             <input name="driverName" defaultValue={editingDriver?.name} placeholder="Nombre completo" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
             <input name="driverEmail" defaultValue={editingDriver?.email} placeholder="Correo Gmail del conductor" required type="email" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
             
-            <div className="space-y-1.5 border-t pt-2">
-               <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wide">Clase de Licencia</label>
+            {/* PANEL DE DOCUMENTACIÓN INTEGRADO AL PERFIL */}
+            <div className="pt-2 border-t border-slate-100">
+               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Documentación de Respaldo</h4>
+               <div className="grid grid-cols-2 gap-3">
+                  <DocUploader field="idFront" label="Carnet (Frente)" />
+                  <DocUploader field="idBack" label="Carnet (Reverso)" />
+                  <DocUploader field="licenseFront" label="Licencia (Frente)" />
+                  <DocUploader field="licenseBack" label="Licencia (Reverso)" />
+               </div>
+            </div>
+
+            <div className="space-y-1.5 border-t border-slate-100 pt-3 mt-2">
+               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Clase de Licencia</label>
                <div className="grid grid-cols-3 gap-1.5">
                   {LICENCIAS.map(l => (
                     <label key={l} className="flex items-center gap-1 p-1 bg-slate-50 border rounded-lg text-[11px] font-bold cursor-pointer hover:bg-slate-100">
@@ -710,18 +738,18 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
                </div>
             </div>
             <div className="space-y-1">
-               <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wide">Fecha de Vencimiento Licencia</label>
+               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Vencimiento Licencia</label>
                <input name="licenseExpiry" type="date" defaultValue={editingDriver?.licenseExpiry || ''} className="w-full border-2 p-2 rounded-xl text-sm font-semibold outline-none text-slate-700 bg-white" />
             </div>
 
-            <div className="flex gap-3 pt-2 border-t">
-              {editingDriver && <button type="button" onClick={() => { setEditingDriver(null); setDriverPhoto(null); }} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>}
-              <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-sm transition-colors shadow-lg shadow-blue-200">{editingDriver ? 'Guardar Cambios' : 'Crear Conductor'}</button>
+            <div className="flex gap-3 pt-2 border-t border-slate-100">
+              {editingDriver && <button type="button" onClick={() => { setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); }} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>}
+              <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-sm transition-colors shadow-lg shadow-blue-200">{editingDriver ? 'Guardar Perfil' : 'Crear Conductor'}</button>
             </div>
           </form>
           
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 max-h-[75vh] overflow-y-auto">
-            <h3 className="font-extrabold text-slate-800 mb-4">Directorio</h3>
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 max-h-[85vh] overflow-y-auto">
+            <h3 className="font-extrabold text-slate-800 mb-4">Directorio Logístico</h3>
             <div className="space-y-2">
               {drivers.length === 0 ? <p className="text-sm font-semibold text-slate-400">Directorio vacío</p> : drivers.map(d=>(
                 <div key={d.id} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-xl group transition-all">
@@ -740,9 +768,11 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
                       {d.licenses && d.licenses.length > 0 && <p className="text-[9px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md mt-1 w-fit">Licencias: {d.licenses.join(', ')}</p>}
                     </div>
                   </div>
-                  <div className="flex gap-1 shrink-0 ml-2">
-                     <button onClick={() => setViewingDocsFor(d)} className="p-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-600 rounded-lg transition-colors shadow-sm" title="Ver Documentos"><FileText className="w-4 h-4"/></button>
-                     <button onClick={() => { setEditingDriver(d); setDriverPhoto(d.photo || null); }} className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors shadow-sm" title="Editar Conductor"><Edit2 className="w-4 h-4"/></button>
+                  <div className="flex gap-1.5 shrink-0 ml-2">
+                     <button onClick={() => { 
+                       setEditingDriver(d); 
+                       setDriverDocs({ photo: d.photo || null, idFront: d.idFront || null, idBack: d.idBack || null, licenseFront: d.licenseFront || null, licenseBack: d.licenseBack || null }); 
+                     }} className="px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors shadow-sm text-xs font-bold flex items-center gap-1.5" title="Ver Perfil y Documentos"><User className="w-4 h-4"/> Perfil</button>
                      <button onClick={() => showConfirm("¿Eliminar conductor?", async()=>await deleteDoc(doc(db,'drivers',d.id)))} className="p-2 bg-red-100 hover:bg-red-200 text-red-500 rounded-lg transition-colors shadow-sm"><Trash2 className="w-4 h-4"/></button>
                   </div>
                 </div>
@@ -752,25 +782,11 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
         </div>
       )}
 
-      {/* NUEVO: MODAL PARA QUE EL ADMIN VEA TODOS LOS DOCUMENTOS DEL CONDUCTOR */}
-      {viewingDocsFor && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95">
-            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-              <div>
-                <h3 className="text-lg font-black text-slate-800">Documentos del Conductor</h3>
-                <p className="text-xs font-bold text-slate-500">{viewingDocsFor.name} ({viewingDocsFor.email})</p>
-              </div>
-              <button onClick={() => setViewingDocsFor(null)} className="p-2 bg-slate-200 hover:bg-slate-300 rounded-full transition-colors"><X className="w-5 h-5"/></button>
-            </div>
-            <div className="p-4 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-4">
-               <DocImage label="Foto Perfil" src={viewingDocsFor.photo} />
-               <DocImage label="Carnet (Frente)" src={viewingDocsFor.idFront} />
-               <DocImage label="Carnet (Reverso)" src={viewingDocsFor.idBack} />
-               <DocImage label="Licencia (Frente)" src={viewingDocsFor.licenseFront} />
-               <DocImage label="Licencia (Reverso)" src={viewingDocsFor.licenseBack} />
-            </div>
-          </div>
+      {/* MODAL FLOTANTE PARA VER CARNET/LICENCIA EN GRANDE AL TOCAR EL "OJO" */}
+      {fullScreenDoc && (
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center z-[300] p-4 cursor-zoom-out animate-in fade-in" onClick={() => setFullScreenDoc(null)}>
+          <button className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/40 rounded-full text-white transition-colors shadow-lg"><X className="w-6 h-6"/></button>
+          <img src={fullScreenDoc} className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
 
