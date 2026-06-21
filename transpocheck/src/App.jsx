@@ -2160,6 +2160,32 @@ export default function App() {
 
   useEffect(() => { driversRef.current = drivers; }, [drivers]);
 
+  // --- HOOKS DE AUTO-REGISTRO (ARRIBA PARA EVITAR ERROR #310) ---
+  const myDriver = user ? drivers.find(d => d.email === currentUserEmail) : null;
+  const registeringRef = useRef(false);
+
+  useEffect(() => {
+    if (user && activeRole === 'driver' && !myDriver && isOnline && !registeringRef.current) {
+      const timer = setTimeout(() => {
+        const stillNoDriver = !driversRef.current.find(d => d.email === currentUserEmail);
+        if (stillNoDriver) {
+          registeringRef.current = true;
+          addDoc(collection(db, 'drivers'), {
+            name: user.displayName || 'Conductor Nuevo',
+            email: currentUserEmail,
+            balance: 0,
+            licenses: [],
+            licenseExpiry: '',
+            createdAt: Date.now()
+          }).then(() => { registeringRef.current = false; })
+            .catch(e => { console.error(e); registeringRef.current = false; });
+        }
+      }, 2500); // Damos 2.5s para asegurar que Firebase cargó
+      return () => clearTimeout(timer);
+    }
+  }, [user, activeRole, myDriver, isOnline, currentUserEmail, db]);
+  // --------------------------------------------------------------
+
   useEffect(() => {
     if (!user) return;
     
@@ -2377,33 +2403,7 @@ export default function App() {
     setCurrentView('checklist');
   };
 
-  // --- CEREBRO DE AUTO-REGISTRO Y CONTROL DE ONBOARDING ESTRICTO ---
-  const myDriver = user ? drivers.find(d => d.email === currentUserEmail) : null;
-  const registeringRef = useRef(false);
-
-  // Si ingresa alguien en rol de conductor pero no está en la base de datos, lo registramos al vuelo de forma segura
-  useEffect(() => {
-    if (user && activeRole === 'driver' && !myDriver && isOnline && !registeringRef.current) {
-      const timer = setTimeout(() => {
-        const stillNoDriver = !driversRef.current.find(d => d.email === currentUserEmail);
-        if (stillNoDriver) {
-          registeringRef.current = true;
-          addDoc(collection(db, 'drivers'), {
-            name: user.displayName || 'Conductor Nuevo',
-            email: currentUserEmail,
-            balance: 0,
-            licenses: [],
-            licenseExpiry: '',
-            createdAt: Date.now()
-          }).then(() => { registeringRef.current = false; })
-            .catch(e => { console.error("Error auto-registro:", e); registeringRef.current = false; });
-        }
-      }, 2500); // Damos 2.5 segs exactos para que Firebase cargue y evitamos duplicados
-      return () => clearTimeout(timer);
-    }
-  }, [user, activeRole, myDriver, isOnline, currentUserEmail, db]);
-
-  // Evaluamos estrictamente si falta CUALQUIER documento vital
+  // --- CONTROL DE ONBOARDING ESTRICTO ---
   const needsOnboarding = myDriver && (
     !myDriver.photo || myDriver.photo === "" || 
     !myDriver.idFront || myDriver.idFront === "" || 
@@ -2412,7 +2412,7 @@ export default function App() {
     !myDriver.licenseBack || myDriver.licenseBack === ""
   );
 
-  // BLOQUEO ABSOLUTO: Nadie en modo "Conductor" pasa a la app sin sus 5 fotos
+  // BLOQUEO ABSOLUTO: Nadie en modo "Conductor" pasa a la app sin sus 5 fotos (sin excepciones)
   if (activeRole === 'driver' && (needsOnboarding || !myDriver)) {
     return (
       <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10 transition-colors duration-300 dark:bg-slate-950">
@@ -2422,9 +2422,13 @@ export default function App() {
              <div className="bg-white/20 p-1.5 rounded-xl"><img src="/logo.png" className="w-8 h-8 object-contain"/></div>
              <h1 className="font-alfa text-xl text-white">Verificación Obligatoria</h1>
            </div>
-           {isRealAdmin && (
+           {isRealAdmin ? (
              <button onClick={() => { setActiveRole('admin'); setRoleMenuOpen(false); }} className="bg-white/10 hover:bg-white/20 p-2.5 rounded-xl text-white transition-colors flex items-center gap-2 text-xs font-bold">
                <LogOut className="w-4 h-4" /> Salir a Admin
+             </button>
+           ) : (
+             <button onClick={() => signOut(auth)} className="bg-white/10 hover:bg-white/20 p-2.5 rounded-xl text-white transition-colors flex items-center gap-2 text-xs font-bold">
+               <LogOut className="w-4 h-4" /> Salir
              </button>
            )}
         </header>
