@@ -195,6 +195,123 @@ const resizeImage = (file, maxWidth = 500, quality = 0.4) => {
   });
 };
 
+// --- NUEVO COMPONENTE: SELECTOR DE CLIENTES CON LOGOS ---
+const CustomClientSelector = ({ value, onChange, clients, placeholder }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Cierra el menú si haces clic afuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) setIsOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Limpia el nombre para buscar el logo (ej: "Grandleasing Las Torres" -> "grandleasinglastorres")
+  const getLogoPath = (name) => {
+    if (!name || name === 'OTRO') return null;
+    const cleanName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return `/logos/${cleanName}.png`; 
+  };
+
+  // Genera un color consistente basado en el nombre (si no hay logo)
+  const getBadgeColor = (name) => {
+    if (!name) return 'bg-slate-200 text-slate-500';
+    if (name === 'OTRO') return 'bg-slate-700 text-white';
+    const colors = ['bg-red-500', 'bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-purple-500', 'bg-sky-500', 'bg-pink-500'];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return `${colors[Math.abs(hash) % colors.length]} text-white`;
+  };
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 outline-none focus:border-blue-500 flex justify-between items-center transition-colors shadow-sm"
+      >
+        <div className="flex items-center gap-3 truncate">
+          {value && value !== 'OTRO' ? (
+            <>
+              <div className="w-6 h-6 rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                {/* Intenta cargar la imagen, si falla, muestra el span de iniciales */}
+                <img
+                  src={getLogoPath(value)}
+                  alt={value}
+                  className="w-full h-full object-contain bg-white"
+                  onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                />
+                <span className={`w-full h-full flex items-center justify-center text-[10px] font-black ${getBadgeColor(value)}`} style={{display: 'none'}}>
+                  {value.substring(0, 2).toUpperCase()}
+                </span>
+              </div>
+              <span className="truncate">{value}</span>
+            </>
+          ) : value === 'OTRO' ? (
+            <>
+              <div className={`w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[10px] font-black ${getBadgeColor('OTRO')}`}>+</div>
+              <span>Otro (Ingreso manual)</span>
+            </>
+          ) : (
+            <span className="text-slate-400 dark:text-slate-500">{placeholder}</span>
+          )}
+        </div>
+        <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden max-h-[40vh] overflow-y-auto animate-in fade-in slide-in-from-top-2">
+          <button
+            type="button"
+            onClick={() => { onChange(""); setIsOpen(false); }}
+            className="w-full text-left p-3 hover:bg-slate-50 dark:hover:bg-slate-700 text-sm font-bold text-slate-400 dark:text-slate-500 transition-colors border-b border-slate-50 dark:border-slate-700"
+          >
+            Ninguno / Limpiar selección
+          </button>
+          
+          {clients.map(c => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => { onChange(c); setIsOpen(false); }}
+              className={`w-full flex items-center gap-3 p-3 hover:bg-blue-50 dark:hover:bg-slate-700/50 transition-colors text-left ${value === c ? 'bg-blue-50 dark:bg-slate-700/50' : ''}`}
+            >
+              <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm">
+                <img
+                  src={getLogoPath(c)}
+                  alt={c}
+                  className="w-full h-full object-contain p-1 bg-white"
+                  onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                />
+                <span className={`w-full h-full flex items-center justify-center text-xs font-black ${getBadgeColor(c)}`} style={{display: 'none'}}>
+                  {c.substring(0, 2).toUpperCase()}
+                </span>
+              </div>
+              <span className={`text-sm font-bold flex-1 truncate ${value === c ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'}`}>
+                {c}
+              </span>
+              {value === c && <CheckCircle className="w-4 h-4 text-blue-500 shrink-0" />}
+            </button>
+          ))}
+
+          <button
+            type="button"
+            onClick={() => { onChange("OTRO"); setIsOpen(false); }}
+            className="w-full flex items-center gap-3 p-4 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left border-t border-slate-100 dark:border-slate-700"
+          >
+            <div className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-xs font-black shadow-sm ${getBadgeColor('OTRO')}`}>+</div>
+            <span className="text-sm font-bold text-slate-700 dark:text-slate-200 flex-1">Otro (Ingreso manual)</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+// --------------------------------------------------------
+
 function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers, db, showAlert, onSuccess }) {
   const [selectedClient, setSelectedClient] = useState(jobToEdit?.client && allClientsList.includes(jobToEdit.client) ? jobToEdit.client : (jobToEdit?.client ? 'OTRO' : ''));
   const [manualClient, setManualClient] = useState(jobToEdit?.client && !allClientsList.includes(jobToEdit.client) ? jobToEdit.client : '');
@@ -363,14 +480,15 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
                <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider ml-1">Fecha de Traslado</label>
                <input name="scheduledDate" type="date" defaultValue={jobToEdit?.scheduledDate || todayStr} required className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-700" />
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1 relative z-50">
               <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider ml-1">Cliente</label>
-              <select value={selectedClient} onChange={(e) => setSelectedClient(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold text-slate-700 bg-white">
-                <option value="">Seleccione Cliente (Opcional)</option>
-                {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
-                <option value="OTRO">Otro (Ingreso manual)</option>
-              </select>
-              {selectedClient === 'OTRO' && <input type="text" value={manualClient} onChange={(e) => setManualClient(e.target.value)} placeholder="Escribe el nombre del cliente" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white mt-2" />}
+              <CustomClientSelector 
+                value={selectedClient} 
+                onChange={(val) => setSelectedClient(val)} 
+                clients={allClientsList} 
+                placeholder="Seleccione Cliente (Opcional)" 
+              />
+              {selectedClient === 'OTRO' && <input type="text" value={manualClient} onChange={(e) => setManualClient(e.target.value)} placeholder="Escribe el nombre del cliente" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white mt-2 animate-in fade-in slide-in-from-top-2" />}
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
@@ -2179,7 +2297,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.4</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.5</p>
                 </div>
               </div>
             )}
@@ -3195,13 +3313,66 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     );
   };
 
+  // MOTOR DE DESCARGA MASIVA EN ZIP (OPCIÓN B)
+  const handleDownloadAllZIP = async () => {
+    const jobsWithChecklist = historyJobs.filter(j => j.checklist);
+    if (jobsWithChecklist.length === 0) return showAlert("No hay actas finalizadas con checklist en este filtro para empaquetar.");
+    
+    showAlert("⏳ Iniciando compresión del lote de actas... Por favor espera un momento.");
+    
+    try {
+      // Carga ultra-segura de JSZip vía CDN para evitar bloqueos en Vercel
+      const JSZip = await new Promise((resolve) => {
+        if (window.JSZip) return resolve(window.JSZip);
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+        script.onload = () => resolve(window.JSZip);
+        document.body.appendChild(script);
+      });
+      
+      const zip = new JSZip();
+      
+      // Procesamos secuencialmente cada PDF y lo inyectamos al contenedor virtual
+      for (const job of jobsWithChecklist) {
+        const docPDF = await buildPDFDoc(job);
+        const pdfBlob = docPDF.output('blob');
+        const cleanPlate = job.plate || job.vin || 'SN';
+        const dateStrForFile = getDStr(job).replace(/\//g, '-');
+        const fileName = `Check.${dateStrForFile}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`;
+        zip.file(fileName, pdfBlob);
+      }
+      
+      // Generamos el binario final descargable
+      const content = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(content);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Actas_LogisticAPP_${new Date().toISOString().split('T')[0]}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showAlert("✅ ¡Archivo ZIP generado y descargado con éxito!");
+    } catch (err) {
+      console.error("Error comprimiendo actas:", err);
+      showAlert("Ocurrió un error inesperado al procesar el archivo comprimido.");
+    }
+  };
+
   return (
     <div className="pb-16">
-      <div className="relative mb-6">
-         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-           <Search className="w-5 h-5 text-slate-400" />
-         </div>
-         <input type="text" placeholder="Buscar por patente, marca, modelo o cliente..." className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 shadow-sm transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1">
+           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+             <Search className="w-5 h-5 text-slate-400" />
+           </div>
+           <input type="text" placeholder="Buscar por patente, marca, modelo o cliente..." className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 shadow-sm transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+        </div>
+        {isAdminView && (
+          <button type="button" onClick={handleDownloadAllZIP} className="group bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0 transition-all duration-200 shrink-0">
+            <FileDown className="w-5 h-5"/> Descargar Lote ZIP
+          </button>
+        )}
       </div>
 
       {/* VISTA KANBAN CON COLUMNAS DESPLEGABLES */}
@@ -3886,7 +4057,7 @@ const dataUrl = await resizeImage(f, 350, 0.3);
                   <option value="camion_2ejes">🚛 Camión (2 Ejes)</option>
                   <option value="camion_3ejes">🚛 Camión (3 Ejes)</option>
                   <option value="camion_8x4">🚚 Camión Rigid (8x4)</option>
-                  <option value="carro_arrastre">🛒 Carro de Arrastre</option>
+                  <option value="carro_arrastre">🛒 Carro Arrastre</option>
                 </select>
               </div>
 
@@ -3917,7 +4088,7 @@ const dataUrl = await resizeImage(f, 350, 0.3);
                        formData.zoomZone === 'bl' ? 'scale-[1.8] origin-bottom-left z-50' :
                        'scale-[1.8] origin-bottom-right z-50'
                      }`}
-                     style={{ height: formData.vehicleType?.includes('camion') || formData.vehicleType === 'furgon_grande' ? '260px' : '220px' }}
+                     style={{ height: formData.vehicleType?.includes('camion') || formData.vehicleType === 'furgon_grande' || formData.vehicleType === 'carro_arrastre' ? '260px' : '220px' }}
                      onClick={(e) => {
                        const rect = e.currentTarget.getBoundingClientRect();
                        const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -4042,21 +4213,24 @@ const dataUrl = await resizeImage(f, 350, 0.3);
                         {formData.vehicleType === 'carro_arrastre' && (
                           <div className="w-full h-full relative overflow-hidden flex justify-center items-center">
                             {/* Cuerpo del carro */}
-                            <div className="w-[90%] h-[80%] bg-slate-300 rounded-md border-4 border-slate-400 relative overflow-hidden shadow-inner flex justify-center items-center z-10">
+                            <div className="w-[90%] h-[80%] bg-slate-300 rounded-md border-4 border-slate-400 relative overflow-hidden shadow-inner flex justify-center items-center z-10 mt-6">
                                 {/* Contorno interior táctil */}
                                 <div className="w-[90%] h-[90%] border-2 border-slate-300/50 rounded-sm"></div>
                             </div>
 
+                            {/* Tiro del carro (Triángulo frontal) */}
+                            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-4 h-10 border-x-4 border-t-4 border-slate-500 rounded-t-full bg-slate-400 z-0"></div>
+
                             {/* Eje 1 (Delantero) */}
                             <div className="absolute top-[48%] left-1/2 -translate-x-1/2 w-[105%] -ml-[2.5%] h-2 bg-slate-800/80 rounded-sm flex justify-between z-0">
-                                <div className="w-4 h-4 rounded-full bg-slate-800 -ml-1"></div>
-                                <div className="w-4 h-4 rounded-full bg-slate-800 -mr-1"></div>
+                                <div className="w-4 h-8 rounded-sm bg-slate-800 -ml-1 -mt-3 shadow-md"></div>
+                                <div className="w-4 h-8 rounded-sm bg-slate-800 -mr-1 -mt-3 shadow-md"></div>
                             </div>
 
                             {/* Eje 2 (Trasero) */}
-                            <div className="absolute top-[52%] left-1/2 -translate-x-1/2 w-[105%] -ml-[2.5%] h-2 bg-slate-800/80 rounded-sm flex justify-between z-0">
-                                <div className="w-4 h-4 rounded-full bg-slate-800 -ml-1"></div>
-                                <div className="w-4 h-4 rounded-full bg-slate-800 -mr-1"></div>
+                            <div className="absolute top-[56%] left-1/2 -translate-x-1/2 w-[105%] -ml-[2.5%] h-2 bg-slate-800/80 rounded-sm flex justify-between z-0">
+                                <div className="w-4 h-8 rounded-sm bg-slate-800 -ml-1 -mt-3 shadow-md"></div>
+                                <div className="w-4 h-8 rounded-sm bg-slate-800 -mr-1 -mt-3 shadow-md"></div>
                             </div>
                           </div>
                         )}
