@@ -1146,9 +1146,21 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
       <main className="max-w-5xl mx-auto p-4 pt-20 sm:pt-24 space-y-8">
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 text-center relative overflow-hidden max-w-2xl mx-auto">
           <div className={`absolute top-0 left-0 w-full h-1.5 ${branding.fill}`}></div>
-          <div className={`mx-auto w-14 h-14 ${branding.light} rounded-2xl flex items-center justify-center mb-3 shadow-inner border border-slate-100`}>
-             <span className={`text-xl font-black ${branding.text}`}>{initials}</span>
+          
+          {/* Tarjeta de Contenedor de Logo Premium */}
+          <div className="mx-auto w-20 h-20 bg-white dark:bg-slate-900 rounded-3xl flex items-center justify-center mb-3 shadow-md border border-slate-200 dark:border-slate-700 p-2 overflow-hidden">
+             <img
+               src={`/logos/${clientName ? clientName.toLowerCase().replace(/[^a-z0-9]/g, '') : ''}.png`}
+               alt={clientName}
+               className="w-full h-full object-contain bg-white"
+               onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+             />
+             {/* Fallback Seguro: Iniciales de respaldo con color dinámico si no hay foto */}
+             <div className={`w-full h-full flex items-center justify-center text-2xl font-black ${branding.text} ${branding.light} rounded-2xl`} style={{ display: 'none' }}>
+               {initials}
+             </div>
           </div>
+
           <h2 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-1">Portal de Seguimiento</h2>
           <p className="text-2xl font-black text-slate-800">{clientName}</p>
         </div>
