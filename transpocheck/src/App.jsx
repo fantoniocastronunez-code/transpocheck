@@ -51,6 +51,39 @@ const SignaturePad = ({ onSave, onClear, initialData }) => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // --- NUEVO: MOTOR DE ROTACIÓN AUTOMÁTICA Y PANTALLA COMPLETA ---
+  const toggleFullscreen = async (forceClose = false) => {
+    const willBeFullscreen = forceClose ? false : !isFullscreen;
+    setIsFullscreen(willBeFullscreen);
+
+    try {
+      if (willBeFullscreen) {
+        // 1. Pedir pantalla completa nativa al sistema operativo
+        const docEl = document.documentElement;
+        if (docEl.requestFullscreen) await docEl.requestFullscreen();
+        else if (docEl.webkitRequestFullscreen) await docEl.webkitRequestFullscreen();
+        
+        // 2. Forzar al celular a girar en horizontal (Ideal en Android/PWA)
+        if (window.screen?.orientation?.lock) {
+          await window.screen.orientation.lock('landscape');
+        }
+      } else {
+        // 1. Salir de pantalla completa
+        if (document.fullscreenElement || document.webkitFullscreenElement) {
+          if (document.exitFullscreen) await document.exitFullscreen();
+          else if (document.webkitExitFullscreen) await document.webkitExitFullscreen();
+        }
+        // 2. Libera la rotación para que vuelva a la verticalidad normal
+        if (window.screen?.orientation?.unlock) {
+          window.screen.orientation.unlock();
+        }
+      }
+    } catch (err) {
+      console.warn("La rotación automática no está permitida por tu navegador (común en iPhone).", err);
+    }
+  };
+  // ---------------------------------------------------------------
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -135,7 +168,7 @@ const SignaturePad = ({ onSave, onClear, initialData }) => {
       <div className={`relative w-full aspect-[2/1] ${isFullscreen ? 'max-w-2xl' : 'max-w-full'}`}>
          {!isFullscreen && <p className="absolute top-3 left-3 text-[10px] font-black text-slate-200 uppercase tracking-widest pointer-events-none select-none">Área de Firma Segura</p>}
          
-         <button type="button" onClick={() => setIsFullscreen(!isFullscreen)} className="absolute top-2 right-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black px-3 py-2 rounded-xl shadow-md z-20 transition-colors border border-slate-200 flex items-center gap-1">
+         <button type="button" onClick={() => toggleFullscreen()} className="absolute top-2 right-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black px-3 py-2 rounded-xl shadow-md z-20 transition-colors border border-slate-200 flex items-center gap-1">
            {isFullscreen ? "↙️ Reducir" : "🔲 Pantalla Completa"}
          </button>
 
@@ -153,7 +186,7 @@ const SignaturePad = ({ onSave, onClear, initialData }) => {
             Limpiar {isFullscreen ? 'Firma' : 'recuadro'}
         </button>
         {isFullscreen && (
-            <button type="button" onClick={() => setIsFullscreen(false)} className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-black py-2 rounded-xl shadow-lg shadow-blue-200 text-lg transition-colors">
+            <button type="button" onClick={() => toggleFullscreen(true)} className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-black py-2 rounded-xl shadow-lg shadow-blue-200 text-lg transition-colors">
                 Guardar y Cerrar
             </button>
         )}
