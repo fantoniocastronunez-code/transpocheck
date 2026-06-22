@@ -382,7 +382,13 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
   const [manualClient, setManualClient] = useState(jobToEdit?.client && !allClientsList.includes(jobToEdit.client) ? jobToEdit.client : '');
   const [brand, setBrand] = useState(jobToEdit?.brand || '');
   const [model, setModel] = useState(jobToEdit?.model || '');
-  const [plate, setPlate] = useState(jobToEdit?.plate || jobToEdit?.vin || '');
+  
+  // Lógica inteligente para traslados antiguos: si la Patente y el VIN eran el mismo texto, los separa visualmente
+  const initPlate = jobToEdit?.plate === jobToEdit?.vin && jobToEdit?.plate?.length !== 6 ? '' : (jobToEdit?.plate || '');
+  const initVin = jobToEdit?.plate === jobToEdit?.vin && jobToEdit?.vin?.length === 6 ? '' : (jobToEdit?.vin || '');
+  
+  const [plate, setPlate] = useState(initPlate);
+  const [vin, setVin] = useState(initVin);
   const [tripType, setTripType] = useState(jobToEdit?.tripType || 'traslado');
   const [vehicleType, setVehicleType] = useState(jobToEdit?.vehicleType || 'auto');
   
@@ -392,12 +398,10 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
   const [revA_inspeccion, setRevA_inspeccion] = useState(jobToEdit?.rtData?.inspeccion || false);
   const [revA_frenos, setRevA_frenos] = useState(jobToEdit?.rtData?.frenos || false);
   const [revB_tipo, setRevB_tipo] = useState(jobToEdit?.rtData?.tipoB || 'completa');
-  // NUEVO: Estado Reactivo para las tarjetas de conductores
   const [selectedDriversUI, setSelectedDriversUI] = useState(() => jobToEdit?.assignedEmails ? drivers.filter(d => jobToEdit.assignedEmails.includes(d.email)).map(d => d.id) : []);
   
   const todayStr = new Date().toISOString().split('T')[0];
 
-  // NUEVO CEREBRO: Auto-completar tipo de vehículo si ya existe en la flota
   useEffect(() => {
     if (brand && model && vehicles.length > 0) {
       const match = vehicles.find(v => v.brand?.toLowerCase() === brand.toLowerCase() && v.model?.toLowerCase() === model.toLowerCase() && v.vehicleType);
@@ -405,12 +409,18 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
     }
   }, [brand, model, vehicles]);
 
-  const handlePlateChange = (e) => {
-    const val = e.target.value.toUpperCase(); setPlate(val);
-    const v = vehicles.find(x => x.plate === val);
+  // CEREBRO GEMELO: Autocompleta ya sea buscando por Patente o por VIN
+  const handleVehicleSearch = (searchValue, type) => {
+    const val = searchValue.toUpperCase(); 
+    if (type === 'plate') setPlate(val);
+    if (type === 'vin') setVin(val);
+    
+    const v = vehicles.find(x => (val && x.plate === val) || (val && x.vin === val));
     if (v) {
-      setBrand(v.brand); setModel(v.model);
-      if (v.vehicleType) setVehicleType(v.vehicleType); // Recuperamos el tipo de la base
+      setBrand(v.brand || ''); setModel(v.model || '');
+      if (v.plate && type === 'vin') setPlate(v.plate);
+      if (v.vin && type === 'plate') setVin(v.vin);
+      if (v.vehicleType) setVehicleType(v.vehicleType); 
       if (allClientsList.includes(v.client)) setSelectedClient(v.client); else { setSelectedClient('OTRO'); setManualClient(v.client); }
     }
   };
@@ -438,7 +448,7 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
 
     const jobData = {
       scheduledDate: formData.get('scheduledDate'), client: finalClient, brand, model,
-      vin: plate, plate, origin: formData.get('origin'), destination: formData.get('destination'),
+      vin: vin.toUpperCase(), plate: plate.toUpperCase(), origin: formData.get('origin'), destination: formData.get('destination'),
       tripType, vehicleType, rtData: rtData || null, // Protección anti-crash
       assignedDrivers: assignedDriversList.map(d => ({id: d.id, name: d.name, email: d.email})), assignedEmails: assignedDriversList.map(d => d.email)
     };
@@ -456,7 +466,7 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
          showAlert(`Trabajo asignado exitosamente.`);
       }
       
-      if (plate && !vehicles.find(v => v.plate === plate)) await addDoc(collection(db, 'vehicles'), { plate, vehicleType, brand, model, client: finalClient, createdAt: Date.now() });
+      if ((plate || vin) && !vehicles.find(v => (plate && v.plate === plate) || (vin && v.vin === vin))) await addDoc(collection(db, 'vehicles'), { plate: plate.toUpperCase(), vin: vin.toUpperCase(), vehicleType, brand, model, client: finalClient, createdAt: Date.now() });
       
       // --- NUEVO: LLAMADA A VERCEL PARA ENVIAR NOTIFICACIÓN PUSH REAL EN SEGUNDO PLANO ---
       const driverTokens = assignedDriversList.map(d => d.fcmToken).filter(token => token);
@@ -520,9 +530,10 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
         </div>
 
         <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl space-y-4">
-           <h3 className="text-base font-bold text-slate-700">2. Vehículo <span className="text-xs text-blue-500 font-bold">(Escribe la patente para autocompletar)</span></h3>
+           <h3 className="text-base font-bold text-slate-700">2. Vehículo <span className="text-xs text-blue-500 font-bold">(Escribe para autocompletar)</span></h3>
            <div className="grid grid-cols-2 gap-4">
-             <input value={plate} onChange={handlePlateChange} type="text" placeholder="Patente o VIN" className="w-full border-2 border-slate-300 p-3 text-sm rounded-xl col-span-2 uppercase outline-none focus:border-blue-500 font-black bg-slate-100 text-slate-800 shadow-inner" />
+             <input value={plate} onChange={e=>handleVehicleSearch(e.target.value, 'plate')} type="text" placeholder="Patente (Ej. ABCD12)" className="w-full border-2 border-slate-300 p-3 text-sm rounded-xl uppercase outline-none focus:border-blue-500 font-black bg-white text-slate-800 shadow-sm" />
+             <input value={vin} onChange={e=>handleVehicleSearch(e.target.value, 'vin')} type="text" placeholder="VIN / Chasis" className="w-full border-2 border-slate-300 p-3 text-sm rounded-xl uppercase outline-none focus:border-blue-500 font-black bg-white text-slate-800 shadow-sm" />
              <input value={brand} onChange={e=>setBrand(e.target.value)} type="text" placeholder="Marca" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-800" />
              <input value={model} onChange={e=>setModel(e.target.value)} type="text" placeholder="Modelo" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-800" />
              <select value={vehicleType} onChange={e=>setVehicleType(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl col-span-2 outline-none focus:border-blue-500 font-bold text-slate-700 bg-white">
@@ -3649,8 +3660,11 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
           <div className="flex flex-col gap-3 w-full">
             <div className="flex justify-between items-start w-full gap-2">
               
-              {/* Bloque de Patente: Adaptable y con diseño visual chileno */}
-              <LicensePlateBadge text={j.plate || j.vin} />
+              {/* Bloque de Patente y VIN combinado */}
+              <div className="shrink-0 relative z-20 flex flex-col items-start gap-1">
+                <LicensePlateBadge text={j.plate} />
+                {j.vin && <span className="text-[9px] font-black bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded-md uppercase tracking-widest shadow-sm ml-1">VIN: {j.vin}</span>}
+              </div>
               
               {/* Botones de Acción (Editar y Menú) alineados a la derecha */}
               <div className="flex items-center gap-1 relative shrink-0">
@@ -3794,9 +3808,12 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     return (
       <div key={j.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between relative pl-5 overflow-hidden hover:shadow-xl hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-default">
         <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
-        <div className="flex justify-between items-center mb-2">
-          <p className="text-sm font-black text-slate-800 leading-tight truncate pr-2">{j.brand} {j.model}</p>
-          <LicensePlateBadge text={j.plate || j.vin} />
+        <div className="flex justify-between items-start mb-2 gap-2">
+          <p className="text-sm font-black text-slate-800 leading-tight truncate mt-1">{j.brand} {j.model}</p>
+          <div className="flex flex-col items-end shrink-0 gap-1">
+            <LicensePlateBadge text={j.plate} />
+            {j.vin && <span className="text-[8px] font-black bg-slate-100 border border-slate-200 text-slate-500 px-1 py-[1px] rounded uppercase tracking-widest mr-1">VIN: {j.vin}</span>}
+          </div>
         </div>
         {/* NUEVO: DISEÑO COMPACTO DE HISTORIAL MEJORADO */}
         <div className="my-2 bg-slate-50 dark:bg-slate-900/40 p-2 rounded-xl border border-slate-100 dark:border-slate-800/60 text-xs font-black flex items-center justify-between gap-1">
