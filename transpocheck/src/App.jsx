@@ -589,6 +589,80 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
     </div>
   );
 }
+// --- NUEVO COMPONENTE: SILUETA DE VEHÍCULOS PARA MARCAS DE AGUA ---
+const VehicleShapeIcon = ({ type }) => {
+  return (
+    <div className="w-full h-full p-2 grayscale brightness-200">
+      {(!type || type === 'auto') && (
+        <div className="w-full h-full bg-white rounded-[40px] border-[6px] border-slate-500 relative overflow-hidden flex flex-col justify-between p-2 shadow-inner">
+          <div className="w-4/5 h-1/5 bg-slate-800/40 mx-auto rounded-t-2xl rounded-b-sm mt-2"></div>
+          <div className="w-4/5 h-10 bg-slate-800/40 mx-auto rounded-b-xl rounded-t-sm mb-2"></div>
+        </div>
+      )}
+      {type === 'furgon_pequeno' && (
+        <div className="w-full h-full relative flex flex-col items-center">
+          <div className="w-[80%] h-[18%] bg-white rounded-t-[35px] border-x-4 border-t-4 border-slate-500 shadow-inner z-0"></div>
+          <div className="w-[100%] h-[82%] bg-slate-100 rounded-t-[15px] rounded-b-[20px] border-4 border-slate-500 shadow-inner flex flex-col p-1.5 z-10 -mt-2">
+            <div className="w-[90%] h-[20%] bg-slate-800/40 mx-auto rounded-t-[15px] rounded-b-sm mb-1.5"></div>
+          </div>
+        </div>
+      )}
+      {type === 'furgon_grande' && (
+         <div className="w-full h-full bg-white rounded-t-[35px] rounded-b-[10px] border-4 border-slate-500 relative flex flex-col justify-start p-2 shadow-inner z-10">
+           <div className="w-[85%] h-[15%] bg-slate-800/40 mx-auto rounded-t-[20px] rounded-b-sm mt-1"></div>
+         </div>
+      )}
+      {type === 'camioneta' && (
+        <div className="w-full h-full relative flex flex-col">
+          <div className="w-full h-[40%] bg-white rounded-t-[35px] rounded-b-md border-4 border-slate-500 p-2 flex flex-col justify-between shadow-inner">
+            <div className="w-5/6 h-5 bg-slate-800/40 mx-auto rounded-t-xl rounded-b-sm mt-1"></div>
+          </div>
+          <div className="w-[90%] h-[60%] mx-auto bg-slate-200 border-x-4 border-b-4 border-slate-500 rounded-b-xl mt-1 relative">
+            <div className="absolute inset-2 border-2 border-slate-400 rounded-sm"></div>
+          </div>
+        </div>
+      )}
+      {type === 'camion' && (
+        <div className="w-full h-full relative flex flex-col">
+          <div className="w-[105%] -ml-[2.5%] h-[25%] bg-white rounded-t-xl rounded-b-sm border-4 border-slate-500 p-1 flex flex-col justify-end shadow-inner z-10 relative">
+            <div className="w-full h-1/2 bg-slate-800/40 rounded-t-md rounded-b-sm mb-1"></div>
+          </div>
+          <div className="w-full h-[73%] mx-auto bg-slate-200 border-4 border-slate-500 rounded-sm mt-1 relative overflow-hidden shadow-inner z-10"></div>
+        </div>
+      )}
+      {type === 'camion_doble' && (
+        <div className="w-full h-full relative flex flex-col">
+          <div className="w-[105%] -ml-[2.5%] h-[35%] bg-white rounded-t-xl rounded-b-sm border-4 border-slate-500 p-1 flex flex-col justify-end gap-1 shadow-inner z-10 relative">
+            <div className="w-full h-[40%] bg-slate-800/40 rounded-t-md"></div>
+            <div className="w-full h-[35%] bg-slate-800/40 rounded-sm mb-0.5"></div>
+          </div>
+          <div className="w-full h-[63%] mx-auto bg-slate-200 border-4 border-slate-500 rounded-sm mt-1 relative overflow-hidden shadow-inner z-10"></div>
+        </div>
+      )}
+      {(type === 'camion_2ejes' || type === 'camion_3ejes' || type === 'camion_8x4') && (
+        <div className="w-full h-full relative flex flex-col items-center">
+          <div className="absolute top-[8%] -left-1 w-2 h-6 bg-slate-800 rounded-sm"></div>
+          <div className="absolute top-[8%] -right-1 w-2 h-6 bg-slate-800 rounded-sm"></div>
+          <div className="w-[105%] h-[20%] bg-white rounded-t-xl rounded-b-sm border-4 border-slate-500 p-1 flex flex-col justify-end shadow-inner z-10 relative">
+            <div className="w-full h-1/2 bg-slate-800/50 rounded-t-md rounded-b-sm mb-1"></div>
+          </div>
+          <div className="w-full h-[78%] mx-auto bg-slate-200 border-4 border-slate-500 rounded-sm mt-1 relative overflow-hidden shadow-inner z-10">
+             <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_5px,#94a3b8_5px,#94a3b8_8px)] opacity-60"></div>
+          </div>
+        </div>
+      )}
+      {type === 'carro_arrastre' && (
+        <div className="w-full h-full relative flex flex-col items-center pt-4">
+          <div className="w-[90%] h-[85%] bg-slate-200 rounded-md border-4 border-slate-500 relative overflow-hidden shadow-inner flex justify-center items-center z-10">
+             <div className="w-[90%] h-[90%] border-2 border-slate-400/50 rounded-sm"></div>
+          </div>
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-6 border-x-4 border-t-4 border-slate-500 rounded-t-full bg-slate-400 z-0"></div>
+        </div>
+      )}
+    </div>
+  );
+};
+// --------------------------------------------------------
 
 function ConfigView({ allClientsList, customClients, vehicles, drivers, db, showAlert, showConfirm }) {
   const [configSubTab, setConfigSubTab] = useState('clients');
@@ -636,11 +710,11 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
   );
 
   return (
-    <div className="space-y-6 relative">
-      <div className="flex gap-2 pb-2">
-         <button onClick={()=>setConfigSubTab('clients')} className={`px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='clients'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Clientes</button>
-         <button onClick={()=>setConfigSubTab('vehicles')} className={`px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='vehicles'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Vehículos</button>
-         <button onClick={()=>setConfigSubTab('drivers')} className={`px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='drivers'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Conductores</button>
+    <div className="space-y-6 relative w-full overflow-hidden">
+      <div className="flex gap-2 pb-2 overflow-x-auto scrollbar-none w-full">
+         <button onClick={()=>setConfigSubTab('clients')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='clients'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Clientes</button>
+         <button onClick={()=>setConfigSubTab('vehicles')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='vehicles'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Vehículos</button>
+         <button onClick={()=>setConfigSubTab('drivers')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='drivers'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Conductores</button>
       </div>
 
       {configSubTab === 'clients' && (
@@ -709,10 +783,10 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
             </div>
           </form>
 
-          <div className="bg-white p-4 sm:p-6 rounded-3xl shadow-sm border border-slate-100">
+          <div className="bg-white p-4 sm:p-6 rounded-3xl shadow-sm border border-slate-100 max-w-full">
             <div className="flex justify-between items-center mb-4 gap-2">
               <h3 className="font-extrabold text-slate-800 whitespace-nowrap">Base Flota</h3>
-              <select onChange={(e) => setFleetFilter(e.target.value)} className="border-2 border-slate-200 p-2 rounded-xl text-xs font-bold text-slate-600 outline-none focus:border-blue-500 max-w-[55%] sm:max-w-full">
+              <select onChange={(e) => setFleetFilter(e.target.value)} className="border-2 border-slate-200 p-2 rounded-xl text-xs font-bold text-slate-600 outline-none focus:border-blue-500 max-w-[55%] sm:max-w-full truncate">
                 <option value="">Todos los Clientes</option>
                 {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
                 <option value="OTRO">Otros</option>
@@ -725,67 +799,37 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
                 return v.client === fleetFilter;
               }).map(v=>{
                 const clientUpper = v.client?.toUpperCase() || '';
-                const vType = (v.vehicleType || '').toUpperCase();
-                
-                // 1. Colores del Gradiente por Cliente
-                const grad = clientUpper.includes('KOVACS') ? 'from-red-600 to-red-800' : 
-                             clientUpper.includes('SALFA') ? 'from-emerald-600 to-emerald-800' : 
-                             clientUpper.includes('GRANDLEASING') ? 'from-slate-700 to-slate-900' : 
-                             'from-blue-600 to-blue-800';
-
-                // 2. Ruta del Logo del Cliente (Ajusta los nombres de los archivos si es necesario)
-                let logoUrl = '';
-                if (clientUpper.includes('KOVACS')) logoUrl = '/logo_kovacs.png';
-                else if (clientUpper.includes('SALFA')) logoUrl = '/logo_salfa.png';
-                else if (clientUpper.includes('GRANDLEASING')) logoUrl = '/logo_grandleasing.png';
+                const grad = clientUpper.includes('KOVACS') ? 'from-red-600 to-red-800' : clientUpper.includes('SALFA') ? 'from-emerald-600 to-emerald-800' : clientUpper.includes('GRANDLEASING') ? 'from-slate-700 to-slate-900' : 'from-blue-600 to-blue-800';
+                const logoUrl = `/logos/${v.client?.toLowerCase().replace(/[^a-z0-9]/g, '')}.png`;
 
                 return (
                 <div key={v.id} className={`relative overflow-hidden p-3.5 sm:p-4 rounded-2xl shadow-md bg-gradient-to-br ${grad} text-white group transition-all hover:scale-[1.02]`}>
                   
-                  {/* --- MARCA DE AGUA 1: LOGO DEL CLIENTE (Izquierda) --- */}
-                  {logoUrl && (
-                    <img 
-                      src={logoUrl} 
-                      alt="Logo Cliente" 
-                      className="absolute -left-4 -bottom-4 w-32 h-32 object-contain opacity-[0.08] pointer-events-none grayscale rotate-[-10deg] mix-blend-overlay"
-                      onError={(e) => e.target.style.display = 'none'} // Si no encuentra el logo, lo oculta sin romper la app
-                    />
-                  )}
+                  {/* MARCA DE AGUA 1: LOGO CLIENTE (Izquierda) */}
+                  <div className="absolute -left-6 -bottom-6 w-32 h-32 opacity-10 pointer-events-none mix-blend-overlay rotate-[-15deg] grayscale">
+                    <img src={logoUrl} alt="" className="w-full h-full object-contain" onError={(e) => e.target.style.display='none'}/>
+                  </div>
 
-                  {/* --- MARCA DE AGUA 2: SILUETA SEGÚN TIPO DE VEHÍCULO (Derecha) --- */}
-                  {vType.includes('CAMIONETA') ? (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="w-28 h-28 absolute -right-4 -top-2 opacity-10 pointer-events-none">
-                      <path d="M3 11h4l2.5-4h6.5l1.5 4h3.5a1 1 0 0 1 1 1v4h-2m-17-5v4h2m14 0a2.5 2.5 0 1 0-5 0h-7a2.5 2.5 0 1 0-5 0" />
-                    </svg>
-                  ) : vType.includes('DOBLE') ? (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="w-28 h-28 absolute -right-4 -top-2 opacity-10 pointer-events-none">
-                      <path d="M2 11h3l2-4h6l1 4h7a1 1 0 0 1 1 1v4h-2m-18-5v4h2m15 0a2.5 2.5 0 1 0-5 0h-8a2.5 2.5 0 1 0-5 0" />
-                      <path d="M9 7v4M12 7v4" />
-                    </svg>
-                  ) : vType.includes('AUTO') ? (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="w-28 h-28 absolute -right-4 -top-2 opacity-10 pointer-events-none">
-                       <path d="M4 11h16a1 1 0 0 1 1 1v4h-2m-14-5v4h2m12 0a2.5 2.5 0 1 0-5 0h-6a2.5 2.5 0 1 0-5 0" />
-                       <path d="M4 11l2-4h12l2 4" />
-                    </svg>
-                  ) : (
-                    <Truck className="w-24 h-24 absolute -right-2 top-0 opacity-10 pointer-events-none" />
-                  )}
+                  {/* MARCA DE AGUA 2: CROQUIS DEL VEHÍCULO (Derecha) */}
+                  <div className="absolute -right-4 -top-2 w-32 h-32 opacity-[0.15] pointer-events-none rotate-[15deg]">
+                    <VehicleShapeIcon type={v.vehicleType} />
+                  </div>
 
-                  {/* --- CONTENIDO PRINCIPAL --- */}
+                  {/* CONTENIDO PRINCIPAL BLINDADO CONTRA DESBORDAMIENTOS */}
                   <div className="flex justify-between items-start gap-2 relative z-10">
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] font-black text-white/70 uppercase tracking-widest truncate">{v.client || 'Sin cliente'}</p>
                       <p className="text-base sm:text-lg font-black leading-tight mt-0.5 truncate">{v.brand} {v.model}</p>
                       {v.vehicleType && <span className="inline-block mt-1.5 text-[9px] font-black bg-white/20 px-2 py-0.5 rounded-md uppercase backdrop-blur-md border border-white/10 truncate max-w-full">{v.vehicleType.replace('_', ' ')}</span>}
                     </div>
-                    <div className="shrink-0">
+                    <div className="shrink-0 relative z-20">
                       <LicensePlateBadge text={v.plate} />
                     </div>
                   </div>
 
-                  <div className="flex gap-2 mt-4 relative z-10 justify-end border-t border-white/10 pt-3">
-                    <button onClick={() => setEditingVehicle(v)} className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors backdrop-blur-sm"><Edit2 className="w-4 h-4 text-white"/></button>
-                    <button onClick={()=>showConfirm("¿Eliminar vehículo?", async () => {try { await deleteDoc(doc(db, 'vehicles', v.id)); } catch (e) {}})} className="p-1.5 bg-red-500/80 hover:bg-red-500 rounded-lg transition-colors backdrop-blur-sm"><Trash2 className="w-4 h-4 text-white"/></button>
+                  <div className="flex gap-2 mt-4 relative z-20 justify-end border-t border-white/10 pt-3">
+                    <button onClick={() => setEditingVehicle(v)} className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors backdrop-blur-sm shadow-sm"><Edit2 className="w-4 h-4 text-white"/></button>
+                    <button onClick={()=>showConfirm("¿Eliminar vehículo?", async () => {try { await deleteDoc(doc(db, 'vehicles', v.id)); } catch (e) {}})} className="p-1.5 bg-red-500/80 hover:bg-red-500 rounded-lg transition-colors backdrop-blur-sm shadow-sm"><Trash2 className="w-4 h-4 text-white"/></button>
                   </div>
                 </div>
               )})}
@@ -2678,7 +2722,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.5 19</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.5 19function ConfigView({</p>
                 </div>
               </div>
             )}
