@@ -718,27 +718,36 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
       </div>
 
       {configSubTab === 'clients' && (
-        <div className="grid md:grid-cols-2 gap-6">
-          <form onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const name = fd.get('name'); try { if(editingClient){ await updateDoc(doc(db, 'clients', editingClient.id), { name }); setEditingClient(null); showAlert("Cliente actualizado"); } else { await addDoc(collection(db, 'clients'), { name, createdAt: Date.now() }); showAlert("Cliente agregado"); } e.target.reset(); } catch(err){} }} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
-            <h3 className="font-extrabold text-lg">{editingClient ? 'Editar Cliente' : 'Nuevo Cliente'}</h3>
-            <input name="name" defaultValue={editingClient?.name} placeholder="Nombre del cliente" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-semibold"/>
-            <div className="flex gap-2">
+        <div className="grid md:grid-cols-2 gap-6 w-full min-w-0">
+          <form onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const name = fd.get('name'); const contactName = fd.get('contactName'); const email = fd.get('email').toLowerCase().trim(); try { if(editingClient){ await updateDoc(doc(db, 'clients', editingClient.id), { name, contactName, email }); setEditingClient(null); showAlert("Cliente actualizado"); } else { await addDoc(collection(db, 'clients'), { name, contactName, email, createdAt: Date.now() }); showAlert("Cliente agregado"); } e.target.reset(); } catch(err){} }} className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4 w-full min-w-0">
+            <h3 className="font-extrabold text-lg flex items-center gap-2"><User className="text-blue-600"/> {editingClient ? 'Editar Cliente' : 'Nuevo Cliente'}</h3>
+            <input name="name" defaultValue={editingClient?.name} placeholder="Nombre Empresa (Ej. Kovacs)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-semibold"/>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+               <input name="contactName" defaultValue={editingClient?.contactName} placeholder="Nombre Responsable" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-semibold"/>
+               <input name="email" type="email" defaultValue={editingClient?.email} placeholder="Correo Gmail" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-semibold"/>
+            </div>
+            <p className="text-[10px] font-bold text-slate-400 mt-1 leading-tight">Al ingresar el correo, el cliente podrá iniciar sesión con Google y ver exclusivamente sus traslados.</p>
+            <div className="flex gap-2 pt-2">
               {editingClient && <button type="button" onClick={()=>setEditingClient(null)} className="flex-1 bg-slate-100 py-3 rounded-xl font-bold">Cancelar</button>}
-              <button type="submit" className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-extrabold">{editingClient ? 'Actualizar' : 'Agregar'}</button>
+              <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold shadow-sm transition-colors">{editingClient ? 'Actualizar Cliente' : 'Crear Acceso'}</button>
             </div>
           </form>
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 max-h-[60vh] overflow-y-auto">
-             <h3 className="font-extrabold text-lg mb-4">Base de Clientes</h3>
-             <div className="space-y-2">
+          <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 max-h-[60vh] overflow-y-auto w-full min-w-0">
+             <h3 className="font-extrabold text-lg mb-4">Base de Clientes y Accesos</h3>
+             <div className="space-y-3">
                 {allClientsList.map((c, i) => {
                    const isCustom = customClients.find(cc => cc.name === c);
                    return (
-                      <div key={i} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-                        <span className="font-bold text-slate-700">{c} {!isCustom && <span className="text-[10px] text-slate-400 bg-slate-200 px-1.5 rounded ml-2">Por defecto</span>}</span>
+                      <div key={i} className="flex justify-between items-center p-3 sm:p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
+                        <div className="flex-1 min-w-0 pr-2">
+                           <p className="font-extrabold text-slate-800 text-sm truncate">{c} {!isCustom && <span className="text-[9px] text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded ml-1 tracking-widest uppercase">Base</span>}</p>
+                           {isCustom?.contactName && <p className="text-xs font-bold text-slate-500 mt-1 truncate"><span className="text-slate-400 font-medium">Responsable:</span> {isCustom.contactName}</p>}
+                           {isCustom?.email && <p className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md uppercase tracking-widest mt-1.5 w-fit border border-emerald-100 truncate max-w-full"><User className="inline w-3 h-3 -mt-0.5 mr-1"/>{isCustom.email}</p>}
+                        </div>
                         {isCustom && (
-                           <div className="flex gap-1">
-                             <button onClick={()=>setEditingClient(isCustom)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg"><Edit2 className="w-4 h-4"/></button>
-                             <button onClick={()=>showConfirm("¿Eliminar cliente?", async()=>await deleteDoc(doc(db,'clients',isCustom.id)))} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg"><Trash2 className="w-4 h-4"/></button>
+                           <div className="flex gap-1.5 shrink-0 ml-1 border-l border-slate-200 pl-3">
+                             <button onClick={()=>setEditingClient(isCustom)} className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition-colors"><Edit2 className="w-4 h-4"/></button>
+                             <button onClick={()=>showConfirm("¿Eliminar cliente y sus accesos?", async()=>await deleteDoc(doc(db,'clients',isCustom.id)))} className="p-2 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-colors"><Trash2 className="w-4 h-4"/></button>
                            </div>
                         )}
                       </div>
@@ -988,7 +997,7 @@ const WaitTimerBadge = ({ arrivedAt, role = 'client' }) => {
   );
 };
 
-function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
+function TrackingView({ clientName, db, onBack, onLogout, darkMode, setDarkMode }) {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState(null); // <-- NUEVO ESTADO PARA EL SPINNER
@@ -1379,6 +1388,11 @@ function TrackingView({ clientName, db, onBack, darkMode, setDarkMode }) {
           {onBack && (
             <button onClick={onBack} className="bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-xl text-sm font-bold text-white transition-colors border border-red-400 shadow-sm flex items-center gap-1.5 z-10 shrink-0 ml-2">
               <LogOut className="w-4 h-4"/> <span className="hidden sm:inline">Volver</span>
+            </button>
+          )}
+          {onLogout && (
+            <button onClick={onLogout} className="bg-slate-800 hover:bg-slate-900 px-3 py-1.5 rounded-xl text-sm font-bold text-white transition-colors border border-slate-700 shadow-sm flex items-center gap-1.5 z-10 shrink-0 ml-2">
+              <LogOut className="w-4 h-4"/> <span className="hidden sm:inline">Cerrar Sesión</span>
             </button>
           )}
         </div>
@@ -2335,15 +2349,20 @@ export default function App() {
 
   useEffect(() => { driversRef.current = drivers; }, [drivers]);
 
-  // --- HOOKS DE AUTO-REGISTRO (ARRIBA PARA EVITAR ERROR #310) ---
+  // --- HOOKS DE AUTO-REGISTRO Y DETECCIÓN DE CLIENTES ---
   const myDriver = user ? drivers.find(d => d.email === currentUserEmail) : null;
+  // Detección en tiempo real de si el usuario logueado es un cliente corporativo
+  const loggedClientRecord = user ? customClients.find(c => c.email && c.email.toLowerCase() === currentUserEmail) : null;
   const registeringRef = useRef(false);
 
   useEffect(() => {
     if (user && activeRole === 'driver' && !myDriver && isOnline && !registeringRef.current) {
       const timer = setTimeout(() => {
         const stillNoDriver = !driversRef.current.find(d => d.email === currentUserEmail);
-        if (stillNoDriver) {
+        const isClientAccount = customClients.some(c => c.email && c.email.toLowerCase() === currentUserEmail);
+        
+        // Solo auto-registra al conductor si NO ES ADMINISTRADOR y NO ES UNA CUENTA DE CLIENTE
+        if (stillNoDriver && !isClientAccount && !isRealAdmin) {
           registeringRef.current = true;
           addDoc(collection(db, 'drivers'), {
             name: user.displayName || 'Conductor Nuevo',
@@ -2358,7 +2377,7 @@ export default function App() {
       }, 2500); // Damos 2.5s para asegurar que Firebase cargó
       return () => clearTimeout(timer);
     }
-  }, [user, activeRole, myDriver, isOnline, currentUserEmail, db]);
+  }, [user, activeRole, myDriver, isOnline, currentUserEmail, db, customClients, isRealAdmin]);
   // --------------------------------------------------------------
 
   // --- NUEVO: RECOLECTOR DE BASURA (TRASH COLLECTOR) EN SEGUNDO PLANO ---
@@ -2532,8 +2551,22 @@ export default function App() {
       </>
     );
   }
+  // --- NUEVO: SI EL USUARIO LOGUEADO ES UN CLIENTE REAL (Y NO ES ADMIN) ---
+  if (user && loggedClientRecord && !isRealAdmin) {
+    return (
+      <>
+        {globalStyles}
+        <TrackingView 
+           clientName={loggedClientRecord.name} 
+           db={db} 
+           onLogout={() => signOut(auth)} 
+           darkMode={darkMode} 
+           setDarkMode={setDarkMode} 
+        />
+      </>
+    );
+  }
   // --------------------------------------------------------------------------------
-  
   // --- NUEVO: VISTA DE FIRMA REMOTA DEL CLIENTE ---
   if (signTrackId) {
     return (
