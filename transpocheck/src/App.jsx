@@ -750,8 +750,8 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
       )}
 
       {configSubTab === 'vehicles' && (
-        <div className="grid md:grid-cols-2 gap-6">
-          <form key={editingVehicle ? editingVehicle.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const client = fd.get('client') === 'OTRO' ? fd.get('manualClient') : fd.get('client'); const vehicleType = fd.get('vehicleType'); try { if(editingVehicle){ await updateDoc(doc(db, 'vehicles', editingVehicle.id), { client, vehicleType, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase() }); setEditingVehicle(null); showAlert("Vehículo actualizado."); } else { await addDoc(collection(db, 'vehicles'), { client, vehicleType, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase(), createdAt: Date.now() }); showAlert("Vehículo guardado."); } e.target.reset(); } catch (error) { error; } }} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full min-w-0">
+          <form key={editingVehicle ? editingVehicle.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const client = fd.get('client') === 'OTRO' ? fd.get('manualClient') : fd.get('client'); const vehicleType = fd.get('vehicleType'); try { if(editingVehicle){ await updateDoc(doc(db, 'vehicles', editingVehicle.id), { client, vehicleType, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase() }); setEditingVehicle(null); showAlert("Vehículo actualizado."); } else { await addDoc(collection(db, 'vehicles'), { client, vehicleType, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase(), createdAt: Date.now() }); showAlert("Vehículo guardado."); } e.target.reset(); } catch (error) { error; } }} className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4 w-full min-w-0">
             <h3 className="font-extrabold flex items-center gap-2"><Truck className="text-blue-600"/> {editingVehicle ? 'Editar Vehículo' : 'Nuevo Vehículo'}</h3>
             <select name="client" defaultValue={editingVehicle?.client || ''} className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-semibold outline-none focus:border-blue-500 bg-white">
               <option value="">Cliente...</option>
@@ -783,10 +783,10 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
             </div>
           </form>
 
-          <div className="bg-white p-4 sm:p-6 rounded-3xl shadow-sm border border-slate-100 max-w-full">
+          <div className="bg-white p-4 sm:p-6 rounded-3xl shadow-sm border border-slate-100 w-full min-w-0 flex flex-col">
             <div className="flex justify-between items-center mb-4 gap-2">
               <h3 className="font-extrabold text-slate-800 whitespace-nowrap">Base Flota</h3>
-              <select onChange={(e) => setFleetFilter(e.target.value)} className="border-2 border-slate-200 p-2 rounded-xl text-xs font-bold text-slate-600 outline-none focus:border-blue-500 max-w-[55%] sm:max-w-full truncate">
+              <select onChange={(e) => setFleetFilter(e.target.value)} className="border-2 border-slate-200 p-2 rounded-xl text-xs font-bold text-slate-600 outline-none focus:border-blue-500 flex-1 max-w-[150px] sm:max-w-full truncate">
                 <option value="">Todos los Clientes</option>
                 {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
                 <option value="OTRO">Otros</option>
@@ -802,21 +802,29 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
                 const grad = clientUpper.includes('KOVACS') ? 'from-red-600 to-red-800' : clientUpper.includes('SALFA') ? 'from-emerald-600 to-emerald-800' : clientUpper.includes('GRANDLEASING') ? 'from-slate-700 to-slate-900' : 'from-blue-600 to-blue-800';
                 const logoUrl = `/logos/${v.client?.toLowerCase().replace(/[^a-z0-9]/g, '')}.png`;
 
+                // Selección dinámica del Emoji según el tipo de vehículo
+                let emoji = '🚙';
+                if (v.vehicleType === 'camioneta') emoji = '🛻';
+                else if (v.vehicleType?.includes('furgon')) emoji = '🚐';
+                else if (v.vehicleType?.includes('2ejes') || v.vehicleType?.includes('3ejes') || v.vehicleType?.includes('8x4')) emoji = '🚛';
+                else if (v.vehicleType?.includes('camion')) emoji = '🚚';
+                else if (v.vehicleType === 'carro_arrastre') emoji = '🛒';
+
                 return (
-                <div key={v.id} className={`relative overflow-hidden p-3.5 sm:p-4 rounded-2xl shadow-md bg-gradient-to-br ${grad} text-white group transition-all hover:scale-[1.02]`}>
+                <div key={v.id} className={`relative overflow-hidden p-3.5 sm:p-4 rounded-2xl shadow-md bg-gradient-to-br ${grad} text-white group transition-all w-full`}>
                   
                   {/* MARCA DE AGUA 1: LOGO CLIENTE (Izquierda) */}
                   <div className="absolute -left-6 -bottom-6 w-32 h-32 opacity-10 pointer-events-none mix-blend-overlay rotate-[-15deg] grayscale">
                     <img src={logoUrl} alt="" className="w-full h-full object-contain" onError={(e) => e.target.style.display='none'}/>
                   </div>
 
-                  {/* MARCA DE AGUA 2: CROQUIS DEL VEHÍCULO (Derecha) */}
-                  <div className="absolute -right-4 -top-2 w-32 h-32 opacity-[0.15] pointer-events-none rotate-[15deg]">
-                    <VehicleShapeIcon type={v.vehicleType} />
+                  {/* MARCA DE AGUA 2: EMOJI GIGANTE (Derecha) */}
+                  <div className="absolute -right-4 -bottom-6 opacity-20 pointer-events-none text-[120px] leading-none select-none mix-blend-overlay grayscale">
+                    {emoji}
                   </div>
 
                   {/* CONTENIDO PRINCIPAL BLINDADO CONTRA DESBORDAMIENTOS */}
-                  <div className="flex justify-between items-start gap-2 relative z-10">
+                  <div className="flex justify-between items-start gap-2 relative z-10 w-full">
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] font-black text-white/70 uppercase tracking-widest truncate">{v.client || 'Sin cliente'}</p>
                       <p className="text-base sm:text-lg font-black leading-tight mt-0.5 truncate">{v.brand} {v.model}</p>
@@ -833,7 +841,7 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
                   </div>
                 </div>
               )})}
-              {vehicles.length === 0 && <p className="text-sm font-semibold text-slate-400">No hay vehículos registrados</p>}
+              {vehicles.length === 0 && <p className="text-sm font-semibold text-slate-400 text-center py-4">No hay vehículos registrados</p>}
             </div>
           </div>
         </div>
