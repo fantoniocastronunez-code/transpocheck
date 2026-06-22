@@ -3660,10 +3660,12 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
           <div className="flex flex-col gap-3 w-full">
             <div className="flex justify-between items-start w-full gap-2">
               
-              {/* Bloque de Patente y VIN combinado */}
-              <div className="shrink-0 relative z-20 flex flex-col items-start gap-1">
-                <LicensePlateBadge text={j.plate} />
-                {j.vin && <span className="text-[9px] font-black bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded-md uppercase tracking-widest shadow-sm ml-1">VIN: {j.vin}</span>}
+              {/* Bloque de Patente y VIN combinado (Inteligente) */}
+              <div className="shrink-0 relative z-20 flex flex-col items-end gap-1">
+                <LicensePlateBadge text={j.plate || j.vin} />
+                {j.vin && j.plate && j.vin !== j.plate && (
+                  <span className="text-[9px] font-black bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded-md uppercase tracking-widest shadow-sm mr-1">VIN: {j.vin}</span>
+                )}
               </div>
               
               {/* Botones de Acción (Editar y Menú) alineados a la derecha */}
@@ -3811,8 +3813,10 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         <div className="flex justify-between items-start mb-2 gap-2">
           <p className="text-sm font-black text-slate-800 leading-tight truncate mt-1">{j.brand} {j.model}</p>
           <div className="flex flex-col items-end shrink-0 gap-1">
-            <LicensePlateBadge text={j.plate} />
-            {j.vin && <span className="text-[8px] font-black bg-slate-100 border border-slate-200 text-slate-500 px-1 py-[1px] rounded uppercase tracking-widest mr-1">VIN: {j.vin}</span>}
+            <LicensePlateBadge text={j.plate || j.vin} />
+            {j.vin && j.plate && j.vin !== j.plate && (
+              <span className="text-[8px] font-black bg-slate-100 border border-slate-200 text-slate-500 px-1 py-[1px] rounded uppercase tracking-widest mr-1">VIN: {j.vin}</span>
+            )}
           </div>
         </div>
         {/* NUEVO: DISEÑO COMPACTO DE HISTORIAL MEJORADO */}
