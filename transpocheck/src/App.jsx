@@ -814,12 +814,12 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
                 <div key={v.id} className={`relative overflow-hidden p-3.5 sm:p-4 rounded-2xl shadow-md bg-gradient-to-br ${grad} text-white group transition-all w-full`}>
                   
                   {/* MARCA DE AGUA 1: LOGO CLIENTE (Izquierda) */}
-                  <div className="absolute -left-6 -bottom-6 w-32 h-32 opacity-10 pointer-events-none mix-blend-overlay rotate-[-15deg] grayscale">
+                  <div className="absolute -left-2 -bottom-2 w-32 h-32 opacity-30 pointer-events-none mix-blend-overlay rotate-[-15deg] grayscale">
                     <img src={logoUrl} alt="" className="w-full h-full object-contain" onError={(e) => e.target.style.display='none'}/>
                   </div>
 
                   {/* MARCA DE AGUA 2: EMOJI GIGANTE (Derecha) */}
-                  <div className="absolute -right-4 -bottom-6 opacity-20 pointer-events-none text-[120px] leading-none select-none mix-blend-overlay grayscale">
+                  <div className="absolute -right-2 -bottom-4 opacity-40 pointer-events-none text-[120px] leading-none select-none mix-blend-overlay grayscale">
                     {emoji}
                   </div>
 
