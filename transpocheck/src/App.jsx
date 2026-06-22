@@ -220,9 +220,15 @@ const CustomClientSelector = ({ value, onChange, clients, placeholder }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Limpia el nombre para buscar el logo (ej: "Grandleasing Las Torres" -> "grandleasinglastorres")
+  // Cerebro inteligente para logos (agrupa sucursales)
   const getLogoPath = (name) => {
     if (!name || name === 'OTRO') return null;
+    const upper = name.toUpperCase();
+    if (upper.includes('KOVACS')) return '/logos/kovacs.png';
+    if (upper.includes('SALFA')) return '/logos/salfa.png';
+    if (upper.includes('GRANDLEASING')) return '/logos/grandleasing.png';
+    if (upper.includes('ENEX')) return '/logos/enex.png';
+
     const cleanName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
     return `/logos/${cleanName}.png`; 
   };
@@ -813,7 +819,13 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
               }).map(v=>{
                 const clientUpper = v.client?.toUpperCase() || '';
                 const grad = clientUpper.includes('KOVACS') ? 'from-red-600 to-red-800' : clientUpper.includes('SALFA') ? 'from-emerald-600 to-emerald-800' : clientUpper.includes('GRANDLEASING') ? 'from-slate-700 to-slate-900' : 'from-blue-600 to-blue-800';
-                const logoUrl = `/logos/${v.client?.toLowerCase().replace(/[^a-z0-9]/g, '')}.png`;
+                
+                // Enrutador inteligente para las marcas de agua de los vehículos
+                const logoUrl = clientUpper.includes('KOVACS') ? '/logos/kovacs.png' : 
+                                clientUpper.includes('SALFA') ? '/logos/salfa.png' : 
+                                clientUpper.includes('GRANDLEASING') ? '/logos/grandleasing.png' : 
+                                clientUpper.includes('ENEX') ? '/logos/enex.png' : 
+                                `/logos/${v.client?.toLowerCase().replace(/[^a-z0-9]/g, '')}.png`;
 
                 // Selección dinámica del Emoji según el tipo de vehículo
                 let emoji = '🚙';
@@ -1409,7 +1421,13 @@ function TrackingView({ clientName, db, onBack, onLogout, darkMode, setDarkMode 
           {/* Tarjeta de Contenedor de Logo Premium Ampliada (Fondo Blanco Forzado) */}
           <div className="mx-auto w-36 h-36 rounded-[28px] flex items-center justify-center mb-4 shadow-md border overflow-hidden transition-all duration-300 p-3" style={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0' }}>
              <img
-               src={`/logos/${clientName ? clientName.toLowerCase().replace(/[^a-z0-9]/g, '') : ''}.png`}
+               src={
+                 (clientName || '').toUpperCase().includes('KOVACS') ? '/logos/kovacs.png' :
+                 (clientName || '').toUpperCase().includes('SALFA') ? '/logos/salfa.png' :
+                 (clientName || '').toUpperCase().includes('GRANDLEASING') ? '/logos/grandleasing.png' :
+                 (clientName || '').toUpperCase().includes('ENEX') ? '/logos/enex.png' :
+                 `/logos/${clientName ? clientName.toLowerCase().replace(/[^a-z0-9]/g, '') : ''}.png`
+               }
                alt={clientName}
                className="w-full h-full object-contain"
                onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
