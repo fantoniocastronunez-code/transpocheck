@@ -709,33 +709,80 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
             </div>
           </form>
 
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-extrabold text-slate-800">Base Flota</h3>
-              <select onChange={(e) => setFleetFilter(e.target.value)} className="border-2 border-slate-200 p-2 rounded-xl text-xs font-bold text-slate-600 outline-none focus:border-blue-500">
+          <div className="bg-white p-4 sm:p-6 rounded-3xl shadow-sm border border-slate-100">
+            <div className="flex justify-between items-center mb-4 gap-2">
+              <h3 className="font-extrabold text-slate-800 whitespace-nowrap">Base Flota</h3>
+              <select onChange={(e) => setFleetFilter(e.target.value)} className="border-2 border-slate-200 p-2 rounded-xl text-xs font-bold text-slate-600 outline-none focus:border-blue-500 max-w-[55%] sm:max-w-full">
                 <option value="">Todos los Clientes</option>
                 {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
                 <option value="OTRO">Otros</option>
               </select>
             </div>
-            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1 sm:pr-2">
               {vehicles.filter(v => {
                 if (!fleetFilter) return true;
                 if (fleetFilter === 'OTRO') return !allClientsList.includes(v.client);
                 return v.client === fleetFilter;
               }).map(v=>{
-                const grad = v.client?.toUpperCase().includes('KOVACS') ? 'from-red-600 to-red-800' : v.client?.toUpperCase().includes('SALFA') ? 'from-emerald-600 to-emerald-800' : v.client?.toUpperCase().includes('GRANDLEASING') ? 'from-slate-700 to-slate-900' : 'from-blue-600 to-blue-800';
+                const clientUpper = v.client?.toUpperCase() || '';
+                const vType = (v.vehicleType || '').toUpperCase();
+                
+                // 1. Colores del Gradiente por Cliente
+                const grad = clientUpper.includes('KOVACS') ? 'from-red-600 to-red-800' : 
+                             clientUpper.includes('SALFA') ? 'from-emerald-600 to-emerald-800' : 
+                             clientUpper.includes('GRANDLEASING') ? 'from-slate-700 to-slate-900' : 
+                             'from-blue-600 to-blue-800';
+
+                // 2. Ruta del Logo del Cliente (Ajusta los nombres de los archivos si es necesario)
+                let logoUrl = '';
+                if (clientUpper.includes('KOVACS')) logoUrl = '/logo_kovacs.png';
+                else if (clientUpper.includes('SALFA')) logoUrl = '/logo_salfa.png';
+                else if (clientUpper.includes('GRANDLEASING')) logoUrl = '/logo_grandleasing.png';
+
                 return (
-                <div key={v.id} className={`relative overflow-hidden p-4 rounded-2xl shadow-md bg-gradient-to-br ${grad} text-white group transition-all hover:scale-[1.02]`}>
-                  <div className="absolute top-0 right-0 p-4 opacity-10"><Truck className="w-20 h-20"/></div>
-                  <div className="flex justify-between items-start relative z-10">
-                    <div>
-                      <p className="text-[10px] font-black text-white/70 uppercase tracking-widest">{v.client || 'Sin cliente'}</p>
-                      <p className="text-lg font-black truncate max-w-[180px]">{v.brand} {v.model}</p>
-                      {v.vehicleType && <span className="inline-block mt-1 text-[9px] font-black bg-white/20 px-2 py-0.5 rounded-md uppercase backdrop-blur-md border border-white/10">{v.vehicleType.replace('_', ' ')}</span>}
+                <div key={v.id} className={`relative overflow-hidden p-3.5 sm:p-4 rounded-2xl shadow-md bg-gradient-to-br ${grad} text-white group transition-all hover:scale-[1.02]`}>
+                  
+                  {/* --- MARCA DE AGUA 1: LOGO DEL CLIENTE (Izquierda) --- */}
+                  {logoUrl && (
+                    <img 
+                      src={logoUrl} 
+                      alt="Logo Cliente" 
+                      className="absolute -left-4 -bottom-4 w-32 h-32 object-contain opacity-[0.08] pointer-events-none grayscale rotate-[-10deg] mix-blend-overlay"
+                      onError={(e) => e.target.style.display = 'none'} // Si no encuentra el logo, lo oculta sin romper la app
+                    />
+                  )}
+
+                  {/* --- MARCA DE AGUA 2: SILUETA SEGÚN TIPO DE VEHÍCULO (Derecha) --- */}
+                  {vType.includes('CAMIONETA') ? (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="w-28 h-28 absolute -right-4 -top-2 opacity-10 pointer-events-none">
+                      <path d="M3 11h4l2.5-4h6.5l1.5 4h3.5a1 1 0 0 1 1 1v4h-2m-17-5v4h2m14 0a2.5 2.5 0 1 0-5 0h-7a2.5 2.5 0 1 0-5 0" />
+                    </svg>
+                  ) : vType.includes('DOBLE') ? (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="w-28 h-28 absolute -right-4 -top-2 opacity-10 pointer-events-none">
+                      <path d="M2 11h3l2-4h6l1 4h7a1 1 0 0 1 1 1v4h-2m-18-5v4h2m15 0a2.5 2.5 0 1 0-5 0h-8a2.5 2.5 0 1 0-5 0" />
+                      <path d="M9 7v4M12 7v4" />
+                    </svg>
+                  ) : vType.includes('AUTO') ? (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="w-28 h-28 absolute -right-4 -top-2 opacity-10 pointer-events-none">
+                       <path d="M4 11h16a1 1 0 0 1 1 1v4h-2m-14-5v4h2m12 0a2.5 2.5 0 1 0-5 0h-6a2.5 2.5 0 1 0-5 0" />
+                       <path d="M4 11l2-4h12l2 4" />
+                    </svg>
+                  ) : (
+                    <Truck className="w-24 h-24 absolute -right-2 top-0 opacity-10 pointer-events-none" />
+                  )}
+
+                  {/* --- CONTENIDO PRINCIPAL --- */}
+                  <div className="flex justify-between items-start gap-2 relative z-10">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-black text-white/70 uppercase tracking-widest truncate">{v.client || 'Sin cliente'}</p>
+                      <p className="text-base sm:text-lg font-black leading-tight mt-0.5 truncate">{v.brand} {v.model}</p>
+                      {v.vehicleType && <span className="inline-block mt-1.5 text-[9px] font-black bg-white/20 px-2 py-0.5 rounded-md uppercase backdrop-blur-md border border-white/10 truncate max-w-full">{v.vehicleType.replace('_', ' ')}</span>}
                     </div>
-                    <LicensePlateBadge text={v.plate} />
+                    <div className="shrink-0">
+                      <LicensePlateBadge text={v.plate} />
+                    </div>
                   </div>
+
                   <div className="flex gap-2 mt-4 relative z-10 justify-end border-t border-white/10 pt-3">
                     <button onClick={() => setEditingVehicle(v)} className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors backdrop-blur-sm"><Edit2 className="w-4 h-4 text-white"/></button>
                     <button onClick={()=>showConfirm("¿Eliminar vehículo?", async () => {try { await deleteDoc(doc(db, 'vehicles', v.id)); } catch (e) {}})} className="p-1.5 bg-red-500/80 hover:bg-red-500 rounded-lg transition-colors backdrop-blur-sm"><Trash2 className="w-4 h-4 text-white"/></button>
@@ -2631,7 +2678,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.5 18</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.5 19</p>
                 </div>
               </div>
             )}
