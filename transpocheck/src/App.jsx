@@ -735,24 +735,22 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
           <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 max-h-[60vh] overflow-y-auto w-full min-w-0">
              <h3 className="font-extrabold text-lg mb-4">Base de Clientes y Accesos</h3>
              <div className="space-y-3">
-                {allClientsList.map((c, i) => {
-                   const isCustom = customClients.find(cc => cc.name === c);
-                   return (
-                      <div key={i} className="flex justify-between items-center p-3 sm:p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm">
-                        <div className="flex-1 min-w-0 pr-2">
-                           <p className="font-extrabold text-slate-800 text-sm truncate">{c} {!isCustom && <span className="text-[9px] text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded ml-1 tracking-widest uppercase">Base</span>}</p>
-                           {isCustom?.contactName && <p className="text-xs font-bold text-slate-500 mt-1 truncate"><span className="text-slate-400 font-medium">Responsable:</span> {isCustom.contactName}</p>}
-                           {isCustom?.email && <p className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md uppercase tracking-widest mt-1.5 w-fit border border-emerald-100 truncate max-w-full"><User className="inline w-3 h-3 -mt-0.5 mr-1"/>{isCustom.email}</p>}
-                        </div>
-                        {isCustom && (
-                           <div className="flex gap-1.5 shrink-0 ml-1 border-l border-slate-200 pl-3">
-                             <button onClick={()=>setEditingClient(isCustom)} className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition-colors"><Edit2 className="w-4 h-4"/></button>
-                             <button onClick={()=>showConfirm("¿Eliminar cliente y sus accesos?", async()=>await deleteDoc(doc(db,'clients',isCustom.id)))} className="p-2 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-colors"><Trash2 className="w-4 h-4"/></button>
-                           </div>
-                        )}
-                      </div>
-                   )
-                })}
+                {customClients.map((clientRecord) => (
+                   <div key={clientRecord.id} className="flex justify-between items-center p-3 sm:p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm hover:border-blue-200 transition-colors">
+                     <div className="flex-1 min-w-0 pr-2">
+                        <p className="font-extrabold text-slate-800 text-sm truncate">{clientRecord.name}</p>
+                        {clientRecord.contactName && <p className="text-xs font-bold text-slate-500 mt-1 truncate"><span className="text-slate-400 font-medium">Responsable:</span> {clientRecord.contactName}</p>}
+                        {clientRecord.email && <p className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md uppercase tracking-widest mt-1.5 w-fit border border-emerald-100 truncate max-w-full"><User className="inline w-3 h-3 -mt-0.5 mr-1"/>{clientRecord.email}</p>}
+                     </div>
+                     <div className="flex gap-1.5 shrink-0 ml-1 border-l border-slate-200 pl-3">
+                       <button onClick={()=>setEditingClient(clientRecord)} className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition-colors shadow-sm"><Edit2 className="w-4 h-4"/></button>
+                       <button onClick={()=>showConfirm("¿Eliminar cliente y sus accesos?", async()=>await deleteDoc(doc(db,'clients',clientRecord.id)))} className="p-2 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-colors shadow-sm"><Trash2 className="w-4 h-4"/></button>
+                     </div>
+                   </div>
+                ))}
+                {customClients.length === 0 && (
+                   <p className="text-sm font-bold text-slate-400 text-center py-6 border-2 border-dashed border-slate-200 rounded-2xl">Aún no hay clientes en la base de datos.</p>
+                )}
              </div>
           </div>
         </div>
@@ -2461,7 +2459,8 @@ export default function App() {
   }, [activeTrackingJobId, db]);
   // ---------------------------------------------------
 
-  const allClientsList = Array.from(new Set([...DEFAULT_CLIENTES, ...customClients.map(c => c.name)])).sort();
+  // Ahora TODOS los clientes provienen exclusivamente de tu base de datos (100% editables)
+  const allClientsList = customClients.map(c => c.name).sort((a, b) => a.localeCompare(b));
 
   const globalStyles = (
     <style>{`
@@ -2763,7 +2762,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.5 19</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.5 19 8</p>
                 </div>
               </div>
             )}
@@ -3938,6 +3937,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                                   </div>
                                   <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
                                       <span className="text-[9px] font-bold text-slate-400 mr-2">{new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL')}</span>
+                                      {isAdminView && <button onClick={()=>onEditJob(j)} className="p-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-md transition-colors" title="Editar Traslado"><Edit2 className="w-3.5 h-3.5"/></button>}
                                       <button onClick={()=>cpyWapp(j)} className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md transition-colors"><Copy className="w-3.5 h-3.5"/></button>
                                       <button onClick={() => generatePDF(j)} className="p-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-md transition-colors"><FileDown className="w-3.5 h-3.5"/></button>
                                       <button onClick={() => handleShareWhatsAppPDF(j)} className="p-1.5 bg-green-50 text-green-700 hover:bg-green-100 rounded-md transition-colors"><Share2 className="w-3.5 h-3.5"/></button>
