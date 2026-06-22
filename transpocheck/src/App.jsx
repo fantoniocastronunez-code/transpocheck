@@ -722,11 +722,11 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
           <form onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const name = fd.get('name'); const contactName = fd.get('contactName'); const email = fd.get('email').toLowerCase().trim(); try { if(editingClient){ await updateDoc(doc(db, 'clients', editingClient.id), { name, contactName, email }); setEditingClient(null); showAlert("Cliente actualizado"); } else { await addDoc(collection(db, 'clients'), { name, contactName, email, createdAt: Date.now() }); showAlert("Cliente agregado"); } e.target.reset(); } catch(err){} }} className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4 w-full min-w-0">
             <h3 className="font-extrabold text-lg flex items-center gap-2"><User className="text-blue-600"/> {editingClient ? 'Editar Cliente' : 'Nuevo Cliente'}</h3>
             <input name="name" defaultValue={editingClient?.name} placeholder="Nombre Empresa (Ej. Kovacs)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-semibold"/>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-               <input name="contactName" defaultValue={editingClient?.contactName} placeholder="Nombre Responsable" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-semibold"/>
-               <input name="email" type="email" defaultValue={editingClient?.email} placeholder="Correo Gmail" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-semibold"/>
+            <div className="grid grid-cols-1 gap-3">
+               <input name="contactName" defaultValue={editingClient?.contactName} placeholder="Nombre(s) Responsable(s) (Ej. Juan Pérez, Ana Silva)" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-semibold"/>
+               <input name="email" type="text" defaultValue={editingClient?.email} placeholder="Correos Gmail (separados por coma. Ej: jefe@gmail.com, sec@gmail.com)" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-semibold"/>
             </div>
-            <p className="text-[10px] font-bold text-slate-400 mt-1 leading-tight">Al ingresar el correo, el cliente podrá iniciar sesión con Google y ver exclusivamente sus traslados.</p>
+            <p className="text-[10px] font-bold text-slate-400 mt-1 leading-tight">Puedes agregar varios correos separados por coma. Cualquiera de ellos podrá iniciar sesión con Google y ver el portal.</p>
             <div className="flex gap-2 pt-2">
               {editingClient && <button type="button" onClick={()=>setEditingClient(null)} className="flex-1 bg-slate-100 py-3 rounded-xl font-bold">Cancelar</button>}
               <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold shadow-sm transition-colors">{editingClient ? 'Actualizar Cliente' : 'Crear Acceso'}</button>
@@ -739,8 +739,14 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
                    <div key={clientRecord.id} className="flex justify-between items-center p-3 sm:p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm hover:border-blue-200 transition-colors">
                      <div className="flex-1 min-w-0 pr-2">
                         <p className="font-extrabold text-slate-800 text-sm truncate">{clientRecord.name}</p>
-                        {clientRecord.contactName && <p className="text-xs font-bold text-slate-500 mt-1 truncate"><span className="text-slate-400 font-medium">Responsable:</span> {clientRecord.contactName}</p>}
-                        {clientRecord.email && <p className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md uppercase tracking-widest mt-1.5 w-fit border border-emerald-100 truncate max-w-full"><User className="inline w-3 h-3 -mt-0.5 mr-1"/>{clientRecord.email}</p>}
+                        {clientRecord.contactName && <p className="text-xs font-bold text-slate-500 mt-1 truncate"><span className="text-slate-400 font-medium">Responsable(s):</span> {clientRecord.contactName}</p>}
+                        {clientRecord.email && (
+                           <div className="flex flex-wrap gap-1.5 mt-2">
+                             {clientRecord.email.split(',').map((e, idx) => (
+                               <span key={idx} className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md uppercase tracking-widest border border-emerald-100 truncate max-w-full"><User className="inline w-3 h-3 -mt-0.5 mr-1"/>{e.trim()}</span>
+                             ))}
+                           </div>
+                        )}
                      </div>
                      <div className="flex gap-1.5 shrink-0 ml-1 border-l border-slate-200 pl-3">
                        <button onClick={()=>setEditingClient(clientRecord)} className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition-colors shadow-sm"><Edit2 className="w-4 h-4"/></button>
@@ -2347,17 +2353,18 @@ export default function App() {
 
   useEffect(() => { driversRef.current = drivers; }, [drivers]);
 
-  // --- HOOKS DE AUTO-REGISTRO Y DETECCIÓN DE CLIENTES ---
+  // --- HOOKS DE AUTO-REGISTRO Y DETECCIÓN DE CLIENTES MULTI-CUENTA ---
   const myDriver = user ? drivers.find(d => d.email === currentUserEmail) : null;
-  // Detección en tiempo real de si el usuario logueado es un cliente corporativo
-  const loggedClientRecord = user ? customClients.find(c => c.email && c.email.toLowerCase() === currentUserEmail) : null;
+  
+  // Detección inteligente: separa los correos por coma y revisa si el usuario está en la lista de permitidos de algún cliente
+  const loggedClientRecord = user ? customClients.find(c => c.email && c.email.toLowerCase().split(',').map(e => e.trim()).includes(currentUserEmail)) : null;
   const registeringRef = useRef(false);
 
   useEffect(() => {
     if (user && activeRole === 'driver' && !myDriver && isOnline && !registeringRef.current) {
       const timer = setTimeout(() => {
         const stillNoDriver = !driversRef.current.find(d => d.email === currentUserEmail);
-        const isClientAccount = customClients.some(c => c.email && c.email.toLowerCase() === currentUserEmail);
+        const isClientAccount = customClients.some(c => c.email && c.email.toLowerCase().split(',').map(e => e.trim()).includes(currentUserEmail));
         
         // Solo auto-registra al conductor si NO ES ADMINISTRADOR y NO ES UNA CUENTA DE CLIENTE
         if (stillNoDriver && !isClientAccount && !isRealAdmin) {
