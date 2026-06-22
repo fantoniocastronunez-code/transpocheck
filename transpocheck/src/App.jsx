@@ -601,8 +601,8 @@ const VehicleShapeIcon = ({ type }) => {
       )}
       {type === 'furgon_pequeno' && (
         <div className="w-full h-full relative flex flex-col items-center">
-          <div className="w-[80%] h-[18%] bg-white rounded-t-[35px] border-x-4 border-t-4 border-slate-500 shadow-inner z-0"></div>
-          <div className="w-[100%] h-[82%] bg-slate-100 rounded-t-[15px] rounded-b-[20px] border-4 border-slate-500 shadow-inner flex flex-col p-1.5 z-10 -mt-2">
+          <div className="w-[80%] h-[20%] bg-white rounded-t-[35px] border-x-4 border-t-4 border-slate-500 shadow-inner z-0"></div>
+          <div className="w-full h-[80%] bg-slate-100 rounded-t-[15px] rounded-b-[20px] border-4 border-slate-500 shadow-inner flex flex-col p-1.5 z-10 -mt-2">
             <div className="w-[90%] h-[20%] bg-slate-800/40 mx-auto rounded-t-[15px] rounded-b-sm mb-1.5"></div>
           </div>
         </div>
@@ -624,29 +624,29 @@ const VehicleShapeIcon = ({ type }) => {
       )}
       {type === 'camion' && (
         <div className="w-full h-full relative flex flex-col">
-          <div className="w-[105%] -ml-[2.5%] h-[25%] bg-white rounded-t-xl rounded-b-sm border-4 border-slate-500 p-1 flex flex-col justify-end shadow-inner z-10 relative">
+          <div className="w-full h-[30%] bg-white rounded-t-xl rounded-b-sm border-4 border-slate-500 p-1 flex flex-col justify-end shadow-inner z-10 relative">
             <div className="w-full h-1/2 bg-slate-800/40 rounded-t-md rounded-b-sm mb-1"></div>
           </div>
-          <div className="w-full h-[73%] mx-auto bg-slate-200 border-4 border-slate-500 rounded-sm mt-1 relative overflow-hidden shadow-inner z-10"></div>
+          <div className="w-full h-[70%] mx-auto bg-slate-200 border-4 border-slate-500 rounded-sm mt-1 relative overflow-hidden shadow-inner z-10"></div>
         </div>
       )}
       {type === 'camion_doble' && (
         <div className="w-full h-full relative flex flex-col">
-          <div className="w-[105%] -ml-[2.5%] h-[35%] bg-white rounded-t-xl rounded-b-sm border-4 border-slate-500 p-1 flex flex-col justify-end gap-1 shadow-inner z-10 relative">
+          <div className="w-full h-[40%] bg-white rounded-t-xl rounded-b-sm border-4 border-slate-500 p-1 flex flex-col justify-end gap-1 shadow-inner z-10 relative">
             <div className="w-full h-[40%] bg-slate-800/40 rounded-t-md"></div>
             <div className="w-full h-[35%] bg-slate-800/40 rounded-sm mb-0.5"></div>
           </div>
-          <div className="w-full h-[63%] mx-auto bg-slate-200 border-4 border-slate-500 rounded-sm mt-1 relative overflow-hidden shadow-inner z-10"></div>
+          <div className="w-full h-[60%] mx-auto bg-slate-200 border-4 border-slate-500 rounded-sm mt-1 relative overflow-hidden shadow-inner z-10"></div>
         </div>
       )}
       {(type === 'camion_2ejes' || type === 'camion_3ejes' || type === 'camion_8x4') && (
         <div className="w-full h-full relative flex flex-col items-center">
-          <div className="absolute top-[8%] -left-1 w-2 h-6 bg-slate-800 rounded-sm"></div>
-          <div className="absolute top-[8%] -right-1 w-2 h-6 bg-slate-800 rounded-sm"></div>
-          <div className="w-[105%] h-[20%] bg-white rounded-t-xl rounded-b-sm border-4 border-slate-500 p-1 flex flex-col justify-end shadow-inner z-10 relative">
+          <div className="absolute top-[8%] left-1 w-2 h-6 bg-slate-800 rounded-sm"></div>
+          <div className="absolute top-[8%] right-1 w-2 h-6 bg-slate-800 rounded-sm"></div>
+          <div className="w-full h-[25%] bg-white rounded-t-xl rounded-b-sm border-4 border-slate-500 p-1 flex flex-col justify-end shadow-inner z-10 relative">
             <div className="w-full h-1/2 bg-slate-800/50 rounded-t-md rounded-b-sm mb-1"></div>
           </div>
-          <div className="w-full h-[78%] mx-auto bg-slate-200 border-4 border-slate-500 rounded-sm mt-1 relative overflow-hidden shadow-inner z-10">
+          <div className="w-full h-[75%] mx-auto bg-slate-200 border-4 border-slate-500 rounded-sm mt-1 relative overflow-hidden shadow-inner z-10">
              <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_5px,#94a3b8_5px,#94a3b8_8px)] opacity-60"></div>
           </div>
         </div>
@@ -710,7 +710,7 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
   );
 
   return (
-    <div className="space-y-6 relative w-full overflow-hidden">
+    <div className="space-y-6 relative w-full">
       <div className="flex gap-2 pb-2 overflow-x-auto scrollbar-none w-full">
          <button onClick={()=>setConfigSubTab('clients')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='clients'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Clientes</button>
          <button onClick={()=>setConfigSubTab('vehicles')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='vehicles'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Vehículos</button>
