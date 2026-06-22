@@ -54,7 +54,11 @@ const SignaturePad = ({ onSave, onClear, initialData }) => {
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#0f172a'; 
+    // Grosor fijo para evitar el efecto de "puntos" en celulares
+    ctx.lineWidth = 4; 
+    ctx.lineCap = 'round'; 
+    ctx.lineJoin = 'round';
     
     if (initialData) {
       const img = new Image();
@@ -97,33 +101,23 @@ const SignaturePad = ({ onSave, onClear, initialData }) => {
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     const x = (clientX - rect.left) * (canvas.width / rect.width);
     const y = (clientY - rect.top) * (canvas.height / rect.height);
-    const time = Date.now();
     
     if (type === 'start') { 
       setIsDrawing(true); 
-      lastPoint.current = { x, y, time }; 
+      lastPoint.current = { x, y }; 
     }
     if (type === 'draw' && isDrawing && lastPoint.current) { 
-      // Tinta sensible a la velocidad
-      const dx = x - lastPoint.current.x;
-      const dy = y - lastPoint.current.y;
-      const dt = time - lastPoint.current.time || 1;
-      const speed = Math.sqrt(dx * dx + dy * dy) / dt;
-      
-      // Ajuste de grosor (más rápido = trazo más fino)
-      ctx.lineWidth = Math.max(1.5, 6 - speed * 1.5);
-      
       ctx.beginPath(); 
       ctx.moveTo(lastPoint.current.x, lastPoint.current.y); 
       ctx.lineTo(x, y); 
       ctx.stroke(); 
-      lastPoint.current = { x, y, time };
+      lastPoint.current = { x, y };
     }
     if (type === 'stop') {
       setIsDrawing(false);
       lastPoint.current = null;
       if (onSave) {
-        if (navigator.vibrate) navigator.vibrate(20); // Micro-Vibración al terminar el trazo
+        if (navigator.vibrate) navigator.vibrate(20);
         const stampedData = generateStampedSignature();
         if (stampedData) onSave(stampedData);
       }
@@ -137,7 +131,8 @@ const SignaturePad = ({ onSave, onClear, initialData }) => {
       
       {isFullscreen && <h3 className="text-white font-black text-2xl mb-4 text-center">Dibuje su firma aquí</h3>}
 
-      <div className={`relative w-full ${isFullscreen ? 'max-w-2xl h-[65vh] sm:h-[50vh]' : 'h-[150px]'}`}>
+      {/* AQUÍ ESTÁ LA MAGIA: aspect-[2/1] asegura que la caja JAMÁS pierda la proporción original de 600x300 */}
+      <div className={`relative w-full aspect-[2/1] ${isFullscreen ? 'max-w-2xl' : 'max-w-full'}`}>
          {!isFullscreen && <p className="absolute top-3 left-3 text-[10px] font-black text-slate-200 uppercase tracking-widest pointer-events-none select-none">Área de Firma Segura</p>}
          
          <button type="button" onClick={() => setIsFullscreen(!isFullscreen)} className="absolute top-2 right-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black px-3 py-2 rounded-xl shadow-md z-20 transition-colors border border-slate-200 flex items-center gap-1">
@@ -2620,7 +2615,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.5 17</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.5 18</p>
                 </div>
               </div>
             )}
