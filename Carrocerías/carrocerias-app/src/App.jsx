@@ -7,12 +7,7 @@ import {
   Share2, Download
 } from 'lucide-react';
 
-const INITIAL_CLIENTS = [
-  { id: 'CLI-1', name: 'Transportes del Sur SpA', rut: '76.123.456-K', contactName: 'Carlos Ruiz', email: 'carlos@transportesur.cl' },
-  { id: 'CLI-2', name: 'Logística Express', rut: '77.987.654-3', contactName: 'Ana Silva', email: 'asilva@logexpress.cl' },
-  { id: 'CLI-3', name: 'Distribuidora Central', rut: '78.555.444-1', contactName: 'Roberto Gómez', email: 'rgomez@dcentral.cl' },
-  { id: 'CLI-4', name: 'Logistica TS', rut: '79.111.222-0', contactName: 'María Fernández', email: 'mfernandez@logts.cl' }
-];
+const INITIAL_CLIENTS = [];
 
 const STATUS_STEPS = [
   'A espera de que llegue a taller',
@@ -23,42 +18,7 @@ const STATUS_STEPS = [
   'Listo para entrega'
 ];
 
-const INITIAL_TRUCKS = [
-  {
-    id: 'CAR-1042',
-    ot: 'OT-5001',
-    clientName: 'Transportes del Sur SpA',
-    rut: '76.123.456-K',
-    dealership: 'Kaufmann Santiago',
-    deliveryPerson: 'Juan Pérez',
-    plate: 'AB-CD-12',
-    make: 'Mercedes-Benz',
-    model: 'Actros',
-    vin: 'WDB1234567890',
-    status: 'En pintura',
-    date: '2026-06-20',
-    checklist: { luces: true, espejos: true, neumaticos: true, herramientas: false, documentos: true, llaves: true },
-    notes: 'Vehículo recibido sin daños aparentes. Se solicita carrocería frigorífica.',
-    signature: null
-  },
-  {
-    id: 'CAR-1043',
-    ot: 'OT-5002',
-    clientName: 'Logística Express',
-    rut: '77.987.654-3',
-    dealership: 'Salfa',
-    deliveryPerson: 'Pedro Gómez',
-    plate: 'XX-YY-99',
-    make: 'Volvo',
-    model: 'FH',
-    vin: 'YV21234567890',
-    status: 'Recepcionado',
-    date: '2026-06-22',
-    checklist: { luces: true, espejos: false, neumaticos: true, herramientas: true, documentos: true, llaves: true },
-    notes: 'Detalle de pintura en parachoques frontal.',
-    signature: null
-  }
-];
+const INITIAL_TRUCKS = [];
 
 export default function App() {
   const [currentView, setCurrentView] = useState('login'); // login, admin, client
