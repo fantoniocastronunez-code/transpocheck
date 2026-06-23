@@ -2262,7 +2262,7 @@ export default function App() {
   // Estados para Modo Oscuro, Conexión Offline y Tuerca
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [jobLimit, setJobLimit] = useState(20); // <-- NUEVO: Control de Paginación Dinámica
+  const [jobLimit, setJobLimit] = useState(300); // <-- AMPLIADO a 300 para que el Ranking y el Excel contabilicen todo el mes sin perder datos
   
   // NUEVO: Lectura Inteligente del Tema del Sistema Operativo
   const [darkMode, setDarkMode] = useState(() => {
@@ -3041,13 +3041,18 @@ function LeaderboardView({ jobs, drivers, isAdminView }) {
   const [selectedDriverJobs, setSelectedDriverJobs] = useState(null);
   const now = new Date(); const firstOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
   
-  // Modificado: Ahora cuenta los completados Y las revisiones técnicas fallidas del mes
+  // REGLA ACTUALIZADA: Cuenta ABSOLUTAMENTE TODOS los completados y fallidos, y usa createdAt si falta completedAt
   const monthlyCompleted = jobs.filter(j => {
-    if (!j.completedAt || j.completedAt < firstOfCurrentMonth) return false;
-    return j.status === 'completed' || (j.status === 'failed' && j.tripType === 'revision');
+    const jobDate = j.completedAt || j.createdAt || 0;
+    if (jobDate < firstOfCurrentMonth) return false;
+    return j.status === 'completed' || j.status === 'failed';
   });
   
-  const ranking = drivers.map(d => { const dj = monthlyCompleted.filter(j => j.acceptedByEmail === d.email); return { ...d, score: dj.length, jobs: dj }; }).sort((a, b) => b.score - a.score);
+  const ranking = drivers.map(d => { 
+     // Cuenta al conductor ya sea por su email directo o si fue asignado a la fuerza por el admin
+     const dj = monthlyCompleted.filter(j => j.acceptedByEmail === d.email || (!j.acceptedByEmail && j.assignedEmails?.includes(d.email))); 
+     return { ...d, score: dj.length, jobs: dj }; 
+  }).sort((a, b) => b.score - a.score);
 
   return (
     <main className="max-w-5xl mx-auto p-4 pt-20 sm:pt-24 pb-24">
