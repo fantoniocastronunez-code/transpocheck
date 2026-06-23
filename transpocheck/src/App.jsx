@@ -7,7 +7,7 @@ import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messagi
 import { 
   Car, MapPin, Camera, CheckCircle, FileText, Download, 
   Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, Edit2, Bell, Share2, X, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Save, Search,
-  CloudOff, Wifi, QrCode, Sun, Moon, Settings, ChevronUp, ChevronDown, ChevronRight, Fuel
+  CloudOff, Wifi, QrCode, Sun, Moon, Settings, ChevronUp, ChevronDown, ChevronRight, Fuel, Megaphone
 } from 'lucide-react';
 
 const firebaseConfig = {
@@ -2275,6 +2275,21 @@ export default function App() {
   const driversRef = useRef([]);
   const [dialogConfig, setDialogConfig] = useState(null);
 
+  // NUEVO: Estados y variables para el Anuncio Global (Pop-Up)
+  const [broadcast, setBroadcast] = useState(null);
+  const [showBroadcastAdmin, setShowBroadcastAdmin] = useState(false);
+  const [localDismissed, setLocalDismissed] = useState(() => localStorage.getItem('dismissedBroadcast'));
+
+  // Escuchador en tiempo real del Anuncio Global
+  useEffect(() => {
+    if (!db) return;
+    const unsub = onSnapshot(doc(db, 'system_config', 'broadcast'), (docSnap) => {
+      if (docSnap.exists()) setBroadcast(docSnap.data());
+      else setBroadcast(null);
+    });
+    return () => unsub();
+  }, [db]);
+
   // Escuchador de conexión a Internet y Cambios de Tema OS
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -2798,7 +2813,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.5 19 8</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.5 20</p>
                 </div>
               </div>
             )}
@@ -2839,10 +2854,11 @@ export default function App() {
         <main className="max-w-5xl mx-auto p-4 pt-20 sm:pt-24">
           {activeRole === 'admin' ? (
             <>
-              <div className="flex flex-wrap gap-2 mb-6 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
-                <button onClick={() => {setAdminTab('dashboard'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-extrabold transition-colors ${adminTab==='dashboard'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><ClipboardList className="w-5 h-5"/> Monitor</button>
-                <button onClick={() => {setAdminTab('newJob'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-extrabold transition-colors ${adminTab==='newJob'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Plus className="w-5 h-5"/> Crear</button>
-                <button onClick={() => setAdminTab('config')} className={`flex-1 flex justify-center items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-extrabold transition-colors ${adminTab==='config'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Truck className="w-5 h-5"/> Config</button>
+              <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-6 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
+                <button onClick={() => {setAdminTab('dashboard'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='dashboard'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><ClipboardList className="w-4 h-4 sm:w-5 sm:h-5"/> Monitor</button>
+                <button onClick={() => {setAdminTab('newJob'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='newJob'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Plus className="w-4 h-4 sm:w-5 sm:h-5"/> Crear</button>
+                <button onClick={() => setAdminTab('config')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='config'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Truck className="w-4 h-4 sm:w-5 sm:h-5"/> Config</button>
+                <button onClick={() => setShowBroadcastAdmin(true)} className="flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors text-purple-600 bg-purple-50 hover:bg-purple-100"><Megaphone className="w-4 h-4 sm:w-5 sm:h-5"/> Aviso</button>
               </div>
               
               {adminTab === 'dashboard' && (
@@ -2951,6 +2967,72 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* --- MODAL ADMIN: CREAR ANUNCIO --- */}
+      {showBroadcastAdmin && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+          <form onSubmit={async (e) => {
+              e.preventDefault();
+              const msg = e.target.message.value.trim();
+              if (!msg) return;
+              try {
+                await setDoc(doc(db, 'system_config', 'broadcast'), { message: msg, timestamp: Date.now(), active: true });
+                setShowBroadcastAdmin(false);
+                showAlert("✅ Anuncio enviado exitosamente a toda la flota.");
+              } catch(err) { console.error(err); showAlert("Error enviando anuncio."); }
+          }} className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl relative animate-in zoom-in-95">
+              <button type="button" onClick={()=>setShowBroadcastAdmin(false)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-700"/></button>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="bg-purple-100 p-2.5 rounded-full"><Megaphone className="w-6 h-6 text-purple-600"/></div>
+                <h3 className="text-xl font-black text-slate-800">Pop-up Global</h3>
+              </div>
+              <p className="text-xs font-bold text-slate-500 mb-5 leading-relaxed">Envía una alerta urgente que aparecerá obligatoriamente en medio de la pantalla de todos los conductores al abrir la app.</p>
+
+              {broadcast?.active && (
+                <div className="mb-5 bg-purple-50 p-4 rounded-2xl border border-purple-200 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1.5 h-full bg-purple-500"></div>
+                    <p className="text-[10px] font-black text-purple-600 uppercase mb-1.5 tracking-widest">Anuncio Activo Actual:</p>
+                    <p className="text-sm font-bold text-slate-700 italic leading-snug">"{broadcast.message}"</p>
+                    <button type="button" onClick={async () => {
+                      await setDoc(doc(db, 'system_config', 'broadcast'), { active: false }, { merge: true });
+                      showAlert("Anuncio apagado. Ya no le saldrá a nadie.");
+                    }} className="mt-3 text-[10px] font-black uppercase text-red-500 hover:text-red-600 bg-red-100 px-3 py-1.5 rounded-lg transition-colors border border-red-200">Apagar Anuncio</button>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Escribir Nuevo Mensaje</label>
+                <textarea name="message" rows="4" required placeholder="Ej: Muchachos, recuerden tomar fotografías claras a los comprobantes de peaje..." className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500 resize-none"></textarea>
+              </div>
+              <button type="submit" className="w-full mt-4 bg-purple-600 hover:bg-purple-700 text-white font-black py-3.5 rounded-xl shadow-lg shadow-purple-200 transition-colors text-sm">Emitir a toda la flota</button>
+          </form>
+        </div>
+      )}
+
+      {/* --- POP-UP CONDUCTORES: MOSTRAR ANUNCIO --- */}
+      {user && broadcast?.active && broadcast.timestamp.toString() !== localDismissed && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-300 border-4 border-purple-500 flex flex-col">
+              <div className="bg-purple-600 p-6 text-center relative overflow-hidden">
+                <div className="absolute -top-10 -right-10 opacity-10"><Megaphone className="w-40 h-40 text-white"/></div>
+                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl relative z-10">
+                    <Megaphone className="w-8 h-8 text-purple-600 animate-pulse"/>
+                </div>
+                <h3 className="text-2xl font-black text-white relative z-10 tracking-wide">¡Aviso Importante!</h3>
+              </div>
+              <div className="p-6 text-center flex-1 flex flex-col justify-center bg-slate-50">
+                <p className="text-base font-extrabold text-slate-700 mb-8 leading-relaxed whitespace-pre-wrap">{broadcast.message}</p>
+                <button onClick={() => {
+                    localStorage.setItem('dismissedBroadcast', broadcast.timestamp.toString());
+                    setLocalDismissed(broadcast.timestamp.toString());
+                }} className="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-black shadow-lg shadow-purple-200 transition-all text-lg active:scale-95">
+                  ¡Entendido!
+                </button>
+              </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
