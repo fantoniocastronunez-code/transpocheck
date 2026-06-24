@@ -7,7 +7,7 @@ import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messagi
 import { 
   Car, MapPin, Camera, CheckCircle, FileText, Download, 
   Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, Edit2, Bell, Share2, X, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Save, Search,
-  CloudOff, Wifi, QrCode, Sun, Moon, Settings, ChevronUp, ChevronDown, ChevronRight, Fuel, Megaphone
+  CloudOff, Wifi, QrCode, Sun, Moon, Settings, ChevronUp, ChevronDown, ChevronRight, Fuel, Megaphone, Star
 } from 'lucide-react';
 
 const firebaseConfig = {
@@ -2281,6 +2281,7 @@ export default function App() {
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
   const [simulatedClient, setSimulatedClient] = useState('');
   const [simulatedDriverEmail, setSimulatedDriverEmail] = useState(''); // <-- NUEVO: Guarda a quién estamos simulando
+  const [favDriverEmail, setFavDriverEmail] = useState(() => localStorage.getItem('favDriverEmail') || ''); // <-- NUEVO: Guarda al conductor favorito (Felipe)
   
   // Estados para Modo Oscuro, Conexión Offline y Tuerca
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -2896,14 +2897,33 @@ export default function App() {
                      <Users className="w-4 h-4"/> Volver a Administrador
                   </button>
 
-                  {/* NUEVA SECCIÓN: ASISTIR/SIMULAR CONDUCTOR */}
-                  <div className="p-3 border-t border-slate-100 space-y-2">
-                     <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5"><Car className="w-3.5 h-3.5 text-blue-600"/> Ayudar a un Conductor</p>
-                     <select value={simulatedDriverEmail} onChange={(e) => setSimulatedDriverEmail(e.target.value)} className="w-full border-2 border-slate-200 p-2.5 rounded-xl text-xs font-bold outline-none focus:border-blue-500 bg-white">
-                        <option value="">Seleccionar Conductor...</option>
-                        {drivers.map(d => <option key={d.id} value={d.email}>{d.name}</option>)}
-                     </select>
-                     <button onClick={() => { if(simulatedDriverEmail) { setActiveRole('driver'); setMainTab('jobs'); setRoleMenuOpen(false); } else { showAlert("Selecciona un conductor de la lista para entrar a su cuenta"); } }} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 rounded-xl transition-colors shadow-sm">Entrar a su sesión</button>
+                  {/* NUEVA SECCIÓN: ASISTIR/SIMULAR CONDUCTOR (DISEÑO MEJORADO Y RÁPIDO) */}
+                  <div className="p-3 border-t border-slate-100 bg-slate-50/50">
+                     <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5 mb-2"><Car className="w-3.5 h-3.5 text-blue-600"/> Entrar como Conductor</p>
+                     
+                     {/* BOTÓN RÁPIDO DE FAVORITO */}
+                     {favDriverEmail && drivers.find(d => d.email === favDriverEmail) && (
+                       <button onClick={() => { setSimulatedDriverEmail(favDriverEmail); setActiveRole('driver'); setMainTab('jobs'); setRoleMenuOpen(false); }} className="w-full bg-gradient-to-r from-amber-100 to-yellow-50 border border-amber-200 hover:from-amber-200 text-amber-800 p-2.5 rounded-xl text-xs font-black flex justify-between items-center transition-colors shadow-sm mb-3">
+                         <div className="flex items-center gap-2"><Star className="w-4 h-4 fill-amber-500 text-amber-500"/> Entrar como {drivers.find(d => d.email === favDriverEmail).name.split(' ')[0]}</div>
+                         <ChevronRight className="w-4 h-4 text-amber-500"/>
+                       </button>
+                     )}
+
+                     {/* LISTA SCROLLEABLE INTERNA (Adiós cuadro gris feo de Android) */}
+                     <div className="bg-white border border-slate-200 rounded-xl max-h-40 overflow-y-auto shadow-inner divide-y divide-slate-50">
+                       {drivers.sort((a, b) => a.name.localeCompare(b.name)).map(d => (
+                         <div key={d.id} className="flex items-center justify-between p-1 hover:bg-blue-50 transition-colors group">
+                            {/* Al tocar el nombre, entras directo sin necesidad de un segundo botón */}
+                            <button onClick={() => { setSimulatedDriverEmail(d.email); setActiveRole('driver'); setMainTab('jobs'); setRoleMenuOpen(false); }} className="flex-1 text-left px-2 py-2 text-xs font-bold text-slate-700 group-hover:text-blue-700 truncate">
+                               {d.name}
+                            </button>
+                            {/* Estrella para fijarlo como favorito arriba */}
+                            <button onClick={(e) => { e.stopPropagation(); setFavDriverEmail(d.email); localStorage.setItem('favDriverEmail', d.email); }} className="p-2 rounded-lg hover:bg-amber-50 transition-colors" title="Fijar como Favorito">
+                               <Star className={`w-4 h-4 transition-colors ${favDriverEmail === d.email ? 'fill-amber-400 text-amber-400' : 'text-slate-200 hover:text-amber-300'}`} />
+                            </button>
+                         </div>
+                       ))}
+                     </div>
                   </div>
 
                   {/* SECCIÓN EXISTENTE: SIMULAR CLIENTE */}
