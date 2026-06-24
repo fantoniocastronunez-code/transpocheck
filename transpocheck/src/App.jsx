@@ -2893,10 +2893,22 @@ export default function App() {
           </div>
           {isRealAdmin && (
             <div className="relative">
-              <button onClick={() => setRoleMenuOpen(!roleMenuOpen)} className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-3 py-2 rounded-xl text-sm font-bold transition-all border border-white/10 backdrop-blur-sm shadow-sm">
+              {/* Botón dinámico inteligente: se vuelve morado y parpadea si estás asistiendo a un conductor */}
+              <button 
+                onClick={() => setRoleMenuOpen(!roleMenuOpen)} 
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all border shadow-sm ${
+                  (activeRole === 'driver' && simulatedDriverEmail) 
+                    ? 'bg-purple-600 border-purple-400 text-white animate-pulse font-black' 
+                    : 'bg-white/20 hover:bg-white/30 border-white/10 text-white font-bold backdrop-blur-sm'
+                }`}
+              >
                 <Eye className="w-5 h-5 text-white"/>
                 <span className="hidden md:inline">
-                  {activeRole === 'admin' ? 'Modo: Admin' : activeRole === 'driver' ? (simulatedDriverEmail ? 'Modo: Asistencia' : 'Modo: Conductor') : 'Modo: Cliente'}
+                  {activeRole === 'admin' ? 'Modo: Admin' : activeRole === 'driver' ? (
+                    simulatedDriverEmail 
+                      ? `Asistiendo a: ${drivers.find(dr => dr.email === simulatedDriverEmail)?.name?.split(' ')[0]}` 
+                      : 'Modo: Conductor'
+                  ) : 'Modo: Cliente'}
                 </span>
               </button>
               {roleMenuOpen && (
@@ -2919,20 +2931,23 @@ export default function App() {
                        </button>
                      )}
 
-                     {/* LISTA SCROLLEABLE INTERNA (Adiós cuadro gris feo de Android) */}
+                     {/* LISTA SCROLLEABLE INTERNA DE CONDUCTORES */}
                      <div className="bg-white border border-slate-200 rounded-xl max-h-40 overflow-y-auto shadow-inner divide-y divide-slate-50">
-                       {drivers.sort((a, b) => a.name.localeCompare(b.name)).map(d => (
-                         <div key={d.id} className="flex items-center justify-between p-1 hover:bg-blue-50 transition-colors group">
-                            {/* Al tocar el nombre, entras directo sin necesidad de un segundo botón */}
-                            <button onClick={() => { setSimulatedDriverEmail(d.email); setActiveRole('driver'); setMainTab('jobs'); setRoleMenuOpen(false); }} className="flex-1 text-left px-2 py-2 text-xs font-bold text-slate-700 group-hover:text-blue-700 truncate">
-                               {d.name}
+                       {drivers.sort((a, b) => a.name.localeCompare(b.name)).map(d => {
+                         const isCurrentActive = activeRole === 'driver' && simulatedDriverEmail === d.email;
+                         return (
+                         <div key={d.id} className={`flex items-center justify-between p-1 transition-colors group ${isCurrentActive ? 'bg-purple-50 border-l-4 border-purple-500' : 'hover:bg-blue-50'}`}>
+                            {/* Al tocar el nombre, entras directo */}
+                            <button onClick={() => { setSimulatedDriverEmail(d.email); setActiveRole('driver'); setMainTab('jobs'); setRoleMenuOpen(false); }} className={`flex-1 text-left px-2 py-2 text-xs truncate ${isCurrentActive ? 'text-purple-700 font-black' : 'text-slate-700 font-bold group-hover:text-blue-700'}`}>
+                               {d.name} {isCurrentActive && <span className="text-[9px] bg-purple-200 text-purple-700 px-1.5 py-0.5 rounded ml-1 animate-pulse">ACTIVO</span>}
                             </button>
                             {/* Estrella para fijarlo como favorito arriba */}
                             <button onClick={(e) => { e.stopPropagation(); setFavDriverEmail(d.email); localStorage.setItem('favDriverEmail', d.email); }} className="p-2 rounded-lg hover:bg-amber-50 transition-colors" title="Fijar como Favorito">
                                <Star className={`w-4 h-4 transition-colors ${favDriverEmail === d.email ? 'fill-amber-400 text-amber-400' : 'text-slate-200 hover:text-amber-300'}`} />
                             </button>
                          </div>
-                       ))}
+                         );
+                       })}
                      </div>
                   </div>
 
