@@ -3807,12 +3807,45 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       const dateShort = getDStr(job).substring(0, 5);
       const cleanPlate = job.plate || job.vin || 'SN';
       const fileName = `Check.${dateStrForFile}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`;
+      
+      // 1. Armamos el texto
       const text = `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`;
+      
+      // 2. Generamos el PDF
       const docPDF = await buildPDFDoc(job); 
       const pdfBlob = docPDF.output('blob'); 
       const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ title: fileName, text: text, files: [file] }); } else { showAlert("Tu dispositivo no soporta compartir el archivo directamente. Descárgalo primero."); handleCopyWhatsApp(job); }
-    } catch (e) { console.error(e); } finally { setProcessingId(null); }
+
+      // 3. TRUCO: Copiamos el texto al portapapeles de forma invisible antes de abrir WhatsApp
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try { 
+        document.execCommand('copy'); 
+        showAlert("✅ PDF listo. El resumen se copió automáticamente. ¡Mantén presionado y pégalo en el comentario de WhatsApp!"); 
+      } catch (err) {
+        console.warn("Auto-copy falló");
+      }
+      document.body.removeChild(textArea);
+
+      // 4. Compartimos SOLO el archivo (para que WhatsApp no se trabe)
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { 
+         await navigator.share({ 
+           title: fileName, 
+           files: [file] 
+         }); 
+      } else { 
+         showAlert("Tu dispositivo no soporta compartir el archivo directamente. Descárgalo primero."); 
+         handleCopyWhatsApp(job); 
+      }
+    } catch (e) { 
+      console.error(e); 
+    } finally { 
+      setProcessingId(null); 
+    }
   };
 
   // --- TARJETAS MODULARES PARA KANBAN ---
