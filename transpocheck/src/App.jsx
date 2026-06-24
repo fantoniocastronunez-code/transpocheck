@@ -2102,6 +2102,17 @@ const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600", isProc
     const maxLeft = containerWidth - 48; // Ancho del botón interno
     let newLeft = clientX - startX.current;
     if (newLeft < 0) newLeft = 0;
+
+    // SOLUCIÓN iPHONE: Auto-completar instantáneamente si el usuario llega al 90% del recorrido, sin esperar a que levante el dedo.
+    if (newLeft >= maxLeft * 0.9) {
+      setSliderLeft(maxLeft);
+      setIsConfirmed(true);
+      startX.current = 0;
+      if (navigator.vibrate) { try { navigator.vibrate([30, 40, 30]); } catch(e){} }
+      onConfirm();
+      return;
+    }
+
     if (newLeft > maxLeft) newLeft = maxLeft;
     setSliderLeft(newLeft);
   };
@@ -2112,9 +2123,8 @@ const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600", isProc
     if (sliderLeft > maxLeft * 0.75) { 
       setSliderLeft(maxLeft);
       setIsConfirmed(true);
-      // Feedback Háptico de triple vibración rápida de éxito
-      if (navigator.vibrate) navigator.vibrate([30, 40, 30]); 
-      setTimeout(() => onConfirm(), 300); 
+      if (navigator.vibrate) { try { navigator.vibrate([30, 40, 30]); } catch(e){} }
+      onConfirm(); 
     } else {
       setSliderLeft(0); 
     }
@@ -2135,6 +2145,7 @@ const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600", isProc
         onTouchStart={e => handleStart(e.touches[0].clientX)}
         onTouchMove={e => handleMove(e.touches[0].clientX)}
         onTouchEnd={handleEnd}
+        onTouchCancel={handleEnd} // <-- SOLUCIÓN CRÍTICA PARA EL CORTE EN iPHONE
         onMouseDown={e => handleStart(e.clientX)}
         onMouseMove={e => startX.current && handleMove(e.clientX)}
         onMouseUp={handleEnd}
@@ -2261,6 +2272,7 @@ export default function App() {
   
   // Estados para Modo Oscuro, Conexión Offline y Tuerca
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false); // <-- NUEVO: Candado de base de datos
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [jobLimit, setJobLimit] = useState(300); // <-- AMPLIADO a 300 para que el Ranking y el Excel contabilicen todo el mes sin perder datos
   
@@ -2398,35 +2410,47 @@ export default function App() {
   useEffect(() => { driversRef.current = drivers; }, [drivers]);
 
   // --- HOOKS DE AUTO-REGISTRO Y DETECCIÓN DE CLIENTES MULTI-CUENTA ---
-  const myDriver = user ? drivers.find(d => d.email === currentUserEmail) : null;
+  // Prioridad: Si por error el sistema duplicó cuentas, rescata automáticamente la que ya tiene sus fotos subidas
+  const myDriver = user ? (drivers.find(d => d.email === currentUserEmail && d.photo) || drivers.find(d => d.email === currentUserEmail)) : null;
   
   // Detección inteligente: separa los correos por coma y revisa si el usuario está en la lista de permitidos de algún cliente
   const loggedClientRecord = user ? customClients.find(c => c.email && c.email.toLowerCase().split(',').map(e => e.trim()).includes(currentUserEmail)) : null;
   const registeringRef = useRef(false);
 
   useEffect(() => {
-    if (user && activeRole === 'driver' && !myDriver && isOnline && !registeringRef.current) {
-      const timer = setTimeout(() => {
-        const stillNoDriver = !driversRef.current.find(d => d.email === currentUserEmail);
+    // CANDADO MAESTRO: Solo evalúa si falta un conductor cuando dataLoaded sea TRUE
+    if (user && activeRole === 'driver' && dataLoaded && !myDriver && isOnline && !registeringRef.current) {
         const isClientAccount = customClients.some(c => c.email && c.email.toLowerCase().split(',').map(e => e.trim()).includes(currentUserEmail));
         
         // Solo auto-registra al conductor si NO ES ADMINISTRADOR y NO ES UNA CUENTA DE CLIENTE
-        if (stillNoDriver && !isClientAccount && !isRealAdmin) {
+        if (!isClientAccount && !isRealAdmin) {
           registeringRef.current = true;
-          addDoc(collection(db, 'drivers'), {
-            name: user.displayName || 'Conductor Nuevo',
-            email: currentUserEmail,
-            balance: 0,
-            licenses: [],
-            licenseExpiry: '',
-            createdAt: Date.now()
-          }).then(() => { registeringRef.current = false; })
-            .catch(e => { console.error(e); registeringRef.current = false; });
+          // Ejecutamos una función asíncrona directamente para hacer la verificación de seguridad
+          (async () => {
+            try {
+              // VERIFICACIÓN BLINDADA: Consultamos directo al servidor de Firebase antes de crear nada
+              const q = query(collection(db, 'drivers'), where('email', '==', currentUserEmail));
+              const snap = await getDocs(q);
+              
+              if (snap.empty) {
+                await addDoc(collection(db, 'drivers'), {
+                  name: user.displayName || 'Conductor Nuevo',
+                  email: currentUserEmail,
+                  balance: 0,
+                  licenses: [],
+                  licenseExpiry: '',
+                  createdAt: Date.now()
+                });
+              }
+            } catch(e) {
+              console.error("Error al auto-registrar:", e);
+            } finally {
+              registeringRef.current = false;
+            }
+          })();
         }
-      }, 2500); // Damos 2.5s para asegurar que Firebase cargó
-      return () => clearTimeout(timer);
     }
-  }, [user, activeRole, myDriver, isOnline, currentUserEmail, db, customClients, isRealAdmin]);
+  }, [user, activeRole, myDriver, dataLoaded, isOnline, currentUserEmail, db, customClients, isRealAdmin]);
   // --------------------------------------------------------------
 
   // --- NUEVO: RECOLECTOR DE BASURA (TRASH COLLECTOR) EN SEGUNDO PLANO ---
@@ -2473,7 +2497,10 @@ export default function App() {
     // OPTIMIZACIÓN 2: Traer solo los últimos 300 gastos
     const qExpenses = query(collection(db, 'expenses'), orderBy('createdAt', 'desc'), limit(300));
 
-    const unsubDrivers = onSnapshot(collection(db, 'drivers'), snap => setDrivers(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    const unsubDrivers = onSnapshot(collection(db, 'drivers'), snap => {
+      setDrivers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setDataLoaded(true); // <-- Candado maestro abierto: Firebase terminó de cargar
+    });
     const unsubExpenses = onSnapshot(qExpenses, snap => setExpenses(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     const unsubVehicles = onSnapshot(collection(db, 'vehicles'), snap => setVehicles(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     const unsubClients = onSnapshot(collection(db, 'clients'), snap => setCustomClients(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
@@ -2813,7 +2840,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.5 20</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.5 21</p>
                 </div>
               </div>
             )}
