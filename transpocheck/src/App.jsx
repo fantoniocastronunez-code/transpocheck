@@ -2836,19 +2836,38 @@ export default function App() {
                     )}
                   </div>
 
-                  {/* --- NUEVO: BOTÓN MATA-CACHÉ (ESPECIAL PARA XIAOMI/PWA) --- */}
+                  {/* --- SÚPER BOTÓN MATA-CACHÉ (SOLUCIÓN DEFINITIVA XIAOMI/PWA) --- */}
                   <div className="flex items-center justify-between border-t border-slate-100 pt-4">
                     <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
                       <Zap className="w-4 h-4 text-blue-600"/> Recargar App
                     </span>
                     <button onClick={() => {
+                        // 1. Matar la caché visual y de archivos
                         if ('caches' in window) {
                           caches.keys().then((names) => {
                             names.forEach(name => caches.delete(name));
                           });
                         }
-                        window.location.reload(true);
-                    }} className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm transition-colors">
+                        // 2. Destruir Service Workers trabados por el navegador
+                        if ('serviceWorker' in navigator) {
+                          navigator.serviceWorker.getRegistrations().then(regs => {
+                            regs.forEach(r => r.unregister());
+                          });
+                        }
+                        // 3. BOMBA NUCLEAR: Destruir la base de datos congelada de Firebase (sin cerrar la sesión)
+                        if (window.indexedDB && window.indexedDB.databases) {
+                          window.indexedDB.databases().then(dbs => {
+                            dbs.forEach(dbFile => {
+                              // 'firestore' es donde Firebase guarda los trabajos offline
+                              if (dbFile.name.startsWith('firestore')) {
+                                window.indexedDB.deleteDatabase(dbFile.name);
+                              }
+                            });
+                          });
+                        }
+                        // 4. Forzar recarga completa después de limpiar todo
+                        setTimeout(() => window.location.reload(true), 300);
+                    }} className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm transition-colors active:bg-blue-300">
                       FORZAR
                     </button>
                   </div>
