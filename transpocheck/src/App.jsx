@@ -2092,6 +2092,16 @@ const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600", isProc
   const [isConfirmed, setIsConfirmed] = useState(false);
   const containerRef = useRef(null);
   const startX = useRef(0);
+  const prevProcessing = useRef(false);
+
+  // AUTO-RESET: Si Firebase procesa pero la red falla (el botón deja de cargar pero se quedó pegado), ¡lo devuelve a cero!
+  useEffect(() => {
+    if (prevProcessing.current && !isProcessing && isConfirmed) {
+      setIsConfirmed(false);
+      setSliderLeft(0);
+    }
+    prevProcessing.current = isProcessing;
+  }, [isProcessing, isConfirmed]);
 
   // Si está procesando, bloqueamos el botón y mostramos el relojito
   if (isProcessing) {
@@ -3936,6 +3946,36 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
                     )}
 
                     <button onClick={()=>cpyWapp(j)} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-slate-50 border-t border-slate-50"><Copy className="w-4 h-4"/> Copiar Resumen</button>
+                    
+                    {/* NUEVA OPCIÓN: CANCELAR ACEPTACIÓN (SOLTAR TRASLADO) */}
+                    {isAccepted && (!j.phase || j.phase === 'claimed' || j.phase === 'arrived_pickup') && (
+                      <button 
+                        onClick={() => {
+                          showConfirm("¿Deseas cancelar la aceptación de este traslado? Volverá a estar disponible para que lo tome otro conductor.", async () => {
+                            try {
+                              // Devolvemos el estado a pendiente y borramos los campos del chofer actual usando deleteField()
+                              await updateDoc(doc(db, 'transport_jobs', j.id), {
+                                status: 'pending',
+                                acceptedByEmail: deleteField(),
+                                phase: deleteField(),
+                                liveLocation: deleteField(),
+                                arrivedPickupAt: deleteField(),
+                                waitTimeMinutes: deleteField()
+                              });
+                              setMenuOpenId(null);
+                              showAlert("✅ Traslado liberado con éxito. Volvió a la lista de espera.");
+                            } catch (err) {
+                              console.error(err);
+                              showAlert("Error al intentar liberar el traslado.");
+                            }
+                          });
+                        }} 
+                        className="w-full text-left p-3 font-bold flex gap-2 text-amber-600 hover:bg-amber-50 border-t border-slate-50"
+                      >
+                        <X className="w-4 h-4"/> Cancelar Aceptación (Soltar)
+                      </button>
+                    )}
+
                     <button onClick={()=>{setJobToFail(j);setMenuOpenId(null);}} className="w-full text-left p-3 font-bold flex gap-2 text-red-600 hover:bg-red-50 border-t border-slate-50"><XCircle className="w-4 h-4"/> Cancelar / Falló</button>
                   </div>
                 )}
@@ -3996,18 +4036,18 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
         <div className="mt-auto pt-3 border-t border-slate-100 flex flex-col gap-2">
           {/* Botón directo deslizable para reclamar el traslado */}
           {isPending && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && (
-            <SwipeButton onConfirm={() => handleAcceptJob(j)} text="Desliza para Aceptar" colorClass="bg-blue-600" isProcessing={processingId === `${j.id}-accept`} />
+            <SwipeButton key={`btn-accept-${j.id}`} onConfirm={() => handleAcceptJob(j)} text="Desliza para Aceptar" colorClass="bg-blue-600" isProcessing={processingId === `${j.id}-accept`} />
           )}
 
           {isAccepted && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
             <>
-              {(!j.phase || j.phase === 'claimed') && <SwipeButton onConfirm={()=>updatePhase(j, 'arrived_pickup', { arrivedPickupAt: Date.now() })} text="Desliza: Llegué a retirar" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-amber-500" isProcessing={processingId === `${j.id}-arrived_pickup`} />}
-              {j.phase === 'arrived_pickup' && <SwipeButton onConfirm={()=>{
+              {(!j.phase || j.phase === 'claimed') && <SwipeButton key={`btn-pickup-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_pickup', { arrivedPickupAt: Date.now() })} text="Desliza: Llegué a retirar" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-amber-500" isProcessing={processingId === `${j.id}-arrived_pickup`} />}
+              {j.phase === 'arrived_pickup' && <SwipeButton key={`btn-power-${j.id}`} onConfirm={()=>{
                 const waitMins = j.arrivedPickupAt ? Math.floor((Date.now() - j.arrivedPickupAt) / 60000) : 0;
                 updatePhase(j, 'picked_up', { pickedUpAt: Date.now(), waitTimeMinutes: waitMins });
               }} text="Desliza: Vehículo en mi poder" icon={<Car className="w-4 h-4"/>} colorClass="bg-indigo-600" isProcessing={processingId === `${j.id}-picked_up`} />}
-              {j.phase === 'picked_up' && j.tripType !== 'revision' && <SwipeButton onConfirm={()=>updatePhase(j, 'arrived_destination')} text="Desliza: Llegué a Destino" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />}
-              {j.phase === 'picked_up' && j.tripType === 'revision' && <SwipeButton onConfirm={()=>updatePhase(j, 'arrived_prt')} text="Desliza: Llegué a PRT" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_prt`} />}
+              {j.phase === 'picked_up' && j.tripType !== 'revision' && <SwipeButton key={`btn-dest-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_destination')} text="Desliza: Llegué a Destino" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />}
+              {j.phase === 'picked_up' && j.tripType === 'revision' && <SwipeButton key={`btn-prt-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_prt')} text="Desliza: Llegué a PRT" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_prt`} />}
               
               {j.phase === 'arrived_prt' && (
                 <div className="flex gap-2">
