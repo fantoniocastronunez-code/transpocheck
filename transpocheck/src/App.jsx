@@ -885,8 +885,18 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
 
       {configSubTab === 'drivers' && (
         <div className="grid md:grid-cols-2 gap-6">
-          <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry'), ...driverDocs }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); showAlert("Perfil actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); showAlert("Conductor creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
-            <h3 className="font-extrabold text-slate-800 flex items-center gap-2"><User className="text-blue-600"/> {editingDriver ? 'Perfil del Conductor' : 'Nuevo Conductor'}</h3>
+          <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry'), ...driverDocs }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); showAlert("Perfil actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); showAlert("Conductor creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4 relative">
+            <div className="flex justify-between items-start">
+              <h3 className="font-extrabold text-slate-800 flex items-center gap-2"><User className="text-blue-600"/> {editingDriver ? 'Perfil del Conductor' : 'Nuevo Conductor'}</h3>
+              {editingDriver?.createdAt && (
+                <div className="text-right">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Registro en App</span>
+                  <span className="text-xs font-extrabold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md inline-block mt-0.5 border border-blue-100 shadow-sm">
+                    {new Date(editingDriver.createdAt).toLocaleDateString('es-CL')}
+                  </span>
+                </div>
+              )}
+            </div>
             
             <div className="flex flex-col items-center justify-center gap-2 pb-2">
               <label className="relative w-20 h-20 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center cursor-pointer overflow-hidden bg-slate-50 dark:bg-slate-900 group hover:border-blue-500 transition-colors shadow-inner">
@@ -955,8 +965,9 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
 
                     <div className="truncate">
                       <p className="text-sm font-extrabold text-slate-800 truncate">{d.name}</p>
-                      <p className="text-xs font-bold text-slate-400 truncate">{d.email}</p>
-                      {d.licenses && d.licenses.length > 0 && <p className="text-[9px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md mt-1 w-fit">Licencias: {d.licenses.join(', ')}</p>}
+                      <p className="text-xs font-bold text-slate-400 truncate leading-tight">{d.email}</p>
+                      {d.createdAt && <p className="text-[9px] font-bold text-slate-400 mt-0.5 flex items-center gap-1"><Clock className="w-3 h-3"/> Ingreso: {new Date(d.createdAt).toLocaleDateString('es-CL')}</p>}
+                      {d.licenses && d.licenses.length > 0 && <p className="text-[9px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md mt-1.5 w-fit border border-blue-100">Licencias: {d.licenses.join(', ')}</p>}
                     </div>
                   </div>
                   <div className="flex gap-1.5 shrink-0 ml-2">
@@ -2269,6 +2280,7 @@ export default function App() {
   
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
   const [simulatedClient, setSimulatedClient] = useState('');
+  const [simulatedDriverEmail, setSimulatedDriverEmail] = useState(''); // <-- NUEVO: Guarda a quién estamos simulando
   
   // Estados para Modo Oscuro, Conexión Offline y Tuerca
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -2400,8 +2412,12 @@ export default function App() {
     return () => unsub();
   }, []);
 
-  const currentUserEmail = user?.email?.toLowerCase();
-  const isRealAdmin = ['fcastro@logisticats.cl', 'hcastro@logisticats.cl'].includes(currentUserEmail);
+  // 1. Guardamos quién eres tú realmente de forma inalterable
+  const actualUserEmail = user?.email?.toLowerCase();
+  const isRealAdmin = ['fcastro@logisticats.cl', 'hcastro@logisticats.cl'].includes(actualUserEmail);
+
+  // 2. MAGIA: Si eliges ayudar a un conductor, toda la App pensará que eres él. Si no, usa tu correo normal.
+  const currentUserEmail = (activeRole === 'driver' && simulatedDriverEmail) ? simulatedDriverEmail : actualUserEmail;
 
   useEffect(() => {
     if (isRealAdmin) setActiveRole('admin');
@@ -2847,26 +2863,38 @@ export default function App() {
           </div>
           {isRealAdmin && (
             <div className="relative">
-              <button onClick={() => setRoleMenuOpen(!roleMenuOpen)} className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-3 py-2 rounded-xl text-sm font-bold transition-all border border-white/10 backdrop-blur-sm">
+              <button onClick={() => setRoleMenuOpen(!roleMenuOpen)} className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-3 py-2 rounded-xl text-sm font-bold transition-all border border-white/10 backdrop-blur-sm shadow-sm">
                 <Eye className="w-5 h-5 text-white"/>
-                <span className="hidden md:inline">Vista: {activeRole === 'admin' ? 'Admin' : activeRole === 'driver' ? 'Conductor' : 'Cliente'}</span>
+                <span className="hidden md:inline">
+                  {activeRole === 'admin' ? 'Modo: Admin' : activeRole === 'driver' ? (simulatedDriverEmail ? 'Modo: Asistencia' : 'Modo: Conductor') : 'Modo: Cliente'}
+                </span>
               </button>
               {roleMenuOpen && (
-                <div className="absolute right-0 top-12 mt-1 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 text-slate-800">
-                  <div className="p-2 border-b border-slate-100 bg-slate-50"><p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider text-center">Cambiar Perfil</p></div>
-                  <button onClick={() => { setActiveRole('admin'); setMainTab('jobs'); setRoleMenuOpen(false); }} className={`w-full text-left px-4 py-3 text-sm font-bold hover:bg-slate-50 flex items-center gap-2 transition-colors ${activeRole==='admin'?'text-blue-600 bg-blue-50':'text-slate-600'}`}>
-                     <Users className="w-4 h-4"/> Administrador
+                <div className="absolute right-0 top-12 mt-1 w-72 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 text-slate-800">
+                  <div className="p-2 border-b border-slate-100 bg-slate-50"><p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider text-center">Panel de Control General</p></div>
+                  
+                  <button onClick={() => { setActiveRole('admin'); setMainTab('jobs'); setSimulatedDriverEmail(''); setRoleMenuOpen(false); }} className={`w-full text-left px-4 py-3 text-sm font-bold hover:bg-slate-50 flex items-center gap-2 transition-colors ${activeRole==='admin'?'text-blue-600 bg-blue-50':'text-slate-600'}`}>
+                     <Users className="w-4 h-4"/> Volver a Administrador
                   </button>
-                  <button onClick={() => { setActiveRole('driver'); setMainTab('jobs'); setRoleMenuOpen(false); }} className={`w-full text-left px-4 py-3 text-sm font-bold hover:bg-slate-50 flex items-center gap-2 transition-colors ${activeRole==='driver'?'text-blue-600 bg-blue-50':'text-slate-600'}`}>
-                     <Car className="w-4 h-4"/> Conductor
-                  </button>
+
+                  {/* NUEVA SECCIÓN: ASISTIR/SIMULAR CONDUCTOR */}
+                  <div className="p-3 border-t border-slate-100 space-y-2">
+                     <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5"><Car className="w-3.5 h-3.5 text-blue-600"/> Ayudar a un Conductor</p>
+                     <select value={simulatedDriverEmail} onChange={(e) => setSimulatedDriverEmail(e.target.value)} className="w-full border-2 border-slate-200 p-2.5 rounded-xl text-xs font-bold outline-none focus:border-blue-500 bg-white">
+                        <option value="">Seleccionar Conductor...</option>
+                        {drivers.map(d => <option key={d.id} value={d.email}>{d.name}</option>)}
+                     </select>
+                     <button onClick={() => { if(simulatedDriverEmail) { setActiveRole('driver'); setMainTab('jobs'); setRoleMenuOpen(false); } else { showAlert("Selecciona un conductor de la lista para entrar a su cuenta"); } }} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 rounded-xl transition-colors shadow-sm">Entrar a su sesión</button>
+                  </div>
+
+                  {/* SECCIÓN EXISTENTE: SIMULAR CLIENTE */}
                   <div className="p-3 border-t border-slate-100 bg-slate-50 space-y-2">
-                     <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5"><Eye className="w-3.5 h-3.5"/> Simular Portal de Cliente</p>
-                     <select value={simulatedClient} onChange={(e) => setSimulatedClient(e.target.value)} className="w-full border-2 border-slate-200 p-2.5 rounded-xl text-xs font-bold outline-none focus:border-blue-500 bg-white">
+                     <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5"><Eye className="w-3.5 h-3.5 text-slate-800"/> Ver Portal de Cliente</p>
+                     <select value={simulatedClient} onChange={(e) => setSimulatedClient(e.target.value)} className="w-full border-2 border-slate-200 p-2.5 rounded-xl text-xs font-bold outline-none focus:border-slate-800 bg-white">
                         <option value="">Seleccionar Cliente...</option>
                         {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
                      </select>
-                     <button onClick={() => { if(simulatedClient) { setActiveRole('client'); setRoleMenuOpen(false); } else { showAlert("Selecciona un cliente de la lista primero"); } }} className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 rounded-xl transition-colors shadow-sm">Entrar como Cliente</button>
+                     <button onClick={() => { if(simulatedClient) { setActiveRole('client'); setRoleMenuOpen(false); } else { showAlert("Selecciona un cliente de la lista primero"); } }} className="w-full bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2.5 rounded-xl transition-colors shadow-sm">Entrar a la vista Cliente</button>
                   </div>
                 </div>
               )}
