@@ -1292,18 +1292,34 @@ function TrackingView({ clientName, db, onBack, onLogout, darkMode, setDarkMode 
       }
     }
 
-    const frontPhotoStr = job.checklist?.photos?.front;
-    if (frontPhotoStr && typeof frontPhotoStr === 'string' && frontPhotoStr.startsWith('data:image')) {
+    // NUEVO: Filtro seguro para garantizar que el PDF pueda leer cualquier imagen de Firebase Storage
+    const parseImgForPDF = async (url) => {
+      if (!url) return null;
+      if (url.startsWith('data:image')) return url;
       try {
-        const dims = await getImageDims(frontPhotoStr); const ratio = dims.h / dims.w;
-        let imgW = 80; let imgH = imgW * ratio; if (imgH > 130) { imgH = 130; imgW = imgH / ratio; }
-        const rightX = 115; const rightY = startY + 6;
-        docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(rightX - 2, rightY - 8, imgW + 4, imgH + 12, 2, 2, 'S');
-        docPDF.setFillColor(...lightBg); docPDF.rect(rightX - 2, rightY - 8, imgW + 4, 8, 'F');
-        docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor);
-        docPDF.text("VISTA FRONTAL", rightX + (imgW/2), rightY - 3, { align: "center" });
-        docPDF.addImage(frontPhotoStr, 'JPEG', rightX, rightY + 2, imgW, imgH);
-      } catch (err) { console.error(err); }
+        const res = await fetch(url, { mode: 'cors' });
+        const blob = await res.blob();
+        return await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } catch (e) {
+        console.warn("Fallo al descargar imagen para el PDF del cliente:", e);
+        return null;
+      }
+    };
+
+    const rawFrontPhoto = job.checklist?.photos?.front;
+    if (rawFrontPhoto && typeof rawFrontPhoto === 'string') {
+      try {
+        const frontPhotoStr = await parseImgForPDF(rawFrontPhoto);
+        if (frontPhotoStr) {
+          const dims = await getImageDims(frontPhotoStr); const ratio = dims.h / dims.w; let imgW = 80; let imgH = imgW * ratio; if (imgH > 130) { imgH = 130; imgW = imgH / ratio; } const rightX = 115; const rightY = startY + 6; docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(rightX - 2, rightY - 8, imgW + 4, imgH + 12, 2, 2, 'S'); docPDF.setFillColor(...lightBg); docPDF.rect(rightX - 2, rightY - 8, imgW + 4, 8, 'F'); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor); docPDF.text("VISTA FRONTAL", rightX + (imgW/2), rightY - 3, { align: "center" }); 
+          docPDF.addImage(frontPhotoStr, 'JPEG', rightX, rightY + 2, imgW, imgH); 
+        }
+      } catch (err) { console.error("Error al incrustar foto frontal:", err); }
     }
 
     const addFooter = () => {
@@ -1321,10 +1337,13 @@ function TrackingView({ clientName, db, onBack, onLogout, darkMode, setDarkMode 
 
       for (const key in photos) {
         if (key === 'front') continue; 
-        if (photos[key] && typeof photos[key] === 'string' && photos[key].startsWith('data:image')) {
+        if (photos[key] && typeof photos[key] === 'string') {
           if (!addedPage) { docPDF.addPage(); drawHeader("ANEXO FOTOGRAFICO"); addedPage = true; }
           try {
-            const dims = await getImageDims(photos[key]); const ratio = dims.h / dims.w;
+            const parsedPhoto = await parseImgForPDF(photos[key]);
+            if (!parsedPhoto) continue;
+
+            const dims = await getImageDims(parsedPhoto); const ratio = dims.h / dims.w;
             let imgW = 85; let imgH = imgW * ratio; if (imgH > 95) { imgH = 95; imgW = imgH / ratio; }
             const slotCenter = currentCol === 1 ? 55 : 155; const finalX = slotCenter - (imgW / 2);
             if (photoY + imgH > 275) { docPDF.addPage(); photoY = 46; drawHeader("ANEXO FOTOGRAFICO (CONT.)"); }
@@ -1333,9 +1352,9 @@ function TrackingView({ clientName, db, onBack, onLogout, darkMode, setDarkMode 
             docPDF.setFillColor(...lightBg); docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F');
             docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor);
             docPDF.text((labels[key] || key).toUpperCase(), slotCenter, photoY - 3, { align: "center" });
-            docPDF.addImage(photos[key], 'JPEG', finalX, photoY + 2, imgW, imgH);
+            docPDF.addImage(parsedPhoto, 'JPEG', finalX, photoY + 2, imgW, imgH);
             if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 20; }
-          } catch (err) {}
+          } catch (err) { console.error("Error al incrustar foto del anexo:", err); }
         }
       }
     }
