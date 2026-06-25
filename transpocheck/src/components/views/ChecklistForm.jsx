@@ -178,22 +178,40 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
   };
 
   const handlePic = async (e, id) => {
-    const f=e.target.files[0]; if(!f)return;
-    try {
-      const dataUrl = await resizeImage(f, 720, 0.6); 
-      setFormData(prev => {
-        const newData = { ...prev, photos: { ...prev.photos, [id]: dataUrl } };
-        if (prev.pendingPin && prev.pendingPin.id === id) {
-          newData.detailPins = [...(prev.detailPins || []), prev.pendingPin];
-          newData.pendingPin = null;
-        }
-        return newData;
-      });
-    } catch(err){ 
-      console.error("Error al procesar la foto:", err);
-      showAlert("Error al procesar la foto. Intenta con una imagen más pequeña."); 
+  const f = e.target.files[0]; 
+  if (!f) return;
+  try {
+    const dataUrl = await resizeImage(f, 720, 0.6); 
+    
+    // PASO 1: Mostrar preview inmediato con Base64
+    setFormData(prev => {
+      const newData = { ...prev, photos: { ...prev.photos, [id]: dataUrl } };
+      if (prev.pendingPin && prev.pendingPin.id === id) {
+        newData.detailPins = [...(prev.detailPins || []), prev.pendingPin];
+        newData.pendingPin = null;
+      }
+      return newData;
+    });
+
+    // PASO 2: Subir a Storage en segundo plano (solo si no es trabajo rápido)
+    if (job.id !== 'NEW_QUICK_JOB' && uploadImageToStorage) {
+      const storageUrl = await uploadImageToStorage(
+        dataUrl, 
+        `checklists/${job.id}`, 
+        `photo_${id}_${Date.now()}.jpg`
+      );
+      // PASO 3: Reemplazar Base64 con la URL permanente de Storage
+      setFormData(prev => ({
+        ...prev,
+        photos: { ...prev.photos, [id]: storageUrl }
+      }));
     }
-  };
+
+  } catch(err) { 
+    console.error("Error al procesar la foto:", err);
+    showAlert("Error al procesar la foto. Intenta con una imagen más pequeña."); 
+  }
+};
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
