@@ -32,15 +32,12 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// 1. PRIMERO SE INICIALIZA 'APP'
 const app = initializeApp(firebaseConfig);
 
-// 2. DESPUÉS SE USAN LOS SERVICIOS BASADOS EN 'APP'
 const auth = getAuth(app);
 const db = getFirestore(app);
-const storage = getStorage(app); // <-- AHORA SÍ FUNCIONA PORQUE 'APP' YA EXISTE
+const storage = getStorage(app); 
 
-// --- FUNCIÓN MAESTRA SUBIDORA DE IMÁGENES A STORAGE ---
 const uploadImageToStorage = async (base64String, folderPath, fileName) => {
   if (!base64String || !base64String.startsWith('data:image')) return base64String;
   const storageRef = ref(storage, `${folderPath}/${fileName}`);
@@ -48,13 +45,11 @@ const uploadImageToStorage = async (base64String, folderPath, fileName) => {
   return await getDownloadURL(storageRef);
 };
 
-// Inicializamos FCM sólo si el navegador lo soporta (ej: para que no crashee en modo incógnito)
 let messaging = null;
 isSupported().then((supported) => {
   if (supported) messaging = getMessaging(app);
 });
 
-// NUEVO: Activamos la Persistencia Offline Multi-Pestaña.
 enableMultiTabIndexedDbPersistence(db).catch((err) => {
   console.warn("Modo offline limitado (Multi-tab):", err.code);
 });
@@ -153,7 +148,7 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
       
       if ((plate || vin) && !vehicles.find(v => (plate && v.plate === plate) || (vin && v.vin === vin))) await addDoc(collection(db, 'vehicles'), { plate: plate.toUpperCase(), vin: vin.toUpperCase(), vehicleType, brand, model, client: finalClient, createdAt: Date.now() });
       
-      // --- NUEVO: LLAMADA A VERCEL PARA ENVIAR NOTIFICACIÓN PUSH REAL EN SEGUNDO PLANO ---
+   
       const driverTokens = assignedDriversList.map(d => d.fcmToken).filter(token => token);
       if (driverTokens.length > 0) {
         try {
@@ -290,6 +285,7 @@ function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers
       </form>
     </div>
   );
+}
 
 function ConfigView({ allClientsList, customClients, vehicles, drivers, db, showAlert, showConfirm }) {
   const [configSubTab, setConfigSubTab] = useState('clients');
@@ -297,12 +293,8 @@ function ConfigView({ allClientsList, customClients, vehicles, drivers, db, show
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [editingClient, setEditingClient] = useState(null);
   const [fleetFilter, setFleetFilter] = useState('');
-  
-  // --- NUEVO: ESTADO CONSOLIDADO PARA DOCUMENTOS DEL PERFIL ---
   const [driverDocs, setDriverDocs] = useState({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null });
   const [fullScreenDoc, setFullScreenDoc] = useState(null); // Para ver el carnet/licencia en grande
-
-  // Función unificada para cargar cualquier tipo de documento en el panel Admin
   const handleDocUpload = async (e, field, size) => {
     const file = e.target.files[0];
     if (!file) return;
