@@ -29,37 +29,7 @@ import TrackingView from './components/views/TrackingView';
 import NewJobForm from './components/views/NewJobForm';
 import JobsList from './components/views/JobsList';
 import ChecklistForm from './components/views/ChecklistForm';
-
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
-};
-
-const app = initializeApp(firebaseConfig);
-
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app); 
-
-const uploadImageToStorage = async (base64String, folderPath, fileName) => {
-  if (!base64String || !base64String.startsWith('data:image')) return base64String;
-  const storageRef = ref(storage, `${folderPath}/${fileName}`);
-  await uploadString(storageRef, base64String, 'data_url');
-  return await getDownloadURL(storageRef);
-};
-
-let messaging = null;
-isSupported().then((supported) => {
-  if (supported) messaging = getMessaging(app);
-});
-
-enableMultiTabIndexedDbPersistence(db).catch((err) => {
-  console.warn("Modo offline limitado (Multi-tab):", err.code);
-});
+import { auth, db, googleProvider, uploadImageToStorage, useFirebase } from './hooks/useFirebase';
 
 const googleProvider = new GoogleAuthProvider();
 
@@ -78,13 +48,6 @@ function LogisticApp() {
   // Detector del código de Relevo (Traspaso en Ruta)
   const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
-
-  const [user, setUser] = useState(null);
-  const [jobs, setJobs] = useState([]);
-  const [drivers, setDrivers] = useState([]);
-  const [expenses, setExpenses] = useState([]);
-  const [vehicles, setVehicles] = useState([]);
-  const [customClients, setCustomClients] = useState([]);
   
   const [adminTab, setAdminTab] = useState('dashboard');
   const [selectedJob, setSelectedJob] = useState(null);
@@ -92,7 +55,6 @@ function LogisticApp() {
   const [currentView, setCurrentView] = useState('main');
   const [mainTab, setMainTab] = useState('jobs');
   const [activeRole, setActiveRole] = useState('driver');
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
   const [simulatedClient, setSimulatedClient] = useState('');
@@ -101,7 +63,6 @@ function LogisticApp() {
   
   // Estados para Modo Oscuro, Conexión Offline y Tuerca
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [dataLoaded, setDataLoaded] = useState(false); // <-- NUEVO: Candado de base de datos
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [jobLimit, setJobLimit] = useState(300); // <-- AMPLIADO a 300 para que el Ranking y el Excel contabilicen todo el mes sin perder datos
   
@@ -117,19 +78,8 @@ function LogisticApp() {
   const [dialogConfig, setDialogConfig] = useState(null);
 
   // NUEVO: Estados y variables para el Anuncio Global (Pop-Up)
-  const [broadcast, setBroadcast] = useState(null);
   const [showBroadcastAdmin, setShowBroadcastAdmin] = useState(false);
   const [localDismissed, setLocalDismissed] = useState(() => localStorage.getItem('dismissedBroadcast'));
-
-  // Escuchador en tiempo real del Anuncio Global
-  useEffect(() => {
-    if (!db) return;
-    const unsub = onSnapshot(doc(db, 'system_config', 'broadcast'), (docSnap) => {
-      if (docSnap.exists()) setBroadcast(docSnap.data());
-      else setBroadcast(null);
-    });
-    return () => unsub();
-  }, [db]);
 
   // Escuchador de conexión a Internet y Cambios de Tema OS
   useEffect(() => {
@@ -164,79 +114,14 @@ function LogisticApp() {
   const showAlert = (message) => setDialogConfig({ type: 'alert', message });
   const showConfirm = (message, onConfirm) => setDialogConfig({ type: 'confirm', message, onConfirm });
   const closeDialog = () => setDialogConfig(null);
+  // 🚀 INYECTAMOS TODOS LOS DATOS CON UNA SOLA LÍNEA
+  const { 
+    user, actualUserEmail, currentUserEmail, isRealAdmin, 
+    jobs, drivers, expenses, vehicles, customClients, 
+    broadcast, dataLoaded, notificationsEnabled, requestNotificationPermission
+  } = useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAlert);
 
-  const requestNotificationPermission = async () => {
-    if (!("Notification" in window)) { 
-      // Detectamos que estamos dentro del APK (WebView) y no en Chrome web
-      showAlert("Estás usando la versión App (APK). Las notificaciones son gestionadas directamente por el sistema Android."); 
-      setNotificationsEnabled(true); // Ponemos el botón en verde "Activas" para no confundir al chofer
-      return; 
-    }
-    try {
-      const permission = await Notification.requestPermission();
-      if (permission === "granted") {
-        showAlert("⏳ Permiso concedido. Generando token seguro...");
-        
-        if (messaging && user) {
-          const token = await getToken(messaging, { vapidKey: 'BK8z3mxtN3JApx1nw-9cVLzsjp78ufh0qimwqsxJOTnRuMIbQ4HQgYWGkKJ8h9MWPpZYFC3WxbX9Y-jskpIaOHY' });
-          if (token) {
-            const driverSnap = driversRef.current.find(d => d.email === user.email);
-            if (driverSnap) {
-              await updateDoc(doc(db, 'drivers', driverSnap.id), { fcmToken: token });
-              setNotificationsEnabled(true);
-              showAlert("✅ ¡Éxito! Token guardado correctamente en la base de datos.");
-            } else {
-              showAlert(`❌ Error: Tu correo (${user.email}) no coincide con ningún conductor registrado.`);
-            }
-          } else {
-            showAlert("❌ Error: Firebase no pudo generar el token.");
-          }
-        } else {
-          showAlert("❌ Error: El servicio de mensajería (FCM) fue bloqueado por tu navegador o modo incógnito.");
-        }
-      } else {
-        showAlert("⚠️ Rechazaste el permiso de notificaciones.");
-      }
-    } catch (error) {
-      showAlert("❌ Error de sistema: " + error.message);
-    }
-  };
-
-  const triggerNotification = (title, body) => {
-    if (!("Notification" in window)) return;
-    if (Notification.permission === "granted") {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.ready.then(reg => {
-          reg.showNotification(title, { body: body, icon: '/logo.png', vibrate: [200, 100, 200] });
-        }).catch(() => new Notification(title, { body }));
-      } else { new Notification(title, { body }); }
-    }
-  };
-
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if ("Notification" in window && Notification.permission === "granted") {
-        setNotificationsEnabled(true);
-        // Escuchamos los mensajes silenciosos cuando la app está abierta en la pantalla
-        if (messaging) {
-          onMessage(messaging, (payload) => {
-            triggerNotification(payload.notification.title, payload.notification.body);
-          });
-        }
-      }
-    });
-    return () => unsub();
-  }, []);
-
-  // 1. Guardamos quién eres tú realmente de forma inalterable
-  const actualUserEmail = user?.email?.toLowerCase();
-  const isRealAdmin = ['fcastro@logisticats.cl', 'hcastro@logisticats.cl'].includes(actualUserEmail);
-
-  // 2. MAGIA: Si eliges ayudar a un conductor, toda la App pensará que eres él. Si no, usa tu correo normal.
-  const currentUserEmail = (activeRole === 'driver' && simulatedDriverEmail) ? simulatedDriverEmail : actualUserEmail;
-
-  useEffect(() => {
+    useEffect(() => {
     if (isRealAdmin) setActiveRole('admin');
   }, [isRealAdmin]);
 
@@ -285,61 +170,6 @@ function LogisticApp() {
     }
   }, [user, activeRole, myDriver, dataLoaded, isOnline, currentUserEmail, db, customClients, isRealAdmin]);
   // --------------------------------------------------------------
-
-  // --- NUEVO: RECOLECTOR DE BASURA (TRASH COLLECTOR) EN SEGUNDO PLANO ---
-  // Elimina fotos Base64 de la memoria local de aquellos traslados que ya se completaron
-  useEffect(() => {
-    const cleanupDrafts = async () => {
-      const finishedWithDrafts = jobs.filter(j => (j.status === 'completed' || j.status === 'failed') && j.draft);
-      for (const j of finishedWithDrafts) {
-         try { await updateDoc(doc(db, 'transport_jobs', j.id), { draft: deleteField() }); } 
-         catch (e) { /* Ignorar si falla, lo intentará luego */ }
-      }
-    };
-    if (jobs.length > 0) cleanupDrafts();
-  }, [jobs, db]);
-
-  useEffect(() => {
-    if (!user) return;
-    
-    // APLICADA MEJORA: Paginación dinámica con límite variable (jobLimit)
-    const qJobs = query(collection(db, 'transport_jobs'), orderBy('createdAt', 'desc'), limit(jobLimit));
-
-    const unsubJobs = onSnapshot(qJobs, (snapshot) => {
-      if (!isFirstLoad.current) {
-        snapshot.docChanges().forEach((change) => {
-          const d = change.doc.data();
-          // Solo notifica si es realmente nuevo (creado hace menos de 2 minutos)
-          const isReallyNew = (Date.now() - (d.createdAt || 0)) < 120000;
-          if (change.type === 'added' && d.status === 'pending' && d.assignedEmails?.includes(currentUserEmail) && isReallyNew) {
-             triggerNotification('📍 ¡Nuevo Traslado!', `CLIENTE: ${d.client || 'Sin Cliente'}\nMARCA: ${d.brand || '-'}\nMODELO: ${d.model || '-'}\nPATENTE: ${d.plate || d.vin || 'S/N'}\nDESDE: ${d.origin || '-'}\nHASTA: ${d.destination || '-'}`);
-          }
-          if (change.type === 'modified' && d.status === 'accepted' && isRealAdmin && activeRole === 'admin') {
-             const driverName = driversRef.current.find(drv => drv.email === d.acceptedByEmail)?.name || d.acceptedByEmail;
-             triggerNotification('✅ Trabajo Aceptado', `Conductor: ${driverName}\nCLIENTE: ${d.client || 'Sin Cliente'}\nMARCA: ${d.brand || '-'}\nMODELO: ${d.model || '-'}\nPATENTE: ${d.plate || d.vin || 'S/N'}\nDESDE: ${d.origin || '-'}\nHASTA: ${d.destination || '-'}`);
-          }
-        });
-      }
-      // Ya vienen ordenados de Firebase, solo mapeamos
-      setJobs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      isFirstLoad.current = false;
-    }, (error) => {
-      console.error("Error en conexión en tiempo real Firebase:", error);
-    });
-
-    // OPTIMIZACIÓN 2: Traer solo los últimos 300 gastos
-    const qExpenses = query(collection(db, 'expenses'), orderBy('createdAt', 'desc'), limit(300));
-
-    const unsubDrivers = onSnapshot(collection(db, 'drivers'), snap => {
-      setDrivers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      setDataLoaded(true); // <-- Candado maestro abierto: Firebase terminó de cargar
-    });
-    const unsubExpenses = onSnapshot(qExpenses, snap => setExpenses(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    const unsubVehicles = onSnapshot(collection(db, 'vehicles'), snap => setVehicles(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    const unsubClients = onSnapshot(collection(db, 'clients'), snap => setCustomClients(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-
-    return () => { unsubJobs(); unsubDrivers(); unsubExpenses(); unsubVehicles(); unsubClients(); };
-  }, [user, activeRole, currentUserEmail, isRealAdmin, jobLimit]);
 
   // --- MOTOR DE TRACKING GPS EN TIEMPO REAL (OPTIMIZADO BATERÍA/iOS) ---
   // 1. Aislamos el ID del trabajo para no re-renderizar todo cuando el GPS se mueve
