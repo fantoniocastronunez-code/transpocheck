@@ -2029,7 +2029,7 @@ function ClientSignView({ jobId, db }) {
 
 // --- NUEVO: PANTALLA DE RELEVO EN RUTA ---
 function RelayAcceptView({ jobId, db, currentUserEmail, drivers }) {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // <-- CORRECCIÓN: Inicializamos el navegador rápido de React Router
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [statusMsg, setStatusMsg] = useState('');
@@ -2065,7 +2065,7 @@ function RelayAcceptView({ jobId, db, currentUserEmail, drivers }) {
         ]
       });
       
-      Maps('/');
+      navigate('/'); // <-- CORRECCIÓN: Usamos navigate para volver instantáneamente sin errores
     } catch (error) {
       console.error(error);
       setStatusMsg('Error al transferir: ' + error.message);
@@ -4521,18 +4521,60 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
   useEffect(() => {
     if (isQuick || !job.id) return;
     const timer = setTimeout(() => {
-      updateDoc(doc(db, 'transport_jobs', job.id), { draft: { step, formData } }).catch(() => {});
+      // FILTRO DE SEGURIDAD: Limpiamos los Base64 gigantes del borrador para evitar el límite de 1MB de Firestore
+      const draftData = JSON.parse(JSON.stringify(formData));
+      for (const key in draftData.photos) {
+         // Si la foto no es un link de Storage (http), la quitamos del borrador
+         if (draftData.photos[key] && !draftData.photos[key].startsWith('http')) {
+             draftData.photos[key] = false; 
+         }
+      }
+      // La firma es muy ligera (10KB), pero por seguridad extrema también la filtramos
+      if (draftData.signatureData && !draftData.signatureData.startsWith('http')) {
+         draftData.signatureData = null;
+      }
+
+      updateDoc(doc(db, 'transport_jobs', job.id), { draft: { step, formData: draftData } }).catch(() => {});
     }, 2000); // 2 segundos de retraso para no saturar la base de datos
     return () => clearTimeout(timer);
   }, [step, formData, job.id, isQuick, db]);
 
-  const [processingAction, setProcessingAction] = useState(null); // <-- NUEVO: CANDADO DE QR/LINK
+  const [processingAction, setProcessingAction] = useState(null);
+
+  // --- MOTOR MAESTRO DE SINCRONIZACIÓN DE FOTOS A STORAGE ---
+  const syncFilesToStorage = async (currentData) => {
+    const d = { ...currentData };
+    const uploadPromises = [];
+    const uploadedPhotos = {};
+    const jobIdFolder = job.id === 'NEW_QUICK_JOB' ? `quick_${Date.now()}` : job.id;
+
+    for (const [key, val] of Object.entries(d.photos)) {
+      if (val && val.startsWith('data:image')) {
+        const p = uploadImageToStorage(val, `checklists/${jobIdFolder}`, `photo_${key}_${Date.now()}.jpg`)
+          .then(url => uploadedPhotos[key] = url);
+        uploadPromises.push(p);
+      } else {
+        uploadedPhotos[key] = val;
+      }
+    }
+    await Promise.all(uploadPromises);
+    d.photos = uploadedPhotos;
+
+    if (d.signatureData && d.signatureData.startsWith('data:image')) {
+       d.signatureData = await uploadImageToStorage(d.signatureData, `checklists/${jobIdFolder}`, `signature_${Date.now()}.jpg`);
+    }
+    return d;
+  };
 
   // Función para generar y mandar el link de firma
   const handleRemoteSignRequest = async () => {
     if (isQuick) return showAlert("⚠️ Para usar la Firma Remota en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
     setProcessingAction('wapp');
     try {
+      // 1. Sincronizamos fotos pesadas a Storage antes de guardar el documento
+      const syncedData = await syncFilesToStorage(formData);
+      setFormData(syncedData); // Actualizamos el estado para que el botón Finalizar no vuelva a subirlas
+
       const url = `${window.location.href.split('?')[0]}?sign=${job.id}`;
       const textToShare = `¡Hola! Por favor firma el acta de recepción y revisa las fotografías del vehículo aquí:\n${url}`;
 
@@ -4545,14 +4587,17 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
       try { document.execCommand('copy'); } catch (err) {}
       document.body.removeChild(textArea);
 
-      await setDoc(doc(db, 'transport_jobs', job.id), { checklist: formData }, { merge: true });
+      await setDoc(doc(db, 'transport_jobs', job.id), { checklist: syncedData }, { merge: true });
 
       if (navigator.share) {
         try { await navigator.share({ title: 'Firma de Recepción', text: textToShare }); } catch (err) { showAlert("✅ Link copiado al portapapeles automáticamente."); }
       } else {
         showAlert("✅ Link copiado al portapapeles. ¡Pégalo en WhatsApp!");
       }
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error(e); 
+      showAlert("Error al preparar la firma remota. Verifica tu conexión.");
+    }
     finally { setProcessingAction(null); }
   };
 
@@ -4563,7 +4608,9 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
     
     setProcessingAction('qr');
     try {
-      await setDoc(doc(db, 'transport_jobs', job.id), { checklist: formData }, { merge: true });
+      const syncedData = await syncFilesToStorage(formData);
+      setFormData(syncedData);
+      await setDoc(doc(db, 'transport_jobs', job.id), { checklist: syncedData }, { merge: true });
       setQrOpen(true);
     } catch (e) {
       console.error(e);
@@ -4635,27 +4682,8 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
 
     // --- MAGIA STORAGE: SUBIR FOTOS Y FIRMA A LA NUBE PRIMERO ---
     try {
-      const uploadPromises = [];
-      const uploadedPhotos = {};
-      const jobIdFolder = job.id === 'NEW_QUICK_JOB' ? `quick_${Date.now()}` : job.id;
-
-      // 1. Subir todas las fotos en paralelo (ultra rápido)
-      for (const [key, val] of Object.entries(d.photos)) {
-        if (val && val.startsWith('data:image')) {
-          const p = uploadImageToStorage(val, `checklists/${jobIdFolder}`, `photo_${key}_${Date.now()}.jpg`)
-            .then(url => uploadedPhotos[key] = url);
-          uploadPromises.push(p);
-        } else {
-          uploadedPhotos[key] = val; // Mantiene las que ya eran URL o están vacías
-        }
-      }
-      await Promise.all(uploadPromises);
-      d.photos = uploadedPhotos;
-
-      // 2. Subir firma digital si existe
-      if (d.signatureData && d.signatureData.startsWith('data:image')) {
-         d.signatureData = await uploadImageToStorage(d.signatureData, `checklists/${jobIdFolder}`, `signature_${Date.now()}.jpg`);
-      }
+      // Utilizamos el motor central de sincronización
+      d = await syncFilesToStorage(d);
     } catch (uploadError) {
       console.error("Error subiendo imágenes:", uploadError);
       showAlert("Hubo un error subiendo las imágenes a la nube. Verifica tu internet.");
