@@ -3939,11 +3939,12 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       // 1. Armamos el texto formateado
       const textToShare = `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`;
       
-      // 2. Generamos y DESCARGAMOS el PDF automáticamente a tu celular
+      // 2. Generamos el PDF EN MEMORIA (sin forzar la descarga en el navegador)
       const docPDF = await buildPDFDoc(job); 
-      docPDF.save(fileName);
+      const pdfBlob = docPDF.output('blob'); 
+      const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
-      // 3. Copiamos el texto al portapapeles
+      // 3. Copiamos el texto al portapapeles de forma invisible
       const textArea = document.createElement("textarea");
       textArea.value = textToShare;
       textArea.style.position = "fixed";
@@ -3952,25 +3953,25 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       textArea.select();
       try { 
         document.execCommand('copy'); 
-        showAlert("✅ PDF descargado en tu teléfono.\n\nAbriendo WhatsApp... Mantén presionado para PEGAR el texto y luego adjunta el PDF."); 
+        showAlert("✅ PDF listo.\n\nEl resumen se copió automáticamente. Cuando elijas WhatsApp, mantén presionado y pega el texto."); 
       } catch (err) {
-        showAlert("✅ PDF descargado en tu teléfono.\n\nAbriendo WhatsApp...");
+        console.warn("Auto-copy falló");
       }
       document.body.removeChild(textArea);
 
-      // 4. TRUCO BLINDADO: Abrimos WhatsApp forzadamente saltando restricciones del APK
-      setTimeout(() => {
-          const waLink = document.createElement('a');
-          waLink.href = `https://wa.me/?text=${encodeURIComponent("(Mantén presionado aquí, selecciona PEGAR y luego adjunta el PDF)")}`;
-          waLink.target = '_blank';
-          document.body.appendChild(waLink);
-          waLink.click();
-          document.body.removeChild(waLink);
-      }, 1500);
-
+      // 4. VOLVEMOS AL COMPARTIR NATIVO (Android Share Sheet)
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { 
+         await navigator.share({ 
+           title: fileName, 
+           files: [file] 
+         }); 
+      } else { 
+         showAlert("Tu dispositivo no soporta compartir el archivo directamente. Descárgalo primero."); 
+         handleCopyWhatsApp(job); 
+      }
     } catch (e) { 
        console.error(e); 
-       showAlert("Error al generar el PDF para WhatsApp.");
+       // Ignoramos el error si el usuario simplemente canceló la ventana de compartir de Android
     } finally { 
        setProcessingId(null); 
     }
