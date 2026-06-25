@@ -3580,7 +3580,6 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     return `${j.origin} ➔ ${j.destination}`;
   };
 
-}
 const buildPDFDoc = async (job) => {
     const jsPDFModule = await import('jspdf');
     const JsPDFClass = jsPDFModule.default?.jsPDF || jsPDFModule.default || jsPDFModule.jsPDF;
