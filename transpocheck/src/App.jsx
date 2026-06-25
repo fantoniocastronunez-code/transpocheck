@@ -18,6 +18,10 @@ import LicensePlateBadge from './components/ui/LicensePlateBadge';
 import VehicleShapeIcon from './components/ui/VehicleShapeIcon';
 import SwipeButton from './components/ui/SwipeButton';
 import WaitTimerBadge from './components/ui/WaitTimerBadge';
+import { DEFAULT_CLIENTES, LICENCIAS, formatMoney, formatDateDisplay, resizeImage } from './utils/helpers';
+import LeaderboardView from './components/views/LeaderboardView';
+import RelayAcceptView from './components/views/RelayAcceptView';
+import DriverOnboarding from './components/views/DriverOnboarding';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -56,45 +60,6 @@ enableMultiTabIndexedDbPersistence(db).catch((err) => {
 });
 
 const googleProvider = new GoogleAuthProvider();
-
-const DEFAULT_CLIENTES = ["Grandleasing Las Torres", "Grandleasing Umaña", "Kovacs", "Salfa", "Enex", "CIPP", "Simumak", "Mutual Capacitación"];
-// ... DE AQUÍ HACIA ABAJO TU CÓDIGO SIGUE IGUAL (LICENCIAS, formatMoney, etc.)
-const LICENCIAS = ["A1", "A2", "A3", "A4", "A5", "A1 antigua", "A2 antigua", "B", "C"];
-
-const formatMoney = (amount) => `$${Number(amount).toLocaleString('es-CL')}`;
-const formatDateDisplay = (dateString) => {
-  if (!dateString) return '';
-  const [y, m, d] = dateString.split('-');
-  return `${d}/${m}/${y}`;
-};
-
-// Se reduce la resolución máxima y la calidad para evitar el bloqueo por peso en Firestore
-const resizeImage = (file, maxWidth = 500, quality = 0.4) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target.result;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-      img.onerror = (err) => reject(err);
-    };
-    reader.onerror = (err) => reject(err);
-  });
-};
 
 
 function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers, db, showAlert, onSuccess }) {
@@ -1471,177 +1436,6 @@ function ClientSignView({ jobId, db }) {
   );
 }
 
-// --- NUEVO: PANTALLA DE RELEVO EN RUTA ---
-function RelayAcceptView({ jobId, db, currentUserEmail, drivers }) {
-  const navigate = useNavigate(); // <-- CORRECCIÓN: Inicializamos el navegador rápido de React Router
-  const [job, setJob] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [statusMsg, setStatusMsg] = useState('');
-
-  useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'transport_jobs', jobId), (docSnap) => {
-      if (docSnap.exists()) setJob({ id: docSnap.id, ...docSnap.data() });
-      setLoading(false);
-    });
-    return () => unsub();
-  }, [jobId, db]);
-
-  const handleAcceptRelay = async () => {
-    setStatusMsg('Transfiriendo...');
-    try {
-      const myDriver = drivers.find(d => d.email === currentUserEmail);
-      const updatedEmails = job.assignedEmails || [];
-      if (!updatedEmails.includes(currentUserEmail)) updatedEmails.push(currentUserEmail);
-
-      const updatedDrivers = job.assignedDrivers || [];
-      if (!updatedDrivers.some(d => d.email === currentUserEmail) && myDriver) {
-         updatedDrivers.push({ id: myDriver.id, name: myDriver.name, email: myDriver.email });
-      }
-
-      // El sistema cambia al dueño actual y guarda un registro de quién se lo entregó a quién
-      await updateDoc(doc(db, 'transport_jobs', jobId), {
-        acceptedByEmail: currentUserEmail,
-        assignedEmails: updatedEmails,
-        assignedDrivers: updatedDrivers,
-        relayHistory: [
-          ...(job.relayHistory || []),
-          { from: job.acceptedByEmail, to: currentUserEmail, date: Date.now() }
-        ]
-      });
-      
-      navigate('/'); // <-- CORRECCIÓN: Usamos navigate para volver instantáneamente sin errores
-    } catch (error) {
-      console.error(error);
-      setStatusMsg('Error al transferir: ' + error.message);
-    }
-  };
-
-  if (loading) return <div className="min-h-screen bg-slate-50 flex items-center justify-center font-bold text-slate-400"><Clock className="w-5 h-5 mr-2 animate-spin"/> Buscando traslado...</div>;
-  if (!job) return <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center font-bold text-red-500"><XCircle className="w-12 h-12 mb-4 text-red-400"/>Traslado no encontrado.</div>;
-  if (job.status === 'completed' || job.status === 'failed') return <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center font-bold text-slate-600"><CheckCircle className="w-12 h-12 mb-4 text-green-500"/>Este trabajo ya finalizó.</div>;
-
-  if (job.acceptedByEmail === currentUserEmail) {
-      return (
-        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
-          <Car className="w-12 h-12 mb-4 text-blue-500"/>
-          <h2 className="text-xl font-black text-slate-800">Ya tienes este vehículo</h2>
-          <button onClick={() => navigate('/')} className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-xl font-bold">Ir a mis trabajos</button>
-        </div>
-      );
-  }
-
-  return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 text-center">
-      <div className="bg-white p-8 rounded-3xl shadow-xl max-w-sm w-full border-t-8 border-purple-500 animate-in zoom-in-95">
-        <Users className="w-16 h-16 text-purple-500 mx-auto mb-4"/>
-        <h2 className="text-2xl font-black text-slate-800 mb-1">Relevo de Vehículo</h2>
-        <p className="text-sm font-bold text-slate-500 mb-6">Estás a punto de tomar el control de este traslado.</p>
-        
-        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-left mb-6">
-          <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Vehículo a recibir</p>
-          <div className="flex justify-between items-center mb-4">
-            <p className="font-extrabold text-slate-800 text-lg">{job.brand} {job.model}</p>
-            <LicensePlateBadge text={job.plate || job.vin} />
-          </div>
-          
-          <p className="text-[10px] font-black text-slate-400 uppercase">Te lo entrega</p>
-          <p className="font-extrabold text-red-600 mb-2">{job.acceptedByEmail}</p>
-
-          <p className="text-[10px] font-black text-slate-400 uppercase">Ruta restante</p>
-          <p className="font-bold text-slate-700 text-xs">{job.origin} ➔ {job.destination}</p>
-        </div>
-
-        <button onClick={handleAcceptRelay} disabled={!!statusMsg} className="w-full bg-purple-600 hover:bg-purple-700 text-white font-black py-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
-          {statusMsg || 'Aceptar y Tomar Control'}
-        </button>
-        <button onClick={() => navigate('/')} className="w-full mt-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl transition-colors">
-          Cancelar
-        </button>
-      </div>
-    </div>
-  );
-}
-// --- NUEVO COMPONENTE: ONBOARDING DE CONDUCTORES ---
-function DriverOnboarding({ driver, db }) {
-  const [docs, setDocs] = useState({ 
-    photo: driver.photo || null, 
-    idFront: driver.idFront || null, 
-    idBack: driver.idBack || null, 
-    licenseFront: driver.licenseFront || null, 
-    licenseBack: driver.licenseBack || null 
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleUpload = async (e, field) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    try {
-      // Comprimimos a 800px para que los textos de los carnets sigan siendo legibles
-      const compressed = await resizeImage(file, 800, 0.5);
-      setDocs(prev => ({ ...prev, [field]: compressed }));
-    } catch (error) {
-      alert("Error al procesar la imagen. Intente de nuevo.");
-    }
-  };
-
-  const isComplete = docs.photo && docs.idFront && docs.idBack && docs.licenseFront && docs.licenseBack;
-
-  const submitDocs = async () => {
-    if (!isComplete) return;
-    setIsSubmitting(true);
-    try {
-      await updateDoc(doc(db, 'drivers', driver.id), docs);
-      // Firebase onSnapshot actualizará el estado global y desbloqueará la app automáticamente
-    } catch (error) {
-      alert("Error guardando los documentos.");
-      setIsSubmitting(false);
-    }
-  };
-
-  const uploadBtn = (field, label) => (
-    <label className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer shadow-sm ${docs[field] ? 'bg-green-50 border-green-400' : 'bg-white border-slate-200 hover:border-blue-400'}`}>
-      <div className="flex items-center gap-3">
-         <div className={`p-2.5 rounded-full shadow-inner ${docs[field] ? 'bg-green-500 text-white' : 'bg-blue-100 text-blue-600'}`}>
-            {docs[field] ? <CheckCircle className="w-5 h-5"/> : <Camera className="w-5 h-5"/>}
-         </div>
-         <span className={`font-bold text-sm ${docs[field] ? 'text-green-700' : 'text-slate-700'}`}>{label}</span>
-      </div>
-      <input type="file" accept="image/*" className="hidden" onChange={(e) => handleUpload(e, field)} />
-      {docs[field] ? (
-         <img src={docs[field]} alt="OK" className="w-10 h-10 object-cover rounded-lg border border-green-200 shadow-sm" />
-      ) : (
-         <span className="text-[10px] font-black uppercase text-blue-500 tracking-widest bg-blue-50 px-2 py-1 rounded-md">Subir</span>
-      )}
-    </label>
-  );
-
-  return (
-    <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-2xl border border-slate-100 space-y-6 max-w-md mx-auto animate-in zoom-in-95 duration-500">
-      <div className="text-center space-y-2">
-        <div className="bg-blue-600 w-16 h-16 rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-blue-200 mb-4"><User className="w-8 h-8 text-white"/></div>
-        <h2 className="text-2xl font-black text-slate-800">Completa tu Perfil</h2>
-        <p className="text-sm font-bold text-slate-500">Por normativa de la empresa, debes subir las fotografías de tu documentación para acceder a la ruta.</p>
-      </div>
-
-      <div className="space-y-3">
-         {uploadBtn('photo', 'Foto de Perfil (Selfie)')}
-         {uploadBtn('idFront', 'Carnet de Identidad (Frente)')}
-         {uploadBtn('idBack', 'Carnet de Identidad (Reverso)')}
-         {uploadBtn('licenseFront', 'Licencia de Conducir (Frente)')}
-         {uploadBtn('licenseBack', 'Licencia de Conducir (Reverso)')}
-      </div>
-
-      <div className="pt-4 border-t border-slate-100">
-         <button onClick={submitDocs} disabled={!isComplete || isSubmitting} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg transition-all disabled:opacity-50 disabled:shadow-none flex justify-center items-center gap-2 text-lg">
-            {isSubmitting ? 'Guardando Perfil...' : 'Comenzar a Trabajar ➔'}
-         </button>
-         {!isComplete && <p className="text-[10px] font-bold text-slate-400 text-center mt-3 uppercase tracking-widest">Debes subir las 5 fotos para continuar</p>}
-      </div>
-    </div>
-  );
-}
-// ------------------------------------------------
-
 function LogisticApp() {
   // Inicializamos el motor de navegación ultra-rápido de React Router
   const [searchParams] = useSearchParams();
@@ -2538,60 +2332,6 @@ function LogisticApp() {
       )}
 
     </div>
-  );
-}
-
-function LeaderboardView({ jobs, drivers, isAdminView }) {
-  const [selectedDriverJobs, setSelectedDriverJobs] = useState(null);
-  const now = new Date(); const firstOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-  
-  // REGLA ACTUALIZADA: Cuenta ABSOLUTAMENTE TODOS los completados y fallidos, y usa createdAt si falta completedAt
-  const monthlyCompleted = jobs.filter(j => {
-    const jobDate = j.completedAt || j.createdAt || 0;
-    if (jobDate < firstOfCurrentMonth) return false;
-    return j.status === 'completed' || j.status === 'failed';
-  });
-  
-  const ranking = drivers.map(d => { 
-     // Cuenta al conductor ya sea por su email directo o si fue asignado a la fuerza por el admin
-     const dj = monthlyCompleted.filter(j => j.acceptedByEmail === d.email || (!j.acceptedByEmail && j.assignedEmails?.includes(d.email))); 
-     return { ...d, score: dj.length, jobs: dj }; 
-  }).sort((a, b) => b.score - a.score);
-
-  return (
-    <main className="max-w-5xl mx-auto p-4 pt-20 sm:pt-24 pb-24">
-      <h2 className="text-2xl font-extrabold mb-6 flex items-center gap-2"><Trophy className="text-yellow-500"/> Ranking Mensual</h2>
-      <div className="bg-white rounded-3xl border p-2 sm:p-4 shadow-sm">
-        {ranking.length === 0 ? <p className="text-center py-6 text-sm font-bold text-slate-400">Sin datos de traslados este mes.</p> : ranking.map((dr, i) => (
-          <div key={dr.id} className="flex justify-between items-center p-4 border-b last:border-0 hover:bg-slate-50 rounded-xl text-sm transition-colors">
-             <div className="flex items-center gap-4"><span className={`text-xl font-black ${i===0?'text-yellow-500':i===1?'text-slate-400':i===2?'text-amber-700':'text-slate-300'}`}>#{i+1}</span><div><p className="font-extrabold text-slate-800">{dr.name}</p><p className="text-xs text-slate-500 font-bold">{dr.score} Traslados</p></div></div>
-             {isAdminView && <button onClick={() => setSelectedDriverJobs(dr)} className="flex gap-1 text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-xl font-bold text-xs items-center transition-colors"><Eye className="w-3.5 h-3.5"/> Historial</button>}
-          </div>
-        ))}
-      </div>
-      {selectedDriverJobs && (
-        <div className="fixed inset-0 bg-slate-900/50 flex justify-center items-center z-[100] p-4">
-          <div className="bg-white rounded-3xl w-full max-w-lg max-h-[85vh] flex flex-col p-4">
-            <div className="p-2 border-b flex justify-between items-center"><h2 className="text-lg font-extrabold text-slate-800">{selectedDriverJobs.name}</h2><button onClick={()=>setSelectedDriverJobs(null)} className="bg-slate-100 p-2 rounded-full hover:bg-slate-200"><X className="w-4 h-4"/></button></div>
-            <div className="p-2 overflow-y-auto space-y-3 flex-1 mt-2">
-              {selectedDriverJobs.jobs.length === 0 ? <p className="text-center text-sm font-bold text-slate-400">Sin traslados.</p> : selectedDriverJobs.jobs.map(j => (
-                <div key={j.id} className="bg-slate-50 p-3 rounded-xl border text-xs relative overflow-hidden">
-                  <div className={`absolute left-0 top-0 bottom-0 w-1 ${j.status==='failed'?'bg-red-500':'bg-green-500'}`}></div>
-                  <div className="flex justify-between mb-1 pl-2">
-                     <p className="font-extrabold text-slate-800 text-sm flex items-center gap-2">
-                       {j.brand} {j.model} 
-                       {j.status === 'failed' && <span className="bg-red-100 text-red-700 text-[9px] px-1.5 py-0.5 rounded uppercase">Rechazada</span>}
-                     </p>
-                     <span className="border px-1.5 rounded bg-white font-bold text-slate-600 uppercase">{j.plate||j.vin}</span>
-                  </div>
-                  <p className="font-semibold text-slate-500 pl-2"><MapPin className="inline w-3 h-3 mr-0.5"/> {j.origin} ➔ <Navigation className="inline w-3 h-3 mr-0.5"/> {j.destination}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-    </main>
   );
 }
 
