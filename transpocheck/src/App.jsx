@@ -4,6 +4,7 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, onAut
 import { getFirestore, enableMultiTabIndexedDbPersistence, collection, addDoc, onSnapshot, updateDoc, setDoc, doc, deleteDoc, getDocs, query, where, orderBy, limit, deleteField } from 'firebase/firestore';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage'; // <-- IMPORTADO CORRECTAMENTE
+import { BrowserRouter as Router, useSearchParams, useNavigate } from 'react-router-dom';
 
 // Eliminamos la importación global de jsPDF para que la app cargue más rápido (Lazy Loading)
 import { 
@@ -2028,6 +2029,7 @@ function ClientSignView({ jobId, db }) {
 
 // --- NUEVO: PANTALLA DE RELEVO EN RUTA ---
 function RelayAcceptView({ jobId, db, currentUserEmail, drivers }) {
+  const navigate = useNavigate();
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [statusMsg, setStatusMsg] = useState('');
@@ -2063,7 +2065,7 @@ function RelayAcceptView({ jobId, db, currentUserEmail, drivers }) {
         ]
       });
       
-      window.location.href = '/'; // Redirigir al inicio para ver su nuevo trabajo
+      Maps('/');
     } catch (error) {
       console.error(error);
       setStatusMsg('Error al transferir: ' + error.message);
@@ -2079,7 +2081,7 @@ function RelayAcceptView({ jobId, db, currentUserEmail, drivers }) {
         <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
           <Car className="w-12 h-12 mb-4 text-blue-500"/>
           <h2 className="text-xl font-black text-slate-800">Ya tienes este vehículo</h2>
-          <button onClick={() => window.location.href='/'} className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-xl font-bold">Ir a mis trabajos</button>
+          <button onClick={() => navigate('/')} className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-xl font-bold">Ir a mis trabajos</button>
         </div>
       );
   }
@@ -2108,7 +2110,7 @@ function RelayAcceptView({ jobId, db, currentUserEmail, drivers }) {
         <button onClick={handleAcceptRelay} disabled={!!statusMsg} className="w-full bg-purple-600 hover:bg-purple-700 text-white font-black py-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
           {statusMsg || 'Aceptar y Tomar Control'}
         </button>
-        <button onClick={() => window.location.href='/'} className="w-full mt-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl transition-colors">
+        <button onClick={() => navigate('/')} className="w-full mt-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl transition-colors">
           Cancelar
         </button>
       </div>
@@ -2289,17 +2291,20 @@ function DriverOnboarding({ driver, db }) {
 }
 // ------------------------------------------------
 
-export default function App() {
-  const params = new URLSearchParams(window.location.search);
-  const clientTrack = params.get('client');
-  const liveTrackId = params.get('track'); 
+function LogisticApp() {
+  // Inicializamos el motor de navegación ultra-rápido de React Router
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  const clientTrack = searchParams.get('client');
+  const liveTrackId = searchParams.get('track'); 
   
-  // NUEVO: Limpiamos la URL por si el escáner QR le agrega barras invertidas ("/") o espacios al final
-  const rawSign = params.get('sign');
+  // Limpiamos la URL por si el escáner QR le agrega barras invertidas ("/") o espacios al final
+  const rawSign = searchParams.get('sign');
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
 
-  // NUEVO: Detector del código de Relevo (Traspaso en Ruta)
-  const rawRelay = params.get('relay');
+  // Detector del código de Relevo (Traspaso en Ruta)
+  const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
 
   const [user, setUser] = useState(null);
@@ -2915,7 +2920,7 @@ export default function App() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.5 21</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.5 22</p>
                 </div>
               </div>
             )}
@@ -5498,5 +5503,14 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
       )}
 
     </div>
+  );
+}
+// --- ENVOLTORIO MAESTRO DE NAVEGACIÓN ---
+// Esto convierte tu aplicación entera en una Single Page Application (SPA) ultra veloz
+export default function App() {
+  return (
+    <Router>
+      <LogisticApp />
+    </Router>
   );
 }
