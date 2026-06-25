@@ -1,17 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, onAuthStateChanged, signOut } from 'firebase/auth';
-import { getFirestore, enableMultiTabIndexedDbPersistence, collection, addDoc, onSnapshot, updateDoc, setDoc, doc, deleteDoc, getDocs, query, where, orderBy, limit, deleteField } from 'firebase/firestore';
-import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
-import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage'; // <-- IMPORTADO CORRECTAMENTE
 import { BrowserRouter as Router, useSearchParams, useNavigate } from 'react-router-dom';
+import { signOut, signInWithPopup } from 'firebase/auth';
+import { doc, updateDoc, setDoc, deleteField } from 'firebase/firestore';
 
-// Eliminamos la importación global de jsPDF para que la app cargue más rápido (Lazy Loading)
 import { 
-  Car, MapPin, Camera, CheckCircle, FileText, Download, 
-  Plus, User, Navigation, AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, Zap, Edit2, Bell, Share2, X, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, XCircle, Trophy, Eye, Clock, Save, Search,
-  CloudOff, Wifi, QrCode, Sun, Moon, Settings, ChevronUp, ChevronDown, ChevronRight, Fuel, Megaphone, Star
+  Car, MapPin, Camera, CheckCircle, FileText, Download, Plus, User, Navigation, 
+  AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, 
+  Zap, Edit2, Bell, Share2, X, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, 
+  XCircle, Trophy, Eye, Clock, Save, Search, CloudOff, Wifi, QrCode, Sun, Moon, 
+  Settings, ChevronUp, ChevronDown, ChevronRight, Fuel, Megaphone, Star
 } from 'lucide-react';
+
 import SignaturePad from './components/ui/SignaturePad';
 import CustomClientSelector from './components/ui/CustomClientSelector';
 import LicensePlateBadge from './components/ui/LicensePlateBadge';
@@ -29,59 +28,56 @@ import TrackingView from './components/views/TrackingView';
 import NewJobForm from './components/views/NewJobForm';
 import JobsList from './components/views/JobsList';
 import ChecklistForm from './components/views/ChecklistForm';
+
+// EL NUEVO MOTOR (Hook)
 import { auth, db, googleProvider, uploadImageToStorage, useFirebase } from './hooks/useFirebase';
 
-const googleProvider = new GoogleAuthProvider();
-
 function LogisticApp() {
-  // Inicializamos el motor de navegación ultra-rápido de React Router
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
   const clientTrack = searchParams.get('client');
   const liveTrackId = searchParams.get('track'); 
-  
-  // Limpiamos la URL por si el escáner QR le agrega barras invertidas ("/") o espacios al final
   const rawSign = searchParams.get('sign');
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
-
-  // Detector del código de Relevo (Traspaso en Ruta)
   const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
-  
+
   const [adminTab, setAdminTab] = useState('dashboard');
   const [selectedJob, setSelectedJob] = useState(null);
   const [editingJob, setEditingJob] = useState(null);
   const [currentView, setCurrentView] = useState('main');
   const [mainTab, setMainTab] = useState('jobs');
   const [activeRole, setActiveRole] = useState('driver');
-  
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
   const [simulatedClient, setSimulatedClient] = useState('');
-  const [simulatedDriverEmail, setSimulatedDriverEmail] = useState(''); // <-- NUEVO: Guarda a quién estamos simulando
-  const [favDriverEmail, setFavDriverEmail] = useState(() => localStorage.getItem('favDriverEmail') || ''); // <-- NUEVO: Guarda al conductor favorito (Felipe)
+  const [simulatedDriverEmail, setSimulatedDriverEmail] = useState('');
+  const [favDriverEmail, setFavDriverEmail] = useState(() => localStorage.getItem('favDriverEmail') || '');
   
-  // Estados para Modo Oscuro, Conexión Offline y Tuerca
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [jobLimit, setJobLimit] = useState(300); // <-- AMPLIADO a 300 para que el Ranking y el Excel contabilicen todo el mes sin perder datos
+  const [jobLimit, setJobLimit] = useState(300);
+  const [showBroadcastAdmin, setShowBroadcastAdmin] = useState(false);
+  const [localDismissed, setLocalDismissed] = useState(() => localStorage.getItem('dismissedBroadcast'));
+  const [dialogConfig, setDialogConfig] = useState(null);
   
-  // NUEVO: Lectura Inteligente del Tema del Sistema Operativo
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
     if (saved !== null) return saved === 'true';
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
-  
-  const isFirstLoad = useRef(true);
-  const driversRef = useRef([]);
-  const [dialogConfig, setDialogConfig] = useState(null);
 
-  // NUEVO: Estados y variables para el Anuncio Global (Pop-Up)
-  const [showBroadcastAdmin, setShowBroadcastAdmin] = useState(false);
-  const [localDismissed, setLocalDismissed] = useState(() => localStorage.getItem('dismissedBroadcast'));
+  const showAlert = (message) => setDialogConfig({ type: 'alert', message });
+  const showConfirm = (message, onConfirm) => setDialogConfig({ type: 'confirm', message, onConfirm });
+  const closeDialog = () => setDialogConfig(null);
 
-  // Escuchador de conexión a Internet y Cambios de Tema OS
+  // 🚀 LA MAGIA: EL HOOK QUE HACE TODO EL TRABAJO SUCIO
+  const { 
+    user, actualUserEmail, currentUserEmail, isRealAdmin, 
+    jobs, drivers, expenses, vehicles, customClients, 
+    broadcast, dataLoaded, notificationsEnabled, requestNotificationPermission
+  } = useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAlert);
+
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -101,7 +97,6 @@ function LogisticApp() {
     };
   }, []);
 
-  // Aplicador del Modo Oscuro Global
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -111,75 +106,13 @@ function LogisticApp() {
       localStorage.setItem('darkMode', 'false');
     }
   }, [darkMode]);
-  const showAlert = (message) => setDialogConfig({ type: 'alert', message });
-  const showConfirm = (message, onConfirm) => setDialogConfig({ type: 'confirm', message, onConfirm });
-  const closeDialog = () => setDialogConfig(null);
-  // 🚀 INYECTAMOS TODOS LOS DATOS CON UNA SOLA LÍNEA
-  const { 
-    user, actualUserEmail, currentUserEmail, isRealAdmin, 
-    jobs, drivers, expenses, vehicles, customClients, 
-    broadcast, dataLoaded, notificationsEnabled, requestNotificationPermission
-  } = useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAlert);
 
-    useEffect(() => {
-    if (isRealAdmin) setActiveRole('admin');
-  }, [isRealAdmin]);
-
-  useEffect(() => { driversRef.current = drivers; }, [drivers]);
-
-  // --- HOOKS DE AUTO-REGISTRO Y DETECCIÓN DE CLIENTES MULTI-CUENTA ---
-  // Prioridad: Si por error el sistema duplicó cuentas, rescata automáticamente la que ya tiene sus fotos subidas
-  const myDriver = user ? (drivers.find(d => d.email === currentUserEmail && d.photo) || drivers.find(d => d.email === currentUserEmail)) : null;
-  
-  // Detección inteligente: separa los correos por coma y revisa si el usuario está en la lista de permitidos de algún cliente
-  const loggedClientRecord = user ? customClients.find(c => c.email && c.email.toLowerCase().split(',').map(e => e.trim()).includes(currentUserEmail)) : null;
-  const registeringRef = useRef(false);
-
-  useEffect(() => {
-    // CANDADO MAESTRO: Solo evalúa si falta un conductor cuando dataLoaded sea TRUE
-    if (user && activeRole === 'driver' && dataLoaded && !myDriver && isOnline && !registeringRef.current) {
-        const isClientAccount = customClients.some(c => c.email && c.email.toLowerCase().split(',').map(e => e.trim()).includes(currentUserEmail));
-        
-        // Solo auto-registra al conductor si NO ES ADMINISTRADOR y NO ES UNA CUENTA DE CLIENTE
-        if (!isClientAccount && !isRealAdmin) {
-          registeringRef.current = true;
-          // Ejecutamos una función asíncrona directamente para hacer la verificación de seguridad
-          (async () => {
-            try {
-              // VERIFICACIÓN BLINDADA: Consultamos directo al servidor de Firebase antes de crear nada
-              const q = query(collection(db, 'drivers'), where('email', '==', currentUserEmail));
-              const snap = await getDocs(q);
-              
-              if (snap.empty) {
-                await addDoc(collection(db, 'drivers'), {
-                  name: user.displayName || 'Conductor Nuevo',
-                  email: currentUserEmail,
-                  balance: 0,
-                  licenses: [],
-                  licenseExpiry: '',
-                  createdAt: Date.now()
-                });
-              }
-            } catch(e) {
-              console.error("Error al auto-registrar:", e);
-            } finally {
-              registeringRef.current = false;
-            }
-          })();
-        }
-    }
-  }, [user, activeRole, myDriver, dataLoaded, isOnline, currentUserEmail, db, customClients, isRealAdmin]);
-  // --------------------------------------------------------------
-
-  // --- MOTOR DE TRACKING GPS EN TIEMPO REAL (OPTIMIZADO BATERÍA/iOS) ---
-  // 1. Aislamos el ID del trabajo para no re-renderizar todo cuando el GPS se mueve
   const activeTrackingJobId = React.useMemo(() => {
     if (!user || activeRole !== 'driver') return null;
     const activeJob = jobs.find(j => j.acceptedByEmail === currentUserEmail && j.status === 'accepted' && j.phase === 'picked_up');
     return activeJob ? activeJob.id : null;
   }, [jobs, user, activeRole, currentUserEmail]);
 
-  // 2. Encendemos el GPS SOLAMENTE cuando el ID cambia (inicia o termina el viaje)
   useEffect(() => {
     if (!activeTrackingJobId || !("geolocation" in navigator)) return;
 
@@ -194,15 +127,21 @@ function LogisticApp() {
       { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
     );
 
-    return () => {
-      navigator.geolocation.clearWatch(watchId);
-    };
+    return () => navigator.geolocation.clearWatch(watchId);
   }, [activeTrackingJobId, db]);
-  // ---------------------------------------------------
 
-  // Ahora TODOS los clientes provienen exclusivamente de tu base de datos (100% editables)
   const allClientsList = customClients.map(c => c.name).sort((a, b) => a.localeCompare(b));
-
+  
+  const myDriver = user ? (drivers.find(d => d.email === currentUserEmail && d.photo) || drivers.find(d => d.email === currentUserEmail)) : null;
+  const loggedClientRecord = user ? customClients.find(c => c.email && c.email.toLowerCase().split(',').map(e => e.trim()).includes(currentUserEmail)) : null;
+  
+  const needsOnboarding = myDriver && (
+    !myDriver.photo || myDriver.photo === "" || 
+    !myDriver.idFront || myDriver.idFront === "" || 
+    !myDriver.idBack || myDriver.idBack === "" || 
+    !myDriver.licenseFront || myDriver.licenseFront === "" || 
+    !myDriver.licenseBack || myDriver.licenseBack === ""
+  );
   const globalStyles = (
     <style>{`
       @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Alfa+Slab+One&display=swap');
