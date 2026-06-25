@@ -3727,14 +3727,40 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
   };
 
   const buildPDFDoc = async (job) => {
-    const jsPDFModule = await import('jspdf');
+    // Helpers
+    const cleanStr = (str) => { if (!str) return ''; return String(str).replace(/➔/g, '->').replace(/•/g, '-').replace(/[^\x20-\x7E\xA0-\xFF]/g, ''); };
+    const fetchImageAsBase64 = async (url) => {
+      if (!url) return null;
+      if (url.startsWith('data:image')) return url;
+      try {
+        const res = await fetch(url, { mode: 'cors' });
+        const blob = await res.blob();
+        return await new Promise(resolve => { const reader = new FileReader(); reader.onloadend = () => resolve(reader.result); reader.readAsDataURL(blob); });
+      } catch (e) { return null; }
+    };
+    const getImageDims = (src) => new Promise(resolve => { const img = new Image(); img.crossOrigin = "Anonymous"; img.onload = () => resolve({ w: img.width, h: img.height }); img.onerror = () => resolve({ w: 85, h: 60 }); img.src = src; });
+    const loadSimpleLogo = async (src) => { return new Promise((resolve) => { const img = new Image(); img.src = src; img.crossOrigin = "Anonymous"; img.onload = () => { const tempCanvas = document.createElement('canvas'); tempCanvas.width = img.width; tempCanvas.height = img.height; const ctx = tempCanvas.getContext('2d'); ctx.drawImage(img, 0, 0, img.width, img.height); resolve({ data: tempCanvas.toDataURL('image/png'), w: img.width, h: img.height }); }; img.onerror = () => resolve(null); setTimeout(() => resolve(null), 1500); }); };
+
+    // 🚀 OPTIMIZACIÓN DE VELOCIDAD: DESCARGA PARALELA DE TODO (Librería + Logos + 10 Fotos HD)
+    const photos = job.checklist?.photos || {};
+    const otherPhotoKeys = Object.keys(photos).filter(k => k !== 'front' && typeof photos[k] === 'string' && photos[k]);
+
+    const [jsPDFModule, logoApp, logoLogistica, frontPhotoStr, ...preloadedOtherPhotos] = await Promise.all([
+      import('jspdf'),
+      loadSimpleLogo('/logo.png'),
+      loadSimpleLogo('/LogoLogistica.png'),
+      fetchImageAsBase64(photos.front),
+      ...otherPhotoKeys.map(async (key) => {
+         const base64Img = await fetchImageAsBase64(photos[key]);
+         if (!base64Img) return null;
+         const dims = await getImageDims(base64Img);
+         return { key, base64Img, dims };
+      })
+    ]);
+
     const JsPDFClass = jsPDFModule.default?.jsPDF || jsPDFModule.default || jsPDFModule.jsPDF;
     const docPDF = new JsPDFClass();
-    const cleanStr = (str) => { if (!str) return ''; return String(str).replace(/➔/g, '->').replace(/•/g, '-').replace(/[^\x20-\x7E\xA0-\xFF]/g, ''); };
-    const getImageDims = (src) => new Promise(resolve => { const img = new Image(); img.onload = () => resolve({ w: img.width, h: img.height }); img.onerror = () => resolve({ w: 85, h: 60 }); img.src = src; });
     const primaryColor = [30, 41, 59]; const secondaryColor = [100, 116, 139]; const accentColor = [37, 99, 235]; const lightBg = [248, 250, 252]; const borderColor = [226, 232, 240];
-    const loadSimpleLogo = async (src) => { return new Promise((resolve) => { const img = new Image(); img.src = src; img.crossOrigin = "Anonymous"; img.onload = () => { const tempCanvas = document.createElement('canvas'); tempCanvas.width = img.width; tempCanvas.height = img.height; const ctx = tempCanvas.getContext('2d'); ctx.drawImage(img, 0, 0, img.width, img.height); resolve({ data: tempCanvas.toDataURL('image/png'), w: img.width, h: img.height }); }; img.onerror = () => resolve(null); setTimeout(() => resolve(null), 1500); }); };
-    const [logoApp, logoLogistica] = await Promise.all([ loadSimpleLogo('/logo.png'), loadSimpleLogo('/LogoLogistica.png') ]);
 
     const drawHeader = (titleText) => {
       docPDF.setFillColor(...primaryColor); docPDF.rect(0, 0, 210, 40, 'F');
@@ -3748,9 +3774,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       docPDF.setFont("helvetica", "normal");
     };
 
-    let pdfTitle = "CHECKLIST DE TRASLADO";
-    if (job.tripType === 'revision') pdfTitle = "CERTIFICADO DE REVISION TECNICA";
-    if (job.tripType === 'viaje') pdfTitle = "TRASLADO A REGIONES";
+    let pdfTitle = job.tripType === 'revision' ? "CERTIFICADO DE REVISION TECNICA" : (job.tripType === 'viaje' ? "TRASLADO A REGIONES" : "CHECKLIST DE TRASLADO");
     drawHeader(pdfTitle);
     let currentY = 50;
 
@@ -3777,11 +3801,8 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     let hM = drawKV("Marca y Modelo", `${job.brand || '-'} ${job.model || '-'}`, 65, currentY, 45);
     currentY += Math.max(hC, hM) + 6;
     
-    // Mostramos Patente y también el VIN si es que existe y es distinto a la patente
     let plateText = job.plate || '-';
-    if (job.vin && job.vin !== job.plate) {
-       plateText += ` / VIN: ${job.vin}`;
-    }
+    if (job.vin && job.vin !== job.plate) { plateText += ` / VIN: ${job.vin}`; }
     let hP = drawKV("Patente / VIN", plateText, 15, currentY, 45);
     let hD = drawKV("Conductor", driverNameStr, 65, currentY, 45);
     currentY += Math.max(hP, hD) + 6;
@@ -3803,15 +3824,7 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     currentY += hGas + 8;
 
     docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("OBSERVACIONES:", 15, currentY); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor); const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin observaciones registradas.'}`), leftColWidth); docPDF.text(obsSplit, 15, currentY + 4); currentY += (obsSplit.length * 4) + 8;
-    if (job.waitTimeMinutes && job.waitTimeMinutes > 20) {
-      docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38);
-      const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA EN ORIGEN: ${job.waitTimeMinutes} minutos`, leftColWidth);
-      docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2;
-    } else if (job.checklist?.hasWaitTime) {
-      docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38); 
-      const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth); 
-      docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2; 
-    }
+    if (job.waitTimeMinutes && job.waitTimeMinutes > 20) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38); const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA EN ORIGEN: ${job.waitTimeMinutes} minutos`, leftColWidth); docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2; } else if (job.checklist?.hasWaitTime) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38);  const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth);  docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2;  }
     if (job.checklist?.hasFuelCharge) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(37, 99, 235); const fcStr = docPDF.splitTextToSize(`CARGA DE COMBUSTIBLE: ${cleanStr(job.checklist.fuelChargeAmount || 'Sí')}`, leftColWidth); docPDF.text(fcStr, 15, currentY); currentY += (fcStr.length * 4) + 2; }
 
     let sectionNum = 3;
@@ -3822,60 +3835,32 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     
     if (job.checklist?.location) { currentY += 2; const { lat, lng } = job.checklist.location; docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text(`UBICACION GPS:`, 15, currentY); docPDF.setFontSize(9); docPDF.setTextColor(...accentColor); docPDF.textWithLink('Clic aqui para ver mapa en Google', 15, currentY + 4, { url: `https://maps.google.com/?q=${lat},${lng}` }); }
 
-    // NUEVO: Filtro súper-blindado para Firebase Storage URLs y Base64
-    const parseImgForPDF = async (url) => {
-      if (!url) return null;
-      if (url.startsWith('data:image')) return url; // Ya es seguro
-      
-      // Si es un link (http/https), forzamos la descarga saltando bloqueos
-      try {
-        const res = await fetch(url, { mode: 'cors' });
-        const blob = await res.blob();
-        return await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
-      } catch (e) {
-        console.warn("Fallo al descargar imagen para el PDF:", e);
-        return null;
-      }
-    };
-
-    const rawFrontPhoto = job.checklist?.photos?.front;
-    if (rawFrontPhoto && typeof rawFrontPhoto === 'string') {
-      try {
-        const frontPhotoStr = await parseImgForPDF(rawFrontPhoto);
-        if (frontPhotoStr) {
-          const dims = await getImageDims(frontPhotoStr); const ratio = dims.h / dims.w; let imgW = 80; let imgH = imgW * ratio; if (imgH > 130) { imgH = 130; imgW = imgH / ratio; } const rightX = 115; const rightY = startY + 6; docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(rightX - 2, rightY - 8, imgW + 4, imgH + 12, 2, 2, 'S'); docPDF.setFillColor(...lightBg); docPDF.rect(rightX - 2, rightY - 8, imgW + 4, 8, 'F'); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor); docPDF.text("VISTA FRONTAL", rightX + (imgW/2), rightY - 3, { align: "center" }); 
-          docPDF.addImage(frontPhotoStr, 'JPEG', rightX, rightY + 2, imgW, imgH); 
-        }
-      } catch (err) { console.error("Error al incrustar foto frontal:", err); }
+    // DIBUJAR VISTA FRONTAL
+    if (frontPhotoStr) { 
+      try { 
+        const dims = await getImageDims(frontPhotoStr); const ratio = dims.h / dims.w; let imgW = 80; let imgH = imgW * ratio; if (imgH > 130) { imgH = 130; imgW = imgH / ratio; } const rightX = 115; const rightY = startY + 6; docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(rightX - 2, rightY - 8, imgW + 4, imgH + 12, 2, 2, 'S'); docPDF.setFillColor(...lightBg); docPDF.rect(rightX - 2, rightY - 8, imgW + 4, 8, 'F'); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor); docPDF.text("VISTA FRONTAL", rightX + (imgW/2), rightY - 3, { align: "center" }); 
+        docPDF.addImage(frontPhotoStr, 'JPEG', rightX, rightY + 2, imgW, imgH); 
+      } catch (err) { console.error("Error al incrustar foto frontal:", err); } 
     }
 
     const addFooter = () => { const pageCount = docPDF.internal.getNumberOfPages(); for(let i = 1; i <= pageCount; i++) { docPDF.setPage(i); docPDF.setFontSize(8); docPDF.setTextColor(148, 163, 184); docPDF.text(`Generado por LogisticAPP el ${new Date().toLocaleString('es-CL')} - Pagina ${i} de ${pageCount}`, 105, 290, null, null, "center"); } }
 
-    if (job.checklist?.photos) {
-      const photos = job.checklist.photos;
-      const labels = { front: 'Frente', left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', interior_front: 'Int. Adelante', interior_back: 'Int. Atras', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4', det5: 'Detalle 5', det6: 'Detalle 6', det7: 'Detalle 7', det8: 'Detalle 8' };
+    if (preloadedOtherPhotos.length > 0) {
+      const labels = { left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', interior_front: 'Int. Adelante', interior_back: 'Int. Atras', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4', det5: 'Detalle 5', det6: 'Detalle 6', det7: 'Detalle 7', det8: 'Detalle 8' };
       let photoY = 46; let currentCol = 1; let addedPage = false;
-      const detailPins = job.checklist.detailPins || [];
+      const detailPins = job.checklist?.detailPins || [];
       if (detailPins.length > 0) { docPDF.addPage(); drawHeader("ESQUEMA DE DAÑOS Y DETALLES"); addedPage = true; const mapX = 75; const mapY = 50; const mapW = 60; const mapH = 100; docPDF.setFillColor(248, 250, 252); docPDF.roundedRect(mapX, mapY, mapW, mapH, 3, 3, 'F'); docPDF.setDrawColor(203, 213, 225); docPDF.roundedRect(mapX, mapY, mapW, mapH, 3, 3, 'S'); const vType = job.checklist.vehicleType || 'auto'; const vx = mapX + 10; const vw = mapW - 20; const vy = mapY + 10; const vh = mapH - 20; docPDF.setFillColor(203, 213, 225); docPDF.setDrawColor(148, 163, 184); docPDF.setLineWidth(1); if (vType === 'camioneta') { docPDF.roundedRect(vx, vy, vw, vh*0.35, 3, 3, 'FD'); docPDF.setFillColor(71, 85, 105); docPDF.rect(vx+4, vy+4, vw-8, 6, 'F'); docPDF.setFillColor(226, 232, 240); docPDF.roundedRect(vx+2, vy+vh*0.38, vw-4, vh*0.62, 2, 2, 'FD'); } else if (vType === 'camion') { docPDF.setFillColor(191, 219, 254); docPDF.roundedRect(vx-2, vy, vw+4, vh*0.2, 2, 2, 'FD'); docPDF.setFillColor(226, 232, 240); docPDF.roundedRect(vx, vy+vh*0.22, vw, vh*0.78, 1, 1, 'FD'); } else { docPDF.roundedRect(vx, vy, vw, vh, 6, 6, 'FD'); docPDF.setFillColor(71, 85, 105); docPDF.rect(vx+4, vy+8, vw-8, 8, 'F'); docPDF.rect(vx+4, vy+vh-12, vw-8, 6, 'F'); } detailPins.forEach(pin => { const px = vx + (vw * (pin.x / 100)); const py = vy + (vh * (pin.y / 100)); docPDF.setFillColor(239, 68, 68); docPDF.circle(px, py, 3.5, 'F'); docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(8); docPDF.text(pin.id.replace('det', ''), px, py + 1.2, {align: 'center', baseline: 'middle'}); }); docPDF.setFontSize(9); docPDF.setTextColor(100, 116, 139); docPDF.text("Los numeros en rojo corresponden a las fotos de detalle del anexo:", 105, 165, null, null, "center"); photoY = 180; }
       
-      for (const key in photos) { 
-        if (key === 'front') continue; 
-        if (photos[key] && typeof photos[key] === 'string') { 
-          if (!addedPage) { docPDF.addPage(); drawHeader("ANEXO FOTOGRAFICO"); addedPage = true; } 
-          try { 
-            const base64Img = await parseImgForPDF(photos[key]);
-            if (!base64Img) continue;
-            
-            const dims = await getImageDims(base64Img); const ratio = dims.h / dims.w; let imgW = 85; let imgH = imgW * ratio; if (imgH > 95) { imgH = 95; imgW = imgH / ratio; } const slotCenter = currentCol === 1 ? 55 : 155; const finalX = slotCenter - (imgW / 2); if (photoY + imgH > 275) { docPDF.addPage(); photoY = 46; drawHeader("ANEXO FOTOGRAFICO (CONT.)"); } docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S'); docPDF.setFillColor(...lightBg); docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F'); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor); docPDF.text((labels[key] || key).toUpperCase(), slotCenter, photoY - 3, { align: "center" }); 
-            docPDF.addImage(base64Img, 'JPEG', finalX, photoY + 2, imgW, imgH); 
-            if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 20; } 
-          } catch (err) { console.error("Error al incrustar la foto:", key, err); } 
-        } 
+      // DIBUJAR OTRAS FOTOS PRE-CARGADAS
+      for (const item of preloadedOtherPhotos) { 
+        if (!item) continue;
+        const { key, base64Img, dims } = item;
+        if (!addedPage) { docPDF.addPage(); drawHeader("ANEXO FOTOGRAFICO"); addedPage = true; } 
+        try { 
+          const ratio = dims.h / dims.w; let imgW = 85; let imgH = imgW * ratio; if (imgH > 95) { imgH = 95; imgW = imgH / ratio; } const slotCenter = currentCol === 1 ? 55 : 155; const finalX = slotCenter - (imgW / 2); if (photoY + imgH > 275) { docPDF.addPage(); photoY = 46; drawHeader("ANEXO FOTOGRAFICO (CONT.)"); } docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S'); docPDF.setFillColor(...lightBg); docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F'); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor); docPDF.text((labels[key] || key).toUpperCase(), slotCenter, photoY - 3, { align: "center" }); 
+          docPDF.addImage(base64Img, 'JPEG', finalX, photoY + 2, imgW, imgH); 
+          if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 20; } 
+        } catch (err) { console.error("Error al incrustar la foto:", key, err); } 
       }
     }
 
