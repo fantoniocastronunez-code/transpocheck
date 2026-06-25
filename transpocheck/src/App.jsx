@@ -14,12 +14,12 @@ import {
 } from 'lucide-react';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDlX1VY0n5dDEvD_Tyivb0u_DLdfsargfI",
-  authDomain: "logisticapp-45452.firebaseapp.com",
-  projectId: "logisticapp-45452",
-  storageBucket: "logisticapp-45452.firebasestorage.app",
-  messagingSenderId: "522404772814",
-  appId: "1:522404772814:web:6ae1154eb945d36475099f"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 // 1. PRIMERO SE INICIALIZA 'APP'
