@@ -3936,43 +3936,43 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       const cleanPlate = job.plate || job.vin || 'SN';
       const fileName = `Check.${dateStrForFile}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`;
       
-      // 1. Armamos el texto
-      const text = `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`;
+      // 1. Armamos el texto formateado
+      const textToShare = `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`;
       
-      // 2. Generamos el PDF
+      // 2. Generamos y DESCARGAMOS el PDF automáticamente a tu celular
       const docPDF = await buildPDFDoc(job); 
-      const pdfBlob = docPDF.output('blob'); 
-      const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+      docPDF.save(fileName);
 
-      // 3. TRUCO: Copiamos el texto al portapapeles de forma invisible antes de abrir WhatsApp
+      // 3. Copiamos el texto al portapapeles
       const textArea = document.createElement("textarea");
-      textArea.value = text;
+      textArea.value = textToShare;
       textArea.style.position = "fixed";
       document.body.appendChild(textArea);
       textArea.focus();
       textArea.select();
       try { 
         document.execCommand('copy'); 
-        showAlert("✅ PDF listo. El resumen se copió automáticamente. ¡Mantén presionado y pégalo en el comentario de WhatsApp!"); 
+        showAlert("✅ PDF descargado en tu teléfono.\n\nAbriendo WhatsApp... Mantén presionado para PEGAR el texto y luego adjunta el PDF."); 
       } catch (err) {
-        console.warn("Auto-copy falló");
+        showAlert("✅ PDF descargado en tu teléfono.\n\nAbriendo WhatsApp...");
       }
       document.body.removeChild(textArea);
 
-      // 4. Compartimos SOLO el archivo (para que WhatsApp no se trabe)
-      if (navigator.canShare && navigator.canShare({ files: [file] })) { 
-         await navigator.share({ 
-           title: fileName, 
-           files: [file] 
-         }); 
-      } else { 
-         showAlert("Tu dispositivo no soporta compartir el archivo directamente. Descárgalo primero."); 
-         handleCopyWhatsApp(job); 
-      }
+      // 4. TRUCO BLINDADO: Abrimos WhatsApp forzadamente saltando restricciones del APK
+      setTimeout(() => {
+          const waLink = document.createElement('a');
+          waLink.href = `https://wa.me/?text=${encodeURIComponent("(Mantén presionado aquí, selecciona PEGAR y luego adjunta el PDF)")}`;
+          waLink.target = '_blank';
+          document.body.appendChild(waLink);
+          waLink.click();
+          document.body.removeChild(waLink);
+      }, 1500);
+
     } catch (e) { 
-      console.error(e); 
+       console.error(e); 
+       showAlert("Error al generar el PDF para WhatsApp.");
     } finally { 
-      setProcessingId(null); 
+       setProcessingId(null); 
     }
   };
 
