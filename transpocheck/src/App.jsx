@@ -3936,33 +3936,27 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
       const cleanPlate = job.plate || job.vin || 'SN';
       const fileName = `Check.${dateStrForFile}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`;
       
-      // 1. Armamos el texto formateado
       const textToShare = `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`;
       
-      // 2. Generamos el PDF EN MEMORIA (sin forzar la descarga en el navegador)
       const docPDF = await buildPDFDoc(job); 
       const pdfBlob = docPDF.output('blob'); 
       const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
-      // 3. Copiamos el texto al portapapeles de forma invisible
+      // Copiamos el texto al portapapeles de forma 100% SILENCIOSA
       const textArea = document.createElement("textarea");
       textArea.value = textToShare;
       textArea.style.position = "fixed";
       document.body.appendChild(textArea);
       textArea.focus();
       textArea.select();
-      try { 
-        document.execCommand('copy'); 
-        showAlert("✅ PDF listo.\n\nEl resumen se copió automáticamente. Cuando elijas WhatsApp, mantén presionado y pega el texto."); 
-      } catch (err) {
-        console.warn("Auto-copy falló");
-      }
+      try { document.execCommand('copy'); } catch (err) { }
       document.body.removeChild(textArea);
 
-      // 4. VOLVEMOS AL COMPARTIR NATIVO (Android Share Sheet)
+      // COMPARTIR NATIVO DIRECTO (Sin alertas que rompan el proceso de Android)
       if (navigator.canShare && navigator.canShare({ files: [file] })) { 
          await navigator.share({ 
            title: fileName, 
+           text: textToShare, // Enviamos el texto también por si lo mandan por Correo o Telegram
            files: [file] 
          }); 
       } else { 
@@ -3970,10 +3964,9 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
          handleCopyWhatsApp(job); 
       }
     } catch (e) { 
-       console.error(e); 
-       // Ignoramos el error si el usuario simplemente canceló la ventana de compartir de Android
+      console.error(e); 
     } finally { 
-       setProcessingId(null); 
+      setProcessingId(null); 
     }
   };
 
