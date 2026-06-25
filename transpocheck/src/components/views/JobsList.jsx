@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { updateDoc, doc, deleteDoc, addDoc, collection, deleteField } from 'firebase/firestore';
 import { 
   Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, 
-  Copy, X, XCircle, MapPin, Clock, FileDown, Search, ChevronUp, ChevronDown 
+  Copy, X, XCircle, MapPin, Clock, FileDown, Search, ChevronUp, ChevronDown,
+  Trash2, Car
 } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import WaitTimerBadge from '../ui/WaitTimerBadge';
