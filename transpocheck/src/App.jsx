@@ -3742,7 +3742,13 @@ function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, curren
     let hC = drawKV("Cliente", `${job.client || 'Sin Cliente'}`, 15, currentY, 45);
     let hM = drawKV("Marca y Modelo", `${job.brand || '-'} ${job.model || '-'}`, 65, currentY, 45);
     currentY += Math.max(hC, hM) + 6;
-    let hP = drawKV("Patente / VIN", `${job.plate || job.vin || '-'}`, 15, currentY, 45);
+    
+    // Mostramos Patente y también el VIN si es que existe y es distinto a la patente
+    let plateText = job.plate || '-';
+    if (job.vin && job.vin !== job.plate) {
+       plateText += ` / VIN: ${job.vin}`;
+    }
+    let hP = drawKV("Patente / VIN", plateText, 15, currentY, 45);
     let hD = drawKV("Conductor", driverNameStr, 65, currentY, 45);
     currentY += Math.max(hP, hD) + 6;
     
@@ -4536,8 +4542,10 @@ function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAl
   const handlePic = async (e, id) => {
     const f=e.target.files[0]; if(!f)return;
     try {
-      // Reducimos a 350px y calidad 30% para evitar el límite de 1MB de Firebase
-const dataUrl = await resizeImage(f, 350, 0.3); 
+      // EQUILIBRIO PERFECTO: Subimos a 720px de ancho y 60% de calidad.
+      // Las fotos se verán completamente nítidas en el PDF,
+      // pero manteniendo un peso seguro para Firebase.
+      const dataUrl = await resizeImage(f, 720, 0.6); 
       setFormData(prev => {
         const newData = { ...prev, photos: { ...prev.photos, [id]: dataUrl } };
         // Si la foto era un detalle tocado en el auto, guardamos el pin y su coordenada
@@ -4568,6 +4576,22 @@ const dataUrl = await resizeImage(f, 350, 0.3);
       d.receiverName="ENTREGA SIN RECEPCIÓN"; 
       d.receiverRut="N/A"; 
     }
+
+    // --- MAGIA GPS: CAPTURAMOS LA UBICACIÓN INVISIBLEMENTE ANTES DE GUARDAR ---
+    const getGPS = () => new Promise((resolve) => {
+      if (!("geolocation" in navigator)) return resolve(null);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        (err) => resolve(null), // Si rechaza permisos o falla, devolvemos null para no bloquear el guardado de la app
+        { timeout: 6000, enableHighAccuracy: true } // Máximo 6 segundos de espera
+      );
+    });
+
+    if (!d.location) {
+      const coords = await getGPS();
+      if (coords) d.location = coords;
+    }
+    // -------------------------------------------------------------------------
     
     const fd = { scheduledDate: new Date().toISOString().split('T')[0], client: d.client, brand: d.brand, model: d.model, vin: d.plateOrVin, plate: d.plateOrVin, origin: d.origin, destination: d.destination, status: 'completed', completedAt: Date.now(), checklist: d, tripType: job.tripType || 'traslado' };
     
@@ -5331,9 +5355,7 @@ const dataUrl = await resizeImage(f, 350, 0.3);
                  </div>
                )}
               
-              <button type="button" onClick={() => { if ("geolocation" in navigator) { navigator.geolocation.getCurrentPosition((pos) => setF('location', { lat: pos.coords.latitude, lng: pos.coords.longitude }), () => showAlert("Error GPS.")); } }} className={`px-4 py-3.5 rounded-2xl text-xs w-full font-extrabold shadow-sm mt-2 border-2 ${formData.location ? 'bg-green-100 text-green-700 border-green-200' : 'bg-slate-50 text-slate-600'}`}>
-                {formData.location ? "📍 Ubicación Geográfica Certificada" : "📍 Capturar Coordenadas GPS de Entrega"}
-              </button>
+              {/* El botón GPS manual fue eliminado. Se captura automáticamente al presionar Finalizar. */}
             </div>
           )}
 
@@ -5354,7 +5376,7 @@ const dataUrl = await resizeImage(f, 350, 0.3);
               </button>
             ) : (
               <button type="submit" disabled={isSubmitting} className="group flex-1 bg-green-600 hover:bg-green-700 text-white font-black py-3 rounded-xl text-sm shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0 disabled:opacity-50 disabled:hover:translate-y-0 disabled:active:scale-100 transition-all duration-200 flex justify-center items-center gap-2">
-                {isSubmitting ? 'Guardando...' : <><span className="group-hover:animate-bounce">🏁</span> Finalizar y Guardar</>}
+                {isSubmitting ? <><Clock className="w-4 h-4 animate-spin"/> Guardando GPS y Acta...</> : <><span className="group-hover:animate-bounce">🏁</span> Finalizar y Guardar</>}
               </button>
             )}
           </div>
