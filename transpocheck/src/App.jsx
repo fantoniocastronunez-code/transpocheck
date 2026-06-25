@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, enableMultiTabIndexedDbPersistence, collection, addDoc, onSnapshot, updateDoc, setDoc, doc, deleteDoc, getDocs, query, where, orderBy, limit, deleteField } from 'firebase/firestore';
-import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
+import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage'; // <-- IMPORTADO CORRECTAMENTE
+
 // Eliminamos la importación global de jsPDF para que la app cargue más rápido (Lazy Loading)
 import { 
   Car, MapPin, Camera, CheckCircle, FileText, Download, 
@@ -19,10 +21,15 @@ const firebaseConfig = {
   appId: "1:522404772814:web:6ae1154eb945d36475099f"
 };
 
-const storage = getStorage(app); // <-- NUEVO: Inicializamos el motor de archivos
+// 1. PRIMERO SE INICIALIZA 'APP'
+const app = initializeApp(firebaseConfig);
 
-// --- NUEVO: FUNCIÓN MAESTRA SUBIDORA DE IMÁGENES A STORAGE ---
-// Si recibe un Base64, lo sube y devuelve la URL. Si ya es una URL, la deja intacta.
+// 2. DESPUÉS SE USAN LOS SERVICIOS BASADOS EN 'APP'
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app); // <-- AHORA SÍ FUNCIONA PORQUE 'APP' YA EXISTE
+
+// --- FUNCIÓN MAESTRA SUBIDORA DE IMÁGENES A STORAGE ---
 const uploadImageToStorage = async (base64String, folderPath, fileName) => {
   if (!base64String || !base64String.startsWith('data:image')) return base64String;
   const storageRef = ref(storage, `${folderPath}/${fileName}`);
@@ -44,6 +51,7 @@ enableMultiTabIndexedDbPersistence(db).catch((err) => {
 const googleProvider = new GoogleAuthProvider();
 
 const DEFAULT_CLIENTES = ["Grandleasing Las Torres", "Grandleasing Umaña", "Kovacs", "Salfa", "Enex", "CIPP", "Simumak", "Mutual Capacitación"];
+// ... DE AQUÍ HACIA ABAJO TU CÓDIGO SIGUE IGUAL (LICENCIAS, formatMoney, etc.)
 const LICENCIAS = ["A1", "A2", "A3", "A4", "A5", "A1 antigua", "A2 antigua", "B", "C"];
 
 const formatMoney = (amount) => `$${Number(amount).toLocaleString('es-CL')}`;
