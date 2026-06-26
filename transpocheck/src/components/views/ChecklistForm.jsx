@@ -377,7 +377,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
 
       <div className="bg-blue-600 text-white p-5 flex justify-between items-center rounded-t-3xl"><h2 className="font-bold text-base"><FileText className="inline w-5 h-5 mr-1"/> Formulario Checklist</h2><button type="button" onClick={()=>showConfirm("¿Deseas salir? (Tu progreso quedará guardado localmente)", onCancel)} className="bg-blue-800 px-3 py-1 rounded-xl text-xs font-bold">Salir</button></div>
       
-      <div className="sticky top-[64px] sm:top-[80px] z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 px-5 py-3 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)]">
+      <div className="sticky top-[64px] sm:top-[80px] z-10 bg-white/90 backdrop-blur-md border-b border-slate-200 px-5 py-3 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)]">
          <div className="flex justify-between items-center mb-1.5">
             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Progreso del Acta</span>
             <span className="text-xs font-black text-blue-600">
