@@ -376,7 +376,13 @@ function LogisticApp() {
           
           {/* NUEVO: BOTÓN TUERCA (AJUSTES) */}
           <div className="relative">
-            <button onClick={() => setSettingsOpen(!settingsOpen)} className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors shadow-sm border border-white/10">
+            <button 
+              onClick={() => {
+                setSettingsOpen(!settingsOpen);
+                setRoleMenuOpen(false); // <-- NUEVO: Cierra el ojo al abrir la tuerca
+              }} 
+              className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors shadow-sm border border-white/10"
+            >
               <Settings className="w-5 h-5 text-white" />
             </button>
             
@@ -462,14 +468,13 @@ function LogisticApp() {
             <div className="relative">
               {/* Botón dinámico inteligente: se vuelve morado y parpadea si estás asistiendo a un conductor */}
               <button 
-                onClick={() => setRoleMenuOpen(!roleMenuOpen)} 
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all border shadow-sm ${
-                  (activeRole === 'driver' && simulatedDriverEmail) 
-                    ? 'bg-purple-600 border-purple-400 text-white animate-pulse font-black' 
-                    : 'bg-white/20 hover:bg-white/30 border-white/10 text-white font-bold backdrop-blur-sm'
-                }`}
-              >
-                <Eye className="w-5 h-5 text-white"/>
+              onClick={() => {
+                setRoleMenuOpen(!roleMenuOpen);
+                setSettingsOpen(false); // <-- NUEVO: Cierra la tuerca al abrir el ojo
+              }} 
+              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-3 py-2 rounded-xl transition-colors shadow-sm border border-white/10"
+            >
+              <Eye className="w-5 h-5 text-white"/>
                 <span className="hidden md:inline">
                   {activeRole === 'admin' ? 'Modo: Admin' : activeRole === 'driver' ? (
                     simulatedDriverEmail 
