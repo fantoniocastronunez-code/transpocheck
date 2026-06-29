@@ -613,9 +613,20 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                     )}
 
                     {(!formData.vehicleType || formData.vehicleType === 'auto') && (
-                      <div className="w-full h-full bg-slate-300 rounded-[40px] border-4 border-slate-400 relative overflow-hidden flex flex-col justify-between p-2 shadow-inner">
-                        <div className="w-4/5 h-1/5 bg-slate-800/30 mx-auto rounded-t-2xl rounded-b-sm mt-5"></div>
-                        <div className="w-4/5 h-12 bg-slate-800/30 mx-auto rounded-b-xl rounded-t-sm mb-3"></div>
+                      <div className="w-full h-full relative flex justify-center">
+                        <div className="absolute top-[28%] left-[2%] w-3 h-5 bg-slate-400 rounded-l-md shadow-sm z-0"></div>
+                        <div className="absolute top-[28%] right-[2%] w-3 h-5 bg-slate-400 rounded-r-md shadow-sm z-0"></div>
+                        <div className="w-[88%] h-full bg-slate-300 rounded-t-[45px] rounded-b-[35px] border-4 border-slate-400 relative flex flex-col p-1 shadow-inner z-10 overflow-hidden">
+                          <div className="absolute top-[-2%] left-[15%] w-[70%] h-[20%] border-x-2 border-slate-400/40 rounded-t-[30px] pointer-events-none"></div>
+                          <div className="flex flex-col h-full justify-between pt-[18%] pb-[12%] z-10">
+                            <div className="w-[85%] h-[16%] bg-slate-800/40 mx-auto rounded-t-[25px] rounded-b-[4px] shadow-sm border-t-2 border-white/20"></div>
+                            <div className="flex-1 w-[80%] mx-auto bg-slate-200 border-x-4 border-slate-800/40 relative flex flex-col my-1 shadow-sm rounded-sm">
+                               <div className="w-full h-1/2 border-b-2 border-slate-400/30"></div>
+                            </div>
+                            <div className="w-[80%] h-[11%] bg-slate-800/40 mx-auto rounded-b-[20px] rounded-t-[4px] shadow-sm border-b-2 border-white/20"></div>
+                          </div>
+                          <div className="absolute bottom-1.5 left-[20%] w-[60%] h-4 border-t-2 border-slate-400/60 rounded-t-lg pointer-events-none"></div>
+                        </div>
                       </div>
                     )}
                     {formData.vehicleType === 'furgon_pequeno' && (
@@ -645,12 +656,17 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                     )}
                     {formData.vehicleType === 'camioneta' && (
                       <div className="w-full h-full relative flex flex-col">
-                        <div className="w-full h-[40%] bg-slate-300 rounded-t-[35px] rounded-b-md border-4 border-slate-400 p-2 flex flex-col justify-between shadow-inner">
-                          <div className="w-5/6 h-8 bg-slate-800/30 mx-auto rounded-t-xl rounded-b-sm mt-2"></div>
-                          <div className="w-5/6 h-4 bg-slate-800/30 mx-auto rounded-b-xl rounded-t-sm mb-1"></div>
+                        <div className="w-full h-[55%] bg-slate-300 rounded-t-[35px] rounded-b-md border-4 border-slate-400 p-2 flex flex-col justify-between shadow-inner relative overflow-hidden">
+                          <div className="w-5/6 h-8 bg-slate-800/30 mx-auto rounded-t-xl rounded-b-sm mt-1 z-10"></div>
+                          <div className="flex-1 w-full mx-auto relative flex flex-col justify-center my-1">
+                             <div className="w-full border-t-2 border-slate-400/40"></div>
+                          </div>
+                          <div className="w-5/6 h-4 bg-slate-800/30 mx-auto rounded-b-xl rounded-t-sm mb-0.5 z-10"></div>
                         </div>
-                        <div className="w-[90%] h-[60%] mx-auto bg-slate-200 border-x-4 border-b-4 border-slate-400 rounded-b-xl mt-1 relative">
-                          <div className="absolute inset-2 border-2 border-slate-300 rounded-sm"></div>
+                        <div className="w-[90%] h-[43%] mx-auto bg-slate-200 border-x-4 border-b-4 border-slate-400 rounded-b-xl mt-1 relative shadow-inner">
+                          <div className="absolute inset-1.5 border-2 border-slate-300/80 rounded-sm"></div>
+                          <div className="absolute inset-y-2 left-1/3 border-l-2 border-slate-300/50"></div>
+                          <div className="absolute inset-y-2 right-1/3 border-r-2 border-slate-300/50"></div>
                         </div>
                       </div>
                     )}
