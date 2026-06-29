@@ -8,7 +8,7 @@ import {
   AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, 
   Zap, Edit2, Bell, Share2, X, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, 
   XCircle, Trophy, Eye, Clock, Save, Search, CloudOff, Wifi, QrCode, Sun, Moon, 
-  Settings, ChevronUp, ChevronDown, ChevronRight, Fuel, Megaphone, Star
+  Settings, ChevronUp, ChevronDown, ChevronRight, Fuel, Megaphone, Star, ShieldCheck
 } from 'lucide-react';
 
 import SignaturePad from './components/ui/SignaturePad';
@@ -28,6 +28,7 @@ import TrackingView from './components/views/TrackingView';
 import NewJobForm from './components/views/NewJobForm';
 import JobsList from './components/views/JobsList';
 import ChecklistForm from './components/views/ChecklistForm';
+import VehicleHistoryView from './components/views/VehicleHistoryView';
 
 // EL NUEVO MOTOR (Hook)
 import { auth, db, googleProvider, uploadImageToStorage, useFirebase } from './hooks/useFirebase';
@@ -459,7 +460,7 @@ function LogisticApp() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.5 22</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.6</p>
                 </div>
               </div>
             )}
@@ -550,6 +551,7 @@ function LogisticApp() {
                 <button onClick={() => {setAdminTab('newJob'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='newJob'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Plus className="w-4 h-4 sm:w-5 sm:h-5"/> Crear</button>
                 <button onClick={() => setAdminTab('config')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='config'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Truck className="w-4 h-4 sm:w-5 sm:h-5"/> Config</button>
                 <button onClick={() => setShowBroadcastAdmin(true)} className="flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors text-purple-600 bg-purple-50 hover:bg-purple-100"><Megaphone className="w-4 h-4 sm:w-5 sm:h-5"/> Aviso</button>
+                <button onClick={() => setAdminTab('history')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='history'?'bg-slate-800 text-white shadow-md':'text-slate-500 hover:bg-slate-50'}`}><ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5"/> Peritaje</button>
               </div>
               
               {adminTab === 'dashboard' && (
@@ -569,6 +571,9 @@ function LogisticApp() {
               )}
               
               {adminTab === 'newJob' && <div className="animate-in zoom-in-[0.98] slide-in-from-bottom-8 duration-500 ease-out"><NewJobForm key={editingJob ? editingJob.id : 'new'} jobToEdit={editingJob} onCancelEdit={() => {setEditingJob(null); setAdminTab('dashboard');}} allClientsList={allClientsList} vehicles={vehicles} drivers={drivers} db={db} showAlert={showAlert} onSuccess={() => setAdminTab('dashboard')} /></div>}
+              
+              {adminTab === 'history' && <div className="animate-in zoom-in-[0.98] duration-300"><VehicleHistoryView db={db} showAlert={showAlert} /></div>}
+              
               {adminTab === 'config' && <div className="animate-in zoom-in-[0.98] duration-300"><ConfigView allClientsList={allClientsList} customClients={customClients} vehicles={vehicles} drivers={drivers} db={db} showAlert={showAlert} showConfirm={showConfirm} /></div>}
             </>
           ) : (
