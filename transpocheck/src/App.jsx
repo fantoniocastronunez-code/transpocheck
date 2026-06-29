@@ -277,6 +277,17 @@ function LogisticApp() {
       </div>
     );
   }
+  // NUEVO: Pantalla de carga global mientras Firebase descarga la base de datos
+  if (!dataLoaded) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+        {globalStyles}
+        <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4 shadow-sm"></div>
+        <p className="text-lg font-extrabold text-slate-700 tracking-tight">Sincronizando datos...</p>
+        <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">LogisticAPP</p>
+      </div>
+    );
+  }
 
   const exportToExcel = () => {
     const headers = ['ID', 'Fecha Prog.', 'Cliente', 'Marca', 'Modelo', 'VIN/Patente', 'Desde', 'Hasta', 'Conductores Asignados', 'Conductor Realizó', 'Estado', 'Fecha Creación'];
