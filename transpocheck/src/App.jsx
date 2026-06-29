@@ -18,17 +18,18 @@ import VehicleShapeIcon from './components/ui/VehicleShapeIcon';
 import SwipeButton from './components/ui/SwipeButton';
 import WaitTimerBadge from './components/ui/WaitTimerBadge';
 import { DEFAULT_CLIENTES, LICENCIAS, formatMoney, formatDateDisplay, resizeImage } from './utils/helpers';
-import LeaderboardView from './components/views/LeaderboardView';
-import RelayAcceptView from './components/views/RelayAcceptView';
-import DriverOnboarding from './components/views/DriverOnboarding';
-import ClientSignView from './components/views/ClientSignView';
-import ExpensesView from './components/views/ExpensesView';
-import ConfigView from './components/views/ConfigView';
-import TrackingView from './components/views/TrackingView';
-import NewJobForm from './components/views/NewJobForm';
-import JobsList from './components/views/JobsList';
-import ChecklistForm from './components/views/ChecklistForm';
-import VehicleHistoryView from './components/views/VehicleHistoryView';
+// IMPORTACIONES "PEREZOSAS" (LAZY LOADING) - Solo se descargan cuando se necesitan
+const LeaderboardView = React.lazy(() => import('./components/views/LeaderboardView'));
+const RelayAcceptView = React.lazy(() => import('./components/views/RelayAcceptView'));
+const DriverOnboarding = React.lazy(() => import('./components/views/DriverOnboarding'));
+const ClientSignView = React.lazy(() => import('./components/views/ClientSignView'));
+const ExpensesView = React.lazy(() => import('./components/views/ExpensesView'));
+const ConfigView = React.lazy(() => import('./components/views/ConfigView'));
+const TrackingView = React.lazy(() => import('./components/views/TrackingView'));
+const NewJobForm = React.lazy(() => import('./components/views/NewJobForm'));
+const JobsList = React.lazy(() => import('./components/views/JobsList'));
+const ChecklistForm = React.lazy(() => import('./components/views/ChecklistForm'));
+const VehicleHistoryView = React.lazy(() => import('./components/views/VehicleHistoryView'));
 
 // EL NUEVO MOTOR (Hook)
 import { auth, db, googleProvider, uploadImageToStorage, useFirebase } from './hooks/useFirebase';
@@ -749,7 +750,15 @@ function LogisticApp() {
 export default function App() {
   return (
     <Router>
-      <LogisticApp />
+      {/* ENVUELVE LA APP PARA ATRAPAR LAS CARGAS DIFERIDAS DE LAS VISTAS */}
+      <React.Suspense fallback={
+        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+          <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4 shadow-sm"></div>
+          <p className="text-lg font-extrabold text-slate-700 tracking-tight">Optimizando módulos...</p>
+        </div>
+      }>
+        <LogisticApp />
+      </React.Suspense>
     </Router>
   );
 }
