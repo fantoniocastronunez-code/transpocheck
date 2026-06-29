@@ -11,7 +11,6 @@ import { resizeImage, formatMoney } from '../../utils/helpers';
 export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList, drivers, expenses, vehicles, uploadImageToStorage }) {
   const isQuick = job.id === 'NEW_QUICK_JOB'; 
   const localStorageKey = `checklist_draft_${job.id}`;
-  const [uploadProgress, setUploadProgress] = useState({ active: false, current: 0, total: 0, text: '' });
   const matchedVehicle = vehicles?.find(v => v.plate === (job.plate || job.vin)?.toUpperCase());
   const initialDocs = matchedVehicle?.docs || { soap:false, permiso:false, revTecnica:false, gases:false };
   const initialDocsExpiry = matchedVehicle?.docsExpiry || {};
