@@ -614,17 +614,32 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
 
                     {(!formData.vehicleType || formData.vehicleType === 'auto') && (
                       <div className="w-full h-full relative flex justify-center">
+                        {/* Espejos Laterales */}
                         <div className="absolute top-[28%] left-[2%] w-3 h-5 bg-slate-400 rounded-l-md shadow-sm z-0"></div>
                         <div className="absolute top-[28%] right-[2%] w-3 h-5 bg-slate-400 rounded-r-md shadow-sm z-0"></div>
+
+                        {/* Chasis principal */}
                         <div className="w-[88%] h-full bg-slate-300 rounded-t-[45px] rounded-b-[35px] border-4 border-slate-400 relative flex flex-col p-1 shadow-inner z-10 overflow-hidden">
+                          
+                          {/* Líneas aerodinámicas del Capó */}
                           <div className="absolute top-[-2%] left-[15%] w-[70%] h-[20%] border-x-2 border-slate-400/40 rounded-t-[30px] pointer-events-none"></div>
+
+                          {/* Habitáculo */}
                           <div className="flex flex-col h-full justify-between pt-[18%] pb-[12%] z-10">
+                            {/* Parabrisas Delantero curvo */}
                             <div className="w-[85%] h-[16%] bg-slate-800/40 mx-auto rounded-t-[25px] rounded-b-[4px] shadow-sm border-t-2 border-white/20"></div>
+
+                            {/* Techo y Ventanas Laterales (vidrios oscuros a los lados) */}
                             <div className="flex-1 w-[80%] mx-auto bg-slate-200 border-x-4 border-slate-800/40 relative flex flex-col my-1 shadow-sm rounded-sm">
+                               {/* Línea divisoria de puertas (Pilar B) */}
                                <div className="w-full h-1/2 border-b-2 border-slate-400/30"></div>
                             </div>
+
+                            {/* Parabrisas Trasero curvo */}
                             <div className="w-[80%] h-[11%] bg-slate-800/40 mx-auto rounded-b-[20px] rounded-t-[4px] shadow-sm border-b-2 border-white/20"></div>
                           </div>
+
+                          {/* Línea del Maletero */}
                           <div className="absolute bottom-1.5 left-[20%] w-[60%] h-4 border-t-2 border-slate-400/60 rounded-t-lg pointer-events-none"></div>
                         </div>
                       </div>
@@ -635,7 +650,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                         <div className="w-[100%] h-[82%] bg-slate-200 rounded-t-[15px] rounded-b-[20px] border-4 border-slate-400 shadow-inner flex flex-col p-1.5 z-10 -mt-2">
                           <div className="w-[90%] h-[20%] bg-slate-800/40 mx-auto rounded-t-[15px] rounded-b-sm mb-1.5 shadow-sm"></div>
                           <div className="flex-1 w-[95%] mx-auto bg-slate-300 border-2 border-slate-400/30 rounded-md relative flex justify-center overflow-hidden">
-                            <div className="w-1/2 h-full border-r-2 border-slate-400/50"></div>
+                            {/* Eliminamos la línea vertical molesta de acá */}
                             <div className="absolute top-1/4 w-full border-t-2 border-slate-400/20"></div>
                             <div className="absolute top-2/4 w-full border-t-2 border-slate-400/20"></div>
                             <div className="absolute top-3/4 w-full border-t-2 border-slate-400/20"></div>
@@ -647,7 +662,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                       <div className="w-full h-full bg-slate-200 rounded-t-[35px] rounded-b-[10px] border-4 border-slate-400 relative flex flex-col justify-start p-2 shadow-inner z-10">
                         <div className="w-[85%] h-[15%] bg-slate-800/40 mx-auto rounded-t-[20px] rounded-b-sm mt-1"></div>
                         <div className="flex-1 w-[90%] mx-auto bg-slate-300 border-2 border-slate-400/30 rounded-sm mt-3 mb-1 flex items-center justify-center relative overflow-hidden shadow-sm">
-                          <div className="w-1/2 h-full border-r-2 border-slate-400/40"></div>
+                          {/* Eliminamos la línea vertical molesta de acá */}
                           <div className="absolute top-1/4 w-full border-t border-slate-400/20"></div>
                           <div className="absolute top-2/4 w-full border-t border-slate-400/20"></div>
                           <div className="absolute top-3/4 w-full border-t border-slate-400/20"></div>
