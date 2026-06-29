@@ -11,11 +11,12 @@ import { resizeImage, formatMoney } from '../../utils/helpers';
 export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList, drivers, expenses, vehicles, uploadImageToStorage }) {
   const isQuick = job.id === 'NEW_QUICK_JOB'; 
   const localStorageKey = `checklist_draft_${job.id}`;
-
+  const [uploadProgress, setUploadProgress] = useState({ active: false, current: 0, total: 0, text: '' });
   const matchedVehicle = vehicles?.find(v => v.plate === (job.plate || job.vin)?.toUpperCase());
   const initialDocs = matchedVehicle?.docs || { soap:false, permiso:false, revTecnica:false, gases:false };
   const initialDocsExpiry = matchedVehicle?.docsExpiry || {};
   const initialReminders = matchedVehicle?.internalReminders || []; 
+
 
   const defaultData = {
     client: job.client||'', manualClient: '', brand: job.brand||'', model: job.model||'', plateOrVin: job.plate||job.vin||'', origin: job.origin||'', destination: job.destination||'', vehicleType: job.vehicleType||'auto', fuelLevel: 50, photos: { front:false, left:false, right:false, back:false, tire:false, dashboard:false, det1:false, det2:false, det3:false, det4:false }, 
@@ -32,6 +33,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
   const [qrOpen, setQrOpen] = useState(false); 
   const [fullScreenImage, setFullScreenImage] = useState(null); 
+  const [uploadProgress, setUploadProgress] = useState({ active: false, current: 0, total: 0, text: '' }); 
 
   useEffect(() => {
     if (isQuick || !job.id) return;
@@ -87,24 +89,46 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
     const uploadedPhotos = {};
     const jobIdFolder = job.id === 'NEW_QUICK_JOB' ? `quick_${Date.now()}` : job.id;
 
+    let totalFiles = 0;
+    for (const val of Object.values(d.photos)) { if (val && val.startsWith('data:image')) totalFiles++; }
+    if (d.signatureData && d.signatureData.startsWith('data:image')) totalFiles++;
+
+    if (totalFiles > 0) {
+       setUploadProgress({ active: true, current: 0, total: totalFiles, text: 'Conectando con el servidor...' });
+    }
+
+    let completed = 0;
+    const updateProgress = (fileName) => {
+       completed++;
+       setUploadProgress(prev => ({ ...prev, current: completed, text: `Sincronizando ${fileName}...` }));
+    };
+
     for (const [key, val] of Object.entries(d.photos)) {
       if (val && val.startsWith('data:image')) {
         const p = uploadImageToStorage(val, `checklists/${jobIdFolder}`, `photo_${key}_${Date.now()}.jpg`)
-          .then(url => uploadedPhotos[key] = url);
+          .then(url => { uploadedPhotos[key] = url; updateProgress(`foto ${key.toUpperCase()}`); return url; });
         uploadPromises.push(p);
       } else {
         uploadedPhotos[key] = val;
       }
     }
-    await Promise.all(uploadPromises);
-    d.photos = uploadedPhotos;
 
     if (d.signatureData && d.signatureData.startsWith('data:image')) {
-       d.signatureData = await uploadImageToStorage(d.signatureData, `checklists/${jobIdFolder}`, `signature_${Date.now()}.jpg`);
+       const p = uploadImageToStorage(d.signatureData, `checklists/${jobIdFolder}`, `signature_${Date.now()}.jpg`)
+         .then(url => { d.signatureData = url; updateProgress('Firma de conformidad'); return url; });
+       uploadPromises.push(p);
     }
+
+    await Promise.all(uploadPromises);
+    d.photos = uploadedPhotos;
+    
+    if (totalFiles > 0) {
+      setUploadProgress({ active: true, current: totalFiles, total: totalFiles, text: '¡Sincronización exitosa!' });
+      setTimeout(() => setUploadProgress({ active: false, current: 0, total: 0, text: '' }), 1500);
+    }
+    
     return d;
   };
-
   const handleRemoteSignRequest = async () => {
     if (isQuick) return showAlert("⚠️ Para usar la Firma Remota en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
     setProcessingAction('wapp');
@@ -614,9 +638,17 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
 
                     {(!formData.vehicleType || formData.vehicleType === 'auto') && (
                       <div className="w-full h-full relative flex justify-center">
-                        {/* Espejos Laterales */}
-                        <div className="absolute top-[28%] left-[2%] w-3 h-5 bg-slate-400 rounded-l-md shadow-sm z-0"></div>
-                        <div className="absolute top-[28%] right-[2%] w-3 h-5 bg-slate-400 rounded-r-md shadow-sm z-0"></div>
+                        {/* Ruedas Delanteras (Neumáticos oscuros) */}
+                        <div className="absolute top-[15%] left-[2%] w-3.5 h-10 bg-slate-800 rounded-sm shadow-md z-0"></div>
+                        <div className="absolute top-[15%] right-[2%] w-3.5 h-10 bg-slate-800 rounded-sm shadow-md z-0"></div>
+
+                        {/* Ruedas Traseras (Neumáticos oscuros) */}
+                        <div className="absolute bottom-[12%] left-[2%] w-3.5 h-10 bg-slate-800 rounded-sm shadow-md z-0"></div>
+                        <div className="absolute bottom-[12%] right-[2%] w-3.5 h-10 bg-slate-800 rounded-sm shadow-md z-0"></div>
+
+                        {/* Espejos Retrovisores Reales (Pequeños y claros) */}
+                        <div className="absolute top-[34%] left-[4%] w-2 h-4 bg-slate-400 rounded-l-md shadow-sm z-20"></div>
+                        <div className="absolute top-[34%] right-[4%] w-2 h-4 bg-slate-400 rounded-r-md shadow-sm z-20"></div>
 
                         {/* Chasis principal */}
                         <div className="w-[88%] h-full bg-slate-300 rounded-t-[45px] rounded-b-[35px] border-4 border-slate-400 relative flex flex-col p-1 shadow-inner z-10 overflow-hidden">
@@ -1023,12 +1055,61 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
         </form>
       </div>
 
+      {uploadProgress.active && (
+        <div className="fixed bottom-[88px] left-1/2 transform -translate-x-1/2 z-[100] w-[92%] max-w-sm animate-in slide-in-from-bottom-5 duration-300">
+          <div className="bg-slate-900/95 backdrop-blur-md p-4 rounded-3xl shadow-2xl border-2 border-slate-700 flex flex-col gap-3">
+            <div className="flex justify-between items-center">
+               <span className="text-xs font-black text-blue-400 uppercase tracking-widest flex items-center gap-2">
+                 <div className="relative">
+                   <CloudOff className="w-5 h-5 text-blue-400 animate-pulse"/>
+                 </div>
+                 Sincronizando
+               </span>
+               <span className="text-xs font-bold text-slate-300 bg-slate-800 px-2 py-0.5 rounded-md border border-slate-700">
+                 {uploadProgress.current} / {uploadProgress.total}
+               </span>
+            </div>
+            <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden shadow-inner border border-slate-900">
+               <div className="bg-blue-500 h-full transition-all duration-300 relative" style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}>
+                 <div className="absolute inset-0 bg-white/20 w-full h-full animate-[pulse_1s_ease-in-out_infinite]"></div>
+               </div>
+            </div>
+            <p className="text-[10px] text-slate-400 font-bold truncate leading-none">{uploadProgress.text}</p>
+          </div>
+        </div>
+      )}
+
       {fullScreenImage && (
         <div className="fixed inset-0 bg-slate-900/95 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm cursor-zoom-out animate-in fade-in duration-200" onClick={() => setFullScreenImage(null)}>
           <button onClick={() => setFullScreenImage(null)} className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 p-2 rounded-full text-white transition-colors shadow-lg">
             <X className="w-6 h-6" />
           </button>
           <img src={fullScreenImage} alt="Evidencia Ampliada" className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
+      {/* CENTRO DE SUBIDAS FLOTANTE */}
+      {uploadProgress.active && (
+        <div className="fixed bottom-[88px] left-1/2 transform -translate-x-1/2 z-[100] w-[92%] max-w-sm animate-in slide-in-from-bottom-5 duration-300">
+          <div className="bg-slate-900/95 backdrop-blur-md p-4 rounded-3xl shadow-2xl border-2 border-slate-700 flex flex-col gap-3">
+            <div className="flex justify-between items-center">
+               <span className="text-xs font-black text-blue-400 uppercase tracking-widest flex items-center gap-2">
+                 <CloudOff className="w-4 h-4 hidden"/> 
+                 <div className="relative">
+                   <CloudOff className="w-5 h-5 text-blue-400 animate-pulse"/>
+                 </div>
+                 Sincronizando
+               </span>
+               <span className="text-xs font-bold text-slate-300 bg-slate-800 px-2 py-0.5 rounded-md border border-slate-700">
+                 {uploadProgress.current} / {uploadProgress.total}
+               </span>
+            </div>
+            <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden shadow-inner border border-slate-900">
+               <div className="bg-blue-500 h-full transition-all duration-300 relative" style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}>
+                 <div className="absolute inset-0 bg-white/20 w-full h-full animate-[pulse_1s_ease-in-out_infinite]"></div>
+               </div>
+            </div>
+            <p className="text-[10px] text-slate-400 font-bold truncate leading-none">{uploadProgress.text}</p>
+          </div>
         </div>
       )}
 

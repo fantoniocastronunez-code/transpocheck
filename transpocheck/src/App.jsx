@@ -160,22 +160,23 @@ function LogisticApp() {
       
       .font-alfa { font-family: 'Alfa Slab One', serif; font-weight: 400; }
       
-      /* REGLAS MAESTRAS MODO OSCURO (Anula Tailwind) */
-      .dark body { background-color: #020617 !important; color: #f8fafc !important; }
-      .dark header.fixed-nav-bar { background-color: #0f172a !important; border-bottom: 1px solid #1e293b !important; }
-      .dark .bg-white:not(canvas) { background-color: #0f172a !important; border-color: #1e293b !important; }
+      /* REGLAS MAESTRAS MODO OSCURO OLED (True Black) */
+      .dark body { background-color: #000000 !important; color: #f8fafc !important; }
+      .dark header.fixed-nav-bar { background-color: #000000 !important; border-bottom: 1px solid #171717 !important; }
+      .dark .bg-white:not(canvas) { background-color: #000000 !important; border-color: #171717 !important; }
       .dark canvas { background-color: #ffffff !important; border-radius: 0.5rem; color: #000 !important; }
-      .dark .bg-slate-50 { background-color: #020617 !important; border-color: #0f172a !important; }
-      .dark .bg-slate-100 { background-color: #1e293b !important; }
-      .dark .bg-slate-200 { background-color: #334155 !important; }
+      .dark .bg-slate-50 { background-color: #000000 !important; border-color: #171717 !important; }
+      .dark .bg-slate-100 { background-color: #0a0a0a !important; }
+      .dark .bg-slate-200 { background-color: #171717 !important; }
       
       .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
       .dark .text-slate-700 { color: #e2e8f0 !important; }
       .dark .text-slate-600 { color: #cbd5e1 !important; }
       .dark .text-slate-500, .dark .text-slate-400 { color: #94a3b8 !important; }
-      .dark .border-slate-100, .dark .border-slate-200, .dark .border-slate-300 { border-color: #1e293b !important; }
+      .dark .border-slate-100, .dark .border-slate-200, .dark .border-slate-300 { border-color: #171717 !important; }
       
-      .dark .bg-blue-50 { background-color: rgba(30, 58, 138, 0.3) !important; border-color: #1e3a8a !important; }
+      /* Botones de alto contraste OLED */
+      .dark .bg-blue-50 { background-color: rgba(37, 99, 235, 0.15) !important; border-color: rgba(37, 99, 235, 0.3) !important; }
       .dark .text-blue-800 { color: #93c5fd !important; }
       .dark .text-blue-600 { color: #60a5fa !important; }
 
