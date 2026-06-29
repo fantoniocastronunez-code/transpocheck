@@ -1115,7 +1115,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
       </div>
 
       {uploadProgress.active && (
-        <div className="fixed bottom-[88px] left-1/2 transform -translate-x-1/2 z-[100] w-[92%] max-w-sm animate-in slide-in-from-bottom-5 duration-300">
+        <div className="fixed bottom-[88px] left-1/2 transform -translate-x-1/2 z-[60] w-[92%] max-w-sm animate-in slide-in-from-bottom-5 duration-300">
           <div className="bg-slate-900/95 backdrop-blur-md p-4 rounded-3xl shadow-2xl border-2 border-slate-700 flex flex-col gap-3">
             <div className="flex justify-between items-center">
                <span className="text-xs font-black text-blue-400 uppercase tracking-widest flex items-center gap-2">
