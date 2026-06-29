@@ -1,13 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import { VitePWA } from 'vite-plugin-pwa' // <-- 1. NUEVO IMPORT
+import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    // 2. CACHÉ AGRESIVO EXTREMO
+    // CACHÉ AGRESIVO EXTREMO
     VitePWA({ 
       registerType: 'autoUpdate',
       includeAssets: ['logo.png', 'LogoLogistica.png', 'robots.txt', 'apple-touch-icon.png'],
@@ -27,4 +27,6 @@ export default defineConfig({
           }
         ]
       }
-    })
+    }) 
+  ],
+})
