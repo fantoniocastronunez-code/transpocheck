@@ -33,6 +33,47 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
   const [qrOpen, setQrOpen] = useState(false); 
   const [fullScreenImage, setFullScreenImage] = useState(null); 
   const [uploadProgress, setUploadProgress] = useState({ active: false, current: 0, total: 0, text: '' }); 
+  
+  // Estados para el Déjà Vu Pericial
+  const [dejaVuData, setDejaVuData] = useState(null);
+  const [showDejaVuModal, setShowDejaVuModal] = useState(false);
+
+  // Motor de búsqueda silenciosa del Déjà Vu
+  useEffect(() => {
+    const fetchHistory = async () => {
+      const plate = formData.plateOrVin?.trim().toUpperCase();
+      if (!plate || plate.length < 5) {
+         setDejaVuData(null);
+         return;
+      }
+      try {
+        const q = query(collection(db, 'transport_jobs'), where('plate', '==', plate));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          let pastJobs = snap.docs
+            .map(d => ({id: d.id, ...d.data()}))
+            .filter(j => j.status === 'completed' && j.id !== job.id);
+          
+          pastJobs.sort((a, b) => b.completedAt - a.completedAt);
+          
+          // Busca el trabajo más reciente que tenga fotos de daños u observaciones largas
+          const jobWithDamage = pastJobs.find(j => 
+             j.checklist && 
+             ((j.checklist.detailPins && j.checklist.detailPins.length > 0) || 
+              (j.checklist.observations && j.checklist.observations.trim().length > 5))
+          );
+          setDejaVuData(jobWithDamage || null);
+        } else {
+           setDejaVuData(null);
+        }
+      } catch(e) {
+        console.error("Error Déjà Vu:", e);
+      }
+    };
+    
+    const timeoutId = setTimeout(fetchHistory, 800); // Espera 800ms después de teclear para no saturar la red
+    return () => clearTimeout(timeoutId);
+  }, [formData.plateOrVin, db, job.id]);
 
   useEffect(() => {
     if (isQuick || !job.id) return;
@@ -460,6 +501,25 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
               </div>
               <input value={formData.plateOrVin} onChange={e=>setF('plateOrVin',e.target.value)} placeholder="Patente o VIN" className="w-full border-2 border-slate-300 bg-slate-100 p-3 rounded-xl font-black uppercase text-slate-800 shadow-inner mt-2"/>
               
+              {/* ALERTA DÉJÀ VU PERICIAL */}
+              {dejaVuData && (
+                <div className="bg-purple-50 border-2 border-purple-200 p-4 rounded-2xl shadow-sm animate-in zoom-in-95 flex items-start gap-3 mt-4 relative overflow-hidden">
+                   <div className="absolute top-0 left-0 w-1.5 h-full bg-purple-500"></div>
+                   <div className="bg-purple-200 p-2 rounded-full text-purple-700 animate-pulse shrink-0">
+                      <Search className="w-5 h-5"/>
+                   </div>
+                   <div className="flex-1">
+                      <h4 className="text-xs font-black text-purple-800 uppercase tracking-widest mb-1">Déjà Vu Pericial</h4>
+                      <p className="text-[11px] font-bold text-purple-600 leading-tight mb-3">
+                        Hay registros de daños previos en este vehículo (Traslado del {new Date(dejaVuData.completedAt).toLocaleDateString()}).
+                      </p>
+                      <button type="button" onClick={() => setShowDejaVuModal(true)} className="bg-purple-600 hover:bg-purple-700 text-white text-[10px] px-3 py-2 rounded-xl font-black uppercase transition-colors shadow-sm w-full">
+                         Ver Daños Anteriores
+                      </button>
+                   </div>
+                </div>
+              )}
+
               {job.tripType === 'revision' && (
                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3 mt-4">
                   <h3 className="text-sm font-extrabold text-blue-600 uppercase tracking-wider">Resultado de la Revisión</h3>
@@ -1078,37 +1138,60 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
         </div>
       )}
 
+      {/* MODAL DEL DÉJÀ VU PERICIAL */}
+      {showDejaVuModal && dejaVuData && (
+        <div className="fixed inset-0 bg-slate-900/80 z-[9998] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setShowDejaVuModal(false)}>
+           <div className="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
+              <div className="bg-purple-600 p-4 flex justify-between items-center">
+                 <h3 className="text-white font-black flex items-center gap-2"><Search className="w-5 h-5"/> Memoria Histórica</h3>
+                 <button onClick={() => setShowDejaVuModal(false)} className="bg-white/20 p-1.5 rounded-full text-white hover:bg-white/30 transition-colors"><X className="w-5 h-5"/></button>
+              </div>
+              <div className="p-5 overflow-y-auto space-y-4">
+                 
+                 <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl">
+                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Último Conductor:</p>
+                    <p className="text-xs font-extrabold text-slate-700">{dejaVuData.assignedDriverName || dejaVuData.acceptedByEmail}</p>
+                 </div>
+
+                 {dejaVuData.checklist.observations && (
+                   <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl">
+                      <p className="text-[10px] font-black text-amber-700 uppercase mb-1">Observaciones Anteriores:</p>
+                      <p className="text-xs font-bold text-amber-900 italic">"{dejaVuData.checklist.observations}"</p>
+                   </div>
+                 )}
+                 
+                 {dejaVuData.checklist.detailPins && dejaVuData.checklist.detailPins.length > 0 && (
+                   <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Fotos de Daños Registrados:</p>
+                      <div className="grid grid-cols-2 gap-2">
+                         {dejaVuData.checklist.detailPins.map(pin => (
+                            dejaVuData.checklist.photos[pin.id] && (
+                              <img 
+                                key={pin.id} 
+                                src={dejaVuData.checklist.photos[pin.id]} 
+                                className="w-full h-24 object-cover rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:opacity-80 transition-opacity" 
+                                alt="Daño anterior" 
+                                onClick={() => { setShowDejaVuModal(false); setFullScreenImage(dejaVuData.checklist.photos[pin.id]); }}
+                              />
+                            )
+                         ))}
+                      </div>
+                   </div>
+                 )}
+                 <button type="button" onClick={() => setShowDejaVuModal(false)} className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black rounded-xl transition-colors text-xs uppercase tracking-widest mt-2">
+                    Entendido, Volver al Checklist
+                 </button>
+              </div>
+           </div>
+        </div>
+      )}
+
       {fullScreenImage && (
         <div className="fixed inset-0 bg-slate-900/95 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm cursor-zoom-out animate-in fade-in duration-200" onClick={() => setFullScreenImage(null)}>
           <button onClick={() => setFullScreenImage(null)} className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 p-2 rounded-full text-white transition-colors shadow-lg">
             <X className="w-6 h-6" />
           </button>
           <img src={fullScreenImage} alt="Evidencia Ampliada" className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
-        </div>
-      )}
-      {/* CENTRO DE SUBIDAS FLOTANTE */}
-      {uploadProgress.active && (
-        <div className="fixed bottom-[88px] left-1/2 transform -translate-x-1/2 z-[100] w-[92%] max-w-sm animate-in slide-in-from-bottom-5 duration-300">
-          <div className="bg-slate-900/95 backdrop-blur-md p-4 rounded-3xl shadow-2xl border-2 border-slate-700 flex flex-col gap-3">
-            <div className="flex justify-between items-center">
-               <span className="text-xs font-black text-blue-400 uppercase tracking-widest flex items-center gap-2">
-                 <CloudOff className="w-4 h-4 hidden"/> 
-                 <div className="relative">
-                   <CloudOff className="w-5 h-5 text-blue-400 animate-pulse"/>
-                 </div>
-                 Sincronizando
-               </span>
-               <span className="text-xs font-bold text-slate-300 bg-slate-800 px-2 py-0.5 rounded-md border border-slate-700">
-                 {uploadProgress.current} / {uploadProgress.total}
-               </span>
-            </div>
-            <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden shadow-inner border border-slate-900">
-               <div className="bg-blue-500 h-full transition-all duration-300 relative" style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}>
-                 <div className="absolute inset-0 bg-white/20 w-full h-full animate-[pulse_1s_ease-in-out_infinite]"></div>
-               </div>
-            </div>
-            <p className="text-[10px] text-slate-400 font-bold truncate leading-none">{uploadProgress.text}</p>
-          </div>
         </div>
       )}
 
