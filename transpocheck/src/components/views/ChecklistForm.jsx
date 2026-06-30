@@ -116,7 +116,8 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
   };
   // ----------------------------------------
 
-  // Estados para el Déjà Vu Pericial  const [dejaVuData, setDejaVuData] = useState(null);
+  // Estados para el Déjà Vu Pericial
+  const [dejaVuData, setDejaVuData] = useState(null);
   const [showDejaVuModal, setShowDejaVuModal] = useState(false);
 
 
