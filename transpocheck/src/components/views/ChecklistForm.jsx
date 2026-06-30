@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { updateDoc, doc, setDoc, addDoc, collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { 
   FileText, MapPin, CheckCircle, CloudOff, AlertCircle, Eye, 
@@ -9,6 +8,7 @@ import {
 import SignaturePad from '../ui/SignaturePad';
 import { resizeImage, formatMoney } from '../../utils/helpers';
 
+
 export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList, drivers, expenses, vehicles, uploadImageToStorage }) {
   const isQuick = job.id === 'NEW_QUICK_JOB'; 
   const localStorageKey = `checklist_draft_${job.id}`;
@@ -16,6 +16,8 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
   const initialDocs = matchedVehicle?.docs || { soap:false, permiso:false, revTecnica:false, gases:false };
   const initialDocsExpiry = matchedVehicle?.docsExpiry || {};
   const initialReminders = matchedVehicle?.internalReminders || []; 
+
+
 
 
   const defaultData = {
@@ -35,12 +37,12 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
   const [fullScreenImage, setFullScreenImage] = useState(null); 
   const [uploadProgress, setUploadProgress] = useState({ active: false, current: 0, total: 0, text: '' }); 
 
+
   // --- MOTOR DE CÁMARA INTERNA MULTI-LENTE (WebRTC) ---
   const [inAppCamera, setInAppCamera] = useState({ isOpen: false, onCapture: null, title: '', stream: null, devices: [], currentIndex: 0 });
   const videoRef = React.useRef(null);
 
   const startCamera = async (deviceId = null, isFirst = false, title = '', callback = null) => {
-    // Apaga el lente actual antes de encender el nuevo
     if (inAppCamera.stream && !isFirst) inAppCamera.stream.getTracks().forEach(t => t.stop());
     
     try {
@@ -50,22 +52,16 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
        let allVideoDevices = inAppCamera.devices;
        let cIndex = inAppCamera.currentIndex;
 
-       // Si es la primera vez que abre, escaneamos todo el hardware en busca de los lentes extra (0.5x, 3x, etc)
        if (isFirst) {
           const devices = await navigator.mediaDevices.enumerateDevices();
           allVideoDevices = devices.filter(d => d.kind === 'videoinput');
-          // Intentamos iniciar con la cámara trasera principal
           cIndex = allVideoDevices.findIndex(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('trasera'));
           if (cIndex === -1) cIndex = 0;
        }
 
        setInAppCamera(prev => ({ 
-         ...prev,
-         isOpen: true, 
-         onCapture: isFirst ? callback : prev.onCapture, 
-         title: isFirst ? title : prev.title, 
-         stream, 
-         devices: allVideoDevices, 
+         ...prev, isOpen: true, onCapture: isFirst ? callback : prev.onCapture, 
+         title: isFirst ? title : prev.title, stream, devices: allVideoDevices, 
          currentIndex: isFirst ? cIndex : prev.currentIndex 
        }));
     } catch (error) {
@@ -118,18 +114,11 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
       closeCamera();
     }, 'image/jpeg', 0.85);
   };
-  // ----------------------------------------    canvas.getContext('2d').drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      inAppCamera.onCapture(new File([blob], "capture.jpg", { type: "image/jpeg" }));
-      closeCamera();
-    }, 'image/jpeg', 0.85);
-  };
   // ----------------------------------------
-  
-  // Estados para el Déjà Vu Pericial
-  const [dejaVuData, setDejaVuData] = useState(null);
+
+  // Estados para el Déjà Vu Pericial  const [dejaVuData, setDejaVuData] = useState(null);
   const [showDejaVuModal, setShowDejaVuModal] = useState(false);
+
 
   // Motor de búsqueda silenciosa del Déjà Vu
   useEffect(() => {
@@ -168,6 +157,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
     return () => clearTimeout(timeoutId);
   }, [formData.plateOrVin, db, job.id]);
 
+
   useEffect(() => {
     if (isQuick || !job.id) return;
     let isFirstLoad = true;
@@ -183,6 +173,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
         isFirstLoad = false;
       }
 
+
       if (data?.checklist?.clientSigned) {
         setFormData(prev => ({
           ...prev,
@@ -195,6 +186,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
     });
     return () => unsub();
   }, [job.id, isQuick, db]);
+
 
   useEffect(() => {
     if (isQuick || !job.id) return;
@@ -209,12 +201,15 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
          draftData.signatureData = null;
       }
 
+
       updateDoc(doc(db, 'transport_jobs', job.id), { draft: { step, formData: draftData } }).catch(() => {});
     }, 2000); 
     return () => clearTimeout(timer);
   }, [step, formData, job.id, isQuick, db]);
 
+
   const [processingAction, setProcessingAction] = useState(null);
+
 
   const syncFilesToStorage = async (currentData) => {
     const d = { ...currentData };
@@ -222,19 +217,23 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
     const uploadedPhotos = {};
     const jobIdFolder = job.id === 'NEW_QUICK_JOB' ? `quick_${Date.now()}` : job.id;
 
+
     let totalFiles = 0;
     for (const val of Object.values(d.photos)) { if (val && val.startsWith('data:image')) totalFiles++; }
     if (d.signatureData && d.signatureData.startsWith('data:image')) totalFiles++;
 
+
     if (totalFiles > 0) {
        setUploadProgress({ active: true, current: 0, total: totalFiles, text: 'Conectando con el servidor...' });
     }
+
 
     let completed = 0;
     const updateProgress = (fileName) => {
        completed++;
        setUploadProgress(prev => ({ ...prev, current: completed, text: `Sincronizando ${fileName}...` }));
     };
+
 
     for (const [key, val] of Object.entries(d.photos)) {
       if (val && val.startsWith('data:image')) {
@@ -246,11 +245,13 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
       }
     }
 
+
     if (d.signatureData && d.signatureData.startsWith('data:image')) {
        const p = uploadImageToStorage(d.signatureData, `checklists/${jobIdFolder}`, `signature_${Date.now()}.jpg`)
          .then(url => { d.signatureData = url; updateProgress('Firma de conformidad'); return url; });
        uploadPromises.push(p);
     }
+
 
     await Promise.all(uploadPromises);
     d.photos = uploadedPhotos;
@@ -269,8 +270,10 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
       const syncedData = await syncFilesToStorage(formData);
       setFormData(syncedData); 
 
+
       const url = `${window.location.href.split('?')[0]}?sign=${job.id}`;
       const textToShare = `¡Hola! Por favor firma el acta de recepción y revisa las fotografías del vehículo aquí:\n${url}`;
+
 
       const textArea = document.createElement("textarea");
       textArea.value = textToShare;
@@ -281,7 +284,9 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
       try { document.execCommand('copy'); } catch (err) {}
       document.body.removeChild(textArea);
 
+
       await setDoc(doc(db, 'transport_jobs', job.id), { checklist: syncedData }, { merge: true });
+
 
       if (navigator.share) {
         try { await navigator.share({ title: 'Firma de Recepción', text: textToShare }); } catch (err) { showAlert("✅ Link copiado al portapapeles automáticamente."); }
@@ -294,6 +299,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
     }
     finally { setProcessingAction(null); }
   };
+
 
   const handleOpenQR = async () => {
     if (isQuick) return showAlert("⚠️ Para usar el Código QR en un trabajo nuevo (Desde 0), PRIMERO debes presionar 'Finalizar y Guardar' abajo.");
@@ -311,7 +317,9 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
     } finally { setProcessingAction(null); }
   };
 
+
   const setF = (f, v) => setFormData(p => ({...p, [f]:v}));
+
 
   const handleReminderChange = (index, field, value) => {
     const newRems = [...(formData.internalReminders || [])];
@@ -325,6 +333,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
     setF('internalReminders', newRems);
   };
 
+
   const clearDraft = () => {
     showConfirm("¿Eliminar borrador y empezar de nuevo?", async () => {
       if (!isQuick) await updateDoc(doc(db, 'transport_jobs', job.id), { draft: null });
@@ -333,6 +342,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
       setIsDraftLoaded(false);
     });
   };
+
 
   const handlePic = async (eOrFile, id) => {
   const f = eOrFile.target ? eOrFile.target.files[0] : eOrFile; 
@@ -350,6 +360,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
       return newData;
     });
 
+
     // PASO 2: Subir a Storage en segundo plano (solo si no es trabajo rápido)
     if (job.id !== 'NEW_QUICK_JOB' && uploadImageToStorage) {
       const storageUrl = await uploadImageToStorage(
@@ -364,13 +375,16 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
       }));
     }
 
+
   } catch(err) { 
     console.error("Error al procesar la foto:", err);
     showAlert("Error al procesar la foto. Intenta con una imagen más pequeña."); 
   }
 };
 
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+
 
   const submit = async (e) => {
     e.preventDefault();
@@ -381,10 +395,12 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
     let d = {...formData}; 
     d.client = d.client === 'OTRO' ? d.manualClient : d.client; 
 
+
     if(d.noReception) { 
       d.receiverName="ENTREGA SIN RECEPCIÓN"; 
       d.receiverRut="N/A"; 
     }
+
 
     try {
       d = await syncFilesToStorage(d);
@@ -395,6 +411,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
       return;
     }
 
+
     const getGPS = () => new Promise((resolve) => {
       if (!("geolocation" in navigator)) return resolve(null);
       navigator.geolocation.getCurrentPosition(
@@ -403,6 +420,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
         { timeout: 6000, enableHighAccuracy: true } 
       );
     });
+
 
     if (!d.location) {
       const coords = await getGPS();
@@ -415,6 +433,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
       let totalToDeduct = 0;
       const expensesToRegister = [];
 
+
       const processExpense = (amountStr, detailStr) => {
         const num = Number(String(amountStr).replace(/[^0-9]/g, ''));
         if (num > 0) {
@@ -422,6 +441,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
           expensesToRegister.push({ amount: num, detail: detailStr });
         }
       };
+
 
       if (d.hasFuelCharge && d.fuelChargeAmount) {
         processExpense(d.fuelChargeAmount, `Carga Combustible (Patente: ${d.plateOrVin || 'S/N'})`);
@@ -433,9 +453,11 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
         if (job.rtData?.frenos && d.prtCostFrenos) processExpense(d.prtCostFrenos, `Valor Cert. Frenos (Patente: ${d.plateOrVin || 'S/N'})`);
       }
 
+
       if (totalToDeduct > 0) {
         const currentDriver = drivers?.find(drv => drv.email === currentUserEmail);
         const isAdminUser = ['fcastro@logisticats.cl', 'hcastro@logisticats.cl'].includes(currentUserEmail);
+
 
         if (currentDriver) {
           const currentBalance = currentDriver.balance || 0;
@@ -444,9 +466,12 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
               return showAlert(`No puedes enviar el checklist. Intentas rendir ${formatMoney(totalToDeduct)} en gastos, pero tu fondo actual es de solo ${formatMoney(currentBalance)}. Pide a la central que te asigne más dinero e intenta de nuevo.`);
           }
 
+
           const newBalance = currentBalance - totalToDeduct;
 
+
           await updateDoc(doc(db, 'drivers', currentDriver.id), { balance: newBalance });
+
 
           for (const exp of expensesToRegister) {
             await addDoc(collection(db, 'expenses'), {
@@ -464,6 +489,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
         }
       }
 
+
       if (d.plateOrVin) {
           const plateUpper = d.plateOrVin.toUpperCase();
           const vehRef = collection(db, 'vehicles');
@@ -471,6 +497,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
           const querySnapshot = await getDocs(q);
           
           const activeReminders = (d.internalReminders || []).filter(r => !r.resolved);
+
 
           if (!querySnapshot.empty) {
               const vehDocId = querySnapshot.docs[0].id;
@@ -488,6 +515,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
               });
           }
       }
+
 
       if(isQuick) { 
           fd.assignedDriverName="Auto-creado"; fd.acceptedByEmail=currentUserEmail; 
@@ -521,6 +549,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
     } finally { setIsSubmitting(false); }
   };
 
+
   return (
     <div className="bg-white rounded-3xl shadow-xl border pb-10 relative">
       {isDraftLoaded && (
@@ -531,6 +560,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
             </div>
          </div>
       )}
+
 
       <div className="bg-blue-600 text-white p-5 flex justify-between items-center rounded-t-3xl"><h2 className="font-bold text-base"><FileText className="inline w-5 h-5 mr-1"/> Formulario Checklist</h2><button type="button" onClick={()=>showConfirm("¿Deseas salir? (Tu progreso quedará guardado localmente)", onCancel)} className="bg-blue-800 px-3 py-1 rounded-xl text-xs font-bold">Salir</button></div>
       
@@ -555,6 +585,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
          </div>
       </div>
 
+
       <div className="p-5">
         <div className="flex gap-1.5 overflow-x-auto pb-3 mb-5 border-b border-slate-100 scrollbar-none">
           {[
@@ -570,6 +601,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
             </button>
           ))}
         </div>
+
 
         <form onSubmit={submit} className="space-y-5 text-sm">
           
@@ -613,6 +645,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                 </div>
               )}
 
+
               {job.tripType === 'revision' && (
                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3 mt-4">
                   <h3 className="text-sm font-extrabold text-blue-600 uppercase tracking-wider">Resultado de la Revisión</h3>
@@ -646,6 +679,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
             </div>
           )}
 
+
           {step === 2 && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Documentos del Vehículo</h3>
@@ -674,10 +708,12 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
             </div>
           )}
 
+
           {step === 3 && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Observaciones Generales</h3>
               <textarea className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 min-h-[90px]" placeholder="Escribe aquí si hay algún daño, rayón o comentario del estado visual del vehículo..." value={formData.observations || ''} onChange={(e) => setF('observations', e.target.value)} />
+
 
               <div className="bg-amber-50 p-4 rounded-2xl border-2 border-amber-200 mt-4 shadow-sm">
                   <h3 className="text-sm font-extrabold text-amber-800 mb-1 flex items-center gap-2"><AlertCircle className="w-4 h-4"/> Alertas Internas de Patente</h3>
@@ -712,6 +748,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
             </div>
           )}
 
+
           {step === 4 && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <div className="flex justify-between items-end border-b border-slate-100 pb-2 mb-2">
@@ -729,6 +766,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                   <option value="carro_arrastre">🛒 Carro Arrastre</option>
                 </select>
               </div>
+
 
               <div className="bg-slate-50 p-4 rounded-3xl border-2 border-slate-100 mb-4 select-none relative">
                 <div className="flex justify-between items-center mb-4 min-h-[40px]">
@@ -762,12 +800,14 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                        const x = ((e.clientX - rect.left) / rect.width) * 100;
                        const y = ((e.clientY - rect.top) / rect.height) * 100;
 
+
                        if (!formData.zoomZone) {
                          let zone = y < 33 ? 't' : y < 66 ? 'm' : 'b';
                          zone += x < 50 ? 'l' : 'r';
                          setF('zoomZone', zone);
                          return;
                        }
+
 
                        const availableDet = ['det1', 'det2', 'det3', 'det4', 'det5', 'det6', 'det7', 'det8'].find(d => !formData.photos[d]);
                        if (!availableDet) return showAlert("Máximo de 8 fotos de detalles/daños alcanzado.");
@@ -788,19 +828,23 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                       </div>
                     )}
 
+
                     {(!formData.vehicleType || formData.vehicleType === 'auto') && (
                       <div className="w-full h-full relative flex justify-center">
                         {/* Ruedas Delanteras (Neumáticos oscuros) */}
                         <div className="absolute top-[15%] left-[2%] w-3.5 h-10 bg-slate-800 rounded-sm shadow-md z-0"></div>
                         <div className="absolute top-[15%] right-[2%] w-3.5 h-10 bg-slate-800 rounded-sm shadow-md z-0"></div>
 
+
                         {/* Ruedas Traseras (Neumáticos oscuros) */}
                         <div className="absolute bottom-[12%] left-[2%] w-3.5 h-10 bg-slate-800 rounded-sm shadow-md z-0"></div>
                         <div className="absolute bottom-[12%] right-[2%] w-3.5 h-10 bg-slate-800 rounded-sm shadow-md z-0"></div>
 
+
                         {/* Espejos Retrovisores Reales (Pequeños y claros) */}
                         <div className="absolute top-[34%] left-[4%] w-2 h-4 bg-slate-400 rounded-l-md shadow-sm z-20"></div>
                         <div className="absolute top-[34%] right-[4%] w-2 h-4 bg-slate-400 rounded-r-md shadow-sm z-20"></div>
+
 
                         {/* Chasis principal */}
                         <div className="w-[88%] h-full bg-slate-300 rounded-t-[45px] rounded-b-[35px] border-4 border-slate-400 relative flex flex-col p-1 shadow-inner z-10 overflow-hidden">
@@ -808,10 +852,12 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                           {/* Líneas aerodinámicas del Capó */}
                           <div className="absolute top-[-2%] left-[15%] w-[70%] h-[20%] border-x-2 border-slate-400/40 rounded-t-[30px] pointer-events-none"></div>
 
+
                           {/* Habitáculo */}
                           <div className="flex flex-col h-full justify-between pt-[18%] pb-[12%] z-10">
                             {/* Parabrisas Delantero curvo */}
                             <div className="w-[85%] h-[16%] bg-slate-800/40 mx-auto rounded-t-[25px] rounded-b-[4px] shadow-sm border-t-2 border-white/20"></div>
+
 
                             {/* Techo y Ventanas Laterales (vidrios oscuros a los lados) */}
                             <div className="flex-1 w-[80%] mx-auto bg-slate-200 border-x-4 border-slate-800/40 relative flex flex-col my-1 shadow-sm rounded-sm">
@@ -819,9 +865,11 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                                <div className="w-full h-1/2 border-b-2 border-slate-400/30"></div>
                             </div>
 
+
                             {/* Parabrisas Trasero curvo */}
                             <div className="w-[80%] h-[11%] bg-slate-800/40 mx-auto rounded-b-[20px] rounded-t-[4px] shadow-sm border-b-2 border-white/20"></div>
                           </div>
+
 
                           {/* Línea del Maletero */}
                           <div className="absolute bottom-1.5 left-[20%] w-[60%] h-4 border-t-2 border-slate-400/60 rounded-t-lg pointer-events-none"></div>
@@ -919,12 +967,15 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                                 <div className="w-[90%] h-[90%] border-2 border-slate-300/50 rounded-sm"></div>
                             </div>
 
+
                             <div className="absolute top-2 left-1/2 -translate-x-1/2 w-4 h-10 border-x-4 border-t-4 border-slate-500 rounded-t-full bg-slate-400 z-0"></div>
+
 
                             <div className="absolute top-[48%] left-1/2 -translate-x-1/2 w-[105%] -ml-[2.5%] h-2 bg-slate-800/80 rounded-sm flex justify-between z-0">
                                 <div className="w-4 h-8 rounded-sm bg-slate-800 -ml-1 -mt-3 shadow-md"></div>
                                 <div className="w-4 h-8 rounded-sm bg-slate-800 -mr-1 -mt-3 shadow-md"></div>
                             </div>
+
 
                             <div className="absolute top-[56%] left-1/2 -translate-x-1/2 w-[105%] -ml-[2.5%] h-2 bg-slate-800/80 rounded-sm flex justify-between z-0">
                                 <div className="w-4 h-8 rounded-sm bg-slate-800 -ml-1 -mt-3 shadow-md"></div>
@@ -966,6 +1017,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                       </div>
                     )}
 
+
                     {(formData.detailPins || []).map(pin => (
                       <div key={pin.id} className="absolute w-8 h-8 -ml-4 -mt-4 bg-red-500 rounded-full border-2 border-white shadow-xl flex items-center justify-center z-50 animate-in zoom-in" style={{ left: `${pin.x}%`, top: `${pin.y}%` }}>
                         <img src={formData.photos[pin.id]} className="w-full h-full object-cover rounded-full opacity-90" alt="Detalle" />
@@ -974,22 +1026,27 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                     ))}
                   </div>
 
+
                   <button type="button" onClick={() => openCamera('FRENTE', f => handlePic(f, 'front'))} className={`absolute top-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.front ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
                     {formData.photos.front ? <><img src={formData.photos.front} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-1"/><span className="text-[9px] font-black text-slate-500 tracking-wide">FRENTE</span></>}
                   </button>
+
 
                   <button type="button" onClick={() => openCamera('ATRÁS', f => handlePic(f, 'back'))} className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.back ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
                     {formData.photos.back ? <><img src={formData.photos.back} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-1"/><span className="text-[9px] font-black text-slate-500 tracking-wide">ATRÁS</span></>}
                   </button>
 
+
                   <button type="button" onClick={() => openCamera('LATERAL PILOTO', f => handlePic(f, 'left'))} className={`absolute top-1/2 left-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.left ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
                     {formData.photos.left ? <><img src={formData.photos.left} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-0.5"/><span className="text-[8px] font-black text-slate-500 text-center leading-tight">LATERAL<br/>PILOTO</span></>}
                   </button>
+
 
                   <button type="button" onClick={() => openCamera('LATERAL COPILOTO', f => handlePic(f, 'right'))} className={`absolute top-1/2 right-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.right ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
                     {formData.photos.right ? <><img src={formData.photos.right} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-0.5"/><span className="text-[8px] font-black text-slate-500 text-center leading-tight">LATERAL<br/>COPILOTO</span></>}
                   </button>
                 </div>
+
 
                 <div className="grid grid-cols-2 gap-3 mt-6 border-t-2 border-slate-100 pt-4">
                   {[{id:'dashboard', l:'Tablero'}, {id:'tire', l:'Repuesto'}, {id:'interior_front', l:'Int. Adelante'}, {id:'interior_back', l:'Int. Atrás'}].map(p => (
@@ -1001,6 +1058,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
               </div>
             </div>
           )}
+
 
           {step === 5 && (
             <div className="space-y-4 animate-in fade-in duration-200">
@@ -1025,6 +1083,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                      </span>
                   </div>
                 </div>
+
 
                 <div className="relative pt-2 pb-2">
                   <div className="flex justify-between text-[11px] font-black px-1 mb-2">
@@ -1068,6 +1127,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                 </div>
               </div>
 
+
               <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 mt-6 text-slate-800 uppercase tracking-wider">Viáticos y Esperas</h3>
               
               <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
@@ -1082,6 +1142,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                   {formatMoney(expenses?.filter(g => g.jobId === job.id && g.type === 'assignment').reduce((acc, curr) => acc + Number(curr.amount || 0), 0) || 0)}
                 </p>
               </div>
+
 
               {job.tripType === 'revision' && (job.rtData?.revision || job.rtData?.inspeccion || job.rtData?.frenos) && (
                 <div className="bg-indigo-50 border-2 border-indigo-200 rounded-xl p-4 shadow-sm space-y-3">
@@ -1109,17 +1170,20 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                 </div>
               )}
 
+
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <div className={`flex flex-col items-center justify-center gap-1.5 h-24 rounded-2xl border-2 select-none shadow-sm ${job.waitTimeMinutes >= 1 ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
                   <Clock className="w-5 h-5"/>
                   <span className="font-black text-xs uppercase tracking-wider text-center leading-tight">Espera: {job.waitTimeMinutes || 0} min</span>
                 </div>
 
+
                 <button type="button" onClick={() => setF('hasFuelCharge', !formData.hasFuelCharge)} className={`flex flex-col items-center justify-center gap-1.5 h-24 rounded-2xl border-2 active:scale-95 transition-all select-none shadow-sm ${formData.hasFuelCharge ? 'border-blue-500 bg-blue-500 text-white shadow-blue-100' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
                   {formData.hasFuelCharge ? <CheckCircle className="w-5 h-5 animate-in zoom-in"/> : <Fuel className="w-5 h-5"/>}
                   <span className="font-black text-xs uppercase tracking-wider text-center leading-tight">Carga Combust.</span>
                 </button>
               </div>
+
 
               {formData.hasFuelCharge && (
                 <div className="animate-in fade-in slide-in-from-top-2 border rounded-xl p-3 bg-slate-50 shadow-inner max-w-sm mx-auto">
@@ -1129,6 +1193,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
               )}
             </div>
           )}
+
 
           {step === 6 && (
             <div className="space-y-4 animate-in fade-in duration-200">
@@ -1154,6 +1219,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                  </div>
                )}
 
+
                {!formData.noReception && (
                  <div className="space-y-3">
                    <div className="flex items-center gap-2 my-2"><div className="h-px bg-slate-200 flex-1"></div><span className="text-[10px] font-bold text-slate-400 uppercase">O llenar manualmente</span><div className="h-px bg-slate-200 flex-1"></div></div>
@@ -1168,6 +1234,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                      </div>
                    )}
 
+
                    <div className="relative mt-1">
                      {formData.signatureData && <div className="absolute top-2 right-2 bg-green-500 text-white text-[9px] px-2 py-0.5 rounded-full font-black flex items-center gap-1 z-10"><CheckCircle className="w-3 h-3"/> CAPTURADA</div>}
                      <SignaturePad initialData={formData.signatureData} onSave={d=>setF('signatureData',d)} onClear={()=>setF('signatureData',null)}/>
@@ -1176,6 +1243,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                )}
             </div>
           )}
+
 
           <div className="flex gap-3 pt-4 border-t border-slate-100 mt-6">
             {step > 1 && (
@@ -1197,8 +1265,10 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
             )}
           </div>
 
+
         </form>
       </div>
+
 
       {uploadProgress.active && (
         <div className="fixed bottom-[88px] left-1/2 transform -translate-x-1/2 z-[60] w-[92%] max-w-sm animate-in slide-in-from-bottom-5 duration-300">
@@ -1270,6 +1340,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
         </div>
       )}
 
+
       {/* MODAL DEL DÉJÀ VU PERICIAL */}
       {showDejaVuModal && dejaVuData && (
         <div className="fixed inset-0 bg-slate-900/80 z-[9998] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setShowDejaVuModal(false)}>
@@ -1284,6 +1355,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                     <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Último Conductor:</p>
                     <p className="text-xs font-extrabold text-slate-700">{dejaVuData.assignedDriverName || dejaVuData.acceptedByEmail}</p>
                  </div>
+
 
                  {dejaVuData.checklist.observations && (
                    <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl">
@@ -1318,6 +1390,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
         </div>
       )}
 
+
       {fullScreenImage && (
         <div className="fixed inset-0 bg-slate-900/95 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm cursor-zoom-out animate-in fade-in duration-200" onClick={() => setFullScreenImage(null)}>
           <button onClick={() => setFullScreenImage(null)} className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 p-2 rounded-full text-white transition-colors shadow-lg">
@@ -1326,6 +1399,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
           <img src={fullScreenImage} alt="Evidencia Ampliada" className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
+
 
     </div>
   );
