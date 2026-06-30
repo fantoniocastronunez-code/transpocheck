@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { updateDoc, doc, setDoc, addDoc, collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { 
   FileText, MapPin, CheckCircle, CloudOff, AlertCircle, Eye, 
@@ -33,6 +33,50 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
   const [qrOpen, setQrOpen] = useState(false); 
   const [fullScreenImage, setFullScreenImage] = useState(null); 
   const [uploadProgress, setUploadProgress] = useState({ active: false, current: 0, total: 0, text: '' }); 
+
+  // --- MOTOR DE CÁMARA INTERNA (WebRTC) ---
+  const [inAppCamera, setInAppCamera] = useState({ isOpen: false, onCapture: null, title: '', stream: null });
+  const videoRef = useRef(null);
+
+  const openCamera = async (title, callback) => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+       const input = document.createElement('input');
+       input.type = 'file'; input.accept = 'image/*'; input.capture = 'environment';
+       input.onchange = (e) => { if (e.target.files[0]) callback(e.target.files[0]); };
+       input.click(); return;
+    }
+    try {
+       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+       setInAppCamera({ isOpen: true, onCapture: callback, title, stream });
+    } catch (error) {
+       const input = document.createElement('input');
+       input.type = 'file'; input.accept = 'image/*';
+       input.onchange = (e) => { if (e.target.files[0]) callback(e.target.files[0]); };
+       input.click();
+    }
+  };
+
+  useEffect(() => {
+    if (inAppCamera.isOpen && inAppCamera.stream && videoRef.current) videoRef.current.srcObject = inAppCamera.stream;
+  }, [inAppCamera]);
+
+  const closeCamera = () => {
+    if (inAppCamera.stream) inAppCamera.stream.getTracks().forEach(track => track.stop());
+    setInAppCamera({ isOpen: false, onCapture: null, title: '', stream: null });
+  };
+
+  const takeInAppPhoto = () => {
+    if (!videoRef.current) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = videoRef.current.videoWidth; canvas.height = videoRef.current.videoHeight;
+    canvas.getContext('2d').drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      inAppCamera.onCapture(new File([blob], "capture.jpg", { type: "image/jpeg" }));
+      closeCamera();
+    }, 'image/jpeg', 0.85);
+  };
+  // ----------------------------------------
   
   // Estados para el Déjà Vu Pericial
   const [dejaVuData, setDejaVuData] = useState(null);
@@ -241,8 +285,8 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
     });
   };
 
-  const handlePic = async (e, id) => {
-  const f = e.target.files[0]; 
+  const handlePic = async (eOrFile, id) => {
+  const f = eOrFile.target ? eOrFile.target.files[0] : eOrFile; 
   if (!f) return;
   try {
     const dataUrl = await resizeImage(f, 1280, 0.75); 
@@ -680,8 +724,8 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                        if (!availableDet) return showAlert("Máximo de 8 fotos de detalles/daños alcanzado.");
                        
                        setF('pendingPin', { id: availableDet, x, y });
-                       document.getElementById(`pic-${availableDet}`).click();
                        setF('zoomZone', null);
+                       openCamera('Detalle del Daño', f => handlePic(f, availableDet));
                      }}
                   >
                     {!formData.zoomZone && (
@@ -881,35 +925,28 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                     ))}
                   </div>
 
-                  <label className={`absolute top-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.front ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
-                    <input type="file" id="pic-front" className="sr-only" accept="image/*" capture="environment" onChange={e=>handlePic(e,'front')}/>
+                  <button type="button" onClick={() => openCamera('FRENTE', f => handlePic(f, 'front'))} className={`absolute top-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.front ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
                     {formData.photos.front ? <><img src={formData.photos.front} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-1"/><span className="text-[9px] font-black text-slate-500 tracking-wide">FRENTE</span></>}
-                  </label>
+                  </button>
 
-                  <label className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.back ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
-                    <input type="file" id="pic-back" className="sr-only" accept="image/*" onChange={e=>handlePic(e,'back')}/>
+                  <button type="button" onClick={() => openCamera('ATRÁS', f => handlePic(f, 'back'))} className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.back ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
                     {formData.photos.back ? <><img src={formData.photos.back} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-1"/><span className="text-[9px] font-black text-slate-500 tracking-wide">ATRÁS</span></>}
-                  </label>
+                  </button>
 
-                  <label className={`absolute top-1/2 left-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.left ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
-                    <input type="file" id="pic-left" className="sr-only" accept="image/*" onChange={e=>handlePic(e,'left')}/>
+                  <button type="button" onClick={() => openCamera('LATERAL PILOTO', f => handlePic(f, 'left'))} className={`absolute top-1/2 left-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.left ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
                     {formData.photos.left ? <><img src={formData.photos.left} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-0.5"/><span className="text-[8px] font-black text-slate-500 text-center leading-tight">LATERAL<br/>PILOTO</span></>}
-                  </label>
+                  </button>
 
-                  <label className={`absolute top-1/2 right-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.right ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
-                    <input type="file" id="pic-right" className="sr-only" accept="image/*" onChange={e=>handlePic(e,'right')}/>
+                  <button type="button" onClick={() => openCamera('LATERAL COPILOTO', f => handlePic(f, 'right'))} className={`absolute top-1/2 right-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.right ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
                     {formData.photos.right ? <><img src={formData.photos.right} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-0.5"/><span className="text-[8px] font-black text-slate-500 text-center leading-tight">LATERAL<br/>COPILOTO</span></>}
-                  </label>
-
-                  {['det1','det2','det3','det4','det5','det6','det7','det8'].map(d => <input key={d} type="file" id={`pic-${d}`} className="sr-only" accept="image/*" onChange={e=>handlePic(e,d)}/>)}
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 mt-6 border-t-2 border-slate-100 pt-4">
                   {[{id:'dashboard', l:'Tablero'}, {id:'tire', l:'Repuesto'}, {id:'interior_front', l:'Int. Adelante'}, {id:'interior_back', l:'Int. Atrás'}].map(p => (
-                     <label key={p.id} className={`w-full h-12 rounded-xl border-2 flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white shadow-sm transition-all ${formData.photos[p.id] ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-slate-50'}`}>
-                       <input type="file" className="sr-only" accept="image/*" onChange={e=>handlePic(e,p.id)}/>
+                     <button type="button" key={p.id} onClick={() => openCamera(p.l, f => handlePic(f, p.id))} className={`w-full h-12 rounded-xl border-2 flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white shadow-sm transition-all ${formData.photos[p.id] ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-slate-50'}`}>
                        {formData.photos[p.id] ? <><img src={formData.photos[p.id]} className="absolute inset-0 w-full h-full object-cover opacity-30"/><CheckCircle className="w-5 h-5 text-green-500 relative z-10 bg-white rounded-full"/><span className="text-[10px] font-black text-green-800 relative z-10">{p.l}</span></> : <><Camera className="w-4 h-4 text-slate-400"/><span className="text-[10px] font-black text-slate-500 uppercase">{p.l}</span></>}
-                     </label>
+                     </button>
                   ))}
                 </div>
               </div>
@@ -1134,6 +1171,36 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                </div>
             </div>
             <p className="text-[10px] text-slate-400 font-bold truncate leading-none">{uploadProgress.text}</p>
+          </div>
+        </div>
+      )}
+      {/* --- CÁMARA INTERNA (WebRTC) --- */}
+      {inAppCamera.isOpen && (
+        <div className="fixed inset-0 bg-black z-[99999] flex flex-col animate-in fade-in duration-200">
+          <div className="bg-black text-white p-4 flex justify-between items-center z-10 shadow-md border-b border-slate-800">
+            <h3 className="font-black text-sm uppercase tracking-widest flex items-center gap-2"><Camera className="w-5 h-5 text-blue-400"/> {inAppCamera.title}</h3>
+            <button onClick={closeCamera} className="bg-white/10 p-2 rounded-full text-white hover:bg-white/20 transition-colors"><X className="w-5 h-5"/></button>
+          </div>
+          
+          <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
+             <video ref={videoRef} playsInline autoPlay className="w-full h-full object-cover" />
+             <div className="absolute inset-0 pointer-events-none border-[40px] border-black/40 flex items-center justify-center">
+               <div className="w-full h-full border-2 border-white/50 border-dashed rounded-xl"></div>
+             </div>
+          </div>
+          
+          <div className="bg-slate-900 pb-8 pt-5 px-6 flex flex-col gap-4 z-10 rounded-t-3xl shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+             <button onClick={takeInAppPhoto} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-black text-lg flex justify-center items-center gap-3 shadow-[0_0_20px_rgba(37,99,235,0.4)] active:scale-95 transition-all">
+                <div className="w-8 h-8 rounded-full border-4 border-white flex items-center justify-center"><div className="w-3 h-3 bg-white rounded-full"></div></div>
+                TOMAR FOTO AHORA
+             </button>
+             <label className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-3.5 rounded-xl font-bold text-sm flex justify-center items-center gap-2 cursor-pointer transition-colors border border-slate-700 active:scale-95">
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                   const f = e.target.files[0];
+                   if (f) { inAppCamera.onCapture(f); closeCamera(); }
+                }} />
+                🖼️ O elegir una de tu Galería
+             </label>
           </div>
         </div>
       )}
