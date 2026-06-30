@@ -12,7 +12,7 @@ import { resizeImage, formatMoney } from '../../utils/helpers';
 export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList, drivers, expenses, vehicles, uploadImageToStorage }) {
   const isQuick = job.id === 'NEW_QUICK_JOB'; 
   const localStorageKey = `checklist_draft_${job.id}`;
-  const matchedVehicle = vehicles?.find(v => v.plate === (job.plate || job.vin)?.toUpperCase());
+  const matchedVehicle = vehicles?.find(v => v.plate === String(job.plate || job.vin || '').toUpperCase());
   const initialDocs = matchedVehicle?.docs || { soap:false, permiso:false, revTecnica:false, gases:false };
   const initialDocsExpiry = matchedVehicle?.docsExpiry || {};
   const initialReminders = matchedVehicle?.internalReminders || []; 
@@ -572,7 +572,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                  let p = 0;
                  if (formData.brand && formData.model && formData.plateOrVin) p += 25;
                  if (formData.fuelLevel !== undefined) p += 25;
-                 if (Object.values(formData.photos).filter(v => v).length >= 2) p += 25;
+                 if (Object.values(formData.photos || {}).filter(v => v).length >= 2) p += 25;
                  if (formData.signatureData || formData.noReception) p += 25;
                  return p;
                })()}%
@@ -580,7 +580,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
          </div>
          <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
             <div className="bg-blue-500 h-full transition-all duration-500 ease-out" style={{width: `${
-                 (formData.brand ? 25 : 0) + (formData.fuelLevel !== undefined ? 25 : 0) + (Object.values(formData.photos).filter(v => v).length >= 2 ? 25 : 0) + (formData.signatureData || formData.noReception ? 25 : 0)
+                 (formData.brand ? 25 : 0) + (formData.fuelLevel !== undefined ? 25 : 0) + (Object.values(formData.photos || {}).filter(v => v).length >= 2 ? 25 : 0) + (formData.signatureData || formData.noReception ? 25 : 0)
             }%`}}></div>
          </div>
       </div>
@@ -1139,7 +1139,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                   </div>
                 </div>
                 <p className="text-xl font-extrabold text-blue-700">
-                  {formatMoney(expenses?.filter(g => g.jobId === job.id && g.type === 'assignment').reduce((acc, curr) => acc + Number(curr.amount || 0), 0) || 0)}
+                  {formatMoney((expenses || []).filter(g => g.jobId === job.id && g.type === 'assignment').reduce((acc, curr) => acc + Number(curr.amount || 0), 0))}
                 </p>
               </div>
 
