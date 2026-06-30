@@ -1318,13 +1318,13 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
              {inAppCamera.devices.length > 1 && (
                <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex bg-black/60 backdrop-blur-md p-1 rounded-full border border-white/20 z-20 shadow-xl">
                  <button 
-                   onClick={() => setLens(1)} 
-                   className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${inAppCamera.currentIndex === 1 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>
+                   onClick={() => setLens(0)} 
+                   className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${inAppCamera.currentIndex === 0 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>
                    0.5x
                  </button>
                  <button 
-                   onClick={() => setLens(0)} 
-                   className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${inAppCamera.currentIndex === 0 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>
+                   onClick={() => setLens(1)} 
+                   className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${inAppCamera.currentIndex === 1 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>
                    1x
                  </button>
                </div>
