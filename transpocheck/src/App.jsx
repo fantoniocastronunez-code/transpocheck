@@ -469,6 +469,14 @@ function LogisticApp() {
                       FORZAR
                     </button>
                   </div>
+                  
+                  {/* --- BOTÓN CERRAR SESIÓN --- */}
+                  <div className="border-t border-slate-100 pt-4 mt-2">
+                     <p className="text-[10px] text-center font-bold text-slate-400 mb-2 truncate">Sesión: {currentUserEmail}</p>
+                     <button onClick={() => signOut(auth)} className="w-full py-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-colors border border-red-100 shadow-sm active:scale-95">
+                        <LogOut className="w-4 h-4"/> Cerrar Sesión
+                     </button>
+                  </div>
 
                 </div>
                 {/* VERSIÓN DE LA APP */}
@@ -550,8 +558,6 @@ function LogisticApp() {
               )}
             </div>
           )}
-          <div className="hidden md:block text-right mr-2"><p className="text-xs text-blue-200 font-bold uppercase tracking-wider">Sesión iniciada</p><p className="text-sm font-extrabold">{currentUserEmail}</p></div>
-          <button onClick={() => signOut(auth)} className="bg-white/10 hover:bg-white/20 p-2.5 rounded-xl text-white transition-colors" title="Cerrar sesión"><LogOut className="w-5 h-5" /></button>
         </div>
       </header>
 
@@ -752,9 +758,9 @@ export default function App() {
     <Router>
       {/* ENVUELVE LA APP PARA ATRAPAR LAS CARGAS DIFERIDAS DE LAS VISTAS */}
       <React.Suspense fallback={
-        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-          <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4 shadow-sm"></div>
-          <p className="text-lg font-extrabold text-slate-700 tracking-tight">Optimizando módulos...</p>
+        <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
+          <div className="w-16 h-16 border-4 border-slate-900 border-t-blue-600 rounded-full animate-spin mb-4 shadow-[0_0_20px_rgba(37,99,235,0.3)]"></div>
+          <p className="text-[11px] font-black text-slate-400 tracking-widest uppercase animate-pulse">Optimizando módulos...</p>
         </div>
       }>
         <LogisticApp />

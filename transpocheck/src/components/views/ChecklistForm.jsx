@@ -54,9 +54,13 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
 
        if (isFirst) {
           const devices = await navigator.mediaDevices.enumerateDevices();
-          allVideoDevices = devices.filter(d => d.kind === 'videoinput');
-          cIndex = allVideoDevices.findIndex(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('trasera'));
-          if (cIndex === -1) cIndex = 0;
+          // Filtramos estrictamente las cámaras traseras (environment/back)
+          let backCameras = devices.filter(d => d.kind === 'videoinput' && (d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('trasera') || d.label.toLowerCase().includes('environment') || d.label.toLowerCase().includes('0')));
+          // Fallback por si el celular no reporta las etiquetas correctamente
+          if (backCameras.length === 0) backCameras = devices.filter(d => d.kind === 'videoinput');
+          
+          allVideoDevices = backCameras;
+          cIndex = 0; // Inicia siempre en el lente principal (1x)
        }
 
        setInAppCamera(prev => ({ 
@@ -85,11 +89,10 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
     startCamera(null, true, title, callback);
   };
 
-  const switchLens = () => {
-    if (inAppCamera.devices.length < 2) return;
-    const nextIndex = (inAppCamera.currentIndex + 1) % inAppCamera.devices.length;
-    startCamera(inAppCamera.devices[nextIndex].deviceId, false);
-    setInAppCamera(prev => ({ ...prev, currentIndex: nextIndex }));
+  const setLens = (index) => {
+    if (index < 0 || index >= inAppCamera.devices.length || index === inAppCamera.currentIndex) return;
+    startCamera(inAppCamera.devices[index].deviceId, false);
+    setInAppCamera(prev => ({ ...prev, currentIndex: index }));
   };
 
   useEffect(() => {
@@ -1301,12 +1304,6 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
             <h3 className="font-black text-sm uppercase tracking-widest flex items-center gap-2 truncate max-w-[40%]"><Camera className="w-5 h-5 text-blue-400 shrink-0"/> {inAppCamera.title}</h3>
             
             <div className="flex items-center gap-3">
-              {/* Solo muestra el botón si el celular tiene más de 1 lente de cámara */}
-              {inAppCamera.devices.length > 1 && (
-                 <button onClick={switchLens} className="bg-blue-600/30 text-blue-400 border border-blue-500/50 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 active:scale-95 transition-all">
-                    🔄 Cambiar Lente
-                 </button>
-              )}
               <button onClick={closeCamera} className="bg-white/10 p-2 rounded-full text-white hover:bg-white/20 transition-colors"><X className="w-5 h-5"/></button>
             </div>
           </div>
@@ -1317,10 +1314,19 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                <div className="w-full h-full border-2 border-white/50 border-dashed rounded-xl"></div>
              </div>
              
-             {/* Indicador visual inferior del lente activo */}
+             {/* Botones de Lente estilo App Nativa (0.5x y 1x) */}
              {inAppCamera.devices.length > 1 && (
-               <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 pointer-events-none">
-                 <p className="text-[10px] text-white font-bold tracking-widest uppercase">Lente {inAppCamera.currentIndex + 1} de {inAppCamera.devices.length}</p>
+               <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex bg-black/60 backdrop-blur-md p-1 rounded-full border border-white/20 z-20 shadow-xl">
+                 <button 
+                   onClick={() => setLens(1)} 
+                   className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${inAppCamera.currentIndex === 1 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>
+                   0.5x
+                 </button>
+                 <button 
+                   onClick={() => setLens(0)} 
+                   className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${inAppCamera.currentIndex === 0 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>
+                   1x
+                 </button>
                </div>
              )}
           </div>
