@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { updateDoc, doc, setDoc, addDoc, collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { 
@@ -34,42 +35,90 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
   const [fullScreenImage, setFullScreenImage] = useState(null); 
   const [uploadProgress, setUploadProgress] = useState({ active: false, current: 0, total: 0, text: '' }); 
 
-  // --- MOTOR DE CÁMARA INTERNA (WebRTC) ---
-  const [inAppCamera, setInAppCamera] = useState({ isOpen: false, onCapture: null, title: '', stream: null });
-  const videoRef = useRef(null);
+  // --- MOTOR DE CÁMARA INTERNA MULTI-LENTE (WebRTC) ---
+  const [inAppCamera, setInAppCamera] = useState({ isOpen: false, onCapture: null, title: '', stream: null, devices: [], currentIndex: 0 });
+  const videoRef = React.useRef(null);
 
-  const openCamera = async (title, callback) => {
+  const startCamera = async (deviceId = null, isFirst = false, title = '', callback = null) => {
+    // Apaga el lente actual antes de encender el nuevo
+    if (inAppCamera.stream && !isFirst) inAppCamera.stream.getTracks().forEach(t => t.stop());
+    
+    try {
+       const constraints = deviceId ? { video: { deviceId: { exact: deviceId } } } : { video: { facingMode: 'environment' } };
+       const stream = await navigator.mediaDevices.getUserMedia(constraints);
+       
+       let allVideoDevices = inAppCamera.devices;
+       let cIndex = inAppCamera.currentIndex;
+
+       // Si es la primera vez que abre, escaneamos todo el hardware en busca de los lentes extra (0.5x, 3x, etc)
+       if (isFirst) {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          allVideoDevices = devices.filter(d => d.kind === 'videoinput');
+          // Intentamos iniciar con la cámara trasera principal
+          cIndex = allVideoDevices.findIndex(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('trasera'));
+          if (cIndex === -1) cIndex = 0;
+       }
+
+       setInAppCamera(prev => ({ 
+         ...prev,
+         isOpen: true, 
+         onCapture: isFirst ? callback : prev.onCapture, 
+         title: isFirst ? title : prev.title, 
+         stream, 
+         devices: allVideoDevices, 
+         currentIndex: isFirst ? cIndex : prev.currentIndex 
+       }));
+    } catch (error) {
+       console.warn("Error de hardware, usando respaldo:", error);
+       if (isFirst) {
+           const input = document.createElement('input');
+           input.type = 'file'; input.accept = 'image/*'; input.capture = 'environment';
+           input.onchange = (e) => { if (e.target.files[0]) callback(e.target.files[0]); };
+           input.click();
+       }
+    }
+  };
+
+  const openCamera = (title, callback) => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
        const input = document.createElement('input');
        input.type = 'file'; input.accept = 'image/*'; input.capture = 'environment';
        input.onchange = (e) => { if (e.target.files[0]) callback(e.target.files[0]); };
        input.click(); return;
     }
-    try {
-       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-       setInAppCamera({ isOpen: true, onCapture: callback, title, stream });
-    } catch (error) {
-       const input = document.createElement('input');
-       input.type = 'file'; input.accept = 'image/*';
-       input.onchange = (e) => { if (e.target.files[0]) callback(e.target.files[0]); };
-       input.click();
-    }
+    startCamera(null, true, title, callback);
+  };
+
+  const switchLens = () => {
+    if (inAppCamera.devices.length < 2) return;
+    const nextIndex = (inAppCamera.currentIndex + 1) % inAppCamera.devices.length;
+    startCamera(inAppCamera.devices[nextIndex].deviceId, false);
+    setInAppCamera(prev => ({ ...prev, currentIndex: nextIndex }));
   };
 
   useEffect(() => {
     if (inAppCamera.isOpen && inAppCamera.stream && videoRef.current) videoRef.current.srcObject = inAppCamera.stream;
-  }, [inAppCamera]);
+  }, [inAppCamera.isOpen, inAppCamera.stream]);
 
   const closeCamera = () => {
     if (inAppCamera.stream) inAppCamera.stream.getTracks().forEach(track => track.stop());
-    setInAppCamera({ isOpen: false, onCapture: null, title: '', stream: null });
+    setInAppCamera({ isOpen: false, onCapture: null, title: '', stream: null, devices: [], currentIndex: 0 });
   };
 
   const takeInAppPhoto = () => {
     if (!videoRef.current) return;
     const canvas = document.createElement('canvas');
-    canvas.width = videoRef.current.videoWidth; canvas.height = videoRef.current.videoHeight;
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
     canvas.getContext('2d').drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      inAppCamera.onCapture(new File([blob], "photo_capture.jpg", { type: "image/jpeg" }));
+      closeCamera();
+    }, 'image/jpeg', 0.85);
+  };
+  // ----------------------------------------    canvas.getContext('2d').drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
     canvas.toBlob((blob) => {
       if (!blob) return;
       inAppCamera.onCapture(new File([blob], "capture.jpg", { type: "image/jpeg" }));
@@ -1178,8 +1227,17 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
       {inAppCamera.isOpen && (
         <div className="fixed inset-0 bg-black z-[99999] flex flex-col animate-in fade-in duration-200">
           <div className="bg-black text-white p-4 flex justify-between items-center z-10 shadow-md border-b border-slate-800">
-            <h3 className="font-black text-sm uppercase tracking-widest flex items-center gap-2"><Camera className="w-5 h-5 text-blue-400"/> {inAppCamera.title}</h3>
-            <button onClick={closeCamera} className="bg-white/10 p-2 rounded-full text-white hover:bg-white/20 transition-colors"><X className="w-5 h-5"/></button>
+            <h3 className="font-black text-sm uppercase tracking-widest flex items-center gap-2 truncate max-w-[40%]"><Camera className="w-5 h-5 text-blue-400 shrink-0"/> {inAppCamera.title}</h3>
+            
+            <div className="flex items-center gap-3">
+              {/* Solo muestra el botón si el celular tiene más de 1 lente de cámara */}
+              {inAppCamera.devices.length > 1 && (
+                 <button onClick={switchLens} className="bg-blue-600/30 text-blue-400 border border-blue-500/50 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 active:scale-95 transition-all">
+                    🔄 Cambiar Lente
+                 </button>
+              )}
+              <button onClick={closeCamera} className="bg-white/10 p-2 rounded-full text-white hover:bg-white/20 transition-colors"><X className="w-5 h-5"/></button>
+            </div>
           </div>
           
           <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
@@ -1187,6 +1245,13 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
              <div className="absolute inset-0 pointer-events-none border-[40px] border-black/40 flex items-center justify-center">
                <div className="w-full h-full border-2 border-white/50 border-dashed rounded-xl"></div>
              </div>
+             
+             {/* Indicador visual inferior del lente activo */}
+             {inAppCamera.devices.length > 1 && (
+               <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 pointer-events-none">
+                 <p className="text-[10px] text-white font-bold tracking-widest uppercase">Lente {inAppCamera.currentIndex + 1} de {inAppCamera.devices.length}</p>
+               </div>
+             )}
           </div>
           
           <div className="bg-slate-900 pb-8 pt-5 px-6 flex flex-col gap-4 z-10 rounded-t-3xl shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
