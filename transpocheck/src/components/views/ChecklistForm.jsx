@@ -245,7 +245,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
   const f = e.target.files[0]; 
   if (!f) return;
   try {
-    const dataUrl = await resizeImage(f, 720, 0.6); 
+    const dataUrl = await resizeImage(f, 1280, 0.75); 
     
     // PASO 1: Mostrar preview inmediato con Base64
     setFormData(prev => {
@@ -603,7 +603,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                           
                           <div className="flex items-center gap-2">
                               <label className={`flex-1 py-2 text-center rounded-lg border-2 border-dashed cursor-pointer text-[10px] font-extrabold transition-colors uppercase tracking-wide ${rem.photo ? 'bg-green-50 border-green-400 text-green-700' : 'bg-slate-50 border-slate-300 hover:bg-slate-100 text-slate-500'}`}>
-                                  <input type="file" accept="image/*" className="hidden" disabled={rem.resolved} onChange={async e => { const f=e.target.files[0]; if(!f)return; try{ const dUrl = await resizeImage(f, 400, 0.4); handleReminderChange(idx, 'photo', dUrl); }catch(err){}}}/>
+                                  <input type="file" accept="image/*" className="hidden" disabled={rem.resolved} onChange={async e => { const f=e.target.files[0]; if(!f)return; try{ const dUrl = await resizeImage(f, 800, 0.6); handleReminderChange(idx, 'photo', dUrl); }catch(err){}}}/>
                                   {rem.photo ? '📸 Foto Guardada' : '📸 Adjuntar Foto'}
                               </label>
                               {rem.photo && <button type="button" onClick={() => {
@@ -882,7 +882,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                   </div>
 
                   <label className={`absolute top-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.front ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
-                    <input type="file" id="pic-front" className="sr-only" accept="image/*" onChange={e=>handlePic(e,'front')}/>
+                    <input type="file" id="pic-front" className="sr-only" accept="image/*" capture="environment" onChange={e=>handlePic(e,'front')}/>
                     {formData.photos.front ? <><img src={formData.photos.front} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-1"/><span className="text-[9px] font-black text-slate-500 tracking-wide">FRENTE</span></>}
                   </label>
 
@@ -1058,7 +1058,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                     <h3 className="font-extrabold text-blue-800 mb-1 flex items-center gap-2"><Zap className="w-5 h-5"/> Firma Remota o QR</h3>
                     <p className="text-[11px] font-bold text-blue-600 mb-3">Envía el link al cliente o muéstrale el QR para que firme desde su celular.</p>
                     <div className="flex gap-2">
-                      <button type="button" onClick={handleRemoteSignRequest} disabled={processingAction === 'wapp'} className="flex-[2] py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-sm flex justify-center items-center gap-1.5 text-xs transition-colors">
+                      <button type="button" onClick={handleRemoteSignRequest} disabled={+2cessingAction === 'wapp'} className="flex-[2] py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-sm flex justify-center items-center gap-1.5 text-xs transition-colors">
                          {processingAction === 'wapp' ? <Clock className="w-4 h-4 animate-spin"/> : <Share2 className="w-4 h-4"/>} {processingAction === 'wapp' ? 'Cargando...' : 'Compartir Link'}
                       </button>
                       <button type="button" onClick={handleOpenQR} disabled={processingAction === 'qr'} className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl shadow-sm flex justify-center items-center gap-1.5 text-xs transition-colors">

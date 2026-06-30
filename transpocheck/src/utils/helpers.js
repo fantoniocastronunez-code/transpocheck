@@ -12,7 +12,7 @@ export const formatDateDisplay = (dateString) => {
   return `${d}/${m}/${y}`;
 };
 
-export const resizeImage = (file, maxWidth = 500, quality = 0.4) => {
+export const resizeImage = (file, maxWidth = 1280, quality = 0.75) => {
   return new Promise((resolve, reject) => {
     // 1. Método de Respaldo Clásico (Por si es un iPhone/Safari muy antiguo)
     const runFallback = () => {
