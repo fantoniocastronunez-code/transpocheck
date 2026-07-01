@@ -25,6 +25,10 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   const [revB_tipo, setRevB_tipo] = useState(jobToEdit?.rtData?.tipoB || 'completa');
   const [selectedDriversUI, setSelectedDriversUI] = useState(() => jobToEdit?.assignedEmails ? drivers.filter(d => jobToEdit.assignedEmails.includes(d.email)).map(d => d.id) : []);
   
+  // --- ESTADOS PARA TRABAJOS SIMPLES ---
+  const [operationMode, setOperationMode] = useState(jobToEdit?.tripType === 'simple' ? 'servicio' : 'traslado');
+  const [description, setDescription] = useState(jobToEdit?.description || '');
+
   const todayStr = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
@@ -57,12 +61,16 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     setIsSubmitting(true);
     const formData = new FormData(e.target);
     const selectedDriverIds = formData.getAll('assignedDriverId');
-    if (selectedDriverIds.length === 0) return showAlert("Debes seleccionar al menos un conductor.");
+    
+    if (selectedDriverIds.length === 0) {
+        setIsSubmitting(false);
+        return showAlert("Debes seleccionar al menos un conductor.");
+    }
 
     const assignedDriversList = drivers.filter(d => selectedDriverIds.includes(d.id));
     const finalClient = selectedClient === 'OTRO' ? manualClient : selectedClient;
     
-    const rtData = tripType === 'revision' ? {
+    const rtData = (operationMode === 'traslado' && tripType === 'revision') ? {
       type: revType, gases: revType === 'A' ? revA_gases : (revB_tipo === 'gases'),
       revision: revType === 'A' ? revA_revision : (revB_tipo === 'completa'),
       inspeccion: revType === 'A' ? revA_inspeccion : false,
@@ -70,12 +78,22 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
       tipoB: revType === 'B' ? revB_tipo : null
     } : null;
 
+    const finalTripType = operationMode === 'servicio' ? 'simple' : tripType;
+
     const jobData = {
-      scheduledDate: formData.get('scheduledDate'), client: finalClient, brand, model,
-      vin: vin.toUpperCase(), plate: plate.toUpperCase(), origin: formData.get('origin'), destination: formData.get('destination'),
-      tripType, vehicleType, rtData: rtData || null,
+      scheduledDate: formData.get('scheduledDate'), client: finalClient, 
+      origin: formData.get('origin'), destination: formData.get('destination') || '',
+      tripType: finalTripType,
       assignedDrivers: assignedDriversList.map(d => ({id: d.id, name: d.name, email: d.email})), assignedEmails: assignedDriversList.map(d => d.email)
     };
+
+    // Si es traslado agregamos los datos del auto, si es servicio agregamos la descripción
+    if (operationMode === 'traslado') {
+       jobData.brand = brand; jobData.model = model; jobData.vin = vin.toUpperCase(); jobData.plate = plate.toUpperCase();
+       jobData.vehicleType = vehicleType; jobData.rtData = rtData;
+    } else {
+       jobData.description = description;
+    }
 
     try {
       if (jobToEdit) {
@@ -90,20 +108,16 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
          showAlert(`Trabajo asignado exitosamente.`);
       }
       
-      if ((plate || vin) && !vehicles.find(v => (plate && v.plate === plate) || (vin && v.vin === vin))) await addDoc(collection(db, 'vehicles'), { plate: plate.toUpperCase(), vin: vin.toUpperCase(), vehicleType, brand, model, client: finalClient, createdAt: Date.now() });
+      if (operationMode === 'traslado' && (plate || vin) && !vehicles.find(v => (plate && v.plate === plate) || (vin && v.vin === vin))) {
+          await addDoc(collection(db, 'vehicles'), { plate: plate.toUpperCase(), vin: vin.toUpperCase(), vehicleType, brand, model, client: finalClient, createdAt: Date.now() });
+      }
       
       const driverTokens = assignedDriversList.map(d => d.fcmToken).filter(token => token);
       if (driverTokens.length > 0) {
+        const pushTitle = jobToEdit ? "🔄 Trabajo Actualizado" : (operationMode === 'servicio' ? "🛠️ ¡Nuevo Servicio Asignado!" : "📍 ¡Nuevo Traslado Asignado!");
+        const pushBody = operationMode === 'servicio' ? `Tarea: ${description}\nLugar: ${jobData.origin}` : `Vehículo: ${brand} ${model} (${plate || 'S/N'})\nDesde: ${jobData.origin}`;
         try {
-          fetch('/api/send-notification', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              tokens: driverTokens,
-              title: jobToEdit ? "🔄 Traslado Actualizado" : "📍 ¡Nuevo Traslado Asignado!",
-              body: `Vehículo: ${brand} ${model} (${plate || 'S/N'})\nDesde: ${jobData.origin}`
-            })
-          });
+          fetch('/api/send-notification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tokens: driverTokens, title: pushTitle, body: pushBody }) });
         } catch (pushErr) { console.warn("Fallo el envío Push:", pushErr); }
       }
 
@@ -119,81 +133,130 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
         {jobToEdit && <button type="button" onClick={onCancelEdit} className="text-slate-500 hover:bg-slate-100 p-2 rounded-xl transition"><X className="w-6 h-6"/></button>}
       </div>
       <form onSubmit={handleCreateOrUpdateJob} className="space-y-6">
-        <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl space-y-4">
-          <h3 className="text-base font-bold text-slate-700">1. Tipo de Servicio</h3>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button type="button" onClick={()=>setTripType('traslado')} className={`flex-1 p-3 border-2 rounded-xl text-center font-bold text-sm transition-colors ${tripType === 'traslado' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-500'}`}>Traslado Local</button>
-            <button type="button" onClick={()=>setTripType('viaje')} className={`flex-1 p-3 border-2 rounded-xl text-center font-bold text-sm transition-colors ${tripType === 'viaje' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-500'}`}>A Regiones</button>
-            <button type="button" onClick={()=>setTripType('revision')} className={`flex-1 p-3 border-2 rounded-xl text-center font-bold text-sm transition-colors ${tripType === 'revision' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-500'}`}>Revisión Técnica</button>
-          </div>
-          {tripType === 'revision' && (
-            <div className="p-4 bg-white border-2 border-blue-100 rounded-xl space-y-4 mt-4 animate-in fade-in">
-               <h4 className="text-xs font-extrabold text-blue-600 uppercase">Detalle Revisión Técnica</h4>
-               <select value={revType} onChange={e=>setRevType(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700">
-                 <option value="A">Revisión Tipo A</option>
-                 <option value="B">Revisión Tipo B</option>
-               </select>
-               {revType === 'A' && (
-                 <div className="grid grid-cols-2 gap-3 text-sm font-bold text-slate-600">
-                   <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_gases} onChange={e=>setRevA_gases(e.target.checked)} className="w-4 h-4 text-blue-600 rounded"/> Gases</label>
-                   <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_revision} onChange={e=>setRevA_revision(e.target.checked)} className="w-4 h-4 text-blue-600 rounded"/> Revisión</label>
-                   <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_inspeccion} onChange={e=>setRevA_inspeccion(e.target.checked)} className="w-4 h-4 text-blue-600 rounded"/> Insp. Visual</label>
-                   <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_frenos} onChange={e=>setRevA_frenos(e.target.checked)} className="w-4 h-4 text-blue-600 rounded"/> Cert. Frenos</label>
-                 </div>
-               )}
-               {revType === 'B' && (
-                 <select value={revB_tipo} onChange={e=>setRevB_tipo(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700">
-                   <option value="completa">Revisión Completa</option>
-                   <option value="gases">Sólo Gases</option>
-                 </select>
-               )}
-            </div>
-          )}
+        
+        {/* NUEVO TABS DE MODO DE OPERACIÓN */}
+        <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-2 shadow-inner">
+          <button type="button" onClick={() => setOperationMode('traslado')} className={`flex-1 py-3 text-xs sm:text-sm font-black rounded-xl transition-all duration-200 ${operationMode === 'traslado' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>🚚 Traslado de Vehículo</button>
+          <button type="button" onClick={() => setOperationMode('servicio')} className={`flex-1 py-3 text-xs sm:text-sm font-black rounded-xl transition-all duration-200 ${operationMode === 'servicio' ? 'bg-white text-purple-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>🛠️ Servicio en Terreno</button>
         </div>
 
-        <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl space-y-4">
-           <h3 className="text-base font-bold text-slate-700">2. Vehículo <span className="text-xs text-blue-500 font-bold">(Escribe para autocompletar)</span></h3>
-           <div className="grid grid-cols-2 gap-4">
-             <input value={plate} onChange={e=>handleVehicleSearch(e.target.value, 'plate')} type="text" placeholder="Patente (Ej. ABCD12)" className="w-full border-2 border-slate-300 p-3 text-sm rounded-xl uppercase outline-none focus:border-blue-500 font-black bg-white text-slate-800 shadow-sm" />
-             <input value={vin} onChange={e=>handleVehicleSearch(e.target.value, 'vin')} type="text" placeholder="VIN / Chasis" className="w-full border-2 border-slate-300 p-3 text-sm rounded-xl uppercase outline-none focus:border-blue-500 font-black bg-white text-slate-800 shadow-sm" />
-             <input value={brand} onChange={e=>setBrand(e.target.value)} type="text" placeholder="Marca" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-800" />
-             <input value={model} onChange={e=>setModel(e.target.value)} type="text" placeholder="Modelo" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-800" />
-             <select value={vehicleType} onChange={e=>setVehicleType(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl col-span-2 outline-none focus:border-blue-500 font-bold text-slate-700 bg-white">
-               <option value="auto">🚙 Auto / SUV</option>
-               <option value="camioneta">🛻 Camioneta</option>
-               <option value="furgon_pequeno">🚐 Furgón Pequeño</option>
-               <option value="furgon_grande">🚐 Furgón Grande</option>
-               <option value="camion">🚚 Camión Simple</option>
-               <option value="camion_doble">🚚 Camión Doble Cabina</option>
-               <option value="camion_2ejes">🚛 Camión (2 Ejes traseros)</option>
-               <option value="camion_3ejes">🚛 Camión (3 Ejes traseros)</option>
-             </select>
-           </div>
-        </div>
-        
-        <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl space-y-4">
-          <h3 className="text-base font-bold text-slate-700">3. Programación y Ruta</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {operationMode === 'traslado' ? (
+          <>
+            <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl space-y-4 animate-in fade-in slide-in-from-bottom-2">
+              <h3 className="text-base font-bold text-slate-700">1. Tipo de Servicio</h3>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button type="button" onClick={()=>setTripType('traslado')} className={`flex-1 p-3 border-2 rounded-xl text-center font-bold text-sm transition-colors ${tripType === 'traslado' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-500'}`}>Traslado Local</button>
+                <button type="button" onClick={()=>setTripType('viaje')} className={`flex-1 p-3 border-2 rounded-xl text-center font-bold text-sm transition-colors ${tripType === 'viaje' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-500'}`}>A Regiones</button>
+                <button type="button" onClick={()=>setTripType('revision')} className={`flex-1 p-3 border-2 rounded-xl text-center font-bold text-sm transition-colors ${tripType === 'revision' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-500'}`}>Revisión Técnica</button>
+              </div>
+              {tripType === 'revision' && (
+                <div className="p-4 bg-white border-2 border-blue-100 rounded-xl space-y-4 mt-4 animate-in fade-in">
+                   <h4 className="text-xs font-extrabold text-blue-600 uppercase">Detalle Revisión Técnica</h4>
+                   <select value={revType} onChange={e=>setRevType(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700">
+                     <option value="A">Revisión Tipo A</option>
+                     <option value="B">Revisión Tipo B</option>
+                   </select>
+                   {revType === 'A' && (
+                     <div className="grid grid-cols-2 gap-3 text-sm font-bold text-slate-600">
+                       <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_gases} onChange={e=>setRevA_gases(e.target.checked)} className="w-4 h-4 text-blue-600 rounded"/> Gases</label>
+                       <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_revision} onChange={e=>setRevA_revision(e.target.checked)} className="w-4 h-4 text-blue-600 rounded"/> Revisión</label>
+                       <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_inspeccion} onChange={e=>setRevA_inspeccion(e.target.checked)} className="w-4 h-4 text-blue-600 rounded"/> Insp. Visual</label>
+                       <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_frenos} onChange={e=>setRevA_frenos(e.target.checked)} className="w-4 h-4 text-blue-600 rounded"/> Cert. Frenos</label>
+                     </div>
+                   )}
+                   {revType === 'B' && (
+                     <select value={revB_tipo} onChange={e=>setRevB_tipo(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700">
+                       <option value="completa">Revisión Completa</option>
+                       <option value="gases">Sólo Gases</option>
+                     </select>
+                   )}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl space-y-4 animate-in fade-in slide-in-from-bottom-2">
+               <h3 className="text-base font-bold text-slate-700">2. Vehículo <span className="text-xs text-blue-500 font-bold">(Escribe para autocompletar)</span></h3>
+               <div className="grid grid-cols-2 gap-4">
+                 <input value={plate} onChange={e=>handleVehicleSearch(e.target.value, 'plate')} type="text" placeholder="Patente (Ej. ABCD12)" className="w-full border-2 border-slate-300 p-3 text-sm rounded-xl uppercase outline-none focus:border-blue-500 font-black bg-white text-slate-800 shadow-sm" />
+                 <input value={vin} onChange={e=>handleVehicleSearch(e.target.value, 'vin')} type="text" placeholder="VIN / Chasis" className="w-full border-2 border-slate-300 p-3 text-sm rounded-xl uppercase outline-none focus:border-blue-500 font-black bg-white text-slate-800 shadow-sm" />
+                 <input value={brand} onChange={e=>setBrand(e.target.value)} type="text" placeholder="Marca" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-800" />
+                 <input value={model} onChange={e=>setModel(e.target.value)} type="text" placeholder="Modelo" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-800" />
+                 <select value={vehicleType} onChange={e=>setVehicleType(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl col-span-2 outline-none focus:border-blue-500 font-bold text-slate-700 bg-white">
+                   <option value="auto">🚙 Auto / SUV</option>
+                   <option value="camioneta">🛻 Camioneta</option>
+                   <option value="furgon_pequeno">🚐 Furgón Pequeño</option>
+                   <option value="furgon_grande">🚐 Furgón Grande</option>
+                   <option value="camion">🚚 Camión Simple</option>
+                   <option value="camion_doble">🚚 Camión Doble Cabina</option>
+                   <option value="camion_2ejes">🚛 Camión (2 Ejes traseros)</option>
+                   <option value="camion_3ejes">🚛 Camión (3 Ejes traseros)</option>
+                 </select>
+               </div>
+            </div>
+            
+            <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl space-y-4 animate-in fade-in slide-in-from-bottom-2">
+              <h3 className="text-base font-bold text-slate-700">3. Programación y Ruta</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                   <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider ml-1">Fecha de Traslado</label>
+                   <input name="scheduledDate" type="date" defaultValue={jobToEdit?.scheduledDate || todayStr} required className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-700" />
+                </div>
+                <div className="space-y-1 relative z-50">
+                  <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider ml-1">Cliente</label>
+                  <CustomClientSelector 
+                    value={selectedClient} 
+                    onChange={(val) => setSelectedClient(val)} 
+                    clients={allClientsList} 
+                    placeholder="Seleccione Cliente (Opcional)" 
+                  />
+                  {selectedClient === 'OTRO' && <input type="text" value={manualClient} onChange={(e) => setManualClient(e.target.value)} placeholder="Escribe el nombre del cliente" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white mt-2 animate-in fade-in slide-in-from-top-2" />}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <input name="origin" defaultValue={jobToEdit?.origin || ''} required type="text" placeholder="Desde (Origen)" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+                <input name="destination" defaultValue={jobToEdit?.destination || ''} required type="text" placeholder={tripType === 'revision' ? 'Planta de Revisión (Destino)' : 'Hasta (Destino)'} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+              </div>
+            </div>
+          </>
+        ) : (
+          /* VISTA SERVICIO SIMPLE */
+          <div className="bg-purple-50/50 p-4 sm:p-6 rounded-2xl space-y-5 border border-purple-100 animate-in fade-in slide-in-from-bottom-2">
+            <h3 className="text-base font-black text-purple-800">Detalles del Servicio</h3>
+            
             <div className="space-y-1">
-               <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider ml-1">Fecha de Traslado</label>
-               <input name="scheduledDate" type="date" defaultValue={jobToEdit?.scheduledDate || todayStr} required className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-700" />
+              <label className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider ml-1">Descripción del Trabajo</label>
+              <textarea value={description} onChange={e=>setDescription(e.target.value)} required rows="3" placeholder="Ej: Pintura de patentes en puertas y techo, retiro de documentos en notaría..." className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white text-slate-800 resize-none shadow-sm" />
             </div>
-            <div className="space-y-1 relative z-50">
-              <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider ml-1">Cliente</label>
-              <CustomClientSelector 
-                value={selectedClient} 
-                onChange={(val) => setSelectedClient(val)} 
-                clients={allClientsList} 
-                placeholder="Seleccione Cliente (Opcional)" 
-              />
-              {selectedClient === 'OTRO' && <input type="text" value={manualClient} onChange={(e) => setManualClient(e.target.value)} placeholder="Escribe el nombre del cliente" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white mt-2 animate-in fade-in slide-in-from-top-2" />}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                 <label className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider ml-1">Fecha de Ejecución</label>
+                 <input name="scheduledDate" type="date" defaultValue={jobToEdit?.scheduledDate || todayStr} required className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white text-slate-700 shadow-sm" />
+              </div>
+              <div className="space-y-1 relative z-50">
+                <label className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider ml-1">Cliente Asociado (Opcional)</label>
+                <CustomClientSelector 
+                  value={selectedClient} 
+                  onChange={(val) => setSelectedClient(val)} 
+                  clients={allClientsList} 
+                  placeholder="Seleccione Cliente" 
+                />
+                {selectedClient === 'OTRO' && <input type="text" value={manualClient} onChange={(e) => setManualClient(e.target.value)} placeholder="Escribe el nombre del cliente" className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white mt-2 animate-in fade-in shadow-sm" />}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider ml-1">Lugar de Trabajo</label>
+                <input name="origin" defaultValue={jobToEdit?.origin || ''} required type="text" placeholder="¿Dónde se realizará?" className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white shadow-sm" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider ml-1">Hasta / Destino (Opcional)</label>
+                <input name="destination" defaultValue={jobToEdit?.destination || ''} type="text" placeholder="Si requiere moverse a otro lugar" className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white shadow-sm" />
+              </div>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-            <input name="origin" defaultValue={jobToEdit?.origin || ''} type="text" placeholder="Desde (Origen)" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
-            <input name="destination" defaultValue={jobToEdit?.destination || ''} type="text" placeholder={tripType === 'revision' ? 'Planta de Revisión (Destino)' : 'Hasta (Destino)'} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
-          </div>
-        </div>
+        )}
         
         <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl space-y-4">
            <h3 className="text-base font-bold text-slate-700">4. Conductores <span className="text-xs text-red-500 font-normal">(Obligatorio seleccionar al menos 1)</span></h3>
