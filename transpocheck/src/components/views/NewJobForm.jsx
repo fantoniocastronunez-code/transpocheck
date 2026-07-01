@@ -123,15 +123,17 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
         const pushTitle = jobToEdit ? "🔄 Trabajo Actualizado" : (operationMode === 'servicio' ? "🛠️ ¡Nuevo Servicio Asignado!" : "📍 ¡Nuevo Traslado Asignado!");
         const pushBody = operationMode === 'servicio' ? `Tarea: ${description}\nLugar: ${jobData.origin}` : `Vehículo: ${brand} ${model} (${plate || 'S/N'})\nDesde: ${jobData.origin}`;
         try {
-          fetch('/api/send-notification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tokens: driverTokens, title: pushTitle, body: pushBody }) });
+          // Agregamos await aquí para asegurar el envío
+          await fetch('/api/send-notification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tokens: driverTokens, title: pushTitle, body: pushBody }) });
         } catch (pushErr) { console.warn("Fallo el envío Push:", pushErr); }
       }
 
-      // --- NUEVO: DISPARADOR DE CORREO ELECTRÓNICO ---
+      // --- DISPARADOR DE CORREO ELECTRÓNICO ---
       try {
          const driverEmails = assignedDriversList.map(d => d.email).filter(e => e);
          if (driverEmails.length > 0) {
-            fetch('/api/notify-driver', { 
+            // Agregamos await aquí para que no se cancele el envío al cerrar el modal
+            await fetch('/api/notify-driver', { 
                method: 'POST', 
                headers: { 'Content-Type': 'application/json' }, 
                body: JSON.stringify({ 
@@ -153,8 +155,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
       } catch (mailErr) { console.warn("Fallo la petición de correo:", mailErr); }
       // ------------------------------------------------
 
-      onSuccess();
-    } catch (error) { console.error(error); showAlert("Ocurrió un error guardando el trabajo."); }
+      onSuccess();    } catch (error) { console.error(error); showAlert("Ocurrió un error guardando el trabajo."); }
     finally { setIsSubmitting(false); }
   };
 
