@@ -123,17 +123,16 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
         const pushTitle = jobToEdit ? "🔄 Trabajo Actualizado" : (operationMode === 'servicio' ? "🛠️ ¡Nuevo Servicio Asignado!" : "📍 ¡Nuevo Traslado Asignado!");
         const pushBody = operationMode === 'servicio' ? `Tarea: ${description}\nLugar: ${jobData.origin}` : `Vehículo: ${brand} ${model} (${plate || 'S/N'})\nDesde: ${jobData.origin}`;
         try {
-          // Agregamos await aquí para asegurar el envío
           await fetch('/api/send-notification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tokens: driverTokens, title: pushTitle, body: pushBody }) });
         } catch (pushErr) { console.warn("Fallo el envío Push:", pushErr); }
       }
 
-      // --- DISPARADOR DE CORREO ELECTRÓNICO ---
+      // --- DISPARADOR DE CORREO ELECTRÓNICO (CON DETECTOR DE ERRORES) ---
       try {
          const driverEmails = assignedDriversList.map(d => d.email).filter(e => e);
+         
          if (driverEmails.length > 0) {
-            // Agregamos await aquí para que no se cancele el envío al cerrar el modal
-            await fetch('/api/notify-driver', { 
+            const mailResponse = await fetch('/api/notify-driver', { 
                method: 'POST', 
                headers: { 'Content-Type': 'application/json' }, 
                body: JSON.stringify({ 
@@ -151,11 +150,23 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                   }
                }) 
             });
+
+            // Si el correo falla en Vercel, lanzará una alerta en tu pantalla
+            if (!mailResponse.ok) {
+               const errorData = await mailResponse.json();
+               showAlert(`⚠️ El trabajo se guardó, pero el correo falló: ${errorData.error}`);
+            }
+         } else {
+            // Si el conductor no tiene correo, te avisará
+            showAlert("⚠️ Trabajo guardado. No se envió correo porque el conductor asignado no tiene un email registrado.");
          }
-      } catch (mailErr) { console.warn("Fallo la petición de correo:", mailErr); }
+      } catch (mailErr) { 
+         showAlert("⚠️ Trabajo guardado, pero no se pudo contactar al servidor de correos."); 
+      }
       // ------------------------------------------------
 
-      onSuccess();    } catch (error) { console.error(error); showAlert("Ocurrió un error guardando el trabajo."); }
+      onSuccess();   
+    } catch (error) { console.error(error); showAlert("Ocurrió un error guardando el trabajo."); }
     finally { setIsSubmitting(false); }
   };
 
