@@ -58,6 +58,7 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
   const isFirstLoad = useRef(true);
   const driversRef = useRef([]);
   const registeringRef = useRef(false);
+  const notifiedJobs = useRef(new Set()); // <-- Memoria anti-spam
 
   // Funciones de Notificación
   const triggerNotification = (title, body) => {
@@ -171,11 +172,17 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
         snapshot.docChanges().forEach((change) => {
           const d = change.doc.data();
           const isReallyNew = (Date.now() - (d.createdAt || 0)) < 120000;
+          
           if (change.type === 'added' && d.status === 'pending' && d.assignedEmails?.includes(currentUserEmail) && isReallyNew) {
              triggerNotification('📍 ¡Nuevo Traslado!', `CLIENTE: ${d.client}\nPATENTE: ${d.plate || d.vin}`);
           }
+          
           if (change.type === 'modified' && d.status === 'accepted' && isRealAdmin && activeRole === 'admin') {
-             triggerNotification('✅ Trabajo Aceptado', `CLIENTE: ${d.client}\nPATENTE: ${d.plate || d.vin}`);
+             // Filtro Anti-Spam: Solo avisa si NO tenemos este ID en la memoria
+             if (!notifiedJobs.current.has(d.id)) {
+                 triggerNotification('✅ Trabajo Aceptado', `CLIENTE: ${d.client}\nPATENTE: ${d.plate || d.vin}`);
+                 notifiedJobs.current.add(d.id); // Guardamos el ID para ignorar las siguientes actualizaciones del GPS
+             }
           }
         });
       }

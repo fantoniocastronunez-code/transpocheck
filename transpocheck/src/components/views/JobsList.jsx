@@ -583,8 +583,24 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             )}
           </div>
 
-          {j.tripType === 'revision' && <div className="mb-3 bg-amber-50 border border-amber-200 p-2 rounded-xl text-center"><span className="text-[10px] font-black text-amber-700 uppercase">REVISIÓN TÉCNICA (TIPO {j.rtData?.type})</span></div>}
-        {j.tripType === 'viaje' && <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-2 mb-3 text-center text-xs font-bold text-indigo-700 uppercase">A Regiones</div>}
+          {j.tripType === 'revision' && <div className="mb-3 bg-amber-50 border border-amber-200 p-2 rounded-xl text-center shadow-sm"><span className="text-[10px] font-black text-amber-700 uppercase">REVISIÓN TÉCNICA (TIPO {j.rtData?.type})</span></div>}
+          {j.tripType === 'viaje' && <div className="mb-3 bg-indigo-50 border border-indigo-100 rounded-xl p-2 mb-3 text-center shadow-sm"><span className="text-[10px] font-black text-indigo-700 uppercase">A Regiones</span></div>}
+          
+          {/* BADGE INTELIGENTE DE FECHA PROGRAMADA */}
+          {(() => {
+             if (!j.scheduledDate) return null;
+             const today = new Date(); today.setHours(0,0,0,0);
+             const [y, m, d] = j.scheduledDate.split('-');
+             const schedDate = new Date(y, m - 1, d); schedDate.setHours(0,0,0,0);
+             const diffDays = Math.round((schedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+             
+             if (diffDays === 0) return null; // Es hoy, no muestra nada
+             if (diffDays === 1) return <div className="mb-3 bg-cyan-50 border border-cyan-200 p-2 rounded-xl text-center shadow-sm"><span className="text-[10px] font-black text-cyan-700 uppercase tracking-widest">📅 Programado para Mañana</span></div>;
+             if (diffDays > 1) return <div className="mb-3 bg-slate-100 border border-slate-200 p-2 rounded-xl text-center shadow-sm"><span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">📅 Programado para el {d}/{m}/{y}</span></div>;
+             
+             // Si quedó en el pasado sin completarse
+             return <div className="mb-3 bg-red-50 border border-red-200 p-2 rounded-xl text-center shadow-sm"><span className="text-[10px] font-black text-red-700 uppercase tracking-widest">⚠️ Atrasado ({d}/{m}/{y})</span></div>;
+          })()}
 
         <div className="relative pl-7 space-y-5 before:absolute before:inset-y-2 before:left-[10px] before:w-0.5 before:bg-slate-100 flex-1 mb-5">
           <div className="relative"><div className="absolute -left-7 bg-blue-500 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center"><CheckCircle className="w-2.5 h-2.5 text-white"/></div><p className="font-extrabold text-slate-800 text-[11px] leading-tight">{isAccepted ? (j.assignedDrivers?.find(d => d.email === j.acceptedByEmail)?.name || "Conductor") : "Buscando conductor"}</p><p className="text-[9px] font-bold text-slate-500">{isAccepted ? (j.tripType === 'simple' ? `Asignado a ${j.origin}` : `Retira en ${j.origin}`) : `Para ${j.origin}`}</p></div>
