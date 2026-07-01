@@ -49,8 +49,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       const sevenDays = 7 * 24 * 60 * 60 * 1000;
       if ((now.getTime() - job.createdAt) > sevenDays) return false;
     } else {
-      const firstOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-      if (job.createdAt < firstOfCurrentMonth) return false;
+      // El administrador ahora ve hasta 60 días atrás (2 meses aprox)
+      const sixtyDays = 60 * 24 * 60 * 60 * 1000;
+      if ((now.getTime() - job.createdAt) > sixtyDays) return false;
     }
 
     if (searchTerm) {
@@ -696,6 +697,33 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     );
   };
 
+  const handlePurgeOldJobs = async () => {
+    showConfirm("⚠️ ¿Estás seguro de eliminar definitivamente los traslados con MÁS de 30 días de antigüedad? Esta acción limpiará tu base de datos y no se puede deshacer.", async () => {
+      try {
+        showAlert("⏳ Buscando y eliminando traslados antiguos...");
+        const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+        
+        // Consultamos a Firebase todos los trabajos creados hace más de 30 días
+        const q = query(collection(db, 'transport_jobs'), where('createdAt', '<', thirtyDaysAgo));
+        const snap = await getDocs(q);
+        
+        if (snap.empty) {
+          return showAlert("No hay traslados con más de 30 días de antigüedad para eliminar.");
+        }
+        
+        let count = 0;
+        for (const document of snap.docs) {
+          await deleteDoc(doc(db, 'transport_jobs', document.id));
+          count++;
+        }
+        showAlert(`✅ Limpieza completada. Se eliminaron ${count} traslados antiguos.`);
+      } catch (err) {
+        console.error("Error en limpieza:", err);
+        showAlert("Ocurrió un error al intentar limpiar el historial.");
+      }
+    });
+  };
+
   const handleDownloadAllZIP = async () => {
     const jobsWithChecklist = historyJobs.filter(j => j.checklist);
     if (jobsWithChecklist.length === 0) return showAlert("No hay actas finalizadas con checklist en este filtro para empaquetar.");
@@ -748,9 +776,14 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
            <input type="text" placeholder="Buscar por patente, marca, modelo o cliente..." className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 shadow-sm transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
         {isAdminView && (
-          <button type="button" onClick={handleDownloadAllZIP} className="group bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0 transition-all duration-200 shrink-0">
-            <FileDown className="w-5 h-5"/> Descargar Lote ZIP
-          </button>
+          <div className="flex gap-2 shrink-0">
+             <button type="button" onClick={handlePurgeOldJobs} className="group bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-sm transition-all duration-200" title="Borrar traslados de más de 30 días">
+               <Trash2 className="w-5 h-5"/> Limpiar DB
+             </button>
+             <button type="button" onClick={handleDownloadAllZIP} className="group bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0 transition-all duration-200">
+               <FileDown className="w-5 h-5"/> Descargar Lote ZIP
+             </button>
+          </div>
         )}
       </div>
 
