@@ -217,20 +217,16 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
 
   const syncFilesToStorage = async (currentData) => {
     const d = { ...currentData };
-    const uploadPromises = [];
     const uploadedPhotos = {};
     const jobIdFolder = job.id === 'NEW_QUICK_JOB' ? `quick_${Date.now()}` : job.id;
-
 
     let totalFiles = 0;
     for (const val of Object.values(d.photos)) { if (val && val.startsWith('data:image')) totalFiles++; }
     if (d.signatureData && d.signatureData.startsWith('data:image')) totalFiles++;
 
-
     if (totalFiles > 0) {
        setUploadProgress({ active: true, current: 0, total: totalFiles, text: 'Conectando con el servidor...' });
     }
-
 
     let completed = 0;
     const updateProgress = (fileName) => {
@@ -238,26 +234,31 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
        setUploadProgress(prev => ({ ...prev, current: completed, text: `Sincronizando ${fileName}...` }));
     };
 
-
+    // SUBIDA SECUENCIAL (Una por una, salva la memoria RAM de los iPhone)
     for (const [key, val] of Object.entries(d.photos)) {
       if (val && val.startsWith('data:image')) {
-        const p = uploadImageToStorage(val, `checklists/${jobIdFolder}`, `photo_${key}_${Date.now()}.jpg`)
-          .then(url => { uploadedPhotos[key] = url; updateProgress(`foto ${key.toUpperCase()}`); return url; });
-        uploadPromises.push(p);
+        try {
+          const url = await uploadImageToStorage(val, `checklists/${jobIdFolder}`, `photo_${key}_${Date.now()}.jpg`);
+          uploadedPhotos[key] = url; 
+          updateProgress(`foto ${key.toUpperCase()}`);
+        } catch (err) {
+          console.error(`Error subiendo foto ${key}:`, err);
+        }
       } else {
         uploadedPhotos[key] = val;
       }
     }
 
-
     if (d.signatureData && d.signatureData.startsWith('data:image')) {
-       const p = uploadImageToStorage(d.signatureData, `checklists/${jobIdFolder}`, `signature_${Date.now()}.jpg`)
-         .then(url => { d.signatureData = url; updateProgress('Firma de conformidad'); return url; });
-       uploadPromises.push(p);
+       try {
+         const url = await uploadImageToStorage(d.signatureData, `checklists/${jobIdFolder}`, `signature_${Date.now()}.jpg`);
+         d.signatureData = url; 
+         updateProgress('Firma de conformidad');
+       } catch (err) {
+         console.error("Error subiendo firma:", err);
+       }
     }
 
-
-    await Promise.all(uploadPromises);
     d.photos = uploadedPhotos;
     
     if (totalFiles > 0) {
@@ -1455,3 +1456,4 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
     </div>
   );
 }
+
