@@ -570,7 +570,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                 <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1.5">Ruta intermedia:</p>
                 <div className="flex flex-wrap gap-1.5">
                   {j.waypoints.map((wp, i) => (
-                     <span key={i} className="text-[10px] font-bold bg-amber-100/50 text-amber-700 px-2 py-0.5 rounded-md border border-amber-200">{i + 1}. {wp}</span>
+                     <span key={i} className="text-[10px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md border border-blue-200 shadow-sm">{i + 1}. {wp}</span>
                   ))}
                 </div>
               </div>
