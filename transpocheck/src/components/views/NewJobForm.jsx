@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { updateDoc, doc, addDoc, collection } from 'firebase/firestore';
-import { X, User, CheckCircle } from 'lucide-react';
+import { X, User, CheckCircle, Plus } from 'lucide-react';
 import CustomClientSelector from '../ui/CustomClientSelector';
 
 export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers, db, showAlert, onSuccess }) {
@@ -28,6 +28,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   // --- ESTADOS PARA TRABAJOS SIMPLES ---
   const [operationMode, setOperationMode] = useState(jobToEdit?.tripType === 'simple' ? 'servicio' : 'traslado');
   const [description, setDescription] = useState(jobToEdit?.description || '');
+  const [waypoints, setWaypoints] = useState(jobToEdit?.waypoints || []);
 
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -54,6 +55,10 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   };
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleAddWaypoint = () => setWaypoints([...waypoints, '']);
+  const handleWaypointChange = (index, val) => { const nw = [...waypoints]; nw[index] = val; setWaypoints(nw); };
+  const handleRemoveWaypoint = (index) => { const nw = [...waypoints]; nw.splice(index, 1); setWaypoints(nw); };
 
   const handleCreateOrUpdateJob = async (e) => {
     e.preventDefault();
@@ -91,6 +96,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     if (operationMode === 'traslado') {
        jobData.brand = brand; jobData.model = model; jobData.vin = vin.toUpperCase(); jobData.plate = plate.toUpperCase();
        jobData.vehicleType = vehicleType; jobData.rtData = rtData;
+       jobData.waypoints = waypoints.filter(w => w.trim() !== ''); // Filtra paradas vacías
     } else {
        jobData.description = description;
     }
@@ -216,6 +222,22 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                 <input name="origin" defaultValue={jobToEdit?.origin || ''} required type="text" placeholder="Desde (Origen)" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
                 <input name="destination" defaultValue={jobToEdit?.destination || ''} required type="text" placeholder={tripType === 'revision' ? 'Planta de Revisión (Destino)' : 'Hasta (Destino)'} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
               </div>
+
+              {/* PARADAS INTERMEDIAS */}
+              {tripType !== 'revision' && (
+                <div className="pt-2 space-y-2 mt-2">
+                   {waypoints.map((wp, idx) => (
+                      <div key={idx} className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
+                         <div className="bg-slate-200 w-9 h-9 rounded-full flex items-center justify-center shrink-0 shadow-inner"><span className="text-xs font-black text-slate-500">{idx + 1}</span></div>
+                         <input type="text" value={wp} onChange={(e) => handleWaypointChange(idx, e.target.value)} placeholder={`Parada intermedia ${idx + 1} (Ej: Pesaje, Notaría, Carga...)`} className="w-full border-2 border-slate-200 p-2.5 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+                         <button type="button" onClick={() => handleRemoveWaypoint(idx)} className="p-2.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors border border-red-100"><X className="w-4 h-4"/></button>
+                      </div>
+                   ))}
+                   <button type="button" onClick={handleAddWaypoint} className="text-xs font-extrabold text-blue-600 bg-blue-50 hover:bg-blue-100 py-2.5 px-4 rounded-xl transition-colors flex items-center gap-1.5 w-full sm:w-fit border border-blue-200 shadow-sm">
+                      <Plus className="w-4 h-4"/> + Añadir Parada Intermedia
+                   </button>
+                </div>
+              )}
             </div>
           </>
         ) : (

@@ -144,7 +144,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
        }
        return `${j.origin} ➔ Planta de Revisión (PRT)`;
     }
-    return `${j.origin} ➔ ${j.destination}`;
+    let route = j.origin || '';
+    if (j.waypoints && j.waypoints.length > 0) route += ` ➔ ${j.waypoints.join(' ➔ ')}`;
+    if (j.destination) route += ` ➔ ${j.destination}`;
+    return route;
   };
 
   const buildPDFDoc = async (job) => {
@@ -202,7 +205,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       docPDF.setFont("helvetica", "normal");
     };
 
-    let pdfTitle = job.tripType === 'revision' ? "CERTIFICADO DE REVISION TECNICA" : (job.tripType === 'viaje' ? "TRASLADO A REGIONES" : "CHECKLIST DE TRASLADO");
+    let pdfTitle = job.tripType === 'revision' ? "CERTIFICADO DE REVISION TECNICA" : (job.tripType === 'viaje' ? "TRASLADO A REGIONES" : (job.tripType === 'simple' ? "ACTA DE SERVICIO EN TERRENO" : "CHECKLIST DE TRASLADO"));
     drawHeader(pdfTitle);
     let currentY = 50;
 
@@ -218,52 +221,81 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     }
 
     const startY = currentY; const leftColWidth = 90;
-    const drawSectionTitle = (title, y) => { docPDF.setFillColor(...lightBg); docPDF.rect(15, y - 6, leftColWidth, 10, 'F'); docPDF.setDrawColor(...accentColor); docPDF.setLineWidth(1); docPDF.line(15, y - 6, 15, y + 4); docPDF.setTextColor(...primaryColor); docPDF.setFontSize(10); docPDF.setFont("helvetica", "bold"); docPDF.text(cleanStr(title).toUpperCase(), 20, y+1); return y + 10; };
+    const drawSectionTitle = (title, y, customWidth = leftColWidth) => { docPDF.setFillColor(...lightBg); docPDF.rect(15, y - 6, customWidth, 10, 'F'); docPDF.setDrawColor(...accentColor); docPDF.setLineWidth(1); docPDF.line(15, y - 6, 15, y + 4); docPDF.setTextColor(...primaryColor); docPDF.setFontSize(10); docPDF.setFont("helvetica", "bold"); docPDF.text(cleanStr(title).toUpperCase(), 20, y+1); return y + 10; };
     const drawKV = (label, value, x, y, maxW = 40) => { docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text(cleanStr(label).toUpperCase(), x, y); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor); const splitValue = docPDF.splitTextToSize(cleanStr(value), maxW); docPDF.text(splitValue, x, y + 4); return splitValue.length * 4; };
 
     let driverNameStr = job.checklist?.assignedDriverName || job.acceptedByEmail || "No registrado";
     if (job.acceptedByEmail) { const foundDriver = drivers?.find(d => d.email === job.acceptedByEmail); if (foundDriver) driverNameStr = foundDriver.name; }
 
-    currentY = drawSectionTitle("1. Detalles del Vehiculo", currentY);
-    let hC = drawKV("Cliente", `${job.client || 'Sin Cliente'}`, 15, currentY, 45);
-    let hM = drawKV("Marca y Modelo", `${job.brand || '-'} ${job.model || '-'}`, 65, currentY, 45);
-    currentY += Math.max(hC, hM) + 6;
-    
-    let plateText = job.plate || '-'; if (job.vin && job.vin !== job.plate) { plateText += ` / VIN: ${job.vin}`; }
-    let hP = drawKV("Patente / VIN", plateText, 15, currentY, 45);
-    let hD = drawKV("Conductor", driverNameStr, 65, currentY, 45);
-    currentY += Math.max(hP, hD) + 6;
-    
-    let routeText = `${job.origin || '-'}  ->  ${job.destination || '-'}`;
-    if (job.tripType === 'revision') { if (job.checklist?.rtStatus === 'aprobado') { const ret = job.checklist.rtReturnOption === 'other' ? job.checklist.rtReturnDestination : job.origin; routeText = `${job.origin || '-'}  ->  PRT  ->  ${ret || '-'}`; } else if (job.checklist?.rtStatus === 'rechazado') { routeText = `${job.origin || '-'}  ->  PRT (Rechazada)`; } else { routeText = `${job.origin || '-'}  ->  PRT`; } }
-    let routeH = drawKV("Ruta Asignada", routeText, 15, currentY, leftColWidth);
-    currentY += routeH + 8;
+    let sectionNum = 1;
 
-    currentY = drawSectionTitle("2. Recepcion y Estado", currentY);
-    const getDocStatus = (docKey) => { const isOk = job.checklist?.docs?.[docKey]; const expDate = job.checklist?.docsExpiry?.[docKey]; if (!isOk) return 'FALTA'; if (expDate) { const [y, m, d] = expDate.split('-'); return `AL DIA (Vence: ${d}/${m}/${y})`; } return 'AL DIA'; };
-    let hFuel = drawKV("Combustible", `${job.checklist?.fuelLevel || '0'}%`, 15, currentY, 45);
-    let hSoap = drawKV("Seguro SOAP", getDocStatus('soap'), 65, currentY, 45);
-    currentY += Math.max(hFuel, hSoap) + 6;
-    let hPerm = drawKV("Permiso Circ.", getDocStatus('permiso'), 15, currentY, 45);
-    let hRev = drawKV("Rev. Tecnica", getDocStatus('revTecnica'), 65, currentY, 45);
-    currentY += Math.max(hPerm, hRev) + 6;
-    let hGas = drawKV("Gases", getDocStatus('gases'), 15, currentY, 45);
-    currentY += hGas + 8;
+    if (job.tripType === 'simple') {
+        currentY = drawSectionTitle(`${sectionNum}. Detalles del Servicio`, currentY, 180);
+        let hC = drawKV("Cliente / Solicitante", `${job.client || 'Sin Cliente'}`, 15, currentY, 80);
+        let hD = drawKV("Operario Encargado", driverNameStr, 105, currentY, 80);
+        currentY += Math.max(hC, hD) + 6;
+        
+        let hDesc = drawKV("Descripcion de la Tarea", `${job.description || 'Sin descripcion detallada'}`, 15, currentY, 180);
+        currentY += hDesc + 6;
+        
+        let routeText = `${job.origin || '-'}`;
+        if (job.destination) routeText += `  ->  ${job.destination}`;
+        let hLoc = drawKV("Lugar de Ejecucion", routeText, 15, currentY, 180);
+        currentY += hLoc + 8;
+        sectionNum++;
 
-    docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("OBSERVACIONES:", 15, currentY); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor); const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin observaciones registradas.'}`), leftColWidth); docPDF.text(obsSplit, 15, currentY + 4); currentY += (obsSplit.length * 4) + 8;
-    if (job.waitTimeMinutes && job.waitTimeMinutes > 20) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38); const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA EN ORIGEN: ${job.waitTimeMinutes} minutos`, leftColWidth); docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2; } else if (job.checklist?.hasWaitTime) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38);  const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth);  docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2;  }
-    if (job.checklist?.hasFuelCharge) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(37, 99, 235); const fcStr = docPDF.splitTextToSize(`CARGA DE COMBUSTIBLE: ${cleanStr(job.checklist.fuelChargeAmount || 'Sí')}`, leftColWidth); docPDF.text(fcStr, 15, currentY); currentY += (fcStr.length * 4) + 2; }
+        currentY = drawSectionTitle(`${sectionNum}. Notas del Operario`, currentY, 180);
+        docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor); 
+        const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin notas registradas.'}`), 180); 
+        docPDF.text(obsSplit, 15, currentY + 2); 
+        currentY += (obsSplit.length * 4) + 10;
+        sectionNum++;
+    } else {
+        currentY = drawSectionTitle(`${sectionNum}. Detalles del Vehiculo`, currentY);
+        let hC = drawKV("Cliente", `${job.client || 'Sin Cliente'}`, 15, currentY, 45);
+        let hM = drawKV("Marca y Modelo", `${job.brand || '-'} ${job.model || '-'}`, 65, currentY, 45);
+        currentY += Math.max(hC, hM) + 6;
+        
+        let plateText = job.plate || '-'; if (job.vin && job.vin !== job.plate) { plateText += ` / VIN: ${job.vin}`; }
+        let hP = drawKV("Patente / VIN", plateText, 15, currentY, 45);
+        let hD = drawKV("Conductor", driverNameStr, 65, currentY, 45);
+        currentY += Math.max(hP, hD) + 6;
+        
+        let routeText = `${job.origin || '-'}`;
+        if (job.waypoints && job.waypoints.length > 0) { routeText += `  ->  ${job.waypoints.join('  ->  ')}`; }
+        if (job.destination) { routeText += `  ->  ${job.destination}`; }
+        
+        if (job.tripType === 'revision') { if (job.checklist?.rtStatus === 'aprobado') { const ret = job.checklist.rtReturnOption === 'other' ? job.checklist.rtReturnDestination : job.origin; routeText = `${job.origin || '-'}  ->  PRT  ->  ${ret || '-'}`; } else if (job.checklist?.rtStatus === 'rechazado') { routeText = `${job.origin || '-'}  ->  PRT (Rechazada)`; } else { routeText = `${job.origin || '-'}  ->  PRT`; } }
+        let routeH = drawKV("Ruta Asignada", routeText, 15, currentY, leftColWidth);
+        currentY += routeH + 8;
+        sectionNum++;
 
-    let sectionNum = 3;
+        currentY = drawSectionTitle(`${sectionNum}. Recepcion y Estado`, currentY);
+        const getDocStatus = (docKey) => { const isOk = job.checklist?.docs?.[docKey]; const expDate = job.checklist?.docsExpiry?.[docKey]; if (!isOk) return 'FALTA'; if (expDate) { const [y, m, d] = expDate.split('-'); return `AL DIA (Vence: ${d}/${m}/${y})`; } return 'AL DIA'; };
+        let hFuel = drawKV("Combustible", `${job.checklist?.fuelLevel || '0'}%`, 15, currentY, 45);
+        let hSoap = drawKV("Seguro SOAP", getDocStatus('soap'), 65, currentY, 45);
+        currentY += Math.max(hFuel, hSoap) + 6;
+        let hPerm = drawKV("Permiso Circ.", getDocStatus('permiso'), 15, currentY, 45);
+        let hRev = drawKV("Rev. Tecnica", getDocStatus('revTecnica'), 65, currentY, 45);
+        currentY += Math.max(hPerm, hRev) + 6;
+        let hGas = drawKV("Gases", getDocStatus('gases'), 15, currentY, 45);
+        currentY += hGas + 8;
+
+        docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("OBSERVACIONES:", 15, currentY); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor); const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin observaciones registradas.'}`), leftColWidth); docPDF.text(obsSplit, 15, currentY + 4); currentY += (obsSplit.length * 4) + 8;
+        if (job.waitTimeMinutes && job.waitTimeMinutes > 20) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38); const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA EN ORIGEN: ${job.waitTimeMinutes} minutos`, leftColWidth); docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2; } else if (job.checklist?.hasWaitTime) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38);  const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth);  docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2;  }
+        if (job.checklist?.hasFuelCharge) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(37, 99, 235); const fcStr = docPDF.splitTextToSize(`CARGA DE COMBUSTIBLE: ${cleanStr(job.checklist.fuelChargeAmount || 'Sí')}`, leftColWidth); docPDF.text(fcStr, 15, currentY); currentY += (fcStr.length * 4) + 2; }
+        sectionNum++;
+    }
+
     if (job.tripType === 'revision') { currentY = drawSectionTitle(`${sectionNum}. Resultado`, currentY); if (job.checklist?.rtStatus === 'aprobado') { docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(16); docPDF.text("APROBADO", 15, currentY + 6); currentY += 18; } else { docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(16); docPDF.text("RECHAZADO", 15, currentY + 6); docPDF.setFontSize(10); docPDF.setTextColor(153, 27, 27); const rejSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.checklist?.rtRejectReason || job.failedReason || 'No especificada'}`), leftColWidth); docPDF.text(rejSplit, 15, currentY + 12); currentY += 20 + (rejSplit.length * 4); } sectionNum++; }
 
-    currentY = drawSectionTitle(`${sectionNum}. Conformidad Entrega`, currentY);
+    currentY = drawSectionTitle(`${sectionNum}. Conformidad Entrega`, currentY, job.tripType === 'simple' ? 180 : leftColWidth);
     if (job.checklist?.noReception) { 
-      docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(9); const nrSplit = docPDF.splitTextToSize("ENTREGA SIN RECEPCION (Confirmada por conductor en terreno)", leftColWidth); docPDF.text(nrSplit, 15, currentY + 4); currentY += (nrSplit.length * 4) + 6; 
+      docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(9); const nrSplit = docPDF.splitTextToSize("TRABAJO SIN FIRMA DE RECEPCION (Confirmada por operario en terreno)", job.tripType === 'simple' ? 180 : leftColWidth); docPDF.text(nrSplit, 15, currentY + 4); currentY += (nrSplit.length * 4) + 6; 
     } else { 
-      drawKV("Receptor", `${job.checklist?.receiverName || 'N/A'}`, 15, currentY, leftColWidth); currentY += 12; 
-      drawKV("RUT", `${job.checklist?.receiverRut || 'N/A'}`, 15, currentY, leftColWidth); currentY += 12; 
-      if (job.checklist?.clientComments) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("COMENTARIOS:", 15, currentY); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor); const commSplit = docPDF.splitTextToSize(cleanStr(job.checklist.clientComments), leftColWidth); docPDF.text(commSplit, 15, currentY + 4); currentY += (commSplit.length * 4) + 6; } 
+      drawKV("Receptor", `${job.checklist?.receiverName || 'N/A'}`, 15, currentY, job.tripType === 'simple' ? 180 : leftColWidth); currentY += 12; 
+      drawKV("RUT", `${job.checklist?.receiverRut || 'N/A'}`, 15, currentY, job.tripType === 'simple' ? 180 : leftColWidth); currentY += 12; 
+      if (job.checklist?.clientComments) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("COMENTARIOS:", 15, currentY); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor); const commSplit = docPDF.splitTextToSize(cleanStr(job.checklist.clientComments), job.tripType === 'simple' ? 180 : leftColWidth); docPDF.text(commSplit, 15, currentY + 4); currentY += (commSplit.length * 4) + 6; } 
       if(signatureStr) { 
         docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("FIRMA DE CONFORMIDAD:", 15, currentY); 
         try { docPDF.addImage(signatureStr, 'JPEG', 15, currentY + 2, 45, 25); } catch(e) { try { docPDF.addImage(signatureStr, 'PNG', 15, currentY + 2, 45, 25); } catch(err){} }
@@ -273,7 +305,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     
     if (job.checklist?.location) { currentY += 2; const { lat, lng } = job.checklist.location; docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text(`UBICACION GPS:`, 15, currentY); docPDF.setFontSize(9); docPDF.setTextColor(...accentColor); docPDF.textWithLink('Clic aqui para ver mapa en Google', 15, currentY + 4, { url: `https://maps.google.com/?q=${lat},${lng}` }); }
 
-    if (frontPhotoStr) { 
+    if (frontPhotoStr && job.tripType !== 'simple') { 
       try { 
         const dims = await getImageDims(frontPhotoStr); const ratio = dims.h / dims.w; let imgW = 80; let imgH = imgW * ratio; if (imgH > 130) { imgH = 130; imgW = imgH / ratio; } const rightX = 115; const rightY = startY + 6; docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(rightX - 2, rightY - 8, imgW + 4, imgH + 12, 2, 2, 'S'); docPDF.setFillColor(...lightBg); docPDF.rect(rightX - 2, rightY - 8, imgW + 4, 8, 'F'); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor); docPDF.text("VISTA FRONTAL", rightX + (imgW/2), rightY - 3, { align: "center" }); 
         try { docPDF.addImage(frontPhotoStr, 'JPEG', rightX, rightY + 2, imgW, imgH); } catch(e) { docPDF.addImage(frontPhotoStr, 'PNG', rightX, rightY + 2, imgW, imgH); }
@@ -283,10 +315,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     const addFooter = () => { const pageCount = docPDF.internal.getNumberOfPages(); for(let i = 1; i <= pageCount; i++) { docPDF.setPage(i); docPDF.setFontSize(8); docPDF.setTextColor(148, 163, 184); docPDF.text(`Generado por LogisticAPP el ${new Date().toLocaleString('es-CL')} - Pagina ${i} de ${pageCount}`, 105, 290, null, null, "center"); } }
 
     if (preloadedOtherPhotos.length > 0) {
-      const labels = { left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', interior_front: 'Int. Adelante', interior_back: 'Int. Atras', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4', det5: 'Detalle 5', det6: 'Detalle 6', det7: 'Detalle 7', det8: 'Detalle 8' };
+      const labels = job.tripType === 'simple' 
+         ? { det1: 'Evidencia 1', det2: 'Evidencia 2', det3: 'Evidencia 3', det4: 'Evidencia 4' }
+         : { left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', interior_front: 'Int. Adelante', interior_back: 'Int. Atras', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4', det5: 'Detalle 5', det6: 'Detalle 6', det7: 'Detalle 7', det8: 'Detalle 8' };
+      
       let photoY = 46; let currentCol = 1; let addedPage = false;
       const detailPins = job.checklist?.detailPins || [];
-      if (detailPins.length > 0) { docPDF.addPage(); drawHeader("ESQUEMA DE DAÑOS Y DETALLES"); addedPage = true; const mapX = 75; const mapY = 50; const mapW = 60; const mapH = 100; docPDF.setFillColor(248, 250, 252); docPDF.roundedRect(mapX, mapY, mapW, mapH, 3, 3, 'F'); docPDF.setDrawColor(203, 213, 225); docPDF.roundedRect(mapX, mapY, mapW, mapH, 3, 3, 'S'); const vType = job.checklist.vehicleType || 'auto'; const vx = mapX + 10; const vw = mapW - 20; const vy = mapY + 10; const vh = mapH - 20; docPDF.setFillColor(203, 213, 225); docPDF.setDrawColor(148, 163, 184); docPDF.setLineWidth(1); if (vType === 'camioneta') { docPDF.roundedRect(vx, vy, vw, vh*0.35, 3, 3, 'FD'); docPDF.setFillColor(71, 85, 105); docPDF.rect(vx+4, vy+4, vw-8, 6, 'F'); docPDF.setFillColor(226, 232, 240); docPDF.roundedRect(vx+2, vy+vh*0.38, vw-4, vh*0.62, 2, 2, 'FD'); } else if (vType === 'camion') { docPDF.setFillColor(191, 219, 254); docPDF.roundedRect(vx-2, vy, vw+4, vh*0.2, 2, 2, 'FD'); docPDF.setFillColor(226, 232, 240); docPDF.roundedRect(vx, vy+vh*0.22, vw, vh*0.78, 1, 1, 'FD'); } else { docPDF.roundedRect(vx, vy, vw, vh, 6, 6, 'FD'); docPDF.setFillColor(71, 85, 105); docPDF.rect(vx+4, vy+8, vw-8, 8, 'F'); docPDF.rect(vx+4, vy+vh-12, vw-8, 6, 'F'); } detailPins.forEach(pin => { const px = vx + (vw * (pin.x / 100)); const py = vy + (vh * (pin.y / 100)); docPDF.setFillColor(239, 68, 68); docPDF.circle(px, py, 3.5, 'F'); docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(8); docPDF.text(pin.id.replace('det', ''), px, py + 1.2, {align: 'center', baseline: 'middle'}); }); docPDF.setFontSize(9); docPDF.setTextColor(100, 116, 139); docPDF.text("Los numeros en rojo corresponden a las fotos de detalle del anexo:", 105, 165, null, null, "center"); photoY = 180; }
+      if (detailPins.length > 0 && job.tripType !== 'simple') { docPDF.addPage(); drawHeader("ESQUEMA DE DAÑOS Y DETALLES"); addedPage = true; const mapX = 75; const mapY = 50; const mapW = 60; const mapH = 100; docPDF.setFillColor(248, 250, 252); docPDF.roundedRect(mapX, mapY, mapW, mapH, 3, 3, 'F'); docPDF.setDrawColor(203, 213, 225); docPDF.roundedRect(mapX, mapY, mapW, mapH, 3, 3, 'S'); const vType = job.checklist.vehicleType || 'auto'; const vx = mapX + 10; const vw = mapW - 20; const vy = mapY + 10; const vh = mapH - 20; docPDF.setFillColor(203, 213, 225); docPDF.setDrawColor(148, 163, 184); docPDF.setLineWidth(1); if (vType === 'camioneta') { docPDF.roundedRect(vx, vy, vw, vh*0.35, 3, 3, 'FD'); docPDF.setFillColor(71, 85, 105); docPDF.rect(vx+4, vy+4, vw-8, 6, 'F'); docPDF.setFillColor(226, 232, 240); docPDF.roundedRect(vx+2, vy+vh*0.38, vw-4, vh*0.62, 2, 2, 'FD'); } else if (vType === 'camion') { docPDF.setFillColor(191, 219, 254); docPDF.roundedRect(vx-2, vy, vw+4, vh*0.2, 2, 2, 'FD'); docPDF.setFillColor(226, 232, 240); docPDF.roundedRect(vx, vy+vh*0.22, vw, vh*0.78, 1, 1, 'FD'); } else { docPDF.roundedRect(vx, vy, vw, vh, 6, 6, 'FD'); docPDF.setFillColor(71, 85, 105); docPDF.rect(vx+4, vy+8, vw-8, 8, 'F'); docPDF.rect(vx+4, vy+vh-12, vw-8, 6, 'F'); } detailPins.forEach(pin => { const px = vx + (vw * (pin.x / 100)); const py = vy + (vh * (pin.y / 100)); docPDF.setFillColor(239, 68, 68); docPDF.circle(px, py, 3.5, 'F'); docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(8); docPDF.text(pin.id.replace('det', ''), px, py + 1.2, {align: 'center', baseline: 'middle'}); }); docPDF.setFontSize(9); docPDF.setTextColor(100, 116, 139); docPDF.text("Los numeros en rojo corresponden a las fotos de detalle del anexo:", 105, 165, null, null, "center"); photoY = 180; }
       
       for (const item of preloadedOtherPhotos) { 
         if (!item) continue;
@@ -511,6 +546,15 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               {(j.destination || j.tripType !== 'simple') && (
                 <>
                   <div className="text-slate-400 font-black text-sm px-2">➔</div>
+                  {j.waypoints && j.waypoints.length > 0 && (
+                     <>
+                        <div className="flex-1 min-w-0 text-center">
+                           <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest block mb-0.5">{j.waypoints.length === 1 ? 'Parada' : 'Paradas'}</span>
+                           <p className="text-xs font-extrabold text-amber-600 truncate" title={j.waypoints.join(' ➔ ')}>{j.waypoints.length} int.</p>
+                        </div>
+                        <div className="text-slate-400 font-black text-sm px-2">➔</div>
+                     </>
+                  )}
                   <div className="flex-1 min-w-0 text-right">
                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-0.5">Hasta</span>
                     <p className="text-sm font-extrabold text-blue-600 truncate">
@@ -520,6 +564,17 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                 </>
               )}
             </div>
+            {/* Resumen de paradas en lista */}
+            {j.waypoints && j.waypoints.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-slate-200/60">
+                <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1.5">Ruta intermedia:</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {j.waypoints.map((wp, i) => (
+                     <span key={i} className="text-[10px] font-bold bg-amber-100/50 text-amber-700 px-2 py-0.5 rounded-md border border-amber-200">{i + 1}. {wp}</span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {j.tripType === 'revision' && <div className="mb-3 bg-amber-50 border border-amber-200 p-2 rounded-xl text-center"><span className="text-[10px] font-black text-amber-700 uppercase">REVISIÓN TÉCNICA (TIPO {j.rtData?.type})</span></div>}
@@ -593,11 +648,21 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       <div key={j.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between relative pl-5 overflow-hidden hover:shadow-xl hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-default">
         <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
         <div className="flex justify-between items-start mb-2 gap-2">
-          <p className="text-sm font-black text-slate-800 leading-tight truncate mt-1">{j.brand} {j.model}</p>
+          {j.tripType === 'simple' ? (
+             <p className="text-sm font-black text-purple-800 leading-tight truncate mt-1">{j.description || 'Servicio en Terreno'}</p>
+          ) : (
+             <p className="text-sm font-black text-slate-800 leading-tight truncate mt-1">{j.brand} {j.model}</p>
+          )}
           <div className="flex flex-col items-end shrink-0 gap-1">
-            <LicensePlateBadge text={j.plate || j.vin} />
-            {j.vin && j.plate && j.vin !== j.plate && (
-              <span className="text-[8px] font-black bg-slate-100 border border-slate-200 text-slate-500 px-1 py-[1px] rounded uppercase tracking-widest mr-1">VIN: {j.vin}</span>
+            {j.tripType === 'simple' ? (
+               <span className="bg-purple-100 text-purple-800 border border-purple-200 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider shadow-sm">SERVICIO</span>
+            ) : (
+               <>
+                 <LicensePlateBadge text={j.plate || j.vin} />
+                 {j.vin && j.plate && j.vin !== j.plate && (
+                   <span className="text-[8px] font-black bg-slate-100 border border-slate-200 text-slate-500 px-1 py-[1px] rounded uppercase tracking-widest mr-1">VIN: {j.vin}</span>
+                 )}
+               </>
             )}
           </div>
         </div>
@@ -755,10 +820,22 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                                       <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
                                       <div className="flex flex-col min-w-0">
                                           <div className="flex items-center gap-2">
-                                              <p className="text-xs font-black text-slate-800 truncate">{j.brand} {j.model}</p>
-                                              <span className="text-[9px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-black uppercase">{j.plate || j.vin || 'S/N'}</span>
+                                              {j.tripType === 'simple' ? (
+                                                  <p className="text-xs font-black text-purple-800 truncate">{j.description || 'Servicio en Terreno'}</p>
+                                              ) : (
+                                                  <p className="text-xs font-black text-slate-800 truncate">{j.brand} {j.model}</p>
+                                              )}
+                                              {j.tripType === 'simple' ? (
+                                                  <span className="text-[9px] bg-purple-100 border border-purple-200 text-purple-800 px-1.5 py-0.5 rounded font-black uppercase">SERVICIO</span>
+                                              ) : (
+                                                  <span className="text-[9px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-black uppercase">{j.plate || j.vin || 'S/N'}</span>
+                                              )}
                                           </div>
-                                          <p className="text-[10px] font-bold text-slate-500 truncate">{j.origin} ➔ {j.destination}</p>
+                                          <p className="text-[10px] font-bold text-slate-500 truncate">
+                                             {j.origin} 
+                                             {j.waypoints && j.waypoints.length > 0 && ` ➔ +${j.waypoints.length} int.`}
+                                             {j.destination && j.tripType !== 'simple' ? ` ➔ ${j.destination}` : ''}
+                                          </p>
                                       </div>
                                   </div>
                                   <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
