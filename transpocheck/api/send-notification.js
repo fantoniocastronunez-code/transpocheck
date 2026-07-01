@@ -28,11 +28,11 @@ export default async function handler(req, res) {
   try {
     const message = {
       notification: { title, body },
-      tokens: tokens, // Enviamos el mensaje a todos los dispositivos en la lista (Multicast)
+      tokens: tokens, // Enviamos el mensaje a todos los dispositivos en la lista
     };
 
-    // Usamos la nueva sintaxis modular para enviar
-    const response = await getMessaging().sendMulticast(message);
+    // SOLUCIÓN: Usamos la nueva función sendEachForMulticast requerida por las versiones recientes de Firebase
+    const response = await getMessaging().sendEachForMulticast(message);
     
     res.status(200).json({ success: true, response });
   } catch (error) {
