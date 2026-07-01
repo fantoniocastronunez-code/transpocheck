@@ -154,14 +154,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const pendingJobsList = activeJobs.filter(j => j.status === 'pending');
   const inProgressJobsList = activeJobs.filter(j => j.status === 'accepted');
 
-  const handleAcceptJob = async (job) => {
-    if (processingId) return;
-    setProcessingId(`${job.id}-accept`);
-    try { await updateDoc(doc(db, 'transport_jobs', job.id), { status: 'accepted', acceptedByEmail: currentUserEmail }); } 
-    catch (e) { console.error(e); }
-    finally { setProcessingId(null); }
-  };
-
   const handleDeleteJob = async (jobId) => {
     showConfirm("¿Estás seguro de eliminar este trabajo definitivamente?", async () => {
       try { await deleteDoc(doc(db, 'transport_jobs', jobId)); } catch (e) { console.error(e); }
