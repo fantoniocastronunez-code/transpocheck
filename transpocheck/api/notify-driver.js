@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'No se enviaron correos de destino.' });
   }
 
-  // 1. Obtenemos el link exacto de tu aplicación en Vercel automáticamente
+  // Obtenemos el link exacto de tu aplicación en Vercel automáticamente
   const protocol = req.headers['x-forwarded-proto'] || 'https';
   const host = req.headers.host;
   const baseUrl = `${protocol}://${host}`;
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
     ? `🔄 ACTUALIZACIÓN: Trabajo reasignado - LogisticAPP` 
     : `📍 NUEVO TRABAJO ASIGNADO - LogisticAPP`;
 
-  // 2. Plantilla HTML con el diseño exacto de tu cabecera negra (Usando Tablas para compatibilidad total)
+  // Plantilla HTML con la cabecera negra y el mensaje corto
   const htmlTemplate = `
     <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; border: 1px solid #171717; border-radius: 12px; overflow: hidden; background-color: #f8fafc;">
       
@@ -53,8 +53,8 @@ export default async function handler(req, res) {
       </div>
       
       <div style="padding: 30px;">
-        <p style="font-size: 16px; color: #334155; margin-top: 0;">Hola,</p>
-        <p style="font-size: 16px; color: #334155;">El administrador te ha asignado un nuevo ${isService ? 'servicio en terreno' : 'traslado de vehículo'}. Por favor, <strong>abre la aplicación para aceptar el trabajo</strong> y confirmar tu disponibilidad.</p>
+        <p style="font-size: 16px; color: #334155; margin-top: 0; font-weight: bold;">Hola.</p>
+        <p style="font-size: 16px; color: #334155;">Tienes un nuevo ${isService ? 'servicio' : 'traslado'} asignado, abre la app para aceptarlo.</p>
         
         <div style="background-color: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px; margin: 25px 0;">
           <h3 style="margin-top: 0; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">Detalles de la Orden</h3>
