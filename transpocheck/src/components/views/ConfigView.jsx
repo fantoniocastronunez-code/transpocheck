@@ -54,7 +54,7 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
 
       {configSubTab === 'clients' && (
         <div className="grid md:grid-cols-2 gap-6 w-full min-w-0">
-          <form onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const name = fd.get('name'); const contactName = fd.get('contactName'); const email = fd.get('email').toLowerCase().trim(); try { if(editingClient){ await updateDoc(doc(db, 'clients', editingClient.id), { name, contactName, email }); setEditingClient(null); showAlert("Cliente actualizado"); } else { await addDoc(collection(db, 'clients'), { name, contactName, email, createdAt: Date.now() }); showAlert("Cliente agregado"); } e.target.reset(); } catch(err){} }} className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4 w-full min-w-0">
+          <form onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const name = fd.get('name'); const contactName = fd.get('contactName'); const email = fd.get('email').toLowerCase().trim(); const enableNotifications = fd.get('enableNotifications') === 'on'; try { if(editingClient){ await updateDoc(doc(db, 'clients', editingClient.id), { name, contactName, email, enableNotifications }); setEditingClient(null); showAlert("Cliente actualizado"); } else { await addDoc(collection(db, 'clients'), { name, contactName, email, enableNotifications, createdAt: Date.now() }); showAlert("Cliente agregado"); } e.target.reset(); } catch(err){} }} className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4 w-full min-w-0">
             <h3 className="font-extrabold text-lg flex items-center gap-2"><User className="text-blue-600"/> {editingClient ? 'Editar Cliente' : 'Nuevo Cliente'}</h3>
             <input name="name" defaultValue={editingClient?.name} placeholder="Nombre Empresa (Ej. Kovacs)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-semibold"/>
             <div className="grid grid-cols-1 gap-3">
@@ -62,6 +62,19 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
                <input name="email" type="text" defaultValue={editingClient?.email} placeholder="Correos Gmail (separados por coma. Ej: jefe@gmail.com, sec@gmail.com)" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-semibold"/>
             </div>
             <p className="text-[10px] font-bold text-slate-400 mt-1 leading-tight">Puedes agregar varios correos separados por coma. Cualquiera de ellos podrá iniciar sesión con Google y ver el portal.</p>
+            
+            {/* NUEVO: INTERRUPTOR DE NOTIFICACIONES */}
+            <div className="bg-blue-50 border border-blue-100 p-3 rounded-xl flex justify-between items-center mt-2">
+               <div>
+                  <p className="text-xs font-extrabold text-blue-900 flex items-center gap-1.5"><Eye className="w-4 h-4"/> Alertas Automáticas</p>
+                  <p className="text-[10px] font-bold text-blue-600 mt-0.5 leading-tight">Enviar correos al cliente con el estado en vivo y acta PDF.</p>
+               </div>
+               <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" name="enableNotifications" defaultChecked={editingClient ? editingClient.enableNotifications : true} className="sr-only peer" />
+                  <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+               </label>
+            </div>
+
             <div className="flex gap-2 pt-2">
               {editingClient && <button type="button" onClick={()=>setEditingClient(null)} className="flex-1 bg-slate-100 py-3 rounded-xl font-bold">Cancelar</button>}
               <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold shadow-sm transition-colors">{editingClient ? 'Actualizar Cliente' : 'Crear Acceso'}</button>
@@ -82,6 +95,14 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
                              ))}
                            </div>
                         )}
+                        {/* NUEVO: BADGE DE NOTIFICACIONES */}
+                        <div className="mt-2">
+                           {clientRecord.enableNotifications ? (
+                             <span className="text-[9px] font-black text-blue-700 bg-blue-100 px-2 py-0.5 rounded uppercase tracking-widest border border-blue-200">🔔 Notificaciones On</span>
+                           ) : (
+                             <span className="text-[9px] font-black text-slate-500 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-widest border border-slate-200">🔕 Notificaciones Off</span>
+                           )}
+                        </div>
                      </div>
                      <div className="flex gap-1.5 shrink-0 ml-1 border-l border-slate-200 pl-3">
                        <button onClick={()=>setEditingClient(clientRecord)} className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition-colors shadow-sm"><Edit2 className="w-4 h-4"/></button>

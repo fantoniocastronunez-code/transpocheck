@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { updateDoc, doc, deleteDoc, addDoc, collection, deleteField } from 'firebase/firestore';
+import { updateDoc, doc, deleteDoc, addDoc, collection, deleteField, getDocs, query, where } from 'firebase/firestore';
 import { 
   Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, 
   Copy, X, XCircle, MapPin, Clock, FileDown, Search, ChevronUp, ChevronDown,
@@ -23,11 +23,64 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [isInProgressOpen, setIsInProgressOpen] = useState(true);
   const [processingId, setProcessingId] = useState(null); 
 
+  // NUEVO: Motor que revisa la configuración del cliente y dispara correos
+  const notifyClient = async (jobData, statusType) => {
+     try {
+        if (!jobData.client || jobData.client === 'Sin Cliente') return;
+        const q = query(collection(db, 'clients'), where('name', '==', jobData.client));
+        const snap = await getDocs(q);
+        if (snap.empty) return;
+        
+        const clientRecord = snap.docs[0].data();
+        if (!clientRecord.enableNotifications || !clientRecord.email) return;
+
+        let driverName = jobData.assignedDriverName || jobData.acceptedByEmail || 'Asignado';
+        if (jobData.acceptedByEmail && drivers) {
+           const d = drivers.find(x => x.email === jobData.acceptedByEmail);
+           if (d) driverName = d.name;
+        }
+
+        await fetch('/api/notify-client', {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({
+              email: clientRecord.email,
+              clientName: clientRecord.name,
+              type: statusType, 
+              jobDetails: {
+                 id: jobData.id,
+                 driverName: driverName,
+                 vehicle: `${jobData.brand || ''} ${jobData.model || ''}`.trim() || 'Vehículo',
+                 plate: jobData.plate || jobData.vin || 'S/N',
+                 origin: jobData.origin || 'Origen no especificado',
+                 destination: jobData.destination || ''
+              }
+           })
+        });
+     } catch (e) { console.error("Error al notificar al cliente:", e); }
+  };
+
   const updatePhase = async (job, phase, extra = {}) => {
     if (processingId) return;
     setProcessingId(`${job.id}-${phase}`);
-    try { await updateDoc(doc(db, 'transport_jobs', job.id), { phase, ...extra }); } 
+    try { 
+       await updateDoc(doc(db, 'transport_jobs', job.id), { phase, ...extra }); 
+       // Correo de EN RUTA (Cuando desliza "Vehículo en mi poder")
+       if (phase === 'picked_up') notifyClient(job, 'en_ruta');
+    } 
     catch (e) { console.error(e); showAlert("Error de conexión al actualizar fase."); }
+    finally { setProcessingId(null); }
+  }; 
+
+  const handleAcceptJob = async (job) => {
+    if (processingId) return;
+    setProcessingId(`${job.id}-accept`);
+    try { 
+       await updateDoc(doc(db, 'transport_jobs', job.id), { status: 'accepted', acceptedByEmail: currentUserEmail }); 
+       // Correo de ASIGNACIÓN
+       notifyClient({ ...job, acceptedByEmail: currentUserEmail }, 'asignado');
+    } 
+    catch (e) { console.error(e); }
     finally { setProcessingId(null); }
   }; 
   
@@ -1009,6 +1062,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                                 phase: forceCloseJob.tripType === 'revision' ? 'prt_done' : 'arrived_destination',
                                 prt_result: forceCloseJob.tripType === 'revision' ? (forceCloseJob.prt_result || 'aprobado') : null
                              });
+                             // NUEVO: Correo de término para cierres forzados del admin
+                             notifyClient({ ...forceCloseJob, acceptedByEmail: d.email, assignedDriverName: d.name }, 'finalizado');
                              setForceCloseJob(null);
                              showAlert(`✅ Traslado cerrado exitosamente a nombre de ${d.name}.`);
                           } catch (e) { console.error(e); showAlert("Error al forzar el cierre."); }

@@ -546,6 +546,37 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
           showAlert("Revisión guardada como RECHAZADA. Se ha creado un nuevo traslado pendiente.");
       } else {
           showAlert("✅ Checklist guardado correctamente."); 
+          // NUEVO: Notificar acta PDF al Cliente
+          try {
+             if (fd.client && fd.client !== 'Sin Cliente') {
+                const qClient = query(collection(db, 'clients'), where('name', '==', fd.client));
+                const snapClient = await getDocs(qClient);
+                if (!snapClient.empty) {
+                   const clientRecord = snapClient.docs[0].data();
+                   if (clientRecord.enableNotifications && clientRecord.email) {
+                      let driverName = d.assignedDriverName || currentUserEmail;
+                      if (drivers) { const drv = drivers.find(x => x.email === currentUserEmail); if (drv) driverName = drv.name; }
+                      fetch('/api/notify-client', {
+                         method: 'POST',
+                         headers: { 'Content-Type': 'application/json' },
+                         body: JSON.stringify({
+                            email: clientRecord.email,
+                            clientName: clientRecord.name,
+                            type: 'finalizado', 
+                            jobDetails: {
+                               id: job.id === 'NEW_QUICK_JOB' ? 'N/A' : job.id,
+                               driverName: driverName,
+                               vehicle: `${fd.brand || ''} ${fd.model || ''}`.trim() || 'Vehículo',
+                               plate: fd.plate || fd.vin || 'S/N',
+                               origin: fd.origin || 'Origen',
+                               destination: fd.destination || 'Destino'
+                            }
+                         })
+                      });
+                   }
+                }
+             }
+          } catch (e) { console.error("Error correo cliente:", e); }
       }
       onComplete();
     } catch(error) { 

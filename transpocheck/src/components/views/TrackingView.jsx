@@ -10,6 +10,9 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState(null); 
+  
+  // NUEVO: Atrapa el ID del trabajo desde la URL si viene desde el correo
+  const [trackId, setTrackId] = useState(() => new URLSearchParams(window.location.search).get('track')); 
 
   useEffect(() => {
     const q = query(collection(db, 'transport_jobs'), where('client', '==', clientName));
@@ -208,6 +211,9 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
   );
 
   const filteredJobs = jobs.filter(j => {
+    // NUEVO: Si hay un ID de rastreo activo, ocultamos el resto de la flota
+    if (trackId && j.id !== trackId) return false;
+    
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
     return (j.plate || '').toLowerCase().includes(term) || 
@@ -282,17 +288,36 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
           </div>
 
           <h2 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-1">Portal de Seguimiento</h2>
-          <p className="text-2xl font-black text-slate-800">{clientName}</p>
-        </div>
-
-        <div className="relative max-w-2xl mx-auto">
-           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-             <Search className="w-5 h-5 text-slate-400" />
+             <p className="text-2xl font-black text-slate-800">{clientName}</p>
            </div>
-           <input type="text" placeholder="Buscar por patente, marca o modelo..." className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 shadow-sm transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-        </div>
 
-        {pendingSignatureJobs.length > 0 && (
+           {/* NUEVO: BANNER DE VISTA FILTRADA */}
+           {trackId && (
+             <div className="bg-blue-50 border-2 border-blue-200 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm animate-in fade-in max-w-2xl mx-auto">
+                <div>
+                  <p className="text-xs font-black text-blue-800 uppercase tracking-widest text-left">Vista Filtrada</p>
+                  <p className="text-sm font-bold text-blue-600 text-left">Mostrando solo el vehículo de la notificación.</p>
+                </div>
+                <button onClick={() => {
+                   setTrackId(null);
+                   window.history.replaceState({}, '', `${window.location.pathname}?client=${encodeURIComponent(clientName)}`);
+                }} className="w-full sm:w-auto bg-white border border-blue-200 text-blue-700 hover:bg-blue-100 px-4 py-2.5 rounded-xl text-xs font-extrabold shadow-sm transition-colors whitespace-nowrap">
+                   Ver toda mi flota
+                </button>
+             </div>
+           )}
+
+           {/* OCULTA EL BUSCADOR SI HAY UN FILTRO ACTIVO */}
+           {!trackId && (
+             <div className="relative max-w-2xl mx-auto">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Search className="w-5 h-5 text-slate-400" />
+                </div>
+                <input type="text" placeholder="Buscar por patente, marca o modelo..." className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 shadow-sm transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+             </div>
+           )}
+
+           {pendingSignatureJobs.length > 0 && (
           <div className="bg-blue-600 rounded-3xl p-5 shadow-xl text-white flex flex-col sm:flex-row items-center justify-between gap-4 animate-in zoom-in duration-300 border-4 border-blue-400 max-w-2xl mx-auto">
              <div>
                <h3 className="font-black text-xl flex items-center gap-2"><CheckCircle className="w-6 h-6 text-green-300"/> ¡Acción Requerida!</h3>
