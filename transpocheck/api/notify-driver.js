@@ -9,9 +9,13 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'No se enviaron correos de destino.' });
   }
 
-  // Configuramos el cartero con tus credenciales de Vercel
+  // 1. Obtenemos el link exacto de tu aplicación en Vercel automáticamente
+  const protocol = req.headers['x-forwarded-proto'] || 'https';
+  const host = req.headers.host;
+  const baseUrl = `${protocol}://${host}`;
+
   const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com', // Asumiendo que usas Google Workspace
+    host: 'smtp.gmail.com',
     port: 465,
     secure: true,
     auth: {
@@ -24,15 +28,31 @@ export default async function handler(req, res) {
     ? `🔄 ACTUALIZACIÓN: Trabajo reasignado - LogisticAPP` 
     : `📍 NUEVO TRABAJO ASIGNADO - LogisticAPP`;
 
-  // Plantilla HTML del correo
+  // 2. Plantilla HTML con el diseño exacto de tu cabecera negra (Usando Tablas para compatibilidad total)
   const htmlTemplate = `
-    <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
-      <div style="background-color: #2563eb; padding: 20px; text-align: center; color: white;">
-        <h2 style="margin: 0; font-size: 24px;">LogisticAPP</h2>
-        <p style="margin: 5px 0 0 0; opacity: 0.9;">Notificación de Asignación</p>
+    <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; border: 1px solid #171717; border-radius: 12px; overflow: hidden; background-color: #f8fafc;">
+      
+      <div style="background-color: #000000; padding: 15px 20px;">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+          <tr>
+            <td align="left" width="25%" valign="middle">
+              <div style="background-color: rgba(255,255,255,0.2); padding: 4px; border-radius: 12px; display: inline-block;">
+                <img src="${baseUrl}/logo.png" alt="App Logo" style="width: 45px; height: 45px; display: block;" />
+              </div>
+            </td>
+            <td align="center" width="50%" valign="middle">
+              <h1 style="margin: 0; color: #ffffff; font-family: 'Impact', 'Arial Black', sans-serif; font-size: 26px; letter-spacing: 1px;">LogisticAPP</h1>
+            </td>
+            <td align="right" width="25%" valign="middle">
+              <div style="background-color: rgba(255,255,255,0.2); padding: 4px; border-radius: 12px; display: inline-block;">
+                <img src="${baseUrl}/LogoLogistica.png" alt="Logistica TS" style="width: 45px; height: 45px; display: block;" />
+              </div>
+            </td>
+          </tr>
+        </table>
       </div>
       
-      <div style="padding: 30px; background-color: #f8fafc;">
+      <div style="padding: 30px;">
         <p style="font-size: 16px; color: #334155; margin-top: 0;">Hola,</p>
         <p style="font-size: 16px; color: #334155;">El administrador te ha asignado un nuevo ${isService ? 'servicio en terreno' : 'traslado de vehículo'}. Por favor, <strong>abre la aplicación para aceptar el trabajo</strong> y confirmar tu disponibilidad.</p>
         
@@ -54,7 +74,7 @@ export default async function handler(req, res) {
         </div>
         
         <div style="text-align: center; margin-top: 30px;">
-          <a href="https://transpocheck-sp86.vercel.app/" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">Abrir LogisticAPP</a>
+          <a href="${baseUrl}" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">Abrir LogisticAPP</a>
         </div>
       </div>
       
