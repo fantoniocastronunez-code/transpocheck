@@ -363,7 +363,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const handleCopyWhatsApp = (job) => { 
     const dateStr = getDStr(job);
     const dateShort = dateStr.substring(0, 5); 
-    const text = `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`; 
+    const text = job.tripType === 'simple' 
+      ? `${dateShort}\n${job.client || 'Sin Cliente'}\n📌 TAREA: ${job.description || 'Servicio en Terreno'}\n📍 LUGAR: ${getRouteStr(job)}${getExtraWappTxt(job)}`
+      : `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`; 
+    
     const textArea = document.createElement("textarea");
     textArea.value = text;
     textArea.style.position = "fixed";
@@ -392,7 +395,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       const cleanPlate = job.plate || job.vin || 'SN';
       const fileName = `Check.${dateStrForFile}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`;
       
-      const textToShare = `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`;
+      const textToShare = job.tripType === 'simple' 
+        ? `${dateShort}\n${job.client || 'Sin Cliente'}\n📌 TAREA: ${job.description || 'Servicio en Terreno'}\n📍 LUGAR: ${getRouteStr(job)}${getExtraWappTxt(job)}`
+        : `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`;
       
       const docPDF = await buildPDFDoc(job); 
       const pdfBlob = docPDF.output('blob'); 
