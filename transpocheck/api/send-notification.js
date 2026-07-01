@@ -1,10 +1,10 @@
-import { getApps, initializeApp, credential } from 'firebase-admin/app';
+import { getApps, initializeApp, cert } from 'firebase-admin/app';
 import { getMessaging } from 'firebase-admin/messaging';
 
 // Inicialización moderna y a prueba de fallos para Vercel (ESM)
 if (getApps().length === 0) {
   initializeApp({
-    credential: credential.cert({
+    credential: cert({
       projectId: process.env.FIREBASE_PROJECT_ID,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
       // Reemplazamos los saltos de línea para que las llaves privadas no se rompan
