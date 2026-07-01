@@ -773,6 +773,20 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
   return (
     <div className="pb-16">
+      
+      {/* AVISO AUTOMÁTICO DÍA 3 DEL MES */}
+      {isAdminView && new Date().getDate() === 3 && (
+          <div className="mb-6 bg-red-50 border-2 border-red-400 p-4 rounded-2xl flex items-start gap-3 shadow-md animate-in slide-in-from-top-2">
+             <div className="bg-red-100 p-2 rounded-full shrink-0"><AlertCircle className="w-6 h-6 text-red-600"/></div>
+             <div>
+                <h3 className="font-black text-red-800 text-sm uppercase tracking-wide">Recordatorio de Mantenimiento</h3>
+                <p className="text-xs font-bold text-red-700 mt-1 leading-relaxed">
+                  Hoy es día 3. Para mantener tu aplicación veloz y evitar colapsos de memoria, por favor presiona el botón <strong className="bg-red-100 border border-red-200 text-red-800 px-1.5 py-0.5 rounded">Limpiar DB</strong> (arriba a la derecha) para eliminar los traslados que ya tienen más de 30 días de antigüedad.
+                </p>
+             </div>
+          </div>
+      )}
+
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -996,3 +1010,4 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       </div>
   );
 }
+
