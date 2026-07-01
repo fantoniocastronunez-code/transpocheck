@@ -127,6 +127,32 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
         } catch (pushErr) { console.warn("Fallo el envío Push:", pushErr); }
       }
 
+      // --- NUEVO: DISPARADOR DE CORREO ELECTRÓNICO ---
+      try {
+         const driverEmails = assignedDriversList.map(d => d.email).filter(e => e);
+         if (driverEmails.length > 0) {
+            fetch('/api/notify-driver', { 
+               method: 'POST', 
+               headers: { 'Content-Type': 'application/json' }, 
+               body: JSON.stringify({ 
+                  emails: driverEmails,
+                  isEdit: !!jobToEdit,
+                  isService: operationMode === 'servicio',
+                  jobDetails: {
+                     client: jobData.client || 'Sin cliente',
+                     origin: jobData.origin,
+                     destination: jobData.destination || '',
+                     date: jobData.scheduledDate,
+                     plate: plate || vin || 'S/N',
+                     vehicle: `${brand} ${model}`.trim() || 'N/A',
+                     description: description || ''
+                  }
+               }) 
+            });
+         }
+      } catch (mailErr) { console.warn("Fallo la petición de correo:", mailErr); }
+      // ------------------------------------------------
+
       onSuccess();
     } catch (error) { console.error(error); showAlert("Ocurrió un error guardando el trabajo."); }
     finally { setIsSubmitting(false); }
