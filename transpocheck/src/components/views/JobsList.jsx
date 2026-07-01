@@ -405,9 +405,17 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             <div className="flex justify-between items-start w-full gap-2">
               
               <div className="shrink-0 relative z-20 flex flex-col items-end gap-1">
-                <LicensePlateBadge text={j.plate || j.vin} />
-                {j.vin && j.plate && j.vin !== j.plate && (
-                  <span className="text-[9px] font-black bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded-md uppercase tracking-widest shadow-sm mr-1">VIN: {j.vin}</span>
+                {j.tripType === 'simple' ? (
+                   <span className="bg-purple-100 text-purple-800 border border-purple-200 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm max-w-[150px] text-center leading-tight">
+                      {j.description || 'Servicio'}
+                   </span>
+                ) : (
+                   <>
+                     <LicensePlateBadge text={j.plate || j.vin} />
+                     {j.vin && j.plate && j.vin !== j.plate && (
+                       <span className="text-[9px] font-black bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded-md uppercase tracking-widest shadow-sm mr-1">VIN: {j.vin}</span>
+                     )}
+                   </>
                 )}
               </div>
               
@@ -484,7 +492,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             </div>
             
             <div>
-                <p className="text-xl font-black text-slate-800 leading-tight mt-1">{j.brand} {j.model}</p>
+                {j.tripType === 'simple' ? (
+                   <p className="text-lg font-black text-purple-800 leading-tight mt-1 truncate">{j.description || 'Servicio en Terreno'}</p>
+                ) : (
+                   <p className="text-xl font-black text-slate-800 leading-tight mt-1">{j.brand} {j.model}</p>
+                )}
                 <p className="text-xs font-bold text-slate-500 mt-0.5 uppercase tracking-wide">{j.client}</p>
               </div>
             </div>
@@ -493,16 +505,20 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           <div className="bg-slate-100 p-3 rounded-2xl border-2 border-slate-200 mb-4 mt-1 shadow-inner">
             <div className="flex items-center justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-0.5">Desde</span>
+                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-0.5">{j.tripType === 'simple' ? 'Lugar' : 'Desde'}</span>
                 <p className="text-sm font-extrabold text-slate-800 truncate">{j.origin || 'Por definir'}</p>
               </div>
-              <div className="text-slate-400 font-black text-sm px-2">➔</div>
-              <div className="flex-1 min-w-0 text-right">
-                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-0.5">Hasta</span>
-                <p className="text-sm font-extrabold text-blue-600 truncate">
-                  {j.tripType === 'revision' ? 'Planta PRT' : (j.destination || 'Por definir')}
-                </p>
-              </div>
+              {(j.destination || j.tripType !== 'simple') && (
+                <>
+                  <div className="text-slate-400 font-black text-sm px-2">➔</div>
+                  <div className="flex-1 min-w-0 text-right">
+                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-0.5">Hasta</span>
+                    <p className="text-sm font-extrabold text-blue-600 truncate">
+                      {j.tripType === 'revision' ? 'Planta PRT' : (j.destination || 'Por definir')}
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -510,9 +526,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         {j.tripType === 'viaje' && <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-2 mb-3 text-center text-xs font-bold text-indigo-700 uppercase">A Regiones</div>}
 
         <div className="relative pl-7 space-y-5 before:absolute before:inset-y-2 before:left-[10px] before:w-0.5 before:bg-slate-100 flex-1 mb-5">
-          <div className="relative"><div className="absolute -left-7 bg-blue-500 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center"><CheckCircle className="w-2.5 h-2.5 text-white"/></div><p className="font-extrabold text-slate-800 text-[11px] leading-tight">{isAccepted ? (j.assignedDrivers?.find(d => d.email === j.acceptedByEmail)?.name || "Conductor") : "Buscando conductor"}</p><p className="text-[9px] font-bold text-slate-500">{isAccepted ? `Retira en ${j.origin}` : `Para ${j.origin}`}</p></div>
-          <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step2Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step2Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-[11px] leading-tight ${step2Done ? 'text-slate-800' : 'text-slate-400'}`}>Vehículo en Tránsito</p></div>
-          <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step3Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step3Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-[11px] leading-tight ${step3Done ? 'text-slate-800' : 'text-slate-400'}`}>{j.tripType === 'revision' ? 'En PRT' : 'Llegada a Destino'}</p><p className={`text-[9px] font-bold ${step3Done ? 'text-blue-600' : 'text-slate-400'}`}>{j.tripType === 'revision' ? 'Planta' : j.destination}</p></div>
+          <div className="relative"><div className="absolute -left-7 bg-blue-500 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center"><CheckCircle className="w-2.5 h-2.5 text-white"/></div><p className="font-extrabold text-slate-800 text-[11px] leading-tight">{isAccepted ? (j.assignedDrivers?.find(d => d.email === j.acceptedByEmail)?.name || "Conductor") : "Buscando conductor"}</p><p className="text-[9px] font-bold text-slate-500">{isAccepted ? (j.tripType === 'simple' ? `Asignado a ${j.origin}` : `Retira en ${j.origin}`) : `Para ${j.origin}`}</p></div>
+          <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step2Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step2Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-[11px] leading-tight ${step2Done ? 'text-slate-800' : 'text-slate-400'}`}>{j.tripType === 'simple' ? 'Realizando Trabajo' : 'Vehículo en Tránsito'}</p></div>
+          <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step3Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step3Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-[11px] leading-tight ${step3Done ? 'text-slate-800' : 'text-slate-400'}`}>{j.tripType === 'simple' ? 'Trabajo Terminado' : (j.tripType === 'revision' ? 'En PRT' : 'Llegada a Destino')}</p><p className={`text-[9px] font-bold ${step3Done ? 'text-blue-600' : 'text-slate-400'}`}>{j.tripType === 'simple' ? (j.destination || '') : (j.tripType === 'revision' ? 'Planta' : j.destination)}</p></div>
           
           {j.tripType === 'revision' && (
             <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step4Done ? (j.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200'}`}>{step4Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-[11px] leading-tight ${step4Done ? (j.prt_result === 'rechazado' ? 'text-red-600' : 'text-green-600') : 'text-slate-400'}`}>Resultado Revisión</p>{step4Done && <p className={`text-[9px] font-bold ${j.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-600'}`}>{j.prt_result === 'rechazado' ? `Rechazado` : 'Aprobado'}</p>}</div>
@@ -538,12 +554,15 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
           {isAccepted && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
             <>
-              {(!j.phase || j.phase === 'claimed') && <SwipeButton key={`btn-pickup-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_pickup', { arrivedPickupAt: Date.now() })} text="Desliza: Llegué a retirar" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-amber-500" isProcessing={processingId === `${j.id}-arrived_pickup`} />}
+              {(!j.phase || j.phase === 'claimed') && <SwipeButton key={`btn-pickup-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_pickup', { arrivedPickupAt: Date.now() })} text={j.tripType === 'simple' ? "Desliza: Llegué al lugar" : "Desliza: Llegué a retirar"} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-amber-500" isProcessing={processingId === `${j.id}-arrived_pickup`} />}
+              
               {j.phase === 'arrived_pickup' && <SwipeButton key={`btn-power-${j.id}`} onConfirm={()=>{
                 const waitMins = j.arrivedPickupAt ? Math.floor((Date.now() - j.arrivedPickupAt) / 60000) : 0;
                 updatePhase(j, 'picked_up', { pickedUpAt: Date.now(), waitTimeMinutes: waitMins });
-              }} text="Desliza: Vehículo en mi poder" icon={<Car className="w-4 h-4"/>} colorClass="bg-indigo-600" isProcessing={processingId === `${j.id}-picked_up`} />}
-              {j.phase === 'picked_up' && j.tripType !== 'revision' && <SwipeButton key={`btn-dest-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_destination')} text="Desliza: Llegué a Destino" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />}
+              }} text={j.tripType === 'simple' ? "Desliza: Iniciar Trabajo" : "Desliza: Vehículo en mi poder"} icon={j.tripType === 'simple' ? <Clock className="w-4 h-4"/> : <Car className="w-4 h-4"/>} colorClass="bg-indigo-600" isProcessing={processingId === `${j.id}-picked_up`} />}
+              
+              {j.phase === 'picked_up' && j.tripType !== 'revision' && <SwipeButton key={`btn-dest-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_destination')} text={j.tripType === 'simple' ? "Desliza: Finalizar Trabajo" : "Desliza: Llegué a Destino"} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />}
+              
               {j.phase === 'picked_up' && j.tripType === 'revision' && <SwipeButton key={`btn-prt-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_prt')} text="Desliza: Llegué a PRT" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_prt`} />}
               
               {j.phase === 'arrived_prt' && (
@@ -556,7 +575,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               )}
 
               <button onClick={()=>onStartChecklist(j)} className={`w-full font-bold py-2 rounded-xl text-xs shadow-sm transition-colors ${(j.phase === 'arrived_destination' || j.phase === 'prt_done') ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'}`}>
-                📸 {(j.phase === 'arrived_destination' || j.phase === 'prt_done') ? 'Cerrar Checklist' : 'Pre-llenar Checklist'}
+                📸 {(j.phase === 'arrived_destination' || j.phase === 'prt_done') ? (j.tripType === 'simple' ? 'Cerrar Acta de Servicio' : 'Cerrar Checklist') : (j.tripType === 'simple' ? 'Pre-llenar Acta' : 'Pre-llenar Checklist')}
               </button>
             </>
           )}

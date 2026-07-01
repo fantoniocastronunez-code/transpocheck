@@ -570,48 +570,92 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
       
       <div className="sticky top-[64px] sm:top-[80px] z-15 bg-white/90 backdrop-blur-md border-b border-slate-200 px-5 py-3 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)]">
          <div className="flex justify-between items-center mb-1.5">
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Progreso del Acta</span>
-            <span className="text-xs font-black text-blue-600">
-               {(() => {
-                 let p = 0;
-                 if (formData.brand && formData.model && formData.plateOrVin) p += 25;
-                 if (formData.fuelLevel !== undefined) p += 25;
-                 if (Object.values(formData.photos || {}).filter(v => v).length >= 2) p += 25;
-                 if (formData.signatureData || formData.noReception) p += 25;
-                 return p;
-               })()}%
-            </span>
-         </div>
-         <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-blue-500 h-full transition-all duration-500 ease-out" style={{width: `${
-                 (formData.brand ? 25 : 0) + (formData.fuelLevel !== undefined ? 25 : 0) + (Object.values(formData.photos || {}).filter(v => v).length >= 2 ? 25 : 0) + (formData.signatureData || formData.noReception ? 25 : 0)
-            }%`}}></div>
-         </div>
-      </div>
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Progreso del Acta</span>
+                    <span className="text-xs font-black text-blue-600">
+                       {(() => {
+                         let p = 0;
+                         if (job.tripType === 'simple') {
+                            if (formData.observations) p += 33;
+                            if (Object.values(formData.photos || {}).filter(v => v).length >= 1) p += 33;
+                            if (formData.signatureData || formData.noReception) p += 34;
+                         } else {
+                            if (formData.brand && formData.model && formData.plateOrVin) p += 25;
+                            if (formData.fuelLevel !== undefined) p += 25;
+                            if (Object.values(formData.photos || {}).filter(v => v).length >= 2) p += 25;
+                            if (formData.signatureData || formData.noReception) p += 25;
+                         }
+                         return Math.min(100, p);
+                       })()}%
+                    </span>
+                 </div>
+                 <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                    <div className={`h-full transition-all duration-500 ease-out ${job.tripType === 'simple' ? 'bg-purple-500' : 'bg-blue-500'}`} style={{width: `${
+                         job.tripType === 'simple' 
+                         ? ((formData.observations ? 33 : 0) + (Object.values(formData.photos || {}).filter(v => v).length >= 1 ? 33 : 0) + (formData.signatureData || formData.noReception ? 34 : 0))
+                         : ((formData.brand ? 25 : 0) + (formData.fuelLevel !== undefined ? 25 : 0) + (Object.values(formData.photos || {}).filter(v => v).length >= 2 ? 25 : 0) + (formData.signatureData || formData.noReception ? 25 : 0))
+                    }%`}}></div>
+                 </div>
+              </div>
 
+              <div className="p-5">
+                <div className="flex gap-1.5 overflow-x-auto pb-3 mb-5 border-b border-slate-100 scrollbar-none">
+                  {(job.tripType === 'simple' 
+                    ? [ { id: 1, label: '📋 Detalles' }, { id: 2, label: '📸 Evidencia' }, { id: 3, label: '✍️ Cierre' } ]
+                    : [ { id: 1, label: '📋 Datos' }, { id: 2, label: '📄 Docs' }, { id: 3, label: '💬 Notas' }, { id: 4, label: '📸 Fotos' }, { id: 5, label: '⛽ Comb. & Espera' }, { id: 6, label: '✍️ Entrega' } ]
+                  ).map(t => (
+                    <button key={t.id} type="button" onClick={() => setStep(t.id)} className={`px-3 py-2 rounded-xl text-xs font-black tracking-wide whitespace-nowrap transition-all shrink-0 ${step === t.id ? (job.tripType === 'simple' ? 'bg-purple-600 text-white shadow-md shadow-purple-100' : 'bg-blue-600 text-white shadow-md shadow-blue-100') : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
 
-      <div className="p-5">
-        <div className="flex gap-1.5 overflow-x-auto pb-3 mb-5 border-b border-slate-100 scrollbar-none">
-          {[
-            { id: 1, label: '📋 Datos' },
-            { id: 2, label: '📄 Docs' },
-            { id: 3, label: '💬 Notas' },
-            { id: 4, label: '📸 Fotos' },
-            { id: 5, label: '⛽ Comb. & Espera' },
-            { id: 6, label: '✍️ Entrega' }
-          ].map(t => (
-            <button key={t.id} type="button" onClick={() => setStep(t.id)} className={`px-3 py-2 rounded-xl text-xs font-black tracking-wide whitespace-nowrap transition-all shrink-0 ${step === t.id ? 'bg-blue-600 text-white shadow-md shadow-blue-100' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
-              {t.label}
-            </button>
-          ))}
-        </div>
+                <form onSubmit={submit} className="space-y-5 text-sm">
+                  
+                  {/* VISTA: TRABAJO SIMPLE (FAST TRACK) */}
+                  {job.tripType === 'simple' && step === 1 && (
+                    <div className="space-y-4 animate-in fade-in duration-200">
+                      <div className="bg-purple-50 border-2 border-purple-100 p-4 rounded-2xl shadow-sm mb-4">
+                         <p className="text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1">Descripción de la Tarea</p>
+                         <p className="text-sm font-bold text-purple-900 leading-snug">{job.description || 'Sin descripción detallada'}</p>
+                         {job.client && <p className="text-xs font-bold text-purple-700 mt-2 border-t border-purple-200 pt-2">Cliente / Autoriza: {job.client}</p>}
+                      </div>
 
+                      <div className="grid grid-cols-2 gap-3">
+                         <div className="bg-slate-50 border-2 border-slate-100 p-3 rounded-xl">
+                            <p className="text-[9px] font-extrabold text-slate-400 uppercase">Lugar</p>
+                            <p className="text-xs font-bold text-slate-700 truncate">{job.origin || 'N/A'}</p>
+                         </div>
+                         {job.destination && (
+                           <div className="bg-slate-50 border-2 border-slate-100 p-3 rounded-xl">
+                              <p className="text-[9px] font-extrabold text-slate-400 uppercase">Hasta</p>
+                              <p className="text-xs font-bold text-slate-700 truncate">{job.destination}</p>
+                           </div>
+                         )}
+                      </div>
 
-        <form onSubmit={submit} className="space-y-5 text-sm">
-          
-          {step === 1 && (
-            <div className="space-y-4 animate-in fade-in duration-200">
-              {isQuick ? (
+                      <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 mt-6 text-slate-800 uppercase tracking-wider">Notas del Operario</h3>
+                      <textarea className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-purple-500 min-h-[100px]" placeholder="Ej: Las plantillas de vinilo no dejaron residuos. Trabajo ejecutado sin novedades..." value={formData.observations || ''} onChange={(e) => setF('observations', e.target.value)} />
+                    </div>
+                  )}
+
+                  {job.tripType === 'simple' && step === 2 && (
+                    <div className="space-y-4 animate-in fade-in duration-200">
+                      <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Evidencia Fotográfica</h3>
+                      <p className="text-xs font-bold text-slate-500 mb-4">Añade al menos 1 fotografía que respalde el trabajo terminado.</p>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        {['det1', 'det2', 'det3', 'det4'].map((photoId, idx) => (
+                           <button type="button" key={photoId} onClick={() => openCamera(`Foto Trabajo ${idx+1}`, f => handlePic(f, photoId))} className={`w-full h-32 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white shadow-sm transition-all ${formData.photos[photoId] ? 'border-purple-400 ring-2 ring-purple-100' : 'border-dashed border-slate-300 hover:bg-slate-50'}`}>
+                             {formData.photos[photoId] ? <><img src={formData.photos[photoId]} className="absolute inset-0 w-full h-full object-cover opacity-60"/><CheckCircle className="w-6 h-6 text-purple-600 relative z-10 bg-white rounded-full"/><span className="text-[10px] font-black text-purple-900 relative z-10 bg-white/80 px-2 rounded-md">Foto {idx+1}</span></> : <><Camera className="w-6 h-6 text-slate-400"/><span className="text-xs font-black text-slate-500 uppercase">Foto {idx+1}</span></>}
+                           </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* VISTA: TRASLADO NORMAL */}
+                  {job.tripType !== 'simple' && step === 1 && (
+                    <div className="space-y-4 animate-in fade-in duration-200">              {isQuick ? (
                 <div className="space-y-2">
                    <select value={formData.client} onChange={(e) => setF('client', e.target.value)} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 bg-white outline-none focus:border-blue-500">
                       <option value="">Selecciona el Cliente...</option>
@@ -684,7 +728,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
           )}
 
 
-          {step === 2 && (
+          {job.tripType !== 'simple' && step === 2 && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Documentos del Vehículo</h3>
               <div className="grid grid-cols-2 gap-3 pt-2">
@@ -713,7 +757,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
           )}
 
 
-          {step === 3 && (
+          {job.tripType !== 'simple' && step === 3 && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Observaciones Generales</h3>
               <textarea className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 min-h-[90px]" placeholder="Escribe aquí si hay algún daño, rayón o comentario del estado visual del vehículo..." value={formData.observations || ''} onChange={(e) => setF('observations', e.target.value)} />
@@ -753,7 +797,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
           )}
 
 
-          {step === 4 && (
+          {job.tripType !== 'simple' && step === 4 && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <div className="flex justify-between items-end border-b border-slate-100 pb-2 mb-2">
                 <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Croquis Pericial de Daños</h3>
@@ -1064,7 +1108,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
           )}
 
 
-          {step === 5 && (
+          {job.tripType !== 'simple' && step === 5 && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Combustible a Bordo</h3>
               
@@ -1199,9 +1243,9 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
           )}
 
 
-          {step === 6 && (
-            <div className="space-y-4 animate-in fade-in duration-200">
-              <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Cierre y Conformidad</h3>
+          {( (job.tripType !== 'simple' && step === 6) || (job.tripType === 'simple' && step === 3) ) && (
+                    <div className="space-y-4 animate-in fade-in duration-200">
+                      <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Cierre y Conformidad</h3>
               
               <label className="flex items-center gap-3 p-4 bg-slate-800 rounded-2xl border-slate-900 border-2 cursor-pointer shadow-md transition-colors hover:bg-slate-700">
                  <input type="checkbox" checked={formData.noReception} onChange={e=>setF('noReception',e.target.checked)} className="w-6 h-6 cursor-pointer accent-blue-500 rounded"/> 
@@ -1250,24 +1294,24 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
 
 
           <div className="flex gap-3 pt-4 border-t border-slate-100 mt-6">
-            {step > 1 && (
-              <button type="button" onClick={() => setStep(step - 1)} className="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-4 py-3 rounded-xl text-sm w-1/3 active:scale-[0.97] transition-all duration-200">
-                Atrás
-              </button>
-            )}
-            
-            {step < 6 ? (
-              <button type="button" onClick={() => setStep(step + 1)} className="group flex-1 bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 rounded-xl text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0 transition-all duration-200 flex justify-center items-center gap-2 relative overflow-hidden">
-                <span className="relative z-10">Siguiente Paso</span>
-                <span className="relative z-10 transform group-hover:translate-x-1.5 transition-transform duration-300">➔</span>
-                <div className="absolute inset-0 h-full w-full translate-x-[-100%] group-hover:translate-x-[100%] bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-in-out"></div>
-              </button>
-            ) : (
-              <button type="submit" disabled={isSubmitting} className="group flex-1 bg-green-600 hover:bg-green-700 text-white font-black py-3 rounded-xl text-sm shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0 disabled:opacity-50 disabled:hover:translate-y-0 disabled:active:scale-100 transition-all duration-200 flex justify-center items-center gap-2">
-                {isSubmitting ? <><Clock className="w-4 h-4 animate-spin"/> Guardando GPS y Acta...</> : <><span className="group-hover:animate-bounce">🏁</span> Finalizar y Guardar</>}
-              </button>
-            )}
-          </div>
+                    {step > 1 && (
+                      <button type="button" onClick={() => setStep(step - 1)} className="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-4 py-3 rounded-xl text-sm w-1/3 active:scale-[0.97] transition-all duration-200">
+                        Atrás
+                      </button>
+                    )}
+                    
+                    {step < (job.tripType === 'simple' ? 3 : 6) ? (
+                      <button type="button" onClick={() => setStep(step + 1)} className={`group flex-1 text-white font-extrabold py-3 rounded-xl text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0 transition-all duration-200 flex justify-center items-center gap-2 relative overflow-hidden ${job.tripType === 'simple' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                        <span className="relative z-10">Siguiente Paso</span>
+                        <span className="relative z-10 transform group-hover:translate-x-1.5 transition-transform duration-300">➔</span>
+                        <div className="absolute inset-0 h-full w-full translate-x-[-100%] group-hover:translate-x-[100%] bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-in-out"></div>
+                      </button>
+                    ) : (
+                      <button type="submit" disabled={isSubmitting} className="group flex-1 bg-green-600 hover:bg-green-700 text-white font-black py-3 rounded-xl text-sm shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0 disabled:opacity-50 disabled:hover:translate-y-0 disabled:active:scale-100 transition-all duration-200 flex justify-center items-center gap-2">
+                        {isSubmitting ? <><Clock className="w-4 h-4 animate-spin"/> Guardando GPS y Acta...</> : <><span className="group-hover:animate-bounce">🏁</span> Finalizar y Guardar</>}
+                      </button>
+                    )}
+                  </div>
 
 
         </form>
