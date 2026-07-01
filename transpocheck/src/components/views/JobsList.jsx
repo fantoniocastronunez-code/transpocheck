@@ -407,7 +407,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               <div className="shrink-0 relative z-20 flex flex-col items-end gap-1">
                 {j.tripType === 'simple' ? (
                    <span className="bg-purple-100 text-purple-800 border border-purple-200 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm max-w-[150px] text-center leading-tight">
-                      {j.description || 'Servicio'}
+                      SERVICIO
                    </span>
                 ) : (
                    <>
