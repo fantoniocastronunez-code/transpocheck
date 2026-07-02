@@ -639,12 +639,18 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
              const schedDate = new Date(y, m - 1, d); schedDate.setHours(0,0,0,0);
              const diffDays = Math.round((schedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
              
-             if (diffDays === 0) return null; // Es hoy, no muestra nada
-             if (diffDays === 1) return <div className="mb-3 bg-cyan-50 border border-cyan-200 p-2 rounded-xl text-center shadow-sm"><span className="text-[10px] font-black text-cyan-700 uppercase tracking-widest">📅 Programado para Mañana</span></div>;
-             if (diffDays > 1) return <div className="mb-3 bg-slate-100 border border-slate-200 p-2 rounded-xl text-center shadow-sm"><span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">📅 Programado para el {d}/{m}/{y}</span></div>;
+             // Extrae la hora si existe
+             const timeStr = j.scheduledTime ? ` a las ${j.scheduledTime}` : '';
+             
+             if (diffDays === 0) {
+                 if (!j.scheduledTime) return null; // Si es hoy y no tiene hora, se oculta
+                 return <div className="mb-3 bg-blue-50 border border-blue-200 p-2 rounded-xl text-center shadow-sm"><span className="text-[10px] font-black text-blue-700 uppercase tracking-widest">📅 HOY{timeStr}</span></div>;
+             }
+             if (diffDays === 1) return <div className="mb-3 bg-cyan-50 border border-cyan-200 p-2 rounded-xl text-center shadow-sm"><span className="text-[10px] font-black text-cyan-700 uppercase tracking-widest">📅 Mañana{timeStr}</span></div>;
+             if (diffDays > 1) return <div className="mb-3 bg-slate-100 border border-slate-200 p-2 rounded-xl text-center shadow-sm"><span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">📅 Para el {d}/{m}/{y}{timeStr}</span></div>;
              
              // Si quedó en el pasado sin completarse
-             return <div className="mb-3 bg-red-50 border border-red-200 p-2 rounded-xl text-center shadow-sm"><span className="text-[10px] font-black text-red-700 uppercase tracking-widest">⚠️ Atrasado ({d}/{m}/{y})</span></div>;
+             return <div className="mb-3 bg-red-50 border border-red-200 p-2 rounded-xl text-center shadow-sm"><span className="text-[10px] font-black text-red-700 uppercase tracking-widest">⚠️ Atrasado ({d}/{m}/{y}{timeStr})</span></div>;
           })()}
 
         <div className="relative pl-7 space-y-5 before:absolute before:inset-y-2 before:left-[10px] before:w-0.5 before:bg-slate-100 flex-1 mb-5">
