@@ -3,7 +3,7 @@ import { updateDoc, doc, deleteDoc, addDoc, collection, deleteField, getDocs, qu
 import { 
   Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, 
   Copy, X, XCircle, MapPin, Clock, FileDown, Search, ChevronUp, ChevronDown,
-  Trash2, Car
+  Trash2, Car, Repeat
 } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import WaitTimerBadge from '../ui/WaitTimerBadge';
@@ -157,6 +157,26 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const handleDeleteJob = async (jobId) => {
     showConfirm("¿Estás seguro de eliminar este trabajo definitivamente?", async () => {
       try { await deleteDoc(doc(db, 'transport_jobs', jobId)); } catch (e) { console.error(e); }
+    });
+  };
+
+  const handleDuplicateJob = async (job) => {
+    showConfirm(`¿Crear un nuevo traslado para el vehículo ${job.plate || job.vin || 'seleccionado'}?`, async () => {
+      try {
+        const cloneJob = {
+            client: job.client || '',
+            brand: job.brand || '',
+            model: job.model || '',
+            vin: job.vin || '',
+            plate: job.plate || '',
+            tripType: job.tripType || 'viaje',
+            description: job.description || '',
+            status: 'pending',
+            createdAt: Date.now()
+        };
+        await addDoc(collection(db, 'transport_jobs'), cloneJob);
+        showAlert("✅ Vehículo duplicado con éxito. Lo encontrarás en 'Pendientes' para asignarle su nueva ruta.");
+      } catch (e) { console.error(e); showAlert("Error al duplicar el trabajo."); }
     });
   };
 
@@ -790,8 +810,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           <p className={`text-[10px] font-black uppercase ${isFailed ? 'text-red-500' : 'text-green-600'}`}>{isFailed ? 'RECHAZADO' : 'ENTREGADO'}</p>
           <p className="text-slate-400 font-bold text-[9px]">{getDStr(j)}</p>
         </div>
-        <div className="flex gap-1.5 mt-auto">
+         <div className="flex gap-1.5 mt-auto">
           {isAdminView && <button onClick={()=>onEditJob(j)} className="flex-1 py-1.5 flex justify-center bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg transition-colors" title="Editar Traslado"><Edit2 className="w-3.5 h-3.5"/></button>}
+          {isAdminView && <button onClick={()=>handleDuplicateJob(j)} className="flex-1 py-1.5 flex justify-center bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg transition-colors" title="Repetir Vehículo"><Repeat className="w-3.5 h-3.5"/></button>}
           <button onClick={()=>cpyWapp(j)} className="flex-1 py-1.5 flex justify-center bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors" title="Copiar Resumen"><Copy className="w-3.5 h-3.5"/></button>
           <button onClick={() => generatePDF(j)} disabled={processingId === `${j.id}-pdf`} className="flex-1 py-1.5 flex justify-center bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50" title="Descargar PDF">{processingId === `${j.id}-pdf` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : <FileDown className="w-3.5 h-3.5"/>}</button>
           <button onClick={() => handleShareWhatsAppPDF(j)} disabled={processingId === `${j.id}-wapp`} className="flex-1 py-1.5 flex justify-center items-center bg-green-50 text-green-600 hover:bg-green-100 rounded-lg transition-colors disabled:opacity-50" title="Compartir PDF por WhatsApp">
@@ -998,6 +1019,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                                   <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
                                       <span className="text-[9px] font-bold text-slate-400 mr-2">{new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL')}</span>
                                       {isAdminView && <button onClick={()=>onEditJob(j)} className="p-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-md transition-colors" title="Editar Traslado"><Edit2 className="w-3.5 h-3.5"/></button>}
+                                      {isAdminView && <button onClick={()=>handleDuplicateJob(j)} className="p-1.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-md transition-colors" title="Repetir Vehículo"><Repeat className="w-3.5 h-3.5"/></button>}
                                       <button onClick={()=>cpyWapp(j)} className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md transition-colors"><Copy className="w-3.5 h-3.5"/></button>
                                       <button onClick={() => generatePDF(j)} className="p-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-md transition-colors"><FileDown className="w-3.5 h-3.5"/></button>
                                       <button onClick={() => handleShareWhatsAppPDF(j)} disabled={processingId === `${j.id}-wapp`} className="p-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-md transition-colors disabled:opacity-50">
@@ -1117,6 +1139,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       </div>
   );
 }
+
 
 
 
