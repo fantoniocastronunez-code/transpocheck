@@ -1305,7 +1305,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                    <div className="flex items-center gap-2 my-2"><div className="h-px bg-slate-200 flex-1"></div><span className="text-[10px] font-bold text-slate-400 uppercase">O llenar manualmente</span><div className="h-px bg-slate-200 flex-1"></div></div>
                    
                    <input required={!formData.noReception} value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
-                   <input required={!formData.noReception} value={formData.receiverRut} onChange={e=>setF('receiverRut',e.target.value)} placeholder="RUT Receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
+                   <input required={!formData.noReception} value={formData.receiverRut} onChange={(e)=>{ let val = e.target.value.replace(/[^0-9kK]/g, '').toUpperCase(); if (val.length > 1) { const dv = val.slice(-1); const body = val.slice(0, -1); val = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '-' + dv; } setF('receiverRut', val); }} placeholder="RUT Receptor (Ej: 12.345.678-9)" maxLength="12" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
                    
                    {formData.clientComments && (
                      <div className="bg-slate-100 p-2.5 rounded-xl border">
@@ -1487,4 +1487,5 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
     </div>
   );
 }
+
 
