@@ -6,7 +6,11 @@ import {
 } from 'lucide-react';
 import { formatMoney, resizeImage } from '../../utils/helpers';
 
-export default function ExpensesView({ role, drivers, jobs, expenses, db, currentUserEmail, showAlert, showConfirm }) {
+export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses: rawExpenses, db, currentUserEmail, showAlert, showConfirm }) {
+  // SEGURO DE VIDA: Si Firebase demora un milisegundo en enviar los datos, usamos listas vacías temporalmente para que la app no se estrelle.
+  const drivers = rawDrivers || [];
+  const expenses = rawExpenses || [];
+
   const isAdminView = role === 'admin';
   const myDriver = drivers.find(d => d.email === currentUserEmail);
   const [selectedDriverId, setSelectedDriverId] = useState(null);

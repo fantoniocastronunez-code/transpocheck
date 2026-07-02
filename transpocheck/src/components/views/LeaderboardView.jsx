@@ -35,14 +35,21 @@ export default function LeaderboardView({ jobs, drivers, isAdminView }) {
               {selectedDriverJobs.jobs.length === 0 ? <p className="text-center text-sm font-bold text-slate-400">Sin traslados.</p> : selectedDriverJobs.jobs.map(j => (
                 <div key={j.id} className="bg-slate-50 p-3 rounded-xl border text-xs relative overflow-hidden">
                   <div className={`absolute left-0 top-0 bottom-0 w-1 ${j.status==='failed'?'bg-red-500':'bg-green-500'}`}></div>
-                  <div className="flex justify-between mb-1 pl-2">
-                     <p className="font-extrabold text-slate-800 text-sm flex items-center gap-2">
-                       {j.brand} {j.model} 
-                       {j.status === 'failed' && <span className="bg-red-100 text-red-700 text-[9px] px-1.5 py-0.5 rounded uppercase">Rechazada</span>}
+                  <div className="flex justify-between items-start mb-1 pl-2 gap-2">
+                     <p className={`font-extrabold text-sm flex items-center gap-2 flex-wrap ${j.tripType === 'simple' ? 'text-purple-800' : 'text-slate-800'}`}>
+                       {j.tripType === 'simple' ? (j.description || 'Servicio en Terreno') : `${j.brand || ''} ${j.model || ''}`.trim()}
+                       {j.status === 'failed' && <span className="bg-red-100 text-red-700 text-[9px] px-1.5 py-0.5 rounded uppercase shrink-0">Rechazada</span>}
                      </p>
-                     <span className="border px-1.5 rounded bg-white font-bold text-slate-600 uppercase">{j.plate||j.vin}</span>
+                     {j.tripType === 'simple' ? (
+                        <span className="bg-purple-100 text-purple-800 border border-purple-200 px-1.5 py-0.5 rounded text-[9px] uppercase font-black shrink-0 shadow-sm">SERVICIO</span>
+                     ) : (
+                        <span className="border px-1.5 py-0.5 rounded bg-white font-bold text-slate-600 uppercase shrink-0 text-[10px]">{j.plate || j.vin || 'S/N'}</span>
+                     )}
                   </div>
-                  <p className="font-semibold text-slate-500 pl-2"><MapPin className="inline w-3 h-3 mr-0.5"/> {j.origin} ➔ <Navigation className="inline w-3 h-3 mr-0.5"/> {j.destination}</p>
+                  <p className="font-semibold text-slate-500 pl-2 mt-1 truncate">
+                     <MapPin className="inline w-3 h-3 mr-0.5 -mt-0.5"/> {j.origin} 
+                     {(j.destination || j.tripType !== 'simple') && <> <span className="text-slate-400 mx-1 text-[10px] font-black">➔</span> <Navigation className="inline w-3 h-3 mr-0.5 -mt-0.5"/> {j.tripType === 'revision' ? 'PRT' : j.destination}</>}
+                  </p>
                 </div>
               ))}
             </div>
