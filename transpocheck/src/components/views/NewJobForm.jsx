@@ -86,7 +86,9 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     const finalTripType = operationMode === 'servicio' ? 'simple' : tripType;
 
     const jobData = {
-      scheduledDate: formData.get('scheduledDate'), client: finalClient, 
+      scheduledDate: formData.get('scheduledDate'), 
+      scheduledTime: formData.get('scheduledTime') || '', // <-- NUEVO CAMPO
+      client: finalClient, 
       origin: formData.get('origin'), destination: formData.get('destination') || '',
       tripType: finalTripType,
       assignedDrivers: assignedDriversList.map(d => ({id: d.id, name: d.name, email: d.email})), assignedEmails: assignedDriversList.map(d => d.email)
@@ -242,8 +244,11 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
               <h3 className="text-base font-bold text-slate-700">3. Programación y Ruta</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                   <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider ml-1">Fecha de Traslado</label>
-                   <input name="scheduledDate" type="date" defaultValue={jobToEdit?.scheduledDate || todayStr} required className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-700" />
+                   <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider ml-1">Fecha y Hora de Traslado</label>
+                   <div className="flex gap-2">
+                     <input name="scheduledDate" type="date" defaultValue={jobToEdit?.scheduledDate || todayStr} required className="w-3/5 border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-700" />
+                     <input name="scheduledTime" type="time" defaultValue={jobToEdit?.scheduledTime || ''} className="w-2/5 border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-700" />
+                   </div>
                 </div>
                 <div className="space-y-1 relative z-50">
                   <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider ml-1">Cliente</label>
@@ -290,8 +295,11 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
-                 <label className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider ml-1">Fecha de Ejecución</label>
-                 <input name="scheduledDate" type="date" defaultValue={jobToEdit?.scheduledDate || todayStr} required className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white text-slate-700 shadow-sm" />
+                 <label className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider ml-1">Fecha y Hora de Ejecución</label>
+                 <div className="flex gap-2">
+                   <input name="scheduledDate" type="date" defaultValue={jobToEdit?.scheduledDate || todayStr} required className="w-3/5 border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white text-slate-700 shadow-sm" />
+                   <input name="scheduledTime" type="time" defaultValue={jobToEdit?.scheduledTime || ''} className="w-2/5 border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white text-slate-700 shadow-sm" />
+                 </div>
               </div>
               <div className="space-y-1 relative z-50">
                 <label className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider ml-1">Cliente Asociado (Opcional)</label>
