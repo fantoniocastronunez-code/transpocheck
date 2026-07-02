@@ -514,7 +514,7 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                  }
               }} className="space-y-3">
                  <input required type="text" placeholder="Nombre de quien recibe" value={batchFormData.name} onChange={e=>setBatchFormData({...batchFormData, name: e.target.value})} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500 text-sm" />
-                 <input required type="text" placeholder="RUT" value={batchFormData.rut} onChange={e=>setBatchFormData({...batchFormData, rut: e.target.value})} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500 text-sm" />
+                 <input required type="text" placeholder="RUT (Ej: 12.345.678-9)" maxLength="12" value={batchFormData.rut} onChange={(e)=>{ let val = e.target.value.replace(/[^0-9kK]/g, '').toUpperCase(); if (val.length > 1) { const dv = val.slice(-1); const body = val.slice(0, -1); val = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '-' + dv; } setBatchFormData({...batchFormData, rut: val}); }} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500 text-sm" />
                  <textarea placeholder="Comentarios generales para el lote (Opcional)" value={batchFormData.comments} onChange={e=>setBatchFormData({...batchFormData, comments: e.target.value})} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500 h-16 text-sm" />
                  
                  <div className="pt-2">
@@ -535,3 +535,4 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
     </div>
   );
 }
+
