@@ -270,6 +270,8 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
                <option value="camion_doble">🚚 Camión Doble Cabina</option>
                <option value="camion_2ejes">🚛 Camión (2 Ejes traseros)</option>
                <option value="camion_3ejes">🚛 Camión (3 Ejes traseros)</option>
+               <option value="camion_8x4">🚚 Camión Rigid (8x4)</option>
+               <option value="carro_arrastre">🛒 Carro Arrastre</option>
             </select>
             <div className="flex gap-2">
               {editingVehicle && <button type="button" onClick={()=>setEditingVehicle(null)} className="bg-slate-100 p-3 rounded-xl font-bold text-sm w-1/3 hover:bg-slate-200 transition-colors">Cancelar</button>}
@@ -452,3 +454,4 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
     </div>
   );
 }
+
