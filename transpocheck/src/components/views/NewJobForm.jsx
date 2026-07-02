@@ -227,6 +227,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                  <input value={vin} onChange={e=>handleVehicleSearch(e.target.value, 'vin')} type="text" placeholder="VIN / Chasis" className="w-full border-2 border-slate-300 p-3 text-sm rounded-xl uppercase outline-none focus:border-blue-500 font-black bg-white text-slate-800 shadow-sm" />
                  <input value={brand} onChange={e=>setBrand(e.target.value)} type="text" placeholder="Marca" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-800" />
                  <input value={model} onChange={e=>setModel(e.target.value)} type="text" placeholder="Modelo" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-800" />
+
                  <select value={vehicleType} onChange={e=>setVehicleType(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl col-span-2 outline-none focus:border-blue-500 font-bold text-slate-700 bg-white">
                    <option value="auto">🚙 Auto / SUV</option>
                    <option value="camioneta">🛻 Camioneta</option>
@@ -236,6 +237,8 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                    <option value="camion_doble">🚚 Camión Doble Cabina</option>
                    <option value="camion_2ejes">🚛 Camión (2 Ejes traseros)</option>
                    <option value="camion_3ejes">🚛 Camión (3 Ejes traseros)</option>
+                   <option value="camion_8x4">🚚 Camión Rigid (8x4)</option>
+                   <option value="carro_arrastre">🛒 Carro Arrastre</option>
                  </select>
                </div>
             </div>
