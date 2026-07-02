@@ -94,7 +94,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       } else {
         if (job.acceptedByEmail !== currentUserEmail) return false;
       }
-      if (job.status === 'failed' && job.tripType !== 'revision') return false; 
+      // Ahora los conductores pueden ver sus trabajos fallidos en la lista de finalizados
     }
     
     if (!job.createdAt) return true;
@@ -353,6 +353,16 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
     if (job.tripType === 'revision') { currentY = drawSectionTitle(`${sectionNum}. Resultado`, currentY); if (job.checklist?.rtStatus === 'aprobado') { docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(16); docPDF.text("APROBADO", 15, currentY + 6); currentY += 18; } else { docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(16); docPDF.text("RECHAZADO", 15, currentY + 6); docPDF.setFontSize(10); docPDF.setTextColor(153, 27, 27); const rejSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.checklist?.rtRejectReason || job.failedReason || 'No especificada'}`), leftColWidth); docPDF.text(rejSplit, 15, currentY + 12); currentY += 20 + (rejSplit.length * 4); } sectionNum++; }
 
+    if (job.status === 'failed' && job.tripType !== 'revision') {
+        currentY = drawSectionTitle(`${sectionNum}. Resultado del Traslado`, currentY, job.tripType === 'simple' ? 180 : leftColWidth);
+        docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(16); docPDF.text("TRASLADO FALLIDO / CANCELADO", 15, currentY + 6);
+        docPDF.setFontSize(10); docPDF.setTextColor(153, 27, 27);
+        const failSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.failedReason || 'No especificada'}`), job.tripType === 'simple' ? 180 : leftColWidth);
+        docPDF.text(failSplit, 15, currentY + 12);
+        currentY += 20 + (failSplit.length * 4);
+        sectionNum++;
+    }
+
     currentY = drawSectionTitle(`${sectionNum}. Conformidad Entrega`, currentY, job.tripType === 'simple' ? 180 : leftColWidth);
     if (job.checklist?.noReception) { 
       docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(9); const nrSplit = docPDF.splitTextToSize("TRABAJO SIN FIRMA DE RECEPCION (Confirmada por operario en terreno)", job.tripType === 'simple' ? 180 : leftColWidth); docPDF.text(nrSplit, 15, currentY + 4); currentY += (nrSplit.length * 4) + 6; 
@@ -428,10 +438,14 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const handleCopyWhatsApp = (job) => { 
     const dateStr = getDStr(job);
     const dateShort = dateStr.substring(0, 5); 
-    const text = job.tripType === 'simple' 
+    let text = job.tripType === 'simple' 
       ? `${dateShort}\n${job.client || 'Sin Cliente'}\n📌 TAREA: ${job.description || 'Servicio en Terreno'}\n📍 LUGAR: ${getRouteStr(job)}${getExtraWappTxt(job)}`
       : `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`; 
     
+    if (job.status === 'failed') {
+      text = `❌ TRASLADO FALLIDO\nMotivo: ${job.failedReason || 'No especificada'}\n\n${text}`;
+    }
+
     const textArea = document.createElement("textarea");
     textArea.value = text;
     textArea.style.position = "fixed";
@@ -460,10 +474,14 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       const cleanPlate = job.plate || job.vin || 'SN';
       const fileName = `Check.${dateStrForFile}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`;
       
-      const textToShare = job.tripType === 'simple' 
+      let textToShare = job.tripType === 'simple' 
         ? `${dateShort}\n${job.client || 'Sin Cliente'}\n📌 TAREA: ${job.description || 'Servicio en Terreno'}\n📍 LUGAR: ${getRouteStr(job)}${getExtraWappTxt(job)}`
         : `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`;
       
+      if (job.status === 'failed') {
+        textToShare = `❌ TRASLADO FALLIDO\nMotivo: ${job.failedReason || 'No especificada'}\n\n${textToShare}`;
+      }
+
       const docPDF = await buildPDFDoc(job); 
       const pdfBlob = docPDF.output('blob'); 
       const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
@@ -1099,5 +1117,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       </div>
   );
 }
+
 
 
