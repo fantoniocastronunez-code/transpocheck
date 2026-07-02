@@ -155,6 +155,16 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
       let sectionNum = 3;
       if (job.tripType === 'revision') { currentY = drawSectionTitle(`${sectionNum}. Resultado`, currentY); if (job.checklist?.rtStatus === 'aprobado') { docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(16); docPDF.text("APROBADO", 15, currentY + 6); currentY += 18; } else { docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(16); docPDF.text("RECHAZADO", 15, currentY + 6); docPDF.setFontSize(10); docPDF.setTextColor(153, 27, 27); const rejSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.checklist?.rtRejectReason || job.failedReason || 'No especificada'}`), leftColWidth); docPDF.text(rejSplit, 15, currentY + 12); currentY += 20 + (rejSplit.length * 4); } sectionNum++; }
 
+      if (job.status === 'failed' && job.tripType !== 'revision') {
+          currentY = drawSectionTitle(`${sectionNum}. Resultado del Traslado`, currentY);
+          docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(16); docPDF.text("TRASLADO FALLIDO / CANCELADO", 15, currentY + 6);
+          docPDF.setFontSize(10); docPDF.setTextColor(153, 27, 27);
+          const failSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.failedReason || 'No especificada'}`), leftColWidth);
+          docPDF.text(failSplit, 15, currentY + 12);
+          currentY += 20 + (failSplit.length * 4);
+          sectionNum++;
+      }
+
       currentY = drawSectionTitle(`${sectionNum}. Conformidad Entrega`, currentY);
       if (job.checklist?.noReception) { docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(9); const nrSplit = docPDF.splitTextToSize("ENTREGA SIN RECEPCION (Confirmada por conductor en terreno)", leftColWidth); docPDF.text(nrSplit, 15, currentY + 4); currentY += (nrSplit.length * 4) + 6; } else { drawKV("Receptor", `${job.checklist?.receiverName || 'N/A'}`, 15, currentY, leftColWidth); currentY += 12; drawKV("RUT", `${job.checklist?.receiverRut || 'N/A'}`, 15, currentY, leftColWidth); currentY += 12; if (job.checklist?.clientComments) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("COMENTARIOS:", 15, currentY); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor); const commSplit = docPDF.splitTextToSize(cleanStr(job.checklist.clientComments), leftColWidth); docPDF.text(commSplit, 15, currentY + 4); currentY += (commSplit.length * 4) + 6; } 
         if(signatureStr) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("FIRMA DE CONFORMIDAD:", 15, currentY); try { docPDF.addImage(signatureStr, 'JPEG', 15, currentY + 2, 45, 25); } catch(e){ try{docPDF.addImage(signatureStr, 'PNG', 15, currentY + 2, 45, 25);}catch(err){} } currentY += 30; } 
@@ -535,4 +545,5 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
     </div>
   );
 }
+
 
