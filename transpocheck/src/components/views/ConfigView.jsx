@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { collection, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
-import { Camera, Eye, User, Edit2, Trash2, Truck, Clock, X } from 'lucide-react';
+import { Camera, Eye, User, Edit2, Trash2, Truck, Clock, X, Plus } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import { LICENCIAS, resizeImage } from '../../utils/helpers';
 
@@ -12,6 +12,21 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
   const [fleetFilter, setFleetFilter] = useState('');
   const [driverDocs, setDriverDocs] = useState({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null });
   const [fullScreenDoc, setFullScreenDoc] = useState(null); 
+  
+  // NUEVO ESTADO: Controla la lista dinámica de usuarios del cliente
+  const [clientContacts, setClientContacts] = useState([{ name: '', email: '' }]);
+
+  React.useEffect(() => {
+    if (editingClient) {
+       const emails = editingClient.email ? editingClient.email.split(',').map(e => e.trim()).filter(Boolean) : [];
+       const names = editingClient.contactName ? editingClient.contactName.split(',').map(n => n.trim()) : [];
+       const mapped = emails.map((e, i) => ({ email: e, name: names[i] || '' }));
+       setClientContacts(mapped.length > 0 ? mapped : [{ name: '', email: '' }]);
+    } else {
+       setClientContacts([{ name: '', email: '' }]);
+    }
+  }, [editingClient]);
+
   const handleDocUpload = async (e, field, size) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -54,31 +69,99 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
 
       {configSubTab === 'clients' && (
         <div className="grid md:grid-cols-2 gap-6 w-full min-w-0">
-          <form onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const name = fd.get('name'); const contactName = fd.get('contactName'); const email = fd.get('email').toLowerCase().trim(); const enableNotifications = fd.get('enableNotifications') === 'on'; try { if(editingClient){ await updateDoc(doc(db, 'clients', editingClient.id), { name, contactName, email, enableNotifications }); setEditingClient(null); showAlert("Cliente actualizado"); } else { await addDoc(collection(db, 'clients'), { name, contactName, email, enableNotifications, createdAt: Date.now() }); showAlert("Cliente agregado"); } e.target.reset(); } catch(err){} }} className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4 w-full min-w-0">
-            <h3 className="font-extrabold text-lg flex items-center gap-2"><User className="text-blue-600"/> {editingClient ? 'Editar Cliente' : 'Nuevo Cliente'}</h3>
-            <input name="name" defaultValue={editingClient?.name} placeholder="Nombre Empresa (Ej. Kovacs)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-semibold"/>
-            <div className="grid grid-cols-1 gap-3">
-               <input name="contactName" defaultValue={editingClient?.contactName} placeholder="Nombre(s) Responsable(s) (Ej. Juan Pérez, Ana Silva)" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-semibold"/>
-               <input name="email" type="text" defaultValue={editingClient?.email} placeholder="Correos Gmail (separados por coma. Ej: jefe@gmail.com, sec@gmail.com)" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-semibold"/>
-            </div>
-            <p className="text-[10px] font-bold text-slate-400 mt-1 leading-tight">Puedes agregar varios correos separados por coma. Cualquiera de ellos podrá iniciar sesión con Google y ver el portal.</p>
+          <form onSubmit={async (e) => { 
+             e.preventDefault(); 
+             const fd = new FormData(e.target); 
+             const name = fd.get('name'); 
+             
+             // Filtramos y transformamos la lista visual en strings para la Base de Datos
+             const validContacts = clientContacts.filter(c => c.email.trim() !== '');
+             if (validContacts.length === 0) return showAlert("Debes agregar al menos un correo de acceso.");
+             
+             const email = validContacts.map(c => c.email.trim().toLowerCase()).join(','); 
+             const contactName = validContacts.map(c => c.name.trim() || 'Usuario').join(','); 
+             const enableNotifications = fd.get('enableNotifications') === 'on'; 
+             
+             try { 
+                 if(editingClient){ 
+                     await updateDoc(doc(db, 'clients', editingClient.id), { name, contactName, email, enableNotifications }); 
+                     setEditingClient(null); 
+                     showAlert("Cliente y accesos actualizados."); 
+                 } else { 
+                     await addDoc(collection(db, 'clients'), { name, contactName, email, enableNotifications, createdAt: Date.now() }); 
+                     showAlert("Cliente agregado."); 
+                 } 
+                 e.target.reset(); 
+                 setClientContacts([{ name: '', email: '' }]);
+             } catch(err){} 
+          }} className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 space-y-5 w-full min-w-0">
             
-            {/* NUEVO: INTERRUPTOR DE NOTIFICACIONES */}
-            <div className="bg-blue-50 border border-blue-100 p-3 rounded-xl flex justify-between items-center mt-2">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+               <h3 className="font-extrabold text-lg flex items-center gap-2 text-slate-800">
+                  <User className="text-blue-600"/> {editingClient ? 'Editar Cliente' : 'Nuevo Cliente'}
+               </h3>
+               {editingClient && (
+                  <button type="button" onClick={() => setEditingClient(null)} className="text-[10px] font-bold text-slate-400 bg-slate-100 px-3 py-1.5 rounded-lg uppercase tracking-wider hover:bg-slate-200 transition-colors">
+                     Cancelar
+                  </button>
+               )}
+            </div>
+
+            <div>
+               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Nombre de la Empresa</label>
+               <input name="name" defaultValue={editingClient?.name} placeholder="Ej. Automotora Kovacs" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-blue-500 transition-colors" list="clients-list" />
+               <datalist id="clients-list">
+                  {allClientsList.map(c => <option key={c} value={c} />)}
+               </datalist>
+            </div>
+
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 shadow-inner">
+               <div className="flex justify-between items-center mb-4">
+                  <div>
+                     <label className="text-xs font-black text-slate-700 uppercase tracking-wide block">Cuentas de Acceso</label>
+                     <p className="text-[9px] font-bold text-slate-500 leading-tight mt-0.5">Asocia a los usuarios que podrán ver a este cliente.</p>
+                  </div>
+                  <button type="button" onClick={() => setClientContacts([...clientContacts, { name: '', email: '' }])} className="text-[10px] font-black bg-blue-100 text-blue-700 px-3 py-2 rounded-lg uppercase tracking-wider hover:bg-blue-200 transition-colors flex items-center gap-1 shadow-sm shrink-0">
+                     <Plus className="w-3.5 h-3.5"/> Añadir Otro
+                  </button>
+               </div>
+               
+               <div className="space-y-3">
+                   {clientContacts.map((contact, index) => (
+                       <div key={index} className="flex flex-col sm:flex-row gap-0 sm:gap-2 bg-white p-1 sm:p-2 rounded-xl border border-slate-200 shadow-sm relative group">
+                           <div className="flex-1 relative pt-3 px-2 sm:pt-0 sm:px-0">
+                               <span className="absolute top-1 left-2 sm:-top-2 sm:left-2 sm:bg-white sm:px-1 text-[8px] font-black text-slate-400 uppercase">Nombre del Responsable</span>
+                               <input type="text" placeholder="Ej. Juan Pérez" value={contact.name} onChange={(e) => { const newContacts = [...clientContacts]; newContacts[index].name = e.target.value; setClientContacts(newContacts); }} className="w-full bg-transparent p-2 pt-3 sm:pt-2.5 text-xs font-bold text-slate-700 outline-none focus:text-blue-600 border-b sm:border-b-0 border-slate-100" />
+                           </div>
+                           <div className="hidden sm:block w-px bg-slate-100 my-1"></div>
+                           <div className="flex-1 relative pt-3 px-2 pb-2 sm:p-0">
+                               <span className="absolute top-1 left-2 sm:-top-2 sm:left-2 sm:bg-white sm:px-1 text-[8px] font-black text-slate-400 uppercase">Correo Gmail</span>
+                               <input type="email" placeholder="usuario@gmail.com" value={contact.email} onChange={(e) => { const newContacts = [...clientContacts]; newContacts[index].email = e.target.value; setClientContacts(newContacts); }} className="w-full bg-transparent p-2 pt-3 sm:pt-2.5 text-xs font-bold text-slate-700 outline-none focus:text-blue-600" />
+                           </div>
+                           {clientContacts.length > 1 && (
+                               <button type="button" onClick={() => { const newContacts = [...clientContacts]; newContacts.splice(index, 1); setClientContacts(newContacts); }} className="sm:self-center p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors absolute right-1 top-1 sm:relative sm:top-0 sm:right-0">
+                                   <Trash2 className="w-4 h-4"/>
+                               </button>
+                           )}
+                       </div>
+                   ))}
+               </div>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-100 p-3.5 rounded-xl flex justify-between items-center shadow-sm">
                <div>
                   <p className="text-xs font-extrabold text-blue-900 flex items-center gap-1.5"><Eye className="w-4 h-4"/> Alertas Automáticas</p>
                   <p className="text-[10px] font-bold text-blue-600 mt-0.5 leading-tight">Enviar correos al cliente con el estado en vivo y acta PDF.</p>
                </div>
                <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" name="enableNotifications" defaultChecked={editingClient ? editingClient.enableNotifications : true} className="sr-only peer" />
-                  <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 shadow-sm"></div>
                </label>
             </div>
 
-            <div className="flex gap-2 pt-2">
-              {editingClient && <button type="button" onClick={()=>setEditingClient(null)} className="flex-1 bg-slate-100 py-3 rounded-xl font-bold">Cancelar</button>}
-              <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold shadow-sm transition-colors">{editingClient ? 'Actualizar Cliente' : 'Crear Acceso'}</button>
-            </div>
+            <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-black text-sm shadow-md shadow-blue-200 transition-all active:scale-[0.98]">
+               {editingClient ? 'Guardar Cambios del Cliente' : 'Crear Cliente y Accesos'}
+            </button>
           </form>
           <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 max-h-[60vh] overflow-y-auto w-full min-w-0">
              <h3 className="font-extrabold text-lg mb-4">Base de Clientes y Accesos</h3>
@@ -88,23 +171,34 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
                      <div className="flex-1 min-w-0 pr-2">
                         <p className="font-extrabold text-slate-800 text-sm truncate">{clientRecord.name}</p>
                         {clientRecord.contactName && <p className="text-xs font-bold text-slate-500 mt-1 truncate"><span className="text-slate-400 font-medium">Responsable(s):</span> {clientRecord.contactName}</p>}
-                        {clientRecord.email && (
-                           <div className="flex flex-wrap gap-1.5 mt-2">
-                             {clientRecord.email.split(',').map((e, idx) => (
-                               <span key={idx} className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md uppercase tracking-widest border border-emerald-100 truncate max-w-full"><User className="inline w-3 h-3 -mt-0.5 mr-1"/>{e.trim()}</span>
-                             ))}
-                           </div>
-                        )}
-                        {/* NUEVO: BADGE DE NOTIFICACIONES */}
-                        <div className="mt-2">
+                        <div className="mt-1">
                            {clientRecord.enableNotifications ? (
-                             <span className="text-[9px] font-black text-blue-700 bg-blue-100 px-2 py-0.5 rounded uppercase tracking-widest border border-blue-200">🔔 Notificaciones On</span>
+                             <span className="text-[8px] font-black text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded uppercase tracking-widest border border-blue-200 shrink-0">🔔 Avisos On</span>
                            ) : (
-                             <span className="text-[9px] font-black text-slate-500 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-widest border border-slate-200">🔕 Notificaciones Off</span>
+                             <span className="text-[8px] font-black text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded uppercase tracking-widest border border-slate-300 shrink-0">🔕 Avisos Off</span>
                            )}
                         </div>
+
+                        {clientRecord.email && (
+                           <div className="flex flex-col gap-1.5 mt-3 border-t border-slate-200/60 pt-3">
+                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Cuentas Autorizadas:</p>
+                             <div className="flex flex-wrap gap-2">
+                                 {clientRecord.email.split(',').map((e, idx) => {
+                                     const namesArray = clientRecord.contactName ? clientRecord.contactName.split(',') : [];
+                                     const associatedName = namesArray[idx] ? namesArray[idx].trim() : 'Usuario';
+                                     return (
+                                       <span key={idx} className="text-[10px] font-bold text-slate-600 bg-white border border-slate-200 px-2 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm max-w-full">
+                                         <User className="w-3 h-3 text-blue-500 shrink-0"/>
+                                         <span className="font-black text-slate-800 truncate">{associatedName}</span> 
+                                         <span className="text-slate-400 truncate hidden sm:inline">({e.trim()})</span>
+                                       </span>
+                                     );
+                                 })}
+                             </div>
+                           </div>
+                        )}
                      </div>
-                     <div className="flex gap-1.5 shrink-0 ml-1 border-l border-slate-200 pl-3">
+                     <div className="flex flex-col gap-1.5 shrink-0 ml-2 border-l border-slate-200 pl-3">
                        <button onClick={()=>setEditingClient(clientRecord)} className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition-colors shadow-sm"><Edit2 className="w-4 h-4"/></button>
                        <button onClick={()=>showConfirm("¿Eliminar cliente y sus accesos?", async()=>await deleteDoc(doc(db,'clients',clientRecord.id)))} className="p-2 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-colors shadow-sm"><Trash2 className="w-4 h-4"/></button>
                      </div>
