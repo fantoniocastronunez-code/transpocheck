@@ -73,6 +73,23 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
     
     try {
       await addDoc(collection(db, 'expenses'), { driverId: myDriver.id, driverEmail: myDriver.email, driverName: myDriver.name, type: 'pending_return', amount: myDriver.balance, detail: det, receiptImage: returnReceipt, createdAt: Date.now() });
+      
+      // NUEVO: Enviar alerta automática por correo al Administrador
+      try {
+         await fetch('/api/notify-admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+               type: 'rendicion',
+               driverName: myDriver.name,
+               amount: myDriver.balance,
+               detail: det
+            })
+         });
+      } catch (mailErr) {
+         console.warn("Aviso de correo al admin falló en el frontend:", mailErr);
+      }
+
       setIsReturnOpen(false); setReturnReceipt(null); showAlert("Rendición enviada. Esperando validación de Admin.");
     } catch(e) {}
     finally { setIsSubmittingReturn(false); }
