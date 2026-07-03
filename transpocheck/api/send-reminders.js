@@ -78,10 +78,10 @@ export default async function handler(req, res) {
           </div>
         `;
 
-        // Mandar el correo al administrador principal
+        // Mandar el correo a los administradores principales
         await transporter.sendMail({
           from: `"Alertas LogisticAPP" <${process.env.EMAIL_USER}>`,
-          to: process.env.EMAIL_USER,
+          to: 'fcastro@logisticats.cl, hcastro@logisticats.cl',
           subject: `⏰ URGENTE: Traslado en 2 Hrs - ${job.plate || job.vin || 'Servicio'}`,
           html: htmlTemplate,
         });
