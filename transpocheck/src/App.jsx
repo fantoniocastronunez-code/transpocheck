@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, useSearchParams, useNavigate } from 'react-router-dom';
 import { signOut, signInWithPopup } from 'firebase/auth';
-import { doc, updateDoc, setDoc, deleteField } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, deleteField, onSnapshot } from 'firebase/firestore';
 
 import { 
   Car, MapPin, Camera, CheckCircle, FileText, Download, Plus, User, Navigation, 
@@ -80,6 +80,54 @@ function LogisticApp() {
     broadcast, dataLoaded, notificationsEnabled, requestNotificationPermission
   } = useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAlert);
 
+  // --- MOTOR DE ACTUALIZACIÓN AUTOMÁTICA (3:00 AM) ---
+  useEffect(() => {
+    const checkAndForceUpdate = () => {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const dateString = now.toISOString().split('T')[0]; 
+      const lastUpdate = localStorage.getItem('last_daily_refresh');
+
+      // Si son las 3:00 AM o más tarde, y hoy no se ha refrescado...
+      if (currentHour >= 3 && lastUpdate !== dateString) {
+        localStorage.setItem('last_daily_refresh', dateString);
+        
+        // 1. Limpiar caché visual del navegador
+        if ('caches' in window) {
+          caches.keys().then((names) => {
+            names.forEach(name => caches.delete(name));
+          });
+        }
+        
+        // 2. Destruir Service Workers (Evita que la PWA se quede pegada)
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(regs => {
+            regs.forEach(r => r.unregister());
+          });
+        }
+        
+        // 3. Recargar forzosamente
+        console.log("⏰ Ejecutando limpieza y actualización de las 3 AM...");
+        setTimeout(() => window.location.reload(true), 300);
+      }
+    };
+
+    checkAndForceUpdate(); // Revisa apenas el usuario abre la app
+    const interval = setInterval(checkAndForceUpdate, 10 * 60 * 1000); // Revisa cada 10 min si la pantalla quedó prendida
+    
+    // Revisa instantáneamente si el conductor desbloquea el celular
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') checkAndForceUpdate();
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+  // --------------------------------------------------
+
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -98,6 +146,33 @@ function LogisticApp() {
       mediaQuery.removeEventListener('change', handleThemeChange);
     };
   }, []);
+
+  // --- MOTOR DE RECARGA GLOBAL (BOTÓN DEL PÁNICO DEL ADMIN) ---
+  useEffect(() => {
+    if (!db) return;
+    const unsub = onSnapshot(doc(db, 'system_config', 'force_refresh'), (docSnap) => {
+      const data = docSnap.data();
+      if (data && data.timestamp) {
+        const lastGlobalRefresh = localStorage.getItem('last_global_refresh');
+        const newTimestamp = data.timestamp.toString();
+        
+        // Si la marca de tiempo es nueva y diferente a la que el celular tenía guardada
+        if (lastGlobalRefresh !== newTimestamp) {
+          localStorage.setItem('last_global_refresh', newTimestamp);
+          
+          // El seguro "!= null" evita que el celular se recargue la primera vez que instala la app
+          if (lastGlobalRefresh !== null) {
+            console.log("⚠️ ¡Orden de actualización global recibida desde la central!");
+            if ('caches' in window) caches.keys().then(names => names.forEach(n => caches.delete(n)));
+            if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+            setTimeout(() => window.location.reload(true), 1000);
+          }
+        }
+      }
+    });
+    return () => unsub();
+  }, [db]);
+  // -------------------------------------------------------------
 
   useEffect(() => {
     if (darkMode) {
@@ -440,35 +515,52 @@ function LogisticApp() {
                       <Zap className="w-4 h-4 text-blue-600"/> Recargar App
                     </span>
                     <button onClick={() => {
-                        // 1. Matar la caché visual y de archivos
                         if ('caches' in window) {
                           caches.keys().then((names) => {
                             names.forEach(name => caches.delete(name));
                           });
                         }
-                        // 2. Destruir Service Workers trabados por el navegador
                         if ('serviceWorker' in navigator) {
                           navigator.serviceWorker.getRegistrations().then(regs => {
                             regs.forEach(r => r.unregister());
                           });
                         }
-                        // 3. BOMBA NUCLEAR: Destruir la base de datos congelada de Firebase (sin cerrar la sesión)
                         if (window.indexedDB && window.indexedDB.databases) {
                           window.indexedDB.databases().then(dbs => {
                             dbs.forEach(dbFile => {
-                              // 'firestore' es donde Firebase guarda los trabajos offline
                               if (dbFile.name.startsWith('firestore')) {
                                 window.indexedDB.deleteDatabase(dbFile.name);
                               }
                             });
                           });
                         }
-                        // 4. Forzar recarga completa después de limpiar todo
                         setTimeout(() => window.location.reload(true), 300);
                     }} className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm transition-colors active:bg-blue-300">
-                      FORZAR
+                      FORZAR LOCAL
                     </button>
                   </div>
+
+                  {/* --- MATA-CACHÉ GLOBAL (SÓLO PARA ADMINISTRADORES) --- */}
+                  {isRealAdmin && (
+                    <div className="flex items-center justify-between border-t border-slate-100 pt-4 bg-purple-50 -mx-4 px-4 pb-2">
+                      <span className="text-sm font-black text-purple-700 flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-purple-600"/> Forzar a TODOS
+                      </span>
+                      <button onClick={() => {
+                          showConfirm("⚠️ ¿Forzar a todos los celulares de la flota a recargarse y actualizarse en este mismo instante?", async () => {
+                             try {
+                               await setDoc(doc(db, 'system_config', 'force_refresh'), { timestamp: Date.now() });
+                               showAlert("✅ Orden de actualización enviada a toda la flota.");
+                             } catch(err) { 
+                               console.error(err); 
+                               showAlert("Error al enviar la orden."); 
+                             }
+                          });
+                      }} className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm transition-colors active:scale-95">
+                        ¡EJECUTAR!
+                      </button>
+                    </div>
+                  )}
                   
                   {/* --- BOTÓN CERRAR SESIÓN --- */}
                   <div className="border-t border-slate-100 pt-4 mt-2">
