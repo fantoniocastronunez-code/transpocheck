@@ -715,8 +715,18 @@ function LogisticApp() {
                 setCurrentView('main');
              }} 
              onComplete={async () => { 
-                if (selectedJob.id !== 'NEW_QUICK_JOB') await updateDoc(doc(db, 'transport_jobs', selectedJob.id), { draft: null });
-                setSelectedJob(null); setCurrentView('main'); 
+                try {
+                   // Intentamos limpiar el borrador
+                   if (selectedJob.id !== 'NEW_QUICK_JOB') {
+                      await updateDoc(doc(db, 'transport_jobs', selectedJob.id), { draft: null });
+                   }
+                } catch(e) { 
+                   // Si Firebase lo bloquea porque el trabajo ya se cerró, lo ignoramos en silencio
+                } finally {
+                   // ESTO ASEGURA QUE LA PANTALLA SE CIERRE PASE LO QUE PASE
+                   setSelectedJob(null); 
+                   setCurrentView('main'); 
+                }
              }} 
              showAlert={showAlert} showConfirm={showConfirm} 
              uploadImageToStorage={uploadImageToStorage}
