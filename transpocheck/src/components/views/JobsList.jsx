@@ -848,28 +848,68 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   };
 
   const handlePurgeOldJobs = async () => {
-    showConfirm("⚠️ ¿Estás seguro de eliminar definitivamente los traslados con MÁS de 30 días de antigüedad? Esta acción limpiará tu base de datos y no se puede deshacer.", async () => {
+    showConfirm("⚠️ ¿Estás seguro de limpiar la base de datos? Se empaquetarán todas las actas de más de 30 días en un archivo ZIP para tu respaldo, y luego se eliminarán de la nube.", async () => {
       try {
-        showAlert("⏳ Buscando y eliminando traslados antiguos...");
+        showAlert("⏳ Buscando traslados antiguos en la base de datos...");
         const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
         
-        // Consultamos a Firebase todos los trabajos creados hace más de 30 días
         const q = query(collection(db, 'transport_jobs'), where('createdAt', '<', thirtyDaysAgo));
         const snap = await getDocs(q);
         
         if (snap.empty) {
           return showAlert("No hay traslados con más de 30 días de antigüedad para eliminar.");
         }
+
+        // 1. Filtrar solo los trabajos que tienen acta (checklist) para el respaldo
+        const jobsToExport = snap.docs.map(d => ({id: d.id, ...d.data()})).filter(j => j.checklist);
+
+        if (jobsToExport.length > 0) {
+          showAlert(`⏳ Procesando ${jobsToExport.length} actas antiguas en un archivo ZIP. Por favor no cierres la aplicación...`);
+          
+          const JSZip = await new Promise((resolve) => {
+            if (window.JSZip) return resolve(window.JSZip);
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+            script.onload = () => resolve(window.JSZip);
+            document.body.appendChild(script);
+          });
+          
+          const zip = new JSZip();
+          
+          // Generamos el PDF uno por uno (para no saturar la memoria RAM) y lo metemos al ZIP
+          for (const job of jobsToExport) {
+            const docPDF = await buildPDFDoc(job);
+            const pdfBlob = docPDF.output('blob');
+            const cleanPlate = job.plate || job.vin || 'SN';
+            const dateStrForFile = getDStr(job).replace(/\//g, '-');
+            const fileName = `Respaldo_${dateStrForFile}_${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}_${cleanPlate}.pdf`;
+            zip.file(fileName, pdfBlob);
+          }
+          
+          const content = await zip.generateAsync({ type: 'blob' });
+          const url = URL.createObjectURL(content);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `Respaldo_Limpieza_LogisticAPP_${new Date().toISOString().split('T')[0]}.zip`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          showAlert("✅ Respaldo ZIP descargado. Procediendo a liberar el espacio en la nube...");
+        } else {
+          showAlert("⏳ No se encontraron actas PDF en estos traslados antiguos. Limpiando espacio en la nube...");
+        }
         
+        // 2. Proceder a borrar los registros de Firebase
         let count = 0;
         for (const document of snap.docs) {
           await deleteDoc(doc(db, 'transport_jobs', document.id));
           count++;
         }
-        showAlert(`✅ Limpieza completada. Se eliminaron ${count} traslados antiguos.`);
+        showAlert(`✅ Limpieza completada exitosamente. Se eliminaron ${count} traslados y la aplicación vuelve a estar ligera.`);
       } catch (err) {
         console.error("Error en limpieza:", err);
-        showAlert("Ocurrió un error al intentar limpiar el historial.");
+        showAlert("Ocurrió un error al intentar generar el ZIP o limpiar el historial.");
       }
     });
   };
@@ -919,19 +959,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   return (
     <div className="pb-16">
       
-      {/* AVISO AUTOMÁTICO DÍA 3 DEL MES */}
-      {isAdminView && new Date().getDate() === 3 && (
-          <div className="mb-6 bg-red-50 border-2 border-red-400 p-4 rounded-2xl flex items-start gap-3 shadow-md animate-in slide-in-from-top-2">
-             <div className="bg-red-100 p-2 rounded-full shrink-0"><AlertCircle className="w-6 h-6 text-red-600"/></div>
-             <div>
-                <h3 className="font-black text-red-800 text-sm uppercase tracking-wide">Recordatorio de Mantenimiento</h3>
-                <p className="text-xs font-bold text-red-700 mt-1 leading-relaxed">
-                  Hoy es día 3. Para mantener tu aplicación veloz y evitar colapsos de memoria, por favor presiona el botón <strong className="bg-red-100 border border-red-200 text-red-800 px-1.5 py-0.5 rounded">Limpiar DB</strong> (arriba a la derecha) para eliminar los traslados que ya tienen más de 30 días de antigüedad.
-                </p>
-             </div>
-          </div>
-      )}
-
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
