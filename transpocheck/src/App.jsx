@@ -541,7 +541,7 @@ function LogisticApp() {
                   </div>
 
                   {/* --- MATA-CACHÉ GLOBAL (SÓLO PARA ADMINISTRADORES) --- */}
-                  {isRealAdmin && (
+                  {activeRole === 'admin' && (
                     <div className="flex items-center justify-between border-t border-slate-100 pt-4 bg-purple-50 -mx-4 px-4 pb-2">
                       <span className="text-sm font-black text-purple-700 flex items-center gap-2">
                         <Zap className="w-4 h-4 text-purple-600"/> Forzar a TODOS
