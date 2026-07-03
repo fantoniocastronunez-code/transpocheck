@@ -423,7 +423,7 @@ function LogisticApp() {
         </header>
         <main className="max-w-md mx-auto p-4 pt-24 sm:pt-28 pb-10">
            {myDriver ? (
-             <DriverOnboarding driver={myDriver} db={db} />
+             <DriverOnboarding driver={myDriver} db={db} uploadImageToStorage={uploadImageToStorage} />
            ) : (
              <div className="bg-white p-8 rounded-3xl border text-center space-y-5 shadow-lg border-slate-100">
                <div className="relative w-20 h-20 mx-auto">
