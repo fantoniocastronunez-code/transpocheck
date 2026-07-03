@@ -80,6 +80,14 @@ function LogisticApp() {
     broadcast, dataLoaded, notificationsEnabled, requestNotificationPermission
   } = useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAlert);
 
+  // --- AUTO-SELECCIÓN DE ROL (SALTO DIRECTO A ADMIN) ---
+  useEffect(() => {
+    // Si la base de datos confirma que eres admin, y no estás intentando simular a un conductor específico...
+    if (isRealAdmin && activeRole === 'driver' && !simulatedDriverEmail) {
+      setActiveRole('admin'); // Te enviamos directo a tu panel de control
+    }
+  }, [isRealAdmin, activeRole, simulatedDriverEmail]);
+
   // --- MOTOR DE ACTUALIZACIÓN AUTOMÁTICA (3:00 AM) ---
   useEffect(() => {
     const checkAndForceUpdate = () => {
