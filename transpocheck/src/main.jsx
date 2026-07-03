@@ -1,10 +1,18 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
-import './index.css' // <-- ESTA LÍNEA ES OBLIGATORIA PARA EL DISEÑO
+import './index.css'
+
+// NUEVO: Importaciones de Vercel
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />
+    
+    {/* NUEVO: Radares activados de forma silenciosa */}
+    <Analytics />
+    <SpeedInsights />
   </React.StrictMode>,
 )
