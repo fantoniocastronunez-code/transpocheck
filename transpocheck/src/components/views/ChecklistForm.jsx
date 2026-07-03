@@ -40,7 +40,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
 
   // --- MOTOR DE CÁMARA INTERNA MULTI-LENTE (WebRTC) ---
   const [inAppCamera, setInAppCamera] = useState({ isOpen: false, onCapture: null, title: '', stream: null, devices: [], currentIndex: 0 });
-  const [isLandscape, setIsLandscape] = useState(false); // NUEVO: Detector de Giroscopio
+  const [landscapeAngle, setLandscapeAngle] = useState(0); // 0 = Vertical, 90 o -90 = Horizontal
   const videoRef = React.useRef(null);
 
   const startCamera = async (deviceId = null, isFirst = false, title = '', callback = null) => {
@@ -107,16 +107,17 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
   // NUEVO: Oído biónico para el giroscopio del celular
   useEffect(() => {
     const handleOrientation = (event) => {
-      // 'gamma' detecta la inclinación lateral del celular. Si pasa los 45 grados, está apaisado (horizontal).
-      if (event.gamma && Math.abs(event.gamma) > 45) {
-        setIsLandscape(true);
+      if (event.gamma && event.gamma > 45) {
+        setLandscapeAngle(-90); // Teléfono inclinado hacia la derecha
+      } else if (event.gamma && event.gamma < -45) {
+        setLandscapeAngle(90);  // Teléfono inclinado hacia la izquierda
       } else {
-        setIsLandscape(false);
+        setLandscapeAngle(0);   // Teléfono Vertical
       }
     };
 
     if (inAppCamera.isOpen) window.addEventListener('deviceorientation', handleOrientation);
-    else setIsLandscape(false);
+    else setLandscapeAngle(0);
     
     return () => window.removeEventListener('deviceorientation', handleOrientation);
   }, [inAppCamera.isOpen]);
@@ -134,15 +135,14 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
     const ctx = canvas.getContext('2d');
     
     // Magia anti-bloqueo de pantalla:
-    // Si el giroscopio sabe que está horizontal, pero el video sigue dibujándose más alto que ancho (bloqueado)...
-    const needsRotation = isLandscape && (video.videoHeight > video.videoWidth);
+    const needsRotation = (landscapeAngle !== 0) && (video.videoHeight > video.videoWidth);
 
     if (needsRotation) {
-      // Volteamos el lienzo 90 grados matemáticamente
+      // Volteamos el lienzo matemáticamente según el lado exacto al que se giró
       canvas.width = video.videoHeight;
       canvas.height = video.videoWidth;
       ctx.translate(canvas.width / 2, canvas.height / 2);
-      ctx.rotate(-90 * Math.PI / 180);
+      ctx.rotate(-landscapeAngle * Math.PI / 180); 
       ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2);
     } else {
       // Fotografía normal
@@ -1427,13 +1427,19 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
           <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
              <video ref={videoRef} playsInline autoPlay className="w-full h-full object-cover" />
              <div className="absolute inset-0 pointer-events-none border-[40px] border-black/40 flex items-center justify-center">
-               <div className={`w-full h-full border-2 border-dashed rounded-xl transition-all duration-500 ${isLandscape ? 'border-green-400 bg-green-500/10 shadow-[0_0_50px_rgba(34,197,94,0.3)_inset]' : 'border-white/50'}`}></div>
+               <div className={`w-full h-full border-2 border-dashed rounded-xl transition-all duration-500 ${landscapeAngle !== 0 ? 'border-green-400 bg-green-500/10 shadow-[0_0_50px_rgba(34,197,94,0.3)_inset]' : 'border-white/50'}`}></div>
              </div>
              
-             {/* FEEDBACK INTELIGENTE (ALERTA VERDE) */}
-             {isLandscape && (
-               <div className="absolute top-16 bg-green-600/90 backdrop-blur-md text-white px-5 py-2.5 rounded-full font-black text-xs uppercase tracking-widest flex items-center gap-2 z-50 border border-green-400 shadow-[0_0_20px_rgba(34,197,94,0.6)] animate-in slide-in-from-top-4">
-                 <CheckCircle className="w-4 h-4"/> Modo Apaisado Activo
+             {/* FEEDBACK INTELIGENTE (ALERTA VERDE ROTATORIA) */}
+             {landscapeAngle !== 0 && (
+               <div 
+                 className="absolute top-1/2 left-1/2 bg-green-600/90 backdrop-blur-md text-white px-6 py-3 rounded-full font-black text-sm uppercase tracking-widest flex items-center gap-2 z-50 border border-green-400 shadow-[0_0_30px_rgba(34,197,94,0.6)] transition-all duration-300"
+                 style={{
+                   transform: `translate(-50%, -50%) rotate(${landscapeAngle}deg)`,
+                   transformOrigin: 'center center'
+                 }}
+               >
+                 <CheckCircle className="w-5 h-5"/> Apaisado Activo
                </div>
              )}
              
