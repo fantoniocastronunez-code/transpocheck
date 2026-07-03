@@ -8,7 +8,7 @@ export default function LeaderboardView({ jobs, drivers, isAdminView }) {
   const monthlyCompleted = jobs.filter(j => {
     const jobDate = j.completedAt || j.createdAt || 0;
     if (jobDate < firstOfCurrentMonth) return false;
-    return j.status === 'completed' || j.status === 'failed';
+    return j.status === 'completed'; // Excluye los fallidos del puntaje del conductor
   });
   
   const ranking = drivers.map(d => { 

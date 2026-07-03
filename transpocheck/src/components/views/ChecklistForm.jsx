@@ -9,7 +9,11 @@ import SignaturePad from '../ui/SignaturePad';
 import { resizeImage, formatMoney } from '../../utils/helpers';
 
 
-export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList, drivers, expenses, vehicles, uploadImageToStorage }) {
+export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList: rawClients, drivers, expenses, vehicles, uploadImageToStorage }) {
+  // SEGURO DE VIDA: Si Firebase demora en enviar los datos, usamos valores por defecto para evitar la Pantalla Blanca
+  const job = rawJob || {};
+  const allClientsList = rawClients || [];
+
   const isQuick = job.id === 'NEW_QUICK_JOB'; 
   const localStorageKey = `checklist_draft_${job.id}`;
   const matchedVehicle = vehicles?.find(v => v.plate === String(job.plate || job.vin || '').toUpperCase());
@@ -40,6 +44,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
 
   // --- MOTOR DE CÁMARA INTERNA MULTI-LENTE (WebRTC) ---
   const [inAppCamera, setInAppCamera] = useState({ isOpen: false, onCapture: null, title: '', stream: null, devices: [], currentIndex: 0 });
+  const [landscapeAngle, setLandscapeAngle] = useState(0); // 0 = Vertical, 90 o -90 = Horizontal
   const videoRef = React.useRef(null);
 
   const startCamera = async (deviceId = null, isFirst = false, title = '', callback = null) => {
@@ -54,13 +59,11 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
 
        if (isFirst) {
           const devices = await navigator.mediaDevices.enumerateDevices();
-          // Filtramos estrictamente las cámaras traseras (environment/back)
           let backCameras = devices.filter(d => d.kind === 'videoinput' && (d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('trasera') || d.label.toLowerCase().includes('environment') || d.label.toLowerCase().includes('0')));
-          // Fallback por si el celular no reporta las etiquetas correctamente
           if (backCameras.length === 0) backCameras = devices.filter(d => d.kind === 'videoinput');
           
           allVideoDevices = backCameras;
-          cIndex = 0; // Inicia siempre en el lente principal (1x)
+          cIndex = 0; 
        }
 
        setInAppCamera(prev => ({ 
@@ -86,6 +89,12 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
        input.onchange = (e) => { if (e.target.files[0]) callback(e.target.files[0]); };
        input.click(); return;
     }
+    
+    // Pide permiso al giroscopio en dispositivos Apple al hacer el click
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+       DeviceOrientationEvent.requestPermission().catch(() => {});
+    }
+    
     startCamera(null, true, title, callback);
   };
 
@@ -99,6 +108,24 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
     if (inAppCamera.isOpen && inAppCamera.stream && videoRef.current) videoRef.current.srcObject = inAppCamera.stream;
   }, [inAppCamera.isOpen, inAppCamera.stream]);
 
+  // NUEVO: Oído biónico para el giroscopio del celular
+  useEffect(() => {
+    const handleOrientation = (event) => {
+      if (event.gamma && event.gamma > 45) {
+        setLandscapeAngle(-90); // Teléfono inclinado hacia la derecha
+      } else if (event.gamma && event.gamma < -45) {
+        setLandscapeAngle(90);  // Teléfono inclinado hacia la izquierda
+      } else {
+        setLandscapeAngle(0);   // Teléfono Vertical
+      }
+    };
+
+    if (inAppCamera.isOpen) window.addEventListener('deviceorientation', handleOrientation);
+    else setLandscapeAngle(0);
+    
+    return () => window.removeEventListener('deviceorientation', handleOrientation);
+  }, [inAppCamera.isOpen]);
+
   const closeCamera = () => {
     if (inAppCamera.stream) inAppCamera.stream.getTracks().forEach(track => track.stop());
     setInAppCamera({ isOpen: false, onCapture: null, title: '', stream: null, devices: [], currentIndex: 0 });
@@ -106,10 +133,27 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
 
   const takeInAppPhoto = () => {
     if (!videoRef.current) return;
+    
+    const video = videoRef.current;
     const canvas = document.createElement('canvas');
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
-    canvas.getContext('2d').drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+    const ctx = canvas.getContext('2d');
+    
+    // Magia anti-bloqueo de pantalla:
+    const needsRotation = (landscapeAngle !== 0) && (video.videoHeight > video.videoWidth);
+
+    if (needsRotation) {
+      // Volteamos el lienzo matemáticamente según el lado exacto al que se giró
+      canvas.width = video.videoHeight;
+      canvas.height = video.videoWidth;
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate(-landscapeAngle * Math.PI / 180); 
+      ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2);
+    } else {
+      // Fotografía normal
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    }
 
     canvas.toBlob((blob) => {
       if (!blob) return;
@@ -1305,7 +1349,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
                    <div className="flex items-center gap-2 my-2"><div className="h-px bg-slate-200 flex-1"></div><span className="text-[10px] font-bold text-slate-400 uppercase">O llenar manualmente</span><div className="h-px bg-slate-200 flex-1"></div></div>
                    
                    <input required={!formData.noReception} value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
-                   <input required={!formData.noReception} value={formData.receiverRut} onChange={e=>setF('receiverRut',e.target.value)} placeholder="RUT Receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
+                   <input required={!formData.noReception} value={formData.receiverRut} onChange={(e)=>{ let val = e.target.value.replace(/[^0-9kK]/g, '').toUpperCase(); if (val.length > 1) { const dv = val.slice(-1); const body = val.slice(0, -1); val = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '-' + dv; } setF('receiverRut', val); }} placeholder="RUT Receptor (Ej: 12.345.678-9)" maxLength="12" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
                    
                    {formData.clientComments && (
                      <div className="bg-slate-100 p-2.5 rounded-xl border">
@@ -1387,8 +1431,21 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
           <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
              <video ref={videoRef} playsInline autoPlay className="w-full h-full object-cover" />
              <div className="absolute inset-0 pointer-events-none border-[40px] border-black/40 flex items-center justify-center">
-               <div className="w-full h-full border-2 border-white/50 border-dashed rounded-xl"></div>
+               <div className={`w-full h-full border-2 border-dashed rounded-xl transition-all duration-500 ${landscapeAngle !== 0 ? 'border-green-400 bg-green-500/10 shadow-[0_0_50px_rgba(34,197,94,0.3)_inset]' : 'border-white/50'}`}></div>
              </div>
+             
+             {/* FEEDBACK INTELIGENTE (ALERTA VERDE ROTATORIA) */}
+             {landscapeAngle !== 0 && (
+               <div 
+                 className="absolute top-1/2 left-1/2 bg-green-600/90 backdrop-blur-md text-white px-6 py-3 rounded-full font-black text-sm uppercase tracking-widest flex items-center gap-2 z-50 border border-green-400 shadow-[0_0_30px_rgba(34,197,94,0.6)] transition-all duration-300"
+                 style={{
+                   transform: `translate(-50%, -50%) rotate(${landscapeAngle}deg)`,
+                   transformOrigin: 'center center'
+                 }}
+               >
+                 <CheckCircle className="w-5 h-5"/> Apaisado Activo
+               </div>
+             )}
              
              {/* Botones de Lente estilo App Nativa (0.5x y 1x) */}
              {inAppCamera.devices.length > 1 && (
@@ -1487,4 +1544,6 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
     </div>
   );
 }
+
+
 

@@ -47,22 +47,40 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
           return await new Promise(resolve => { const reader = new FileReader(); reader.onloadend = () => resolve(reader.result); reader.readAsDataURL(fileBlob); });
         } catch (e) { return null; }
       };
-      const getImageDims = (src) => new Promise(resolve => { const img = new Image(); img.crossOrigin = "Anonymous"; img.onload = () => resolve({ w: img.width, h: img.height }); img.onerror = () => resolve({ w: 85, h: 60 }); img.src = src; });
+      // NUEVO MOTOR QUE REPARA LA ORIENTACIÓN EXIF DE LOS CELULARES
+      const fixImageOrientation = async (base64) => {
+        if (!base64) return null;
+        return new Promise(resolve => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, img.width, img.height);
+            // Esto devuelve la foto "horneada" en su orientación real (horizontal o vertical)
+            resolve({ data: canvas.toDataURL('image/jpeg', 0.8), w: img.width, h: img.height });
+          };
+          img.onerror = () => resolve(null);
+          img.src = base64;
+        });
+      };
       const loadSimpleLogo = async (src) => { return new Promise((resolve) => { const img = new Image(); img.src = src; img.crossOrigin = "Anonymous"; img.onload = () => { const tempCanvas = document.createElement('canvas'); tempCanvas.width = img.width; tempCanvas.height = img.height; const ctx = tempCanvas.getContext('2d'); ctx.drawImage(img, 0, 0, img.width, img.height); resolve({ data: tempCanvas.toDataURL('image/png'), w: img.width, h: img.height }); }; img.onerror = () => resolve(null); setTimeout(() => resolve(null), 1500); }); };
 
       const photos = job.checklist?.photos || {};
       const otherPhotoKeys = Object.keys(photos).filter(k => k !== 'front' && typeof photos[k] === 'string' && photos[k]);
 
-      const [logoApp, logoLogistica, frontPhotoStr, signatureStr, ...preloadedOtherPhotos] = await Promise.all([
+      const [logoApp, logoLogistica, frontPhotoObj, signatureStr, ...preloadedOtherPhotos] = await Promise.all([
         loadSimpleLogo('/logo.png'),
         loadSimpleLogo('/LogoLogistica.png'),
-        fetchImageAsBase64(photos.front),
+        fetchImageAsBase64(photos.front).then(fixImageOrientation),
         fetchImageAsBase64(job.checklist?.signatureData),
         ...otherPhotoKeys.map(async (key) => {
            const base64Img = await fetchImageAsBase64(photos[key]);
            if (!base64Img) return null;
-           const dims = await getImageDims(base64Img);
-           return { key, base64Img, dims };
+           const processed = await fixImageOrientation(base64Img);
+           if (!processed) return null;
+           return { key, base64Img: processed.data, dims: { w: processed.w, h: processed.h } };
         })
       ]);
 
@@ -137,6 +155,16 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
       let sectionNum = 3;
       if (job.tripType === 'revision') { currentY = drawSectionTitle(`${sectionNum}. Resultado`, currentY); if (job.checklist?.rtStatus === 'aprobado') { docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(16); docPDF.text("APROBADO", 15, currentY + 6); currentY += 18; } else { docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(16); docPDF.text("RECHAZADO", 15, currentY + 6); docPDF.setFontSize(10); docPDF.setTextColor(153, 27, 27); const rejSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.checklist?.rtRejectReason || job.failedReason || 'No especificada'}`), leftColWidth); docPDF.text(rejSplit, 15, currentY + 12); currentY += 20 + (rejSplit.length * 4); } sectionNum++; }
 
+      if (job.status === 'failed' && job.tripType !== 'revision') {
+          currentY = drawSectionTitle(`${sectionNum}. Resultado del Traslado`, currentY);
+          docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(16); docPDF.text("TRASLADO FALLIDO / CANCELADO", 15, currentY + 6);
+          docPDF.setFontSize(10); docPDF.setTextColor(153, 27, 27);
+          const failSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.failedReason || 'No especificada'}`), leftColWidth);
+          docPDF.text(failSplit, 15, currentY + 12);
+          currentY += 20 + (failSplit.length * 4);
+          sectionNum++;
+      }
+
       currentY = drawSectionTitle(`${sectionNum}. Conformidad Entrega`, currentY);
       if (job.checklist?.noReception) { docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(9); const nrSplit = docPDF.splitTextToSize("ENTREGA SIN RECEPCION (Confirmada por conductor en terreno)", leftColWidth); docPDF.text(nrSplit, 15, currentY + 4); currentY += (nrSplit.length * 4) + 6; } else { drawKV("Receptor", `${job.checklist?.receiverName || 'N/A'}`, 15, currentY, leftColWidth); currentY += 12; drawKV("RUT", `${job.checklist?.receiverRut || 'N/A'}`, 15, currentY, leftColWidth); currentY += 12; if (job.checklist?.clientComments) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("COMENTARIOS:", 15, currentY); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor); const commSplit = docPDF.splitTextToSize(cleanStr(job.checklist.clientComments), leftColWidth); docPDF.text(commSplit, 15, currentY + 4); currentY += (commSplit.length * 4) + 6; } 
         if(signatureStr) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("FIRMA DE CONFORMIDAD:", 15, currentY); try { docPDF.addImage(signatureStr, 'JPEG', 15, currentY + 2, 45, 25); } catch(e){ try{docPDF.addImage(signatureStr, 'PNG', 15, currentY + 2, 45, 25);}catch(err){} } currentY += 30; } 
@@ -144,8 +172,12 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
       
       if (job.checklist?.location) { currentY += 2; const { lat, lng } = job.checklist.location; docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text(`UBICACION GPS:`, 15, currentY); docPDF.setFontSize(9); docPDF.setTextColor(...accentColor); docPDF.textWithLink('Clic aqui para ver mapa en Google', 15, currentY + 4, { url: `https://maps.google.com/?q=${lat},${lng}` }); }
 
-      if (frontPhotoStr) { 
-        try { const dims = await getImageDims(frontPhotoStr); const ratio = dims.h / dims.w; let imgW = 80; let imgH = imgW * ratio; if (imgH > 130) { imgH = 130; imgW = imgH / ratio; } const rightX = 115; const rightY = startY + 6; docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(rightX - 2, rightY - 8, imgW + 4, imgH + 12, 2, 2, 'S'); docPDF.setFillColor(...lightBg); docPDF.rect(rightX - 2, rightY - 8, imgW + 4, 8, 'F'); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor); docPDF.text("VISTA FRONTAL", rightX + (imgW/2), rightY - 3, { align: "center" }); try { docPDF.addImage(frontPhotoStr, 'JPEG', rightX, rightY + 2, imgW, imgH); } catch(e){docPDF.addImage(frontPhotoStr, 'PNG', rightX, rightY + 2, imgW, imgH);} } catch (err) {} 
+      if (frontPhotoObj) { 
+        try { 
+          const dims = { w: frontPhotoObj.w, h: frontPhotoObj.h }; 
+          const frontPhotoStr = frontPhotoObj.data;
+          const ratio = dims.h / dims.w; let imgW = 80; let imgH = imgW * ratio; if (imgH > 130) { imgH = 130; imgW = imgH / ratio; } const rightX = 115; const rightY = startY + 6; docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(rightX - 2, rightY - 8, imgW + 4, imgH + 12, 2, 2, 'S'); docPDF.setFillColor(...lightBg); docPDF.rect(rightX - 2, rightY - 8, imgW + 4, 8, 'F'); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor); docPDF.text("VISTA FRONTAL", rightX + (imgW/2), rightY - 3, { align: "center" }); try { docPDF.addImage(frontPhotoStr, 'JPEG', rightX, rightY + 2, imgW, imgH); } catch(e){docPDF.addImage(frontPhotoStr, 'PNG', rightX, rightY + 2, imgW, imgH);} 
+        } catch (err) {} 
       }
 
       const addFooter = () => { const pageCount = docPDF.internal.getNumberOfPages(); for(let i = 1; i <= pageCount; i++) { docPDF.setPage(i); docPDF.setFontSize(8); docPDF.setTextColor(148, 163, 184); docPDF.text(`Generado por LogisticAPP el ${new Date().toLocaleString('es-CL')} - Pagina ${i} de ${pageCount}`, 105, 290, null, null, "center"); } }
@@ -492,7 +524,7 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                  }
               }} className="space-y-3">
                  <input required type="text" placeholder="Nombre de quien recibe" value={batchFormData.name} onChange={e=>setBatchFormData({...batchFormData, name: e.target.value})} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500 text-sm" />
-                 <input required type="text" placeholder="RUT" value={batchFormData.rut} onChange={e=>setBatchFormData({...batchFormData, rut: e.target.value})} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500 text-sm" />
+                 <input required type="text" placeholder="RUT (Ej: 12.345.678-9)" maxLength="12" value={batchFormData.rut} onChange={(e)=>{ let val = e.target.value.replace(/[^0-9kK]/g, '').toUpperCase(); if (val.length > 1) { const dv = val.slice(-1); const body = val.slice(0, -1); val = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '-' + dv; } setBatchFormData({...batchFormData, rut: val}); }} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500 text-sm" />
                  <textarea placeholder="Comentarios generales para el lote (Opcional)" value={batchFormData.comments} onChange={e=>setBatchFormData({...batchFormData, comments: e.target.value})} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500 h-16 text-sm" />
                  
                  <div className="pt-2">
@@ -513,3 +545,5 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
     </div>
   );
 }
+
+

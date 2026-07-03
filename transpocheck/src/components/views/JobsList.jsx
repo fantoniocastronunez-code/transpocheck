@@ -3,7 +3,7 @@ import { updateDoc, doc, deleteDoc, addDoc, collection, deleteField, getDocs, qu
 import { 
   Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, 
   Copy, X, XCircle, MapPin, Clock, FileDown, Search, ChevronUp, ChevronDown,
-  Trash2, Car
+  Trash2, Car, Repeat
 } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import WaitTimerBadge from '../ui/WaitTimerBadge';
@@ -94,7 +94,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       } else {
         if (job.acceptedByEmail !== currentUserEmail) return false;
       }
-      if (job.status === 'failed' && job.tripType !== 'revision') return false; 
+      // Ahora los conductores pueden ver sus trabajos fallidos en la lista de finalizados
     }
     
     if (!job.createdAt) return true;
@@ -160,6 +160,26 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     });
   };
 
+  const handleDuplicateJob = async (job) => {
+    showConfirm(`¿Crear un nuevo traslado para el vehículo ${job.plate || job.vin || 'seleccionado'}?`, async () => {
+      try {
+        const cloneJob = {
+            client: job.client || '',
+            brand: job.brand || '',
+            model: job.model || '',
+            vin: job.vin || '',
+            plate: job.plate || '',
+            tripType: job.tripType || 'viaje',
+            description: job.description || '',
+            status: 'pending',
+            createdAt: Date.now()
+        };
+        await addDoc(collection(db, 'transport_jobs'), cloneJob);
+        showAlert("✅ Vehículo duplicado con éxito. Lo encontrarás en 'Pendientes' para asignarle su nueva ruta.");
+      } catch (e) { console.error(e); showAlert("Error al duplicar el trabajo."); }
+    });
+  };
+
   const handleFailJob = async (job, reason) => {
     try {
       if (job.tripType === 'revision' && reason === 'RECHAZO_RT_AUTOMATICO') {
@@ -218,22 +238,40 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       } catch (e) { return null; }
     };
 
-    const getImageDims = (src) => new Promise(resolve => { const img = new Image(); img.crossOrigin = "Anonymous"; img.onload = () => resolve({ w: img.width, h: img.height }); img.onerror = () => resolve({ w: 85, h: 60 }); img.src = src; });
+    // NUEVO MOTOR QUE REPARA LA ORIENTACIÓN EXIF DE LOS CELULARES
+    const fixImageOrientation = async (base64) => {
+      if (!base64) return null;
+      return new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, img.width, img.height);
+          // Esto devuelve la foto "horneada" en su orientación real (horizontal)
+          resolve({ data: canvas.toDataURL('image/jpeg', 0.8), w: img.width, h: img.height });
+        };
+        img.onerror = () => resolve(null);
+        img.src = base64;
+      });
+    };
     const loadSimpleLogo = async (src) => { return new Promise((resolve) => { const img = new Image(); img.src = src; img.crossOrigin = "Anonymous"; img.onload = () => { const tempCanvas = document.createElement('canvas'); tempCanvas.width = img.width; tempCanvas.height = img.height; const ctx = tempCanvas.getContext('2d'); ctx.drawImage(img, 0, 0, img.width, img.height); resolve({ data: tempCanvas.toDataURL('image/png'), w: img.width, h: img.height }); }; img.onerror = () => resolve(null); setTimeout(() => resolve(null), 1500); }); };
 
     const photos = job.checklist?.photos || {};
     const otherPhotoKeys = Object.keys(photos).filter(k => k !== 'front' && typeof photos[k] === 'string' && photos[k]);
 
-    const [logoApp, logoLogistica, frontPhotoStr, signatureStr, ...preloadedOtherPhotos] = await Promise.all([
+    const [logoApp, logoLogistica, frontPhotoObj, signatureStr, ...preloadedOtherPhotos] = await Promise.all([
       loadSimpleLogo('/logo.png'),
       loadSimpleLogo('/LogoLogistica.png'),
-      fetchImageAsBase64(photos.front),
+      fetchImageAsBase64(photos.front).then(fixImageOrientation),
       fetchImageAsBase64(job.checklist?.signatureData),
       ...otherPhotoKeys.map(async (key) => {
          const base64Img = await fetchImageAsBase64(photos[key]);
          if (!base64Img) return null;
-         const dims = await getImageDims(base64Img);
-         return { key, base64Img, dims };
+         const processed = await fixImageOrientation(base64Img);
+         if (!processed) return null;
+         return { key, base64Img: processed.data, dims: { w: processed.w, h: processed.h } };
       })
     ]);
 
@@ -335,6 +373,16 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
     if (job.tripType === 'revision') { currentY = drawSectionTitle(`${sectionNum}. Resultado`, currentY); if (job.checklist?.rtStatus === 'aprobado') { docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(16); docPDF.text("APROBADO", 15, currentY + 6); currentY += 18; } else { docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(16); docPDF.text("RECHAZADO", 15, currentY + 6); docPDF.setFontSize(10); docPDF.setTextColor(153, 27, 27); const rejSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.checklist?.rtRejectReason || job.failedReason || 'No especificada'}`), leftColWidth); docPDF.text(rejSplit, 15, currentY + 12); currentY += 20 + (rejSplit.length * 4); } sectionNum++; }
 
+    if (job.status === 'failed' && job.tripType !== 'revision') {
+        currentY = drawSectionTitle(`${sectionNum}. Resultado del Traslado`, currentY, job.tripType === 'simple' ? 180 : leftColWidth);
+        docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(16); docPDF.text("TRASLADO FALLIDO / CANCELADO", 15, currentY + 6);
+        docPDF.setFontSize(10); docPDF.setTextColor(153, 27, 27);
+        const failSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.failedReason || 'No especificada'}`), job.tripType === 'simple' ? 180 : leftColWidth);
+        docPDF.text(failSplit, 15, currentY + 12);
+        currentY += 20 + (failSplit.length * 4);
+        sectionNum++;
+    }
+
     currentY = drawSectionTitle(`${sectionNum}. Conformidad Entrega`, currentY, job.tripType === 'simple' ? 180 : leftColWidth);
     if (job.checklist?.noReception) { 
       docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(9); const nrSplit = docPDF.splitTextToSize("TRABAJO SIN FIRMA DE RECEPCION (Confirmada por operario en terreno)", job.tripType === 'simple' ? 180 : leftColWidth); docPDF.text(nrSplit, 15, currentY + 4); currentY += (nrSplit.length * 4) + 6; 
@@ -351,9 +399,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     
     if (job.checklist?.location) { currentY += 2; const { lat, lng } = job.checklist.location; docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text(`UBICACION GPS:`, 15, currentY); docPDF.setFontSize(9); docPDF.setTextColor(...accentColor); docPDF.textWithLink('Clic aqui para ver mapa en Google', 15, currentY + 4, { url: `https://maps.google.com/?q=${lat},${lng}` }); }
 
-    if (frontPhotoStr && job.tripType !== 'simple') { 
+    if (frontPhotoObj && job.tripType !== 'simple') { 
       try { 
-        const dims = await getImageDims(frontPhotoStr); const ratio = dims.h / dims.w; let imgW = 80; let imgH = imgW * ratio; if (imgH > 130) { imgH = 130; imgW = imgH / ratio; } const rightX = 115; const rightY = startY + 6; docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(rightX - 2, rightY - 8, imgW + 4, imgH + 12, 2, 2, 'S'); docPDF.setFillColor(...lightBg); docPDF.rect(rightX - 2, rightY - 8, imgW + 4, 8, 'F'); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor); docPDF.text("VISTA FRONTAL", rightX + (imgW/2), rightY - 3, { align: "center" }); 
+        const dims = { w: frontPhotoObj.w, h: frontPhotoObj.h }; 
+        const frontPhotoStr = frontPhotoObj.data;
+        const ratio = dims.h / dims.w; let imgW = 80; let imgH = imgW * ratio; if (imgH > 130) { imgH = 130; imgW = imgH / ratio; } const rightX = 115; const rightY = startY + 6; docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(rightX - 2, rightY - 8, imgW + 4, imgH + 12, 2, 2, 'S'); docPDF.setFillColor(...lightBg); docPDF.rect(rightX - 2, rightY - 8, imgW + 4, 8, 'F'); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor); docPDF.text("VISTA FRONTAL", rightX + (imgW/2), rightY - 3, { align: "center" }); 
         try { docPDF.addImage(frontPhotoStr, 'JPEG', rightX, rightY + 2, imgW, imgH); } catch(e) { docPDF.addImage(frontPhotoStr, 'PNG', rightX, rightY + 2, imgW, imgH); }
       } catch (err) { console.error("Error al incrustar foto frontal:", err); } 
     }
@@ -408,10 +458,14 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const handleCopyWhatsApp = (job) => { 
     const dateStr = getDStr(job);
     const dateShort = dateStr.substring(0, 5); 
-    const text = job.tripType === 'simple' 
+    let text = job.tripType === 'simple' 
       ? `${dateShort}\n${job.client || 'Sin Cliente'}\n📌 TAREA: ${job.description || 'Servicio en Terreno'}\n📍 LUGAR: ${getRouteStr(job)}${getExtraWappTxt(job)}`
       : `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`; 
     
+    if (job.status === 'failed') {
+      text = `❌ TRASLADO FALLIDO\nMotivo: ${job.failedReason || 'No especificada'}\n\n${text}`;
+    }
+
     const textArea = document.createElement("textarea");
     textArea.value = text;
     textArea.style.position = "fixed";
@@ -440,10 +494,14 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       const cleanPlate = job.plate || job.vin || 'SN';
       const fileName = `Check.${dateStrForFile}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`;
       
-      const textToShare = job.tripType === 'simple' 
+      let textToShare = job.tripType === 'simple' 
         ? `${dateShort}\n${job.client || 'Sin Cliente'}\n📌 TAREA: ${job.description || 'Servicio en Terreno'}\n📍 LUGAR: ${getRouteStr(job)}${getExtraWappTxt(job)}`
         : `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`;
       
+      if (job.status === 'failed') {
+        textToShare = `❌ TRASLADO FALLIDO\nMotivo: ${job.failedReason || 'No especificada'}\n\n${textToShare}`;
+      }
+
       const docPDF = await buildPDFDoc(job); 
       const pdfBlob = docPDF.output('blob'); 
       const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
@@ -752,8 +810,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           <p className={`text-[10px] font-black uppercase ${isFailed ? 'text-red-500' : 'text-green-600'}`}>{isFailed ? 'RECHAZADO' : 'ENTREGADO'}</p>
           <p className="text-slate-400 font-bold text-[9px]">{getDStr(j)}</p>
         </div>
-        <div className="flex gap-1.5 mt-auto">
+         <div className="flex gap-1.5 mt-auto">
           {isAdminView && <button onClick={()=>onEditJob(j)} className="flex-1 py-1.5 flex justify-center bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg transition-colors" title="Editar Traslado"><Edit2 className="w-3.5 h-3.5"/></button>}
+          {isAdminView && <button onClick={()=>handleDuplicateJob(j)} className="flex-1 py-1.5 flex justify-center bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg transition-colors" title="Repetir Vehículo"><Repeat className="w-3.5 h-3.5"/></button>}
           <button onClick={()=>cpyWapp(j)} className="flex-1 py-1.5 flex justify-center bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors" title="Copiar Resumen"><Copy className="w-3.5 h-3.5"/></button>
           <button onClick={() => generatePDF(j)} disabled={processingId === `${j.id}-pdf`} className="flex-1 py-1.5 flex justify-center bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50" title="Descargar PDF">{processingId === `${j.id}-pdf` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : <FileDown className="w-3.5 h-3.5"/>}</button>
           <button onClick={() => handleShareWhatsAppPDF(j)} disabled={processingId === `${j.id}-wapp`} className="flex-1 py-1.5 flex justify-center items-center bg-green-50 text-green-600 hover:bg-green-100 rounded-lg transition-colors disabled:opacity-50" title="Compartir PDF por WhatsApp">
@@ -960,6 +1019,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                                   <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
                                       <span className="text-[9px] font-bold text-slate-400 mr-2">{new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL')}</span>
                                       {isAdminView && <button onClick={()=>onEditJob(j)} className="p-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-md transition-colors" title="Editar Traslado"><Edit2 className="w-3.5 h-3.5"/></button>}
+                                      {isAdminView && <button onClick={()=>handleDuplicateJob(j)} className="p-1.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-md transition-colors" title="Repetir Vehículo"><Repeat className="w-3.5 h-3.5"/></button>}
                                       <button onClick={()=>cpyWapp(j)} className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md transition-colors"><Copy className="w-3.5 h-3.5"/></button>
                                       <button onClick={() => generatePDF(j)} className="p-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-md transition-colors"><FileDown className="w-3.5 h-3.5"/></button>
                                       <button onClick={() => handleShareWhatsAppPDF(j)} disabled={processingId === `${j.id}-wapp`} className="p-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-md transition-colors disabled:opacity-50">
@@ -1079,4 +1139,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       </div>
   );
 }
+
+
+
 

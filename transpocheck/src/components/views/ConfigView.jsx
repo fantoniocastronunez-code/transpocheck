@@ -98,7 +98,7 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
             
             <div className="flex justify-between items-center border-b border-slate-100 pb-3">
                <h3 className="font-extrabold text-lg flex items-center gap-2 text-slate-800">
-                  <User className="text-blue-600"/> {editingClient ? 'Editar Cliente' : 'Nuevo Cliente'}
+                  <User className="text-blue-600"/> {editingClient ? 'Añadir/Editar Accesos' : 'Nuevo Cliente'}
                </h3>
                {editingClient && (
                   <button type="button" onClick={() => setEditingClient(null)} className="text-[10px] font-bold text-slate-400 bg-slate-100 px-3 py-1.5 rounded-lg uppercase tracking-wider hover:bg-slate-200 transition-colors">
@@ -107,12 +107,43 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
                )}
             </div>
 
-            <div>
-               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Nombre de la Empresa</label>
-               <input name="name" defaultValue={editingClient?.name} placeholder="Ej. Automotora Kovacs" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-blue-500 transition-colors" list="clients-list" />
-               <datalist id="clients-list">
-                  {allClientsList.map(c => <option key={c} value={c} />)}
-               </datalist>
+            <div className="space-y-4">
+               {/* 1. EL DESPLEGABLE NATIVO */}
+               <div>
+                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Seleccionar Empresa</label>
+                 <select 
+                    value={editingClient ? editingClient.id : 'NEW'} 
+                    onChange={(e) => {
+                       if (e.target.value === 'NEW') {
+                          setEditingClient(null);
+                       } else {
+                          const found = customClients.find(c => c.id === e.target.value);
+                          if (found) setEditingClient(found);
+                       }
+                    }}
+                    className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-blue-500 bg-white shadow-sm"
+                 >
+                    <option value="NEW">✨ NUEVO CLIENTE (Crear desde cero)</option>
+                    {customClients.map(c => (
+                       <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                 </select>
+               </div>
+
+               {/* 2. EL CAMPO DE NOMBRE (Editable o Nuevo) */}
+               <div className="animate-in fade-in slide-in-from-top-1">
+                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">
+                    {editingClient ? 'Nombre de la Empresa (Editable)' : 'Nombre de la Nueva Empresa'}
+                 </label>
+                 <input 
+                    name="name" 
+                    key={editingClient ? editingClient.id : 'new-input'}
+                    defaultValue={editingClient?.name || ''} 
+                    placeholder="Ej. Automotora Kovacs" 
+                    required 
+                    className={`w-full border-2 p-3 rounded-xl text-sm font-bold outline-none focus:border-blue-500 transition-colors shadow-sm ${editingClient ? 'border-slate-200 text-slate-800 bg-white' : 'border-blue-200 bg-blue-50 text-blue-900'}`} 
+                 />
+               </div>
             </div>
 
             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 shadow-inner">
@@ -239,6 +270,8 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
                <option value="camion_doble">🚚 Camión Doble Cabina</option>
                <option value="camion_2ejes">🚛 Camión (2 Ejes traseros)</option>
                <option value="camion_3ejes">🚛 Camión (3 Ejes traseros)</option>
+               <option value="camion_8x4">🚚 Camión Rigid (8x4)</option>
+               <option value="carro_arrastre">🛒 Carro Arrastre</option>
             </select>
             <div className="flex gap-2">
               {editingVehicle && <button type="button" onClick={()=>setEditingVehicle(null)} className="bg-slate-100 p-3 rounded-xl font-bold text-sm w-1/3 hover:bg-slate-200 transition-colors">Cancelar</button>}
@@ -421,3 +454,4 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
     </div>
   );
 }
+
