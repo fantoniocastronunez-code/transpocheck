@@ -79,6 +79,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
        await updateDoc(doc(db, 'transport_jobs', job.id), { status: 'accepted', acceptedByEmail: currentUserEmail }); 
        // Correo de ASIGNACIÓN
        notifyClient({ ...job, acceptedByEmail: currentUserEmail }, 'asignado');
+       
+       // NUEVO: Desplazar la pantalla suavemente hacia arriba para que el conductor vea su trabajo en "En Curso"
+       window.scrollTo({ top: 0, behavior: 'smooth' });
     } 
     catch (e) { console.error(e); }
     finally { setProcessingId(null); }
