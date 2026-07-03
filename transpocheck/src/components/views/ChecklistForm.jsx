@@ -9,7 +9,11 @@ import SignaturePad from '../ui/SignaturePad';
 import { resizeImage, formatMoney } from '../../utils/helpers';
 
 
-export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList, drivers, expenses, vehicles, uploadImageToStorage }) {
+export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList: rawClients, drivers, expenses, vehicles, uploadImageToStorage }) {
+  // SEGURO DE VIDA: Si Firebase demora en enviar los datos, usamos valores por defecto para evitar la Pantalla Blanca
+  const job = rawJob || {};
+  const allClientsList = rawClients || [];
+
   const isQuick = job.id === 'NEW_QUICK_JOB'; 
   const localStorageKey = `checklist_draft_${job.id}`;
   const matchedVehicle = vehicles?.find(v => v.plate === String(job.plate || job.vin || '').toUpperCase());
