@@ -1,10 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { updateDoc, doc, addDoc, collection } from 'firebase/firestore';
+import { updateDoc, doc, addDoc, collection, getDocs } from 'firebase/firestore';
 import { X, User, CheckCircle, Plus } from 'lucide-react';
 import CustomClientSelector from '../ui/CustomClientSelector';
 
 export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers, db, showAlert, onSuccess }) {
   const [selectedClient, setSelectedClient] = useState(jobToEdit?.client && allClientsList.includes(jobToEdit.client) ? jobToEdit.client : (jobToEdit?.client ? 'OTRO' : ''));
+  
+  // NUEVO: Estado para cargar el directorio de destinos
+  const [directoryList, setDirectoryList] = useState([]);
+  useEffect(() => {
+    const fetchDirectory = async () => {
+      try {
+        const snap = await getDocs(collection(db, 'directory'));
+        setDirectoryList(snap.docs.map(d => d.data()));
+      } catch(e) { console.error("Error cargando directorio:", e); }
+    };
+    fetchDirectory();
+  }, [db]);
   const [manualClient, setManualClient] = useState(jobToEdit?.client && !allClientsList.includes(jobToEdit.client) ? jobToEdit.client : '');
   const [brand, setBrand] = useState(jobToEdit?.brand || '');
   const [model, setModel] = useState(jobToEdit?.model || '');
@@ -103,6 +115,16 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
        jobData.description = description;
     }
 
+    // NUEVO: BUSCAR DESTINO EN EL DIRECTORIO PARA AUTORRELLENAR ENCARGADO
+    const destinationValue = jobData.destination?.trim().toLowerCase();
+    if (destinationValue) {
+       const matchedPlace = directoryList.find(d => d.placeName.trim().toLowerCase() === destinationValue);
+       if (matchedPlace) {
+          jobData.contactName = matchedPlace.contactName;
+          jobData.contactPhone = matchedPlace.contactPhone;
+       }
+    }
+
     try {
       if (jobToEdit) {
          await updateDoc(doc(db, 'transport_jobs', jobToEdit.id), jobData);
@@ -174,6 +196,14 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
 
   return (
     <div className="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-100">
+      
+      {/* NUEVO: Datalist invisible para autocompletar destinos */}
+      <datalist id="directory-destinations">
+        {directoryList.map((dir, idx) => (
+          <option key={idx} value={dir.placeName}>{dir.contactName}</option>
+        ))}
+      </datalist>
+
       <div className="flex justify-between items-center mb-6 border-b pb-4">
         <h2 className="text-xl sm:text-2xl font-extrabold text-slate-800">{jobToEdit ? 'Editar Trabajo' : 'Crear Nuevo Trabajo'}</h2>
         {jobToEdit && <button type="button" onClick={onCancelEdit} className="text-slate-500 hover:bg-slate-100 p-2 rounded-xl transition"><X className="w-6 h-6"/></button>}
@@ -266,7 +296,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <input name="origin" defaultValue={jobToEdit?.origin || ''} required type="text" placeholder="Desde (Origen)" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
-                <input name="destination" defaultValue={jobToEdit?.destination || ''} required type="text" placeholder={tripType === 'revision' ? 'Planta de Revisión (Destino)' : 'Hasta (Destino)'} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+                <input name="destination" list="directory-destinations" defaultValue={jobToEdit?.destination || ''} required type="text" placeholder={tripType === 'revision' ? 'Planta de Revisión (Destino)' : 'Hasta (Destino)'} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
               </div>
 
               {/* PARADAS INTERMEDIAS */}
@@ -323,7 +353,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider ml-1">Hasta / Destino (Opcional)</label>
-                <input name="destination" defaultValue={jobToEdit?.destination || ''} type="text" placeholder="Si requiere moverse a otro lugar" className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white shadow-sm" />
+                <input name="destination" list="directory-destinations" defaultValue={jobToEdit?.destination || ''} type="text" placeholder="Si requiere moverse a otro lugar" className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white shadow-sm" />
               </div>
             </div>
           </div>

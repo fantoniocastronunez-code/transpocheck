@@ -1,11 +1,24 @@
-import React, { useState } from 'react';
-import { collection, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
-import { Camera, Eye, User, Edit2, Trash2, Truck, Clock, X, Plus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { collection, addDoc, updateDoc, doc, deleteDoc, getDocs } from 'firebase/firestore';
+import { Camera, Eye, User, Edit2, Trash2, Truck, Clock, X, Plus, BookOpen, Phone } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import { LICENCIAS, resizeImage } from '../../utils/helpers';
 
 export default function ConfigView({ allClientsList, customClients, vehicles, drivers, db, showAlert, showConfirm }) {
   const [configSubTab, setConfigSubTab] = useState('clients');
+  const [editingDir, setEditingDir] = useState(null); // NUEVO: Estado editar directorio
+  const [directoryList, setDirectoryList] = useState([]); // NUEVO: Base de datos directorio
+  
+  // NUEVO: Cargar el directorio desde Firebase
+  useEffect(() => {
+    const fetchDirectory = async () => {
+      try {
+        const snap = await getDocs(collection(db, 'directory'));
+        setDirectoryList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch(e) { console.error("Error cargando directorio:", e); }
+    };
+    fetchDirectory();
+  }, [db, configSubTab]);
   const [editingDriver, setEditingDriver] = useState(null);
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [editingClient, setEditingClient] = useState(null);
@@ -65,6 +78,7 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
          <button onClick={()=>setConfigSubTab('clients')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='clients'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Clientes</button>
          <button onClick={()=>setConfigSubTab('vehicles')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='vehicles'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Vehículos</button>
          <button onClick={()=>setConfigSubTab('drivers')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='drivers'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Conductores</button>
+         <button onClick={()=>setConfigSubTab('directory')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='directory'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Directorio</button>
       </div>
 
       {configSubTab === 'clients' && (
@@ -436,6 +450,79 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
                        setDriverDocs({ photo: d.photo || null, idFront: d.idFront || null, idBack: d.idBack || null, licenseFront: d.licenseFront || null, licenseBack: d.licenseBack || null }); 
                      }} className="px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors shadow-sm text-xs font-bold flex items-center gap-1.5" title="Ver Perfil y Documentos"><User className="w-4 h-4"/> Perfil</button>
                      <button onClick={() => showConfirm("¿Eliminar conductor?", async()=>await deleteDoc(doc(db,'drivers',d.id)))} className="p-2 bg-red-100 hover:bg-red-200 text-red-500 rounded-lg transition-colors shadow-sm"><Trash2 className="w-4 h-4"/></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- NUEVA PESTAÑA: DIRECTORIO --- */}
+      {configSubTab === 'directory' && (
+        <div className="grid md:grid-cols-2 gap-6 w-full min-w-0">
+          <form key={editingDir ? editingDir.id : 'new-dir'} onSubmit={async (e) => { 
+             e.preventDefault(); 
+             const fd = new FormData(e.target); 
+             const data = { 
+                placeName: fd.get('placeName').trim(), 
+                contactName: fd.get('contactName').trim(), 
+                contactPhone: fd.get('contactPhone').trim() 
+             }; 
+             try { 
+                if (editingDir) { 
+                   await updateDoc(doc(db, 'directory', editingDir.id), data); 
+                   setEditingDir(null); 
+                   showAlert("Destino actualizado."); 
+                } else { 
+                   await addDoc(collection(db, 'directory'), data); 
+                   showAlert("Destino guardado en el directorio."); 
+                } 
+                const snap = await getDocs(collection(db, 'directory'));
+                setDirectoryList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+                e.target.reset(); 
+             } catch (err) { showAlert("Error al guardar."); } 
+          }} className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+            <div className="flex justify-between items-center">
+               <h3 className="font-extrabold flex items-center gap-2 text-slate-800"><BookOpen className="text-blue-600 w-5 h-5"/> {editingDir ? 'Editar Destino' : 'Nuevo Destino'}</h3>
+               {editingDir && <button type="button" onClick={()=>setEditingDir(null)} className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-lg uppercase">Cancelar</button>}
+            </div>
+            <p className="text-[10px] font-bold text-slate-500 mb-2 leading-tight">Agrega los destinos frecuentes. Cuando crees un trabajo y escribas exactamente el mismo lugar, el sistema adjuntará a este encargado automáticamente.</p>
+            
+            <div className="space-y-1">
+               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Lugar / Destino exacto</label>
+               <input name="placeName" defaultValue={editingDir?.placeName} placeholder="Ej: Samex Quilicura" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
+            </div>
+            <div className="space-y-1">
+               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre del Encargado</label>
+               <input name="contactName" defaultValue={editingDir?.contactName} placeholder="Ej: Luis Ahumada" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
+            </div>
+            <div className="space-y-1">
+               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Teléfono (Llamada o WhatsApp)</label>
+               <input name="contactPhone" defaultValue={editingDir?.contactPhone} placeholder="Ej: +56912345678" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
+            </div>
+
+            <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-black text-sm transition-colors shadow-md shadow-blue-200 mt-2">
+               {editingDir ? 'Guardar Cambios' : 'Agregar al Directorio'}
+            </button>
+          </form>
+
+          <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 max-h-[85vh] overflow-y-auto">
+            <h3 className="font-extrabold text-slate-800 mb-4">Destinos Guardados</h3>
+            <div className="space-y-2">
+              {directoryList.length === 0 ? <p className="text-sm font-bold text-slate-400 text-center py-4">Directorio vacío</p> : directoryList.map(d=>(
+                <div key={d.id} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-xl hover:border-blue-200 transition-all">
+                  <div className="flex-1 min-w-0 pr-2">
+                    <p className="text-sm font-extrabold text-slate-800 truncate">{d.placeName}</p>
+                    <p className="text-[11px] font-bold text-slate-500 mt-0.5 truncate flex items-center gap-1"><User className="w-3 h-3"/> {d.contactName}</p>
+                    <p className="text-[11px] font-bold text-slate-500 mt-0.5 truncate flex items-center gap-1"><Phone className="w-3 h-3"/> {d.contactPhone}</p>
+                  </div>
+                  <div className="flex flex-col gap-1.5 shrink-0 ml-2">
+                     <button onClick={() => setEditingDir(d)} className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors shadow-sm" title="Editar"><Edit2 className="w-3.5 h-3.5"/></button>
+                     <button onClick={() => showConfirm("¿Eliminar destino del directorio?", async () => { 
+                         await deleteDoc(doc(db,'directory',d.id));
+                         setDirectoryList(directoryList.filter(item => item.id !== d.id));
+                     })} className="p-1.5 bg-red-100 hover:bg-red-200 text-red-500 rounded-lg transition-colors shadow-sm" title="Eliminar"><Trash2 className="w-3.5 h-3.5"/></button>
                   </div>
                 </div>
               ))}

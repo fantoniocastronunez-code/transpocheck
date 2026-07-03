@@ -684,6 +684,22 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                 </div>
               </div>
             )}
+
+            {/* NUEVO: CONTACTO AUTOMÁTICO EN DESTINO */}
+            {j.contactName && j.contactPhone && (
+              <div className="mt-3 pt-3 border-t border-slate-200/80 flex items-center justify-between gap-2">
+                 <div className="flex items-center gap-2">
+                    <div className="bg-green-100 p-1.5 rounded-full"><Users className="w-4 h-4 text-green-600"/></div>
+                    <div>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Encargado en Destino</p>
+                      <p className="text-xs font-bold text-slate-700">{j.contactName}</p>
+                    </div>
+                 </div>
+                 <a href={`tel:${j.contactPhone.replace(/[^\d+]/g, '')}`} className="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-colors shadow-sm active:scale-95 shrink-0">
+                   📞 Llamar
+                 </a>
+              </div>
+            )}
           </div>
 
           {j.tripType === 'revision' && <div className="mb-3 bg-amber-50 border border-amber-200 p-2 rounded-xl text-center shadow-sm"><span className="text-[10px] font-black text-amber-700 uppercase">REVISIÓN TÉCNICA (TIPO {j.rtData?.type})</span></div>}
