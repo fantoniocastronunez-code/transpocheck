@@ -40,6 +40,7 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
 
   // --- MOTOR DE CÁMARA INTERNA MULTI-LENTE (WebRTC) ---
   const [inAppCamera, setInAppCamera] = useState({ isOpen: false, onCapture: null, title: '', stream: null, devices: [], currentIndex: 0 });
+  const [isLandscape, setIsLandscape] = useState(false); // NUEVO: Detector de Giroscopio
   const videoRef = React.useRef(null);
 
   const startCamera = async (deviceId = null, isFirst = false, title = '', callback = null) => {
@@ -54,13 +55,11 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
 
        if (isFirst) {
           const devices = await navigator.mediaDevices.enumerateDevices();
-          // Filtramos estrictamente las cámaras traseras (environment/back)
           let backCameras = devices.filter(d => d.kind === 'videoinput' && (d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('trasera') || d.label.toLowerCase().includes('environment') || d.label.toLowerCase().includes('0')));
-          // Fallback por si el celular no reporta las etiquetas correctamente
           if (backCameras.length === 0) backCameras = devices.filter(d => d.kind === 'videoinput');
           
           allVideoDevices = backCameras;
-          cIndex = 0; // Inicia siempre en el lente principal (1x)
+          cIndex = 0; 
        }
 
        setInAppCamera(prev => ({ 
@@ -86,6 +85,12 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
        input.onchange = (e) => { if (e.target.files[0]) callback(e.target.files[0]); };
        input.click(); return;
     }
+    
+    // Pide permiso al giroscopio en dispositivos Apple al hacer el click
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+       DeviceOrientationEvent.requestPermission().catch(() => {});
+    }
+    
     startCamera(null, true, title, callback);
   };
 
@@ -99,6 +104,23 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
     if (inAppCamera.isOpen && inAppCamera.stream && videoRef.current) videoRef.current.srcObject = inAppCamera.stream;
   }, [inAppCamera.isOpen, inAppCamera.stream]);
 
+  // NUEVO: Oído biónico para el giroscopio del celular
+  useEffect(() => {
+    const handleOrientation = (event) => {
+      // 'gamma' detecta la inclinación lateral del celular. Si pasa los 45 grados, está apaisado (horizontal).
+      if (event.gamma && Math.abs(event.gamma) > 45) {
+        setIsLandscape(true);
+      } else {
+        setIsLandscape(false);
+      }
+    };
+
+    if (inAppCamera.isOpen) window.addEventListener('deviceorientation', handleOrientation);
+    else setIsLandscape(false);
+    
+    return () => window.removeEventListener('deviceorientation', handleOrientation);
+  }, [inAppCamera.isOpen]);
+
   const closeCamera = () => {
     if (inAppCamera.stream) inAppCamera.stream.getTracks().forEach(track => track.stop());
     setInAppCamera({ isOpen: false, onCapture: null, title: '', stream: null, devices: [], currentIndex: 0 });
@@ -106,10 +128,28 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
 
   const takeInAppPhoto = () => {
     if (!videoRef.current) return;
+    
+    const video = videoRef.current;
     const canvas = document.createElement('canvas');
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
-    canvas.getContext('2d').drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+    const ctx = canvas.getContext('2d');
+    
+    // Magia anti-bloqueo de pantalla:
+    // Si el giroscopio sabe que está horizontal, pero el video sigue dibujándose más alto que ancho (bloqueado)...
+    const needsRotation = isLandscape && (video.videoHeight > video.videoWidth);
+
+    if (needsRotation) {
+      // Volteamos el lienzo 90 grados matemáticamente
+      canvas.width = video.videoHeight;
+      canvas.height = video.videoWidth;
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate(-90 * Math.PI / 180);
+      ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2);
+    } else {
+      // Fotografía normal
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    }
 
     canvas.toBlob((blob) => {
       if (!blob) return;
@@ -1387,8 +1427,15 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
           <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
              <video ref={videoRef} playsInline autoPlay className="w-full h-full object-cover" />
              <div className="absolute inset-0 pointer-events-none border-[40px] border-black/40 flex items-center justify-center">
-               <div className="w-full h-full border-2 border-white/50 border-dashed rounded-xl"></div>
+               <div className={`w-full h-full border-2 border-dashed rounded-xl transition-all duration-500 ${isLandscape ? 'border-green-400 bg-green-500/10 shadow-[0_0_50px_rgba(34,197,94,0.3)_inset]' : 'border-white/50'}`}></div>
              </div>
+             
+             {/* FEEDBACK INTELIGENTE (ALERTA VERDE) */}
+             {isLandscape && (
+               <div className="absolute top-16 bg-green-600/90 backdrop-blur-md text-white px-5 py-2.5 rounded-full font-black text-xs uppercase tracking-widest flex items-center gap-2 z-50 border border-green-400 shadow-[0_0_20px_rgba(34,197,94,0.6)] animate-in slide-in-from-top-4">
+                 <CheckCircle className="w-4 h-4"/> Modo Apaisado Activo
+               </div>
+             )}
              
              {/* Botones de Lente estilo App Nativa (0.5x y 1x) */}
              {inAppCamera.devices.length > 1 && (
@@ -1487,5 +1534,6 @@ export default function ChecklistForm({ job, db, currentUserEmail, onCancel, onC
     </div>
   );
 }
+
 
 
