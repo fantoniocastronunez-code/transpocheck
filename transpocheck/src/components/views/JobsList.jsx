@@ -688,19 +688,24 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               </div>
             )}
 
-            {/* NUEVO: CONTACTO AUTOMÁTICO EN DESTINO */}
+            {/* NUEVO: CONTACTO AUTOMÁTICO EN DESTINO (LLAMADA + WHATSAPP) */}
             {j.contactName && j.contactPhone && (
               <div className="mt-3 pt-3 border-t border-slate-200/80 flex items-center justify-between gap-2">
-                 <div className="flex items-center gap-2">
-                    <div className="bg-green-100 p-1.5 rounded-full"><Users className="w-4 h-4 text-green-600"/></div>
-                    <div>
+                 <div className="flex items-center gap-2 min-w-0">
+                    <div className="bg-emerald-100 p-1.5 rounded-full shrink-0"><Users className="w-4 h-4 text-emerald-600"/></div>
+                    <div className="truncate">
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Encargado en Destino</p>
-                      <p className="text-xs font-bold text-slate-700">{j.contactName}</p>
+                      <p className="text-xs font-bold text-slate-700 truncate">{j.contactName}</p>
                     </div>
                  </div>
-                 <a href={`tel:${j.contactPhone.replace(/[^\d+]/g, '')}`} className="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-colors shadow-sm active:scale-95 shrink-0">
-                   📞 Llamar
-                 </a>
+                 <div className="flex gap-1.5 shrink-0">
+                   <a href={`https://wa.me/${j.contactPhone.replace(/[^\d]/g, '')}?text=${encodeURIComponent('Hola ' + j.contactName + ', soy de LogisticAPP y voy en camino al destino con el vehículo.')}`} target="_blank" rel="noopener noreferrer" className="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1 transition-colors shadow-sm active:scale-95">
+                     💬 WA
+                   </a>
+                   <a href={`tel:${j.contactPhone.replace(/[^\d+]/g, '')}`} className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1 transition-colors shadow-sm active:scale-95">
+                     📞 Llamar
+                   </a>
+                 </div>
               </div>
             )}
           </div>
@@ -1185,6 +1190,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       </div>
   );
 }
+
 
 
 
