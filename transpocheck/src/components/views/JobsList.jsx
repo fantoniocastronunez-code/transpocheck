@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { updateDoc, doc, deleteDoc, addDoc, collection, deleteField, getDocs, query, where } from 'firebase/firestore';
 import { 
   Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, 
@@ -22,6 +22,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [isPendingOpen, setIsPendingOpen] = useState(true);
   const [isInProgressOpen, setIsInProgressOpen] = useState(true);
   const [processingId, setProcessingId] = useState(null); 
+
+  // 6. SKELETON SCREENS (Carga Fantasma)
+  const [isAppReady, setIsAppReady] = useState(false);
+  useEffect(() => {
+     const timer = setTimeout(() => setIsAppReady(true), 800);
+     return () => clearTimeout(timer);
+  }, []); 
 
   // NUEVO: Motor que revisa la configuración del cliente y dispara correos
   const notifyClient = async (jobData, statusType) => {
@@ -60,31 +67,35 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
      } catch (e) { console.error("Error al notificar al cliente:", e); }
   };
 
+  // 8. INTERFAZ OPTIMISTA (Ejecución en 0 milisegundos sin "await")
   const updatePhase = async (job, phase, extra = {}) => {
     if (processingId) return;
     setProcessingId(`${job.id}-${phase}`);
     try { 
-       await updateDoc(doc(db, 'transport_jobs', job.id), { phase, ...extra }); 
-       // Correo de EN RUTA (Cuando desliza "Vehículo en mi poder")
+       // Quitamos el 'await'. Firebase actualiza la pantalla al instante usando su memoria caché
+       updateDoc(doc(db, 'transport_jobs', job.id), { phase, ...extra }).catch(e => {
+           console.error(e); showAlert("Error de conexión al actualizar fase.");
+       }); 
        if (phase === 'picked_up') notifyClient(job, 'en_ruta');
     } 
-    catch (e) { console.error(e); showAlert("Error de conexión al actualizar fase."); }
-    finally { setProcessingId(null); }
+    finally { 
+       // Liberamos la interfaz casi al instante (0.3 segundos)
+       setTimeout(() => setProcessingId(null), 300); 
+    }
   }; 
 
   const handleAcceptJob = async (job) => {
     if (processingId) return;
     setProcessingId(`${job.id}-accept`);
     try { 
-       await updateDoc(doc(db, 'transport_jobs', job.id), { status: 'accepted', acceptedByEmail: currentUserEmail }); 
-       // Correo de ASIGNACIÓN
+       // Quitamos el 'await' para una respuesta visual inmediata
+       updateDoc(doc(db, 'transport_jobs', job.id), { status: 'accepted', acceptedByEmail: currentUserEmail }).catch(e => console.error(e)); 
        notifyClient({ ...job, acceptedByEmail: currentUserEmail }, 'asignado');
-       
-       // NUEVO: Desplazar la pantalla suavemente hacia arriba para que el conductor vea su trabajo en "En Curso"
        window.scrollTo({ top: 0, behavior: 'smooth' });
     } 
-    catch (e) { console.error(e); }
-    finally { setProcessingId(null); }
+    finally { 
+       setTimeout(() => setProcessingId(null), 300); 
+    }
   }; 
   
   const now = new Date();
@@ -960,6 +971,30 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       showAlert("Ocurrió un error inesperado al procesar el archivo comprimido.");
     }
   };
+
+  if (!isAppReady) {
+    return (
+      <div className="pb-16 space-y-6 pt-4">
+        {/* Esqueleto del Buscador */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <div className="w-full h-14 bg-slate-200/60 animate-pulse rounded-2xl"></div>
+          {isAdminView && <div className="w-full sm:w-48 h-14 bg-slate-200/60 animate-pulse rounded-2xl"></div>}
+        </div>
+        {/* Esqueletos de las Columnas (En Curso y Pendientes) */}
+        <div className="flex flex-col md:flex-row gap-6">
+          <div className="w-full md:w-1/2 space-y-4">
+             <div className="h-12 bg-blue-100/50 animate-pulse rounded-2xl w-full"></div>
+             <div className="h-56 bg-slate-200/50 animate-pulse rounded-3xl w-full"></div>
+             <div className="h-56 bg-slate-200/50 animate-pulse rounded-3xl w-full"></div>
+          </div>
+          <div className="w-full md:w-1/2 space-y-4">
+             <div className="h-12 bg-slate-200/60 animate-pulse rounded-2xl w-full"></div>
+             <div className="h-56 bg-slate-200/50 animate-pulse rounded-3xl w-full"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pb-16">

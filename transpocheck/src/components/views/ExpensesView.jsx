@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { updateDoc, doc, addDoc, collection, deleteDoc } from 'firebase/firestore';
 import { 
   Wallet, ArrowUpCircle, ArrowDownCircle, CheckCircle, 
@@ -23,6 +23,13 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
 
   const activeOrPendingJobs = jobs?.filter(j => j.status === 'pending' || j.status === 'accepted') || [];
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 6. SKELETON SCREENS (Carga Fantasma)
+  const [isAppReady, setIsAppReady] = useState(false);
+  useEffect(() => {
+     const timer = setTimeout(() => setIsAppReady(true), 800);
+     return () => clearTimeout(timer);
+  }, []);
 
   const addExp = async (e, type, amount, detail, driverId, dName, dEmail) => {
     e.preventDefault();
@@ -53,12 +60,14 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
     }
 
     try {
-      await updateDoc(doc(db, 'drivers', driverId), { balance: newBalance });
-      await addDoc(collection(db, 'expenses'), { driverId, driverEmail: dEmail, driverName: dName, type, amount, detail: detailString, jobId: assocJobId, deductedAmount, createdAt: Date.now() });
+      // 8. INTERFAZ OPTIMISTA: Quitamos los 'await' para que Firebase lo resuelva en segundo plano
+      updateDoc(doc(db, 'drivers', driverId), { balance: newBalance });
+      addDoc(collection(db, 'expenses'), { driverId, driverEmail: dEmail, driverName: dName, type, amount, detail: detailString, jobId: assocJobId, deductedAmount, createdAt: Date.now() });
+      
       e.target.reset(); 
       showAlert(type === 'assignment' ? "Fondo asignado correctamente." : "Gasto registrado exitosamente.");
     } catch (err) { console.error(err); }
-    finally { setIsSubmitting(false); }
+    finally { setTimeout(() => setIsSubmitting(false), 300); }
   };
 
   const [isSubmittingReturn, setIsSubmittingReturn] = useState(false);
@@ -72,27 +81,24 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
     let det = returnMethod === 'efectivo' ? 'Rendición en Efectivo (En revisión)' : 'Rendición de Vuelto (En revisión)';
     
     try {
-      await addDoc(collection(db, 'expenses'), { driverId: myDriver.id, driverEmail: myDriver.email, driverName: myDriver.name, type: 'pending_return', amount: myDriver.balance, detail: det, receiptImage: returnReceipt, createdAt: Date.now() });
+      // Interfaz Optimista: Sin await en la base de datos
+      addDoc(collection(db, 'expenses'), { driverId: myDriver.id, driverEmail: myDriver.email, driverName: myDriver.name, type: 'pending_return', amount: myDriver.balance, detail: det, receiptImage: returnReceipt, createdAt: Date.now() });
       
-      // NUEVO: Enviar alerta automática por correo al Administrador
-      try {
-         await fetch('/api/notify-admin', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-               type: 'rendicion',
-               driverName: myDriver.name,
-               amount: myDriver.balance,
-               detail: det
-            })
-         });
-      } catch (mailErr) {
-         console.warn("Aviso de correo al admin falló en el frontend:", mailErr);
-      }
+      // Disparamos el correo en segundo plano (sin await)
+      fetch('/api/notify-admin', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+            type: 'rendicion',
+            driverName: myDriver.name,
+            amount: myDriver.balance,
+            detail: det
+         })
+      }).catch(mailErr => console.warn("Aviso de correo al admin falló:", mailErr));
 
       setIsReturnOpen(false); setReturnReceipt(null); showAlert("Rendición enviada. Esperando validación de Admin.");
     } catch(e) {}
-    finally { setIsSubmittingReturn(false); }
+    finally { setTimeout(() => setIsSubmittingReturn(false), 300); }
   };
 
   const approveReturn = async (exp) => {
@@ -177,6 +183,21 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
       return d.toLocaleDateString();
     } catch(e) { return 'Fecha inválida'; }
   };
+
+  // Muestra el Carga Fantasma mientras inicia la vista
+  if (!isAppReady) {
+    return (
+      <main className={`${isAdminView ? 'max-w-3xl' : 'max-w-md'} mx-auto p-4 pt-20 sm:pt-24 space-y-6 pb-24`}>
+        <div className="h-8 w-48 bg-slate-200/60 animate-pulse rounded-lg mb-6"></div>
+        <div className="h-32 bg-slate-200/50 animate-pulse rounded-3xl w-full mb-6"></div>
+        <div className="space-y-4">
+           <div className="h-24 bg-slate-100/80 animate-pulse rounded-2xl w-full"></div>
+           <div className="h-24 bg-slate-100/80 animate-pulse rounded-2xl w-full"></div>
+           <div className="h-24 bg-slate-100/80 animate-pulse rounded-2xl w-full"></div>
+        </div>
+      </main>
+    );
+  }
 
   if (isAdminView) {
     return (
