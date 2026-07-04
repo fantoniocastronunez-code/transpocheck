@@ -88,9 +88,29 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     if (processingId) return;
     setProcessingId(`${job.id}-accept`);
     try { 
-       // Quitamos el 'await' para una respuesta visual inmediata
+       // 1. Actualiza la base de datos al instante
        updateDoc(doc(db, 'transport_jobs', job.id), { status: 'accepted', acceptedByEmail: currentUserEmail }).catch(e => console.error(e)); 
+       
+       // 2. Avisa al cliente
        notifyClient({ ...job, acceptedByEmail: currentUserEmail }, 'asignado');
+       
+       // 3. NUEVO: Avisa a los administradores en segundo plano
+       const driverName = drivers?.find(d => d.email === currentUserEmail)?.name || currentUserEmail;
+       fetch('/api/notify-admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+             type: 'job_accepted',
+             driverName: driverName,
+             jobDetails: {
+                client: job.client || 'Sin Cliente',
+                vehicle: `${job.brand || ''} ${job.model || ''}`.trim() || job.description || 'Servicio',
+                plate: job.plate || job.vin || 'S/N',
+                origin: job.origin || 'No especificado'
+             }
+          })
+       }).catch(err => console.warn("Aviso al admin falló:", err));
+
        window.scrollTo({ top: 0, behavior: 'smooth' });
     } 
     finally { 
