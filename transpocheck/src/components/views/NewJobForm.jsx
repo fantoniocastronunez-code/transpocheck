@@ -51,22 +51,48 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     }
   }, [brand, model, vehicles]);
 
-  const handleVehicleSearch = (searchValue, type) => {
-    const val = searchValue.toUpperCase(); 
+  const handleVehicleSearch = async (searchValue, type) => {
+    const val = searchValue.toUpperCase().trim();
     if (type === 'plate') setPlate(val);
     if (type === 'vin') setVin(val);
-    
-    const v = vehicles.find(x => (val && x.plate === val) || (val && x.vin === val));
-    if (v) {
-      setBrand(v.brand || ''); setModel(v.model || '');
-      if (v.plate && type === 'vin') setPlate(v.plate);
-      if (v.vin && type === 'plate') setVin(v.vin);
-      if (v.vehicleType) setVehicleType(v.vehicleType); 
-      if (allClientsList.includes(v.client)) setSelectedClient(v.client); else { setSelectedClient('OTRO'); setManualClient(v.client); }
+
+    // Reseteamos estados visuales
+    setVehicleFoundStatus(null);
+
+    // Disparamos la búsqueda solo si la patente parece estar completa (mínimo 5 letras) o el VIN
+    if ((type === 'plate' && val.length >= 5) || (type === 'vin' && val.length >= 6)) {
+      setIsSearchingVehicle(true);
+
+      // Simulamos un retraso de red para dar retroalimentación visual de "procesando"
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      // AQUÍ PUEDES CONECTAR UNA API EXTERNA CHILENA A FUTURO.
+      // Ejemplo: const response = await fetch(`https://api.patentes.cl/${val}`); const data = await response.json();
+      
+      // Por ahora, buscamos instantáneamente en nuestra base de datos:
+      const v = vehicles.find(x => (val && x.plate === val) || (val && x.vin === val));
+
+      if (v) {
+        setBrand(v.brand || ''); setModel(v.model || '');
+        if (v.plate && type === 'vin') setPlate(v.plate);
+        if (v.vin && type === 'plate') setVin(v.vin);
+        if (v.vehicleType) setVehicleType(v.vehicleType);
+        if (allClientsList.includes(v.client)) setSelectedClient(v.client); else { setSelectedClient('OTRO'); setManualClient(v.client); }
+        
+        setVehicleFoundStatus('found');
+        // Limpiamos el efecto verde después de 3 segundos
+        setTimeout(() => setVehicleFoundStatus(null), 3000);
+      } else {
+        setVehicleFoundStatus('not_found');
+      }
+      
+      setIsSearchingVehicle(false);
     }
   };
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSearchingVehicle, setIsSearchingVehicle] = useState(false);
+  const [vehicleFoundStatus, setVehicleFoundStatus] = useState(null); // 'found', 'not_found', null
 
   const handleAddWaypoint = () => setWaypoints([...waypoints, '']);
   const handleWaypointChange = (index, val) => { const nw = [...waypoints]; nw[index] = val; setWaypoints(nw); };
@@ -250,15 +276,19 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
               )}
             </div>
 
-            <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl space-y-4 animate-in fade-in slide-in-from-bottom-2">
-               <h3 className="text-base font-bold text-slate-700">2. Vehículo <span className="text-xs text-blue-500 font-bold">(Escribe para autocompletar)</span></h3>
+            <div className={`p-4 sm:p-6 rounded-2xl space-y-4 animate-in fade-in slide-in-from-bottom-2 transition-colors duration-300 ${vehicleFoundStatus === 'found' ? 'bg-green-50 border border-green-200' : 'bg-slate-50 border border-transparent'}`}>
+               <div className="flex justify-between items-center">
+                 <h3 className="text-base font-bold text-slate-700">2. Vehículo <span className="text-xs text-blue-500 font-bold">(Escribe para autocompletar)</span></h3>
+                 {isSearchingVehicle && <span className="text-xs font-black text-blue-600 bg-blue-100 px-2 py-1 rounded-md animate-pulse">Buscando...</span>}
+                 {vehicleFoundStatus === 'found' && !isSearchingVehicle && <span className="text-xs font-black text-green-700 bg-green-200 px-2 py-1 rounded-md flex items-center gap-1"><CheckCircle className="w-3 h-3"/> ¡Encontrado!</span>}
+               </div>
                <div className="grid grid-cols-2 gap-4">
-                 <input value={plate} onChange={e=>handleVehicleSearch(e.target.value, 'plate')} type="text" placeholder="Patente (Ej. ABCD12)" className="w-full border-2 border-slate-300 p-3 text-sm rounded-xl uppercase outline-none focus:border-blue-500 font-black bg-white text-slate-800 shadow-sm" />
-                 <input value={vin} onChange={e=>handleVehicleSearch(e.target.value, 'vin')} type="text" placeholder="VIN / Chasis" className="w-full border-2 border-slate-300 p-3 text-sm rounded-xl uppercase outline-none focus:border-blue-500 font-black bg-white text-slate-800 shadow-sm" />
-                 <input value={brand} onChange={e=>setBrand(e.target.value)} type="text" placeholder="Marca" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-800" />
-                 <input value={model} onChange={e=>setModel(e.target.value)} type="text" placeholder="Modelo" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-800" />
+                 <input value={plate} onChange={e=>handleVehicleSearch(e.target.value, 'plate')} type="text" placeholder="Patente (Ej. ABCD12)" className={`w-full border-2 p-3 text-sm rounded-xl uppercase outline-none font-black bg-white shadow-sm transition-colors ${isSearchingVehicle ? 'border-blue-400 ring-2 ring-blue-100' : vehicleFoundStatus === 'found' ? 'border-green-400 text-green-800' : 'border-slate-300 focus:border-blue-500 text-slate-800'}`} />
+                 <input value={vin} onChange={e=>handleVehicleSearch(e.target.value, 'vin')} type="text" placeholder="VIN / Chasis" className={`w-full border-2 p-3 text-sm rounded-xl uppercase outline-none font-black bg-white shadow-sm transition-colors ${isSearchingVehicle ? 'border-blue-400 ring-2 ring-blue-100' : vehicleFoundStatus === 'found' ? 'border-green-400 text-green-800' : 'border-slate-300 focus:border-blue-500 text-slate-800'}`} />
+                 <input value={brand} onChange={e=>setBrand(e.target.value)} type="text" placeholder="Marca" className={`w-full border-2 p-3 text-sm rounded-xl outline-none font-semibold bg-white transition-colors ${vehicleFoundStatus === 'found' ? 'border-green-300 text-green-800' : 'border-slate-200 focus:border-blue-500 text-slate-800'}`} />
+                 <input value={model} onChange={e=>setModel(e.target.value)} type="text" placeholder="Modelo" className={`w-full border-2 p-3 text-sm rounded-xl outline-none font-semibold bg-white transition-colors ${vehicleFoundStatus === 'found' ? 'border-green-300 text-green-800' : 'border-slate-200 focus:border-blue-500 text-slate-800'}`} />
 
-                 <select value={vehicleType} onChange={e=>setVehicleType(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl col-span-2 outline-none focus:border-blue-500 font-bold text-slate-700 bg-white">
+                 <select value={vehicleType} onChange={e=>setVehicleType(e.target.value)} className={`w-full border-2 p-3 text-sm rounded-xl col-span-2 outline-none font-bold bg-white transition-colors ${vehicleFoundStatus === 'found' ? 'border-green-300 text-green-800' : 'border-slate-200 focus:border-blue-500 text-slate-700'}`}>
                    <option value="auto">🚙 Auto / SUV</option>
                    <option value="camioneta">🛻 Camioneta</option>
                    <option value="furgon_pequeno">🚐 Furgón Pequeño</option>
