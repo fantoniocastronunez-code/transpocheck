@@ -28,7 +28,7 @@ export default function LeaderboardView({ jobs, drivers, isAdminView, db }) {
     return j.status === 'completed'; // Excluye los fallidos
   });
   
-  const ranking = drivers.map(d => { 
+  const ranking = drivers.filter(d => !d.isHidden).map(d => { 
      const dj = monthlyCompleted.filter(j => j.acceptedByEmail === d.email || (!j.acceptedByEmail && j.assignedEmails?.includes(d.email))); 
      const validScoreJobs = dj.filter(j => {
         const isService = j.tripType === 'simple' || j.isPintura;
@@ -116,5 +116,6 @@ export default function LeaderboardView({ jobs, drivers, isAdminView, db }) {
     </main>
   );
 }
+
 
 
