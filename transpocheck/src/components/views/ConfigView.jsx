@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, updateDoc, doc, deleteDoc, getDocs } from 'firebase/firestore';
-import { Camera, Eye, User, Edit2, Trash2, Truck, Clock, X, Plus, BookOpen, Phone } from 'lucide-react';
+import { Camera, Eye, EyeOff, User, Edit2, Trash2, Truck, Clock, X, Plus, BookOpen, Phone } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import { LICENCIAS, resizeImage } from '../../utils/helpers';
 
@@ -427,28 +428,38 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
             <h3 className="font-extrabold text-slate-800 mb-4">Directorio Logístico</h3>
             <div className="space-y-2">
               {drivers.length === 0 ? <p className="text-sm font-semibold text-slate-400">Directorio vacío</p> : drivers.map(d=>(
-                <div key={d.id} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-xl group transition-all">
+                <div key={d.id} className={`flex justify-between items-center p-3 border rounded-xl group transition-all ${d.isHidden ? 'bg-slate-100 border-slate-200 opacity-75' : 'bg-slate-50 border-slate-100'}`}>
                   <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 bg-white flex items-center justify-center shadow-sm">
+                    <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 bg-white flex items-center justify-center shadow-sm relative">
                       {d.photo ? (
-                        <img src={d.photo} alt={d.name} className="w-full h-full object-cover" />
+                        <img src={d.photo} alt={d.name} className={`w-full h-full object-cover ${d.isHidden ? 'grayscale' : ''}`} />
                       ) : (
                         <User className="w-5 h-5 text-slate-400" />
                       )}
+                      {d.isHidden && <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center"><EyeOff className="w-4 h-4 text-white"/></div>}
                     </div>
 
                     <div className="truncate">
-                      <p className="text-sm font-extrabold text-slate-800 truncate">{d.name}</p>
+                      <div className="flex items-center gap-2">
+                         <p className={`text-sm font-extrabold truncate ${d.isHidden ? 'text-slate-500 line-through decoration-slate-400' : 'text-slate-800'}`}>{d.name}</p>
+                         {d.isHidden && <span className="bg-slate-200 text-slate-500 border border-slate-300 text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest shrink-0">Oculto</span>}
+                      </div>
                       <p className="text-xs font-bold text-slate-400 truncate leading-tight">{d.email}</p>
                       {d.createdAt && <p className="text-[9px] font-bold text-slate-400 mt-0.5 flex items-center gap-1"><Clock className="w-3 h-3"/> Ingreso: {new Date(d.createdAt).toLocaleDateString('es-CL')}</p>}
-                      {d.licenses && d.licenses.length > 0 && <p className="text-[9px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md mt-1.5 w-fit border border-blue-100">Licencias: {d.licenses.join(', ')}</p>}
+                      {d.licenses && d.licenses.length > 0 && <p className={`text-[9px] font-black px-2 py-0.5 rounded-md mt-1.5 w-fit border ${d.isHidden ? 'bg-slate-200 text-slate-500 border-slate-300' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>Licencias: {d.licenses.join(', ')}</p>}
                     </div>
                   </div>
                   <div className="flex gap-1.5 shrink-0 ml-2">
+                     <button onClick={async () => {
+                         try { await updateDoc(doc(db, 'drivers', d.id), { isHidden: !d.isHidden }); }
+                         catch (e) { showAlert("Error al cambiar estado."); }
+                     }} className={`p-2 rounded-lg transition-colors shadow-sm ${d.isHidden ? 'bg-green-100 text-green-600 hover:bg-green-200 border border-green-200' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}`} title={d.isHidden ? "Restaurar Conductor" : "Ocultar Conductor"}>
+                         {d.isHidden ? <Eye className="w-4 h-4"/> : <EyeOff className="w-4 h-4"/>}
+                     </button>
                      <button onClick={() => { 
                        setEditingDriver(d); 
                        setDriverDocs({ photo: d.photo || null, idFront: d.idFront || null, idBack: d.idBack || null, licenseFront: d.licenseFront || null, licenseBack: d.licenseBack || null }); 
-                     }} className="px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors shadow-sm text-xs font-bold flex items-center gap-1.5" title="Ver Perfil y Documentos"><User className="w-4 h-4"/> Perfil</button>
+                     }} className={`px-3 py-2 rounded-lg transition-colors shadow-sm text-xs font-bold flex items-center gap-1.5 ${d.isHidden ? 'bg-slate-200 text-slate-500 hover:bg-slate-300' : 'bg-blue-100 hover:bg-blue-200 text-blue-600'}`} title="Ver Perfil y Documentos"><User className="w-4 h-4"/> Perfil</button>
                      <button onClick={() => showConfirm("¿Eliminar conductor?", async()=>await deleteDoc(doc(db,'drivers',d.id)))} className="p-2 bg-red-100 hover:bg-red-200 text-red-500 rounded-lg transition-colors shadow-sm"><Trash2 className="w-4 h-4"/></button>
                   </div>
                 </div>
@@ -541,4 +552,5 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
     </div>
   );
 }
+
 
