@@ -25,7 +25,8 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
 
   const defaultData = {
-    client: job.client||'', manualClient: '', brand: job.brand||'', model: job.model||'', plateOrVin: job.plate||job.vin||'', origin: job.origin||'', destination: job.destination||'', vehicleType: job.vehicleType||'auto', fuelLevel: 50, photos: { front:false, left:false, right:false, back:false, tire:false, dashboard:false, det1:false, det2:false, det3:false, det4:false }, 
+    client: job.client||'', manualClient: '', brand: job.brand||'', model: job.model||'', plateOrVin: job.plate||job.vin||'', origin: job.origin||'', destination: job.destination||'', vehicleType: job.vehicleType||'auto', fuelLevel: 50, 
+    photos: { front:false, left:false, right:false, back:false, tire:false, dashboard:false, ...Array.from({length: 30}).reduce((acc, _, i) => { acc[`det${i+1}`] = false; return acc; }, {}) }, 
     docs: job.checklist?.docs || initialDocs, 
     docsExpiry: job.checklist?.docsExpiry || initialDocsExpiry, 
     internalReminders: job.checklist?.internalReminders || initialReminders, 
@@ -439,6 +440,16 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     e.preventDefault();
     if (isSubmitting) return;
     if (!formData.noReception && !formData.signatureData) return showAlert("La firma del receptor es mandatoria.");
+    
+    // NUEVO: Validar que se suban todas las fotos obligatorias en Pintura/Grabado
+    if (job.tripType === 'simple' && (job.isPintura || job.isGrabado)) {
+       const reqPhotos = (job.qtyPintura || 0) + (job.qtyGrabado || 0);
+       const currentPhotos = Object.values(formData.photos || {}).filter(v => v).length;
+       if (currentPhotos < reqPhotos) {
+           return showAlert(`⚠️ Evidencia Incompleta: Debes adjuntar las ${reqPhotos} fotografías requeridas (Patentes y/o Vidrios) para poder cerrar y rendir esta acta.`);
+       }
+    }
+
     setIsSubmitting(true);
     
     let d = {...formData}; 
@@ -651,8 +662,10 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                        {(() => {
                          let p = 0;
                          if (job.tripType === 'simple') {
+                            const req = (job.isPintura || job.isGrabado) ? ((job.qtyPintura || 0) + (job.qtyGrabado || 0)) : 1;
+                            const cur = Object.values(formData.photos || {}).filter(v => v).length;
                             if (formData.observations) p += 33;
-                            if (Object.values(formData.photos || {}).filter(v => v).length >= 1) p += 33;
+                            if (cur >= req) p += 33;
                             if (formData.signatureData || formData.noReception) p += 34;
                          } else {
                             if (formData.brand && formData.model && formData.plateOrVin) p += 25;
@@ -666,9 +679,22 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                  </div>
                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                     <div className={`h-full transition-all duration-500 ease-out ${job.tripType === 'simple' ? 'bg-purple-500' : 'bg-blue-500'}`} style={{width: `${
-                         job.tripType === 'simple' 
-                         ? ((formData.observations ? 33 : 0) + (Object.values(formData.photos || {}).filter(v => v).length >= 1 ? 33 : 0) + (formData.signatureData || formData.noReception ? 34 : 0))
-                         : ((formData.brand ? 25 : 0) + (formData.fuelLevel !== undefined ? 25 : 0) + (Object.values(formData.photos || {}).filter(v => v).length >= 2 ? 25 : 0) + (formData.signatureData || formData.noReception ? 25 : 0))
+                       (() => {
+                         let p = 0;
+                         if (job.tripType === 'simple') {
+                            const req = (job.isPintura || job.isGrabado) ? ((job.qtyPintura || 0) + (job.qtyGrabado || 0)) : 1;
+                            const cur = Object.values(formData.photos || {}).filter(v => v).length;
+                            if (formData.observations) p += 33;
+                            if (cur >= req) p += 33;
+                            if (formData.signatureData || formData.noReception) p += 34;
+                         } else {
+                            if (formData.brand ? 25 : 0) p += 25;
+                            if (formData.fuelLevel !== undefined) p += 25;
+                            if (Object.values(formData.photos || {}).filter(v => v).length >= 2) p += 25;
+                            if (formData.signatureData || formData.noReception) p += 25;
+                         }
+                         return Math.min(100, p);
+                       })()
                     }%`}}></div>
                  </div>
               </div>
@@ -714,20 +740,45 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                     </div>
                   )}
 
-                  {job.tripType === 'simple' && step === 2 && (
-                    <div className="space-y-4 animate-in fade-in duration-200">
-                      <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Evidencia Fotográfica</h3>
-                      <p className="text-xs font-bold text-slate-500 mb-4">Añade al menos 1 fotografía que respalde el trabajo terminado.</p>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        {['det1', 'det2', 'det3', 'det4'].map((photoId, idx) => (
-                           <button type="button" key={photoId} onClick={() => openCamera(`Foto Trabajo ${idx+1}`, f => handlePic(f, photoId))} className={`w-full h-32 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white shadow-sm transition-all ${formData.photos[photoId] ? 'border-purple-400 ring-2 ring-purple-100' : 'border-dashed border-slate-300 hover:bg-slate-50'}`}>
-                             {formData.photos[photoId] ? <><img src={formData.photos[photoId]} className="absolute inset-0 w-full h-full object-cover opacity-60"/><CheckCircle className="w-6 h-6 text-purple-600 relative z-10 bg-white rounded-full"/><span className="text-[10px] font-black text-purple-900 relative z-10 bg-white/80 px-2 rounded-md">Foto {idx+1}</span></> : <><Camera className="w-6 h-6 text-slate-400"/><span className="text-xs font-black text-slate-500 uppercase">Foto {idx+1}</span></>}
-                           </button>
-                        ))}
+                  {job.tripType === 'simple' && step === 2 && (() => {
+                    const isSpecialJob = job.isPintura || job.isGrabado;
+                    const reqPhotos = isSpecialJob ? ((job.qtyPintura || 0) + (job.qtyGrabado || 0)) : 4;
+                    const photoKeys = Array.from({ length: reqPhotos > 0 ? reqPhotos : 4 }, (_, i) => `det${i + 1}`);
+
+                    return (
+                      <div className="space-y-4 animate-in fade-in duration-200">
+                        <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Evidencia Fotográfica</h3>
+                        
+                        {isSpecialJob ? (
+                          <div className="bg-purple-50 border-2 border-purple-200 p-4 rounded-2xl mb-4 shadow-sm">
+                             <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-1">Requisito Obligatorio</p>
+                             <p className="text-sm font-bold text-purple-900 leading-tight">Se requieren <span className="font-black bg-purple-200 px-1.5 py-0.5 rounded">{reqPhotos} fotografías</span> individuales (Una por cada patente o vidrio trabajado).</p>
+                          </div>
+                        ) : (
+                          <p className="text-xs font-bold text-slate-500 mb-4">Añade al menos 1 fotografía que respalde el trabajo terminado.</p>
+                        )}
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          {photoKeys.map((photoId, idx) => {
+                             let label = `Foto ${idx + 1}`;
+                             if (isSpecialJob) {
+                                if (idx < (job.qtyPintura || 0)) {
+                                   label = `Patente ${idx + 1}`;
+                                } else {
+                                   label = `Vidrio ${(idx + 1) - (job.qtyPintura || 0)}`;
+                                }
+                             }
+
+                             return (
+                               <button type="button" key={photoId} onClick={() => openCamera(`${label}`, f => handlePic(f, photoId))} className={`w-full h-32 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white shadow-sm transition-all ${formData.photos[photoId] ? 'border-purple-400 ring-2 ring-purple-100' : 'border-dashed border-purple-300 hover:bg-purple-50'}`}>
+                                 {formData.photos[photoId] ? <><img src={formData.photos[photoId]} className="absolute inset-0 w-full h-full object-cover opacity-60"/><CheckCircle className="w-6 h-6 text-purple-600 relative z-10 bg-white rounded-full"/><span className="text-[10px] font-black text-purple-900 relative z-10 bg-white/80 px-2 rounded-md">{label}</span></> : <><Camera className="w-6 h-6 text-purple-400"/><span className="text-[10px] font-black text-purple-600 uppercase tracking-wide text-center leading-tight">{label}</span></>}
+                               </button>
+                             );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {/* VISTA: TRASLADO NORMAL */}
                   {job.tripType !== 'simple' && step === 1 && (
@@ -1544,6 +1595,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     </div>
   );
 }
+
 
 
 
