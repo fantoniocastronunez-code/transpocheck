@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, updateDoc, doc, deleteDoc, getDocs } from 'firebase/firestore';
 import { Camera, Eye, EyeOff, User, Edit2, Trash2, Truck, Clock, X, Plus, BookOpen, Phone } from 'lucide-react';
@@ -7,10 +6,9 @@ import { LICENCIAS, resizeImage } from '../../utils/helpers';
 
 export default function ConfigView({ allClientsList, customClients, vehicles, drivers, db, showAlert, showConfirm }) {
   const [configSubTab, setConfigSubTab] = useState('clients');
-  const [editingDir, setEditingDir] = useState(null); // NUEVO: Estado editar directorio
-  const [directoryList, setDirectoryList] = useState([]); // NUEVO: Base de datos directorio
+  const [editingDir, setEditingDir] = useState(null); 
+  const [directoryList, setDirectoryList] = useState([]); 
   
-  // NUEVO: Cargar el directorio desde Firebase
   useEffect(() => {
     const fetchDirectory = async () => {
       try {
@@ -20,6 +18,7 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
     };
     fetchDirectory();
   }, [db, configSubTab]);
+
   const [editingDriver, setEditingDriver] = useState(null);
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [editingClient, setEditingClient] = useState(null);
@@ -27,41 +26,29 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
   const [driverDocs, setDriverDocs] = useState({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null });
   const [fullScreenDoc, setFullScreenDoc] = useState(null); 
   
-        // NUEVO ESTADO: Controla la lista dinámica de usuarios del cliente
-      const [clientContacts, setClientContacts] = useState([{ name: '', email: '' }]);
-      
-      // NUEVO: Estado del Panel de Notificaciones
-      const defaultNotifs = { creado: false, asignado: true, llegada_origen: false, en_ruta: true, llegada_destino: false, finalizado: true };
-      const [clientNotifs, setClientNotifs] = useState(defaultNotifs);
+  const [clientContacts, setClientContacts] = useState([{ name: '', email: '' }]);
+  
+  const defaultNotifs = { creado: false, asignado: true, llegada_origen: false, en_ruta: true, llegada_destino: false, finalizado: true };
+  const [clientNotifs, setClientNotifs] = useState(defaultNotifs);
 
-      React.useEffect(() => {
-        if (editingClient) {
-           const emails = editingClient.email ? editingClient.email.split(',').map(e => e.trim()).filter(Boolean) : [];
-           const names = editingClient.contactName ? editingClient.contactName.split(',').map(n => n.trim()) : [];
-           const mapped = emails.map((e, i) => ({ email: e, name: names[i] || '' }));
-           setClientContacts(mapped.length > 0 ? mapped : [{ name: '', email: '' }]);
-           
-           // Carga las notificaciones guardadas o adapta las del sistema antiguo
-           setClientNotifs(editingClient.notifications || {
-              creado: false,
-              asignado: !!editingClient.enableNotifications,
-              llegada_origen: false,
-              en_ruta: !!editingClient.enableNotifications,
-              llegada_destino: false,
-              finalizado: !!editingClient.enableNotifications
-           });
-        } else {
-           setClientContacts([{ name: '', email: '' }]);
-           setClientNotifs(defaultNotifs);
-        }
-      }, [editingClient]);
-
+  React.useEffect(() => {
+    if (editingClient) {
        const emails = editingClient.email ? editingClient.email.split(',').map(e => e.trim()).filter(Boolean) : [];
        const names = editingClient.contactName ? editingClient.contactName.split(',').map(n => n.trim()) : [];
        const mapped = emails.map((e, i) => ({ email: e, name: names[i] || '' }));
        setClientContacts(mapped.length > 0 ? mapped : [{ name: '', email: '' }]);
+       
+       setClientNotifs(editingClient.notifications || {
+          creado: false,
+          asignado: !!editingClient.enableNotifications,
+          llegada_origen: false,
+          en_ruta: !!editingClient.enableNotifications,
+          llegada_destino: false,
+          finalizado: !!editingClient.enableNotifications
+       });
     } else {
        setClientContacts([{ name: '', email: '' }]);
+       setClientNotifs(defaultNotifs);
     }
   }, [editingClient]);
 
@@ -113,7 +100,6 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
              const fd = new FormData(e.target); 
              const name = fd.get('name'); 
              
-             // Filtramos y transformamos la lista visual en strings para la Base de Datos
              const validContacts = clientContacts.filter(c => c.email.trim() !== '');
              if (validContacts.length === 0) return showAlert("Debes agregar al menos un correo de acceso.");
              
@@ -148,7 +134,6 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
             </div>
 
             <div className="space-y-4">
-               {/* 1. EL DESPLEGABLE NATIVO */}
                <div>
                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Seleccionar Empresa</label>
                  <select 
@@ -170,7 +155,6 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
                  </select>
                </div>
 
-               {/* 2. EL CAMPO DE NOMBRE (Editable o Nuevo) */}
                <div className="animate-in fade-in slide-in-from-top-1">
                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">
                     {editingClient ? 'Nombre de la Empresa (Editable)' : 'Nombre de la Nueva Empresa'}
@@ -514,7 +498,6 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
         </div>
       )}
 
-      {/* --- NUEVA PESTAÑA: DIRECTORIO --- */}
       {configSubTab === 'directory' && (
         <div className="grid md:grid-cols-2 gap-6 w-full min-w-0">
           <form key={editingDir ? editingDir.id : 'new-dir'} onSubmit={async (e) => { 
@@ -597,7 +580,3 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
     </div>
   );
 }
-
-
-
-
