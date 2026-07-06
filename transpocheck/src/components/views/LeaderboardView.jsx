@@ -1,19 +1,33 @@
 import React, { useState } from 'react';
-import { Trophy, Eye, X, MapPin, Navigation } from 'lucide-react';
+import { Trophy, Eye, X, MapPin, Navigation, EyeOff } from 'lucide-react';
+import { updateDoc, doc } from 'firebase/firestore';
 
-export default function LeaderboardView({ jobs, drivers, isAdminView }) {
+export default function LeaderboardView({ jobs, drivers, isAdminView, db }) {
   const [selectedDriverJobs, setSelectedDriverJobs] = useState(null);
   const now = new Date(); const firstOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
   
+  // NUEVO: Función para ocultar un trabajo manualmente del ranking
+  const toggleExclude = async (jobId, currentState) => {
+    if (!db) return;
+    try {
+      await updateDoc(doc(db, 'transport_jobs', jobId), { excludeFromRanking: !currentState });
+    } catch (e) { console.error("Error al actualizar la exclusión del ranking:", e); }
+  };
+
   const monthlyCompleted = jobs.filter(j => {
     const jobDate = j.completedAt || j.createdAt || 0;
     if (jobDate < firstOfCurrentMonth) return false;
-    return j.status === 'completed'; // Excluye los fallidos del puntaje del conductor
+    return j.status === 'completed'; // Excluye los fallidos
   });
   
   const ranking = drivers.map(d => { 
+     // Todos los trabajos (para mostrarlos en el historial visual)
      const dj = monthlyCompleted.filter(j => j.acceptedByEmail === d.email || (!j.acceptedByEmail && j.assignedEmails?.includes(d.email))); 
-     return { ...d, score: dj.length, jobs: dj }; 
+     
+     // Trabajos válidos (Solo estos suman puntaje. Ignora Pinturas, Servicios Simples y los excluidos manualmente)
+     const validScoreJobs = dj.filter(j => !j.isPintura && j.tripType !== 'simple' && !j.excludeFromRanking);
+     
+     return { ...d, score: validScoreJobs.length, jobs: dj }; 
   }).sort((a, b) => b.score - a.score);
 
   return (
@@ -50,6 +64,21 @@ export default function LeaderboardView({ jobs, drivers, isAdminView }) {
                      <MapPin className="inline w-3 h-3 mr-0.5 -mt-0.5"/> {j.origin} 
                      {(j.destination || j.tripType !== 'simple') && <> <span className="text-slate-400 mx-1 text-[10px] font-black">➔</span> <Navigation className="inline w-3 h-3 mr-0.5 -mt-0.5"/> {j.tripType === 'revision' ? 'PRT' : j.destination}</>}
                   </p>
+                  
+                  {/* NUEVO: Controles de Administrador para el Ranking */}
+                  {isAdminView && (
+                     <div className="flex justify-end mt-3 pt-3 border-t border-slate-100">
+                        <button 
+                           onClick={() => toggleExclude(j.id, j.excludeFromRanking)}
+                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-extrabold transition-colors shadow-sm ${j.excludeFromRanking || j.tripType === 'simple' || j.isPintura ? 'bg-slate-200 text-slate-500 hover:bg-slate-300' : 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100'}`}
+                           title="Excluir o Incluir en el conteo del ranking"
+                           disabled={j.tripType === 'simple' || j.isPintura}
+                        >
+                           <EyeOff className="w-3.5 h-3.5"/> 
+                           {j.tripType === 'simple' || j.isPintura ? 'No suma puntos' : j.excludeFromRanking ? 'Devolver al Ranking' : 'Quitar del Ranking'}
+                        </button>
+                     </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -59,3 +88,4 @@ export default function LeaderboardView({ jobs, drivers, isAdminView }) {
     </main>
   );
 }
+
