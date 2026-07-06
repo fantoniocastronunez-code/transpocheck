@@ -263,6 +263,37 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
       } catch (mailErr) { 
          showAlert("⚠️ Trabajo guardado, pero no se pudo contactar al servidor de correos."); 
       }
+      
+      // NUEVO: CORREO AL CLIENTE POR TRABAJO RECIÉN CREADO
+      if (!jobToEdit && jobData.client && jobData.client !== 'Sin Cliente' && jobData.client !== 'OTRO') {
+         try {
+            const qClient = query(collection(db, 'clients'), where('name', '==', jobData.client));
+            const snapClient = await getDocs(qClient);
+            if (!snapClient.empty) {
+               const clientRecord = snapClient.docs[0].data();
+               const notifs = clientRecord.notifications || { creado: false };
+               if (notifs.creado && clientRecord.email) {
+                  fetch('/api/notify-client', {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify({
+                        email: clientRecord.email,
+                        clientName: clientRecord.name,
+                        type: 'creado',
+                        jobDetails: {
+                           id: 'N/A',
+                           driverName: 'Buscando conductor...',
+                           vehicle: operationMode === 'servicio' ? (jobData.description || 'Servicio en Terreno') : (`${brand} ${model}`.trim() || 'Vehículo'),
+                           plate: plate || vin || jobData.associatedPlate || 'S/N',
+                           origin: jobData.origin || 'Origen',
+                           destination: jobData.destination || 'Destino'
+                        }
+                     })
+                  }).catch(e => console.error(e));
+               }
+            }
+         } catch(e) { console.error("Error correo cliente creación:", e); }
+      }
       // ------------------------------------------------
 
       onSuccess();   
@@ -545,6 +576,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     </div>
   );
 }
+
 
 
 
