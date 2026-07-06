@@ -244,8 +244,8 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                      origin: jobData.origin,
                      destination: jobData.destination || '',
                      date: jobData.scheduledDate,
-                     plate: plate || vin || 'S/N',
-                     vehicle: `${brand} ${model}`.trim() || 'N/A',
+                     plate: plate || vin || jobData.associatedPlate || 'S/N',
+                     vehicle: operationMode === 'servicio' ? (jobData.description || 'Servicio en Terreno') : (`${brand} ${model}`.trim() || 'N/A'),
                      description: description || ''
                   }
                }) 
@@ -545,6 +545,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     </div>
   );
 }
+
 
 
 
