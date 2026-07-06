@@ -424,7 +424,27 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                {(isPintura || isGrabado) && (
                   <div className="animate-in fade-in slide-in-from-top-2 pt-2 border-t border-purple-50">
                      <label className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider ml-1 mb-1 block">Asociar a un Vehículo en Curso (Opcional)</label>
-                     <select value={associatedJobId} onChange={(e) => setAssociatedJobId(e.target.value)} className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white text-slate-700 shadow-sm">
+                     <select 
+                        value={associatedJobId} 
+                        onChange={(e) => {
+                           const newId = e.target.value;
+                           setAssociatedJobId(newId);
+                           
+                           // AUTO-COMPLETADO DEL CLIENTE
+                           if (newId) {
+                              const matchJob = activeJobsList.find(j => j.id === newId);
+                              if (matchJob && matchJob.client) {
+                                 if (allClientsList.includes(matchJob.client)) {
+                                    setSelectedClient(matchJob.client);
+                                 } else {
+                                    setSelectedClient('OTRO');
+                                    setManualClient(matchJob.client);
+                                 }
+                              }
+                           }
+                        }} 
+                        className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white text-slate-700 shadow-sm"
+                     >
                         <option value="">-- Seleccionar vehículo activo --</option>
                         {activeJobsList.filter(j => j.tripType !== 'simple').map(j => (
                            <option key={j.id} value={j.id}>
