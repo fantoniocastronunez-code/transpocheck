@@ -608,7 +608,10 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                 const snapClient = await getDocs(qClient);
                 if (!snapClient.empty) {
                    const clientRecord = snapClient.docs[0].data();
-                   if (clientRecord.enableNotifications && clientRecord.email) {
+                   const notifs = clientRecord.notifications || { finalizado: !!clientRecord.enableNotifications };
+                   
+                   // Si el interruptor 6 está encendido, manda el Acta PDF
+                   if (notifs.finalizado && clientRecord.email) {
                       let driverName = d.assignedDriverName || currentUserEmail;
                       if (drivers) { const drv = drivers.find(x => x.email === currentUserEmail); if (drv) driverName = drv.name; }
                       fetch('/api/notify-client', {
@@ -1595,6 +1598,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     </div>
   );
 }
+
 
 
 
