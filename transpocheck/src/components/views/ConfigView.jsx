@@ -29,9 +29,32 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
   
   // NUEVO ESTADO: Controla la lista dinámica de usuarios del cliente
   const [clientContacts, setClientContacts] = useState([{ name: '', email: '' }]);
+  
+  // NUEVO: Estado del Panel de Notificaciones
+  const defaultNotifs = { creado: false, asignado: true, llegada_origen: false, en_ruta: true, llegada_destino: false, finalizado: true };
+  const [clientNotifs, setClientNotifs] = useState(defaultNotifs);
 
   React.useEffect(() => {
     if (editingClient) {
+       const emails = editingClient.email ? editingClient.email.split(',').map(e => e.trim()).filter(Boolean) : [];
+       const names = editingClient.contactName ? editingClient.contactName.split(',').map(n => n.trim()) : [];
+       const mapped = emails.map((e, i) => ({ email: e, name: names[i] || '' }));
+       setClientContacts(mapped.length > 0 ? mapped : [{ name: '', email: '' }]);
+       
+       // Carga las notificaciones guardadas o adapta las del sistema antiguo
+       setClientNotifs(editingClient.notifications || {
+          creado: false,
+          asignado: !!editingClient.enableNotifications,
+          llegada_origen: false,
+          en_ruta: !!editingClient.enableNotifications,
+          llegada_destino: false,
+          finalizado: !!editingClient.enableNotifications
+       });
+    } else {
+       setClientContacts([{ name: '', email: '' }]);
+       setClientNotifs(defaultNotifs);
+    }
+  }, [editingClient]);
        const emails = editingClient.email ? editingClient.email.split(',').map(e => e.trim()).filter(Boolean) : [];
        const names = editingClient.contactName ? editingClient.contactName.split(',').map(n => n.trim()) : [];
        const mapped = emails.map((e, i) => ({ email: e, name: names[i] || '' }));
@@ -95,19 +118,20 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
              
              const email = validContacts.map(c => c.email.trim().toLowerCase()).join(','); 
              const contactName = validContacts.map(c => c.name.trim() || 'Usuario').join(','); 
-             const enableNotifications = fd.get('enableNotifications') === 'on'; 
+             const enableNotifications = Object.values(clientNotifs).some(v => v); 
              
              try { 
                  if(editingClient){ 
-                     await updateDoc(doc(db, 'clients', editingClient.id), { name, contactName, email, enableNotifications }); 
+                     await updateDoc(doc(db, 'clients', editingClient.id), { name, contactName, email, enableNotifications, notifications: clientNotifs }); 
                      setEditingClient(null); 
                      showAlert("Cliente y accesos actualizados."); 
                  } else { 
-                     await addDoc(collection(db, 'clients'), { name, contactName, email, enableNotifications, createdAt: Date.now() }); 
+                     await addDoc(collection(db, 'clients'), { name, contactName, email, enableNotifications, notifications: clientNotifs, createdAt: Date.now() }); 
                      showAlert("Cliente agregado."); 
                  } 
                  e.target.reset(); 
                  setClientContacts([{ name: '', email: '' }]);
+                 setClientNotifs(defaultNotifs);
              } catch(err){} 
           }} className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 space-y-5 w-full min-w-0">
             
@@ -194,15 +218,29 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
                </div>
             </div>
 
-            <div className="bg-blue-50 border border-blue-100 p-3.5 rounded-xl flex justify-between items-center shadow-sm">
-               <div>
-                  <p className="text-xs font-extrabold text-blue-900 flex items-center gap-1.5"><Eye className="w-4 h-4"/> Alertas Automáticas</p>
-                  <p className="text-[10px] font-bold text-blue-600 mt-0.5 leading-tight">Enviar correos al cliente con el estado en vivo y acta PDF.</p>
+            <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl shadow-sm space-y-3">
+               <div className="border-b border-blue-200/50 pb-2">
+                  <p className="text-xs font-extrabold text-blue-900 flex items-center gap-1.5"><Eye className="w-4 h-4"/> Panel de Notificaciones (Correos)</p>
+                  <p className="text-[10px] font-bold text-blue-600 mt-0.5 leading-tight">Selecciona exactamente qué actualizaciones recibirá el cliente en su correo.</p>
                </div>
-               <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" name="enableNotifications" defaultChecked={editingClient ? editingClient.enableNotifications : true} className="sr-only peer" />
-                  <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 shadow-sm"></div>
-               </label>
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[
+                    { id: 'creado', label: '1. Trabajo Creado' },
+                    { id: 'asignado', label: '2. Conductor Acepta' },
+                    { id: 'llegada_origen', label: '3. Llegada a Origen' },
+                    { id: 'en_ruta', label: '4. Vehículo en Ruta' },
+                    { id: 'llegada_destino', label: '5. Llegada a Destino' },
+                    { id: 'finalizado', label: '6. Acta Finalizada (PDF)' }
+                  ].map(notif => (
+                    <div key={notif.id} className="flex justify-between items-center bg-white p-2 rounded-lg border border-blue-100">
+                       <span className="text-[10px] font-black text-slate-700">{notif.label}</span>
+                       <label className="relative inline-flex items-center cursor-pointer">
+                          <input type="checkbox" checked={clientNotifs[notif.id]} onChange={(e) => setClientNotifs({...clientNotifs, [notif.id]: e.target.checked})} className="sr-only peer" />
+                          <div className="w-7 h-4 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600 shadow-sm"></div>
+                       </label>
+                    </div>
+                  ))}
+               </div>
             </div>
 
             <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-black text-sm shadow-md shadow-blue-200 transition-all active:scale-[0.98]">
@@ -217,8 +255,14 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
                      <div className="flex-1 min-w-0 pr-2">
                         <p className="font-extrabold text-slate-800 text-sm truncate">{clientRecord.name}</p>
                         {clientRecord.contactName && <p className="text-xs font-bold text-slate-500 mt-1 truncate"><span className="text-slate-400 font-medium">Responsable(s):</span> {clientRecord.contactName}</p>}
-                        <div className="mt-1">
-                           {clientRecord.enableNotifications ? (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                           {clientRecord.notifications ? (
+                             Object.entries(clientRecord.notifications).filter(([k,v]) => v).map(([k, v]) => (
+                               <span key={k} className="text-[8px] font-black text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded uppercase tracking-widest border border-blue-200 shrink-0">
+                                 {k.replace('_', ' ')}
+                               </span>
+                             ))
+                           ) : clientRecord.enableNotifications ? (
                              <span className="text-[8px] font-black text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded uppercase tracking-widest border border-blue-200 shrink-0">🔔 Avisos On</span>
                            ) : (
                              <span className="text-[8px] font-black text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded uppercase tracking-widest border border-slate-300 shrink-0">🔕 Avisos Off</span>
@@ -552,5 +596,6 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
     </div>
   );
 }
+
 
 
