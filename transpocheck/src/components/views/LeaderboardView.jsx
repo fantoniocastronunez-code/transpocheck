@@ -6,12 +6,19 @@ export default function LeaderboardView({ jobs, drivers, isAdminView, db }) {
   const [selectedDriverJobs, setSelectedDriverJobs] = useState(null);
   const now = new Date(); const firstOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
   
-  // NUEVO: Función para ocultar un trabajo manualmente del ranking
-  const toggleExclude = async (jobId, currentState) => {
+  // NUEVO: Función inteligente para controlar si un trabajo suma puntos o no
+  const toggleRankingStatus = async (job) => {
     if (!db) return;
+    const isService = job.tripType === 'simple' || job.isPintura;
     try {
-      await updateDoc(doc(db, 'transport_jobs', jobId), { excludeFromRanking: !currentState });
-    } catch (e) { console.error("Error al actualizar la exclusión del ranking:", e); }
+      if (isService) {
+         // Si es servicio, toggleamos el forzado para que sume
+         await updateDoc(doc(db, 'transport_jobs', job.id), { forceRanking: !job.forceRanking });
+      } else {
+         // Si es traslado normal, toggleamos la exclusión para que no sume
+         await updateDoc(doc(db, 'transport_jobs', job.id), { excludeFromRanking: !job.excludeFromRanking });
+      }
+    } catch (e) { console.error("Error al actualizar estado del ranking:", e); }
   };
 
   const monthlyCompleted = jobs.filter(j => {
@@ -24,8 +31,15 @@ export default function LeaderboardView({ jobs, drivers, isAdminView, db }) {
      // Todos los trabajos (para mostrarlos en el historial visual)
      const dj = monthlyCompleted.filter(j => j.acceptedByEmail === d.email || (!j.acceptedByEmail && j.assignedEmails?.includes(d.email))); 
      
-     // Trabajos válidos (Solo estos suman puntaje. Ignora Pinturas, Servicios Simples y los excluidos manualmente)
-     const validScoreJobs = dj.filter(j => !j.isPintura && j.tripType !== 'simple' && !j.excludeFromRanking);
+     // Trabajos válidos (Lógica dinámica de puntajes)
+     const validScoreJobs = dj.filter(j => {
+        const isService = j.tripType === 'simple' || j.isPintura;
+        if (isService) {
+           return !!j.forceRanking; // Los servicios solo suman si el admin lo forzó
+        } else {
+           return !j.excludeFromRanking; // Los traslados suman siempre, a menos que el admin los excluya
+        }
+     });
      
      return { ...d, score: validScoreJobs.length, jobs: dj }; 
   }).sort((a, b) => b.score - a.score);
@@ -68,15 +82,25 @@ export default function LeaderboardView({ jobs, drivers, isAdminView, db }) {
                   {/* NUEVO: Controles de Administrador para el Ranking */}
                   {isAdminView && (
                      <div className="flex justify-end mt-3 pt-3 border-t border-slate-100">
-                        <button 
-                           onClick={() => toggleExclude(j.id, j.excludeFromRanking)}
-                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-extrabold transition-colors shadow-sm ${j.excludeFromRanking || j.tripType === 'simple' || j.isPintura ? 'bg-slate-200 text-slate-500 hover:bg-slate-300' : 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100'}`}
-                           title="Excluir o Incluir en el conteo del ranking"
-                           disabled={j.tripType === 'simple' || j.isPintura}
-                        >
-                           <EyeOff className="w-3.5 h-3.5"/> 
-                           {j.tripType === 'simple' || j.isPintura ? 'No suma puntos' : j.excludeFromRanking ? 'Devolver al Ranking' : 'Quitar del Ranking'}
-                        </button>
+                        {(() => {
+                           const isService = j.tripType === 'simple' || j.isPintura;
+                           const isScoring = isService ? !!j.forceRanking : !j.excludeFromRanking;
+
+                           return (
+                              <button 
+                                 onClick={() => toggleRankingStatus(j)}
+                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-extrabold transition-colors shadow-sm ${
+                                    isScoring
+                                       ? 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100' // Si está sumando, botón rojo para quitarlo
+                                       : 'bg-green-50 text-green-600 border border-green-200 hover:bg-green-100' // Si NO está sumando, botón verde para agregarlo
+                                 }`}
+                                 title="Excluir o Incluir en el conteo del ranking"
+                              >
+                                 {isScoring ? <EyeOff className="w-3.5 h-3.5"/> : <Eye className="w-3.5 h-3.5"/>}
+                                 {isScoring ? 'Quitar del Ranking' : 'Sumar al Ranking'}
+                              </button>
+                           );
+                        })()}
                      </div>
                   )}
                 </div>
@@ -88,4 +112,5 @@ export default function LeaderboardView({ jobs, drivers, isAdminView, db }) {
     </main>
   );
 }
+
 
