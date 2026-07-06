@@ -17,6 +17,7 @@ import LicensePlateBadge from './components/ui/LicensePlateBadge';
 import VehicleShapeIcon from './components/ui/VehicleShapeIcon';
 import SwipeButton from './components/ui/SwipeButton';
 import WaitTimerBadge from './components/ui/WaitTimerBadge';
+import GhostCamera from './components/ui/GhostCamera'; // <-- NUEVO: Nuestra cámara fantasma
 import { DEFAULT_CLIENTES, LICENCIAS, formatMoney, formatDateDisplay, resizeImage } from './utils/helpers';
 // IMPORTACIONES "PEREZOSAS" (LAZY LOADING) - Solo se descargan cuando se necesitan
 const LeaderboardView = React.lazy(() => import('./components/views/LeaderboardView'));
@@ -44,6 +45,10 @@ function LogisticApp() {
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
   const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
+
+  // NUEVO: Estados para probar la Cámara Fantasma
+  const [showGhostCamera, setShowGhostCamera] = useState(false);
+  const [testPhotoResult, setTestPhotoResult] = useState(null);
 
   const [adminTab, setAdminTab] = useState('dashboard');
   const [selectedJob, setSelectedJob] = useState(null);
@@ -468,8 +473,24 @@ function LogisticApp() {
       <div className="bg-white/20 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0 ml-0.5 sm:ml-1 overflow-hidden">
         <img src="/LogoLogistica.png" alt="Logística TS SpA" className="h-8 sm:h-15 object-contain" />
       </div>
+      
+      {/* NUEVO: Botón Temporal para probar la Cámara en Desktop */}
+      <button 
+        onClick={() => setShowGhostCamera(true)}
+        className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-xl font-black text-xs shadow-lg transition-transform active:scale-95 ml-2 hidden sm:flex items-center gap-1.5 border border-purple-400/50"
+      >
+        <Camera className="w-4 h-4"/> Probar Cámara
+      </button>
     </div>
         <div className="flex items-center gap-2 sm:gap-4">
+          
+          {/* Botón en versión Móvil (Ícono solo para no romper el header) */}
+          <button 
+            onClick={() => setShowGhostCamera(true)}
+            className="bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-xl shadow-lg transition-transform active:scale-95 sm:hidden border border-purple-400/50"
+          >
+            <Camera className="w-4 h-4"/>
+          </button>
           
           {/* NUEVO: BOTÓN TUERCA (AJUSTES) */}
           <div className="relative">
@@ -857,6 +878,26 @@ function LogisticApp() {
         </div>
       )}
 
+      {/* --- NUEVO: CÁMARA FANTASMA Y VISOR DE RESULTADOS --- */}
+      {showGhostCamera && (
+        <GhostCamera 
+          onClose={() => setShowGhostCamera(false)}
+          onCapture={(photoBase64) => {
+            console.log("¡Foto tomada con éxito!");
+            setTestPhotoResult(photoBase64); // Guarda la foto en la memoria para que la veas
+            setShowGhostCamera(false);
+          }}
+        />
+      )}
+
+      {testPhotoResult && (
+        <div className="fixed bottom-24 right-4 w-32 h-32 bg-white rounded-2xl shadow-2xl p-1.5 z-[9999] border-4 border-blue-500 animate-in slide-in-from-right-4">
+           <button onClick={() => setTestPhotoResult(null)} className="absolute -top-3 -left-3 bg-red-500 text-white p-1.5 rounded-full shadow-md hover:bg-red-600 transition-colors"><X className="w-4 h-4"/></button>
+           <img src={testPhotoResult} className="w-full h-full object-cover rounded-xl" alt="Test" />
+           <div className="absolute bottom-2 left-0 right-0 text-center"><span className="bg-black/80 text-white text-[9px] font-black px-2 py-0.5 rounded-full backdrop-blur-md">CAPTURA OK</span></div>
+        </div>
+      )}
+
     </div>
   );
 }
@@ -878,4 +919,5 @@ export default function App() {
     </Router>
   );
 }
+
 
