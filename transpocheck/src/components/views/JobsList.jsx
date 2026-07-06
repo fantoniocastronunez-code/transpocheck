@@ -64,8 +64,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               jobDetails: {
                  id: jobData.id,
                  driverName: driverName,
-                 vehicle: `${jobData.brand || ''} ${jobData.model || ''}`.trim() || 'Vehículo',
-                 plate: jobData.plate || jobData.vin || 'S/N',
+                 vehicle: jobData.tripType === 'simple' ? (jobData.description || 'Servicio en Terreno') : (`${jobData.brand || ''} ${jobData.model || ''}`.trim() || 'Vehículo'),
+                 plate: jobData.plate || jobData.vin || jobData.associatedPlate || 'S/N',
                  origin: jobData.origin || 'Origen no especificado',
                  destination: jobData.destination || ''
               }
@@ -111,8 +111,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
              driverName: driverName,
              jobDetails: {
                 client: job.client || 'Sin Cliente',
-                vehicle: `${job.brand || ''} ${job.model || ''}`.trim() || job.description || 'Servicio',
-                plate: job.plate || job.vin || 'S/N',
+                vehicle: job.tripType === 'simple' ? (job.description || 'Servicio en Terreno') : (`${job.brand || ''} ${job.model || ''}`.trim() || 'Servicio'),
+                plate: job.plate || job.vin || job.associatedPlate || 'S/N',
                 origin: job.origin || 'No especificado'
              }
           })
@@ -1377,3 +1377,4 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       </div>
   );
 }
+
