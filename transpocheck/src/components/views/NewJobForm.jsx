@@ -157,20 +157,33 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
        jobData.vehicleType = vehicleType; jobData.rtData = rtData;
        jobData.waypoints = waypoints.filter(w => w.trim() !== ''); // Filtra paradas vacías
     } else {
-       jobData.description = description;
-       
-       // NUEVO: Guardar si incluye pintura/grabado y la patente asociada
        jobData.isPintura = isPintura;
        jobData.isGrabado = isGrabado;
        jobData.associatedJobId = (isPintura || isGrabado) ? associatedJobId : null;
+       
+       let finalDesc = description;
        
        if ((isPintura || isGrabado) && associatedJobId) {
           const asocJob = activeJobsList.find(j => j.id === associatedJobId);
           if (asocJob) {
              jobData.associatedPlate = asocJob.plate || asocJob.vin || 'S/N';
              jobData.associatedVehicle = `${asocJob.brand || ''} ${asocJob.model || ''}`.trim();
+             
+             // Generación automática del texto para el historial
+             const acciones = [];
+             if (isPintura) acciones.push("PINTURA DE PATENTES");
+             if (isGrabado) acciones.push("GRABADO DE VIDRIOS");
+             
+             // Adaptamos el texto según el tipo de carrocería (ideal para los camiones)
+             const tipoVeh = asocJob.vehicleType?.includes('camion') ? 'CAMIÓN' : 'VEHÍCULO';
+             const autoText = `${acciones.join(" Y ")} DE ${tipoVeh} ${asocJob.brand?.toUpperCase() || ''} MODELO ${asocJob.model?.toUpperCase() || ''} VIN ${asocJob.vin || 'S/N'}`.trim();
+             
+             // Si escribiste algo extra lo suma, si no, usa solo el texto automático
+             finalDesc = description.trim() ? `${autoText} - Notas adicionales: ${description}` : autoText;
           }
        }
+       
+       jobData.description = finalDesc || 'Servicio en Terreno';
     }
 
     // NUEVO: BUSCAR DESTINO EN EL DIRECTORIO PARA AUTORRELLENAR ENCARGADO
@@ -385,7 +398,14 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
             
             <div className="space-y-1">
               <label className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider ml-1">Descripción del Trabajo</label>
-              <textarea value={description} onChange={e=>setDescription(e.target.value)} required rows="3" placeholder="Ej: Pintura de patentes en puertas y techo, retiro de documentos en notaría..." className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white text-slate-800 resize-none shadow-sm" />
+              <textarea 
+                 value={description} 
+                 onChange={e=>setDescription(e.target.value)} 
+                 required={!(isPintura || isGrabado)} 
+                 rows="3" 
+                 placeholder={(isPintura || isGrabado) ? "Opcional. El sistema redactará el detalle de la pintura/grabado automáticamente." : "Ej: Retiro de documentos en notaría..."} 
+                 className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white text-slate-800 resize-none shadow-sm" 
+              />
             </div>
             
             {/* NUEVO: Opciones Especiales (Pintura / Grabado) */}
@@ -480,4 +500,5 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     </div>
   );
 }
+
 
