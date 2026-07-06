@@ -621,8 +621,8 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                             jobDetails: {
                                id: job.id === 'NEW_QUICK_JOB' ? 'N/A' : job.id,
                                driverName: driverName,
-                               vehicle: `${fd.brand || ''} ${fd.model || ''}`.trim() || 'Vehículo',
-                               plate: fd.plate || fd.vin || 'S/N',
+                               vehicle: job.tripType === 'simple' ? (job.description || 'Servicio en Terreno') : (`${fd.brand || ''} ${fd.model || ''}`.trim() || 'Vehículo'),
+                               plate: fd.plate || fd.vin || job.associatedPlate || 'S/N',
                                origin: fd.origin || 'Origen',
                                destination: fd.destination || 'Destino'
                             }
@@ -1595,6 +1595,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     </div>
   );
 }
+
 
 
 
