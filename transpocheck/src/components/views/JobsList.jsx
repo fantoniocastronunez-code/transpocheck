@@ -46,7 +46,18 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         if (snap.empty) return;
         
         const clientRecord = snap.docs[0].data();
-        if (!clientRecord.enableNotifications || !clientRecord.email) return;
+        
+        // Verifica el interruptor exacto según el evento
+        const notifs = clientRecord.notifications || {
+           creado: false,
+           asignado: !!clientRecord.enableNotifications,
+           llegada_origen: false,
+           en_ruta: !!clientRecord.enableNotifications,
+           llegada_destino: false,
+           finalizado: !!clientRecord.enableNotifications
+        };
+
+        if (!notifs[statusType] || !clientRecord.email) return;
 
         let driverName = jobData.assignedDriverName || jobData.acceptedByEmail || 'Asignado';
         if (jobData.acceptedByEmail && drivers) {
@@ -83,7 +94,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
        updateDoc(doc(db, 'transport_jobs', job.id), { phase, ...extra }).catch(e => {
            console.error(e); showAlert("Error de conexión al actualizar fase.");
        }); 
+       
+       // Dispara las alertas si sus interruptores están activos
+       if (phase === 'arrived_pickup') notifyClient(job, 'llegada_origen');
        if (phase === 'picked_up') notifyClient(job, 'en_ruta');
+       if (phase === 'arrived_destination' || phase === 'arrived_prt') notifyClient(job, 'llegada_destino');
     } 
     finally { 
        // Liberamos la interfaz casi al instante (0.3 segundos)
@@ -1377,4 +1392,5 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       </div>
   );
 }
+
 
