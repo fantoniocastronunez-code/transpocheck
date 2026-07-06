@@ -27,34 +27,35 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
   const [driverDocs, setDriverDocs] = useState({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null });
   const [fullScreenDoc, setFullScreenDoc] = useState(null); 
   
-  // NUEVO ESTADO: Controla la lista dinámica de usuarios del cliente
-  const [clientContacts, setClientContacts] = useState([{ name: '', email: '' }]);
-  
-  // NUEVO: Estado del Panel de Notificaciones
-  const defaultNotifs = { creado: false, asignado: true, llegada_origen: false, en_ruta: true, llegada_destino: false, finalizado: true };
-  const [clientNotifs, setClientNotifs] = useState(defaultNotifs);
+        // NUEVO ESTADO: Controla la lista dinámica de usuarios del cliente
+      const [clientContacts, setClientContacts] = useState([{ name: '', email: '' }]);
+      
+      // NUEVO: Estado del Panel de Notificaciones
+      const defaultNotifs = { creado: false, asignado: true, llegada_origen: false, en_ruta: true, llegada_destino: false, finalizado: true };
+      const [clientNotifs, setClientNotifs] = useState(defaultNotifs);
 
-  React.useEffect(() => {
-    if (editingClient) {
-       const emails = editingClient.email ? editingClient.email.split(',').map(e => e.trim()).filter(Boolean) : [];
-       const names = editingClient.contactName ? editingClient.contactName.split(',').map(n => n.trim()) : [];
-       const mapped = emails.map((e, i) => ({ email: e, name: names[i] || '' }));
-       setClientContacts(mapped.length > 0 ? mapped : [{ name: '', email: '' }]);
-       
-       // Carga las notificaciones guardadas o adapta las del sistema antiguo
-       setClientNotifs(editingClient.notifications || {
-          creado: false,
-          asignado: !!editingClient.enableNotifications,
-          llegada_origen: false,
-          en_ruta: !!editingClient.enableNotifications,
-          llegada_destino: false,
-          finalizado: !!editingClient.enableNotifications
-       });
-    } else {
-       setClientContacts([{ name: '', email: '' }]);
-       setClientNotifs(defaultNotifs);
-    }
-  }, [editingClient]);
+      React.useEffect(() => {
+        if (editingClient) {
+           const emails = editingClient.email ? editingClient.email.split(',').map(e => e.trim()).filter(Boolean) : [];
+           const names = editingClient.contactName ? editingClient.contactName.split(',').map(n => n.trim()) : [];
+           const mapped = emails.map((e, i) => ({ email: e, name: names[i] || '' }));
+           setClientContacts(mapped.length > 0 ? mapped : [{ name: '', email: '' }]);
+           
+           // Carga las notificaciones guardadas o adapta las del sistema antiguo
+           setClientNotifs(editingClient.notifications || {
+              creado: false,
+              asignado: !!editingClient.enableNotifications,
+              llegada_origen: false,
+              en_ruta: !!editingClient.enableNotifications,
+              llegada_destino: false,
+              finalizado: !!editingClient.enableNotifications
+           });
+        } else {
+           setClientContacts([{ name: '', email: '' }]);
+           setClientNotifs(defaultNotifs);
+        }
+      }, [editingClient]);
+
        const emails = editingClient.email ? editingClient.email.split(',').map(e => e.trim()).filter(Boolean) : [];
        const names = editingClient.contactName ? editingClient.contactName.split(',').map(n => n.trim()) : [];
        const mapped = emails.map((e, i) => ({ email: e, name: names[i] || '' }));
@@ -596,6 +597,7 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
     </div>
   );
 }
+
 
 
 
