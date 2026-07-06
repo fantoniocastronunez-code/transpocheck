@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { updateDoc, doc, addDoc, collection, getDocs } from 'firebase/firestore';
+import { updateDoc, doc, addDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { X, User, CheckCircle, Plus } from 'lucide-react';
 import CustomClientSelector from '../ui/CustomClientSelector';
 
@@ -8,6 +8,8 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   
   // NUEVO: Estado para cargar el directorio de destinos
   const [directoryList, setDirectoryList] = useState([]);
+  const [activeJobsList, setActiveJobsList] = useState([]); // NUEVO: Memoria de trabajos activos
+
   useEffect(() => {
     const fetchDirectory = async () => {
       try {
@@ -15,9 +17,26 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
         setDirectoryList(snap.docs.map(d => d.data()));
       } catch(e) { console.error("Error cargando directorio:", e); }
     };
+    
+    // NUEVO: Traer vehículos que están actualmente en ruta o pendientes
+    const fetchActiveJobs = async () => {
+      try {
+        const q = query(collection(db, 'transport_jobs'), where('status', 'in', ['pending', 'accepted']));
+        const snap = await getDocs(q);
+        setActiveJobsList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch(e) { console.error("Error cargando trabajos activos:", e); }
+    };
+
     fetchDirectory();
+    fetchActiveJobs();
   }, [db]);
+  
   const [manualClient, setManualClient] = useState(jobToEdit?.client && !allClientsList.includes(jobToEdit.client) ? jobToEdit.client : '');
+  
+  // NUEVOS ESTADOS: Pintura y Grabado
+  const [isPintura, setIsPintura] = useState(jobToEdit?.isPintura || false);
+  const [isGrabado, setIsGrabado] = useState(jobToEdit?.isGrabado || false);
+  const [associatedJobId, setAssociatedJobId] = useState(jobToEdit?.associatedJobId || '');
   const [brand, setBrand] = useState(jobToEdit?.brand || '');
   const [model, setModel] = useState(jobToEdit?.model || '');
   
@@ -139,6 +158,19 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
        jobData.waypoints = waypoints.filter(w => w.trim() !== ''); // Filtra paradas vacías
     } else {
        jobData.description = description;
+       
+       // NUEVO: Guardar si incluye pintura/grabado y la patente asociada
+       jobData.isPintura = isPintura;
+       jobData.isGrabado = isGrabado;
+       jobData.associatedJobId = (isPintura || isGrabado) ? associatedJobId : null;
+       
+       if ((isPintura || isGrabado) && associatedJobId) {
+          const asocJob = activeJobsList.find(j => j.id === associatedJobId);
+          if (asocJob) {
+             jobData.associatedPlate = asocJob.plate || asocJob.vin || 'S/N';
+             jobData.associatedVehicle = `${asocJob.brand || ''} ${asocJob.model || ''}`.trim();
+          }
+       }
     }
 
     // NUEVO: BUSCAR DESTINO EN EL DIRECTORIO PARA AUTORRELLENAR ENCARGADO
@@ -355,6 +387,34 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
               <label className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider ml-1">Descripción del Trabajo</label>
               <textarea value={description} onChange={e=>setDescription(e.target.value)} required rows="3" placeholder="Ej: Pintura de patentes en puertas y techo, retiro de documentos en notaría..." className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white text-slate-800 resize-none shadow-sm" />
             </div>
+            
+            {/* NUEVO: Opciones Especiales (Pintura / Grabado) */}
+            <div className="bg-white p-4 rounded-xl border border-purple-100 shadow-sm space-y-4">
+               <div className="flex flex-col sm:flex-row gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-purple-50 rounded-lg transition-colors flex-1">
+                     <input type="checkbox" checked={isPintura} onChange={(e) => setIsPintura(e.target.checked)} className="w-5 h-5 text-purple-600 rounded border-purple-300 focus:ring-purple-500" />
+                     <span className="text-sm font-extrabold text-slate-700">🎨 Pintura de Patentes</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-purple-50 rounded-lg transition-colors flex-1">
+                     <input type="checkbox" checked={isGrabado} onChange={(e) => setIsGrabado(e.target.checked)} className="w-5 h-5 text-purple-600 rounded border-purple-300 focus:ring-purple-500" />
+                     <span className="text-sm font-extrabold text-slate-700">🪟 Grabado de Vidrios</span>
+                  </label>
+               </div>
+               
+               {(isPintura || isGrabado) && (
+                  <div className="animate-in fade-in slide-in-from-top-2 pt-2 border-t border-purple-50">
+                     <label className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider ml-1 mb-1 block">Asociar a un Vehículo en Curso (Opcional)</label>
+                     <select value={associatedJobId} onChange={(e) => setAssociatedJobId(e.target.value)} className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white text-slate-700 shadow-sm">
+                        <option value="">-- Seleccionar vehículo activo --</option>
+                        {activeJobsList.filter(j => j.tripType !== 'simple').map(j => (
+                           <option key={j.id} value={j.id}>
+                              {j.plate || j.vin || 'S/N'} - {j.brand} {j.model} ({j.client})
+                           </option>
+                        ))}
+                     </select>
+                  </div>
+               )}
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
@@ -420,3 +480,4 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     </div>
   );
 }
+
