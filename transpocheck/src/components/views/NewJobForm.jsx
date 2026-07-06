@@ -35,7 +35,9 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   
   // NUEVOS ESTADOS: Pintura y Grabado
   const [isPintura, setIsPintura] = useState(jobToEdit?.isPintura || false);
+  const [qtyPintura, setQtyPintura] = useState(jobToEdit?.qtyPintura || 1); // NUEVO
   const [isGrabado, setIsGrabado] = useState(jobToEdit?.isGrabado || false);
+  const [qtyGrabado, setQtyGrabado] = useState(jobToEdit?.qtyGrabado || 1); // NUEVO
   const [associatedJobId, setAssociatedJobId] = useState(jobToEdit?.associatedJobId || '');
   const [brand, setBrand] = useState(jobToEdit?.brand || '');
   const [model, setModel] = useState(jobToEdit?.model || '');
@@ -158,7 +160,9 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
        jobData.waypoints = waypoints.filter(w => w.trim() !== ''); // Filtra paradas vacías
     } else {
        jobData.isPintura = isPintura;
+       jobData.qtyPintura = isPintura ? Number(qtyPintura) : 0;
        jobData.isGrabado = isGrabado;
+       jobData.qtyGrabado = isGrabado ? Number(qtyGrabado) : 0;
        jobData.associatedJobId = (isPintura || isGrabado) ? associatedJobId : null;
        
        let finalDesc = description;
@@ -169,14 +173,15 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
              jobData.associatedPlate = asocJob.plate || asocJob.vin || 'S/N';
              jobData.associatedVehicle = `${asocJob.brand || ''} ${asocJob.model || ''}`.trim();
              
-             // Generación automática del texto para el historial
+             // Generación automática del texto con cantidades exactas
              const acciones = [];
-             if (isPintura) acciones.push("PINTURA DE PATENTES");
-             if (isGrabado) acciones.push("GRABADO DE VIDRIOS");
+             if (isPintura) acciones.push(`PINTURA DE ${qtyPintura} PATENTE${qtyPintura > 1 ? 'S' : ''}`);
+             if (isGrabado) acciones.push(`GRABADO DE ${qtyGrabado} VIDRIO${qtyGrabado > 1 ? 'S' : ''}`);
              
-             // Adaptamos el texto según el tipo de carrocería (ideal para los camiones)
+             // Adaptamos el texto y priorizamos mostrar la PATENTE en lugar del VIN
              const tipoVeh = asocJob.vehicleType?.includes('camion') ? 'CAMIÓN' : 'VEHÍCULO';
-             const autoText = `${acciones.join(" Y ")} DE ${tipoVeh} ${asocJob.brand?.toUpperCase() || ''} MODELO ${asocJob.model?.toUpperCase() || ''} VIN ${asocJob.vin || 'S/N'}`.trim();
+             const identificador = asocJob.plate ? `PATENTE ${asocJob.plate}` : `VIN ${asocJob.vin || 'S/N'}`;
+             const autoText = `${acciones.join(" Y ")} DE ${tipoVeh} ${asocJob.brand?.toUpperCase() || ''} MODELO ${asocJob.model?.toUpperCase() || ''} ${identificador}`.trim();
              
              // Si escribiste algo extra lo suma, si no, usa solo el texto automático
              finalDesc = description.trim() ? `${autoText} - Notas adicionales: ${description}` : autoText;
@@ -411,14 +416,34 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
             {/* NUEVO: Opciones Especiales (Pintura / Grabado) */}
             <div className="bg-white p-4 rounded-xl border border-purple-100 shadow-sm space-y-4">
                <div className="flex flex-col sm:flex-row gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-purple-50 rounded-lg transition-colors flex-1">
-                     <input type="checkbox" checked={isPintura} onChange={(e) => setIsPintura(e.target.checked)} className="w-5 h-5 text-purple-600 rounded border-purple-300 focus:ring-purple-500" />
-                     <span className="text-sm font-extrabold text-slate-700">🎨 Pintura de Patentes</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-purple-50 rounded-lg transition-colors flex-1">
-                     <input type="checkbox" checked={isGrabado} onChange={(e) => setIsGrabado(e.target.checked)} className="w-5 h-5 text-purple-600 rounded border-purple-300 focus:ring-purple-500" />
-                     <span className="text-sm font-extrabold text-slate-700">🪟 Grabado de Vidrios</span>
-                  </label>
+                  <div className="flex-1 flex flex-col gap-1.5">
+                      <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-purple-50 rounded-lg transition-colors">
+                         <input type="checkbox" checked={isPintura} onChange={(e) => setIsPintura(e.target.checked)} className="w-5 h-5 text-purple-600 rounded border-purple-300 focus:ring-purple-500" />
+                         <span className="text-sm font-extrabold text-slate-700">🎨 Pintura de Patentes</span>
+                      </label>
+                      {isPintura && (
+                         <div className="pl-9 pr-2 animate-in slide-in-from-top-1">
+                             <div className="flex items-center gap-2 bg-purple-50 p-2 rounded-xl border-2 border-purple-100">
+                                <span className="text-xs font-bold text-purple-800 flex-1">Cantidad:</span>
+                                <input type="number" min="1" max="10" value={qtyPintura} onChange={(e) => setQtyPintura(e.target.value)} className="w-16 text-center border-none p-1 text-sm rounded-lg outline-none font-black text-purple-900 bg-white shadow-sm" />
+                             </div>
+                         </div>
+                      )}
+                  </div>
+                  <div className="flex-1 flex flex-col gap-1.5">
+                      <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-purple-50 rounded-lg transition-colors">
+                         <input type="checkbox" checked={isGrabado} onChange={(e) => setIsGrabado(e.target.checked)} className="w-5 h-5 text-purple-600 rounded border-purple-300 focus:ring-purple-500" />
+                         <span className="text-sm font-extrabold text-slate-700">🪟 Grabado de Vidrios</span>
+                      </label>
+                      {isGrabado && (
+                         <div className="pl-9 pr-2 animate-in slide-in-from-top-1">
+                             <div className="flex items-center gap-2 bg-purple-50 p-2 rounded-xl border-2 border-purple-100">
+                                <span className="text-xs font-bold text-purple-800 flex-1">Cantidad:</span>
+                                <input type="number" min="1" max="20" value={qtyGrabado} onChange={(e) => setQtyGrabado(e.target.value)} className="w-16 text-center border-none p-1 text-sm rounded-lg outline-none font-black text-purple-900 bg-white shadow-sm" />
+                             </div>
+                         </div>
+                      )}
+                  </div>
                </div>
                
                {(isPintura || isGrabado) && (
@@ -520,5 +545,6 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     </div>
   );
 }
+
 
 
