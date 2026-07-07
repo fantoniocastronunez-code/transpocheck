@@ -42,6 +42,14 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
   const [fullScreenImage, setFullScreenImage] = useState(null); 
   const [uploadProgress, setUploadProgress] = useState({ active: false, current: 0, total: 0, text: '' }); 
 
+  // MAGIA UX: Auto-scroll hacia arriba al cambiar de pestaña en el checklist
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  }, [step]);
+
 
   // --- MOTOR DE CÁMARA INTERNA MULTI-LENTE (WebRTC) ---
   const [inAppCamera, setInAppCamera] = useState({ isOpen: false, onCapture: null, title: '', stream: null, devices: [], currentIndex: 0 });
@@ -1598,6 +1606,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     </div>
   );
 }
+
 
 
 
