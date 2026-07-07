@@ -839,38 +839,6 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Observaciones Generales</h3>
               <textarea className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 min-h-[90px]" placeholder="Escribe aquí si hay algún daño, rayón o comentario del estado visual del vehículo..." value={formData.observations || ''} onChange={(e) => setF('observations', e.target.value)} />
-
-
-              <div className="bg-amber-50 p-4 rounded-2xl border-2 border-amber-200 mt-4 shadow-sm">
-                  <h3 className="text-sm font-extrabold text-amber-800 mb-1 flex items-center gap-2"><AlertCircle className="w-4 h-4"/> Alertas Internas de Patente</h3>
-                  <p className="text-[10px] font-bold text-amber-700 mb-4 leading-tight">Avisos privados que no salen en el PDF. Sirven como historial para el próximo traslado.</p>
-                  
-                  {(formData.internalReminders || []).map((rem, idx) => (
-                      <div key={rem.id} className={`p-3 rounded-xl border-2 mb-3 bg-white transition-all ${rem.resolved ? 'border-green-300 opacity-60 grayscale-[50%]' : 'border-amber-300 shadow-sm'}`}>
-                          <div className="flex justify-between items-center mb-2">
-                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Aviso #{idx + 1}</span>
-                              <label className="flex items-center gap-1.5 cursor-pointer text-xs font-bold text-green-700 bg-green-50 px-2 py-1 rounded-lg border border-green-200 transition-colors">
-                                  <input type="checkbox" className="w-4 h-4 accent-green-600 rounded cursor-pointer" checked={rem.resolved} onChange={e => handleReminderChange(idx, 'resolved', e.target.checked)}/>
-                                  Solucionado
-                              </label>
-                          </div>
-                          <textarea disabled={rem.resolved} value={rem.text} onChange={e => handleReminderChange(idx, 'text', e.target.value)} placeholder="Ej: Triángulo roto, falta gata, rueda repuesto baja..." className="w-full border-2 border-slate-100 p-2.5 rounded-lg text-sm font-bold outline-none focus:border-amber-500 mb-2 disabled:bg-slate-50 text-slate-700 resize-none min-h-[60px]"/>
-                          
-                          <div className="flex items-center gap-2">
-                              <label className={`flex-1 py-2 text-center rounded-lg border-2 border-dashed cursor-pointer text-[10px] font-extrabold transition-colors uppercase tracking-wide ${rem.photo ? 'bg-green-50 border-green-400 text-green-700' : 'bg-slate-50 border-slate-300 hover:bg-slate-100 text-slate-500'}`}>
-                                  <input type="file" accept="image/*" className="hidden" disabled={rem.resolved} onChange={async e => { const f=e.target.files[0]; if(!f)return; try{ const dUrl = await resizeImage(f, 800, 0.6); handleReminderChange(idx, 'photo', dUrl); }catch(err){}}}/>
-                                  {rem.photo ? '📸 Foto Guardada' : '📸 Adjuntar Foto'}
-                              </label>
-                              {rem.photo && <button type="button" onClick={() => {
-                                  const w = window.open(""); 
-                                  w.document.write(`<img src="${rem.photo}" style="width:100%;max-width:800px;margin:auto;display:block;padding-top:20px;"/>`);
-                              }} className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors border border-blue-200"><Eye className="w-4 h-4"/></button>}
-                              <button type="button" onClick={()=>removeReminder(idx)} className="p-2 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg transition-colors border border-red-200"><Trash2 className="w-4 h-4"/></button>
-                          </div>
-                      </div>
-                  ))}
-                  <button type="button" onClick={addReminder} className="w-full py-3 bg-amber-200 hover:bg-amber-300 text-amber-800 font-black text-xs uppercase tracking-widest rounded-xl transition-colors border border-amber-300 shadow-sm">+ Agregar Nuevo Aviso</button>
-              </div>
             </div>
           )}
 
