@@ -1147,8 +1147,45 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
       )}
 
-      {showBulkSign && (
+           {showBulkSign && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
            <div className="bg-white rounded-3xl p-5 w-full max-w-lg shadow-2xl flex flex-col max-h-[95vh] border-t-8 border-emerald-500">
               <div className="flex justify-between mb-4">
-                 <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><PenTool className="w-5 h-5 text-emerald-60
+                 <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                    <PenTool className="w-5 h-5 text-emerald-600" /> Firma Masiva
+                 </h3>
+                 <button onClick={()=>setShowBulkSign(false)} className="bg-slate-100 p-2 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button>
+              </div>
+              <div className="overflow-y-auto space-y-4 flex-1">
+                 <div className="bg-slate-50 border p-3 rounded-xl">
+                    <p className="text-[10px] font-black text-slate-500 uppercase mb-2">Selecciona los vehículos a entregar:</p>
+                    <div className="max-h-40 overflow-y-auto space-y-1.5">
+                       {inProgressJobsList.length === 0 ? (
+                          <p className="text-xs font-bold text-slate-400 text-center">No hay vehículos en curso.</p>
+                       ) : (
+                          inProgressJobsList.map(j => (
+                             <label key={j.id} className="flex items-center gap-3 p-3 border rounded-xl bg-white cursor-pointer hover:bg-slate-50">
+                                <input type="checkbox" className="w-4 h-4 accent-emerald-600" checked={bulkSelectedIds.includes(j.id)} onChange={e => e.target.checked ? setBulkSelectedIds([...bulkSelectedIds, j.id]) : setBulkSelectedIds(bulkSelectedIds.filter(id => id !== j.id))}/>
+                                <div className="text-xs font-black text-slate-700">
+                                   {getJobIdentifier(j)} - {j.tripType === 'simple' ? j.description : `${j.brand} ${j.model}`}
+                                </div>
+                             </label>
+                          ))
+                       )}
+                    </div>
+                 </div>
+                 <input type="text" placeholder="Nombre del Receptor" value={bulkReceiverName} onChange={e=>setBulkReceiverName(e.target.value)} className="w-full border-2 p-3 rounded-xl font-bold outline-none focus:border-emerald-500"/>
+                 <input type="text" placeholder="RUT Receptor" value={bulkReceiverRut} onChange={e=>setBulkReceiverRut(e.target.value)} className="w-full border-2 p-3 rounded-xl font-bold outline-none focus:border-emerald-500"/>
+                 <div className="border-2 rounded-xl overflow-hidden">
+                    <SignaturePad onSave={d=>setBulkSignature(d)} onClear={()=>setBulkSignature(null)}/>
+                 </div>
+              </div>
+              <button onClick={handleBulkSignSubmit} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-black mt-4 shadow-md transition-colors">Finalizar Flota</button>
+           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
