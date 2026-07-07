@@ -42,7 +42,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
      return () => clearTimeout(timer);
   }, []); 
 
-  // NUEVO: Motor Extractor Inteligente de Patentes
   const getJobIdentifier = (j) => {
      if (j.plate && j.plate !== 'S/N') return j.plate;
      if (j.associatedPlate && j.associatedPlate !== 'S/N') return j.associatedPlate;
@@ -91,7 +90,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                  id: jobData.id,
                  driverName: driverName,
                  vehicle: jobData.tripType === 'simple' ? (jobData.description || 'Servicio en Terreno') : (`${jobData.brand || ''} ${jobData.model || ''}`.trim() || 'Vehículo'),
-                 plate: getJobIdentifier(jobData), // FIX CORREO CLIENTE
+                 plate: getJobIdentifier(jobData),
                  origin: jobData.origin || 'Origen no especificado',
                  destination: jobData.destination || ''
               }
@@ -125,7 +124,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
        
        const driverName = drivers?.find(d => d.email === currentUserEmail)?.name || currentUserEmail;
        
-       // FIX CORREO ADMIN
        fetch('/api/notify-admin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -258,7 +256,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             }
         }
 
-        // FIX CLONADOR: Se lleva el 100% de los datos del servicio de pintura/grabado
         const cloneJob = {
             client: dupPromptJob.client || '',
             brand: dupPromptJob.brand || '',
@@ -688,7 +685,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     const step3Done = isAccepted && ['arrived_destination', 'arrived_prt', 'prt_done'].includes(phase);
     const step4Done = isAccepted && phase === 'prt_done';
     
-    // FIX TARJETA VISUAL: Extrae la patente o el VIN para mostrarlo siempre
     const ident = getJobIdentifier(j);
 
     return (
@@ -1043,21 +1039,110 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           </form>
         </div>
       )}
+      
+      {/* MODAL DE RECHAZO PRT */}
+      {prtPromptJob && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <form onSubmit={(e) => { e.preventDefault(); updatePhase(prtPromptJob, 'prt_done', { prt_result: 'rechazado', prt_reason: e.target.reason.value }); setPrtPromptJob(null); }} className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-xl border-t-8 border-red-500">
+            <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5"><XCircle className="text-red-500"/> Motivo del Rechazo PRT</h3>
+            <textarea name="reason" required placeholder="Escribe por qué rechazaron el vehículo en la planta..." className="w-full border-2 p-3 rounded-xl font-bold text-sm outline-none focus:border-red-500" rows="3"></textarea>
+            <div className="flex gap-3">
+              <button type="button" onClick={()=>setPrtPromptJob(null)} className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-sm text-slate-600 transition-colors">Cancelar</button>
+              <button type="submit" className="flex-[2] py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm shadow-md transition-colors">Guardar Rechazo</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* MODAL DE TRASPASO A COMPAÑERO */}
+      {relayPromptJob && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+          <div className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 max-w-sm w-full text-center relative animate-in zoom-in-95 border border-slate-100">
+            <button type="button" onClick={() => setRelayPromptJob(null)} className="absolute top-4 right-4 bg-slate-100 p-2 rounded-full hover:bg-slate-200 transition-colors"><X className="w-5 h-5 text-slate-700"/></button>
+            <h3 className="text-xl font-black text-slate-800 mb-1">Traspaso a Compañero</h3>
+            <p className="text-xs font-bold text-slate-500 mb-5">Pide al otro conductor que escanee este código con la cámara de su celular para entregarle el auto.</p>
+            
+            <div className="bg-white p-3 rounded-2xl border-4 border-slate-100 shadow-inner inline-block">
+              <img src={`https://quickchart.io/qr?size=250&margin=1&text=${encodeURIComponent(`${window.location.origin}/?relay=${relayPromptJob.id}`)}`} alt="QR Relevo" className="w-48 h-48 mx-auto" />
+            </div>
+            
+            <div className="mt-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+              <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">O envíale el link por WhatsApp:</p>
+              <button onClick={() => {
+                 const link = `${window.location.origin}/?relay=${relayPromptJob.id}`;
+                 const text = `🔑 Toma mi relevo del vehículo ${relayPromptJob.plate || relayPromptJob.vin} abriendo este link: ${link}`;
+                 window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+              }} className="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl text-sm shadow-md transition-colors flex justify-center items-center gap-2"><Share2 className="w-4 h-4"/> Enviar Link a Compañero</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE CIERRE FORZADO (ADMIN) */}
+      {forceCloseJob && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+           <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl flex flex-col max-h-[80vh] animate-in zoom-in-95">
+              <div className="flex justify-between items-center mb-4">
+                 <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-2"><CheckCircle className="w-5 h-5 text-emerald-500"/> Asignar y Finalizar</h3>
+                 <button onClick={()=>setForceCloseJob(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4"/></button>
+              </div>
+              <p className="text-sm font-bold text-slate-500 mb-4 pb-4 border-b border-slate-100">Selecciona al conductor que realizó este traslado. El acta se cerrará automáticamente a su nombre (como entrega sin recepción).</p>
+              
+              <div className="overflow-y-auto space-y-2 flex-1 pr-1">
+                 {drivers.map(d => (
+                    <button key={d.id} onClick={async () => {
+                       showConfirm(`¿Guardar el traslado de la patente ${forceCloseJob.plate || forceCloseJob.vin} a nombre de ${d.name}?`, async () => {
+                          try {
+                             const mockChecklist = {
+                                client: forceCloseJob.client || '', brand: forceCloseJob.brand || '', model: forceCloseJob.model || '', 
+                                plateOrVin: forceCloseJob.plate || forceCloseJob.vin || '', origin: forceCloseJob.origin || '', 
+                                destination: forceCloseJob.destination || '', fuelLevel: 50, photos: {}, docs: {}, 
+                                observations: 'Sin observaciones registradas.', 
+                                receiverName: 'ENTREGA SIN RECEPCIÓN', receiverRut: 'N/A', noReception: true, signatureData: null, 
+                                assignedDriverName: d.name
+                             };
+                             await updateDoc(doc(db, 'transport_jobs', forceCloseJob.id), {
+                                status: 'completed',
+                                completedAt: Date.now(),
+                                acceptedByEmail: d.email,
+                                assignedDrivers: [{id: d.id, name: d.name, email: d.email}],
+                                assignedEmails: [d.email],
+                                checklist: mockChecklist,
+                                phase: forceCloseJob.tripType === 'revision' ? 'prt_done' : 'arrived_destination',
+                                prt_result: forceCloseJob.tripType === 'revision' ? (forceCloseJob.prt_result || 'aprobado') : null
+                             });
+                             notifyClient({ ...forceCloseJob, acceptedByEmail: d.email, assignedDriverName: d.name }, 'finalizado');
+                             setForceCloseJob(null);
+                             showAlert(`✅ Traslado cerrado exitosamente a nombre de ${d.name}.`);
+                          } catch (e) { console.error(e); showAlert("Error al forzar el cierre."); }
+                       });
+                    }} className="w-full text-left p-3 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-200 border border-slate-100 rounded-xl transition-colors">
+                       <p className="font-extrabold text-slate-800">{d.name}</p>
+                       <p className="text-[10px] font-bold text-slate-400">{d.email}</p>
+                    </button>
+                 ))}
+              </div>
+           </div>
+        </div>
+      )}
 
       {dupPromptJob && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-           <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4">
-              <h3 className="text-xl font-black">Nuevo Traslado</h3>
+           <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4 border-t-8 border-purple-500">
+              <div className="flex justify-between items-center">
+                 <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><Repeat className="w-5 h-5 text-purple-600"/> Nuevo Traslado</h3>
+                 <button onClick={()=>setDupPromptJob(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X className="w-4 h-4"/></button>
+              </div>
               <div className="space-y-2">
-                 <button onClick={() => setDupMode('clone')} className={`w-full p-3 rounded-xl border-2 ${dupMode === 'clone' ? 'border-purple-600 bg-purple-50' : 'border-slate-100'}`}>Clonar Exactamente Igual</button>
-                 <button onClick={() => setDupMode('return')} className={`w-full p-3 rounded-xl border-2 ${dupMode === 'return' ? 'border-purple-600 bg-purple-50' : 'border-slate-100'}`}>Retornar al Origen</button>
-                 <button onClick={() => { setDupMode('continue'); setDupDestination(''); }} className={`w-full p-3 rounded-xl border-2 ${dupMode === 'continue' ? 'border-purple-600 bg-purple-50' : 'border-slate-100'}`}>Continuar a Otro Destino</button>
+                 <button onClick={() => setDupMode('clone')} className={`w-full text-left p-3 rounded-xl border-2 font-extrabold ${dupMode === 'clone' ? 'border-purple-600 bg-purple-50 text-purple-800' : 'border-slate-100 text-slate-700'}`}>Clonar Exactamente Igual</button>
+                 <button onClick={() => setDupMode('return')} className={`w-full text-left p-3 rounded-xl border-2 font-extrabold ${dupMode === 'return' ? 'border-purple-600 bg-purple-50 text-purple-800' : 'border-slate-100 text-slate-700'}`}>Retornar al Origen</button>
+                 <button onClick={() => { setDupMode('continue'); setDupDestination(''); }} className={`w-full text-left p-3 rounded-xl border-2 font-extrabold ${dupMode === 'continue' ? 'border-purple-600 bg-purple-50 text-purple-800' : 'border-slate-100 text-slate-700'}`}>Continuar a Otro Destino</button>
                  {dupMode === 'continue' && (
-                    <input type="text" placeholder="Escribe el nuevo destino..." value={dupDestination} onChange={e=>setDupDestination(e.target.value)} className="w-full border-2 p-3 rounded-xl mt-2"/>
+                    <input type="text" placeholder="Escribe el nuevo destino..." value={dupDestination} onChange={e=>setDupDestination(e.target.value)} className="w-full border-2 border-purple-300 p-3 rounded-xl mt-2 font-bold outline-none focus:border-purple-500"/>
                  )}
               </div>
-              <button onClick={executeDuplicate} className="w-full bg-purple-600 text-white py-3 rounded-xl font-black shadow-md">Crear Traslado</button>
-              <button onClick={()=>setDupPromptJob(null)} className="w-full bg-slate-100 py-3 rounded-xl font-bold">Cancelar</button>
+              <button onClick={executeDuplicate} className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3.5 rounded-xl font-black shadow-md transition-colors">Crear Traslado</button>
+              <button onClick={()=>setDupPromptJob(null)} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-bold transition-colors">Cancelar</button>
            </div>
         </div>
       )}
@@ -1066,37 +1151,4 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
            <div className="bg-white rounded-3xl p-5 w-full max-w-lg shadow-2xl flex flex-col max-h-[95vh] border-t-8 border-emerald-500">
               <div className="flex justify-between mb-4">
-                 <h3 className="text-xl font-black text-slate-800">Firma Masiva</h3>
-                 <button onClick={()=>setShowBulkSign(false)} className="bg-slate-100 p-2 rounded-full"><X className="w-5 h-5"/></button>
-              </div>
-              <div className="overflow-y-auto space-y-4 flex-1">
-                 <div className="bg-slate-50 border p-3 rounded-xl">
-                    <p className="text-[10px] font-black text-slate-500 uppercase mb-2">Selecciona los vehículos a entregar:</p>
-                    <div className="max-h-40 overflow-y-auto space-y-1.5">
-                       {inProgressJobsList.length === 0 ? (
-                          <p className="text-xs font-bold text-slate-400 text-center">No hay vehículos en curso.</p>
-                       ) : (
-                          inProgressJobsList.map(j => (
-                             <label key={j.id} className="flex items-center gap-3 p-3 border rounded-xl bg-white cursor-pointer hover:bg-slate-50">
-                                <input type="checkbox" className="w-4 h-4 accent-emerald-600" checked={bulkSelectedIds.includes(j.id)} onChange={e => e.target.checked ? setBulkSelectedIds([...bulkSelectedIds, j.id]) : setBulkSelectedIds(bulkSelectedIds.filter(id => id !== j.id))}/>
-                                <div className="text-xs font-black text-slate-700">
-                                   {getJobIdentifier(j)} - {j.tripType === 'simple' ? j.description : `${j.brand} ${j.model}`}
-                                </div>
-                             </label>
-                          ))
-                       )}
-                    </div>
-                 </div>
-                 <input type="text" placeholder="Nombre del Receptor" value={bulkReceiverName} onChange={e=>setBulkReceiverName(e.target.value)} className="w-full border-2 p-3 rounded-xl font-bold"/>
-                 <input type="text" placeholder="RUT Receptor" value={bulkReceiverRut} onChange={e=>setBulkReceiverRut(e.target.value)} className="w-full border-2 p-3 rounded-xl font-bold"/>
-                 <div className="border-2 rounded-xl overflow-hidden">
-                    <SignaturePad onSave={d=>setBulkSignature(d)} onClear={()=>setBulkSignature(null)}/>
-                 </div>
-              </div>
-              <button onClick={handleBulkSignSubmit} className="w-full bg-emerald-600 text-white py-4 rounded-xl font-black mt-4 shadow-md">Finalizar Flota</button>
-           </div>
-        </div>
-      )}
-    </div>
-  );
-}
+                 <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><PenTool className="w-5 h-5 text-emerald-60
