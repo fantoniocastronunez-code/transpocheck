@@ -449,12 +449,12 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     if (isSubmitting) return;
     if (!formData.noReception && !formData.signatureData) return showAlert("La firma del receptor es mandatoria.");
     
-    // NUEVO: Validar que se suban todas las fotos obligatorias en Pintura/Grabado
+    // Validación de Fotografías Obligatorias
     if (job.tripType === 'simple' && (job.isPintura || job.isGrabado)) {
        const reqPhotos = (job.qtyPintura || 0) + (job.qtyGrabado || 0);
        const currentPhotos = Object.values(formData.photos || {}).filter(v => v).length;
        if (currentPhotos < reqPhotos) {
-           return showAlert(`⚠️ Evidencia Incompleta: Debes adjuntar las ${reqPhotos} fotografías requeridas (Patentes y/o Vidrios) para poder cerrar y rendir esta acta.`);
+           return showAlert(`⚠️ Evidencia Incompleta: Debes adjuntar las ${reqPhotos} fotografías requeridas para poder cerrar y rendir esta acta.`);
        }
     }
 
@@ -463,39 +463,131 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     let d = {...formData}; 
     d.client = d.client === 'OTRO' ? d.manualClient : d.client; 
 
-
     if(d.noReception) { 
       d.receiverName="ENTREGA SIN RECEPCIÓN"; 
       d.receiverRut="N/A"; 
     }
 
+    // --- 1. VALIDACIÓN SINCRÓNICA (Dinero y Rendición) ANTES DE CERRAR ---
+    let totalToDeduct = 0;
+    const expensesToRegister = [];
 
-    try {
-      d = await syncFilesToStorage(d);
-    } catch (uploadError) {
-      console.error("Error subiendo imágenes:", uploadError);
-      showAlert("Hubo un error subiendo las imágenes a la nube. Verifica tu internet.");
-      setIsSubmitting(false);
-      return;
-    }
+    const processExpense = (amountStr, detailStr) => {
+      const num = Number(String(amountStr).replace(/[^0-9]/g, ''));
+      if (num > 0) {
+        totalToDeduct += num;
+        expensesToRegister.push({ amount: num, detail: detailStr });
+      }
+    };
 
-
-    const getGPS = () => new Promise((resolve) => {
-      if (!("geolocation" in navigator)) return resolve(null);
-      navigator.geolocation.getCurrentPosition(
-        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        (err) => resolve(null), 
-        { timeout: 6000, enableHighAccuracy: true } 
-      );
-    });
-
-
-    if (!d.location) {
-      const coords = await getGPS();
-      if (coords) d.location = coords;
+    if (d.hasFuelCharge && d.fuelChargeAmount) {
+      processExpense(d.fuelChargeAmount, `Carga Combustible (Patente: ${d.plateOrVin || 'S/N'})`);
     }
     
-    const fd = { scheduledDate: new Date().toISOString().split('T')[0], client: d.client, brand: d.brand, model: d.model, vin: d.plateOrVin, plate: d.plateOrVin, origin: d.origin, destination: d.destination, status: 'completed', completedAt: Date.now(), checklist: d, tripType: job.tripType || 'traslado' };
+    if (job.tripType === 'revision') {
+      if (job.rtData?.revision && d.prtCostRevision) processExpense(d.prtCostRevision, `Valor Revisión Técnica (Patente: ${d.plateOrVin || 'S/N'})`);
+      if (job.rtData?.inspeccion && d.prtCostInspeccion) processExpense(d.prtCostInspeccion, `Valor Inspección Visual (Patente: ${d.plateOrVin || 'S/N'})`);
+      if (job.rtData?.frenos && d.prtCostFrenos) processExpense(d.prtCostFrenos, `Valor Cert. Frenos (Patente: ${d.plateOrVin || 'S/N'})`);
+    }
+
+    // Comprobar saldo ANTES de dejar ir al conductor
+    if (totalToDeduct > 0) {
+      const currentDriver = drivers?.find(drv => drv.email === currentUserEmail);
+      const isAdminUser = ['fcastro@logisticats.cl', 'hcastro@logisticats.cl'].includes(currentUserEmail);
+
+      if (currentDriver) {
+        const currentBalance = currentDriver.balance || 0;
+        if (!isAdminUser && totalToDeduct > currentBalance) {
+            setIsSubmitting(false);
+            return showAlert(`No puedes enviar el checklist. Intentas rendir ${formatMoney(totalToDeduct)} en gastos, pero tu fondo actual es de solo ${formatMoney(currentBalance)}. Pide a la central que te asigne más dinero.`);
+        }
+      }
+    }
+
+    // --- 2. MAGIA UX: CERRAR DE INMEDIATO ---
+    showAlert("⏳ Guardando y subiendo fotos en segundo plano... Puedes continuar trabajando.");
+    onComplete(); // ESTO CIERRA LA PANTALLA INSTANTÁNEAMENTE
+
+   // --- 3. SUBIDA SILENCIOSA (SEGUNDO PLANO) ---
+    (async () => {
+      try {
+        d = await syncFilesToStorage(d);
+
+        const getGPS = () => new Promise((resolve) => {
+          if (!("geolocation" in navigator)) return resolve(null);
+          navigator.geolocation.getCurrentPosition(
+            (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            (err) => resolve(null), { timeout: 6000, enableHighAccuracy: true } 
+          );
+        });
+
+        if (!d.location) {
+          const coords = await getGPS();
+          if (coords) d.location = coords;
+        }
+        
+        const fd = { scheduledDate: new Date().toISOString().split('T')[0], client: d.client, brand: d.brand, model: d.model, vin: d.plateOrVin, plate: d.plateOrVin, origin: d.origin, destination: d.destination, status: 'completed', completedAt: Date.now(), checklist: d, tripType: job.tripType || 'traslado' };
+        
+        if (totalToDeduct > 0) {
+          const currentDriver = drivers?.find(drv => drv.email === currentUserEmail);
+          if (currentDriver) {
+            const newBalance = (currentDriver.balance || 0) - totalToDeduct;
+            await updateDoc(doc(db, 'drivers', currentDriver.id), { balance: newBalance });
+
+            for (const exp of expensesToRegister) {
+              await addDoc(collection(db, 'expenses'), {
+                driverId: currentDriver.id, driverEmail: currentDriver.email, driverName: currentDriver.name,
+                type: 'expense', amount: exp.amount, detail: exp.detail,
+                jobId: job.id === 'NEW_QUICK_JOB' ? '' : job.id, deductedAmount: exp.amount, createdAt: Date.now()
+              });
+            }
+          }
+        }
+       if (d.plateOrVin) {
+            const plateUpper = d.plateOrVin.toUpperCase();
+            const vehRef = collection(db, 'vehicles');
+            const q = query(vehRef, where('plate', '==', plateUpper));
+            const querySnapshot = await getDocs(q);
+            const activeReminders = (d.internalReminders || []).filter(r => !r.resolved);
+
+            if (!querySnapshot.empty) {
+                await updateDoc(doc(db, 'vehicles', querySnapshot.docs[0].id), { docs: d.docs, docsExpiry: d.docsExpiry || {}, internalReminders: activeReminders });
+            } else {
+                await addDoc(vehRef, { plate: plateUpper, brand: d.brand, model: d.model, client: d.client, docs: d.docs, docsExpiry: d.docsExpiry || {}, internalReminders: activeReminders, createdAt: Date.now() });
+            }
+        }
+
+        if(isQuick) { 
+            fd.assignedDriverName="Auto-creado"; fd.acceptedByEmail=currentUserEmail; 
+            await addDoc(collection(db,'transport_jobs'), fd); 
+        } else { 
+            if (job.tripType === 'revision' && d.rtStatus === 'rechazado') {
+               fd.status = 'failed'; fd.failedReason = d.rtRejectReason || 'Revisión Técnica Rechazada';
+               const cloneJob = { scheduledDate: d.scheduledDate || null, client: d.client || '', brand: d.brand || '', model: d.model || '', vin: d.plateOrVin || '', plate: d.plateOrVin || '', origin: d.origin || '', destination: d.destination || '', tripType: job.tripType || 'traslado', rtData: job.rtData || null, assignedDrivers: job.assignedDrivers || [], assignedEmails: job.assignedEmails || [], status: 'pending', createdAt: Date.now(), checklist: null };
+               await addDoc(collection(db, 'transport_jobs'), cloneJob);
+            }
+            await updateDoc(doc(db,'transport_jobs',job.id), fd); 
+        }
+        
+        try {
+           if (fd.client && fd.client !== 'Sin Cliente') {
+              const qClient = query(collection(db, 'clients'), where('name', '==', fd.client));
+              const snapClient = await getDocs(qClient);
+              if (!snapClient.empty) {
+                 const clientRecord = snapClient.docs[0].data();
+                 const notifs = clientRecord.notifications || { finalizado: !!clientRecord.enableNotifications };
+                 if (notifs.finalizado && clientRecord.email) {
+                    let driverName = d.assignedDriverName || currentUserEmail;
+                    if (drivers) { const drv = drivers.find(x => x.email === currentUserEmail); if (drv) driverName = drv.name; }
+                    fetch('/api/notify-client', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: clientRecord.email, clientName: clientRecord.name, type: 'finalizado', jobDetails: { id: job.id === 'NEW_QUICK_JOB' ? 'N/A' : job.id, driverName: driverName, vehicle: job.tripType === 'simple' ? (job.description || 'Servicio en Terreno') : (`${fd.brand || ''} ${fd.model || ''}`.trim() || 'Vehículo'), plate: fd.plate || fd.vin || job.associatedPlate || 'S/N', origin: fd.origin || 'Origen', destination: fd.destination || 'Destino' } }) });
+                 }
+              }
+           }
+        } catch (e) {}
+      } catch(error) { console.error("Firebase Error 2do Plano:", error); }
+    })(); 
+  };
+
     
     try {
       let totalToDeduct = 0;
@@ -1606,6 +1698,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     </div>
   );
 }
+
 
 
 
