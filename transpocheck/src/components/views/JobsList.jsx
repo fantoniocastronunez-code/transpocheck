@@ -29,7 +29,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [bulkReceiverRut, setBulkReceiverRut] = useState('');
   const [bulkSignature, setBulkSignature] = useState(null);
 
-  // NUEVO: Estados para creación de Flota (Convoy)
   const [showFleetModal, setShowFleetModal] = useState(false);
   const [fleetSelectedIds, setFleetSelectedIds] = useState([]);
 
@@ -41,6 +40,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [processingId, setProcessingId] = useState(null); 
 
   const [isAppReady, setIsAppReady] = useState(false);
+  
   useEffect(() => {
      const timer = setTimeout(() => setIsAppReady(true), 800);
      return () => clearTimeout(timer);
@@ -153,7 +153,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const now = new Date();
   const isAdminView = role === 'admin';
   
-  // FIX FLOTA: Si el conductor es parte de una flota, puede ver TODOS los trabajos de esa flota
   const myFleetGroups = jobs.filter(j => 
      (j.status === 'accepted' || j.status === 'pending') && 
      (j.acceptedByEmail === currentUserEmail || j.assignedEmails?.includes(currentUserEmail)) && 
@@ -165,7 +164,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       const isMine = (job.status === 'pending' && job.assignedEmails?.includes(currentUserEmail)) || (job.status !== 'pending' && job.acceptedByEmail === currentUserEmail);
       const isMyFleet = job.fleetGroup && myFleetGroups.includes(job.fleetGroup);
       
-      // Si no es mi trabajo, y tampoco pertenece a una flota en la que yo esté, lo ocultamos
       if (!isMine && !isMyFleet) return false;
     }
     
@@ -299,7 +297,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     }
   };
 
-  // NUEVO MOTOR: Creación de Grupos de Flota
   const handleCreateFleet = async () => {
     if (fleetSelectedIds.length < 2) return showAlert("Selecciona al menos 2 vehículos para formar un convoy.");
     setProcessingId('create-fleet');
@@ -897,7 +894,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         {j.phase === 'arrived_pickup' && j.arrivedPickupAt && <WaitTimerBadge arrivedAt={j.arrivedPickupAt} role={role} />}
 
         <div className="mt-auto pt-3 border-t border-slate-100 flex flex-col gap-2">
-          {/* Si el trabajo NO es mío, solo me muestra la tarjeta de forma informativa. No me deja tocar los botones de acción */}
           {(!isAdminView && j.acceptedByEmail !== currentUserEmail && !j.assignedEmails?.includes(currentUserEmail)) ? (
              <div className="bg-slate-50 border border-slate-200 text-slate-500 text-xs font-bold text-center py-3 rounded-xl">Vehículo en convoy a cargo de un compañero.</div>
           ) : (
@@ -994,25 +990,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
       </div>
     );
-  };
-
-  const handleCreateFleet = async () => {
-    if (fleetSelectedIds.length < 2) return showAlert("Selecciona al menos 2 vehículos para formar un convoy.");
-    setProcessingId('create-fleet');
-    try {
-       const newFleetId = `FLT-${Date.now()}`;
-       for (const jId of fleetSelectedIds) {
-          await updateDoc(doc(db, 'transport_jobs', jId), { fleetGroup: newFleetId });
-       }
-       showAlert("✅ Convoy de Flota creado exitosamente. La Firma Masiva está habilitada para este grupo.");
-       setShowFleetModal(false);
-       setFleetSelectedIds([]);
-    } catch(e) {
-       console.error(e);
-       showAlert("Error al agrupar los vehículos.");
-    } finally {
-       setProcessingId(null);
-    }
   };
 
   const handlePurgeOldJobs = async () => {
