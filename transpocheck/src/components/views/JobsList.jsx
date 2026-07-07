@@ -946,13 +946,45 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   };
 
   const handlePurgeOldJobs = async () => {
-    showConfirm("⚠️ ¿Limpiar DB? Se empaquetarán actas > 30 días en ZIP.", async () => {
+    showConfirm("⚠️ ¿Estás seguro de limpiar la base de datos? Se empaquetarán todas las actas de más de 30 días en un archivo ZIP para tu respaldo, y luego se eliminarán de la nube.", async () => {
       try {
+        showAlert("⏳ Buscando traslados antiguos en la base de datos...");
         const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+        
         const q = query(collection(db, 'transport_jobs'), where('createdAt', '<', thirtyDaysAgo));
         const snap = await getDocs(q);
-        if (snap.empty) return showAlert("Nada que limpiar.");
+        
+        if (snap.empty) return showAlert("No hay traslados antiguos para eliminar.");
 
+        const jobsToExport = snap.docs.map(d => ({id: d.id, ...d.data()})).filter(j => j.checklist);
+
+        if (jobsToExport.length > 0) {
+          showAlert(`⏳ Procesando ${jobsToExport.length} actas antiguas en un archivo ZIP. Por favor no cierres la aplicación...`);
+          
+          const JSZip = await new Promise((resolve) => {
+            if (window.JSZip) return resolve(window.JSZip);
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+            script.onload = () => resolve(window.JSZip);
+            document.body.appendChild(script);
+          });
+          
+          const zip = new JSZip();
+          for (const job of jobsToExport) {
+            const docPDF = await buildPDFDoc(job);
+            zip.file(`Respaldo_Acta_${job.id}.pdf`, docPDF.output('blob'));
+          }
+          
+          const content = await zip.generateAsync({ type: 'blob' });
+          const url = URL.createObjectURL(content);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `Respaldo_Limpieza_LogisticAPP_${new Date().toISOString().split('T')[0]}.zip`;
+          link.click();
+          
+          showAlert("✅ Respaldo ZIP descargado. Borrando de la nube...");
+        }
+        
         let count = 0;
         for (const document of snap.docs) {
           await deleteDoc(doc(db, 'transport_jobs', document.id));
@@ -964,9 +996,16 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   };
 
   const handleDownloadAllZIP = async () => {
-    showAlert("⏳ Comprimiendo...");
+    showAlert("⏳ Comprimiendo... Por favor espera.");
     try {
-        const JSZip = (await import('jszip')).default;
+        const JSZip = await new Promise((resolve) => {
+          if (window.JSZip) return resolve(window.JSZip);
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+          script.onload = () => resolve(window.JSZip);
+          document.body.appendChild(script);
+        });
+        
         const zip = new JSZip();
         for (const job of historyJobs.filter(j => j.checklist)) {
            const docPDF = await buildPDFDoc(job);
@@ -976,8 +1015,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         const url = URL.createObjectURL(content);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `Actas_Export_${Date.now()}.zip`;
+        link.download = `Actas_LogisticAPP_${new Date().toISOString().split('T')[0]}.zip`;
         link.click();
+        showAlert("✅ ¡Archivo ZIP generado y descargado con éxito!");
     } catch (err) { showAlert("Error al generar ZIP."); }
   };
 
