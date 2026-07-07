@@ -509,7 +509,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     onComplete(); // ESTO CIERRA LA PANTALLA INSTANTÁNEAMENTE
 
       // --- 3. SUBIDA SILENCIOSA (SEGUNDO PLANO) ---
-    (async () => {
+    const ejecutarSegundoPlano = async () => {
       try {
         d = await syncFilesToStorage(d);
 
@@ -583,9 +583,12 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                  }
               }
            }
-        } catch (e) {}
-      } catch(error) { console.error("Firebase Error 2do Plano:", error); }
-    })(); 
+             } catch(error) { 
+        console.error("Firebase Error 2do Plano:", error);
+      }
+    };
+    
+    ejecutarSegundoPlano();
   };
 
     
