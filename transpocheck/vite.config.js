@@ -11,6 +11,30 @@ export default defineConfig({
     VitePWA({ 
       registerType: 'autoUpdate',
       includeAssets: ['logo.png', 'LogoLogistica.png', 'robots.txt', 'apple-touch-icon.png'],
+      
+      // NUEVO: FORZAMOS EL COLOR NEGRO PARA LA BARRA DE NAVEGACIÓN DEL SISTEMA
+      manifest: {
+        name: 'LogisticAPP',
+        short_name: 'LogisticAPP',
+        description: 'Sistema Operativo Logístico',
+        theme_color: '#000000',
+        background_color: '#000000',
+        display: 'standalone',
+        orientation: 'portrait',
+        icons: [
+          {
+            src: '/logo.png',
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: '/logo.png',
+            sizes: '512x512',
+            type: 'image/png'
+          }
+        ]
+      },
+
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,ttf,eot}'],
         maximumFileSizeToCacheInBytes: 6000000, // Permite cachear archivos de hasta 6MB
