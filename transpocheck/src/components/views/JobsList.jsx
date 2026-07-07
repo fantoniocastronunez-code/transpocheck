@@ -1342,7 +1342,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           </div>
       )}
 
-      {dupPromptJob && (
+           {dupPromptJob && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
            <div className="bg-white rounded-3xl p-5 sm:p-6 w-full max-w-md shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 border-t-8 border-purple-500">
               <div className="flex justify-between items-start mb-4">
@@ -1392,7 +1392,34 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                                 <input type="text" autoFocus placeholder="Escribe el nuevo destino..." value={dupDestination} onChange={e=>setDupDestination(e.target.value)} className="w-full bg-white border border-purple-200 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-400 font-bold" />
                              </div>
                           ) : (
-                             <p className="text-[10px] font-bold text-slate-500 truncate">{dupPromptJob.tripType === 'revision' ? 'PRT' : (dupPromptJob.destinatio
+                             <p className="text-[10px] font-bold text-slate-500 truncate">{dupPromptJob.tripType === 'revision' ? 'PRT' : (dupPromptJob.destination || dupPromptJob.origin)} ➔ ???</p>
+                          )}
+                       </div>
+                    </button>
+                 </div>
+
+                 {/* ASIGNACIÓN DE CONDUCTOR */}
+                 <div className="space-y-2 pt-2 border-t border-slate-100">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Asignar a Conductor</label>
+                    <select value={dupDriverEmail} onChange={e=>setDupDriverEmail(e.target.value)} className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-purple-500 font-bold text-slate-700 bg-slate-50">
+                       <option value="">Nadie aún (Enviar a Bolsa de Trabajo)</option>
+                       {drivers.map(d => (
+                          <option key={d.id} value={d.email}>{d.name}</option>
+                       ))}
+                    </select>
+                 </div>
+              </div>
+
+              <div className="flex gap-3 pt-3 border-t border-slate-100 mt-auto">
+                 <button onClick={()=>setDupPromptJob(null)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3.5 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>
+                 <button onClick={executeDuplicate} disabled={processingId === `dup-${dupPromptJob.id}`} className="flex-[2] bg-purple-600 hover:bg-purple-700 text-white py-3.5 rounded-xl font-extrabold text-sm transition-colors shadow-lg shadow-purple-200 flex justify-center items-center gap-2 disabled:opacity-50">
+                    {processingId === `dup-${dupPromptJob.id}` ? <Clock className="w-5 h-5 animate-spin"/> : 'Crear Traslado'}
+                 </button>
+              </div>
+           </div>
+        </div>
+      )}
+
       {showBulkSign && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
            <div className="bg-white rounded-3xl p-5 w-full max-w-lg shadow-2xl flex flex-col max-h-[95vh] border-t-8 border-emerald-500">
