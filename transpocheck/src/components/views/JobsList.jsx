@@ -1401,12 +1401,27 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                  {/* ASIGNACIÓN DE CONDUCTOR */}
                  <div className="space-y-2 pt-2 border-t border-slate-100">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Asignar a Conductor</label>
-                    <select value={dupDriverEmail} onChange={e=>setDupDriverEmail(e.target.value)} className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-purple-500 font-bold text-slate-700 bg-slate-50">
-                       <option value="">Nadie aún (Enviar a Bolsa de Trabajo)</option>
-                       {drivers.map(d => (
-                          <option key={d.id} value={d.email}>{d.name}</option>
-                       ))}
-                    </select>
+                    <div className="bg-slate-50 border-2 border-slate-100 rounded-xl overflow-hidden">
+                       <div className="max-h-40 overflow-y-auto p-1.5 space-y-1 scrollbar-none">
+                          <label className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${!dupDriverEmail ? 'border-purple-500 bg-purple-50' : 'border-transparent hover:bg-slate-100'}`}>
+                             <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${!dupDriverEmail ? 'border-purple-600' : 'border-slate-300'}`}>
+                                {!dupDriverEmail && <div className="w-2 h-2 bg-purple-600 rounded-full"></div>}
+                             </div>
+                             <span className={`text-xs font-black ${!dupDriverEmail ? 'text-purple-800' : 'text-slate-600'}`}>Nadie aún (Bolsa de Trabajo)</span>
+                          </label>
+                          {drivers.map(d => {
+                             const isSelected = dupDriverEmail === d.email;
+                             return (
+                                <label key={d.id} className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${isSelected ? 'border-purple-500 bg-purple-50' : 'border-transparent hover:bg-slate-100'}`}>
+                                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${isSelected ? 'border-purple-600' : 'border-slate-300'}`}>
+                                      {isSelected && <div className="w-2 h-2 bg-purple-600 rounded-full"></div>}
+                                   </div>
+                                   <span className={`text-xs font-black ${isSelected ? 'text-purple-800' : 'text-slate-700'}`}>{d.name}</span>
+                                </label>
+                             );
+                          })}
+                       </div>
+                    </div>
                  </div>
               </div>
 
