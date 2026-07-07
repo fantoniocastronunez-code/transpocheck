@@ -302,7 +302,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   };
 
   return (
-    <div className="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-100">
+    <div className="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-100 mb-28">
       
       {/* NUEVO: Datalist invisible para autocompletar destinos */}
       <datalist id="directory-destinations">
@@ -394,7 +394,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                      <input name="scheduledTime" type="time" defaultValue={jobToEdit?.scheduledTime || ''} className="w-2/5 border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-700" />
                    </div>
                 </div>
-                <div className="space-y-1 relative z-50">
+                <div className="space-y-1 relative z-[999]">
                   <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider ml-1">Cliente</label>
                   <CustomClientSelector 
                     value={selectedClient} 
@@ -520,7 +520,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                    <input name="scheduledTime" type="time" defaultValue={jobToEdit?.scheduledTime || ''} className="w-2/5 border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white text-slate-700 shadow-sm" />
                  </div>
               </div>
-              <div className="space-y-1 relative z-50">
+              <div className="space-y-1 relative z-[999]">
                 <label className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider ml-1">Cliente Asociado (Opcional)</label>
                 <CustomClientSelector 
                   value={selectedClient} 
@@ -576,6 +576,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     </div>
   );
 }
+
 
 
 
