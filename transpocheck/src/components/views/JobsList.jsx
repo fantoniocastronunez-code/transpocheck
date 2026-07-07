@@ -1411,7 +1411,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                              <span className={`text-xs font-black ${dupDriverEmails.length === 0 ? 'text-purple-800' : 'text-slate-600'}`}>Nadie aún (Bolsa de Trabajo)</span>
                           </div>
 
-                          {drivers.map(d => {
+                          {drivers.filter(d => !d.isHidden).map(d => {
                              const isSelected = dupDriverEmails.includes(d.email);
                              return (
                                 <div key={d.id} onClick={() => {
