@@ -3,11 +3,12 @@ import { updateDoc, doc, deleteDoc, addDoc, collection, deleteField, getDocs, qu
 import { 
   Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, 
   Copy, X, XCircle, MapPin, Clock, FileDown, Search, ChevronUp, ChevronDown,
-  Trash2, Car, Repeat, AlertCircle
+  Trash2, Car, Repeat, AlertCircle, PenTool
 } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import WaitTimerBadge from '../ui/WaitTimerBadge';
 import SwipeButton from '../ui/SwipeButton';
+import SignaturePad from '../ui/SignaturePad';
 import { formatDateDisplay } from '../../utils/helpers';
 
 export default function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, currentUserEmail, showAlert, showConfirm, allClientsList, onLoadMore }) {
@@ -22,6 +23,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [dupMode, setDupMode] = useState('clone'); // 'clone', 'return', 'continue'
   const [dupDestination, setDupDestination] = useState('');
   const [dupDriverEmail, setDupDriverEmail] = useState('');
+
+  // NUEVO: Estados para Firma Masiva (Flotas)
+  const [showBulkSign, setShowBulkSign] = useState(false);
+  const [bulkSelectedIds, setBulkSelectedIds] = useState([]);
+  const [bulkReceiverName, setBulkReceiverName] = useState('');
+  const [bulkReceiverRut, setBulkReceiverRut] = useState('');
+  const [bulkSignature, setBulkSignature] = useState(null);
 
   const [historyClientFilter, setHistoryClientFilter] = useState(''); 
   const [searchTerm, setSearchTerm] = useState('');
@@ -299,6 +307,66 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       });
       setJobToFail(null); showAlert(reason === 'RECHAZO_RT_AUTOMATICO' ? "Revisión guardada como rechazada y se ha creado un nuevo traslado pendiente." : "Trabajo marcado como fallido.");
     } catch (e) { console.error(e); }
+  };
+
+  // NUEVO: Motor Procesador de Firmas Múltiples
+  const handleBulkSignSubmit = async () => {
+     if (bulkSelectedIds.length === 0) return showAlert("Selecciona al menos un vehículo para entregar.");
+     if (!bulkReceiverName || !bulkReceiverRut || !bulkSignature) return showAlert("Faltan datos del receptor o la firma.");
+     
+     setProcessingId('bulk-sign');
+     try {
+        for (const jId of bulkSelectedIds) {
+           const jobToClose = inProgressJobsList.find(j => j.id === jId);
+           if (!jobToClose) continue;
+           
+           // Rescatar las fotos que el conductor ya haya tomado previamente y estén en borrador
+           const draftData = jobToClose.draft?.formData || {};
+           const existingPhotos = draftData.photos || jobToClose.checklist?.photos || {};
+           
+           const mergedChecklist = {
+               client: jobToClose.client || '', 
+               brand: jobToClose.brand || '', 
+               model: jobToClose.model || '', 
+               plateOrVin: jobToClose.plate || jobToClose.vin || jobToClose.associatedPlate || '', 
+               origin: jobToClose.origin || '', 
+               destination: jobToClose.destination || '', 
+               fuelLevel: draftData.fuelLevel || 50, 
+               photos: existingPhotos,
+               docs: draftData.docs || {}, 
+               observations: draftData.observations || 'Entrega masiva de flota.', 
+               receiverName: bulkReceiverName, 
+               receiverRut: bulkReceiverRut, 
+               noReception: false, 
+               signatureData: bulkSignature, 
+               assignedDriverName: drivers?.find(d => d.email === jobToClose.acceptedByEmail)?.name || jobToClose.acceptedByEmail
+           };
+           
+           // Inyectar a la base de datos de cada vehículo
+           await updateDoc(doc(db, 'transport_jobs', jId), {
+              status: 'completed',
+              completedAt: Date.now(),
+              checklist: mergedChecklist,
+              phase: jobToClose.tripType === 'revision' ? 'prt_done' : 'arrived_destination',
+              draft: deleteField() // Borrar borrador temporal
+           });
+           
+           // Disparar correo al cliente por cada vehículo cerrado
+           notifyClient({...jobToClose, acceptedByEmail: jobToClose.acceptedByEmail, assignedDriverName: mergedChecklist.assignedDriverName}, 'finalizado');
+        }
+        
+        showAlert(`✅ ${bulkSelectedIds.length} traslados finalizados exitosamente con una sola firma.`);
+        setShowBulkSign(false);
+        setBulkSelectedIds([]);
+        setBulkReceiverName('');
+        setBulkReceiverRut('');
+        setBulkSignature(null);
+     } catch(e) {
+        console.error(e);
+        showAlert("Error crítico al procesar la firma masiva. Verifica tu conexión.");
+     } finally {
+        setProcessingId(null);
+     }
   };
 
   const getRouteStr = (j) => {
@@ -1094,16 +1162,25 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
            </div>
            <input type="text" placeholder="Buscar por patente, marca, modelo o cliente..." className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 shadow-sm transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
-        {isAdminView && (
-          <div className="flex gap-2 shrink-0">
-             <button type="button" onClick={handlePurgeOldJobs} className="group bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-sm transition-all duration-200" title="Borrar traslados de más de 30 días">
-               <Trash2 className="w-5 h-5"/> Limpiar DB
-             </button>
-             <button type="button" onClick={handleDownloadAllZIP} className="group bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0 transition-all duration-200">
-               <FileDown className="w-5 h-5"/> Descargar Lote ZIP
-             </button>
-          </div>
-        )}
+        
+        <div className="flex gap-2 shrink-0 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+           <button type="button" onClick={() => {
+              setBulkSelectedIds([]); setBulkReceiverName(''); setBulkReceiverRut(''); setBulkSignature(null); setShowBulkSign(true);
+           }} className="group bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 shrink-0">
+             <PenTool className="w-5 h-5"/> Firma Masiva
+           </button>
+
+           {isAdminView && (
+             <>
+               <button type="button" onClick={handlePurgeOldJobs} className="group bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-sm transition-all duration-200 shrink-0" title="Borrar traslados de más de 30 días">
+                 <Trash2 className="w-5 h-5"/> Limpiar DB
+               </button>
+               <button type="button" onClick={handleDownloadAllZIP} className="group bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 shrink-0">
+                 <FileDown className="w-5 h-5"/> ZIP Actas
+               </button>
+             </>
+           )}
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row gap-6 items-start">
@@ -1389,8 +1466,52 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
       )}
 
-      </div>
-  );
-}
+      {/* NUEVO: MODAL DE FIRMA MASIVA PARA FLOTAS */}
+      {showBulkSign && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+           <div className="bg-white rounded-3xl p-5 sm:p-6 w-full max-w-lg shadow-2xl flex flex-col max-h-[95vh] animate-in zoom-in-95 border-t-8 border-emerald-500">
+              <div className="flex justify-between items-start mb-4 shrink-0">
+                 <div>
+                   <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><PenTool className="w-5 h-5 text-emerald-600"/> Firma Masiva (Flotas)</h3>
+                   <p className="text-xs font-bold text-slate-500 mt-1">Cierra múltiples entregas con una sola firma del receptor.</p>
+                 </div>
+                 <button onClick={()=>setShowBulkSign(false)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-5 h-5"/></button>
+              </div>
+
+              <div className="overflow-y-auto space-y-4 pr-1 pb-4 flex-1">
+                 
+                 <div className="bg-emerald-50 border-2 border-emerald-100 p-3 rounded-xl shadow-sm">
+                    <p className="text-[10px] font-black text-emerald-700 uppercase mb-2">1. Selecciona los vehículos a entregar:</p>
+                    <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1">
+                       {inProgressJobsList.length === 0 ? (
+                          <p className="text-xs font-bold text-slate-400 p-2 text-center">No tienes vehículos en curso para entregar.</p>
+                       ) : (
+                          inProgressJobsList.map(j => {
+                             const isSelected = bulkSelectedIds.includes(j.id);
+                             return (
+                               <label key={j.id} className={`flex items-center gap-3 p-2.5 rounded-lg border-2 cursor-pointer transition-colors ${isSelected ? 'border-emerald-500 bg-emerald-100' : 'border-slate-200 bg-white hover:border-emerald-300'}`}>
+                                  <input type="checkbox" className="w-4 h-4 accent-emerald-600" checked={isSelected} onChange={(e) => {
+                                     if(e.target.checked) setBulkSelectedIds([...bulkSelectedIds, j.id]);
+                                     else setBulkSelectedIds(bulkSelectedIds.filter(id => id !== j.id));
+                                  }}/>
+                                  <div className="flex-1 min-w-0">
+                                     <p className="text-xs font-black text-slate-800 truncate">{j.tripType === 'simple' ? j.description : `${j.brand} ${j.model}`}</p>
+                                     <p className="text-[10px] font-bold text-slate-500 truncate">{j.plate || j.vin || j.associatedPlate || 'S/N'} • {j.client}</p>
+                                  </div>
+                               </label>
+                             );
+                          })
+                       )}
+                    </div>
+                 </div>
+
+                 <div className="space-y-3">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">2. Datos del Receptor Único</p>
+                    <input type="text" placeholder="Nombre completo del receptor" value={bulkReceiverName} onChange={e=>setBulkReceiverName(e.target.value)} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 text-sm outline-none focus:border-emerald-500 bg-white"/>
+                    <input type="text" placeholder="RUT Receptor (Ej: 12.345.678-9)" value={bulkReceiverRut} maxLength="12" onChange={(e)=>{ let val = e.target.value.replace(/[^0-9kK]/g, '').toUpperCase(); if (val.length > 1) { const dv = val.slice(-1); const body = val.slice(0, -1); val = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '-' + dv; } setBulkReceiverRut(val); }} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 text-sm outline-none focus:border-emerald-500 bg-white"/>
+                 </div>
+
+                 <div className="space-y-2">
+                    <p className="text-[10px] font-black
 
 
