@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { updateDoc, doc, deleteDoc, addDoc, collection, deleteField, getDocs, query, where } from 'firebase/firestore';
 import { 
   Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, 
   Copy, X, XCircle, MapPin, Clock, FileDown, Search, ChevronUp, ChevronDown,
-  Trash2, Car, Repeat, AlertCircle, PenTool, Truck
+  Trash2, Car, Repeat, PenTool, Truck
 } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import WaitTimerBadge from '../ui/WaitTimerBadge';
@@ -50,7 +51,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
      if (j.plate && j.plate !== 'S/N') return j.plate;
      if (j.associatedPlate && j.associatedPlate !== 'S/N') return j.associatedPlate;
      if (j.vin && j.vin !== 'S/N') return j.vin;
-     
      if (j.tripType === 'simple' && j.description) {
         const match = j.description.match(/(PATENTE|VIN)\s+([A-Z0-9]+)/i);
         if (match) return match[2];
@@ -163,7 +163,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     if (!isAdminView) {
       const isMine = (job.status === 'pending' && job.assignedEmails?.includes(currentUserEmail)) || (job.status !== 'pending' && job.acceptedByEmail === currentUserEmail);
       const isMyFleet = job.fleetGroup && myFleetGroups.includes(job.fleetGroup);
-      
       if (!isMine && !isMyFleet) return false;
     }
     
@@ -1122,7 +1121,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">{todayHistoryJobs.map(j => renderHistoryJobCard(j))}</div>
       </div>
 
-      {/* AQUÍ VOLVEMOS A PONER EL HISTORIAL ANTIGUO */}
       {olderHistoryJobs.length > 0 && (
           <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden mb-8">
               <div className="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
@@ -1132,6 +1130,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               <div className="divide-y divide-slate-100 max-h-[500px] overflow-y-auto">
                   {olderHistoryJobs.map(j => {
                       const isFailed = j.status === 'failed';
+                      const ident = getJobIdentifier(j);
                       return (
                           <div key={j.id} className="p-2 sm:p-3 hover:bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between transition-colors gap-2 sm:gap-0">
                               <div className="flex items-center gap-2 overflow-hidden">
@@ -1146,12 +1145,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                                           {j.tripType === 'simple' ? (
                                               <span className="text-[9px] bg-purple-100 border border-purple-200 text-purple-800 px-1.5 py-0.5 rounded font-black uppercase">SERVICIO</span>
                                           ) : (
-                                              <span className="text-[9px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-black uppercase">{getJobIdentifier(j)}</span>
+                                              <span className="text-[9px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-black uppercase">{ident}</span>
                                           )}
                                       </div>
                                       <p className="text-[10px] font-bold text-slate-500 truncate">
                                          {j.origin} 
-                                         {j.waypoints && j.waypoints.length > 0 && ` ➔ +${j.waypoints.length} int.`}
+                                         {j.waypoints && j.waypoints.length > 0 ? ` ➔ +${j.waypoints.length} int.` : ''}
                                          {j.destination && j.tripType !== 'simple' ? ` ➔ ${j.destination}` : ''}
                                       </p>
                                   </div>
@@ -1160,12 +1159,27 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                                   <span className="text-[9px] font-bold text-slate-400 mr-2">{new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL')}</span>
                                   {isAdminView && <button onClick={()=>onEditJob(j)} className="p-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-md transition-colors" title="Editar Traslado"><Edit2 className="w-3.5 h-3.5"/></button>}
                                   {isAdminView && <button onClick={()=>handleDuplicateJob(j)} className="p-1.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-md transition-colors" title="Repetir Vehículo"><Repeat className="w-3.5 h-3.5"/></button>}
-                                  <button onClick={()=>cpyWapp(j)} className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md transition-colors"><Copy className="w-3.5 h-3.5"/></button>
-                                  <button onClick={() => generatePDF(j)} className="p-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-md transition-colors"><FileDown className="w-3.5 h-3.5"/></button>
-                                  <button onClick={() => handleShareWhatsAppPDF(j)} disabled={processingId === `${j.id}-wapp`} className="p-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-md transition-colors disabled:opacity-50">
+                                  <button onClick={()=>cpyWapp(j)} className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md transition-colors" title="Copiar Resumen"><Copy className="w-3.5 h-3.5"/></button>
+                                  <button onClick={() => generatePDF(j)} className="p-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-md transition-colors" title="Descargar PDF"><FileDown className="w-3.5 h-3.5"/></button>
+                                  <button onClick={() => handleShareWhatsAppPDF(j)} disabled={processingId === `${j.id}-wapp`} className="p-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-md transition-colors disabled:opacity-50" title="Compartir PDF">
                                     {processingId === `${j.id}-wapp` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : <Share2 className="w-3.5 h-3.5"/>}
                                   </button>
-                                  {isAdminView && <button onClick={()=>handleDeleteJob(j.id)} className="p-1.5 bg-red-50 text-red-500 hover:bg-red-100       {jobToFail && (
+                                  {isAdminView && <button onClick={()=>handleDeleteJob(j.id)} className="p-1.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-md transition-colors" title="Eliminar Traslado"><Trash2 className="w-3.5 h-3.5"/></button>}
+                              </div>
+                          </div>
+                      );
+                  })}
+              </div>
+              {onLoadMore && (
+                 <button onClick={onLoadMore} className="w-full bg-slate-50 hover:bg-slate-100 text-blue-600 font-bold text-sm py-4 transition-colors border-t border-slate-200 shadow-inner">
+                     Cargar más traslados antiguos...
+                 </button>
+              )}
+          </div>
+      )}
+
+      {/* MODALES */}
+      {jobToFail && (
         <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[100] p-4">
           <form onSubmit={(e) => { e.preventDefault(); handleFailJob(jobToFail, e.target.reason.value); }} className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-4">
             <h3 className="text-lg font-extrabold">¿Motivo del fallo?</h3>
@@ -1175,7 +1189,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
       )}
       
-      {/* MODAL DE RECHAZO PRT */}
       {prtPromptJob && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <form onSubmit={(e) => { e.preventDefault(); updatePhase(prtPromptJob, 'prt_done', { prt_result: 'rechazado', prt_reason: e.target.reason.value }); setPrtPromptJob(null); }} className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-xl border-t-8 border-red-500">
@@ -1189,7 +1202,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
       )}
 
-      {/* MODAL DE TRASPASO A COMPAÑERO */}
       {relayPromptJob && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
           <div className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 max-w-sm w-full text-center relative animate-in zoom-in-95 border border-slate-100">
@@ -1213,7 +1225,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
       )}
 
-      {/* MODAL DE CIERRE FORZADO (ADMIN) */}
       {forceCloseJob && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
            <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl flex flex-col max-h-[80vh] animate-in zoom-in-95">
@@ -1261,7 +1272,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
       )}
 
-      {/* MODAL CREAR FLOTA (ADMIN) */}
       {showFleetModal && (
           <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
              <div className="bg-white rounded-3xl p-5 w-full max-w-lg shadow-2xl flex flex-col max-h-[95vh] border-t-8 border-indigo-500 animate-in zoom-in-95">
@@ -1294,7 +1304,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                 </button>
              </div>
           </div>
-        )}
+      )}
 
       {dupPromptJob && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
@@ -1355,4 +1365,3 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     </div>
   );
 }
-
