@@ -12,7 +12,7 @@ import SwipeButton from '../ui/SwipeButton';
 import SignaturePad from '../ui/SignaturePad';
 import { formatDateDisplay } from '../../utils/helpers';
 
-export default function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, currentUserEmail, showAlert, showConfirm, allClientsList, onLoadMore }) {
+export default function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, currentUserEmail, showAlert, showConfirm, allClientsList, onLoadMore, vehicles }) {
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [jobToFail, setJobToFail] = useState(null);
   const [prtPromptJob, setPrtPromptJob] = useState(null); 
@@ -714,6 +714,28 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     
     const ident = getJobIdentifier(j);
 
+    // NUEVO: Motor de Alertas de Documentos por Vencer (30 días) o Vencidos
+    let expiringDocs = [];
+    if (vehicles && ident && ident !== 'S/N' && j.tripType !== 'simple') {
+       const v = vehicles.find(x => x.plate === ident.toUpperCase());
+       if (v && v.docsExpiry) {
+           const today = new Date(); today.setHours(0,0,0,0);
+           const limit = new Date(); limit.setDate(today.getDate() + 30); // Aviso 30 días antes
+           const docNames = { soap: 'SOAP', permiso: 'Permiso Circ.', revTecnica: 'Rev. Técnica', gases: 'Gases' };
+           
+           for (const [key, dateStr] of Object.entries(v.docsExpiry)) {
+               if (!dateStr) continue;
+               const [year, month, day] = dateStr.split('-');
+               const expDate = new Date(year, month - 1, day);
+               if (expDate < today) {
+                   expiringDocs.push(`🔴 ${docNames[key]} Vencido (${day}/${month}/${year})`);
+               } else if (expDate <= limit) {
+                   expiringDocs.push(`🟠 ${docNames[key]} vence el ${day}/${month}/${year}`);
+               }
+           }
+       }
+    }
+
     return (
       <div key={j.id} className={`bg-white rounded-3xl border p-4 sm:p-5 flex flex-col shadow-sm relative hover:shadow-xl hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 overflow-hidden cursor-default ${j.fleetGroup ? 'border-indigo-200' : 'border-slate-100'}`}>
         <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${isPending ? 'bg-amber-400' : 'bg-blue-500'}`}></div>
@@ -891,6 +913,20 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
 
         {j.phase === 'arrived_pickup' && j.arrivedPickupAt && <WaitTimerBadge arrivedAt={j.arrivedPickupAt} role={role} />}
+
+        {/* NUEVO: PANEL DE ALERTA DE DOCUMENTOS VENCIDOS O POR VENCER */}
+        {expiringDocs.length > 0 && (
+          <div className="mb-2 mt-3 bg-red-50 border-2 border-red-200 p-3 rounded-xl shadow-sm animate-in fade-in">
+             <p className="text-[10px] font-black text-red-600 uppercase tracking-widest flex items-center gap-1.5 mb-1.5">
+               <AlertCircle className="w-4 h-4" /> Alerta de Documentos
+             </p>
+             <ul className="text-xs font-bold text-red-800 space-y-1">
+               {expiringDocs.map((docAlert, idx) => (
+                 <li key={idx} className="bg-white/60 px-2 py-1 rounded-md border border-red-100">{docAlert}</li>
+               ))}
+             </ul>
+          </div>
+        )}
 
         <div className="mt-auto pt-3 border-t border-slate-100 flex flex-col gap-2">
           {(!isAdminView && j.acceptedByEmail !== currentUserEmail && !j.assignedEmails?.includes(currentUserEmail)) ? (
@@ -1365,3 +1401,4 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     </div>
   );
 }
+
