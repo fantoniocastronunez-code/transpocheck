@@ -508,7 +508,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     showAlert("⏳ Guardando y subiendo fotos en segundo plano... Puedes continuar trabajando.");
     onComplete(); // ESTO CIERRA LA PANTALLA INSTANTÁNEAMENTE
 
-   // --- 3. SUBIDA SILENCIOSA (SEGUNDO PLANO) ---
+      // --- 3. SUBIDA SILENCIOSA (SEGUNDO PLANO) ---
     (async () => {
       try {
         d = await syncFilesToStorage(d);
