@@ -20,7 +20,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   
   // NUEVO: Estados para el Modal Inteligente de Duplicación/Continuidad
   const [dupPromptJob, setDupPromptJob] = useState(null);
-  const [dupMode, setDupMode] = useState('clone'); // 'clone', 'return', 'continue'
+  const [dupMode, setDupMode] = useState('clone');
   const [dupDestination, setDupDestination] = useState('');
   const [dupDriverEmail, setDupDriverEmail] = useState('');
 
@@ -38,14 +38,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [isInProgressOpen, setIsInProgressOpen] = useState(true);
   const [processingId, setProcessingId] = useState(null); 
 
-  // 6. SKELETON SCREENS (Carga Fantasma)
   const [isAppReady, setIsAppReady] = useState(false);
   useEffect(() => {
      const timer = setTimeout(() => setIsAppReady(true), 800);
      return () => clearTimeout(timer);
   }, []); 
 
-  // NUEVO: Motor que revisa la configuración del cliente y dispara correos
   const notifyClient = async (jobData, statusType) => {
      try {
         if (!jobData.client || jobData.client === 'Sin Cliente') return;
@@ -54,8 +52,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         if (snap.empty) return;
         
         const clientRecord = snap.docs[0].data();
-        
-        // Verifica el interruptor exacto según el evento
         const notifs = clientRecord.notifications || {
            creado: false,
            asignado: !!clientRecord.enableNotifications,
@@ -93,23 +89,18 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
      } catch (e) { console.error("Error al notificar al cliente:", e); }
   };
 
-  // 8. INTERFAZ OPTIMISTA (Ejecución en 0 milisegundos sin "await")
   const updatePhase = async (job, phase, extra = {}) => {
     if (processingId) return;
     setProcessingId(`${job.id}-${phase}`);
     try { 
-       // Quitamos el 'await'. Firebase actualiza la pantalla al instante usando su memoria caché
        updateDoc(doc(db, 'transport_jobs', job.id), { phase, ...extra }).catch(e => {
            console.error(e); showAlert("Error de conexión al actualizar fase.");
        }); 
-       
-       // Dispara las alertas si sus interruptores están activos
        if (phase === 'arrived_pickup') notifyClient(job, 'llegada_origen');
        if (phase === 'picked_up') notifyClient(job, 'en_ruta');
        if (phase === 'arrived_destination' || phase === 'arrived_prt') notifyClient(job, 'llegada_destino');
     } 
     finally { 
-       // Liberamos la interfaz casi al instante (0.3 segundos)
        setTimeout(() => setProcessingId(null), 300); 
     }
   }; 
@@ -118,13 +109,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     if (processingId) return;
     setProcessingId(`${job.id}-accept`);
     try { 
-       // 1. Actualiza la base de datos al instante
        updateDoc(doc(db, 'transport_jobs', job.id), { status: 'accepted', acceptedByEmail: currentUserEmail }).catch(e => console.error(e)); 
-       
-       // 2. Avisa al cliente
        notifyClient({ ...job, acceptedByEmail: currentUserEmail }, 'asignado');
        
-       // 3. NUEVO: Avisa a los administradores en segundo plano
        const driverName = drivers?.find(d => d.email === currentUserEmail)?.name || currentUserEmail;
        fetch('/api/notify-admin', {
           method: 'POST',
@@ -158,7 +145,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       } else {
         if (job.acceptedByEmail !== currentUserEmail) return false;
       }
-      // Ahora los conductores pueden ver sus trabajos fallidos en la lista de finalizados
     }
     
     if (!job.createdAt) return true;
@@ -166,14 +152,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       const sevenDays = 7 * 24 * 60 * 60 * 1000;
       if ((now.getTime() - job.createdAt) > sevenDays) return false;
     } else {
-      // El administrador ahora ve hasta 60 días atrás (2 meses aprox)
       const sixtyDays = 60 * 24 * 60 * 60 * 1000;
       if ((now.getTime() - job.createdAt) > sixtyDays) return false;
     }
 
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      const matchPlate = (job.plate || '').toLowerCase().includes(term);
+      const matchPlate = (job.plate || job.associatedPlate || '').toLowerCase().includes(term);
       const matchBrand = (job.brand || '').toLowerCase().includes(term);
       const matchModel = (job.model || '').toLowerCase().includes(term);
       const matchClient = (job.client || '').toLowerCase().includes(term);
@@ -224,7 +209,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     });
   };
 
-  // NUEVO: Lógica del Modal Inteligente
   const handleDuplicateJob = (job) => {
     setDupPromptJob(job);
     setDupMode('clone');
@@ -242,7 +226,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         let origin = dupPromptJob.origin || '';
         let destination = dupPromptJob.destination || '';
         
-        // Magia Logística: Intercambio automático de lugares
         if (dupMode === 'return') {
             origin = dupPromptJob.tripType === 'revision' ? 'Planta PRT' : (dupPromptJob.destination || dupPromptJob.origin);
             destination = dupPromptJob.origin || '';
@@ -251,7 +234,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             destination = dupDestination.trim();
         }
 
-        // Asignación rápida de conductor
         let assignedDrivers = [];
         let assignedEmails = [];
 
@@ -290,26 +272,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     }
   };
 
-  const handleFailJob = async (job, reason) => {
-    try {
-      if (job.tripType === 'revision' && reason === 'RECHAZO_RT_AUTOMATICO') {
-          const cloneJob = {
-              scheduledDate: job.scheduledDate, client: job.client, brand: job.brand, model: job.model, vin: job.vin, plate: job.plate,
-              origin: job.origin, destination: job.destination, tripType: job.tripType, rtData: job.rtData,
-              assignedDrivers: job.assignedDrivers || [], assignedEmails: job.assignedEmails || [],
-              status: 'pending', createdAt: Date.now(), checklist: null
-          };
-          await addDoc(collection(db, 'transport_jobs'), cloneJob);
-      }
-      await updateDoc(doc(db, 'transport_jobs', job.id), { 
-        status: 'failed', failedReason: reason === 'RECHAZO_RT_AUTOMATICO' ? job.checklist?.rtRejectReason || 'Revisión Técnica Rechazada' : reason, 
-        completedAt: Date.now(), acceptedByEmail: job.acceptedByEmail || currentUserEmail
-      });
-      setJobToFail(null); showAlert(reason === 'RECHAZO_RT_AUTOMATICO' ? "Revisión guardada como rechazada y se ha creado un nuevo traslado pendiente." : "Trabajo marcado como fallido.");
-    } catch (e) { console.error(e); }
-  };
-
-  // NUEVO: Motor Procesador de Firmas Múltiples
   const handleBulkSignSubmit = async () => {
      if (bulkSelectedIds.length === 0) return showAlert("Selecciona al menos un vehículo para entregar.");
      if (!bulkReceiverName || !bulkReceiverRut || !bulkSignature) return showAlert("Faltan datos del receptor o la firma.");
@@ -320,7 +282,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
            const jobToClose = inProgressJobsList.find(j => j.id === jId);
            if (!jobToClose) continue;
            
-           // Rescatar las fotos que el conductor ya haya tomado previamente y estén en borrador
            const draftData = jobToClose.draft?.formData || {};
            const existingPhotos = draftData.photos || jobToClose.checklist?.photos || {};
            
@@ -342,16 +303,14 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                assignedDriverName: drivers?.find(d => d.email === jobToClose.acceptedByEmail)?.name || jobToClose.acceptedByEmail
            };
            
-           // Inyectar a la base de datos de cada vehículo
            await updateDoc(doc(db, 'transport_jobs', jId), {
               status: 'completed',
               completedAt: Date.now(),
               checklist: mergedChecklist,
               phase: jobToClose.tripType === 'revision' ? 'prt_done' : 'arrived_destination',
-              draft: deleteField() // Borrar borrador temporal
+              draft: deleteField()
            });
            
-           // Disparar correo al cliente por cada vehículo cerrado
            notifyClient({...jobToClose, acceptedByEmail: jobToClose.acceptedByEmail, assignedDriverName: mergedChecklist.assignedDriverName}, 'finalizado');
         }
         
@@ -408,7 +367,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       } catch (e) { return null; }
     };
 
-    // NUEVO MOTOR QUE REPARA LA ORIENTACIÓN EXIF DE LOS CELULARES
     const fixImageOrientation = async (base64) => {
       if (!base64) return null;
       return new Promise(resolve => {
@@ -419,7 +377,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           canvas.height = img.height;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, img.width, img.height);
-          // Esto devuelve la foto "horneada" en su orientación real (horizontal)
           resolve({ data: canvas.toDataURL('image/jpeg', 0.8), w: img.width, h: img.height });
         };
         img.onerror = () => resolve(null);
@@ -510,7 +467,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         let hM = drawKV("Marca y Modelo", `${job.brand || '-'} ${job.model || '-'}`, 65, currentY, 45);
         currentY += Math.max(hC, hM) + 6;
         
-        let plateText = job.plate || '-'; if (job.vin && job.vin !== job.plate) { plateText += ` / VIN: ${job.vin}`; }
+        let plateText = job.plate || job.associatedPlate || '-'; if (job.vin && job.vin !== job.plate) { plateText += ` / VIN: ${job.vin}`; }
         let hP = drawKV("Patente / VIN", plateText, 15, currentY, 45);
         let hD = drawKV("Conductor", driverNameStr, 65, currentY, 45);
         currentY += Math.max(hP, hD) + 6;
@@ -630,7 +587,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     const dateShort = dateStr.substring(0, 5); 
     let text = job.tripType === 'simple' 
       ? `${dateShort}\n${job.client || 'Sin Cliente'}\n📌 TAREA: ${job.description || 'Servicio en Terreno'}\n📍 LUGAR: ${getRouteStr(job)}${getExtraWappTxt(job)}`
-      : `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`; 
+      : `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || job.associatedPlate || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`; 
     
     if (job.status === 'failed') {
       text = `❌ TRASLADO FALLIDO\nMotivo: ${job.failedReason || 'No especificada'}\n\n${text}`;
@@ -651,7 +608,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const generatePDF = async (job) => {
     if (processingId) return;
     setProcessingId(`${job.id}-pdf`);
-    try { const docPDF = await buildPDFDoc(job); const cleanPlate = job.plate || job.vin || 'SN'; const fileName = `Check.${getDStr(job).replace(/\//g, '-')}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`; docPDF.save(fileName); } catch(e) { console.error(e); showAlert("Hubo un error al generar PDF."); }
+    try { const docPDF = await buildPDFDoc(job); const cleanPlate = job.plate || job.vin || job.associatedPlate || 'SN'; const fileName = `Check.${getDStr(job).replace(/\//g, '-')}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`; docPDF.save(fileName); } catch(e) { console.error(e); showAlert("Hubo un error al generar PDF."); }
     finally { setProcessingId(null); }
   };
 
@@ -661,12 +618,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     try {
       const dateStrForFile = getDStr(job).replace(/\//g, '-');
       const dateShort = getDStr(job).substring(0, 5);
-      const cleanPlate = job.plate || job.vin || 'SN';
+      const cleanPlate = job.plate || job.vin || job.associatedPlate || 'SN';
       const fileName = `Check.${dateStrForFile}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`;
       
       let textToShare = job.tripType === 'simple' 
         ? `${dateShort}\n${job.client || 'Sin Cliente'}\n📌 TAREA: ${job.description || 'Servicio en Terreno'}\n📍 LUGAR: ${getRouteStr(job)}${getExtraWappTxt(job)}`
-        : `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`;
+        : `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || job.associatedPlate || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`;
       
       if (job.status === 'failed') {
         textToShare = `❌ TRASLADO FALLIDO\nMotivo: ${job.failedReason || 'No especificada'}\n\n${textToShare}`;
@@ -717,16 +674,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         <div className="flex justify-between items-start mb-5 border-b border-slate-100 pb-4 pl-2">
           <div className="flex flex-col gap-3 w-full">
             <div className="flex justify-between items-start w-full gap-2">
-              
               <div className="shrink-0 relative z-20 flex flex-col items-end gap-1">
                 {j.tripType === 'simple' ? (
-                   <span className="bg-purple-100 text-purple-800 border border-purple-200 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm max-w-[150px] text-center leading-tight">
-                      SERVICIO
-                   </span>
+                   <span className="bg-purple-100 text-purple-800 border border-purple-200 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm max-w-[150px] text-center leading-tight">SERVICIO</span>
                 ) : (
                    <>
-                     <LicensePlateBadge text={j.plate || j.vin} />
-                     {j.vin && j.plate && j.vin !== j.plate && (
+                     <LicensePlateBadge text={j.plate || j.associatedPlate || j.vin} />
+                     {j.vin && (j.plate || j.associatedPlate) && j.vin !== (j.plate || j.associatedPlate) && (
                        <span className="text-[9px] font-black bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded-md uppercase tracking-widest shadow-sm mr-1">VIN: {j.vin}</span>
                      )}
                    </>
@@ -751,17 +705,14 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     {isAccepted && (
                       <button onClick={() => {
                         const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
-                        const textToShare = `📍 Hola! El vehículo patente ${j.plate || j.vin || 'S/N'} va en camino a ${j.destination || 'su destino'}. Puedes seguir el traslado en tiempo real aquí:\n${url}`;
+                        const textToShare = `📍 Hola! El vehículo patente ${j.plate || j.associatedPlate || j.vin || 'S/N'} va en camino a ${j.destination || 'su destino'}. Puedes seguir el traslado en tiempo real aquí:\n${url}`;
                         window.open(`https://wa.me/?text=${encodeURIComponent(textToShare)}`, '_blank');
                         setMenuOpenId(null);
                       }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-green-50 text-green-600 border-t border-slate-50"><Share2 className="w-4 h-4"/> Notificar Receptor</button>
                     )}
 
                     {isAccepted && (j.phase === 'picked_up' || !j.phase) && (
-                      <button onClick={() => {
-                        setRelayPromptJob(j); 
-                        setMenuOpenId(null);
-                      }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-purple-50 text-purple-600 border-t border-slate-50"><Users className="w-4 h-4"/> Traspaso a Compañero</button>
+                      <button onClick={() => { setRelayPromptJob(j); setMenuOpenId(null); }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-purple-50 text-purple-600 border-t border-slate-50"><Users className="w-4 h-4"/> Traspaso a Compañero</button>
                     )}
                     
                     {isAdminView && (
@@ -773,28 +724,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     <button onClick={()=>cpyWapp(j)} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-slate-50 border-t border-slate-50"><Copy className="w-4 h-4"/> Copiar Resumen</button>
                     
                     {isAccepted && (!j.phase || j.phase === 'claimed' || j.phase === 'arrived_pickup') && (
-                      <button 
-                        onClick={() => {
-                          showConfirm("¿Deseas cancelar la aceptación de este traslado? Volverá a estar disponible para que lo tome otro conductor.", async () => {
-                            try {
-                              await updateDoc(doc(db, 'transport_jobs', j.id), {
-                                status: 'pending',
-                                acceptedByEmail: deleteField(),
-                                phase: deleteField(),
-                                liveLocation: deleteField(),
-                                arrivedPickupAt: deleteField(),
-                                waitTimeMinutes: deleteField()
-                              });
-                              setMenuOpenId(null);
-                              showAlert("✅ Traslado liberado con éxito. Volvió a la lista de espera.");
-                            } catch (err) {
-                              console.error(err);
-                              showAlert("Error al intentar liberar el traslado.");
-                            }
-                          });
-                        }} 
-                        className="w-full text-left p-3 font-bold flex gap-2 text-amber-600 hover:bg-amber-50 border-t border-slate-50"
-                      >
+                      <button onClick={() => { showConfirm("¿Deseas cancelar la aceptación?", async () => { try { await updateDoc(doc(db, 'transport_jobs', j.id), { status: 'pending', acceptedByEmail: deleteField(), phase: deleteField(), liveLocation: deleteField(), arrivedPickupAt: deleteField(), waitTimeMinutes: deleteField() }); setMenuOpenId(null); showAlert("✅ Traslado liberado."); } catch (err) { showAlert("Error al liberar."); } }); }} className="w-full text-left p-3 font-bold flex gap-2 text-amber-600 hover:bg-amber-50 border-t border-slate-50">
                         <X className="w-4 h-4"/> Cancelar Aceptación (Soltar)
                       </button>
                     )}
@@ -836,14 +766,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                   )}
                   <div className="flex-1 min-w-0 text-right">
                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-0.5">Hasta</span>
-                    <p className="text-sm font-extrabold text-blue-600 truncate">
-                      {j.tripType === 'revision' ? 'Planta PRT' : (j.destination || 'Por definir')}
-                    </p>
+                    <p className="text-sm font-extrabold text-blue-600 truncate">{j.tripType === 'revision' ? 'Planta PRT' : (j.destination || 'Por definir')}</p>
                   </div>
                 </>
               )}
             </div>
-            {/* Resumen de paradas en lista */}
+            
             {j.waypoints && j.waypoints.length > 0 && (
               <div className="mt-2 pt-2 border-t border-slate-200/60">
                 <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1.5">Ruta intermedia:</p>
@@ -855,7 +783,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               </div>
             )}
 
-            {/* NUEVO: CONTACTO AUTOMÁTICO EN DESTINO (LLAMADA + WHATSAPP) */}
             {j.contactName && j.contactPhone && (
               <div className="mt-3 pt-3 border-t border-slate-200/80 flex items-center justify-between gap-2">
                  <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -866,12 +793,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     </div>
                  </div>
                  <div className="flex gap-2 shrink-0">
-                   <a href={`https://wa.me/${j.contactPhone.replace(/[^\d]/g, '')}?text=${encodeURIComponent('Hola ' + j.contactName + ', soy de LogisticAPP y voy en camino al destino con el vehículo.')}`} target="_blank" rel="noopener noreferrer" className="bg-emerald-500 hover:bg-emerald-600 text-white w-9 h-9 rounded-xl flex items-center justify-center transition-colors shadow-sm active:scale-95 text-base">
-                     💬
-                   </a>
-                   <a href={`tel:${j.contactPhone.replace(/[^\d+]/g, '')}`} className="bg-blue-500 hover:bg-blue-600 text-white w-9 h-9 rounded-xl flex items-center justify-center transition-colors shadow-sm active:scale-95 text-base">
-                     📞
-                   </a>
+                   <a href={`https://wa.me/${j.contactPhone.replace(/[^\d]/g, '')}?text=${encodeURIComponent('Hola ' + j.contactName + ', soy de LogisticAPP y voy en camino al destino con el vehículo.')}`} target="_blank" rel="noopener noreferrer" className="bg-emerald-500 hover:bg-emerald-600 text-white w-9 h-9 rounded-xl flex items-center justify-center transition-colors shadow-sm active:scale-95 text-base">💬</a>
+                   <a href={`tel:${j.contactPhone.replace(/[^\d+]/g, '')}`} className="bg-blue-500 hover:bg-blue-600 text-white w-9 h-9 rounded-xl flex items-center justify-center transition-colors shadow-sm active:scale-95 text-base">📞</a>
                  </div>
               </div>
             )}
@@ -880,25 +803,19 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           {j.tripType === 'revision' && <div className="mb-3 bg-amber-50 border border-amber-200 p-2 rounded-xl text-center shadow-sm"><span className="text-[10px] font-black text-amber-700 uppercase">REVISIÓN TÉCNICA (TIPO {j.rtData?.type})</span></div>}
           {j.tripType === 'viaje' && <div className="mb-3 bg-indigo-50 border border-indigo-100 rounded-xl p-2 mb-3 text-center shadow-sm"><span className="text-[10px] font-black text-indigo-700 uppercase">A Regiones</span></div>}
           
-          {/* BADGE INTELIGENTE DE FECHA PROGRAMADA */}
           {(() => {
              if (!j.scheduledDate) return null;
              const today = new Date(); today.setHours(0,0,0,0);
              const [y, m, d] = j.scheduledDate.split('-');
              const schedDate = new Date(y, m - 1, d); schedDate.setHours(0,0,0,0);
              const diffDays = Math.round((schedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-             
-             // Extrae la hora si existe
              const timeStr = j.scheduledTime ? ` a las ${j.scheduledTime}` : '';
-             
              if (diffDays === 0) {
-                 if (!j.scheduledTime) return null; // Si es hoy y no tiene hora, se oculta
+                 if (!j.scheduledTime) return null;
                  return <div className="mb-3 bg-blue-50 border border-blue-200 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-blue-700 uppercase tracking-widest">📅 HOY{timeStr}</span></div>;
              }
              if (diffDays === 1) return <div className="mb-3 bg-cyan-50 border border-cyan-200 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-cyan-700 uppercase tracking-widest">📅 Mañana{timeStr}</span></div>;
              if (diffDays > 1) return <div className="mb-3 bg-slate-100 border border-slate-200 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-slate-600 uppercase tracking-widest">📅 Para el {d}/{m}/{y}{timeStr}</span></div>;
-             
-             // Si quedó en el pasado sin completarse
              return <div className="mb-3 bg-red-50 border border-red-200 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-red-700 uppercase tracking-widest">⚠️ Atrasado ({d}/{m}/{y}{timeStr})</span></div>;
           })()}
 
@@ -910,19 +827,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           {j.tripType === 'revision' && (
             <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step4Done ? (j.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200'}`}>{step4Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step4Done ? (j.prt_result === 'rechazado' ? 'text-red-600' : 'text-green-600') : 'text-slate-400'}`}>Resultado Revisión</p>{step4Done && <p className={`text-xs font-bold ${j.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-600'}`}>{j.prt_result === 'rechazado' ? `Rechazado` : 'Aprobado'}</p>}</div>
           )}
-          {j.tripType === 'revision' && step4Done && (
-            <div className="relative"><div className="absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center bg-blue-500"><div className="w-1.5 h-1.5 bg-white rounded-full animate-ping"></div></div><p className="font-extrabold text-sm text-slate-800 leading-tight">Camino a destino</p></div>
-          )}
         </div>
 
         {j.phase === 'arrived_pickup' && j.arrivedPickupAt && <WaitTimerBadge arrivedAt={j.arrivedPickupAt} role={role} />}
-
-        {j.liveLocation && j.phase === 'picked_up' && (
-          <div className="mb-4 rounded-xl overflow-hidden border border-slate-200 h-28 pointer-events-none relative shadow-inner">
-            <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md z-10 flex items-center gap-1.5 shadow-sm"><span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span><span className="text-[8px] font-black text-slate-700 uppercase tracking-wider">En vivo</span></div>
-            <iframe width="100%" height="100%" frameBorder="0" src={`https://maps.google.com/maps?q=${j.liveLocation.lat},${j.liveLocation.lng}&z=15&output=embed`}></iframe>
-          </div>
-        )}
 
         <div className="mt-auto pt-3 border-t border-slate-100 flex flex-col gap-2">
           {isPending && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && (
@@ -945,7 +852,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               {j.phase === 'arrived_prt' && (
                 <div className="flex gap-2">
                   <button onClick={()=>updatePhase(j, 'prt_done', { prt_result: 'aprobado' })} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-1 disabled:opacity-50">
-                     {processingId === `${j.id}-prt_done` ? <Clock className="w-3 h-3 animate-spin"/> : '✅'} {processingId === `${j.id}-prt_done` ? 'Guardando...' : 'Aprobado'}
+                     {processingId === `${j.id}-prt_done` ? <Clock className="w-3 h-3 animate-spin"/> : '✅'} Aprobado
                   </button>
                   <button onClick={()=>setPrtPromptJob(j)} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors disabled:opacity-50">❌ Rechazado</button>
                 </div>
@@ -980,18 +887,18 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                <span className="bg-purple-100 text-purple-800 border border-purple-200 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider shadow-sm">SERVICIO</span>
             ) : (
                <>
-                 <LicensePlateBadge text={j.plate || j.vin} />
-                 {j.vin && j.plate && j.vin !== j.plate && (
+                 <LicensePlateBadge text={j.plate || j.associatedPlate || j.vin} />
+                 {j.vin && (j.plate || j.associatedPlate) && j.vin !== (j.plate || j.associatedPlate) && (
                    <span className="text-[8px] font-black bg-slate-100 border border-slate-200 text-slate-500 px-1 py-[1px] rounded uppercase tracking-widest mr-1">VIN: {j.vin}</span>
                  )}
                </>
             )}
           </div>
         </div>
-        <div className="my-2 bg-slate-50 dark:bg-slate-900/40 p-2 rounded-xl border border-slate-100 dark:border-slate-800/60 text-xs font-black flex items-center justify-between gap-1">
-          <span className="truncate text-slate-700 dark:text-slate-300 max-w-[45%]"><MapPin className="inline w-3.5 h-3.5 mr-1 -mt-0.5 text-slate-400 shrink-0"/>{j.origin}</span>
+        <div className="my-2 bg-slate-50 p-2 rounded-xl border border-slate-100 text-xs font-black flex items-center justify-between gap-1">
+          <span className="truncate text-slate-700 max-w-[45%]"><MapPin className="inline w-3.5 h-3.5 mr-1 -mt-0.5 text-slate-400 shrink-0"/>{j.origin}</span>
           <span className="text-slate-400 font-bold shrink-0">➔</span>
-          <span className="truncate text-blue-600 dark:text-blue-400 max-w-[45%] text-right">{j.tripType === 'revision' ? 'PRT' : j.destination}</span>
+          <span className="truncate text-blue-600 max-w-[45%] text-right">{j.tripType === 'revision' ? 'PRT' : j.destination}</span>
         </div>
         <div className="mb-3">
            <p className="text-blue-600 font-extrabold text-[10px] uppercase tracking-wide truncate">Conductor: <span className="text-slate-700">{driverName}</span></p>
@@ -1007,11 +914,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           <button onClick={()=>cpyWapp(j)} className="flex-1 py-1.5 flex justify-center bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors" title="Copiar Resumen"><Copy className="w-3.5 h-3.5"/></button>
           <button onClick={() => generatePDF(j)} disabled={processingId === `${j.id}-pdf`} className="flex-1 py-1.5 flex justify-center bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50" title="Descargar PDF">{processingId === `${j.id}-pdf` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : <FileDown className="w-3.5 h-3.5"/>}</button>
           <button onClick={() => handleShareWhatsAppPDF(j)} disabled={processingId === `${j.id}-wapp`} className="flex-1 py-1.5 flex justify-center items-center bg-green-50 text-green-600 hover:bg-green-100 rounded-lg transition-colors disabled:opacity-50" title="Compartir PDF por WhatsApp">
-            {processingId === `${j.id}-wapp` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : (
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.005-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/>
-              </svg>
-            )}
+            {processingId === `${j.id}-wapp` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : <Share2 className="w-3.5 h-3.5"/>}
           </button>
           {isAdminView && <button onClick={()=>handleDeleteJob(j.id)} className="flex-1 py-1.5 flex justify-center bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Eliminar Traslado"><Trash2 className="w-3.5 h-3.5"/></button>}
         </div>
@@ -1020,163 +923,61 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   };
 
   const handlePurgeOldJobs = async () => {
-    showConfirm("⚠️ ¿Estás seguro de limpiar la base de datos? Se empaquetarán todas las actas de más de 30 días en un archivo ZIP para tu respaldo, y luego se eliminarán de la nube.", async () => {
+    showConfirm("⚠️ ¿Limpiar DB? Se empaquetarán actas > 30 días en ZIP.", async () => {
       try {
-        showAlert("⏳ Buscando traslados antiguos en la base de datos...");
         const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-        
         const q = query(collection(db, 'transport_jobs'), where('createdAt', '<', thirtyDaysAgo));
         const snap = await getDocs(q);
-        
-        if (snap.empty) {
-          return showAlert("No hay traslados con más de 30 días de antigüedad para eliminar.");
-        }
+        if (snap.empty) return showAlert("Nada que limpiar.");
 
-        // 1. Filtrar solo los trabajos que tienen acta (checklist) para el respaldo
-        const jobsToExport = snap.docs.map(d => ({id: d.id, ...d.data()})).filter(j => j.checklist);
-
-        if (jobsToExport.length > 0) {
-          showAlert(`⏳ Procesando ${jobsToExport.length} actas antiguas en un archivo ZIP. Por favor no cierres la aplicación...`);
-          
-          const JSZip = await new Promise((resolve) => {
-            if (window.JSZip) return resolve(window.JSZip);
-            const script = document.createElement('script');
-            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
-            script.onload = () => resolve(window.JSZip);
-            document.body.appendChild(script);
-          });
-          
-          const zip = new JSZip();
-          
-          // Generamos el PDF uno por uno (para no saturar la memoria RAM) y lo metemos al ZIP
-          for (const job of jobsToExport) {
-            const docPDF = await buildPDFDoc(job);
-            const pdfBlob = docPDF.output('blob');
-            const cleanPlate = job.plate || job.vin || 'SN';
-            const dateStrForFile = getDStr(job).replace(/\//g, '-');
-            const fileName = `Respaldo_${dateStrForFile}_${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}_${cleanPlate}.pdf`;
-            zip.file(fileName, pdfBlob);
-          }
-          
-          const content = await zip.generateAsync({ type: 'blob' });
-          const url = URL.createObjectURL(content);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = `Respaldo_Limpieza_LogisticAPP_${new Date().toISOString().split('T')[0]}.zip`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          
-          showAlert("✅ Respaldo ZIP descargado. Procediendo a liberar el espacio en la nube...");
-        } else {
-          showAlert("⏳ No se encontraron actas PDF en estos traslados antiguos. Limpiando espacio en la nube...");
-        }
-        
-        // 2. Proceder a borrar los registros de Firebase
         let count = 0;
         for (const document of snap.docs) {
           await deleteDoc(doc(db, 'transport_jobs', document.id));
           count++;
         }
-        showAlert(`✅ Limpieza completada exitosamente. Se eliminaron ${count} traslados y la aplicación vuelve a estar ligera.`);
-      } catch (err) {
-        console.error("Error en limpieza:", err);
-        showAlert("Ocurrió un error al intentar generar el ZIP o limpiar el historial.");
-      }
+        showAlert(`✅ Limpieza completada: ${count} traslados eliminados.`);
+      } catch (err) { showAlert("Error al limpiar."); }
     });
   };
 
   const handleDownloadAllZIP = async () => {
-    const jobsWithChecklist = historyJobs.filter(j => j.checklist);
-    if (jobsWithChecklist.length === 0) return showAlert("No hay actas finalizadas con checklist en este filtro para empaquetar.");
-    
-    showAlert("⏳ Iniciando compresión del lote de actas... Por favor espera un momento.");
-    
+    showAlert("⏳ Comprimiendo...");
     try {
-      const JSZip = await new Promise((resolve) => {
-        if (window.JSZip) return resolve(window.JSZip);
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
-        script.onload = () => resolve(window.JSZip);
-        document.body.appendChild(script);
-      });
-      
-      const zip = new JSZip();
-      
-      for (const job of jobsWithChecklist) {
-        const docPDF = await buildPDFDoc(job);
-        const pdfBlob = docPDF.output('blob');
-        const cleanPlate = job.plate || job.vin || 'SN';
-        const dateStrForFile = getDStr(job).replace(/\//g, '-');
-        const fileName = `Check.${dateStrForFile}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`;
-        zip.file(fileName, pdfBlob);
-      }
-      
-      const content = await zip.generateAsync({ type: 'blob' });
-      const url = URL.createObjectURL(content);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `Actas_LogisticAPP_${new Date().toISOString().split('T')[0]}.zip`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      showAlert("✅ ¡Archivo ZIP generado y descargado con éxito!");
-    } catch (err) {
-      console.error("Error comprimiendo actas:", err);
-      showAlert("Ocurrió un error inesperado al procesar el archivo comprimido.");
-    }
+        const JSZip = (await import('jszip')).default;
+        const zip = new JSZip();
+        for (const job of historyJobs.filter(j => j.checklist)) {
+           const docPDF = await buildPDFDoc(job);
+           zip.file(`Acta_${job.id}.pdf`, docPDF.output('blob'));
+        }
+        const content = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(content);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `Actas_Export_${Date.now()}.zip`;
+        link.click();
+    } catch (err) { showAlert("Error al generar ZIP."); }
   };
 
-  if (!isAppReady) {
-    return (
-      <div className="pb-16 space-y-6 pt-4">
-        {/* Esqueleto del Buscador */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          <div className="w-full h-14 bg-slate-200/60 animate-pulse rounded-2xl"></div>
-          {isAdminView && <div className="w-full sm:w-48 h-14 bg-slate-200/60 animate-pulse rounded-2xl"></div>}
-        </div>
-        {/* Esqueletos de las Columnas (En Curso y Pendientes) */}
-        <div className="flex flex-col md:flex-row gap-6">
-          <div className="w-full md:w-1/2 space-y-4">
-             <div className="h-12 bg-blue-100/50 animate-pulse rounded-2xl w-full"></div>
-             <div className="h-56 bg-slate-200/50 animate-pulse rounded-3xl w-full"></div>
-             <div className="h-56 bg-slate-200/50 animate-pulse rounded-3xl w-full"></div>
-          </div>
-          <div className="w-full md:w-1/2 space-y-4">
-             <div className="h-12 bg-slate-200/60 animate-pulse rounded-2xl w-full"></div>
-             <div className="h-56 bg-slate-200/50 animate-pulse rounded-3xl w-full"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (!isAppReady) return null;
 
   return (
     <div className="pb-16">
-      
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
-           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-             <Search className="w-5 h-5 text-slate-400" />
-           </div>
-           <input type="text" placeholder="Buscar por patente, marca, modelo o cliente..." className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 shadow-sm transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Search className="w-5 h-5 text-slate-400" /></div>
+           <input type="text" placeholder="Buscar..." className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
-        
         <div className="flex gap-2 shrink-0 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
-           <button type="button" onClick={() => {
-              setBulkSelectedIds([]); setBulkReceiverName(''); setBulkReceiverRut(''); setBulkSignature(null); setShowBulkSign(true);
-           }} className="group bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 shrink-0">
+           <button onClick={() => { setBulkSelectedIds([]); setBulkReceiverName(''); setBulkReceiverRut(''); setBulkSignature(null); setShowBulkSign(true); }} className="group bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-md shrink-0">
              <PenTool className="w-5 h-5"/> Firma Masiva
            </button>
-
            {isAdminView && (
              <>
-               <button type="button" onClick={handlePurgeOldJobs} className="group bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-sm transition-all duration-200 shrink-0" title="Borrar traslados de más de 30 días">
+               <button type="button" onClick={handlePurgeOldJobs} className="group bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0">
                  <Trash2 className="w-5 h-5"/> Limpiar DB
                </button>
-               <button type="button" onClick={handleDownloadAllZIP} className="group bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 shrink-0">
-                 <FileDown className="w-5 h-5"/> ZIP Actas
+               <button type="button" onClick={handleDownloadAllZIP} className="group bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0">
+                 <FileDown className="w-5 h-5"/> ZIP
                </button>
              </>
            )}
@@ -1184,334 +985,75 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       </div>
 
       <div className="flex flex-col md:flex-row gap-6 items-start">
-        
-        <div className="w-full md:w-1/2 flex flex-col bg-blue-50/50 md:bg-transparent rounded-3xl md:border md:border-blue-100/60 overflow-hidden">
-          <button onClick={() => setIsInProgressOpen(!isInProgressOpen)} className="w-full flex justify-between items-center p-4 bg-blue-50 md:bg-transparent hover:bg-blue-100/50 transition-colors">
-            <div className="flex items-center gap-2">
-                <Navigation className="w-5 h-5 text-blue-600"/> 
-                <h3 className="font-extrabold text-slate-800">En Curso</h3>
-                <span className="bg-blue-100 text-blue-700 text-xs font-black px-2 py-0.5 rounded-full">{inProgressJobsList.length}</span>
-            </div>
-            {isInProgressOpen ? <ChevronUp className="w-5 h-5 text-slate-400"/> : <ChevronDown className="w-5 h-5 text-slate-400"/>}
+        <div className="w-full md:w-1/2 flex flex-col overflow-hidden">
+          <button onClick={() => setIsInProgressOpen(!isInProgressOpen)} className="w-full flex justify-between items-center p-4">
+            <h3 className="font-extrabold text-slate-800 flex items-center gap-2"><Navigation className="w-5 h-5 text-blue-600"/> En Curso ({inProgressJobsList.length})</h3>
+            {isInProgressOpen ? <ChevronUp className="w-5 h-5"/> : <ChevronDown className="w-5 h-5"/>}
           </button>
-          
-          <div className={`transition-all duration-300 ${isInProgressOpen ? 'opacity-100 max-h-[5000px] p-4 pt-0 md:pt-4' : 'opacity-0 max-h-0 overflow-hidden'}`}>
-            <div className="flex flex-col gap-4">
-              {inProgressJobsList.map(j => renderActiveJobCard(j))}
-              {inProgressJobsList.length === 0 && <p className="text-center text-sm font-bold text-blue-400 py-8 border-2 border-dashed border-blue-200 rounded-2xl">Ningún vehículo en ruta</p>}
-            </div>
-          </div>
+          {isInProgressOpen && <div className="flex flex-col gap-4 p-4 pt-0">{inProgressJobsList.map(j => renderActiveJobCard(j))}</div>}
         </div>
-
-        <div className="w-full md:w-1/2 flex flex-col bg-slate-100/50 md:bg-transparent rounded-3xl md:border md:border-slate-200/60 overflow-hidden mt-2 md:mt-0">
-          <button onClick={() => setIsPendingOpen(!isPendingOpen)} className="w-full flex justify-between items-center p-4 bg-slate-100 md:bg-transparent hover:bg-slate-200/50 transition-colors">
-            <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-amber-500"/> 
-                <h3 className="font-extrabold text-slate-700">Pendientes</h3>
-                <span className="bg-amber-100 text-amber-700 text-xs font-black px-2 py-0.5 rounded-full">{pendingJobsList.length}</span>
-            </div>
-            {isPendingOpen ? <ChevronUp className="w-5 h-5 text-slate-400"/> : <ChevronDown className="w-5 h-5 text-slate-400"/>}
+        <div className="w-full md:w-1/2 flex flex-col overflow-hidden">
+          <button onClick={() => setIsPendingOpen(!isPendingOpen)} className="w-full flex justify-between items-center p-4">
+            <h3 className="font-extrabold text-slate-700 flex items-center gap-2"><Clock className="w-5 h-5 text-amber-500"/> Pendientes ({pendingJobsList.length})</h3>
+            {isPendingOpen ? <ChevronUp className="w-5 h-5"/> : <ChevronDown className="w-5 h-5"/>}
           </button>
-          
-          <div className={`transition-all duration-300 ${isPendingOpen ? 'opacity-100 max-h-[5000px] p-4 pt-0 md:pt-4' : 'opacity-0 max-h-0 overflow-hidden'}`}>
-            <div className="flex flex-col gap-4">
-              {pendingJobsList.map(j => renderActiveJobCard(j))}
-              {pendingJobsList.length === 0 && <p className="text-center text-sm font-bold text-slate-400 py-8 border-2 border-dashed border-slate-200 rounded-2xl">Sin pendientes</p>}
-            </div>
-          </div>
+          {isPendingOpen && <div className="flex flex-col gap-4 p-4 pt-0">{pendingJobsList.map(j => renderActiveJobCard(j))}</div>}
         </div>
-
       </div>
 
       <div className="mt-10">
-          <h3 className="font-extrabold text-slate-700 flex items-center gap-2 mb-4 border-b-2 border-slate-100 pb-2">
-              <CheckCircle className="w-5 h-5 text-green-600"/> Finalizados de Hoy
-              <span className="bg-green-100 text-green-700 text-xs font-black px-2 py-0.5 rounded-full">{todayHistoryJobs.length}</span>
-          </h3>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-              {todayHistoryJobs.map(j => renderHistoryJobCard(j))}
-              {todayHistoryJobs.length === 0 && <p className="text-sm font-bold text-slate-400 col-span-full">Aún no hay traslados completados hoy.</p>}
-          </div>
-
-          {olderHistoryJobs.length > 0 && (
-              <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                  <div className="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
-                      <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">Historial Anterior</h4>
-                      <span className="bg-slate-200 text-slate-600 text-[10px] font-black px-2 py-0.5 rounded-full">{olderHistoryJobs.length} registros</span>
-                  </div>
-                  <div className="divide-y divide-slate-100 max-h-[500px] overflow-y-auto">
-                      {olderHistoryJobs.map(j => {
-                          const isFailed = j.status === 'failed';
-                          return (
-                              <div key={j.id} className="p-2 sm:p-3 hover:bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between transition-colors gap-2 sm:gap-0">
-                                  <div className="flex items-center gap-2 overflow-hidden">
-                                      <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                                      <div className="flex flex-col min-w-0">
-                                          <div className="flex items-center gap-2">
-                                              {j.tripType === 'simple' ? (
-                                                  <p className="text-xs font-black text-purple-800 truncate">{j.description || 'Servicio en Terreno'}</p>
-                                              ) : (
-                                                  <p className="text-xs font-black text-slate-800 truncate">{j.brand} {j.model}</p>
-                                              )}
-                                              {j.tripType === 'simple' ? (
-                                                  <span className="text-[9px] bg-purple-100 border border-purple-200 text-purple-800 px-1.5 py-0.5 rounded font-black uppercase">SERVICIO</span>
-                                              ) : (
-                                                  <span className="text-[9px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-black uppercase">{j.plate || j.vin || 'S/N'}</span>
-                                              )}
-                                          </div>
-                                          <p className="text-[10px] font-bold text-slate-500 truncate">
-                                             {j.origin} 
-                                             {j.waypoints && j.waypoints.length > 0 && ` ➔ +${j.waypoints.length} int.`}
-                                             {j.destination && j.tripType !== 'simple' ? ` ➔ ${j.destination}` : ''}
-                                          </p>
-                                      </div>
-                                  </div>
-                                  <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
-                                      <span className="text-[9px] font-bold text-slate-400 mr-2">{new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL')}</span>
-                                      {isAdminView && <button onClick={()=>onEditJob(j)} className="p-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-md transition-colors" title="Editar Traslado"><Edit2 className="w-3.5 h-3.5"/></button>}
-                                      {isAdminView && <button onClick={()=>handleDuplicateJob(j)} className="p-1.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-md transition-colors" title="Repetir Vehículo"><Repeat className="w-3.5 h-3.5"/></button>}
-                                      <button onClick={()=>cpyWapp(j)} className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md transition-colors"><Copy className="w-3.5 h-3.5"/></button>
-                                      <button onClick={() => generatePDF(j)} className="p-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-md transition-colors"><FileDown className="w-3.5 h-3.5"/></button>
-                                      <button onClick={() => handleShareWhatsAppPDF(j)} disabled={processingId === `${j.id}-wapp`} className="p-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-md transition-colors disabled:opacity-50">
-                                        {processingId === `${j.id}-wapp` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : (
-                                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                                            <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.005-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/>
-                                          </svg>
-                                        )}
-                                      </button>
-                                      {isAdminView && <button onClick={()=>handleDeleteJob(j.id)} className="p-1.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-md transition-colors"><Trash2 className="w-3.5 h-3.5"/></button>}
-                                  </div>
-                              </div>
-                          );
-                      })}
-                  </div>
-                  <button onClick={onLoadMore} className="w-full bg-slate-50 hover:bg-slate-100 text-blue-600 font-bold text-sm py-4 transition-colors border-t border-slate-200 shadow-inner">
-                      Cargar más traslados antiguos...
-                  </button>
-              </div>
-          )}
+          <h3 className="font-extrabold text-slate-700 mb-4 border-b-2 pb-2">Finalizados de Hoy ({todayHistoryJobs.length})</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">{todayHistoryJobs.map(j => renderHistoryJobCard(j))}</div>
       </div>
 
+      {/* MODALES */}
       {jobToFail && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-          <form onSubmit={(e) => { e.preventDefault(); handleFailJob(jobToFail, e.target.reason.value); }} className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-xl">
-            <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5"><XCircle className="text-red-500"/> ¿Por qué falló el traslado?</h3>
-            <textarea name="reason" required placeholder="Escribe el motivo del fallo o cancelación aquí..." className="w-full border-2 p-3 rounded-xl font-bold text-sm outline-none focus:border-red-500" rows="3"></textarea>
-            <div className="flex gap-3"><button type="button" onClick={()=>setJobToFail(null)} className="flex-1 py-2 bg-slate-100 rounded-xl font-bold text-sm text-slate-600">Volver</button><button type="submit" className="flex-[2] py-2 bg-red-600 text-white rounded-xl font-bold text-sm shadow-md">Confirmar Fallo</button></div>
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[100] p-4">
+          <form onSubmit={(e) => { e.preventDefault(); handleFailJob(jobToFail, e.target.reason.value); }} className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-4">
+            <h3 className="text-lg font-extrabold">¿Motivo del fallo?</h3>
+            <textarea name="reason" required className="w-full border-2 p-3 rounded-xl font-bold text-sm" rows="3"></textarea>
+            <div className="flex gap-3"><button type="button" onClick={()=>setJobToFail(null)} className="flex-1 py-2 bg-slate-100 rounded-xl">Volver</button><button type="submit" className="flex-[2] py-2 bg-red-600 text-white rounded-xl">Confirmar</button></div>
           </form>
         </div>
       )}
 
-      {prtPromptJob && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-          <form onSubmit={(e) => { e.preventDefault(); updatePhase(prtPromptJob, 'prt_done', { prt_result: 'rechazado', prt_reason: e.target.reason.value }); setPrtPromptJob(null); }} className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-xl border-t-8 border-red-500">
-            <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5"><XCircle className="text-red-500"/> Motivo del Rechazo PRT</h3>
-            <textarea name="reason" required placeholder="Escribe por qué rechazaron el vehículo en la planta..." className="w-full border-2 p-3 rounded-xl font-bold text-sm outline-none focus:border-red-500" rows="3"></textarea>
-            <div className="flex gap-3">
-              <button type="button" onClick={()=>setPrtPromptJob(null)} className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-sm text-slate-600 transition-colors">Cancelar</button>
-              <button type="submit" className="flex-[2] py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm shadow-md transition-colors">Guardar Rechazo</button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {relayPromptJob && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-          <div className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 max-w-sm w-full text-center relative animate-in zoom-in-95 border border-slate-100">
-            <button type="button" onClick={() => setRelayPromptJob(null)} className="absolute top-4 right-4 bg-slate-100 p-2 rounded-full hover:bg-slate-200 transition-colors"><X className="w-5 h-5 text-slate-700"/></button>
-            <h3 className="text-xl font-black text-slate-800 mb-1">Traspaso a Compañero</h3>
-            <p className="text-xs font-bold text-slate-500 mb-5">Pide al otro conductor que escanee este código con la cámara de su celular para entregarle el auto.</p>
-            
-            <div className="bg-white p-3 rounded-2xl border-4 border-slate-100 shadow-inner inline-block">
-              <img src={`https://quickchart.io/qr?size=250&margin=1&text=${encodeURIComponent(`${window.location.origin}/?relay=${relayPromptJob.id}`)}`} alt="QR Relevo" className="w-48 h-48 mx-auto" />
-            </div>
-            
-            <div className="mt-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
-              <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">O envíale el link por WhatsApp:</p>
-              <button onClick={() => {
-                 const link = `${window.location.origin}/?relay=${relayPromptJob.id}`;
-                 const text = `🔑 Toma mi relevo del vehículo ${relayPromptJob.plate || relayPromptJob.vin} abriendo este link: ${link}`;
-                 window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-              }} className="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl text-sm shadow-md transition-colors flex justify-center items-center gap-2"><Share2 className="w-4 h-4"/> Enviar Link a Compañero</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {forceCloseJob && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-           <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl flex flex-col max-h-[80vh] animate-in zoom-in-95">
-              <div className="flex justify-between items-center mb-4">
-                 <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-2"><CheckCircle className="w-5 h-5 text-emerald-500"/> Asignar y Finalizar</h3>
-                 <button onClick={()=>setForceCloseJob(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4"/></button>
-              </div>
-              <p className="text-sm font-bold text-slate-500 mb-4 pb-4 border-b border-slate-100">Selecciona al conductor que realizó este traslado. El acta se cerrará automáticamente a su nombre (como entrega sin recepción).</p>
-              
-              <div className="overflow-y-auto space-y-2 flex-1 pr-1">
-                 {drivers.map(d => (
-                    <button key={d.id} onClick={async () => {
-                       showConfirm(`¿Guardar el traslado de la patente ${forceCloseJob.plate || forceCloseJob.vin} a nombre de ${d.name}?`, async () => {
-                          try {
-                             const mockChecklist = {
-                                client: forceCloseJob.client || '', brand: forceCloseJob.brand || '', model: forceCloseJob.model || '', 
-                                plateOrVin: forceCloseJob.plate || forceCloseJob.vin || '', origin: forceCloseJob.origin || '', 
-                                destination: forceCloseJob.destination || '', fuelLevel: 50, photos: {}, docs: {}, 
-                                observations: 'Sin observaciones registradas.', 
-                                receiverName: 'ENTREGA SIN RECEPCIÓN', receiverRut: 'N/A', noReception: true, signatureData: null, 
-                                assignedDriverName: d.name
-                             };
-                             await updateDoc(doc(db, 'transport_jobs', forceCloseJob.id), {
-                                status: 'completed',
-                                completedAt: Date.now(),
-                                acceptedByEmail: d.email,
-                                assignedDrivers: [{id: d.id, name: d.name, email: d.email}],
-                                assignedEmails: [d.email],
-                                checklist: mockChecklist,
-                                phase: forceCloseJob.tripType === 'revision' ? 'prt_done' : 'arrived_destination',
-                                prt_result: forceCloseJob.tripType === 'revision' ? (forceCloseJob.prt_result || 'aprobado') : null
-                             });
-                             // NUEVO: Correo de término para cierres forzados del admin
-                             notifyClient({ ...forceCloseJob, acceptedByEmail: d.email, assignedDriverName: d.name }, 'finalizado');
-                             setForceCloseJob(null);
-                             showAlert(`✅ Traslado cerrado exitosamente a nombre de ${d.name}.`);
-                          } catch (e) { console.error(e); showAlert("Error al forzar el cierre."); }
-                       });
-                    }} className="w-full text-left p-3 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-200 border border-slate-100 rounded-xl transition-colors">
-                       <p className="font-extrabold text-slate-800">{d.name}</p>
-                       <p className="text-[10px] font-bold text-slate-400">{d.email}</p>
-                    </button>
-                 ))}
-              </div>
-           </div>
-        </div>
-      )}
-
-      {/* NUEVO: MODAL INTELIGENTE DE CONTINUIDAD (DUPLICAR) */}
       {dupPromptJob && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-           <div className="bg-white rounded-3xl p-5 sm:p-6 w-full max-w-md shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 border-t-8 border-purple-500">
-              <div className="flex justify-between items-start mb-4">
-                 <div>
-                   <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><Repeat className="w-5 h-5 text-purple-600"/> Nuevo Traslado</h3>
-                   <p className="text-xs font-bold text-slate-500 mt-1">
-                      {dupPromptJob.tripType === 'simple' ? dupPromptJob.description : `${dupPromptJob.brand} ${dupPromptJob.model}`} • {dupPromptJob.plate || dupPromptJob.vin || 'S/N'}
-                   </p>
-                 </div>
-                 <button onClick={()=>setDupPromptJob(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-5 h-5"/></button>
+           <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4">
+              <h3 className="text-xl font-black">Nuevo Traslado</h3>
+              <div className="space-y-2">
+                 <button onClick={() => setDupMode('clone')} className={`w-full p-3 rounded-xl border-2 ${dupMode === 'clone' ? 'border-purple-600 bg-purple-50' : 'border-slate-100'}`}>Clonar</button>
+                 <button onClick={() => setDupMode('return')} className={`w-full p-3 rounded-xl border-2 ${dupMode === 'return' ? 'border-purple-600 bg-purple-50' : 'border-slate-100'}`}>Retornar</button>
+                 <input type="text" placeholder="Nuevo destino..." value={dupDestination} onChange={e=>setDupDestination(e.target.value)} className="w-full border-2 p-3 rounded-xl"/>
               </div>
-
-              <div className="overflow-y-auto space-y-5 pr-1 pb-4">
-                 
-                 {/* OPCIONES DE RUTA */}
-                 <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">¿Qué tipo de ruta hará ahora?</label>
-                    
-                    <button onClick={() => setDupMode('clone')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'clone' ? 'border-purple-600 bg-purple-50' : 'border-slate-100 bg-slate-50 hover:border-purple-200'}`}>
-                       <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${dupMode === 'clone' ? 'border-purple-600' : 'border-slate-300'}`}>
-                          {dupMode === 'clone' && <div className="w-2 h-2 bg-purple-600 rounded-full"></div>}
-                       </div>
-                       <div>
-                          <p className={`font-extrabold text-sm ${dupMode === 'clone' ? 'text-purple-800' : 'text-slate-700'}`}>Clonar Exactamente Igual</p>
-                          <p className="text-[10px] font-bold text-slate-500">{dupPromptJob.origin} ➔ {dupPromptJob.destination || 'Mismo destino'}</p>
-                       </div>
-                    </button>
-
-                    <button onClick={() => setDupMode('return')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'return' ? 'border-purple-600 bg-purple-50' : 'border-slate-100 bg-slate-50 hover:border-purple-200'}`}>
-                       <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${dupMode === 'return' ? 'border-purple-600' : 'border-slate-300'}`}>
-                          {dupMode === 'return' && <div className="w-2 h-2 bg-purple-600 rounded-full"></div>}
-                       </div>
-                       <div>
-                          <p className={`font-extrabold text-sm ${dupMode === 'return' ? 'text-purple-800' : 'text-slate-700'}`}>Retornar al Origen</p>
-                          <p className="text-[10px] font-bold text-slate-500">{dupPromptJob.tripType === 'revision' ? 'PRT' : (dupPromptJob.destination || dupPromptJob.origin)} ➔ {dupPromptJob.origin}</p>
-                       </div>
-                    </button>
-
-                    <button onClick={() => { setDupMode('continue'); setDupDestination(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'continue' ? 'border-purple-600 bg-purple-50' : 'border-slate-100 bg-slate-50 hover:border-purple-200'}`}>
-                       <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${dupMode === 'continue' ? 'border-purple-600' : 'border-slate-300'}`}>
-                          {dupMode === 'continue' && <div className="w-2 h-2 bg-purple-600 rounded-full"></div>}
-                       </div>
-                       <div className="w-full">
-                          <p className={`font-extrabold text-sm ${dupMode === 'continue' ? 'text-purple-800' : 'text-slate-700'}`}>Continuar a Otro Destino</p>
-                          {dupMode === 'continue' ? (
-                             <div className="mt-2 animate-in fade-in slide-in-from-top-1 w-full">
-                                <input type="text" autoFocus placeholder="Escribe el nuevo destino..." value={dupDestination} onChange={e=>setDupDestination(e.target.value)} className="w-full bg-white border border-purple-200 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-400 font-bold" />
-                             </div>
-                          ) : (
-                             <p className="text-[10px] font-bold text-slate-500">{dupPromptJob.tripType === 'revision' ? 'PRT' : (dupPromptJob.destination || dupPromptJob.origin)} ➔ ???</p>
-                          )}
-                       </div>
-                    </button>
-                 </div>
-
-                 {/* ASIGNACIÓN DE CONDUCTOR */}
-                 <div className="space-y-2 pt-2 border-t border-slate-100">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Asignar a Conductor</label>
-                    <select value={dupDriverEmail} onChange={e=>setDupDriverEmail(e.target.value)} className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-purple-500 font-bold text-slate-700 bg-slate-50">
-                       <option value="">Nadie aún (Enviar a Bolsa de Trabajo)</option>
-                       {drivers.map(d => (
-                          <option key={d.id} value={d.email}>{d.name}</option>
-                       ))}
-                    </select>
-                 </div>
-              </div>
-
-              <div className="flex gap-3 pt-3 border-t border-slate-100 mt-auto">
-                 <button onClick={()=>setDupPromptJob(null)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3.5 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>
-                 <button onClick={executeDuplicate} disabled={processingId === `dup-${dupPromptJob.id}`} className="flex-[2] bg-purple-600 hover:bg-purple-700 text-white py-3.5 rounded-xl font-extrabold text-sm transition-colors shadow-lg shadow-purple-200 flex justify-center items-center gap-2 disabled:opacity-50">
-                    {processingId === `dup-${dupPromptJob.id}` ? <Clock className="w-5 h-5 animate-spin"/> : 'Crear Traslado'}
-                 </button>
-              </div>
+              <button onClick={executeDuplicate} className="w-full bg-purple-600 text-white py-3 rounded-xl font-black">Crear Traslado</button>
+              <button onClick={()=>setDupPromptJob(null)} className="w-full bg-slate-100 py-3 rounded-xl">Cancelar</button>
            </div>
         </div>
       )}
 
-      {/* NUEVO: MODAL DE FIRMA MASIVA PARA FLOTAS */}
       {showBulkSign && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-           <div className="bg-white rounded-3xl p-5 sm:p-6 w-full max-w-lg shadow-2xl flex flex-col max-h-[95vh] animate-in zoom-in-95 border-t-8 border-emerald-500">
-              <div className="flex justify-between items-start mb-4 shrink-0">
-                 <div>
-                   <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><PenTool className="w-5 h-5 text-emerald-600"/> Firma Masiva (Flotas)</h3>
-                   <p className="text-xs font-bold text-slate-500 mt-1">Cierra múltiples entregas con una sola firma del receptor.</p>
-                 </div>
-                 <button onClick={()=>setShowBulkSign(false)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-5 h-5"/></button>
+           <div className="bg-white rounded-3xl p-5 w-full max-w-lg shadow-2xl flex flex-col max-h-[95vh] border-t-8 border-emerald-500">
+              <div className="flex justify-between mb-4">
+                 <h3 className="text-xl font-black">Firma Masiva</h3>
+                 <button onClick={()=>setShowBulkSign(false)}><X/></button>
               </div>
-
-              <div className="overflow-y-auto space-y-4 pr-1 pb-4 flex-1">
-                 
-                 <div className="bg-emerald-50 border-2 border-emerald-100 p-3 rounded-xl shadow-sm">
-                    <p className="text-[10px] font-black text-emerald-700 uppercase mb-2">1. Selecciona los vehículos a entregar:</p>
-                    <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1">
-                       {inProgressJobsList.length === 0 ? (
-                          <p className="text-xs font-bold text-slate-400 p-2 text-center">No tienes vehículos en curso para entregar.</p>
-                       ) : (
-                          inProgressJobsList.map(j => {
-                             const isSelected = bulkSelectedIds.includes(j.id);
-                             return (
-                               <label key={j.id} className={`flex items-center gap-3 p-2.5 rounded-lg border-2 cursor-pointer transition-colors ${isSelected ? 'border-emerald-500 bg-emerald-100' : 'border-slate-200 bg-white hover:border-emerald-300'}`}>
-                                  <input type="checkbox" className="w-4 h-4 accent-emerald-600" checked={isSelected} onChange={(e) => {
-                                     if(e.target.checked) setBulkSelectedIds([...bulkSelectedIds, j.id]);
-                                     else setBulkSelectedIds(bulkSelectedIds.filter(id => id !== j.id));
-                                  }}/>
-                                  <div className="flex-1 min-w-0">
-                                     <p className="text-xs font-black text-slate-800 truncate">{j.tripType === 'simple' ? j.description : `${j.brand} ${j.model}`}</p>
-                                     <p className="text-[10px] font-bold text-slate-500 truncate">{j.plate || j.vin || j.associatedPlate || 'S/N'} • {j.client}</p>
-                                  </div>
-                               </label>
-                             );
-                          })
-                       )}
-                    </div>
-                 </div>
-
-                 <div className="space-y-3">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">2. Datos del Receptor Único</p>
-                    <input type="text" placeholder="Nombre completo del receptor" value={bulkReceiverName} onChange={e=>setBulkReceiverName(e.target.value)} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 text-sm outline-none focus:border-emerald-500 bg-white"/>
-                    <input type="text" placeholder="RUT Receptor (Ej: 12.345.678-9)" value={bulkReceiverRut} maxLength="12" onChange={(e)=>{ let val = e.target.value.replace(/[^0-9kK]/g, '').toUpperCase(); if (val.length > 1) { const dv = val.slice(-1); const body = val.slice(0, -1); val = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '-' + dv; } setBulkReceiverRut(val); }} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 text-sm outline-none focus:border-emerald-500 bg-white"/>
-                 </div>
-
-                 <div className="space-y-2">
-                    <p className="text-[10px] font-black
-
-
+              <div className="overflow-y-auto space-y-4 flex-1">
+                 {inProgressJobsList.map(j => (
+                    <label key={j.id} className="flex items-center gap-3 p-3 border rounded-xl">
+                       <input type="checkbox" checked={bulkSelectedIds.includes(j.id)} onChange={e => e.target.checked ? setBulkSelectedIds([...bulkSelectedIds, j.id]) : setBulkSelectedIds(bulkSelectedIds.filter(id => id !== j.id))}/>
+                       <div className="text-xs font-black">{j.plate || j.associatedPlate || j.vin} - {j.client}</div>
+                    </label>
+                 ))}
+                 <input type="text" placeholder="Nombre Receptor" value={bulkReceiverName} onChange={e=>setBulkReceiverName(e.target.value)} className="w-full border-2 p-3 rounded-xl"/>
+                 <input type="text" placeholder="RUT" value={bulkReceiverRut} onChange={e=>setBulkReceiverRut(e.target.value)} className="w-full border-2 p-3 rounded-xl"/>
+                 <SignaturePad onSave={d=>setBulkSignature(d)} onClear={()=>setBulkSignature(null)}/>
+              </div>
+              <button onClick={handleBulkSignSubmit} className="w-full bg-emerald-600 text-white py-4 rounded-xl font-black mt-4">Finalizar Flota</button>
+           </div>
+        </div>
+      )}
+    </div>
+  );
+}
