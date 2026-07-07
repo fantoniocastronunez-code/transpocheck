@@ -18,13 +18,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [relayPromptJob, setRelayPromptJob] = useState(null); 
   const [forceCloseJob, setForceCloseJob] = useState(null); 
   
-  // NUEVO: Estados para el Modal Inteligente de Duplicación/Continuidad
   const [dupPromptJob, setDupPromptJob] = useState(null);
   const [dupMode, setDupMode] = useState('clone');
   const [dupDestination, setDupDestination] = useState('');
   const [dupDriverEmail, setDupDriverEmail] = useState('');
 
-  // NUEVO: Estados para Firma Masiva (Flotas)
   const [showBulkSign, setShowBulkSign] = useState(false);
   const [bulkSelectedIds, setBulkSelectedIds] = useState([]);
   const [bulkReceiverName, setBulkReceiverName] = useState('');
@@ -43,6 +41,19 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
      const timer = setTimeout(() => setIsAppReady(true), 800);
      return () => clearTimeout(timer);
   }, []); 
+
+  // NUEVO: Motor Extractor Inteligente de Patentes
+  const getJobIdentifier = (j) => {
+     if (j.plate && j.plate !== 'S/N') return j.plate;
+     if (j.associatedPlate && j.associatedPlate !== 'S/N') return j.associatedPlate;
+     if (j.vin && j.vin !== 'S/N') return j.vin;
+     
+     if (j.tripType === 'simple' && j.description) {
+        const match = j.description.match(/(PATENTE|VIN)\s+([A-Z0-9]+)/i);
+        if (match) return match[2];
+     }
+     return 'S/N';
+  };
 
   const notifyClient = async (jobData, statusType) => {
      try {
@@ -80,7 +91,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                  id: jobData.id,
                  driverName: driverName,
                  vehicle: jobData.tripType === 'simple' ? (jobData.description || 'Servicio en Terreno') : (`${jobData.brand || ''} ${jobData.model || ''}`.trim() || 'Vehículo'),
-                 plate: jobData.plate || jobData.vin || jobData.associatedPlate || 'S/N',
+                 plate: getJobIdentifier(jobData), // FIX CORREO CLIENTE
                  origin: jobData.origin || 'Origen no especificado',
                  destination: jobData.destination || ''
               }
@@ -113,6 +124,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
        notifyClient({ ...job, acceptedByEmail: currentUserEmail }, 'asignado');
        
        const driverName = drivers?.find(d => d.email === currentUserEmail)?.name || currentUserEmail;
+       
+       // FIX CORREO ADMIN
        fetch('/api/notify-admin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -122,7 +135,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
              jobDetails: {
                 client: job.client || 'Sin Cliente',
                 vehicle: job.tripType === 'simple' ? (job.description || 'Servicio en Terreno') : (`${job.brand || ''} ${job.model || ''}`.trim() || 'Servicio'),
-                plate: job.plate || job.vin || job.associatedPlate || 'S/N',
+                plate: getJobIdentifier(job),
                 origin: job.origin || 'No especificado'
              }
           })
@@ -245,12 +258,18 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             }
         }
 
+        // FIX CLONADOR: Se lleva el 100% de los datos del servicio de pintura/grabado
         const cloneJob = {
             client: dupPromptJob.client || '',
             brand: dupPromptJob.brand || '',
             model: dupPromptJob.model || '',
             vin: dupPromptJob.vin || '',
             plate: dupPromptJob.plate || '',
+            associatedPlate: dupPromptJob.associatedPlate || '',
+            isPintura: dupPromptJob.isPintura || false,
+            qtyPintura: dupPromptJob.qtyPintura || 0,
+            isGrabado: dupPromptJob.isGrabado || false,
+            qtyGrabado: dupPromptJob.qtyGrabado || 0,
             tripType: dupPromptJob.tripType || 'viaje',
             description: dupPromptJob.description || '',
             origin: origin,
@@ -467,7 +486,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         let hM = drawKV("Marca y Modelo", `${job.brand || '-'} ${job.model || '-'}`, 65, currentY, 45);
         currentY += Math.max(hC, hM) + 6;
         
-        let plateText = job.plate || job.associatedPlate || '-'; if (job.vin && job.vin !== job.plate) { plateText += ` / VIN: ${job.vin}`; }
+        let plateText = getJobIdentifier(job); if (job.vin && job.vin !== plateText) { plateText += ` / VIN: ${job.vin}`; }
         let hP = drawKV("Patente / VIN", plateText, 15, currentY, 45);
         let hD = drawKV("Conductor", driverNameStr, 65, currentY, 45);
         currentY += Math.max(hP, hD) + 6;
@@ -539,7 +558,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
     if (preloadedOtherPhotos.length > 0) {
       const labels = job.tripType === 'simple' 
-         ? { det1: 'Evidencia 1', det2: 'Evidencia 2', det3: 'Evidencia 3', det4: 'Evidencia 4' }
+         ? { det1: 'Evidencia 1', det2: 'Evidencia 2', det3: 'Evidencia 3', det4: 'Evidencia 4', det5: 'Evidencia 5', det6: 'Evidencia 6', det7: 'Evidencia 7', det8: 'Evidencia 8', det9: 'Evidencia 9', det10: 'Evidencia 10' }
          : { left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', interior_front: 'Int. Adelante', interior_back: 'Int. Atras', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4', det5: 'Detalle 5', det6: 'Detalle 6', det7: 'Detalle 7', det8: 'Detalle 8' };
       
       let photoY = 46; let currentCol = 1; let addedPage = false;
@@ -585,9 +604,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const handleCopyWhatsApp = (job) => { 
     const dateStr = getDStr(job);
     const dateShort = dateStr.substring(0, 5); 
+    const jobPlate = getJobIdentifier(job);
+    
     let text = job.tripType === 'simple' 
-      ? `${dateShort}\n${job.client || 'Sin Cliente'}\n📌 TAREA: ${job.description || 'Servicio en Terreno'}\n📍 LUGAR: ${getRouteStr(job)}${getExtraWappTxt(job)}`
-      : `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || job.associatedPlate || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`; 
+      ? `${dateShort}\n${job.client || 'Sin Cliente'}\n📌 TAREA: ${job.description || 'Servicio en Terreno'}\n🚗 VEHÍCULO: ${jobPlate}\n📍 LUGAR: ${getRouteStr(job)}${getExtraWappTxt(job)}`
+      : `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${jobPlate}\n${getRouteStr(job)}${getExtraWappTxt(job)}`; 
     
     if (job.status === 'failed') {
       text = `❌ TRASLADO FALLIDO\nMotivo: ${job.failedReason || 'No especificada'}\n\n${text}`;
@@ -608,7 +629,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const generatePDF = async (job) => {
     if (processingId) return;
     setProcessingId(`${job.id}-pdf`);
-    try { const docPDF = await buildPDFDoc(job); const cleanPlate = job.plate || job.vin || job.associatedPlate || 'SN'; const fileName = `Check.${getDStr(job).replace(/\//g, '-')}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`; docPDF.save(fileName); } catch(e) { console.error(e); showAlert("Hubo un error al generar PDF."); }
+    try { const docPDF = await buildPDFDoc(job); const cleanPlate = getJobIdentifier(job); const fileName = `Check.${getDStr(job).replace(/\//g, '-')}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`; docPDF.save(fileName); } catch(e) { console.error(e); showAlert("Hubo un error al generar PDF."); }
     finally { setProcessingId(null); }
   };
 
@@ -618,12 +639,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     try {
       const dateStrForFile = getDStr(job).replace(/\//g, '-');
       const dateShort = getDStr(job).substring(0, 5);
-      const cleanPlate = job.plate || job.vin || job.associatedPlate || 'SN';
+      const cleanPlate = getJobIdentifier(job);
       const fileName = `Check.${dateStrForFile}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`;
       
       let textToShare = job.tripType === 'simple' 
-        ? `${dateShort}\n${job.client || 'Sin Cliente'}\n📌 TAREA: ${job.description || 'Servicio en Terreno'}\n📍 LUGAR: ${getRouteStr(job)}${getExtraWappTxt(job)}`
-        : `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${job.plate || job.vin || job.associatedPlate || '-'}\n${getRouteStr(job)}${getExtraWappTxt(job)}`;
+        ? `${dateShort}\n${job.client || 'Sin Cliente'}\n📌 TAREA: ${job.description || 'Servicio en Terreno'}\n🚗 VEHÍCULO: ${cleanPlate}\n📍 LUGAR: ${getRouteStr(job)}${getExtraWappTxt(job)}`
+        : `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${cleanPlate}\n${getRouteStr(job)}${getExtraWappTxt(job)}`;
       
       if (job.status === 'failed') {
         textToShare = `❌ TRASLADO FALLIDO\nMotivo: ${job.failedReason || 'No especificada'}\n\n${textToShare}`;
@@ -666,6 +687,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     const step2Done = isAccepted && ['picked_up', 'arrived_destination', 'arrived_prt', 'prt_done'].includes(phase);
     const step3Done = isAccepted && ['arrived_destination', 'arrived_prt', 'prt_done'].includes(phase);
     const step4Done = isAccepted && phase === 'prt_done';
+    
+    // FIX TARJETA VISUAL: Extrae la patente o el VIN para mostrarlo siempre
+    const ident = getJobIdentifier(j);
 
     return (
       <div key={j.id} className="bg-white rounded-3xl border border-slate-100 p-4 sm:p-5 flex flex-col shadow-sm relative hover:shadow-xl hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 overflow-hidden cursor-default">
@@ -675,12 +699,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           <div className="flex flex-col gap-3 w-full">
             <div className="flex justify-between items-start w-full gap-2">
               <div className="shrink-0 relative z-20 flex flex-col items-end gap-1">
-                {j.tripType === 'simple' ? (
-                   <span className="bg-purple-100 text-purple-800 border border-purple-200 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm max-w-[150px] text-center leading-tight">SERVICIO</span>
-                ) : (
+                {j.tripType === 'simple' && (
+                   <span className="bg-purple-100 text-purple-800 border border-purple-200 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm max-w-[150px] text-center leading-tight mb-1">SERVICIO</span>
+                )}
+                {ident !== 'S/N' && (
                    <>
-                     <LicensePlateBadge text={j.plate || j.associatedPlate || j.vin} />
-                     {j.vin && (j.plate || j.associatedPlate) && j.vin !== (j.plate || j.associatedPlate) && (
+                     <LicensePlateBadge text={ident} />
+                     {j.vin && ident !== j.vin && (
                        <span className="text-[9px] font-black bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded-md uppercase tracking-widest shadow-sm mr-1">VIN: {j.vin}</span>
                      )}
                    </>
@@ -705,7 +730,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     {isAccepted && (
                       <button onClick={() => {
                         const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
-                        const textToShare = `📍 Hola! El vehículo patente ${j.plate || j.associatedPlate || j.vin || 'S/N'} va en camino a ${j.destination || 'su destino'}. Puedes seguir el traslado en tiempo real aquí:\n${url}`;
+                        const textToShare = `📍 Hola! El vehículo ${ident} va en camino a ${j.destination || 'su destino'}. Puedes seguir el traslado en tiempo real aquí:\n${url}`;
                         window.open(`https://wa.me/?text=${encodeURIComponent(textToShare)}`, '_blank');
                         setMenuOpenId(null);
                       }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-green-50 text-green-600 border-t border-slate-50"><Share2 className="w-4 h-4"/> Notificar Receptor</button>
@@ -872,6 +897,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     const drv = drivers?.find(d => d.email === j.acceptedByEmail);
     const driverName = drv ? drv.name : (j.checklist?.assignedDriverName || j.acceptedByEmail || 'No registrado');
     const isFailed = j.status === 'failed';
+    const ident = getJobIdentifier(j);
     
     return (
       <div key={j.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between relative pl-5 overflow-hidden hover:shadow-xl hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-default">
@@ -883,12 +909,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
              <p className="text-sm font-black text-slate-800 leading-tight break-words mt-1 pr-2">{j.brand} {j.model}</p>
           )}
           <div className="flex flex-col items-end shrink-0 gap-1">
-            {j.tripType === 'simple' ? (
-               <span className="bg-purple-100 text-purple-800 border border-purple-200 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider shadow-sm">SERVICIO</span>
-            ) : (
+            {j.tripType === 'simple' && (
+               <span className="bg-purple-100 text-purple-800 border border-purple-200 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider shadow-sm mb-0.5">SERVICIO</span>
+            )}
+            {ident !== 'S/N' && (
                <>
-                 <LicensePlateBadge text={j.plate || j.associatedPlate || j.vin} />
-                 {j.vin && (j.plate || j.associatedPlate) && j.vin !== (j.plate || j.associatedPlate) && (
+                 <LicensePlateBadge text={ident} />
+                 {j.vin && ident !== j.vin && (
                    <span className="text-[8px] font-black bg-slate-100 border border-slate-200 text-slate-500 px-1 py-[1px] rounded uppercase tracking-widest mr-1">VIN: {j.vin}</span>
                  )}
                </>
@@ -1022,12 +1049,15 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
            <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4">
               <h3 className="text-xl font-black">Nuevo Traslado</h3>
               <div className="space-y-2">
-                 <button onClick={() => setDupMode('clone')} className={`w-full p-3 rounded-xl border-2 ${dupMode === 'clone' ? 'border-purple-600 bg-purple-50' : 'border-slate-100'}`}>Clonar</button>
-                 <button onClick={() => setDupMode('return')} className={`w-full p-3 rounded-xl border-2 ${dupMode === 'return' ? 'border-purple-600 bg-purple-50' : 'border-slate-100'}`}>Retornar</button>
-                 <input type="text" placeholder="Nuevo destino..." value={dupDestination} onChange={e=>setDupDestination(e.target.value)} className="w-full border-2 p-3 rounded-xl"/>
+                 <button onClick={() => setDupMode('clone')} className={`w-full p-3 rounded-xl border-2 ${dupMode === 'clone' ? 'border-purple-600 bg-purple-50' : 'border-slate-100'}`}>Clonar Exactamente Igual</button>
+                 <button onClick={() => setDupMode('return')} className={`w-full p-3 rounded-xl border-2 ${dupMode === 'return' ? 'border-purple-600 bg-purple-50' : 'border-slate-100'}`}>Retornar al Origen</button>
+                 <button onClick={() => { setDupMode('continue'); setDupDestination(''); }} className={`w-full p-3 rounded-xl border-2 ${dupMode === 'continue' ? 'border-purple-600 bg-purple-50' : 'border-slate-100'}`}>Continuar a Otro Destino</button>
+                 {dupMode === 'continue' && (
+                    <input type="text" placeholder="Escribe el nuevo destino..." value={dupDestination} onChange={e=>setDupDestination(e.target.value)} className="w-full border-2 p-3 rounded-xl mt-2"/>
+                 )}
               </div>
-              <button onClick={executeDuplicate} className="w-full bg-purple-600 text-white py-3 rounded-xl font-black">Crear Traslado</button>
-              <button onClick={()=>setDupPromptJob(null)} className="w-full bg-slate-100 py-3 rounded-xl">Cancelar</button>
+              <button onClick={executeDuplicate} className="w-full bg-purple-600 text-white py-3 rounded-xl font-black shadow-md">Crear Traslado</button>
+              <button onClick={()=>setDupPromptJob(null)} className="w-full bg-slate-100 py-3 rounded-xl font-bold">Cancelar</button>
            </div>
         </div>
       )}
@@ -1036,21 +1066,34 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
            <div className="bg-white rounded-3xl p-5 w-full max-w-lg shadow-2xl flex flex-col max-h-[95vh] border-t-8 border-emerald-500">
               <div className="flex justify-between mb-4">
-                 <h3 className="text-xl font-black">Firma Masiva</h3>
-                 <button onClick={()=>setShowBulkSign(false)}><X/></button>
+                 <h3 className="text-xl font-black text-slate-800">Firma Masiva</h3>
+                 <button onClick={()=>setShowBulkSign(false)} className="bg-slate-100 p-2 rounded-full"><X className="w-5 h-5"/></button>
               </div>
               <div className="overflow-y-auto space-y-4 flex-1">
-                 {inProgressJobsList.map(j => (
-                    <label key={j.id} className="flex items-center gap-3 p-3 border rounded-xl">
-                       <input type="checkbox" checked={bulkSelectedIds.includes(j.id)} onChange={e => e.target.checked ? setBulkSelectedIds([...bulkSelectedIds, j.id]) : setBulkSelectedIds(bulkSelectedIds.filter(id => id !== j.id))}/>
-                       <div className="text-xs font-black">{j.plate || j.associatedPlate || j.vin} - {j.client}</div>
-                    </label>
-                 ))}
-                 <input type="text" placeholder="Nombre Receptor" value={bulkReceiverName} onChange={e=>setBulkReceiverName(e.target.value)} className="w-full border-2 p-3 rounded-xl"/>
-                 <input type="text" placeholder="RUT" value={bulkReceiverRut} onChange={e=>setBulkReceiverRut(e.target.value)} className="w-full border-2 p-3 rounded-xl"/>
-                 <SignaturePad onSave={d=>setBulkSignature(d)} onClear={()=>setBulkSignature(null)}/>
+                 <div className="bg-slate-50 border p-3 rounded-xl">
+                    <p className="text-[10px] font-black text-slate-500 uppercase mb-2">Selecciona los vehículos a entregar:</p>
+                    <div className="max-h-40 overflow-y-auto space-y-1.5">
+                       {inProgressJobsList.length === 0 ? (
+                          <p className="text-xs font-bold text-slate-400 text-center">No hay vehículos en curso.</p>
+                       ) : (
+                          inProgressJobsList.map(j => (
+                             <label key={j.id} className="flex items-center gap-3 p-3 border rounded-xl bg-white cursor-pointer hover:bg-slate-50">
+                                <input type="checkbox" className="w-4 h-4 accent-emerald-600" checked={bulkSelectedIds.includes(j.id)} onChange={e => e.target.checked ? setBulkSelectedIds([...bulkSelectedIds, j.id]) : setBulkSelectedIds(bulkSelectedIds.filter(id => id !== j.id))}/>
+                                <div className="text-xs font-black text-slate-700">
+                                   {getJobIdentifier(j)} - {j.tripType === 'simple' ? j.description : `${j.brand} ${j.model}`}
+                                </div>
+                             </label>
+                          ))
+                       )}
+                    </div>
+                 </div>
+                 <input type="text" placeholder="Nombre del Receptor" value={bulkReceiverName} onChange={e=>setBulkReceiverName(e.target.value)} className="w-full border-2 p-3 rounded-xl font-bold"/>
+                 <input type="text" placeholder="RUT Receptor" value={bulkReceiverRut} onChange={e=>setBulkReceiverRut(e.target.value)} className="w-full border-2 p-3 rounded-xl font-bold"/>
+                 <div className="border-2 rounded-xl overflow-hidden">
+                    <SignaturePad onSave={d=>setBulkSignature(d)} onClear={()=>setBulkSignature(null)}/>
+                 </div>
               </div>
-              <button onClick={handleBulkSignSubmit} className="w-full bg-emerald-600 text-white py-4 rounded-xl font-black mt-4">Finalizar Flota</button>
+              <button onClick={handleBulkSignSubmit} className="w-full bg-emerald-600 text-white py-4 rounded-xl font-black mt-4 shadow-md">Finalizar Flota</button>
            </div>
         </div>
       )}
