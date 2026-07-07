@@ -22,7 +22,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [dupPromptJob, setDupPromptJob] = useState(null);
   const [dupMode, setDupMode] = useState('clone');
   const [dupDestination, setDupDestination] = useState('');
-  const [dupDriverEmail, setDupDriverEmail] = useState('');
+  const [dupDriverEmails, setDupDriverEmails] = useState([]); // AHORA ES UN ARREGLO
 
   const [showBulkSign, setShowBulkSign] = useState(false);
   const [bulkSelectedIds, setBulkSelectedIds] = useState([]);
@@ -232,7 +232,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     setDupPromptJob(job);
     setDupMode('clone');
     setDupDestination('');
-    setDupDriverEmail('');
+    setDupDriverEmails([]); // LIMPIA EL ARREGLO MÚLTIPLE
   };
 
   const executeDuplicate = async () => {
@@ -256,12 +256,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         let assignedDrivers = [];
         let assignedEmails = [];
 
-        if (dupDriverEmail) {
-            const drv = drivers.find(d => d.email === dupDriverEmail);
-            if (drv) {
-                assignedDrivers = [{ id: drv.id, name: drv.name, email: drv.email }];
-                assignedEmails = [drv.email];
-            }
+        if (dupDriverEmails.length > 0) {
+            // BUSCA Y ASIGNA A TODOS LOS CONDUCTORES SELECCIONADOS
+            assignedDrivers = drivers
+               .filter(d => dupDriverEmails.includes(d.email))
+               .map(d => ({ id: d.id, name: d.name, email: d.email }));
+            assignedEmails = dupDriverEmails;
         }
 
         const cloneJob = {
@@ -1398,32 +1398,44 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     </button>
                  </div>
 
-                 {/* ASIGNACIÓN DE CONDUCTOR */}
+                                 {/* ASIGNACIÓN DE CONDUCTORES (MÚLTIPLE) */}
                  <div className="space-y-2 pt-2 border-t border-slate-100">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Asignar a Conductor</label>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Asignar a Conductores</label>
                     <div className="bg-slate-50 border-2 border-slate-100 rounded-xl overflow-hidden">
                        <div className="max-h-40 overflow-y-auto p-1.5 space-y-1 scrollbar-none">
-                          <label className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${!dupDriverEmail ? 'border-purple-500 bg-purple-50' : 'border-transparent hover:bg-slate-100'}`}>
-                             <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${!dupDriverEmail ? 'border-purple-600' : 'border-slate-300'}`}>
-                                {!dupDriverEmail && <div className="w-2 h-2 bg-purple-600 rounded-full"></div>}
+                          
+                          {/* BOTÓN: NADIE AÚN */}
+                          <label className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${dupDriverEmails.length === 0 ? 'border-purple-500 bg-purple-50' : 'border-transparent hover:bg-slate-100'}`}>
+                             <input type="checkbox" className="hidden" checked={dupDriverEmails.length === 0} onChange={() => setDupDriverEmails([])} />
+                             <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border-2 transition-colors ${dupDriverEmails.length === 0 ? 'border-purple-600 bg-purple-600' : 'border-slate-300 bg-white'}`}>
+                                {dupDriverEmails.length === 0 && <CheckCircle className="w-3 h-3 text-white"/>}
                              </div>
-                             <span className={`text-xs font-black ${!dupDriverEmail ? 'text-purple-800' : 'text-slate-600'}`}>Nadie aún (Bolsa de Trabajo)</span>
+                             <span className={`text-xs font-black ${dupDriverEmails.length === 0 ? 'text-purple-800' : 'text-slate-600'}`}>Nadie aún (Bolsa de Trabajo)</span>
                           </label>
+
+                          {/* LISTA DE CONDUCTORES MÚLTIPLES */}
                           {drivers.map(d => {
-                             const isSelected = dupDriverEmail === d.email;
+                             const isSelected = dupDriverEmails.includes(d.email);
                              return (
                                 <label key={d.id} className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${isSelected ? 'border-purple-500 bg-purple-50' : 'border-transparent hover:bg-slate-100'}`}>
-                                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${isSelected ? 'border-purple-600' : 'border-slate-300'}`}>
-                                      {isSelected && <div className="w-2 h-2 bg-purple-600 rounded-full"></div>}
+                                   <input type="checkbox" className="hidden" checked={isSelected} onChange={(e) => {
+                                      if (e.target.checked) {
+                                         setDupDriverEmails([...dupDriverEmails, d.email]);
+                                      } else {
+                                         setDupDriverEmails(dupDriverEmails.filter(email => email !== d.email));
+                                      }
+                                   }} />
+                                   <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border-2 transition-colors ${isSelected ? 'border-purple-600 bg-purple-600' : 'border-slate-300 bg-white'}`}>
+                                      {isSelected && <CheckCircle className="w-3 h-3 text-white"/>}
                                    </div>
                                    <span className={`text-xs font-black ${isSelected ? 'text-purple-800' : 'text-slate-700'}`}>{d.name}</span>
                                 </label>
                              );
                           })}
+
                        </div>
                     </div>
                  </div>
-              </div>
 
               <div className="flex gap-3 pt-3 border-t border-slate-100 mt-auto">
                  <button onClick={()=>setDupPromptJob(null)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3.5 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>
