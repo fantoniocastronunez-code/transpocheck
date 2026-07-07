@@ -1122,8 +1122,50 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">{todayHistoryJobs.map(j => renderHistoryJobCard(j))}</div>
       </div>
 
-      {/* MODALES */}
-      {jobToFail && (
+      {/* AQUÍ VOLVEMOS A PONER EL HISTORIAL ANTIGUO */}
+      {olderHistoryJobs.length > 0 && (
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+              <div className="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
+                  <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">Historial Anterior</h4>
+                  <span className="bg-slate-200 text-slate-600 text-[10px] font-black px-2 py-0.5 rounded-full">{olderHistoryJobs.length} registros</span>
+              </div>
+              <div className="divide-y divide-slate-100 max-h-[500px] overflow-y-auto">
+                  {olderHistoryJobs.map(j => {
+                      const isFailed = j.status === 'failed';
+                      return (
+                          <div key={j.id} className="p-2 sm:p-3 hover:bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between transition-colors gap-2 sm:gap-0">
+                              <div className="flex items-center gap-2 overflow-hidden">
+                                  <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                                  <div className="flex flex-col min-w-0">
+                                      <div className="flex items-center gap-2">
+                                          {j.tripType === 'simple' ? (
+                                              <p className="text-xs font-black text-purple-800 truncate">{j.description || 'Servicio en Terreno'}</p>
+                                          ) : (
+                                              <p className="text-xs font-black text-slate-800 truncate">{j.brand} {j.model}</p>
+                                          )}
+                                          {j.tripType === 'simple' ? (
+                                              <span className="text-[9px] bg-purple-100 border border-purple-200 text-purple-800 px-1.5 py-0.5 rounded font-black uppercase">SERVICIO</span>
+                                          ) : (
+                                              <span className="text-[9px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-black uppercase">{getJobIdentifier(j)}</span>
+                                          )}
+                                      </div>
+                                      <p className="text-[10px] font-bold text-slate-500 truncate">
+                                         {j.origin} 
+                                         {j.waypoints && j.waypoints.length > 0 && ` ➔ +${j.waypoints.length} int.`}
+                                         {j.destination && j.tripType !== 'simple' ? ` ➔ ${j.destination}` : ''}
+                                      </p>
+                                  </div>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
+                                  <span className="text-[9px] font-bold text-slate-400 mr-2">{new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL')}</span>
+                                  {isAdminView && <button onClick={()=>onEditJob(j)} className="p-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-md transition-colors" title="Editar Traslado"><Edit2 className="w-3.5 h-3.5"/></button>}
+                                  {isAdminView && <button onClick={()=>handleDuplicateJob(j)} className="p-1.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-md transition-colors" title="Repetir Vehículo"><Repeat className="w-3.5 h-3.5"/></button>}
+                                  <button onClick={()=>cpyWapp(j)} className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md transition-colors"><Copy className="w-3.5 h-3.5"/></button>
+                                  <button onClick={() => generatePDF(j)} className="p-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-md transition-colors"><FileDown className="w-3.5 h-3.5"/></button>
+                                  <button onClick={() => handleShareWhatsAppPDF(j)} disabled={processingId === `${j.id}-wapp`} className="p-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-md transition-colors disabled:opacity-50">
+                                    {processingId === `${j.id}-wapp` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : <Share2 className="w-3.5 h-3.5"/>}
+                                  </button>
+                                  {isAdminView && <button onClick={()=>handleDeleteJob(j.id)} className="p-1.5 bg-red-50 text-red-500 hover:bg-red-100       {jobToFail && (
         <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[100] p-4">
           <form onSubmit={(e) => { e.preventDefault(); handleFailJob(jobToFail, e.target.reason.value); }} className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-4">
             <h3 className="text-lg font-extrabold">¿Motivo del fallo?</h3>
@@ -1313,3 +1355,4 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     </div>
   );
 }
+
