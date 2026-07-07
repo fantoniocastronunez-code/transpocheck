@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, updateDoc, doc, deleteDoc, getDocs } from 'firebase/firestore';
-import { Camera, Eye, EyeOff, User, Edit2, Trash2, Truck, Clock, X, Plus, BookOpen, Phone } from 'lucide-react';
+import { Camera, Eye, EyeOff, User, Edit2, Trash2, Truck, Clock, X, Plus, BookOpen, Phone, CheckCircle } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import { LICENCIAS, resizeImage } from '../../utils/helpers';
 
-export default function ConfigView({ allClientsList, customClients, vehicles, drivers, db, showAlert, showConfirm }) {
+export default function ConfiView({ allClientsList, customClients, vehicles, drivers, db, showAlert, showConfirm }) {
   const [configSubTab, setConfigSubTab] = useState('clients');
   const [editingDir, setEditingDir] = useState(null); 
   const [directoryList, setDirectoryList] = useState([]); 
@@ -208,23 +208,32 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
                   <p className="text-xs font-extrabold text-blue-900 flex items-center gap-1.5"><Eye className="w-4 h-4"/> Panel de Notificaciones (Correos)</p>
                   <p className="text-[10px] font-bold text-blue-600 mt-0.5 leading-tight">Selecciona exactamente qué actualizaciones recibirá el cliente en su correo.</p>
                </div>
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
                   {[
-                    { id: 'creado', label: '1. Trabajo Creado' },
-                    { id: 'asignado', label: '2. Conductor Acepta' },
-                    { id: 'llegada_origen', label: '3. Llegada a Origen' },
-                    { id: 'en_ruta', label: '4. Vehículo en Ruta' },
-                    { id: 'llegada_destino', label: '5. Llegada a Destino' },
-                    { id: 'finalizado', label: '6. Acta Finalizada (PDF)' }
-                  ].map(notif => (
-                    <div key={notif.id} className="flex justify-between items-center bg-white p-2 rounded-lg border border-blue-100">
-                       <span className="text-[10px] font-black text-slate-700">{notif.label}</span>
-                       <label className="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" checked={clientNotifs[notif.id]} onChange={(e) => setClientNotifs({...clientNotifs, [notif.id]: e.target.checked})} className="sr-only peer" />
-                          <div className="w-7 h-4 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600 shadow-sm"></div>
-                       </label>
-                    </div>
-                  ))}
+                    { id: 'creado', label: 'Creado' },
+                    { id: 'asignado', label: 'Asignado' },
+                    { id: 'llegada_origen', label: 'En Origen' },
+                    { id: 'en_ruta', label: 'En Ruta' },
+                    { id: 'llegada_destino', label: 'En Destino' },
+                    { id: 'finalizado', label: 'Acta PDF' }
+                  ].map(notif => {
+                     const isActive = clientNotifs[notif.id];
+                     return (
+                       <button
+                         key={notif.id}
+                         type="button"
+                         onClick={() => setClientNotifs({...clientNotifs, [notif.id]: !isActive})}
+                         className={`py-3 px-1.5 rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all duration-200 border-2 flex flex-col items-center justify-center gap-1.5 select-none ${
+                           isActive
+                             ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200 scale-100'
+                             : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 scale-[0.98]'
+                         }`}
+                       >
+                         {isActive ? <CheckCircle className="w-5 h-5 mb-0.5 animate-in zoom-in duration-200" /> : <div className="w-5 h-5 mb-0.5 rounded-full border-2 border-slate-300 bg-white"></div>}
+                         <span className="text-center leading-tight">{notif.label}</span>
+                       </button>
+                     );
+                  })}
                </div>
             </div>
 
@@ -274,7 +283,7 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
                         )}
                      </div>
                      <div className="flex flex-col gap-1.5 shrink-0 ml-2 border-l border-slate-200 pl-3">
-                       <button onClick={()=>setEditingClient(clientRecord)} className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition-colors shadow-sm"><Edit2 className="w-4 h-4"/></button>
+                       <button onClick={()=>{setEditingClient(clientRecord); window.scrollTo({ top: 0, behavior: 'smooth' });}} className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition-colors shadow-sm"><Edit2 className="w-4 h-4"/></button>
                        <button onClick={()=>showConfirm("¿Eliminar cliente y sus accesos?", async()=>await deleteDoc(doc(db,'clients',clientRecord.id)))} className="p-2 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-colors shadow-sm"><Trash2 className="w-4 h-4"/></button>
                      </div>
                    </div>
@@ -377,7 +386,7 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
                   </div>
 
                   <div className="flex gap-2 mt-4 relative z-20 justify-end border-t border-white/10 pt-3">
-                    <button onClick={() => setEditingVehicle(v)} className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors backdrop-blur-sm shadow-sm"><Edit2 className="w-4 h-4 text-white"/></button>
+                    <button onClick={() => {setEditingVehicle(v); window.scrollTo({ top: 0, behavior: 'smooth' });}} className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors backdrop-blur-sm shadow-sm"><Edit2 className="w-4 h-4 text-white"/></button>
                     <button onClick={()=>showConfirm("¿Eliminar vehículo?", async () => {try { await deleteDoc(doc(db, 'vehicles', v.id)); } catch (e) {}})} className="p-1.5 bg-red-500/80 hover:bg-red-500 rounded-lg transition-colors backdrop-blur-sm shadow-sm"><Trash2 className="w-4 h-4 text-white"/></button>
                   </div>
                 </div>
@@ -488,6 +497,7 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
                      <button onClick={() => { 
                        setEditingDriver(d); 
                        setDriverDocs({ photo: d.photo || null, idFront: d.idFront || null, idBack: d.idBack || null, licenseFront: d.licenseFront || null, licenseBack: d.licenseBack || null }); 
+                       window.scrollTo({ top: 0, behavior: 'smooth' });
                      }} className={`px-3 py-2 rounded-lg transition-colors shadow-sm text-xs font-bold flex items-center gap-1.5 ${d.isHidden ? 'bg-slate-200 text-slate-500 hover:bg-slate-300' : 'bg-blue-100 hover:bg-blue-200 text-blue-600'}`} title="Ver Perfil y Documentos"><User className="w-4 h-4"/> Perfil</button>
                      <button onClick={() => showConfirm("¿Eliminar conductor?", async()=>await deleteDoc(doc(db,'drivers',d.id)))} className="p-2 bg-red-100 hover:bg-red-200 text-red-500 rounded-lg transition-colors shadow-sm"><Trash2 className="w-4 h-4"/></button>
                   </div>
@@ -557,7 +567,7 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
                     <p className="text-[11px] font-bold text-slate-500 mt-0.5 truncate flex items-center gap-1"><Phone className="w-3 h-3"/> {d.contactPhone}</p>
                   </div>
                   <div className="flex flex-col gap-1.5 shrink-0 ml-2">
-                     <button onClick={() => setEditingDir(d)} className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors shadow-sm" title="Editar"><Edit2 className="w-3.5 h-3.5"/></button>
+                     <button onClick={() => {setEditingDir(d); window.scrollTo({ top: 0, behavior: 'smooth' });}} className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors shadow-sm" title="Editar"><Edit2 className="w-3.5 h-3.5"/></button>
                      <button onClick={() => showConfirm("¿Eliminar destino del directorio?", async () => { 
                          await deleteDoc(doc(db,'directory',d.id));
                          setDirectoryList(directoryList.filter(item => item.id !== d.id));
@@ -580,3 +590,4 @@ export default function ConfigView({ allClientsList, customClients, vehicles, dr
     </div>
   );
 }
+
