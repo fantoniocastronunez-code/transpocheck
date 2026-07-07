@@ -1342,7 +1342,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           </div>
       )}
 
-           {dupPromptJob && (
+      {dupPromptJob && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
            <div className="bg-white rounded-3xl p-5 sm:p-6 w-full max-w-md shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 border-t-8 border-purple-500">
               <div className="flex justify-between items-start mb-4">
@@ -1398,44 +1398,42 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     </button>
                  </div>
 
-                                 {/* ASIGNACIÓN DE CONDUCTORES (MÚLTIPLE) */}
+                 {/* ASIGNACIÓN DE CONDUCTORES (MÚLTIPLE) */}
                  <div className="space-y-2 pt-2 border-t border-slate-100">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Asignar a Conductores</label>
                     <div className="bg-slate-50 border-2 border-slate-100 rounded-xl overflow-hidden">
                        <div className="max-h-40 overflow-y-auto p-1.5 space-y-1 scrollbar-none">
                           
-                          {/* BOTÓN: NADIE AÚN */}
-                          <label className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${dupDriverEmails.length === 0 ? 'border-purple-500 bg-purple-50' : 'border-transparent hover:bg-slate-100'}`}>
-                             <input type="checkbox" className="hidden" checked={dupDriverEmails.length === 0} onChange={() => setDupDriverEmails([])} />
+                          <div onClick={() => setDupDriverEmails([])} className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${dupDriverEmails.length === 0 ? 'border-purple-500 bg-purple-50' : 'border-transparent hover:bg-slate-100'}`}>
                              <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border-2 transition-colors ${dupDriverEmails.length === 0 ? 'border-purple-600 bg-purple-600' : 'border-slate-300 bg-white'}`}>
                                 {dupDriverEmails.length === 0 && <CheckCircle className="w-3 h-3 text-white"/>}
                              </div>
                              <span className={`text-xs font-black ${dupDriverEmails.length === 0 ? 'text-purple-800' : 'text-slate-600'}`}>Nadie aún (Bolsa de Trabajo)</span>
-                          </label>
+                          </div>
 
-                          {/* LISTA DE CONDUCTORES MÚLTIPLES */}
                           {drivers.map(d => {
                              const isSelected = dupDriverEmails.includes(d.email);
                              return (
-                                <label key={d.id} className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${isSelected ? 'border-purple-500 bg-purple-50' : 'border-transparent hover:bg-slate-100'}`}>
-                                   <input type="checkbox" className="hidden" checked={isSelected} onChange={(e) => {
-                                      if (e.target.checked) {
-                                         setDupDriverEmails([...dupDriverEmails, d.email]);
-                                      } else {
+                                <div key={d.id} onClick={() => {
+                                      if (isSelected) {
                                          setDupDriverEmails(dupDriverEmails.filter(email => email !== d.email));
+                                      } else {
+                                         setDupDriverEmails([...dupDriverEmails, d.email]);
                                       }
-                                   }} />
+                                   }} className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${isSelected ? 'border-purple-500 bg-purple-50' : 'border-transparent hover:bg-slate-100'}`}>
                                    <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border-2 transition-colors ${isSelected ? 'border-purple-600 bg-purple-600' : 'border-slate-300 bg-white'}`}>
                                       {isSelected && <CheckCircle className="w-3 h-3 text-white"/>}
                                    </div>
                                    <span className={`text-xs font-black ${isSelected ? 'text-purple-800' : 'text-slate-700'}`}>{d.name}</span>
-                                </label>
+                                </div>
                              );
                           })}
 
                        </div>
                     </div>
                  </div>
+
+              </div>
 
               <div className="flex gap-3 pt-3 border-t border-slate-100 mt-auto">
                  <button onClick={()=>setDupPromptJob(null)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3.5 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>
@@ -1447,7 +1445,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
       )}
 
-      {showBulkSign && (
+{showBulkSign && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
            <div className="bg-white rounded-3xl p-5 w-full max-w-lg shadow-2xl flex flex-col max-h-[95vh] border-t-8 border-emerald-500">
               <div className="flex justify-between mb-4">
@@ -1485,5 +1483,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     </div>
   );
 }
+
 
 
