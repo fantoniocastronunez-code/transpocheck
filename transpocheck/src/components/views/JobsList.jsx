@@ -3,7 +3,7 @@ import { updateDoc, doc, deleteDoc, addDoc, collection, deleteField, getDocs, qu
 import { 
   Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, 
   Copy, X, XCircle, MapPin, Clock, FileDown, Search, ChevronUp, ChevronDown,
-  Trash2, Car, Repeat, AlertCircle, PenTool
+  Trash2, Car, Repeat, AlertCircle, PenTool, Truck
 } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import WaitTimerBadge from '../ui/WaitTimerBadge';
@@ -28,6 +28,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [bulkReceiverName, setBulkReceiverName] = useState('');
   const [bulkReceiverRut, setBulkReceiverRut] = useState('');
   const [bulkSignature, setBulkSignature] = useState(null);
+
+  // NUEVO: Estados para creación de Flota (Convoy)
+  const [showFleetModal, setShowFleetModal] = useState(false);
+  const [fleetSelectedIds, setFleetSelectedIds] = useState([]);
 
   const [historyClientFilter, setHistoryClientFilter] = useState(''); 
   const [searchTerm, setSearchTerm] = useState('');
@@ -149,13 +153,20 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const now = new Date();
   const isAdminView = role === 'admin';
   
+  // FIX FLOTA: Si el conductor es parte de una flota, puede ver TODOS los trabajos de esa flota
+  const myFleetGroups = jobs.filter(j => 
+     (j.status === 'accepted' || j.status === 'pending') && 
+     (j.acceptedByEmail === currentUserEmail || j.assignedEmails?.includes(currentUserEmail)) && 
+     j.fleetGroup
+  ).map(j => j.fleetGroup);
+
   const filteredJobs = jobs.filter(job => {
     if (!isAdminView) {
-      if (job.status === 'pending') {
-        if (!job.assignedEmails?.includes(currentUserEmail)) return false;
-      } else {
-        if (job.acceptedByEmail !== currentUserEmail) return false;
-      }
+      const isMine = (job.status === 'pending' && job.assignedEmails?.includes(currentUserEmail)) || (job.status !== 'pending' && job.acceptedByEmail === currentUserEmail);
+      const isMyFleet = job.fleetGroup && myFleetGroups.includes(job.fleetGroup);
+      
+      // Si no es mi trabajo, y tampoco pertenece a una flota en la que yo esté, lo ocultamos
+      if (!isMine && !isMyFleet) return false;
     }
     
     if (!job.createdAt) return true;
@@ -285,6 +296,26 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         showAlert("Error al crear el nuevo traslado.");
     } finally {
         setProcessingId(null);
+    }
+  };
+
+  // NUEVO MOTOR: Creación de Grupos de Flota
+  const handleCreateFleet = async () => {
+    if (fleetSelectedIds.length < 2) return showAlert("Selecciona al menos 2 vehículos para formar un convoy.");
+    setProcessingId('create-fleet');
+    try {
+       const newFleetId = `FLT-${Date.now()}`;
+       for (const jId of fleetSelectedIds) {
+          await updateDoc(doc(db, 'transport_jobs', jId), { fleetGroup: newFleetId });
+       }
+       showAlert("✅ Convoy de Flota creado exitosamente. La Firma Masiva está habilitada para este grupo.");
+       setShowFleetModal(false);
+       setFleetSelectedIds([]);
+    } catch(e) {
+       console.error(e);
+       showAlert("Error al agrupar los vehículos.");
+    } finally {
+       setProcessingId(null);
     }
   };
 
@@ -688,7 +719,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     const ident = getJobIdentifier(j);
 
     return (
-      <div key={j.id} className="bg-white rounded-3xl border border-slate-100 p-4 sm:p-5 flex flex-col shadow-sm relative hover:shadow-xl hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 overflow-hidden cursor-default">
+      <div key={j.id} className={`bg-white rounded-3xl border p-4 sm:p-5 flex flex-col shadow-sm relative hover:shadow-xl hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 overflow-hidden cursor-default ${j.fleetGroup ? 'border-indigo-200' : 'border-slate-100'}`}>
         <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${isPending ? 'bg-amber-400' : 'bg-blue-500'}`}></div>
         
         <div className="flex justify-between items-start mb-5 border-b border-slate-100 pb-4 pl-2">
@@ -732,7 +763,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                       }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-green-50 text-green-600 border-t border-slate-50"><Share2 className="w-4 h-4"/> Notificar Receptor</button>
                     )}
 
-                    {isAccepted && (j.phase === 'picked_up' || !j.phase) && (
+                    {isAccepted && (!j.phase || j.phase === 'claimed' || j.phase === 'arrived_pickup') && (
                       <button onClick={() => { setRelayPromptJob(j); setMenuOpenId(null); }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-purple-50 text-purple-600 border-t border-slate-50"><Users className="w-4 h-4"/> Traspaso a Compañero</button>
                     )}
                     
@@ -740,6 +771,16 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                       <button onClick={() => { setForceCloseJob(j); setMenuOpenId(null); }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-emerald-50 text-emerald-600 border-t border-slate-50">
                         <CheckCircle className="w-4 h-4"/> Forzar Cierre
                       </button>
+                    )}
+
+                    {isAdminView && j.fleetGroup && (
+                       <button onClick={() => {
+                          showConfirm("¿Quitar este vehículo del grupo de flota?", async () => {
+                             try { await updateDoc(doc(db, 'transport_jobs', j.id), { fleetGroup: deleteField() }); setMenuOpenId(null); showAlert("Vehículo removido de la flota."); } catch (e) { showAlert("Error al desagrupar."); }
+                          });
+                       }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-indigo-50 text-indigo-600 border-t border-slate-50">
+                          <Truck className="w-4 h-4"/> Quitar de Flota
+                       </button>
                     )}
 
                     <button onClick={()=>cpyWapp(j)} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-slate-50 border-t border-slate-50"><Copy className="w-4 h-4"/> Copiar Resumen</button>
@@ -762,7 +803,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                 ) : (
                    <p className="text-xl font-black text-slate-800 leading-tight mt-1 break-words pr-2">{j.brand} {j.model}</p>
                 )}
-                <p className="text-xs font-bold text-slate-500 mt-0.5 uppercase tracking-wide">{j.client}</p>
+                <p className="text-xs font-bold text-slate-500 mt-0.5 uppercase tracking-wide flex items-center flex-wrap gap-2">
+                   {j.client}
+                   {j.fleetGroup && <span className="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded text-[9px] font-black border border-indigo-200">EN FLOTA (CONVOY)</span>}
+                </p>
               </div>
             </div>
           </div>
@@ -853,35 +897,42 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         {j.phase === 'arrived_pickup' && j.arrivedPickupAt && <WaitTimerBadge arrivedAt={j.arrivedPickupAt} role={role} />}
 
         <div className="mt-auto pt-3 border-t border-slate-100 flex flex-col gap-2">
-          {isPending && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && (
-            <SwipeButton key={`btn-accept-${j.id}`} onConfirm={() => handleAcceptJob(j)} text="Desliza para Aceptar" colorClass="bg-blue-600" isProcessing={processingId === `${j.id}-accept`} />
-          )}
-
-          {isAccepted && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
+          {/* Si el trabajo NO es mío, solo me muestra la tarjeta de forma informativa. No me deja tocar los botones de acción */}
+          {(!isAdminView && j.acceptedByEmail !== currentUserEmail && !j.assignedEmails?.includes(currentUserEmail)) ? (
+             <div className="bg-slate-50 border border-slate-200 text-slate-500 text-xs font-bold text-center py-3 rounded-xl">Vehículo en convoy a cargo de un compañero.</div>
+          ) : (
             <>
-              {(!j.phase || j.phase === 'claimed') && <SwipeButton key={`btn-pickup-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_pickup', { arrivedPickupAt: Date.now() })} text={j.tripType === 'simple' ? "Desliza: Llegué al lugar" : "Desliza: Llegué a retirar"} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-amber-500" isProcessing={processingId === `${j.id}-arrived_pickup`} />}
-              
-              {j.phase === 'arrived_pickup' && <SwipeButton key={`btn-power-${j.id}`} onConfirm={()=>{
-                const waitMins = j.arrivedPickupAt ? Math.floor((Date.now() - j.arrivedPickupAt) / 60000) : 0;
-                updatePhase(j, 'picked_up', { pickedUpAt: Date.now(), waitTimeMinutes: waitMins });
-              }} text={j.tripType === 'simple' ? "Desliza: Iniciar Trabajo" : "Desliza: Vehículo en mi poder"} icon={j.tripType === 'simple' ? <Clock className="w-4 h-4"/> : <Car className="w-4 h-4"/>} colorClass="bg-indigo-600" isProcessing={processingId === `${j.id}-picked_up`} />}
-              
-              {j.phase === 'picked_up' && j.tripType !== 'revision' && <SwipeButton key={`btn-dest-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_destination')} text={j.tripType === 'simple' ? "Desliza: Finalizar Trabajo" : "Desliza: Llegué a Destino"} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />}
-              
-              {j.phase === 'picked_up' && j.tripType === 'revision' && <SwipeButton key={`btn-prt-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_prt')} text="Desliza: Llegué a PRT" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_prt`} />}
-              
-              {j.phase === 'arrived_prt' && (
-                <div className="flex gap-2">
-                  <button onClick={()=>updatePhase(j, 'prt_done', { prt_result: 'aprobado' })} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-1 disabled:opacity-50">
-                     {processingId === `${j.id}-prt_done` ? <Clock className="w-3 h-3 animate-spin"/> : '✅'} Aprobado
-                  </button>
-                  <button onClick={()=>setPrtPromptJob(j)} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors disabled:opacity-50">❌ Rechazado</button>
-                </div>
+              {isPending && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && (
+                <SwipeButton key={`btn-accept-${j.id}`} onConfirm={() => handleAcceptJob(j)} text="Desliza para Aceptar" colorClass="bg-blue-600" isProcessing={processingId === `${j.id}-accept`} />
               )}
 
-              <button onClick={()=>onStartChecklist(j)} className={`w-full font-bold py-2 rounded-xl text-xs shadow-sm transition-colors ${(j.phase === 'arrived_destination' || j.phase === 'prt_done') ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'}`}>
-                📸 {(j.phase === 'arrived_destination' || j.phase === 'prt_done') ? (j.tripType === 'simple' ? 'Cerrar Acta de Servicio' : 'Cerrar Checklist') : (j.tripType === 'simple' ? 'Pre-llenar Acta' : 'Pre-llenar Checklist')}
-              </button>
+              {isAccepted && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
+                <>
+                  {(!j.phase || j.phase === 'claimed') && <SwipeButton key={`btn-pickup-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_pickup', { arrivedPickupAt: Date.now() })} text={j.tripType === 'simple' ? "Desliza: Llegué al lugar" : "Desliza: Llegué a retirar"} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-amber-500" isProcessing={processingId === `${j.id}-arrived_pickup`} />}
+                  
+                  {j.phase === 'arrived_pickup' && <SwipeButton key={`btn-power-${j.id}`} onConfirm={()=>{
+                    const waitMins = j.arrivedPickupAt ? Math.floor((Date.now() - j.arrivedPickupAt) / 60000) : 0;
+                    updatePhase(j, 'picked_up', { pickedUpAt: Date.now(), waitTimeMinutes: waitMins });
+                  }} text={j.tripType === 'simple' ? "Desliza: Iniciar Trabajo" : "Desliza: Vehículo en mi poder"} icon={j.tripType === 'simple' ? <Clock className="w-4 h-4"/> : <Car className="w-4 h-4"/>} colorClass="bg-indigo-600" isProcessing={processingId === `${j.id}-picked_up`} />}
+                  
+                  {j.phase === 'picked_up' && j.tripType !== 'revision' && <SwipeButton key={`btn-dest-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_destination')} text={j.tripType === 'simple' ? "Desliza: Finalizar Trabajo" : "Desliza: Llegué a Destino"} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />}
+                  
+                  {j.phase === 'picked_up' && j.tripType === 'revision' && <SwipeButton key={`btn-prt-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_prt')} text="Desliza: Llegué a PRT" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_prt`} />}
+                  
+                  {j.phase === 'arrived_prt' && (
+                    <div className="flex gap-2">
+                      <button onClick={()=>updatePhase(j, 'prt_done', { prt_result: 'aprobado' })} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-1 disabled:opacity-50">
+                         {processingId === `${j.id}-prt_done` ? <Clock className="w-3 h-3 animate-spin"/> : '✅'} Aprobado
+                      </button>
+                      <button onClick={()=>setPrtPromptJob(j)} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors disabled:opacity-50">❌ Rechazado</button>
+                    </div>
+                  )}
+
+                  <button onClick={()=>onStartChecklist(j)} className={`w-full font-bold py-2 rounded-xl text-xs shadow-sm transition-colors ${(j.phase === 'arrived_destination' || j.phase === 'prt_done') ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'}`}>
+                    📸 {(j.phase === 'arrived_destination' || j.phase === 'prt_done') ? (j.tripType === 'simple' ? 'Cerrar Acta de Servicio' : 'Cerrar Checklist') : (j.tripType === 'simple' ? 'Pre-llenar Acta' : 'Pre-llenar Checklist')}
+                  </button>
+                </>
+              )}
             </>
           )}
         </div>
@@ -943,6 +994,25 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
       </div>
     );
+  };
+
+  const handleCreateFleet = async () => {
+    if (fleetSelectedIds.length < 2) return showAlert("Selecciona al menos 2 vehículos para formar un convoy.");
+    setProcessingId('create-fleet');
+    try {
+       const newFleetId = `FLT-${Date.now()}`;
+       for (const jId of fleetSelectedIds) {
+          await updateDoc(doc(db, 'transport_jobs', jId), { fleetGroup: newFleetId });
+       }
+       showAlert("✅ Convoy de Flota creado exitosamente. La Firma Masiva está habilitada para este grupo.");
+       setShowFleetModal(false);
+       setFleetSelectedIds([]);
+    } catch(e) {
+       console.error(e);
+       showAlert("Error al agrupar los vehículos.");
+    } finally {
+       setProcessingId(null);
+    }
   };
 
   const handlePurgeOldJobs = async () => {
@@ -1022,6 +1092,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   };
 
   if (!isAppReady) return null;
+  const canBulkSign = inProgressJobsList.some(j => j.fleetGroup);
 
   return (
     <div className="pb-16">
@@ -1031,11 +1102,16 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
            <input type="text" placeholder="Buscar..." className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
         <div className="flex gap-2 shrink-0 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
-           <button onClick={() => { setBulkSelectedIds([]); setBulkReceiverName(''); setBulkReceiverRut(''); setBulkSignature(null); setShowBulkSign(true); }} className="group bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-md shrink-0">
-             <PenTool className="w-5 h-5"/> Firma Masiva
-           </button>
+           {canBulkSign && (
+               <button onClick={() => { setBulkSelectedIds([]); setBulkReceiverName(''); setBulkReceiverRut(''); setBulkSignature(null); setShowBulkSign(true); }} className="group bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-md shrink-0">
+                 <PenTool className="w-5 h-5"/> Firma Masiva
+               </button>
+           )}
            {isAdminView && (
              <>
+               <button type="button" onClick={() => { setFleetSelectedIds([]); setShowFleetModal(true); }} className="group bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-md shrink-0">
+                 <Truck className="w-5 h-5"/> Crear Flota
+               </button>
                <button type="button" onClick={handlePurgeOldJobs} className="group bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0">
                  <Trash2 className="w-5 h-5"/> Limpiar DB
                </button>
@@ -1166,6 +1242,41 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
       )}
 
+      {/* MODAL CREAR FLOTA (ADMIN) */}
+      {showFleetModal && (
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+             <div className="bg-white rounded-3xl p-5 w-full max-w-lg shadow-2xl flex flex-col max-h-[95vh] border-t-8 border-indigo-500 animate-in zoom-in-95">
+                <div className="flex justify-between mb-4">
+                   <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><Truck className="w-5 h-5 text-indigo-600"/> Agrupar Flota</h3>
+                   <button onClick={()=>setShowFleetModal(false)} className="bg-slate-100 p-2 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button>
+                </div>
+                <div className="overflow-y-auto space-y-4 flex-1">
+                   <p className="text-xs font-bold text-slate-500">Selecciona los traslados activos que viajarán juntos en convoy. Esto habilitará la firma masiva para todos los conductores de este grupo.</p>
+                   <div className="bg-slate-50 border p-3 rounded-xl">
+                      <div className="max-h-60 overflow-y-auto space-y-1.5">
+                         {activeJobs.length === 0 ? (
+                            <p className="text-xs font-bold text-slate-400 text-center">No hay vehículos activos.</p>
+                         ) : (
+                            activeJobs.map(j => (
+                               <label key={j.id} className="flex items-center gap-3 p-3 border rounded-xl bg-white cursor-pointer hover:bg-slate-50">
+                                  <input type="checkbox" className="w-4 h-4 accent-indigo-600" checked={fleetSelectedIds.includes(j.id)} onChange={e => e.target.checked ? setFleetSelectedIds([...fleetSelectedIds, j.id]) : setFleetSelectedIds(fleetSelectedIds.filter(id => id !== j.id))}/>
+                                  <div className="text-xs font-black text-slate-700 flex-1 min-w-0">
+                                     <div className="truncate">{getJobIdentifier(j)} - {j.tripType === 'simple' ? j.description : `${j.brand} ${j.model}`}</div>
+                                     {j.fleetGroup && <span className="text-[9px] bg-indigo-100 text-indigo-700 px-1 rounded uppercase mt-1 inline-block">Ya en Flota</span>}
+                                  </div>
+                               </label>
+                            ))
+                         )}
+                      </div>
+                   </div>
+                </div>
+                <button onClick={handleCreateFleet} disabled={processingId === 'create-fleet'} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-xl font-black mt-4 shadow-md transition-colors disabled:opacity-50">
+                   {processingId === 'create-fleet' ? 'Creando...' : 'Crear Grupo de Flota'}
+                </button>
+             </div>
+          </div>
+        )}
+
       {dupPromptJob && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
            <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4 border-t-8 border-purple-500">
@@ -1187,23 +1298,21 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
       )}
 
-           {showBulkSign && (
+      {showBulkSign && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
            <div className="bg-white rounded-3xl p-5 w-full max-w-lg shadow-2xl flex flex-col max-h-[95vh] border-t-8 border-emerald-500">
               <div className="flex justify-between mb-4">
-                 <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
-                    <PenTool className="w-5 h-5 text-emerald-600" /> Firma Masiva
-                 </h3>
+                 <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><PenTool className="w-5 h-5 text-emerald-600"/> Firma Masiva</h3>
                  <button onClick={()=>setShowBulkSign(false)} className="bg-slate-100 p-2 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button>
               </div>
               <div className="overflow-y-auto space-y-4 flex-1">
                  <div className="bg-slate-50 border p-3 rounded-xl">
                     <p className="text-[10px] font-black text-slate-500 uppercase mb-2">Selecciona los vehículos a entregar:</p>
                     <div className="max-h-40 overflow-y-auto space-y-1.5">
-                       {inProgressJobsList.length === 0 ? (
-                          <p className="text-xs font-bold text-slate-400 text-center">No hay vehículos en curso.</p>
+                       {inProgressJobsList.filter(j => j.fleetGroup).length === 0 ? (
+                          <p className="text-xs font-bold text-slate-400 text-center">No perteneces a ninguna flota activa.</p>
                        ) : (
-                          inProgressJobsList.map(j => (
+                          inProgressJobsList.filter(j => j.fleetGroup).map(j => (
                              <label key={j.id} className="flex items-center gap-3 p-3 border rounded-xl bg-white cursor-pointer hover:bg-slate-50">
                                 <input type="checkbox" className="w-4 h-4 accent-emerald-600" checked={bulkSelectedIds.includes(j.id)} onChange={e => e.target.checked ? setBulkSelectedIds([...bulkSelectedIds, j.id]) : setBulkSelectedIds(bulkSelectedIds.filter(id => id !== j.id))}/>
                                 <div className="text-xs font-black text-slate-700">
@@ -1227,5 +1336,3 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     </div>
   );
 }
-
-
