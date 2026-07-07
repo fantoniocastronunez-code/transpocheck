@@ -680,7 +680,7 @@ function LogisticApp() {
                     <button onClick={exportToExcel} className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex justify-center items-center gap-2 shadow-lg shadow-green-200 transition-colors"><Download className="w-5 h-5"/> Exportar Excel</button>
                   </div>
                   <JobsList 
-                    jobs={jobs} drivers={drivers} role="admin" 
+                    jobs={jobs} drivers={drivers} vehicles={vehicles} role="admin" 
                     onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} 
                     onEditJob={(j) => { setEditingJob(j); setAdminTab('newJob'); }} 
                     db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} allClientsList={allClientsList}
@@ -699,7 +699,7 @@ function LogisticApp() {
             <div className="space-y-6">
               <h2 className="text-2xl font-extrabold text-slate-800">Mis Trabajos Asignados</h2>
               <JobsList 
-                 jobs={jobs} drivers={drivers} role="driver" 
+                 jobs={jobs} drivers={drivers} vehicles={vehicles} role="driver" 
                  onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} 
                  db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} allClientsList={allClientsList}
                  onLoadMore={() => setJobLimit(prev => prev + 20)}
@@ -878,6 +878,7 @@ export default function App() {
     </Router>
   );
 }
+
 
 
 
