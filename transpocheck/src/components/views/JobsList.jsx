@@ -1344,25 +1344,55 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       {dupPromptJob && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-           <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4 border-t-8 border-purple-500">
-              <div className="flex justify-between items-center">
-                 <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><Repeat className="w-5 h-5 text-purple-600"/> Nuevo Traslado</h3>
-                 <button onClick={()=>setDupPromptJob(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X className="w-4 h-4"/></button>
+           <div className="bg-white rounded-3xl p-5 sm:p-6 w-full max-w-md shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 border-t-8 border-purple-500">
+              <div className="flex justify-between items-start mb-4">
+                 <div>
+                   <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><Repeat className="w-5 h-5 text-purple-600"/> Nuevo Traslado</h3>
+                   <p className="text-xs font-bold text-slate-500 mt-1">
+                      {dupPromptJob.tripType === 'simple' ? dupPromptJob.description : `${dupPromptJob.brand} ${dupPromptJob.model}`} • {getJobIdentifier(dupPromptJob)}
+                   </p>
+                 </div>
+                 <button onClick={()=>setDupPromptJob(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-5 h-5"/></button>
               </div>
-              <div className="space-y-2">
-                 <button onClick={() => setDupMode('clone')} className={`w-full text-left p-3 rounded-xl border-2 font-extrabold ${dupMode === 'clone' ? 'border-purple-600 bg-purple-50 text-purple-800' : 'border-slate-100 text-slate-700'}`}>Clonar Exactamente Igual</button>
-                 <button onClick={() => setDupMode('return')} className={`w-full text-left p-3 rounded-xl border-2 font-extrabold ${dupMode === 'return' ? 'border-purple-600 bg-purple-50 text-purple-800' : 'border-slate-100 text-slate-700'}`}>Retornar al Origen</button>
-                 <button onClick={() => { setDupMode('continue'); setDupDestination(''); }} className={`w-full text-left p-3 rounded-xl border-2 font-extrabold ${dupMode === 'continue' ? 'border-purple-600 bg-purple-50 text-purple-800' : 'border-slate-100 text-slate-700'}`}>Continuar a Otro Destino</button>
-                 {dupMode === 'continue' && (
-                    <input type="text" placeholder="Escribe el nuevo destino..." value={dupDestination} onChange={e=>setDupDestination(e.target.value)} className="w-full border-2 border-purple-300 p-3 rounded-xl mt-2 font-bold outline-none focus:border-purple-500"/>
-                 )}
-              </div>
-              <button onClick={executeDuplicate} className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3.5 rounded-xl font-black shadow-md transition-colors">Crear Traslado</button>
-              <button onClick={()=>setDupPromptJob(null)} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-bold transition-colors">Cancelar</button>
-           </div>
-        </div>
-      )}
 
+              <div className="overflow-y-auto space-y-5 pr-1 pb-4">
+                 
+                 {/* OPCIONES DE RUTA */}
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">¿Qué tipo de ruta hará ahora?</label>
+                    
+                    <button onClick={() => setDupMode('clone')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'clone' ? 'border-purple-600 bg-purple-50' : 'border-slate-100 bg-slate-50 hover:border-purple-200'}`}>
+                       <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${dupMode === 'clone' ? 'border-purple-600' : 'border-slate-300'}`}>
+                          {dupMode === 'clone' && <div className="w-2 h-2 bg-purple-600 rounded-full"></div>}
+                       </div>
+                       <div>
+                          <p className={`font-extrabold text-sm ${dupMode === 'clone' ? 'text-purple-800' : 'text-slate-700'}`}>Clonar Exactamente Igual</p>
+                          <p className="text-[10px] font-bold text-slate-500 truncate">{dupPromptJob.origin} ➔ {dupPromptJob.destination || 'Mismo destino'}</p>
+                       </div>
+                    </button>
+
+                    <button onClick={() => setDupMode('return')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'return' ? 'border-purple-600 bg-purple-50' : 'border-slate-100 bg-slate-50 hover:border-purple-200'}`}>
+                       <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${dupMode === 'return' ? 'border-purple-600' : 'border-slate-300'}`}>
+                          {dupMode === 'return' && <div className="w-2 h-2 bg-purple-600 rounded-full"></div>}
+                       </div>
+                       <div>
+                          <p className={`font-extrabold text-sm ${dupMode === 'return' ? 'text-purple-800' : 'text-slate-700'}`}>Retornar al Origen</p>
+                          <p className="text-[10px] font-bold text-slate-500 truncate">{dupPromptJob.tripType === 'revision' ? 'PRT' : (dupPromptJob.destination || dupPromptJob.origin)} ➔ {dupPromptJob.origin}</p>
+                       </div>
+                    </button>
+
+                    <button onClick={() => { setDupMode('continue'); setDupDestination(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'continue' ? 'border-purple-600 bg-purple-50' : 'border-slate-100 bg-slate-50 hover:border-purple-200'}`}>
+                       <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${dupMode === 'continue' ? 'border-purple-600' : 'border-slate-300'}`}>
+                          {dupMode === 'continue' && <div className="w-2 h-2 bg-purple-600 rounded-full"></div>}
+                       </div>
+                       <div className="w-full overflow-hidden">
+                          <p className={`font-extrabold text-sm ${dupMode === 'continue' ? 'text-purple-800' : 'text-slate-700'}`}>Continuar a Otro Destino</p>
+                          {dupMode === 'continue' ? (
+                             <div className="mt-2 animate-in fade-in slide-in-from-top-1 w-full">
+                                <input type="text" autoFocus placeholder="Escribe el nuevo destino..." value={dupDestination} onChange={e=>setDupDestination(e.target.value)} className="w-full bg-white border border-purple-200 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-400 font-bold" />
+                             </div>
+                          ) : (
+                             <p className="text-[10px] font-bold text-slate-500 truncate">{dupPromptJob.tripType === 'revision' ? 'PRT' : (dupPromptJob.destinatio
       {showBulkSign && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
            <div className="bg-white rounded-3xl p-5 w-full max-w-lg shadow-2xl flex flex-col max-h-[95vh] border-t-8 border-emerald-500">
@@ -1401,4 +1431,5 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     </div>
   );
 }
+
 
