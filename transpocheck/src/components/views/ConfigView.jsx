@@ -514,9 +514,9 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
              e.preventDefault(); 
              const fd = new FormData(e.target); 
              const data = { 
-                placeName: fd.get('placeName').trim(), 
-                contactName: fd.get('contactName').trim(), 
-                contactPhone: fd.get('contactPhone').trim(),
+                placeName: fd.get('placeName')?.trim() || '', 
+                contactName: fd.get('contactName')?.trim() || '', 
+                contactPhone: fd.get('contactPhone')?.trim() || '',
                 address: fd.get('address')?.trim() || '',
                 commune: fd.get('commune')?.trim() || ''
              }; 
@@ -538,28 +538,31 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                <h3 className="font-extrabold flex items-center gap-2 text-slate-800"><BookOpen className="text-blue-600 w-5 h-5"/> {editingDir ? 'Editar Destino' : 'Nuevo Destino'}</h3>
                {editingDir && <button type="button" onClick={()=>setEditingDir(null)} className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-lg uppercase">Cancelar</button>}
             </div>
-            <p className="text-[10px] font-bold text-slate-500 mb-2 leading-tight">Agrega los destinos frecuentes. Cuando crees un trabajo y escribas exactamente el mismo lugar, el sistema adjuntará a este encargado automáticamente.</p>
+            <p className="text-[10px] font-bold text-slate-500 mb-2 leading-tight">Agrega los destinos frecuentes. Cuando crees un trabajo y escribas exactamente el mismo lugar, el sistema adjuntará toda esta información automáticamente.</p>
             
             <div className="space-y-1">
-               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Lugar / Destino exacto</label>
-               <input name="placeName" defaultValue={editingDir?.placeName} placeholder="Ej: Samex Quilicura" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
+               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Lugar / Destino exacto <span className="text-red-500">*</span></label>
+               <input name="placeName" defaultValue={editingDir?.placeName} placeholder="Ej: Samex Quilicura (Obligatorio)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
             </div>
+            
             <div className="space-y-1">
-               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre del Encargado</label>
-               <input name="contactName" defaultValue={editingDir?.contactName} placeholder="Ej: Luis Ahumada" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
+               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre del Encargado (Opcional)</label>
+               <input name="contactName" defaultValue={editingDir?.contactName} placeholder="Ej: Luis Ahumada" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
             </div>
+            
             <div className="space-y-1">
-               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Teléfono (Llamada o WhatsApp)</label>
-               <input name="contactPhone" defaultValue={editingDir?.contactPhone} placeholder="Ej: +56912345678" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
+               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Teléfono (Opcional)</label>
+               <input name="contactPhone" defaultValue={editingDir?.contactPhone} placeholder="Ej: +56912345678" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
             </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Dirección Exacta</label>
-                  <input name="address" defaultValue={editingDir?.address} placeholder="Ej: Av. Américo Vespucio 1501" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Dirección Exacta (Opcional)</label>
+                  <input name="address" defaultValue={editingDir?.address} placeholder="Ej: Av. Vespucio 1501" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
                </div>
                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Comuna / Ciudad</label>
-                  <input name="commune" defaultValue={editingDir?.commune} placeholder="Ej: Quilicura" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Comuna / Ciudad (Opcional)</label>
+                  <input name="commune" defaultValue={editingDir?.commune} placeholder="Ej: Quilicura" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
                </div>
             </div>
 
@@ -575,8 +578,8 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                 <div key={d.id} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-xl hover:border-blue-200 transition-all">
                   <div className="flex-1 min-w-0 pr-2">
                     <p className="text-sm font-extrabold text-slate-800 truncate">{d.placeName}</p>
-                    <p className="text-[11px] font-bold text-slate-500 mt-0.5 truncate flex items-center gap-1"><MapPin className="w-3 h-3 text-blue-500"/> {d.address}, {d.commune}</p>
-                    <p className="text-[11px] font-bold text-slate-500 mt-0.5 truncate flex items-center gap-1"><User className="w-3 h-3 text-emerald-600"/> {d.contactName} • <Phone className="w-3 h-3 ml-1 text-emerald-600"/> {d.contactPhone}</p>
+                    {(d.address || d.commune) && <p className="text-[11px] font-bold text-slate-500 mt-0.5 truncate flex items-center gap-1"><MapPin className="w-3 h-3 text-blue-500"/> {d.address}{d.address && d.commune ? ', ' : ''}{d.commune}</p>}
+                    {(d.contactName || d.contactPhone) && <p className="text-[11px] font-bold text-slate-500 mt-0.5 truncate flex items-center gap-1"><User className="w-3 h-3 text-emerald-600"/> {d.contactName || 'Sin nombre'} {d.contactPhone && `• ${d.contactPhone}`}</p>}
                   </div>
                   <div className="flex flex-col gap-1.5 shrink-0 ml-2">
                      <button onClick={() => {setEditingDir(d); window.scrollTo({ top: 0, behavior: 'smooth' });}} className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors shadow-sm" title="Editar"><Edit2 className="w-3.5 h-3.5"/></button>

@@ -868,55 +868,64 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
             {/* CONTACTOS, DIRECCIONES Y NAVEGACIÓN INTELIGENTE */}
             <div className="mt-3 space-y-2">
-              {/* CONTACTO ORIGEN (O LEGACY) */}
-              {((j.originContactName && j.originContactPhone) || (j.contactName && j.contactPhone)) && (
+              
+              {/* BLOQUE ORIGEN (O LEGACY) */}
+              {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone || j.originAddress) && (
                 <div className="pt-3 border-t border-slate-200/80 flex flex-col gap-2">
+                   {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone) && (
                    <div className="flex items-center justify-between gap-2">
                      <div className="flex items-center gap-2 flex-1 min-w-0">
                         <div className="bg-emerald-100 p-1.5 rounded-full shrink-0"><Users className="w-4 h-4 text-emerald-600"/></div>
                         <div className="flex-1 min-w-0">
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 truncate">Encargado Origen</p>
-                          <p className="text-xs font-bold text-slate-700 truncate">{j.originContactName || j.contactName}</p>
+                          <p className="text-xs font-bold text-slate-700 truncate">{j.originContactName || j.contactName || 'No especificado'}</p>
                         </div>
                      </div>
+                     {(j.originContactPhone || j.contactPhone) && (
                      <div className="flex gap-2 shrink-0">
-                       <a href={`https://wa.me/${(j.originContactPhone || j.contactPhone).replace(/[^\d]/g, '')}?text=${encodeURIComponent('Hola ' + (j.originContactName || j.contactName) + ', soy de LogisticAPP y voy a retirar el vehículo.')}`} target="_blank" rel="noopener noreferrer" className="bg-emerald-500 hover:bg-emerald-600 text-white w-8 h-8 rounded-xl flex items-center justify-center transition-colors shadow-sm active:scale-95 text-sm">💬</a>
+                       <a href={`https://wa.me/${(j.originContactPhone || j.contactPhone).replace(/[^\d]/g, '')}?text=${encodeURIComponent('Hola ' + (j.originContactName || j.contactName || '') + ', soy de LogisticAPP y voy a retirar el vehículo.')}`} target="_blank" rel="noopener noreferrer" className="bg-emerald-500 hover:bg-emerald-600 text-white w-8 h-8 rounded-xl flex items-center justify-center transition-colors shadow-sm active:scale-95 text-sm">💬</a>
                        <a href={`tel:${(j.originContactPhone || j.contactPhone).replace(/[^\d+]/g, '')}`} className="bg-blue-500 hover:bg-blue-600 text-white w-8 h-8 rounded-xl flex items-center justify-center transition-colors shadow-sm active:scale-95 text-sm">📞</a>
                      </div>
+                     )}
                    </div>
+                   )}
                    
                    {/* Waze Origen: Solo aparece si no ha retirado el vehículo */}
-                   {j.originAddress && j.originCommune && (!j.phase || j.phase === 'claimed') && (
-                      <div className="flex justify-between items-center bg-slate-50 p-2 rounded-xl border border-slate-100 ml-9 shadow-inner">
-                        <p className="text-[10px] font-bold text-slate-500 truncate mr-2"><MapPin className="w-3 h-3 inline mr-1 text-slate-400"/>{j.originAddress}, {j.originCommune}</p>
-                        <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.originAddress}, ${j.originCommune}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shrink-0 transition-colors"><Navigation className="w-3 h-3"/> Waze</a>
+                   {j.originAddress && (!j.phase || j.phase === 'claimed') && (
+                      <div className="flex justify-between items-center bg-slate-50 p-2 rounded-xl border border-slate-100 shadow-inner mt-1">
+                        <p className="text-[10px] font-bold text-slate-500 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-slate-400"/>{j.originAddress}{j.originCommune ? `, ${j.originCommune}` : ''}</p>
+                        <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.originAddress} ${j.originCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shrink-0 transition-colors"><Navigation className="w-3 h-3"/> Waze</a>
                       </div>
                    )}
                 </div>
               )}
 
-              {/* CONTACTO DESTINO */}
-              {j.destContactName && j.destContactPhone && (
+              {/* BLOQUE DESTINO */}
+              {(j.destContactName || j.destContactPhone || j.destAddress) && (
                 <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+                   {(j.destContactName || j.destContactPhone) && (
                    <div className="flex items-center justify-between gap-2">
                      <div className="flex items-center gap-2 flex-1 min-w-0">
                         <div className="bg-blue-100 p-1.5 rounded-full shrink-0"><Users className="w-4 h-4 text-blue-600"/></div>
                         <div className="flex-1 min-w-0">
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 truncate">Encargado Destino</p>
-                          <p className="text-xs font-bold text-slate-700 truncate">{j.destContactName}</p>
+                          <p className="text-xs font-bold text-slate-700 truncate">{j.destContactName || 'No especificado'}</p>
                         </div>
                      </div>
+                     {j.destContactPhone && (
                      <div className="flex gap-2 shrink-0">
-                       <a href={`https://wa.me/${j.destContactPhone.replace(/[^\d]/g, '')}?text=${encodeURIComponent('Hola ' + j.destContactName + ', soy de LogisticAPP y voy en camino al destino con el vehículo.')}`} target="_blank" rel="noopener noreferrer" className="bg-emerald-500 hover:bg-emerald-600 text-white w-8 h-8 rounded-xl flex items-center justify-center transition-colors shadow-sm active:scale-95 text-sm">💬</a>
+                       <a href={`https://wa.me/${j.destContactPhone.replace(/[^\d]/g, '')}?text=${encodeURIComponent('Hola ' + (j.destContactName || '') + ', soy de LogisticAPP y voy en camino al destino con el vehículo.')}`} target="_blank" rel="noopener noreferrer" className="bg-emerald-500 hover:bg-emerald-600 text-white w-8 h-8 rounded-xl flex items-center justify-center transition-colors shadow-sm active:scale-95 text-sm">💬</a>
                        <a href={`tel:${j.destContactPhone.replace(/[^\d+]/g, '')}`} className="bg-blue-500 hover:bg-blue-600 text-white w-8 h-8 rounded-xl flex items-center justify-center transition-colors shadow-sm active:scale-95 text-sm">📞</a>
                      </div>
+                     )}
                    </div>
+                   )}
 
                    {/* Waze Destino: Solo aparece cuando el conductor YA TIENE el vehículo */}
-                   {j.destAddress && j.destCommune && (j.phase === 'picked_up') && (
-                      <div className="flex justify-between items-center bg-blue-50 p-2.5 rounded-xl border border-blue-200 ml-9 shadow-sm animate-in fade-in slide-in-from-top-1">
-                        <p className="text-[10px] font-bold text-blue-800 truncate mr-2"><MapPin className="w-3 h-3 inline mr-1 text-blue-500"/>{j.destAddress}, {j.destCommune}</p>
-                        <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.destAddress}, ${j.destCommune}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shrink-0 shadow-md transition-colors"><Navigation className="w-3 h-3"/> Waze</a>
+                   {j.destAddress && (j.phase === 'picked_up') && (
+                      <div className="flex justify-between items-center bg-blue-50 p-2.5 rounded-xl border border-blue-200 shadow-sm animate-in fade-in slide-in-from-top-1 mt-1">
+                        <p className="text-[10px] font-bold text-blue-800 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-blue-500"/>{j.destAddress}{j.destCommune ? `, ${j.destCommune}` : ''}</p>
+                        <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.destAddress} ${j.destCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shrink-0 shadow-md transition-colors"><Navigation className="w-3 h-3"/> Waze</a>
                       </div>
                    )}
                 </div>
