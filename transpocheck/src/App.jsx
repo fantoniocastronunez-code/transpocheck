@@ -731,12 +731,12 @@ function LogisticApp() {
                          return (
                          <div key={d.id} className={`flex items-center justify-between p-1 transition-colors group ${isCurrentActive ? 'bg-purple-50 border-l-4 border-purple-500' : 'hover:bg-blue-50'}`}>
                             {/* Al tocar el nombre, entras directo */}
-                            <button onClick={() => { setSimulatedDriverEmail(d.email); setActiveRole('driver'); setMainTab('jobs'); setRoleMenuOpen(false); }} className={`flex-1 text-left px-2 py-2 text-xs truncate ${isCurrentActive ? 'text-purple-700 font-black' : 'text-slate-700 font-bold group-hover:text-blue-700'}`}>
+                            <button onClick={() => { setSimulatedDriverEmail(d.email); setActiveRole('driver'); setMainTab('jobs'); setRoleMenuOpen(false); }} className={`flex-1 text-left px-2 py-2 text-xs truncate transition-colors ${isCurrentActive ? 'text-purple-700 font-black' : 'text-slate-700 font-bold group-hover:text-blue-800'}`}>
                                {d.name} {isCurrentActive && <span className="text-[9px] bg-purple-200 text-purple-700 px-1.5 py-0.5 rounded ml-1 animate-pulse">ACTIVO</span>}
                             </button>
                             {/* Estrella para fijarlo como favorito arriba */}
-                            <button onClick={(e) => { e.stopPropagation(); setFavDriverEmail(d.email); localStorage.setItem('favDriverEmail', d.email); }} className="p-2 rounded-lg hover:bg-amber-50 transition-colors" title="Fijar como Favorito">
-                               <Star className={`w-4 h-4 transition-colors ${favDriverEmail === d.email ? 'fill-amber-400 text-amber-400' : 'text-slate-200 hover:text-amber-300'}`} />
+                            <button onClick={(e) => { e.stopPropagation(); setFavDriverEmail(d.email); localStorage.setItem('favDriverEmail', d.email); }} className="p-2 rounded-lg hover:bg-amber-100 transition-colors" title="Fijar como Favorito">
+                               <Star className={`w-4 h-4 transition-colors ${favDriverEmail === d.email ? 'fill-amber-400 text-amber-400' : 'text-slate-300 group-hover:text-amber-400 hover:text-amber-500'}`} />
                             </button>
                          </div>
                          );
