@@ -62,6 +62,7 @@ function LogisticApp() {
   const [showBroadcastAdmin, setShowBroadcastAdmin] = useState(false);
   const [localDismissed, setLocalDismissed] = useState(() => localStorage.getItem('dismissedBroadcast'));
   const [dialogConfig, setDialogConfig] = useState(null);
+  const [showRequestJob, setShowRequestJob] = useState(false); // <-- NUEVO ESTADO PARA SOLICITAR TRASLADO
   
   // NUEVO: ESTADO GLOBAL DE COLA EN SEGUNDO PLANO
   const [syncQueue, setSyncQueue] = useState([]);
@@ -616,7 +617,7 @@ function LogisticApp() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.8.4</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.9</p>
                 </div>
               </div>
             )}
@@ -781,9 +782,9 @@ function LogisticApp() {
 
       {currentView === 'main' && (
         <nav className="fixed bottom-0 w-full bg-white border-t border-slate-200 flex justify-around items-center pt-2 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
-          <button onClick={handleQuickChecklist} className="flex flex-col items-center text-slate-400 hover:text-blue-600 transition-colors w-20 sm:w-24">
-             <div className="bg-slate-100 p-2 rounded-xl mb-1"><Zap className="w-5 h-5"/></div>
-             <span className="text-[10px] font-extrabold tracking-wide">Desde 0</span>
+          <button onClick={() => setShowRequestJob(true)} className="flex flex-col items-center text-slate-400 hover:text-blue-600 transition-colors w-20 sm:w-24">
+             <div className="bg-slate-100 p-2 rounded-xl mb-1"><Plus className="w-5 h-5"/></div>
+             <span className="text-[10px] font-extrabold tracking-wide">Solicitar</span>
           </button>
           <button onClick={() => setMainTab('jobs')} className={`flex flex-col items-center transition-colors w-20 sm:w-24 ${mainTab==='jobs' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}>
              <div className={`${mainTab==='jobs' ? 'bg-blue-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><ClipboardList className="w-5 h-5"/></div>
@@ -816,8 +817,86 @@ function LogisticApp() {
         </div>
       )}
 
-      {dialogConfig && (
+      {/* MODAL: SOLICITAR TRASLADO */}
+      {showRequestJob && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+          <form onSubmit={async (e) => {
+              e.preventDefault();
+              const fd = new FormData(e.target);
+              const autoAssign = fd.get('autoAssign') === 'on';
+              
+              const newJob = {
+                  client: fd.get('client'),
+                  brand: fd.get('brand'),
+                  model: fd.get('model'),
+                  plate: fd.get('plateOrVin').toUpperCase(),
+                  vin: fd.get('plateOrVin').toUpperCase(), 
+                  origin: fd.get('origin'),
+                  destination: fd.get('destination'),
+                  tripType: 'traslado',
+                  status: autoAssign ? 'accepted' : 'pending',
+                  createdAt: Date.now(),
+                  scheduledDate: new Date().toISOString().split('T')[0],
+                  assignedDrivers: autoAssign ? [{ id: myDriver?.id || 'auto', name: myDriver?.name || currentUserEmail, email: currentUserEmail }] : [],
+                  assignedEmails: autoAssign ? [currentUserEmail] : [],
+                  acceptedByEmail: autoAssign ? currentUserEmail : null,
+                  requestedBy: currentUserEmail
+              };
+              
+              try {
+                  await addDoc(collection(db, 'transport_jobs'), newJob);
+                  setShowRequestJob(false);
+                  showAlert(autoAssign ? "✅ Traslado creado y asignado a ti exitosamente." : "✅ Solicitud enviada a la central de traslados pendientes.");
+              } catch (err) {
+                  showAlert("Error al crear la solicitud.");
+              }
+          }} className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl relative animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+              <button type="button" onClick={()=>setShowRequestJob(false)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-700"/></button>
+              <div className="flex items-center gap-3 mb-5 border-b border-slate-100 pb-3">
+                <div className="bg-blue-100 p-2.5 rounded-full"><Plus className="w-6 h-6 text-blue-600"/></div>
+                <h3 className="text-xl font-black text-slate-800 leading-tight">Solicitar<br/>Traslado</h3>
+              </div>
+              
+              <div className="space-y-4">
+                 <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Empresa / Cliente</label>
+                    <select name="client" required className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500 bg-white">
+                       <option value="">Selecciona un cliente...</option>
+                       {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                 </div>
+                 <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Marca</label>
+                       <input name="brand" required placeholder="Ej: Kia" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"/>
+                    </div>
+                    <div className="space-y-1">
+                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Modelo</label>
+                       <input name="model" required placeholder="Ej: Rio" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"/>
+                    </div>
+                 </div>
+                 <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Patente o VIN</label>
+                    <input name="plateOrVin" required placeholder="Ej: ABCD12" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-black uppercase text-slate-800 outline-none focus:border-blue-500"/>
+                 </div>
+                 <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Desde (Origen)</label>
+                    <input name="origin" required placeholder="Ej: Kovacs Sucursal" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"/>
+                 </div>
+                 <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Hasta (Destino)</label>
+                    <input name="destination" required placeholder="Ej: Cliente Final" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"/>
+                 </div>
+                 
+                 <label className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-xl mt-3 cursor-pointer">
+                    <input type="checkbox" name="autoAssign" defaultChecked className="w-5 h-5 accent-blue-600 rounded cursor-pointer"/>
+                    <span className="text-xs font-bold text-blue-800">Asignarme este traslado a mí automáticamente</span>
+                 </label>
+              </div>
+              <button type="submit" className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg shadow-blue-200 transition-colors text-sm">Crear Solicitud</button>
+          </form>
+        </div>
+      )}
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 transform transition-all animate-in zoom-in-95 duration-150">
             <div className="flex items-center gap-3 mb-4"><div className="bg-blue-100 p-2 rounded-full">{dialogConfig.type === 'confirm' ? <AlertCircle className="w-6 h-6 text-blue-600"/> : <Bell className="w-6 h-6 text-blue-600"/>}</div><h3 className="text-xl font-extrabold">LogisticAPP</h3></div>
             <p className="text-slate-600 font-bold mb-6 text-sm">{dialogConfig.message}</p>
