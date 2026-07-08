@@ -1233,21 +1233,42 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-6 items-start">
-        <div className="w-full md:w-1/2 flex flex-col overflow-hidden">
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        
+        {/* COLUMNA EN CURSO */}
+        <div className="w-full lg:w-1/2 flex flex-col overflow-hidden">
           <button onClick={() => setIsInProgressOpen(!isInProgressOpen)} className="w-full flex justify-between items-center p-4">
             <h3 className="font-extrabold text-slate-800 flex items-center gap-2"><Navigation className="w-5 h-5 text-blue-600"/> En Curso ({inProgressJobsList.length})</h3>
             {isInProgressOpen ? <ChevronUp className="w-5 h-5"/> : <ChevronDown className="w-5 h-5"/>}
           </button>
-          {isInProgressOpen && <div className="flex flex-col gap-4 p-4 pt-0">{inProgressJobsList.map(j => renderActiveJobCard(j))}</div>}
+          {isInProgressOpen && (
+            <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 px-4 pb-8 pt-2 -mx-4 lg:mx-0 lg:px-4 lg:flex-col lg:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              {inProgressJobsList.map(j => (
+                <div key={j.id} className="w-[85vw] sm:w-[350px] lg:w-full shrink-0 snap-center [&>div]:h-full">
+                  {renderActiveJobCard(j)}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        <div className="w-full md:w-1/2 flex flex-col overflow-hidden">
+        
+        {/* COLUMNA PENDIENTES */}
+        <div className="w-full lg:w-1/2 flex flex-col overflow-hidden">
           <button onClick={() => setIsPendingOpen(!isPendingOpen)} className="w-full flex justify-between items-center p-4">
             <h3 className="font-extrabold text-slate-700 flex items-center gap-2"><Clock className="w-5 h-5 text-amber-500"/> Pendientes ({pendingJobsList.length})</h3>
             {isPendingOpen ? <ChevronUp className="w-5 h-5"/> : <ChevronDown className="w-5 h-5"/>}
           </button>
-          {isPendingOpen && <div className="flex flex-col gap-4 p-4 pt-0">{pendingJobsList.map(j => renderActiveJobCard(j))}</div>}
+          {isPendingOpen && (
+            <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 px-4 pb-8 pt-2 -mx-4 lg:mx-0 lg:px-4 lg:flex-col lg:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              {pendingJobsList.map(j => (
+                <div key={j.id} className="w-[85vw] sm:w-[350px] lg:w-full shrink-0 snap-center [&>div]:h-full">
+                  {renderActiveJobCard(j)}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
+
       </div>
 
       <div className="mt-10">
@@ -1605,6 +1626,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     </div>
   );
 }
+
 
 
 
