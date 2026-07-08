@@ -621,43 +621,37 @@ function LogisticApp() {
                     )}
                   </div>
 
-                  {/* --- SÚPER BOTÓN MATA-CACHÉ (SOLUCIÓN DEFINITIVA XIAOMI/PWA) --- */}
-                  <div className="flex items-center justify-between border-t border-slate-100 pt-4">
-                    <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                      <Zap className="w-4 h-4 text-blue-600"/> Recargar App
-                    </span>
-                    <button onClick={() => {
-                        if ('caches' in window) {
-                          caches.keys().then((names) => {
-                            names.forEach(name => caches.delete(name));
-                          });
-                        }
-                        if ('serviceWorker' in navigator) {
-                          navigator.serviceWorker.getRegistrations().then(regs => {
-                            regs.forEach(r => r.unregister());
-                          });
-                        }
-                        if (window.indexedDB && window.indexedDB.databases) {
-                          window.indexedDB.databases().then(dbs => {
-                            dbs.forEach(dbFile => {
-                              if (dbFile.name.startsWith('firestore')) {
-                                window.indexedDB.deleteDatabase(dbFile.name);
-                              }
-                            });
-                          });
-                        }
-                        setTimeout(() => window.location.reload(true), 300);
-                    }} className="px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm transition-colors active:bg-blue-300">
-                      FORZAR LOCAL
-                    </button>
-                  </div>
+                 {/* --- SÚPER BOTÓN MATA-CACHÉ (SOLUCIÓN DEFINITIVA XIAOMI/PWA) --- */}
+    <div className="border-t pt-3 mt-1 w-full">
+      <button onClick={() => {
+        if ('caches' in window) {
+          caches.keys().then((names) => {
+            names.forEach(name => caches.delete(name));
+          });
+        }
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(regs => {
+            regs.forEach(r => r.unregister());
+          });
+        }
+        if (window.indexedDB && window.indexedDB.databases) {
+          window.indexedDB.databases().then(dbs => {
+            dbs.forEach(dbFile => {
+              if (dbFile.name.startsWith('firestore')) {
+                window.indexedDB.deleteDatabase(dbFile.name);
+              }
+            });
+          });
+        }
+        setTimeout(() => window.location.reload(true), 300);
+      }} className="w-full py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-xl text-xs font-black uppercase tracking-wider shadow-sm transition-colors active:bg-blue-300 flex justify-center items-center gap-2">
+        ACTUALIZAR APP
+      </button>
+    </div>
 
                   {/* --- MATA-CACHÉ GLOBAL (SÓLO PARA ADMINISTRADORES) --- */}
                   {activeRole === 'admin' && (
-                    <div className="flex items-center justify-between border-t border-slate-100 pt-4 bg-purple-50 -mx-4 px-4 pb-2">
-                      <span className="text-sm font-black text-purple-700 flex items-center gap-2">
-                        <Zap className="w-4 h-4 text-purple-600"/> Forzar a TODOS
-                      </span>
+                    <div className="border-t pt-3 mt-1 w-full">
                       <button onClick={() => {
                           showConfirm("⚠️ ¿Forzar a todos los celulares de la flota a recargarse y actualizarse en este mismo instante?", async () => {
                              try {
@@ -668,8 +662,8 @@ function LogisticApp() {
                                showAlert("Error al enviar la orden."); 
                              }
                           });
-                      }} className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm transition-colors active:scale-95">
-                        ¡EJECUTAR!
+                      }} className="w-full py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-xl text-xs font-black uppercase tracking-wider shadow-sm transition-colors active:bg-purple-300 flex justify-center items-center gap-2">
+                        ACTUALIZAR A TODOS
                       </button>
                     </div>
                   )}
