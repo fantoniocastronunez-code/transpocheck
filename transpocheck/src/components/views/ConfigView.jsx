@@ -516,7 +516,9 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
              const data = { 
                 placeName: fd.get('placeName').trim(), 
                 contactName: fd.get('contactName').trim(), 
-                contactPhone: fd.get('contactPhone').trim() 
+                contactPhone: fd.get('contactPhone').trim(),
+                address: fd.get('address')?.trim() || '',
+                commune: fd.get('commune')?.trim() || ''
              }; 
              try { 
                 if (editingDir) { 
@@ -550,6 +552,16 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Teléfono (Llamada o WhatsApp)</label>
                <input name="contactPhone" defaultValue={editingDir?.contactPhone} placeholder="Ej: +56912345678" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+               <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Dirección Exacta</label>
+                  <input name="address" defaultValue={editingDir?.address} placeholder="Ej: Av. Américo Vespucio 1501" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
+               </div>
+               <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Comuna / Ciudad</label>
+                  <input name="commune" defaultValue={editingDir?.commune} placeholder="Ej: Quilicura" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
+               </div>
+            </div>
 
             <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-black text-sm transition-colors shadow-md shadow-blue-200 mt-2">
                {editingDir ? 'Guardar Cambios' : 'Agregar al Directorio'}
@@ -563,8 +575,8 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                 <div key={d.id} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-xl hover:border-blue-200 transition-all">
                   <div className="flex-1 min-w-0 pr-2">
                     <p className="text-sm font-extrabold text-slate-800 truncate">{d.placeName}</p>
-                    <p className="text-[11px] font-bold text-slate-500 mt-0.5 truncate flex items-center gap-1"><User className="w-3 h-3"/> {d.contactName}</p>
-                    <p className="text-[11px] font-bold text-slate-500 mt-0.5 truncate flex items-center gap-1"><Phone className="w-3 h-3"/> {d.contactPhone}</p>
+                    <p className="text-[11px] font-bold text-slate-500 mt-0.5 truncate flex items-center gap-1"><MapPin className="w-3 h-3 text-blue-500"/> {d.address}, {d.commune}</p>
+                    <p className="text-[11px] font-bold text-slate-500 mt-0.5 truncate flex items-center gap-1"><User className="w-3 h-3 text-emerald-600"/> {d.contactName} • <Phone className="w-3 h-3 ml-1 text-emerald-600"/> {d.contactPhone}</p>
                   </div>
                   <div className="flex flex-col gap-1.5 shrink-0 ml-2">
                      <button onClick={() => {setEditingDir(d); window.scrollTo({ top: 0, behavior: 'smooth' });}} className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors shadow-sm" title="Editar"><Edit2 className="w-3.5 h-3.5"/></button>

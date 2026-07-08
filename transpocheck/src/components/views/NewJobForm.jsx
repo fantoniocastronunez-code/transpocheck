@@ -198,6 +198,8 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
        if (matchedOrigin) {
           jobData.originContactName = matchedOrigin.contactName;
           jobData.originContactPhone = matchedOrigin.contactPhone;
+          jobData.originAddress = matchedOrigin.address || '';
+          jobData.originCommune = matchedOrigin.commune || '';
        }
     }
 
@@ -208,6 +210,8 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
        if (matchedDest) {
           jobData.destContactName = matchedDest.contactName;
           jobData.destContactPhone = matchedDest.contactPhone;
+          jobData.destAddress = matchedDest.address || '';
+          jobData.destCommune = matchedDest.commune || '';
        }
     }
 
