@@ -20,6 +20,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
   const [returnMethod, setReturnMethod] = useState('transferencia');
   const [editingExpense, setEditingExpense] = useState(null);
   const [adminTxType, setAdminTxType] = useState('assignment'); 
+  const [selectedJobId, setSelectedJobId] = useState(''); // <-- NUEVO ESTADO PARA LA TARJETA DE TRABAJO 
 
   const activeOrPendingJobs = jobs?.filter(j => j.status === 'pending' || j.status === 'accepted') || [];
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -212,7 +213,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
           {drivers.map(d => (
             <div key={d.id} className={`bg-white p-4 sm:p-5 rounded-3xl border transition-all ${selectedDriverId === d.id ? 'border-blue-500 shadow-md ring-4 ring-blue-50' : 'border-slate-200 shadow-sm hover:border-blue-300'}`}>
               
-              <div className="flex justify-between items-center cursor-pointer" onClick={() => {setSelectedDriverId(d.id === selectedDriverId ? null : d.id); setAdminTxType('assignment');}}>
+              <div className="flex justify-between items-center cursor-pointer" onClick={() => {setSelectedDriverId(d.id === selectedDriverId ? null : d.id); setAdminTxType('assignment'); setSelectedJobId('');}}>
                 <div>
                   <p className="font-extrabold text-lg text-slate-800">{d.name}</p>
                   <p className="text-xs text-slate-400 font-bold">{d.email}</p>
@@ -240,12 +241,48 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
                     
                     <input name="amount" type="number" required placeholder={adminTxType === 'assignment' ? "Monto a asignar $" : "Monto del gasto $"} className="w-full border-2 border-white bg-white p-3 rounded-xl text-sm font-bold outline-none focus:border-blue-400 shadow-sm"/>
                     
-                    <select name="jobId" className="w-full border-2 border-white bg-white p-3 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-blue-400 shadow-sm">
-                       <option value="">{adminTxType === 'assignment' ? "Asociar a un Trabajo (Opcional)" : "Trabajo activo (Opcional, permite saldo negativo)"}</option>
-                       {activeOrPendingJobs.map(j => <option key={j.id} value={j.id}>{j.client} - {j.brand} ({j.plate || j.vin || 'S/N'})</option>)}
-                    </select>
+                    <input type="hidden" name="jobId" value={selectedJobId} />
+                    <div className="mt-3 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                          Asociar a un Traslado (Opcional)
+                       </p>
+                       {activeOrPendingJobs.length === 0 ? (
+                          <p className="text-xs text-slate-400 font-bold text-center py-2 bg-slate-50 rounded-lg">No hay traslados activos.</p>
+                       ) : (
+                          <div className="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1">
+                             <label className={`relative flex items-center p-3 rounded-2xl border-2 cursor-pointer transition-all ${selectedJobId === '' ? 'border-blue-500 bg-blue-50' : 'border-slate-100 bg-slate-50 hover:border-blue-200'}`}>
+                                <input type="radio" name="jobSelection" className="hidden" checked={selectedJobId === ''} onChange={() => setSelectedJobId('')} />
+                                <div className="flex-1">
+                                   <span className={`block text-xs font-black ${selectedJobId === '' ? 'text-blue-700' : 'text-slate-500'}`}>Ninguno (Gasto general)</span>
+                                </div>
+                                <CheckCircle className={`w-5 h-5 transition-transform duration-200 shrink-0 ${selectedJobId === '' ? 'scale-100 text-blue-600' : 'scale-0 text-slate-300'}`} />
+                             </label>
+
+                             {activeOrPendingJobs.map(j => (
+                                <label key={j.id} className={`relative flex items-center p-3 rounded-2xl border-2 cursor-pointer transition-all shadow-sm ${selectedJobId === j.id ? 'border-blue-500 bg-blue-50' : 'border-slate-100 bg-white hover:border-blue-200'}`}>
+                                   <input type="radio" name="jobSelection" className="hidden" checked={selectedJobId === j.id} onChange={() => setSelectedJobId(j.id)} />
+                                   <div className="flex-1 min-w-0">
+                                      <span className={`block text-sm font-black truncate ${selectedJobId === j.id ? 'text-blue-800' : 'text-slate-700'}`}>
+                                         {j.brand} {j.model}
+                                         <span className={`ml-2 text-[9px] px-1.5 py-0.5 rounded-md ${selectedJobId === j.id ? 'bg-blue-200 text-blue-800' : 'bg-slate-200 text-slate-600'}`}>
+                                            {j.plate || j.vin || 'S/N'}
+                                         </span>
+                                      </span>
+                                      <span className={`block text-[10px] font-bold truncate mt-1 ${selectedJobId === j.id ? 'text-blue-600' : 'text-slate-500'}`}>
+                                         🏢 Cliente: {j.client}
+                                      </span>
+                                      <span className={`block text-[10px] font-bold truncate mt-0.5 ${selectedJobId === j.id ? 'text-blue-600' : 'text-slate-500'}`}>
+                                         📍 {j.origin || 'Origen'} ➔ 🏁 {j.destination || 'Destino'}
+                                      </span>
+                                   </div>
+                                   <CheckCircle className={`w-5 h-5 transition-transform duration-200 shrink-0 ml-2 ${selectedJobId === j.id ? 'scale-100 text-blue-600' : 'scale-0 text-slate-300'}`} />
+                                </label>
+                             ))}
+                          </div>
+                       )}
+                    </div>
                     
-                    <button disabled={isSubmitting} className={`w-full py-3 rounded-xl font-extrabold text-sm transition-colors text-white disabled:opacity-50 shadow-md mt-2 ${adminTxType === 'assignment' ? 'bg-green-600 hover:bg-green-700 shadow-green-200' : 'bg-red-600 hover:bg-red-700 shadow-red-200'}`}>{isSubmitting ? 'Procesando...' : `Confirmar ${adminTxType === 'assignment' ? 'Fondo' : 'Gasto'}`}</button>
+                    <button disabled={isSubmitting} className={`w-full py-3 rounded-xl font-extrabold text-sm transition-colors text-white disabled:opacity-50 shadow-md mt-4 ${adminTxType === 'assignment' ? 'bg-green-600 hover:bg-green-700 shadow-green-200' : 'bg-red-600 hover:bg-red-700 shadow-red-200'}`}>{isSubmitting ? 'Procesando...' : `Confirmar ${adminTxType === 'assignment' ? 'Fondo' : 'Gasto'}`}</button>
                   </form>
 
                   <h4 className="font-extrabold text-slate-700 mb-3 flex items-center gap-2 text-sm"><ClipboardList className="w-4 h-4 text-slate-400"/> Historial de Movimientos</h4>
