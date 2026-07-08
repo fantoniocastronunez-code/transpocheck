@@ -717,6 +717,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
          showAlert("Tu dispositivo no soporta compartir el archivo directamente. Descárgalo primero."); 
          handleCopyWhatsApp(job); 
       }
+
+      // NUEVO: Sumar +1 al contador de compartidos en la base de datos
+      await updateDoc(doc(db, 'transport_jobs', job.id), {
+         sharedCount: (job.sharedCount || 0) + 1
+      });
+
     } catch (e) { 
       console.error("Compartir cancelado o fallido:", e); 
     } finally { 
@@ -1087,6 +1093,14 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           <p className={`text-[10px] font-black uppercase ${isFailed ? 'text-red-500' : 'text-green-600'}`}>{isFailed ? 'RECHAZADO' : 'ENTREGADO'}</p>
           <p className="text-slate-400 font-bold text-[9px]">{getDStr(j)}</p>
         </div>
+
+        {/* NUEVO: AVISO VISUAL DE ACTA YA COMPARTIDA/RENDIDA */}
+        {j.sharedCount > 0 && (
+           <div className="mb-2.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-black px-2 py-1.5 rounded-lg text-center flex items-center justify-center gap-1.5 shadow-sm animate-in zoom-in duration-300">
+              <CheckCircle className="w-3.5 h-3.5" /> Ya rendido ({j.sharedCount} {j.sharedCount === 1 ? 'vez' : 'veces'})
+           </div>
+        )}
+
          <div className="flex gap-1.5 mt-auto">
           {isAdminView && <button onClick={()=>onEditJob(j)} className="flex-1 py-1.5 flex justify-center bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg transition-colors" title="Editar Traslado"><Edit2 className="w-3.5 h-3.5"/></button>}
           {isAdminView && <button onClick={()=>handleDuplicateJob(j)} className="flex-1 py-1.5 flex justify-center bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg transition-colors" title="Repetir Vehículo"><Repeat className="w-3.5 h-3.5"/></button>}
@@ -1581,6 +1595,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     </div>
   );
 }
+
 
 
 
