@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, useSearchParams, useNavigate } from 'react-router-dom';
 import { signOut, signInWithPopup } from 'firebase/auth';
-import { doc, updateDoc, setDoc, deleteField, onSnapshot } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, deleteField, onSnapshot, collection, getDocs } from 'firebase/firestore';
 
 import { 
   Car, MapPin, Camera, CheckCircle, FileText, Download, Plus, User, Navigation, 
@@ -396,16 +396,13 @@ function LogisticApp() {
                  
                  const email = e.target.email.value.trim().toLowerCase();
                  try {
-                     // Importamos dinámicamente las herramientas de Firebase para leer los clientes
-                     const { collection, getDocs } = await import('firebase/firestore');
+                     // Usamos las herramientas ya importadas arriba
                      const snap = await getDocs(collection(db, 'clients'));
                      let foundClient = null;
                      
-                     // Buscamos si el correo ingresado está en la lista de correos de algún cliente
                      snap.forEach(doc => {
                         const data = doc.data();
                         if (data.email) {
-                           // Separa los correos por comas (por si hay más de uno) y quita espacios
                            const allowedEmails = data.email.split(',').map(em => em.trim().toLowerCase());
                            if (allowedEmails.includes(email)) {
                               foundClient = data.name;
@@ -421,7 +418,8 @@ function LogisticApp() {
                         btn.disabled = false;
                      }
                  } catch (err) {
-                     alert("Error al verificar el correo. Revisa tu conexión a internet.");
+                     console.error("Error de Firebase:", err);
+                     alert("Error de Firebase: " + err.message);
                      btn.innerHTML = originalText;
                      btn.disabled = false;
                  }
