@@ -62,7 +62,18 @@ function LogisticApp() {
   const [showBroadcastAdmin, setShowBroadcastAdmin] = useState(false);
   const [localDismissed, setLocalDismissed] = useState(() => localStorage.getItem('dismissedBroadcast'));
   const [dialogConfig, setDialogConfig] = useState(null);
+  
   const [showRequestJob, setShowRequestJob] = useState(false); // <-- NUEVO ESTADO PARA SOLICITAR TRASLADO
+  const [directoryList, setDirectoryList] = useState([]); // <-- NUEVO: Memoria del Directorio
+
+  // Carga el directorio en segundo plano de forma 100% segura
+  useEffect(() => {
+     import('firebase/firestore').then(({ getDocs, collection }) => {
+        getDocs(collection(db, 'directory'))
+          .then(snap => setDirectoryList(snap.docs.map(d => d.data())))
+          .catch(() => {});
+     });
+  }, [db]);
   
   // NUEVO: ESTADO GLOBAL DE COLA EN SEGUNDO PLANO
   const [syncQueue, setSyncQueue] = useState([]);
@@ -817,7 +828,7 @@ function LogisticApp() {
         </div>
       )}
 
-      {/* MODAL: SOLICITAR TRASLADO */}
+      {/* MODAL: SOLICITAR TRASLADO CON AUTOCOMPLETADO Y WAZE */}
       {showRequestJob && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
           <form onSubmit={async (e) => {
@@ -825,14 +836,33 @@ function LogisticApp() {
               const fd = new FormData(e.target);
               const autoAssign = fd.get('autoAssign') === 'on';
               
+              const originValue = fd.get('origin')?.trim();
+              const destValue = fd.get('destination')?.trim();
+              
+              // MAGIA: Buscamos si el texto escrito coincide con algún lugar del directorio
+              const matchedOrigin = directoryList.find(d => d.placeName.trim().toLowerCase() === originValue.toLowerCase());
+              const matchedDest = directoryList.find(d => d.placeName.trim().toLowerCase() === destValue.toLowerCase());
+
               const newJob = {
                   client: fd.get('client'),
                   brand: fd.get('brand'),
                   model: fd.get('model'),
                   plate: fd.get('plateOrVin').toUpperCase(),
                   vin: fd.get('plateOrVin').toUpperCase(), 
-                  origin: fd.get('origin'),
-                  destination: fd.get('destination'),
+                  origin: originValue,
+                  destination: destValue,
+                  
+                  // Inyectamos la dirección, comuna y contactos en segundo plano para que Waze funcione
+                  originContactName: matchedOrigin?.contactName || '',
+                  originContactPhone: matchedOrigin?.contactPhone || '',
+                  originAddress: matchedOrigin?.address || '',
+                  originCommune: matchedOrigin?.commune || '',
+                  
+                  destContactName: matchedDest?.contactName || '',
+                  destContactPhone: matchedDest?.contactPhone || '',
+                  destAddress: matchedDest?.address || '',
+                  destCommune: matchedDest?.commune || '',
+
                   tripType: 'traslado',
                   status: autoAssign ? 'accepted' : 'pending',
                   createdAt: Date.now(),
@@ -844,6 +874,7 @@ function LogisticApp() {
               };
               
               try {
+                  const { addDoc, collection } = await import('firebase/firestore');
                   await addDoc(collection(db, 'transport_jobs'), newJob);
                   setShowRequestJob(false);
                   showAlert(autoAssign ? "✅ Traslado creado y asignado a ti exitosamente." : "✅ Solicitud enviada a la central de traslados pendientes.");
@@ -872,20 +903,27 @@ function LogisticApp() {
                     </div>
                     <div className="space-y-1">
                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Modelo</label>
-                       <input name="model" required placeholder="Ej: Rio" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"/>
+<input name="model" required placeholder="Ej: Rio" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"/>
                     </div>
                  </div>
                  <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Patente o VIN</label>
                     <input name="plateOrVin" required placeholder="Ej: ABCD12" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-black uppercase text-slate-800 outline-none focus:border-blue-500"/>
                  </div>
+
+
+                                       {/* LA MAGIA VISUAL: Datalist con todos los lugares guardados */}
+                 <datalist id="directory-places">
+                    {directoryList.map((d, i) => <option key={i} value={d.placeName} />)}
+                 </datalist>
+
                  <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Desde (Origen)</label>
-                    <input name="origin" required placeholder="Ej: Kovacs Sucursal" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"/>
+                    <input name="origin" list="directory-places" required placeholder="Toca para buscar o escribe..." className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"/>
                  </div>
                  <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Hasta (Destino)</label>
-                    <input name="destination" required placeholder="Ej: Cliente Final" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"/>
+                    <input name="destination" list="directory-places" required placeholder="Toca para buscar o escribe..." className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"/>
                  </div>
                  
                  <label className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-xl mt-3 cursor-pointer">
@@ -997,6 +1035,7 @@ export default function App() {
     </Router>
   );
 }
+
 
 
 
