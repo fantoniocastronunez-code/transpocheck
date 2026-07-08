@@ -975,7 +975,6 @@ function LogisticApp() {
 
     </div>
   );
-}
 
 // --- ENVOLTORIO MAESTRO DE NAVEGACIÓN ---
 // Esto convierte tu aplicación entera en una Single Page Application (SPA) ultra veloz
