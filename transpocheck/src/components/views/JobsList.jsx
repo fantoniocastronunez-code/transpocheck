@@ -32,6 +32,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
   const [showFleetModal, setShowFleetModal] = useState(false);
   const [fleetSelectedIds, setFleetSelectedIds] = useState([]);
+  const [showFleetMenu, setShowFleetMenu] = useState(false); // <-- NUEVO ESTADO PARA EL MENÚ
 
   const [historyClientFilter, setHistoryClientFilter] = useState(''); 
   const [searchTerm, setSearchTerm] = useState('');
@@ -1194,8 +1195,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
            )}
            {isAdminView && (
              <>
-               <button type="button" onClick={() => { setFleetSelectedIds([]); setShowFleetModal(true); }} className="group bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-md shrink-0">
-                 <Truck className="w-5 h-5"/> Crear Flota
+               <button type="button" onClick={() => setShowFleetMenu(true)} className="group bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-md shrink-0">
+                 <Truck className="w-5 h-5"/> Flotas
                </button>
                <button type="button" onClick={handlePurgeOldJobs} className="group bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0">
                  <Trash2 className="w-5 h-5"/> Limpiar DB
@@ -1376,6 +1377,30 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                        <p className="text-[10px] font-bold text-slate-400">{d.email}</p>
                     </button>
                  ))}
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* NUEVO MENÚ CENTRAL DE FLOTAS */}
+      {showFleetMenu && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+           <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl flex flex-col animate-in zoom-in-95 border-t-8 border-indigo-500 relative">
+              <button onClick={() => setShowFleetMenu(false)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-5 h-5 text-slate-700"/></button>
+              <div className="flex items-center gap-3 mb-6">
+                 <div className="bg-indigo-100 p-2.5 rounded-full"><Truck className="w-6 h-6 text-indigo-600"/></div>
+                 <h3 className="text-xl font-black text-slate-800 leading-tight">Gestión de<br/>Flotas</h3>
+              </div>
+              <div className="space-y-3">
+                 <button onClick={() => { setShowFleetMenu(false); setFleetSelectedIds([]); setShowFleetModal(true); }} className="w-full bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-extrabold py-3.5 rounded-xl transition-colors flex items-center gap-3 px-4 shadow-sm">
+                   <Plus className="w-5 h-5"/> Crear Nueva Flota
+                 </button>
+                 <button onClick={() => { setShowFleetMenu(false); showAlert("🔧 El módulo para modificar flotas está en construcción."); }} className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-extrabold py-3.5 rounded-xl transition-colors flex items-center gap-3 px-4 shadow-sm">
+                   <Edit2 className="w-5 h-5 text-slate-400"/> Modificar Flotas
+                 </button>
+                 <button onClick={() => { setShowFleetMenu(false); showAlert("📋 El módulo para ver flotas activas está en construcción."); }} className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-extrabold py-3.5 rounded-xl transition-colors flex items-center gap-3 px-4 shadow-sm">
+                   <Navigation className="w-5 h-5 text-slate-400"/> Flotas Activas
+                 </button>
               </div>
            </div>
         </div>

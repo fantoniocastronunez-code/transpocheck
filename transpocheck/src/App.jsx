@@ -897,6 +897,9 @@ function LogisticApp() {
           </form>
         </div>
       )}
+
+      {dialogConfig && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 transform transition-all animate-in zoom-in-95 duration-150">
             <div className="flex items-center gap-3 mb-4"><div className="bg-blue-100 p-2 rounded-full">{dialogConfig.type === 'confirm' ? <AlertCircle className="w-6 h-6 text-blue-600"/> : <Bell className="w-6 h-6 text-blue-600"/>}</div><h3 className="text-xl font-extrabold">LogisticAPP</h3></div>
             <p className="text-slate-600 font-bold mb-6 text-sm">{dialogConfig.message}</p>
@@ -975,6 +978,7 @@ function LogisticApp() {
 
     </div>
   );
+}
 
 // --- ENVOLTORIO MAESTRO DE NAVEGACIÓN ---
 // Esto convierte tu aplicación entera en una Single Page Application (SPA) ultra veloz
