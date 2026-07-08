@@ -646,6 +646,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   };
 
   const handleCopyWhatsApp = (job) => { 
+    // NUEVO: Sumar contador silenciosamente al copiar
+    updateDoc(doc(db, 'transport_jobs', job.id), { sharedCount: (job.sharedCount || 0) + 1 }).catch(e => console.log(e));
+    
     const dateStr = getDStr(job);
     const dateShort = dateStr.substring(0, 5); 
     const jobPlate = getJobIdentifier(job);
@@ -680,6 +683,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const handleShareWhatsAppPDF = async (job) => {
     if (processingId) return;
     setProcessingId(`${job.id}-wapp`);
+    
+    // MAGIA: Sumamos +1 en segundo plano
+    updateDoc(doc(db, 'transport_jobs', job.id), {
+       sharedCount: (job.sharedCount || 0) + 1
+    }).catch(e => console.log("Error contador:", e));
+
     try {
       const dateStrForFile = getDStr(job).replace(/\//g, '-');
       const dateShort = getDStr(job).substring(0, 5);
