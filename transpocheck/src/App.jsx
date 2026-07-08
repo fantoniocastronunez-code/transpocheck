@@ -380,13 +380,38 @@ function LogisticApp() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 flex flex-col items-center justify-center p-4">
         {globalStyles}
-        <div className="bg-white p-10 rounded-3xl shadow-xl w-full max-w-md text-center border border-blue-50">
+        <div className="bg-white p-8 sm:p-10 rounded-3xl shadow-xl w-full max-w-md text-center border border-blue-50">
           <div className="bg-blue-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-200 transform rotate-3 hover:rotate-0 transition-transform"><Car className="w-10 h-10 text-white" /></div>
           <h1 className="text-4xl font-extrabold text-slate-900 mb-2 tracking-tight">LogisticAPP</h1>
-          <p className="text-slate-500 mb-10 text-lg">Gestión de traslados inteligente</p>
-          <button onClick={() => signInWithPopup(auth, googleProvider).catch(e => alert("Error de Acceso: " + e.message))} className="w-full bg-white border-2 border-slate-200 text-slate-700 font-bold py-4 px-4 rounded-2xl shadow-sm hover:bg-slate-50 flex items-center justify-center gap-3 transition-all text-lg">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-6 h-6" /> Ingresar con Google
-          </button>
+          
+          {/* SECCIÓN 1: ACCESO DIRECTO PARA CLIENTES */}
+          <div className="mt-8 mb-8">
+             <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Portal de Clientes</p>
+             <form onSubmit={(e) => {
+                 e.preventDefault();
+                 const clientName = e.target.clientName.value.trim();
+                 if (clientName) navigate(`/?client=${encodeURIComponent(clientName)}`);
+             }} className="flex flex-col gap-3">
+                 <input 
+                   name="clientName" 
+                   type="text" 
+                   placeholder="Escribe el nombre de tu empresa..." 
+                   required 
+                   className="w-full border-2 border-slate-200 p-4 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 text-center transition-colors shadow-inner" 
+                 />
+                 <button type="submit" className="w-full bg-slate-800 hover:bg-slate-900 text-white font-black py-4 rounded-2xl shadow-lg transition-colors text-sm flex items-center justify-center gap-2">
+                   <Search className="w-5 h-5" /> Buscar mis traslados
+                 </button>
+             </form>
+          </div>
+
+          {/* SECCIÓN 2: ACCESO EQUIPO INTERNO */}
+          <div className="pt-6 border-t border-slate-100">
+             <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Equipo Interno</p>
+             <button onClick={() => signInWithPopup(auth, googleProvider).catch(e => alert("Error de Acceso: " + e.message))} className="w-full bg-white border-2 border-slate-200 text-slate-700 font-bold py-3.5 px-4 rounded-2xl shadow-sm hover:bg-slate-50 flex items-center justify-center gap-3 transition-all text-sm">
+               <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" /> Ingresar con Google
+             </button>
+          </div>
         </div>
       </div>
     );
@@ -1035,6 +1060,7 @@ export default function App() {
     </Router>
   );
 }
+
 
 
 
