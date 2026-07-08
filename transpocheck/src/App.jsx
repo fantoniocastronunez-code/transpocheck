@@ -505,6 +505,24 @@ function LogisticApp() {
                 <div className="p-3 border-b border-slate-100 bg-slate-50">
                   <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider text-center">Ajustes de App</p>
                 </div>
+                
+                {/* PANEL DE COLA DE SUBIDAS MOVIDO A LA TUERCA */}
+                {syncQueue.length > 0 && (
+                   <div className="p-3 bg-slate-800 text-white border-b border-slate-700">
+                      <p className="text-[10px] font-black uppercase tracking-widest mb-2 flex items-center gap-1.5"><CloudOff className="w-3.5 h-3.5 text-blue-400"/> Cola en Segundo Plano</p>
+                      <div className="space-y-1.5 max-h-32 overflow-y-auto scrollbar-none">
+                         {syncQueue.map(task => (
+                            <div key={task.id} className="flex justify-between items-center bg-slate-700 p-2 rounded-lg text-xs border border-slate-600">
+                               <span className="font-bold truncate mr-2">{task.name}</span>
+                               {task.status === 'syncing' && <Clock className="w-3.5 h-3.5 text-blue-400 animate-spin shrink-0"/>}
+                               {task.status === 'done' && <CheckCircle className="w-3.5 h-3.5 text-green-400 shrink-0"/>}
+                               {task.status === 'error' && <XCircle className="w-3.5 h-3.5 text-red-400 shrink-0" title={task.error}/>}
+                            </div>
+                         ))}
+                      </div>
+                   </div>
+                )}
+
                 <div className="p-4 space-y-5">
                   {/* Estado de Red */}
                   <div className="flex items-center justify-between">
@@ -626,22 +644,6 @@ function LogisticApp() {
                 <div className="absolute right-0 top-12 mt-1 w-72 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 text-slate-800">
                   <div className="p-2 border-b border-slate-100 bg-slate-50"><p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider text-center">Panel de Control General</p></div>
                   
-                  {/* NUEVO: PANEL DE COLA DE SUBIDAS */}
-                  {syncQueue.length > 0 && (
-                     <div className="p-3 bg-slate-800 text-white border-b border-slate-700">
-                        <p className="text-[10px] font-black uppercase tracking-widest mb-2 flex items-center gap-1.5"><CloudOff className="w-3.5 h-3.5 text-blue-400"/> Cola en Segundo Plano</p>
-                        <div className="space-y-1.5 max-h-32 overflow-y-auto scrollbar-none">
-                           {syncQueue.map(task => (
-                              <div key={task.id} className="flex justify-between items-center bg-slate-700 p-2 rounded-lg text-xs border border-slate-600">
-                                 <span className="font-bold truncate mr-2">{task.name}</span>
-                                 {task.status === 'syncing' && <Clock className="w-3.5 h-3.5 text-blue-400 animate-spin shrink-0"/>}
-                                 {task.status === 'done' && <CheckCircle className="w-3.5 h-3.5 text-green-400 shrink-0"/>}
-                                 {task.status === 'error' && <XCircle className="w-3.5 h-3.5 text-red-400 shrink-0" title={task.error}/>}
-                              </div>
-                           ))}
-                        </div>
-                     </div>
-                  )}
                   
                   <button onClick={() => { setActiveRole('admin'); setMainTab('jobs'); setSimulatedDriverEmail(''); setRoleMenuOpen(false); }} className={`w-full text-left px-4 py-3 text-sm font-bold hover:bg-slate-50 flex items-center gap-2 transition-colors ${activeRole==='admin'?'text-blue-600 bg-blue-50':'text-slate-600'}`}>
                      <Users className="w-4 h-4"/> Volver a Administrador
