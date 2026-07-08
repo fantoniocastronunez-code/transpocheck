@@ -228,6 +228,25 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     });
   };
 
+  const handleFailJob = async (job, reason) => {
+    if (processingId) return;
+    setProcessingId(`${job.id}-fail`);
+    try {
+      await updateDoc(doc(db, 'transport_jobs', job.id), { 
+        status: 'failed', 
+        failedReason: reason,
+        completedAt: Date.now() 
+      });
+      showAlert("❌ Trabajo marcado como fallido/cancelado.");
+      setJobToFail(null);
+    } catch (error) {
+      console.error(error);
+      showAlert("Error al cancelar el trabajo.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   const handleDuplicateJob = (job) => {
     setDupPromptJob(job);
     setDupMode('clone');
