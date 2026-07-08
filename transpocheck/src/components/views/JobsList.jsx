@@ -866,18 +866,36 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               </div>
             )}
 
-            {j.contactName && j.contactPhone && (
+            {/* CONTACTO ORIGEN (O LEGACY) */}
+            {((j.originContactName && j.originContactPhone) || (j.contactName && j.contactPhone)) ? (
               <div className="mt-3 pt-3 border-t border-slate-200/80 flex items-center justify-between gap-2">
                  <div className="flex items-center gap-2 flex-1 min-w-0">
                     <div className="bg-emerald-100 p-1.5 rounded-full shrink-0"><Users className="w-4 h-4 text-emerald-600"/></div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 truncate">Encargado</p>
-                      <p className="text-xs font-bold text-slate-700 truncate">{j.contactName}</p>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 truncate">Encargado Origen</p>
+                      <p className="text-xs font-bold text-slate-700 truncate">{j.originContactName || j.contactName}</p>
                     </div>
                  </div>
                  <div className="flex gap-2 shrink-0">
-                   <a href={`https://wa.me/${j.contactPhone.replace(/[^\d]/g, '')}?text=${encodeURIComponent('Hola ' + j.contactName + ', soy de LogisticAPP y voy en camino al destino con el vehículo.')}`} target="_blank" rel="noopener noreferrer" className="bg-emerald-500 hover:bg-emerald-600 text-white w-9 h-9 rounded-xl flex items-center justify-center transition-colors shadow-sm active:scale-95 text-base">💬</a>
-                   <a href={`tel:${j.contactPhone.replace(/[^\d+]/g, '')}`} className="bg-blue-500 hover:bg-blue-600 text-white w-9 h-9 rounded-xl flex items-center justify-center transition-colors shadow-sm active:scale-95 text-base">📞</a>
+                   <a href={`https://wa.me/${(j.originContactPhone || j.contactPhone).replace(/[^\d]/g, '')}?text=${encodeURIComponent('Hola ' + (j.originContactName || j.contactName) + ', soy de LogisticAPP y voy a retirar el vehículo.')}`} target="_blank" rel="noopener noreferrer" className="bg-emerald-500 hover:bg-emerald-600 text-white w-9 h-9 rounded-xl flex items-center justify-center transition-colors shadow-sm active:scale-95 text-base">💬</a>
+                   <a href={`tel:${(j.originContactPhone || j.contactPhone).replace(/[^\d+]/g, '')}`} className="bg-blue-500 hover:bg-blue-600 text-white w-9 h-9 rounded-xl flex items-center justify-center transition-colors shadow-sm active:scale-95 text-base">📞</a>
+                 </div>
+              </div>
+            ) : null}
+
+            {/* CONTACTO DESTINO */}
+            {j.destContactName && j.destContactPhone && (
+              <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                 <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className="bg-blue-100 p-1.5 rounded-full shrink-0"><Users className="w-4 h-4 text-blue-600"/></div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 truncate">Encargado Destino</p>
+                      <p className="text-xs font-bold text-slate-700 truncate">{j.destContactName}</p>
+                    </div>
+                 </div>
+                 <div className="flex gap-2 shrink-0">
+                   <a href={`https://wa.me/${j.destContactPhone.replace(/[^\d]/g, '')}?text=${encodeURIComponent('Hola ' + j.destContactName + ', soy de LogisticAPP y voy en camino al destino con el vehículo.')}`} target="_blank" rel="noopener noreferrer" className="bg-emerald-500 hover:bg-emerald-600 text-white w-9 h-9 rounded-xl flex items-center justify-center transition-colors shadow-sm active:scale-95 text-base">💬</a>
+                   <a href={`tel:${j.destContactPhone.replace(/[^\d+]/g, '')}`} className="bg-blue-500 hover:bg-blue-600 text-white w-9 h-9 rounded-xl flex items-center justify-center transition-colors shadow-sm active:scale-95 text-base">📞</a>
                  </div>
               </div>
             )}

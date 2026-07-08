@@ -191,13 +191,23 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
        jobData.description = finalDesc || 'Servicio en Terreno';
     }
 
-    // NUEVO: BUSCAR DESTINO EN EL DIRECTORIO PARA AUTORRELLENAR ENCARGADO
+    // NUEVO: BUSCAR ORIGEN EN EL DIRECTORIO
+    const originValue = jobData.origin?.trim().toLowerCase();
+    if (originValue) {
+       const matchedOrigin = directoryList.find(d => d.placeName.trim().toLowerCase() === originValue);
+       if (matchedOrigin) {
+          jobData.originContactName = matchedOrigin.contactName;
+          jobData.originContactPhone = matchedOrigin.contactPhone;
+       }
+    }
+
+    // NUEVO: BUSCAR DESTINO EN EL DIRECTORIO
     const destinationValue = jobData.destination?.trim().toLowerCase();
     if (destinationValue) {
-       const matchedPlace = directoryList.find(d => d.placeName.trim().toLowerCase() === destinationValue);
-       if (matchedPlace) {
-          jobData.contactName = matchedPlace.contactName;
-          jobData.contactPhone = matchedPlace.contactPhone;
+       const matchedDest = directoryList.find(d => d.placeName.trim().toLowerCase() === destinationValue);
+       if (matchedDest) {
+          jobData.destContactName = matchedDest.contactName;
+          jobData.destContactPhone = matchedDest.contactPhone;
        }
     }
 
@@ -406,7 +416,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                <input name="origin" defaultValue={jobToEdit?.origin || ''} required type="text" placeholder="Desde (Origen)" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+                <input name="origin" list="directory-destinations" defaultValue={jobToEdit?.origin || ''} required type="text" placeholder="Desde (Origen)" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
                 <input name="destination" list="directory-destinations" defaultValue={jobToEdit?.destination || ''} required type="text" placeholder={tripType === 'revision' ? 'Planta de Revisión (Destino)' : 'Hasta (Destino)'} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
               </div>
 
@@ -535,7 +545,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider ml-1">Lugar de Trabajo</label>
-                <input name="origin" defaultValue={jobToEdit?.origin || ''} required type="text" placeholder="¿Dónde se realizará?" className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white shadow-sm" />
+                <input name="origin" list="directory-destinations" defaultValue={jobToEdit?.origin || ''} required type="text" placeholder="¿Dónde se realizará?" className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white shadow-sm" />
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider ml-1">Hasta / Destino (Opcional)</label>
