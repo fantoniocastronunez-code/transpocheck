@@ -889,7 +889,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             <div className="mt-3 space-y-2">
               
               {/* BLOQUE ORIGEN (O LEGACY) */}
-              {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone || j.originAddress) && (
+              {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone || j.originAddress || j.originCommune) && (
                 <div className="pt-3 border-t border-slate-200/80 flex flex-col gap-2">
                    {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone) && (
                    <div className="flex items-center justify-between gap-2">
@@ -909,18 +909,20 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                    </div>
                    )}
                    
-                   {/* Waze Origen: Solo aparece si no ha retirado el vehículo */}
-                   {j.originAddress && (!j.phase || j.phase === 'claimed') && (
+                   {/* Dirección Origen (Siempre visible) y Waze (Se activa al Aceptar) */}
+                   {(j.originAddress || j.originCommune) && (
                       <div className="flex justify-between items-center bg-slate-50 p-2 rounded-xl border border-slate-100 shadow-inner mt-1">
-                        <p className="text-[10px] font-bold text-slate-500 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-slate-400"/>{j.originAddress}{j.originCommune ? `, ${j.originCommune}` : ''}</p>
-                        <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.originAddress} ${j.originCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shrink-0 transition-colors"><Navigation className="w-3 h-3"/> Waze</a>
+                        <p className="text-[10px] font-bold text-slate-500 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-slate-400"/>{j.originAddress}{j.originAddress && j.originCommune ? ', ' : ''}{j.originCommune}</p>
+                        {isAccepted && (
+                          <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.originAddress || ''} ${j.originCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shrink-0 transition-colors"><Navigation className="w-3 h-3"/> Waze</a>
+                        )}
                       </div>
                    )}
                 </div>
               )}
 
               {/* BLOQUE DESTINO */}
-              {(j.destContactName || j.destContactPhone || j.destAddress) && (
+              {(j.destContactName || j.destContactPhone || j.destAddress || j.destCommune) && (
                 <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
                    {(j.destContactName || j.destContactPhone) && (
                    <div className="flex items-center justify-between gap-2">
@@ -940,11 +942,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                    </div>
                    )}
 
-                   {/* Waze Destino: Solo aparece cuando el conductor YA TIENE el vehículo */}
-                   {j.destAddress && (j.phase === 'picked_up') && (
+                   {/* Dirección Destino (Siempre visible) y Waze (Se activa al Aceptar) */}
+                   {(j.destAddress || j.destCommune) && (
                       <div className="flex justify-between items-center bg-blue-50 p-2.5 rounded-xl border border-blue-200 shadow-sm animate-in fade-in slide-in-from-top-1 mt-1">
-                        <p className="text-[10px] font-bold text-blue-800 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-blue-500"/>{j.destAddress}{j.destCommune ? `, ${j.destCommune}` : ''}</p>
-                        <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.destAddress} ${j.destCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shrink-0 shadow-md transition-colors"><Navigation className="w-3 h-3"/> Waze</a>
+                        <p className="text-[10px] font-bold text-blue-800 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-blue-500"/>{j.destAddress}{j.destAddress && j.destCommune ? ', ' : ''}{j.destCommune}</p>
+                        {isAccepted && (
+                          <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.destAddress || ''} ${j.destCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shrink-0 shadow-md transition-colors"><Navigation className="w-3 h-3"/> Waze</a>
+                        )}
                       </div>
                    )}
                 </div>
