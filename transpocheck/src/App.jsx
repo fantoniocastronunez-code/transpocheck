@@ -387,20 +387,54 @@ function LogisticApp() {
           {/* SECCIÓN 1: ACCESO DIRECTO PARA CLIENTES */}
           <div className="mt-8 mb-8">
              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Portal de Clientes</p>
-             <form onSubmit={(e) => {
+             <form onSubmit={async (e) => {
                  e.preventDefault();
-                 const clientName = e.target.clientName.value.trim();
-                 if (clientName) navigate(`/?client=${encodeURIComponent(clientName)}`);
+                 const btn = e.nativeEvent.submitter;
+                 const originalText = btn.innerHTML;
+                 btn.innerHTML = 'Verificando acceso...';
+                 btn.disabled = true;
+                 
+                 const email = e.target.email.value.trim().toLowerCase();
+                 try {
+                     // Importamos dinámicamente las herramientas de Firebase para leer los clientes
+                     const { collection, getDocs } = await import('firebase/firestore');
+                     const snap = await getDocs(collection(db, 'clients'));
+                     let foundClient = null;
+                     
+                     // Buscamos si el correo ingresado está en la lista de correos de algún cliente
+                     snap.forEach(doc => {
+                        const data = doc.data();
+                        if (data.email) {
+                           // Separa los correos por comas (por si hay más de uno) y quita espacios
+                           const allowedEmails = data.email.split(',').map(em => em.trim().toLowerCase());
+                           if (allowedEmails.includes(email)) {
+                              foundClient = data.name;
+                           }
+                        }
+                     });
+                     
+                     if (foundClient) {
+                        navigate(`/?client=${encodeURIComponent(foundClient)}`);
+                     } else {
+                        alert("El correo no está registrado ni asociado a ninguna empresa. Contacta al administrador.");
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                     }
+                 } catch (err) {
+                     alert("Error al verificar el correo. Revisa tu conexión a internet.");
+                     btn.innerHTML = originalText;
+                     btn.disabled = false;
+                 }
              }} className="flex flex-col gap-3">
                  <input 
-                   name="clientName" 
-                   type="text" 
-                   placeholder="Escribe el nombre de tu empresa..." 
+                   name="email" 
+                   type="email" 
+                   placeholder="Ingresa tu correo autorizado..." 
                    required 
                    className="w-full border-2 border-slate-200 p-4 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 text-center transition-colors shadow-inner" 
                  />
-                 <button type="submit" className="w-full bg-slate-800 hover:bg-slate-900 text-white font-black py-4 rounded-2xl shadow-lg transition-colors text-sm flex items-center justify-center gap-2">
-                   <Search className="w-5 h-5" /> Buscar mis traslados
+                 <button type="submit" className="w-full bg-slate-800 hover:bg-slate-900 text-white font-black py-4 rounded-2xl shadow-lg transition-colors text-sm flex items-center justify-center gap-2 disabled:opacity-70">
+                   <Search className="w-5 h-5" /> Ingresar a mi portal
                  </button>
              </form>
           </div>
