@@ -63,6 +63,23 @@ function LogisticApp() {
   const [localDismissed, setLocalDismissed] = useState(() => localStorage.getItem('dismissedBroadcast'));
   const [dialogConfig, setDialogConfig] = useState(null);
   
+  // NUEVO: ESTADO GLOBAL DE COLA EN SEGUNDO PLANO
+  const [syncQueue, setSyncQueue] = useState([]);
+  const pushSyncTask = (taskName) => {
+     const id = Date.now() + Math.random();
+     setSyncQueue(prev => [...prev, { id, name: taskName, status: 'syncing' }]);
+     return {
+        finish: () => {
+           setSyncQueue(prev => prev.map(t => t.id === id ? { ...t, status: 'done' } : t));
+           setTimeout(() => setSyncQueue(prev => prev.filter(t => t.id !== id)), 6000); // Desaparece tras 6 seg
+        },
+        error: (err) => {
+           setSyncQueue(prev => prev.map(t => t.id === id ? { ...t, status: 'error', error: err } : t));
+           setTimeout(() => setSyncQueue(prev => prev.filter(t => t.id !== id)), 10000);
+        }
+     };
+  };
+  
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
     if (saved !== null) return saved === 'true';
@@ -609,6 +626,23 @@ function LogisticApp() {
                 <div className="absolute right-0 top-12 mt-1 w-72 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 text-slate-800">
                   <div className="p-2 border-b border-slate-100 bg-slate-50"><p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider text-center">Panel de Control General</p></div>
                   
+                  {/* NUEVO: PANEL DE COLA DE SUBIDAS */}
+                  {syncQueue.length > 0 && (
+                     <div className="p-3 bg-slate-800 text-white border-b border-slate-700">
+                        <p className="text-[10px] font-black uppercase tracking-widest mb-2 flex items-center gap-1.5"><CloudOff className="w-3.5 h-3.5 text-blue-400"/> Cola en Segundo Plano</p>
+                        <div className="space-y-1.5 max-h-32 overflow-y-auto scrollbar-none">
+                           {syncQueue.map(task => (
+                              <div key={task.id} className="flex justify-between items-center bg-slate-700 p-2 rounded-lg text-xs border border-slate-600">
+                                 <span className="font-bold truncate mr-2">{task.name}</span>
+                                 {task.status === 'syncing' && <Clock className="w-3.5 h-3.5 text-blue-400 animate-spin shrink-0"/>}
+                                 {task.status === 'done' && <CheckCircle className="w-3.5 h-3.5 text-green-400 shrink-0"/>}
+                                 {task.status === 'error' && <XCircle className="w-3.5 h-3.5 text-red-400 shrink-0" title={task.error}/>}
+                              </div>
+                           ))}
+                        </div>
+                     </div>
+                  )}
+                  
                   <button onClick={() => { setActiveRole('admin'); setMainTab('jobs'); setSimulatedDriverEmail(''); setRoleMenuOpen(false); }} className={`w-full text-left px-4 py-3 text-sm font-bold hover:bg-slate-50 flex items-center gap-2 transition-colors ${activeRole==='admin'?'text-blue-600 bg-blue-50':'text-slate-600'}`}>
                      <Users className="w-4 h-4"/> Volver a Administrador
                   </button>
@@ -689,7 +723,7 @@ function LogisticApp() {
                 </div>
               )}
               
-              {adminTab === 'newJob' && <div className="animate-in zoom-in-[0.98] slide-in-from-bottom-8 duration-500 ease-out"><NewJobForm key={editingJob ? editingJob.id : 'new'} jobToEdit={editingJob} onCancelEdit={() => {setEditingJob(null); setAdminTab('dashboard');}} allClientsList={allClientsList} vehicles={vehicles} drivers={drivers.filter(d => !d.isHidden)} db={db} showAlert={showAlert} onSuccess={() => setAdminTab('dashboard')} /></div>}
+              {adminTab === 'newJob' && <div className="animate-in zoom-in-[0.98] slide-in-from-bottom-8 duration-500 ease-out"><NewJobForm key={editingJob ? editingJob.id : 'new'} jobToEdit={editingJob} onCancelEdit={() => {setEditingJob(null); setAdminTab('dashboard');}} allClientsList={allClientsList} vehicles={vehicles} drivers={drivers.filter(d => !d.isHidden)} db={db} showAlert={showAlert} onSuccess={() => setAdminTab('dashboard')} pushSyncTask={pushSyncTask} /></div>}
               
               {adminTab === 'history' && <div className="animate-in zoom-in-[0.98] duration-300"><VehicleHistoryView db={db} showAlert={showAlert} /></div>}
               
@@ -738,6 +772,7 @@ function LogisticApp() {
              }} 
              showAlert={showAlert} showConfirm={showConfirm} 
              uploadImageToStorage={uploadImageToStorage}
+             pushSyncTask={pushSyncTask}
           />
         </main>
       )}

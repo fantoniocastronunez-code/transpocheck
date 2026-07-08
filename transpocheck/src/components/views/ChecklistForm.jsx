@@ -9,7 +9,7 @@ import SignaturePad from '../ui/SignaturePad';
 import { resizeImage, formatMoney } from '../../utils/helpers';
 
 
-export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList: rawClients, drivers, expenses, vehicles, uploadImageToStorage }) {
+export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList: rawClients, drivers, expenses, vehicles, uploadImageToStorage, pushSyncTask }) {
   // SEGURO DE VIDA: Si Firebase demora en enviar los datos, usamos valores por defecto para evitar la Pantalla Blanca
   const job = rawJob || {};
   const allClientsList = rawClients || [];
@@ -505,8 +505,11 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     }
 
     // --- 2. MAGIA UX: CERRAR DE INMEDIATO ---
-    showAlert("⏳ Guardando y subiendo fotos en segundo plano... Puedes continuar trabajando.");
+    showAlert("⏳ Guardando y subiendo fotos en segundo plano... Revisa el Ojo para ver el progreso.");
     onComplete(); // ESTO CIERRA LA PANTALLA INSTANTÁNEAMENTE
+    
+    // Registra la tarea en la cola global
+    const syncTask = pushSyncTask ? pushSyncTask(`Acta Patente ${d.plateOrVin || 'S/N'}`) : { finish:()=>{}, error:()=>{} };
 
       // --- 3. SUBIDA SILENCIOSA (SEGUNDO PLANO) ---
     const ejecutarSegundoPlano = async () => {
@@ -584,8 +587,11 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
               }
            }
         } catch (e) { console.error("Error correo cliente:", e); }
+        
+        syncTask.finish(); // Pone el ticket en Verde en la cola del Ojo
       } catch(error) { 
         console.error("Firebase Error 2do Plano:", error); 
+        syncTask.error("Error al subir"); // Pone el ticket en Rojo en la cola del Ojo
       }
     };
     

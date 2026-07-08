@@ -3,7 +3,7 @@ import { updateDoc, doc, addDoc, collection, getDocs, query, where } from 'fireb
 import { X, User, CheckCircle, Plus } from 'lucide-react';
 import CustomClientSelector from '../ui/CustomClientSelector';
 
-export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers, db, showAlert, onSuccess }) {
+export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers, db, showAlert, onSuccess, pushSyncTask }) {
   const [selectedClient, setSelectedClient] = useState(jobToEdit?.client && allClientsList.includes(jobToEdit.client) ? jobToEdit.client : (jobToEdit?.client ? 'OTRO' : ''));
   
   // NUEVO: Estado para cargar el directorio de destinos
@@ -211,104 +211,67 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
        }
     }
 
-    try {
-      if (jobToEdit) {
-         await updateDoc(doc(db, 'transport_jobs', jobToEdit.id), jobData);
-         showAlert(`Trabajo actualizado exitosamente.`);
-         if (onCancelEdit) onCancelEdit();
-      } else {
-         jobData.status = 'pending';
-         jobData.createdAt = Date.now();
-         jobData.checklist = null;
-         await addDoc(collection(db, 'transport_jobs'), jobData);
-         showAlert(`Trabajo asignado exitosamente.`);
-      }
-      
-      if (operationMode === 'traslado' && (plate || vin) && !vehicles.find(v => (plate && v.plate === plate) || (vin && v.vin === vin))) {
-          await addDoc(collection(db, 'vehicles'), { plate: plate.toUpperCase(), vin: vin.toUpperCase(), vehicleType, brand, model, client: finalClient, createdAt: Date.now() });
-      }
-      
-      const driverTokens = assignedDriversList.map(d => d.fcmToken).filter(token => token);
-      if (driverTokens.length > 0) {
-        const pushTitle = jobToEdit ? "🔄 Trabajo Actualizado" : (operationMode === 'servicio' ? "🛠️ ¡Nuevo Servicio Asignado!" : "📍 ¡Nuevo Traslado Asignado!");
-        const pushBody = operationMode === 'servicio' ? `Tarea: ${description}\nLugar: ${jobData.origin}` : `Vehículo: ${brand} ${model} (${plate || 'S/N'})\nDesde: ${jobData.origin}`;
-        try {
-          await fetch('/api/send-notification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tokens: driverTokens, title: pushTitle, body: pushBody }) });
-        } catch (pushErr) { console.warn("Fallo el envío Push:", pushErr); }
-      }
+    // MAGIA UX: CIERRE INMEDIATO
+    showAlert("⏳ Guardando en segundo plano...");
+    if (jobToEdit && onCancelEdit) onCancelEdit();
+    else onSuccess();
+    
+    // Abrimos el registro en la cola global
+    const taskName = jobToEdit ? `Actualizando ${plate || brand || 'Traslado'}` : `Creando ${plate || brand || 'Traslado'}`;
+    const syncTask = pushSyncTask ? pushSyncTask(taskName) : { finish:()=>{}, error:()=>{} };
 
-      // --- DISPARADOR DE CORREO ELECTRÓNICO (CON DETECTOR DE ERRORES) ---
+    // BURBUJA ASÍNCRONA (Segundo Plano)
+    (async () => {
       try {
-         const driverEmails = assignedDriversList.map(d => d.email).filter(e => e);
-         
-         if (driverEmails.length > 0) {
-            const mailResponse = await fetch('/api/notify-driver', { 
-               method: 'POST', 
-               headers: { 'Content-Type': 'application/json' }, 
-               body: JSON.stringify({ 
-                  emails: driverEmails,
-                  isEdit: !!jobToEdit,
-                  isService: operationMode === 'servicio',
-                  jobDetails: {
-                     client: jobData.client || 'Sin cliente',
-                     origin: jobData.origin,
-                     destination: jobData.destination || '',
-                     date: jobData.scheduledDate,
-                     plate: plate || vin || jobData.associatedPlate || 'S/N',
-                     vehicle: operationMode === 'servicio' ? (jobData.description || 'Servicio en Terreno') : (`${brand} ${model}`.trim() || 'N/A'),
-                     description: description || ''
-                  }
-               }) 
-            });
+        if (jobToEdit) {
+           await updateDoc(doc(db, 'transport_jobs', jobToEdit.id), jobData);
+        } else {
+           jobData.status = 'pending';
+           jobData.createdAt = Date.now();
+           jobData.checklist = null;
+           await addDoc(collection(db, 'transport_jobs'), jobData);
+        }
+        
+        if (operationMode === 'traslado' && (plate || vin) && !vehicles.find(v => (plate && v.plate === plate) || (vin && v.vin === vin))) {
+            await addDoc(collection(db, 'vehicles'), { plate: plate.toUpperCase(), vin: vin.toUpperCase(), vehicleType, brand, model, client: finalClient, createdAt: Date.now() });
+        }
+        
+        const driverTokens = assignedDriversList.map(d => d.fcmToken).filter(token => token);
+        if (driverTokens.length > 0) {
+          const pushTitle = jobToEdit ? "🔄 Trabajo Actualizado" : (operationMode === 'servicio' ? "🛠️ ¡Nuevo Servicio Asignado!" : "📍 ¡Nuevo Traslado Asignado!");
+          const pushBody = operationMode === 'servicio' ? `Tarea: ${description}\nLugar: ${jobData.origin}` : `Vehículo: ${brand} ${model} (${plate || 'S/N'})\nDesde: ${jobData.origin}`;
+          try { await fetch('/api/send-notification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tokens: driverTokens, title: pushTitle, body: pushBody }) }); } catch (err) {}
+        }
 
-            // Si el correo falla en Vercel, lanzará una alerta en tu pantalla
-            if (!mailResponse.ok) {
-               const errorData = await mailResponse.json();
-               showAlert(`⚠️ El trabajo se guardó, pero el correo falló: ${errorData.error}`);
-            }
-         } else {
-            // Si el conductor no tiene correo, te avisará
-            showAlert("⚠️ Trabajo guardado. No se envió correo porque el conductor asignado no tiene un email registrado.");
-         }
-      } catch (mailErr) { 
-         showAlert("⚠️ Trabajo guardado, pero no se pudo contactar al servidor de correos."); 
-      }
-      
-      // NUEVO: CORREO AL CLIENTE POR TRABAJO RECIÉN CREADO
-      if (!jobToEdit && jobData.client && jobData.client !== 'Sin Cliente' && jobData.client !== 'OTRO') {
-         try {
-            const qClient = query(collection(db, 'clients'), where('name', '==', jobData.client));
-            const snapClient = await getDocs(qClient);
-            if (!snapClient.empty) {
-               const clientRecord = snapClient.docs[0].data();
-               const notifs = clientRecord.notifications || { creado: false };
-               if (notifs.creado && clientRecord.email) {
-                  fetch('/api/notify-client', {
-                     method: 'POST',
-                     headers: { 'Content-Type': 'application/json' },
-                     body: JSON.stringify({
-                        email: clientRecord.email,
-                        clientName: clientRecord.name,
-                        type: 'creado',
-                        jobDetails: {
-                           id: 'N/A',
-                           driverName: 'Buscando conductor...',
-                           vehicle: operationMode === 'servicio' ? (jobData.description || 'Servicio en Terreno') : (`${brand} ${model}`.trim() || 'Vehículo'),
-                           plate: plate || vin || jobData.associatedPlate || 'S/N',
-                           origin: jobData.origin || 'Origen',
-                           destination: jobData.destination || 'Destino'
-                        }
-                     })
-                  }).catch(e => console.error(e));
-               }
-            }
-         } catch(e) { console.error("Error correo cliente creación:", e); }
-      }
-      // ------------------------------------------------
+        try {
+           const driverEmails = assignedDriversList.map(d => d.email).filter(e => e);
+           if (driverEmails.length > 0) {
+              await fetch('/api/notify-driver', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ emails: driverEmails, isEdit: !!jobToEdit, isService: operationMode === 'servicio', jobDetails: { client: jobData.client || 'Sin cliente', origin: jobData.origin, destination: jobData.destination || '', date: jobData.scheduledDate, plate: plate || vin || jobData.associatedPlate || 'S/N', vehicle: operationMode === 'servicio' ? (jobData.description || 'Servicio en Terreno') : (`${brand} ${model}`.trim() || 'N/A'), description: description || '' } }) });
+           }
+        } catch (err) {}
+        
+        if (!jobToEdit && jobData.client && jobData.client !== 'Sin Cliente' && jobData.client !== 'OTRO') {
+           try {
+              const qClient = query(collection(db, 'clients'), where('name', '==', jobData.client));
+              const snapClient = await getDocs(qClient);
+              if (!snapClient.empty) {
+                 const clientRecord = snapClient.docs[0].data();
+                 const notifs = clientRecord.notifications || { creado: false };
+                 if (notifs.creado && clientRecord.email) {
+                    fetch('/api/notify-client', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: clientRecord.email, clientName: clientRecord.name, type: 'creado', jobDetails: { id: 'N/A', driverName: 'Buscando conductor...', vehicle: operationMode === 'servicio' ? (jobData.description || 'Servicio en Terreno') : (`${brand} ${model}`.trim() || 'Vehículo'), plate: plate || vin || jobData.associatedPlate || 'S/N', origin: jobData.origin || 'Origen', destination: jobData.destination || 'Destino' } }) }).catch(e => {});
+                 }
+              }
+           } catch(e) {}
+        }
 
-      onSuccess();   
-    } catch (error) { console.error(error); showAlert("Ocurrió un error guardando el trabajo."); }
-    finally { setIsSubmitting(false); }
+        syncTask.finish(); // Marca en verde en el Ojo
+      } catch (error) { 
+        console.error(error); 
+        syncTask.error("Error de conexión"); // Marca en rojo en el Ojo
+      } finally {
+        setIsSubmitting(false);
+      }
+    })();
   };
 
   return (
