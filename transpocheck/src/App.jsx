@@ -785,6 +785,7 @@ function LogisticApp() {
                           jobs={jobs} drivers={drivers} vehicles={vehicles} role="admin" 
                           onStartChecklist={(j) => {setSelectedJob(j); navigate('/checklist')}} 
                           onEditJob={(j) => { setEditingJob(j); setAdminTab('newJob'); }} 
+                          onNewJob={(type) => { setEditingJob(null); setAdminTab('newJob'); }}
                           db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} allClientsList={allClientsList}
                           onLoadMore={() => setJobLimit(prev => prev + 20)}
                         />
@@ -803,6 +804,7 @@ function LogisticApp() {
                     <JobsList 
                        jobs={jobs} drivers={drivers} vehicles={vehicles} role="driver" 
                        onStartChecklist={(j) => {setSelectedJob(j); navigate('/checklist')}} 
+                       onNewJob={(type) => setShowRequestJob(type)}
                        db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} allClientsList={allClientsList}
                        onLoadMore={() => setJobLimit(prev => prev + 20)}
                     />
@@ -923,7 +925,7 @@ function LogisticApp() {
                   destAddress: matchedDest?.address || '',
                   destCommune: matchedDest?.commune || '',
 
-                  tripType: 'traslado',
+                  tripType: typeof showRequestJob === 'string' ? showRequestJob : 'traslado',
                   status: finalStatus,
                   createdAt: Date.now(),
                   scheduledDate: new Date().toISOString().split('T')[0],
@@ -1101,6 +1103,7 @@ export default function App() {
     </Router>
   );
 }
+
 
 
 
