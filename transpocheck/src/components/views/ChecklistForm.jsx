@@ -1507,6 +1507,31 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
       )}
 
 
+      {/* MODAL DEL CÓDIGO QR */}
+      {qrOpen && (
+        <div className="fixed inset-0 bg-slate-900/90 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setQrOpen(false)}>
+           <div className="bg-white w-full max-w-sm rounded-3xl p-6 flex flex-col items-center text-center shadow-2xl animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
+              <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mb-4 shadow-sm border border-indigo-200">
+                 <QrCode className="w-8 h-8" />
+              </div>
+              <h3 className="text-lg font-black text-slate-800 mb-1">Firma Remota</h3>
+              <p className="text-xs font-bold text-slate-500 mb-6">Pide al cliente que escanee este código con la cámara de su celular para firmar el acta.</p>
+              
+              <div className="bg-white p-3 rounded-2xl shadow-inner border-2 border-slate-100 mb-6">
+                 <img 
+                   src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`${window.location.href.split('?')[0]}?sign=${job.id}`)}`} 
+                   alt="Código QR" 
+                   className="w-48 h-48 object-contain mix-blend-multiply"
+                 />
+              </div>
+              
+              <button type="button" onClick={() => setQrOpen(false)} className="w-full py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black rounded-xl transition-colors text-xs uppercase tracking-widest shadow-sm border border-slate-200">
+                 Cerrar QR
+              </button>
+           </div>
+        </div>
+      )}
+
       {fullScreenImage && (
         <div className="fixed inset-0 bg-slate-900/95 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm cursor-zoom-out animate-in fade-in duration-200" onClick={() => setFullScreenImage(null)}>
           <button onClick={() => setFullScreenImage(null)} className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 p-2 rounded-full text-white transition-colors shadow-lg">
@@ -1520,6 +1545,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     </div>
   );
 }
+
 
 
 
