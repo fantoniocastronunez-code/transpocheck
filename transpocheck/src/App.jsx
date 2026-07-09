@@ -907,12 +907,13 @@ function LogisticApp() {
 
               const newJob = {
                   client: fd.get('client'),
-                  brand: fd.get('brand'),
-                  model: fd.get('model'),
-                  plate: fd.get('plateOrVin').toUpperCase(),
-                  vin: fd.get('plateOrVin').toUpperCase(), 
+                  brand: fd.get('brand') || '',
+                  model: fd.get('model') || '',
+                  plate: fd.get('plateOrVin') ? fd.get('plateOrVin').toUpperCase() : 'S/N',
+                  vin: fd.get('plateOrVin') ? fd.get('plateOrVin').toUpperCase() : 'S/N', 
+                  description: fd.get('description') || '',
                   origin: originValue,
-                  destination: destValue,
+                  destination: destValue || '',
                   
                   // Inyectamos la dirección, comuna y contactos en segundo plano para que Waze funcione
                   originContactName: matchedOrigin?.contactName || '',
@@ -925,7 +926,7 @@ function LogisticApp() {
                   destAddress: matchedDest?.address || '',
                   destCommune: matchedDest?.commune || '',
 
-                  tripType: typeof showRequestJob === 'string' ? showRequestJob : 'traslado',
+                  tripType: (typeof showRequestJob === 'string' && showRequestJob !== 'true') ? showRequestJob : 'viaje',
                   status: finalStatus,
                   createdAt: Date.now(),
                   scheduledDate: new Date().toISOString().split('T')[0],
@@ -951,9 +952,16 @@ function LogisticApp() {
               }
           }} className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl relative animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
               <button type="button" onClick={()=>setShowRequestJob(false)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-700"/></button>
-              <div className="flex items-center gap-3 mb-5 border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-3 mb-4 border-b border-slate-100 pb-3">
                 <div className="bg-blue-100 p-2.5 rounded-full"><Plus className="w-6 h-6 text-blue-600"/></div>
-                <h3 className="text-xl font-black text-slate-800 leading-tight">Solicitar<br/>Traslado</h3>
+                <h3 className="text-xl font-black text-slate-800 leading-tight">Solicitar<br/>Trabajo</h3>
+              </div>
+
+              {/* SELECTOR DE TIPO DE TRASLADO */}
+              <div className="flex bg-slate-100 p-1 rounded-xl mb-5 gap-1 shadow-inner">
+                 <button type="button" onClick={() => setShowRequestJob('simple')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'simple' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-200'}`}><Car className="w-4 h-4"/> Local</button>
+                 <button type="button" onClick={() => setShowRequestJob('viaje')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'viaje' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-200'}`}><MapPin className="w-4 h-4"/> Regiones</button>
+                 <button type="button" onClick={() => setShowRequestJob('revision')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'revision' ? 'bg-amber-500 text-white shadow-md' : 'text-slate-500 hover:bg-slate-200'}`}><CheckCircle className="w-4 h-4"/> PRT</button>
               </div>
               
               <div className="space-y-4">
@@ -964,20 +972,36 @@ function LogisticApp() {
                        {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                  </div>
-                 <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Marca</label>
-                       <input name="brand" required placeholder="Ej: Kia" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"/>
-                    </div>
-                    <div className="space-y-1">
-                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Modelo</label>
-<input name="model" required placeholder="Ej: Rio" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"/>
-                    </div>
-                 </div>
-                 <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Patente o VIN</label>
-                    <input name="plateOrVin" required placeholder="Ej: ABCD12" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-black uppercase text-slate-800 outline-none focus:border-blue-500"/>
-                 </div>
+                 
+                 {showRequestJob === 'simple' ? (
+                    <>
+                       <div className="space-y-1">
+                          <label className="text-[10px] font-black text-purple-400 uppercase tracking-widest ml-1">Descripción del Servicio</label>
+                          <input name="description" required placeholder="Ej: Instalación de GPS, Batería..." className="w-full border-2 border-purple-200 bg-purple-50 rounded-xl p-3 text-sm font-bold text-purple-900 outline-none focus:border-purple-500"/>
+                       </div>
+                       <div className="space-y-1">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Patente / VIN (Opcional)</label>
+                          <input name="plateOrVin" placeholder="Ej: ABCD12 (Si aplica)" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-black uppercase text-slate-800 outline-none focus:border-purple-500"/>
+                       </div>
+                    </>
+                 ) : (
+                    <>
+                       <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Marca</label>
+                             <input name="brand" required placeholder="Ej: Kia" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"/>
+                          </div>
+                          <div className="space-y-1">
+                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Modelo</label>
+                             <input name="model" required placeholder="Ej: Rio" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"/>
+                          </div>
+                       </div>
+                       <div className="space-y-1">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Patente o VIN</label>
+                          <input name="plateOrVin" required placeholder="Ej: ABCD12" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-black uppercase text-slate-800 outline-none focus:border-blue-500"/>
+                       </div>
+                    </>
+                 )}
 
 
                                        {/* LA MAGIA VISUAL: Datalist con todos los lugares guardados */}
@@ -1103,6 +1127,7 @@ export default function App() {
     </Router>
   );
 }
+
 
 
 
