@@ -12,7 +12,7 @@ import SwipeButton from '../ui/SwipeButton';
 import SignaturePad from '../ui/SignaturePad';
 import { formatDateDisplay } from '../../utils/helpers';
 
-export default function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, db, currentUserEmail, showAlert, showConfirm, allClientsList, onLoadMore, vehicles }) {
+export default function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, onNewJob, db, currentUserEmail, showAlert, showConfirm, allClientsList, onLoadMore, vehicles }) {
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [jobToFail, setJobToFail] = useState(null);
   const [prtPromptJob, setPrtPromptJob] = useState(null); 
@@ -1261,6 +1261,17 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
            <input type="text" placeholder="Buscar..." className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
         <div className="flex gap-2 shrink-0 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+           {/* BOTONES DE CREAR / SOLICITAR TRASLADO */}
+           <button onClick={() => onNewJob?.('simple')} className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-md shrink-0 transition-colors">
+             <Car className="w-5 h-5"/> Local
+           </button>
+           <button onClick={() => onNewJob?.('viaje')} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-md shrink-0 transition-colors">
+             <MapPin className="w-5 h-5"/> Regiones
+           </button>
+           <button onClick={() => onNewJob?.('revision')} className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-md shrink-0 transition-colors">
+             <CheckCircle className="w-5 h-5"/> PRT
+           </button>
+
            {canBulkSign && (
                <button onClick={() => { setBulkSelectedIds([]); setBulkReceiverName(''); setBulkReceiverRut(''); setBulkSignature(null); setShowBulkSign(true); }} className="group bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-md shrink-0">
                  <PenTool className="w-5 h-5"/> Firma Masiva
@@ -1697,6 +1708,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     </div>
   );
 }
+
 
 
 
