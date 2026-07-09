@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+ import React, { useState, useEffect } from 'react';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { 
   Clock, XCircle, CheckCircle, Download, Camera, 
@@ -288,7 +288,10 @@ export default function ClientSignView({ jobId, db }) {
            <textarea placeholder="¿Alguna observación sobre el estado del vehículo al recibirlo?" value={formData.comments} onChange={e=>setFormData({...formData, comments: e.target.value})} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500 min-h-[80px]" />
 
            <h3 className="text-sm font-extrabold text-slate-800 pt-2 border-t border-slate-100">Firma Digital</h3>
-           <SignaturePad initialData={formData.signature} onSave={d=>setFormData({...formData, signature: d})} onClear={()=>setFormData({...formData, signature: null})} />
+           <div className="relative mt-1">
+             {formData.signature && <div className="absolute top-2 right-2 bg-green-500 text-white text-[9px] px-2 py-0.5 rounded-full font-black flex items-center gap-1 z-10 shadow-sm"><CheckCircle className="w-3 h-3"/> CAPTURADA</div>}
+             <SignaturePad initialData={formData.signature} onSave={d=>setFormData({...formData, signature: d})} onClear={()=>setFormData({...formData, signature: null})} />
+           </div>
 
            <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg shadow-blue-200 transition-colors mt-4 text-lg">Confirmar y Enviar Acta</button>
         </form>
