@@ -37,6 +37,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [historyClientFilter, setHistoryClientFilter] = useState(''); 
   const [searchTerm, setSearchTerm] = useState('');
   
+  const [isRequestedOpen, setIsRequestedOpen] = useState(true);
   const [isPendingOpen, setIsPendingOpen] = useState(true);
   const [isInProgressOpen, setIsInProgressOpen] = useState(true);
   const [processingId, setProcessingId] = useState(null); 
@@ -162,7 +163,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
   const filteredJobs = jobs.filter(job => {
     if (!isAdminView) {
-      const isMine = (job.status === 'pending' && job.assignedEmails?.includes(currentUserEmail)) || (job.status !== 'pending' && job.acceptedByEmail === currentUserEmail);
+      const isMine = (job.status === 'pending' && job.assignedEmails?.includes(currentUserEmail)) || 
+                     (job.status === 'accepted' && job.acceptedByEmail === currentUserEmail) || 
+                     (job.status === 'requested' && job.requestedBy === currentUserEmail) || 
+                     ((job.status === 'completed' || job.status === 'failed') && job.acceptedByEmail === currentUserEmail);
       const isMyFleet = job.fleetGroup && myFleetGroups.includes(job.fleetGroup);
       if (!isMine && !isMyFleet) return false;
     }
@@ -188,8 +192,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   });
 
   const sortedJobs = [...filteredJobs].sort((a, b) => {
-    const adminOrder = { pending: 1, accepted: 2, completed: 3, failed: 3 };
-    const driverOrder = { accepted: 1, pending: 2, completed: 3, failed: 3 };
+    const adminOrder = { requested: 1, pending: 2, accepted: 3, completed: 4, failed: 4 };
+    const driverOrder = { accepted: 1, requested: 2, pending: 3, completed: 4, failed: 4 };
     const order = isAdminView ? adminOrder : driverOrder;
     if (order[a.status] !== order[b.status]) return order[a.status] - order[b.status];
     if (a.status === 'completed' || a.status === 'failed') return (b.completedAt || b.createdAt) - (a.completedAt || a.createdAt);
@@ -201,7 +205,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     return getValidTime(a.scheduledDate, a.createdAt) - getValidTime(b.scheduledDate, b.createdAt);
   });
 
-  const activeJobs = sortedJobs.filter(j => j.status === 'pending' || j.status === 'accepted');
+  const activeJobs = sortedJobs.filter(j => j.status === 'requested' || j.status === 'pending' || j.status === 'accepted');
   const historyJobsRaw = sortedJobs.filter(j => j.status === 'completed' || j.status === 'failed');
   
   const historyJobs = historyJobsRaw.filter(j => {
@@ -220,8 +224,29 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const todayHistoryJobs = historyJobs.filter(j => isToday(j.completedAt || j.createdAt));
   const olderHistoryJobs = historyJobs.filter(j => !isToday(j.completedAt || j.createdAt));
 
+  const requestedJobsList = activeJobs.filter(j => j.status === 'requested');
   const pendingJobsList = activeJobs.filter(j => j.status === 'pending');
   const inProgressJobsList = activeJobs.filter(j => j.status === 'accepted');
+
+  const handleApproveRequest = async (job) => {
+    if (processingId) return;
+    setProcessingId(`${job.id}-approve`);
+    try {
+      await updateDoc(doc(db, 'transport_jobs', job.id), { status: 'pending' });
+      showAlert("✅ Solicitud aprobada. El trabajo ha sido publicado a la flota.");
+    } catch(e) {
+      console.error(e); showAlert("Error al aprobar.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleRejectRequest = async (job) => {
+    showConfirm("¿Rechazar y eliminar esta solicitud de trabajo permanentemente?", async () => {
+      try { await deleteDoc(doc(db, 'transport_jobs', job.id)); showAlert("❌ Solicitud rechazada y eliminada."); } 
+      catch (e) { console.error(e); }
+    });
+  };
 
   const handleDeleteJob = async (jobId) => {
     showConfirm("¿Estás seguro de eliminar este trabajo definitivamente?", async () => {
@@ -284,6 +309,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             assignedEmails = dupDriverEmails;
         }
 
+        const isRequestMode = role !== 'admin';
+        const finalStatus = isRequestMode ? 'requested' : 'pending';
+
         const cloneJob = {
             client: dupPromptJob.client || '',
             brand: dupPromptJob.brand || '',
@@ -301,12 +329,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             destination: destination,
             assignedDrivers: assignedDrivers,
             assignedEmails: assignedEmails,
-            status: 'pending',
+            status: finalStatus,
+            requestedBy: isRequestMode ? currentUserEmail : null,
             createdAt: Date.now()
         };
 
         await addDoc(collection(db, 'transport_jobs'), cloneJob);
-        showAlert("✅ Nuevo traslado creado con éxito. Revisa la lista de pendientes.");
+        showAlert(isRequestMode ? "✅ Solicitud enviada. Esperando aprobación del administrador." : "✅ Nuevo traslado creado con éxito. Revisa la lista de pendientes.");
         setDupPromptJob(null);
     } catch (e) {
         console.error(e);
@@ -740,6 +769,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   };
 
   const renderActiveJobCard = (j) => {
+    const isRequested = j.status === 'requested';
     const isPending = j.status === 'pending';
     const isAccepted = j.status === 'accepted';
     const phase = j.phase || 'claimed'; 
@@ -773,7 +803,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
     return (
       <div key={j.id} className={`bg-white rounded-3xl border p-4 sm:p-5 flex flex-col shadow-sm relative hover:shadow-xl hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 overflow-hidden cursor-default ${j.fleetGroup ? 'border-indigo-200' : 'border-slate-100'}`}>
-        <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${isPending ? 'bg-amber-400' : 'bg-blue-500'}`}></div>
+        <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${isRequested ? 'bg-pink-500' : (isPending ? 'bg-amber-400' : 'bg-blue-500')}`}></div>
         
         <div className="flex justify-between items-start mb-5 border-b border-slate-100 pb-4 pl-2">
           <div className="flex flex-col gap-3 w-full">
@@ -1019,7 +1049,26 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         )}
 
         <div className="mt-auto pt-3 border-t border-slate-100 flex flex-col gap-2">
-          {(!isAdminView && j.acceptedByEmail !== currentUserEmail && !j.assignedEmails?.includes(currentUserEmail)) ? (
+          {isRequested && (
+            <>
+              {isAdminView ? (
+                <div className="flex gap-2">
+                  <button onClick={() => handleApproveRequest(j)} disabled={processingId === `${j.id}-approve`} className="flex-1 bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-1 disabled:opacity-50">
+                    {processingId === `${j.id}-approve` ? <Clock className="w-4 h-4 animate-spin"/> : <CheckCircle className="w-4 h-4"/>} Aprobar
+                  </button>
+                  <button onClick={() => handleRejectRequest(j)} className="flex-1 bg-red-100 hover:bg-red-200 text-red-700 font-bold py-3 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-1">
+                    <XCircle className="w-4 h-4"/> Rechazar
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-pink-50 border border-pink-200 text-pink-700 text-xs font-bold text-center py-3 rounded-xl flex items-center justify-center gap-2">
+                  <Clock className="w-4 h-4" /> Pendiente de Aprobación
+                </div>
+              )}
+            </>
+          )}
+
+          {(!isRequested && !isAdminView && j.acceptedByEmail !== currentUserEmail && !j.assignedEmails?.includes(currentUserEmail)) ? (
              <div className="bg-slate-50 border border-slate-200 text-slate-500 text-xs font-bold text-center py-3 rounded-xl">Vehículo en convoy a cargo de un compañero.</div>
           ) : (
             <>
@@ -1233,10 +1282,29 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 items-start">
+      <div className="flex flex-col lg:flex-row gap-6 items-start w-full">
         
+        {/* COLUMNA SOLICITUDES (NUEVO) */}
+        {requestedJobsList.length > 0 && (
+          <div className="w-full lg:flex-1 flex flex-col overflow-hidden border-2 border-pink-100 bg-pink-50/40 rounded-3xl shadow-sm">
+            <button onClick={() => setIsRequestedOpen(!isRequestedOpen)} className="w-full flex justify-between items-center p-4">
+              <h3 className="font-extrabold text-pink-600 flex items-center gap-2"><CheckCircle className="w-5 h-5"/> Por Aprobar ({requestedJobsList.length})</h3>
+              {isRequestedOpen ? <ChevronUp className="w-5 h-5 text-pink-600"/> : <ChevronDown className="w-5 h-5 text-pink-600"/>}
+            </button>
+            {isRequestedOpen && (
+              <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 px-4 pb-8 pt-2 -mx-4 lg:mx-0 lg:px-4 lg:flex-col lg:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                {requestedJobsList.map(j => (
+                  <div key={j.id} className="w-[85vw] sm:w-[350px] lg:w-full shrink-0 snap-center [&>div]:h-full">
+                    {renderActiveJobCard(j)}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* COLUMNA EN CURSO */}
-        <div className="w-full lg:w-1/2 flex flex-col overflow-hidden">
+        <div className="w-full lg:flex-1 flex flex-col overflow-hidden">
           <button onClick={() => setIsInProgressOpen(!isInProgressOpen)} className="w-full flex justify-between items-center p-4">
             <h3 className="font-extrabold text-slate-800 flex items-center gap-2"><Navigation className="w-5 h-5 text-blue-600"/> En Curso ({inProgressJobsList.length})</h3>
             {isInProgressOpen ? <ChevronUp className="w-5 h-5"/> : <ChevronDown className="w-5 h-5"/>}
@@ -1253,7 +1321,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
         
         {/* COLUMNA PENDIENTES */}
-        <div className="w-full lg:w-1/2 flex flex-col overflow-hidden">
+        <div className="w-full lg:flex-1 flex flex-col overflow-hidden">
           <button onClick={() => setIsPendingOpen(!isPendingOpen)} className="w-full flex justify-between items-center p-4">
             <h3 className="font-extrabold text-slate-700 flex items-center gap-2"><Clock className="w-5 h-5 text-amber-500"/> Pendientes ({pendingJobsList.length})</h3>
             {isPendingOpen ? <ChevronUp className="w-5 h-5"/> : <ChevronDown className="w-5 h-5"/>}
@@ -1626,6 +1694,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     </div>
   );
 }
+
 
 
 
