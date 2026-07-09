@@ -125,6 +125,25 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
     });
   };
 
+  const resetBalance = (d) => {
+     if (!d.balance || d.balance === 0) return showAlert("El saldo de este conductor ya es $0.");
+     showConfirm(`¿Confirmas realizar un corte de caja? El saldo de ${d.name} quedará en $0 y se creará un registro de ajuste automático.`, async () => {
+        try {
+           const type = d.balance > 0 ? 'expense' : 'assignment'; // Restamos si hay saldo a favor, sumamos si está en negativo
+           const amount = Math.abs(d.balance);
+           const detailString = "Corte de Caja (Reinicio a $0 por Administrador)";
+           
+           await updateDoc(doc(db, 'drivers', d.id), { balance: 0 });
+           await addDoc(collection(db, 'expenses'), { driverId: d.id, driverEmail: d.email, driverName: d.name, type, amount, detail: detailString, jobId: '', deductedAmount: amount, createdAt: Date.now() });
+           
+           showAlert(`Saldo de ${d.name} reiniciado correctamente a $0.`);
+        } catch(e) {
+           console.error(e);
+           showAlert("Error al reiniciar el saldo a $0.");
+        }
+     });
+  };
+
   const TransactionIcon = ({ type }) => {
     if (type === 'assignment') return <ArrowUpCircle className="w-5 h-5 text-green-500 shrink-0"/>;
     if (type === 'pending_return') return <Clock className="w-5 h-5 text-amber-500 shrink-0"/>;
@@ -285,7 +304,14 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
                     <button disabled={isSubmitting} className={`w-full py-3 rounded-xl font-extrabold text-sm transition-colors text-white disabled:opacity-50 shadow-md mt-4 ${adminTxType === 'assignment' ? 'bg-green-600 hover:bg-green-700 shadow-green-200' : 'bg-red-600 hover:bg-red-700 shadow-red-200'}`}>{isSubmitting ? 'Procesando...' : `Confirmar ${adminTxType === 'assignment' ? 'Fondo' : 'Gasto'}`}</button>
                   </form>
 
-                  <h4 className="font-extrabold text-slate-700 mb-3 flex items-center gap-2 text-sm"><ClipboardList className="w-4 h-4 text-slate-400"/> Historial de Movimientos</h4>
+                  <div className="flex justify-between items-center mb-3">
+                     <h4 className="font-extrabold text-slate-700 flex items-center gap-2 text-sm">
+                        <ClipboardList className="w-4 h-4 text-slate-400"/> Historial de Movimientos
+                     </h4>
+                     <button type="button" onClick={() => resetBalance(d)} disabled={!d.balance || d.balance === 0} className="text-[10px] font-black uppercase bg-slate-800 text-white px-3 py-1.5 rounded-lg hover:bg-slate-900 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1">
+                        <CheckCircle className="w-3.5 h-3.5" /> Volver a $0
+                     </button>
+                  </div>
                   
                   <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
                     {expenses.filter(e => e.driverId === d.id).length === 0 ? (
