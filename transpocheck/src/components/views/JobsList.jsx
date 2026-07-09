@@ -1433,16 +1433,19 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             <p className="text-xs font-bold text-slate-500 mb-5">Pide al otro conductor que escanee este código con la cámara de su celular para entregarle el auto.</p>
             
             <div className="bg-white p-3 rounded-2xl border-4 border-slate-100 shadow-inner inline-block">
-              <img src={`https://quickchart.io/qr?size=250&margin=1&text=${encodeURIComponent(`${window.location.origin}/?relay=${relayPromptJob.id}`)}`} alt="QR Relevo" className="w-48 h-48 mx-auto" />
+              <img src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`${window.location.origin}/?relay=${relayPromptJob.id}`)}`} alt="QR Relevo" className="w-48 h-48 mx-auto" />
             </div>
             
             <div className="mt-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
               <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">O envíale el link por WhatsApp:</p>
-              <button onClick={() => {
-                 const link = `${window.location.origin}/?relay=${relayPromptJob.id}`;
-                 const text = `🔑 Toma mi relevo del vehículo ${relayPromptJob.plate || relayPromptJob.vin} abriendo este link: ${link}`;
-                 window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-              }} className="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl text-sm shadow-md transition-colors flex justify-center items-center gap-2"><Share2 className="w-4 h-4"/> Enviar Link a Compañero</button>
+              <a 
+                 href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`🔑 Toma mi relevo del vehículo ${relayPromptJob.plate || relayPromptJob.vin} abriendo este link: ${window.location.origin}/?relay=${relayPromptJob.id}`)}`}
+                 target="_blank" 
+                 rel="noopener noreferrer" 
+                 className="w-full bg-green-500 hover:bg-green-600 text-white font-black py-3 rounded-xl text-sm shadow-md transition-colors flex justify-center items-center gap-2"
+              >
+                 <Share2 className="w-4 h-4"/> Enviar Link a Compañero
+              </a>
             </div>
           </div>
         </div>
@@ -1694,6 +1697,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     </div>
   );
 }
+
 
 
 
