@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BrowserRouter as Router, useSearchParams, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { signOut, signInWithPopup } from 'firebase/auth';
 import { doc, updateDoc, setDoc, deleteField, onSnapshot, collection, getDocs } from 'firebase/firestore';
 
@@ -47,6 +47,7 @@ function LogisticApp() {
 
   const [adminTab, setAdminTab] = useState('dashboard');
   const [selectedJob, setSelectedJob] = useState(null);
+  const navigate = useNavigate();
   const [editingJob, setEditingJob] = useState(null);
   const [currentView, setCurrentView] = useState('main');
   const [mainTab, setMainTab] = useState('jobs');
@@ -483,7 +484,7 @@ function LogisticApp() {
   const handleQuickChecklist = () => {
     const today = new Date().toISOString().split('T')[0];
     setSelectedJob({ id: 'NEW_QUICK_JOB', client: '', brand: '', model: '', plate: '', vin: '', origin: '', destination: '', tripType: 'traslado', scheduledDate: today });
-    setCurrentView('checklist');
+    navigate('/checklist');
   };
 
   // --- CONTROL DE ONBOARDING ESTRICTO ---
@@ -760,108 +761,114 @@ function LogisticApp() {
         </div>
       </header>
 
-      {currentView === 'main' && mainTab === 'jobs' && (
-        <main className="max-w-5xl mx-auto p-4 pt-20 sm:pt-24">
-          {activeRole === 'admin' ? (
-            <>
-              <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-6 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
-                <button onClick={() => {setAdminTab('dashboard'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='dashboard'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><ClipboardList className="w-4 h-4 sm:w-5 sm:h-5"/> Monitor</button>
-                <button onClick={() => {setAdminTab('newJob'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='newJob'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Plus className="w-4 h-4 sm:w-5 sm:h-5"/> Crear</button>
-                <button onClick={() => setAdminTab('config')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='config'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Truck className="w-4 h-4 sm:w-5 sm:h-5"/> Config</button>
-                <button onClick={() => setShowBroadcastAdmin(true)} className="flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors text-purple-600 bg-purple-50 hover:bg-purple-100"><Megaphone className="w-4 h-4 sm:w-5 sm:h-5"/> Aviso</button>
-                <button onClick={() => setAdminTab('history')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='history'?'bg-slate-800 text-white shadow-md':'text-slate-500 hover:bg-slate-50'}`}><ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5"/> Peritaje</button>
-              </div>
-              
-              {adminTab === 'dashboard' && (
-                <div className="space-y-6">
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                    <h2 className="text-2xl font-extrabold text-slate-800">Monitor de Trabajos</h2>
-                    <button onClick={exportToExcel} className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex justify-center items-center gap-2 shadow-lg shadow-green-200 transition-colors"><Download className="w-5 h-5"/> Exportar Excel</button>
+      <Routes>
+        <Route path="/" element={
+          <>
+            {mainTab === 'jobs' && (
+              <main className="max-w-5xl mx-auto p-4 pt-20 sm:pt-24">
+                {activeRole === 'admin' ? (
+                  <>
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-6 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
+                      <button onClick={() => {setAdminTab('dashboard'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='dashboard'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><ClipboardList className="w-4 h-4 sm:w-5 sm:h-5"/> Monitor</button>
+                      <button onClick={() => {setAdminTab('newJob'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='newJob'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Plus className="w-4 h-4 sm:w-5 sm:h-5"/> Crear</button>
+                      <button onClick={() => setAdminTab('config')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='config'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Truck className="w-4 h-4 sm:w-5 sm:h-5"/> Config</button>
+                      <button onClick={() => setShowBroadcastAdmin(true)} className="flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors text-purple-600 bg-purple-50 hover:bg-purple-100"><Megaphone className="w-4 h-4 sm:w-5 sm:h-5"/> Aviso</button>
+                      <button onClick={() => setAdminTab('history')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='history'?'bg-slate-800 text-white shadow-md':'text-slate-500 hover:bg-slate-50'}`}><ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5"/> Peritaje</button>
+                    </div>
+                    
+                    {adminTab === 'dashboard' && (
+                      <div className="space-y-6">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                          <h2 className="text-2xl font-extrabold text-slate-800">Monitor de Trabajos</h2>
+                          <button onClick={exportToExcel} className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex justify-center items-center gap-2 shadow-lg shadow-green-200 transition-colors"><Download className="w-5 h-5"/> Exportar Excel</button>
+                        </div>
+                        <JobsList 
+                          jobs={jobs} drivers={drivers} vehicles={vehicles} role="admin" 
+                          onStartChecklist={(j) => {setSelectedJob(j); navigate('/checklist')}} 
+                          onEditJob={(j) => { setEditingJob(j); setAdminTab('newJob'); }} 
+                          db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} allClientsList={allClientsList}
+                          onLoadMore={() => setJobLimit(prev => prev + 20)}
+                        />
+                      </div>
+                    )}
+                    
+                    {adminTab === 'newJob' && <div className="animate-in zoom-in-[0.98] slide-in-from-bottom-8 duration-500 ease-out"><NewJobForm key={editingJob ? editingJob.id : 'new'} jobToEdit={editingJob} onCancelEdit={() => {setEditingJob(null); setAdminTab('dashboard');}} allClientsList={allClientsList} vehicles={vehicles} drivers={drivers.filter(d => !d.isHidden)} db={db} showAlert={showAlert} onSuccess={() => setAdminTab('dashboard')} pushSyncTask={pushSyncTask} /></div>}
+                    
+                    {adminTab === 'history' && <div className="animate-in zoom-in-[0.98] duration-300"><VehicleHistoryView db={db} showAlert={showAlert} /></div>}
+                    
+                    {adminTab === 'config' && <div className="animate-in zoom-in-[0.98] duration-300"><ConfigView allClientsList={allClientsList} customClients={customClients} vehicles={vehicles} drivers={drivers} db={db} showAlert={showAlert} showConfirm={showConfirm} /></div>}
+                  </>
+                ) : (
+                  <div className="space-y-6">
+                    <h2 className="text-2xl font-extrabold text-slate-800">Mis Trabajos Asignados</h2>
+                    <JobsList 
+                       jobs={jobs} drivers={drivers} vehicles={vehicles} role="driver" 
+                       onStartChecklist={(j) => {setSelectedJob(j); navigate('/checklist')}} 
+                       db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} allClientsList={allClientsList}
+                       onLoadMore={() => setJobLimit(prev => prev + 20)}
+                    />
                   </div>
-                  <JobsList 
-                    jobs={jobs} drivers={drivers} vehicles={vehicles} role="admin" 
-                    onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} 
-                    onEditJob={(j) => { setEditingJob(j); setAdminTab('newJob'); }} 
-                    db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} allClientsList={allClientsList}
-                    onLoadMore={() => setJobLimit(prev => prev + 20)}
-                  />
-                </div>
-              )}
-              
-              {adminTab === 'newJob' && <div className="animate-in zoom-in-[0.98] slide-in-from-bottom-8 duration-500 ease-out"><NewJobForm key={editingJob ? editingJob.id : 'new'} jobToEdit={editingJob} onCancelEdit={() => {setEditingJob(null); setAdminTab('dashboard');}} allClientsList={allClientsList} vehicles={vehicles} drivers={drivers.filter(d => !d.isHidden)} db={db} showAlert={showAlert} onSuccess={() => setAdminTab('dashboard')} pushSyncTask={pushSyncTask} /></div>}
-              
-              {adminTab === 'history' && <div className="animate-in zoom-in-[0.98] duration-300"><VehicleHistoryView db={db} showAlert={showAlert} /></div>}
-              
-              {adminTab === 'config' && <div className="animate-in zoom-in-[0.98] duration-300"><ConfigView allClientsList={allClientsList} customClients={customClients} vehicles={vehicles} drivers={drivers} db={db} showAlert={showAlert} showConfirm={showConfirm} /></div>}
-            </>
-          ) : (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-extrabold text-slate-800">Mis Trabajos Asignados</h2>
-              <JobsList 
-                 jobs={jobs} drivers={drivers} vehicles={vehicles} role="driver" 
-                 onStartChecklist={(j) => {setSelectedJob(j); setCurrentView('checklist')}} 
-                 db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} allClientsList={allClientsList}
-                 onLoadMore={() => setJobLimit(prev => prev + 20)}
+                )}
+              </main>
+            )}
+
+            {mainTab === 'ranking' && <LeaderboardView jobs={jobs} drivers={drivers} isAdminView={activeRole === 'admin'} db={db} />}
+            {mainTab === 'expenses' && <ExpensesView role={activeRole} drivers={drivers} jobs={jobs} expenses={expenses} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />}
+            
+            <nav className="fixed bottom-0 w-full bg-white border-t border-slate-200 flex justify-around items-center pt-2 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+              <button onClick={() => setShowRequestJob(true)} className="flex flex-col items-center text-slate-400 hover:text-blue-600 transition-colors w-20 sm:w-24">
+                 <div className="bg-slate-100 p-2 rounded-xl mb-1"><Plus className="w-5 h-5"/></div>
+                 <span className="text-[10px] font-extrabold tracking-wide">Solicitar</span>
+              </button>
+              <button onClick={() => setMainTab('jobs')} className={`flex flex-col items-center transition-colors w-20 sm:w-24 ${mainTab==='jobs' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}>
+                 <div className={`${mainTab==='jobs' ? 'bg-blue-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><ClipboardList className="w-5 h-5"/></div>
+                 <span className="text-[10px] font-extrabold tracking-wide">Trabajos</span>
+              </button>
+              <button onClick={() => setMainTab('ranking')} className={`flex flex-col items-center transition-colors w-20 sm:w-24 ${mainTab==='ranking' ? 'text-yellow-600' : 'text-slate-400 hover:text-yellow-600'}`}>
+                 <div className={`${mainTab==='ranking' ? 'bg-yellow-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Trophy className="w-5 h-5"/></div>
+                 <span className="text-[10px] font-extrabold tracking-wide">Ranking</span>
+              </button>
+              <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors w-20 sm:w-24 ${mainTab==='expenses' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}>
+                 <div className={`${mainTab==='expenses' ? 'bg-blue-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Wallet className="w-5 h-5"/></div>
+                 <span className="text-[10px] font-extrabold tracking-wide">Gastos</span>
+              </button>
+            </nav>
+          </>
+        } />
+        
+        <Route path="/checklist" element={
+          selectedJob && (
+            <main className="max-w-2xl mx-auto p-4 pt-20 sm:pt-24 pb-24 animate-in zoom-in-[0.98] slide-in-from-bottom-8 duration-500 ease-out">
+              <ChecklistForm 
+                 job={selectedJob} db={db} currentUserEmail={currentUserEmail} 
+                 allClientsList={allClientsList}
+                 vehicles={vehicles}
+                 drivers={drivers} expenses={expenses} 
+                 onCancel={() => { 
+                    navigate('/');
+                 }} 
+                 onComplete={async () => { 
+                    try {
+                       // Intentamos limpiar el borrador
+                       if (selectedJob.id !== 'NEW_QUICK_JOB') {
+                          await updateDoc(doc(db, 'transport_jobs', selectedJob.id), { draft: null });
+                       }
+                    } catch(e) { 
+                       // Si Firebase lo bloquea porque el trabajo ya se cerró, lo ignoramos en silencio
+                    } finally {
+                       // ESTO ASEGURA QUE LA PANTALLA SE CIERRE PASE LO QUE PASE
+                       setSelectedJob(null); 
+                       navigate('/'); 
+                    }
+                 }} 
+                 showAlert={showAlert} showConfirm={showConfirm} 
+                 uploadImageToStorage={uploadImageToStorage}
+                 pushSyncTask={pushSyncTask}
               />
-            </div>
-          )}
-        </main>
-      )}
-
-      {currentView === 'main' && mainTab === 'ranking' && <LeaderboardView jobs={jobs} drivers={drivers} isAdminView={activeRole === 'admin'} db={db} />}
-      {currentView === 'main' && mainTab === 'expenses' && <ExpensesView role={activeRole} drivers={drivers} jobs={jobs} expenses={expenses} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />}
-      
-      {currentView === 'checklist' && selectedJob && (
-        <main className="max-w-2xl mx-auto p-4 pt-20 sm:pt-24 pb-24 animate-in zoom-in-[0.98] slide-in-from-bottom-8 duration-500 ease-out">
-          <ChecklistForm 
-             job={selectedJob} db={db} currentUserEmail={currentUserEmail} 
-             allClientsList={allClientsList}
-             vehicles={vehicles}
-             drivers={drivers} expenses={expenses} 
-             onCancel={() => { 
-                setCurrentView('main');
-             }} 
-             onComplete={async () => { 
-                try {
-                   // Intentamos limpiar el borrador
-                   if (selectedJob.id !== 'NEW_QUICK_JOB') {
-                      await updateDoc(doc(db, 'transport_jobs', selectedJob.id), { draft: null });
-                   }
-                } catch(e) { 
-                   // Si Firebase lo bloquea porque el trabajo ya se cerró, lo ignoramos en silencio
-                } finally {
-                   // ESTO ASEGURA QUE LA PANTALLA SE CIERRE PASE LO QUE PASE
-                   setSelectedJob(null); 
-                   setCurrentView('main'); 
-                }
-             }} 
-             showAlert={showAlert} showConfirm={showConfirm} 
-             uploadImageToStorage={uploadImageToStorage}
-             pushSyncTask={pushSyncTask}
-          />
-        </main>
-      )}
-
-      {currentView === 'main' && (
-        <nav className="fixed bottom-0 w-full bg-white border-t border-slate-200 flex justify-around items-center pt-2 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
-          <button onClick={() => setShowRequestJob(true)} className="flex flex-col items-center text-slate-400 hover:text-blue-600 transition-colors w-20 sm:w-24">
-             <div className="bg-slate-100 p-2 rounded-xl mb-1"><Plus className="w-5 h-5"/></div>
-             <span className="text-[10px] font-extrabold tracking-wide">Solicitar</span>
-          </button>
-          <button onClick={() => setMainTab('jobs')} className={`flex flex-col items-center transition-colors w-20 sm:w-24 ${mainTab==='jobs' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}>
-             <div className={`${mainTab==='jobs' ? 'bg-blue-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><ClipboardList className="w-5 h-5"/></div>
-             <span className="text-[10px] font-extrabold tracking-wide">Trabajos</span>
-          </button>
-          <button onClick={() => setMainTab('ranking')} className={`flex flex-col items-center transition-colors w-20 sm:w-24 ${mainTab==='ranking' ? 'text-yellow-600' : 'text-slate-400 hover:text-yellow-600'}`}>
-             <div className={`${mainTab==='ranking' ? 'bg-yellow-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Trophy className="w-5 h-5"/></div>
-             <span className="text-[10px] font-extrabold tracking-wide">Ranking</span>
-          </button>
-          <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors w-20 sm:w-24 ${mainTab==='expenses' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}>
-             <div className={`${mainTab==='expenses' ? 'bg-blue-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Wallet className="w-5 h-5"/></div>
-             <span className="text-[10px] font-extrabold tracking-wide">Gastos</span>
-          </button>
-        </nav>
-      )}
+            </main>
+          )
+        } />
+      </Routes>
 
       {/* NUEVO: Bandeja Flotante de Trabajo Offline (Idea 3) */}
       {!isOnline && user && (
