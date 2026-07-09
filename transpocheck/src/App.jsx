@@ -900,6 +900,9 @@ function LogisticApp() {
               const matchedOrigin = directoryList.find(d => d.placeName.trim().toLowerCase() === originValue.toLowerCase());
               const matchedDest = directoryList.find(d => d.placeName.trim().toLowerCase() === destValue.toLowerCase());
 
+              const isRequestMode = activeRole !== 'admin';
+              const finalStatus = isRequestMode ? 'requested' : (autoAssign ? 'accepted' : 'pending');
+
               const newJob = {
                   client: fd.get('client'),
                   brand: fd.get('brand'),
@@ -921,12 +924,13 @@ function LogisticApp() {
                   destCommune: matchedDest?.commune || '',
 
                   tripType: 'traslado',
-                  status: autoAssign ? 'accepted' : 'pending',
+                  status: finalStatus,
                   createdAt: Date.now(),
                   scheduledDate: new Date().toISOString().split('T')[0],
                   assignedDrivers: autoAssign ? [{ id: myDriver?.id || 'auto', name: myDriver?.name || currentUserEmail, email: currentUserEmail }] : [],
                   assignedEmails: autoAssign ? [currentUserEmail] : [],
-                  acceptedByEmail: autoAssign ? currentUserEmail : null,
+                  // Si el conductor lo pide, evitamos que se acepte automáticamente hasta que el admin lo apruebe
+                  acceptedByEmail: (autoAssign && !isRequestMode) ? currentUserEmail : null,
                   requestedBy: currentUserEmail
               };
               
@@ -934,7 +938,12 @@ function LogisticApp() {
                   const { addDoc, collection } = await import('firebase/firestore');
                   await addDoc(collection(db, 'transport_jobs'), newJob);
                   setShowRequestJob(false);
-                  showAlert(autoAssign ? "✅ Traslado creado y asignado a ti exitosamente." : "✅ Solicitud enviada a la central de traslados pendientes.");
+                  
+                  if (isRequestMode) {
+                     showAlert("✅ Solicitud de traslado enviada. Esperando aprobación del administrador.");
+                  } else {
+                     showAlert(autoAssign ? "✅ Traslado creado y asignado a ti exitosamente." : "✅ Traslado publicado en la central.");
+                  }
               } catch (err) {
                   showAlert("Error al crear la solicitud.");
               }
@@ -1092,6 +1101,7 @@ export default function App() {
     </Router>
   );
 }
+
 
 
 
