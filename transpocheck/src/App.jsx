@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useSearchParams } from 'react-router-dom';
 import { signOut, signInWithPopup } from 'firebase/auth';
 import { doc, updateDoc, setDoc, deleteField, onSnapshot, collection, getDocs } from 'firebase/firestore';
 
