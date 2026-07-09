@@ -329,7 +329,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
       setFormData(syncedData); 
 
 
-      const url = `${window.location.href.split('?')[0]}?sign=${job.id}`;
+      const url = `${window.location.origin}/?sign=${job.id}`;
       const textToShare = `¡Hola! Por favor firma el acta de recepción y revisa las fotografías del vehículo aquí:\n${url}`;
 
 
@@ -1510,22 +1510,23 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
       {/* MODAL DEL CÓDIGO QR */}
       {qrOpen && (
         <div className="fixed inset-0 bg-slate-900/90 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setQrOpen(false)}>
-           <div className="bg-white w-full max-w-sm rounded-3xl p-6 flex flex-col items-center text-center shadow-2xl animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
+           <div className="w-full max-w-sm rounded-3xl p-6 flex flex-col items-center text-center shadow-2xl animate-in zoom-in-95" style={{ backgroundColor: '#ffffff' }} onClick={e => e.stopPropagation()}>
               <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mb-4 shadow-sm border border-indigo-200">
                  <QrCode className="w-8 h-8" />
               </div>
-              <h3 className="text-lg font-black text-slate-800 mb-1">Firma Remota</h3>
-              <p className="text-xs font-bold text-slate-500 mb-6">Pide al cliente que escanee este código con la cámara de su celular para firmar el acta.</p>
+              <h3 className="text-lg font-black mb-1" style={{ color: '#1e293b' }}>Firma Remota</h3>
+              <p className="text-xs font-bold mb-6" style={{ color: '#64748b' }}>Pide al cliente que escanee este código con la cámara de su celular para firmar el acta.</p>
               
-              <div className="bg-white p-3 rounded-2xl shadow-inner border-2 border-slate-100 mb-6">
+              <div className="p-3 rounded-2xl shadow-inner border-2 border-slate-100 mb-6" style={{ backgroundColor: '#ffffff' }}>
                  <img 
-                   src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`${window.location.href.split('?')[0]}?sign=${job.id}`)}`} 
+                   src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&bgcolor=ffffff&data=${encodeURIComponent(`${window.location.origin}/?sign=${job.id}`)}`} 
                    alt="Código QR" 
-                   className="w-48 h-48 object-contain mix-blend-multiply"
+                   className="w-48 h-48 object-contain"
+                   style={{ backgroundColor: '#ffffff' }}
                  />
               </div>
               
-              <button type="button" onClick={() => setQrOpen(false)} className="w-full py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black rounded-xl transition-colors text-xs uppercase tracking-widest shadow-sm border border-slate-200">
+              <button type="button" onClick={() => setQrOpen(false)} className="w-full py-3.5 hover:bg-slate-200 font-black rounded-xl transition-colors text-xs uppercase tracking-widest shadow-sm border border-slate-200" style={{ backgroundColor: '#f1f5f9', color: '#334155' }}>
                  Cerrar QR
               </button>
            </div>
@@ -1545,6 +1546,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     </div>
   );
 }
+
 
 
 
