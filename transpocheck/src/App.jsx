@@ -817,7 +817,7 @@ function LogisticApp() {
             {mainTab === 'expenses' && <ExpensesView role={activeRole} drivers={drivers} jobs={jobs} expenses={expenses} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />}
             
             <nav className="fixed bottom-0 w-full bg-white border-t border-slate-200 flex justify-around items-center pt-2 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
-              <button onClick={() => setShowRequestJob(true)} className="flex flex-col items-center text-slate-400 hover:text-blue-600 transition-colors w-20 sm:w-24">
+              <button onClick={() => setShowRequestJob('traslado')} className="flex flex-col items-center text-slate-400 hover:text-blue-600 transition-colors w-20 sm:w-24">
                  <div className="bg-slate-100 p-2 rounded-xl mb-1"><Plus className="w-5 h-5"/></div>
                  <span className="text-[10px] font-extrabold tracking-wide">Solicitar</span>
               </button>
@@ -905,7 +905,7 @@ function LogisticApp() {
               const isRequestMode = activeRole !== 'admin';
               const finalStatus = isRequestMode ? 'requested' : (autoAssign ? 'accepted' : 'pending');
 
-              const newJob = {
+                            const newJob = {
                   client: fd.get('client'),
                   brand: fd.get('brand') || '',
                   model: fd.get('model') || '',
@@ -926,7 +926,7 @@ function LogisticApp() {
                   destAddress: matchedDest?.address || '',
                   destCommune: matchedDest?.commune || '',
 
-                  tripType: (typeof showRequestJob === 'string' && showRequestJob !== 'true') ? showRequestJob : 'viaje',
+                  tripType: (typeof showRequestJob === 'string' && showRequestJob !== 'true') ? showRequestJob : 'traslado',
                   status: finalStatus,
                   createdAt: Date.now(),
                   scheduledDate: new Date().toISOString().split('T')[0],
@@ -957,11 +957,12 @@ function LogisticApp() {
                 <h3 className="text-xl font-black text-slate-800 leading-tight">Solicitar<br/>Trabajo</h3>
               </div>
 
-              {/* SELECTOR DE TIPO DE TRASLADO */}
-              <div className="flex bg-slate-100 p-1 rounded-xl mb-5 gap-1 shadow-inner">
-                 <button type="button" onClick={() => setShowRequestJob('simple')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'simple' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-200'}`}><Car className="w-4 h-4"/> Local</button>
-                 <button type="button" onClick={() => setShowRequestJob('viaje')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'viaje' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-200'}`}><MapPin className="w-4 h-4"/> Regiones</button>
-                 <button type="button" onClick={() => setShowRequestJob('revision')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'revision' ? 'bg-amber-500 text-white shadow-md' : 'text-slate-500 hover:bg-slate-200'}`}><CheckCircle className="w-4 h-4"/> PRT</button>
+              {/* SELECTOR DE TIPO DE TRABAJO (4 OPCIONES) */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 bg-slate-100 p-1 rounded-xl mb-5 gap-1 shadow-inner">
+                 <button type="button" onClick={() => setShowRequestJob('traslado')} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'traslado' || showRequestJob === true ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-500 hover:bg-slate-200'}`}><Car className="w-3.5 h-3.5"/> Local</button>
+                 <button type="button" onClick={() => setShowRequestJob('simple')} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'simple' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-200'}`}><FileText className="w-3.5 h-3.5"/> Servicio</button>
+                 <button type="button" onClick={() => setShowRequestJob('viaje')} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'viaje' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-200'}`}><MapPin className="w-3.5 h-3.5"/> Regiones</button>
+                 <button type="button" onClick={() => setShowRequestJob('revision')} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'revision' ? 'bg-amber-500 text-white shadow-md' : 'text-slate-500 hover:bg-slate-200'}`}><CheckCircle className="w-3.5 h-3.5"/> PRT</button>
               </div>
               
               <div className="space-y-4">
@@ -998,11 +999,7 @@ function LogisticApp() {
                        </div>
                        <div className="space-y-1">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Patente o VIN</label>
-                          <input name="plateOrVin" required placeholder="Ej: ABCD12" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-black uppercase text-slate-800 outline-none focus:border-blue-500"/>
-                       </div>
-                    </>
-                 )}
-
+                          <input name="plateOrVin" required placeholder="Ej: ABCD12" className="w-full border-2 border-slate-200 rounded-x
 
                                        {/* LA MAGIA VISUAL: Datalist con todos los lugares guardados */}
                  <datalist id="directory-places">
@@ -1127,6 +1124,7 @@ export default function App() {
     </Router>
   );
 }
+
 
 
 
