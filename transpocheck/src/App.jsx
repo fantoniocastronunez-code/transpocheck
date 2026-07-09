@@ -887,7 +887,7 @@ function LogisticApp() {
         </div>
       )}
 
-      {/* MODAL: SOLICITAR TRASLADO CON AUTOCOMPLETADO Y WAZE */}
+           {/* MODAL: SOLICITAR TRASLADO CON AUTOCOMPLETADO Y WAZE */}
       {showRequestJob && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
           <form onSubmit={async (e) => {
@@ -905,7 +905,7 @@ function LogisticApp() {
               const isRequestMode = activeRole !== 'admin';
               const finalStatus = isRequestMode ? 'requested' : (autoAssign ? 'accepted' : 'pending');
 
-                            const newJob = {
+              const newJob = {
                   client: fd.get('client'),
                   brand: fd.get('brand') || '',
                   model: fd.get('model') || '',
@@ -952,6 +952,7 @@ function LogisticApp() {
               }
           }} className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl relative animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
               <button type="button" onClick={()=>setShowRequestJob(false)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-700"/></button>
+              
               <div className="flex items-center gap-3 mb-4 border-b border-slate-100 pb-3">
                 <div className="bg-blue-100 p-2.5 rounded-full"><Plus className="w-6 h-6 text-blue-600"/></div>
                 <h3 className="text-xl font-black text-slate-800 leading-tight">Solicitar<br/>Trabajo</h3>
@@ -999,9 +1000,12 @@ function LogisticApp() {
                        </div>
                        <div className="space-y-1">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Patente o VIN</label>
-                          <input name="plateOrVin" required placeholder="Ej: ABCD12" className="w-full border-2 border-slate-200 rounded-x
+                          <input name="plateOrVin" required placeholder="Ej: ABCD12" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-black uppercase text-slate-800 outline-none focus:border-blue-500"/>
+                       </div>
+                    </>
+                 )}
 
-                                       {/* LA MAGIA VISUAL: Datalist con todos los lugares guardados */}
+                 {/* LA MAGIA VISUAL: Datalist con todos los lugares guardados */}
                  <datalist id="directory-places">
                     {directoryList.map((d, i) => <option key={i} value={d.placeName} />)}
                  </datalist>
