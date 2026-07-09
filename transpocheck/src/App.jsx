@@ -47,7 +47,6 @@ function LogisticApp() {
 
   const [adminTab, setAdminTab] = useState('dashboard');
   const [selectedJob, setSelectedJob] = useState(null);
-  const navigate = useNavigate();
   const [editingJob, setEditingJob] = useState(null);
   const [currentView, setCurrentView] = useState('main');
   const [mainTab, setMainTab] = useState('jobs');
