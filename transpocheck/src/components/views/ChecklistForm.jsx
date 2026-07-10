@@ -538,7 +538,25 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
           if (coords) d.location = coords;
         }
         
-        const fd = { scheduledDate: new Date().toISOString().split('T')[0], client: d.client, brand: d.brand, model: d.model, vin: d.plateOrVin, plate: d.plateOrVin, origin: d.origin, destination: d.destination, status: 'completed', completedAt: Date.now(), checklist: d, tripType: job.tripType || 'traslado' };
+        // 🚨 FIX CRÍTICO: Firebase colapsa si detecta campos "undefined" (ej: campos no tocados por el conductor).
+        // JSON.stringify purga mágicamente cualquier valor undefined del objeto para que Firebase guarde la data sin fallar.
+        const cleanD = JSON.parse(JSON.stringify(d));
+        
+        const fd = { 
+          scheduledDate: job.scheduledDate || new Date().toISOString().split('T')[0], 
+          client: cleanD.client || '', 
+          brand: cleanD.brand || '', 
+          model: cleanD.model || '', 
+          vin: cleanD.plateOrVin || '', 
+          plate: cleanD.plateOrVin || '', 
+          origin: cleanD.origin || '', 
+          destination: cleanD.destination || '', 
+          status: 'completed', 
+          completedAt: Date.now(), 
+          checklist: cleanD, 
+          tripType: job.tripType || 'traslado',
+          draft: null // 🧹 Limpiamos el borrador para evitar el "robo" de fotos por la función de auto-guardado
+        };
         
         if (totalToDeduct > 0) {
           const currentDriver = drivers?.find(drv => drv.email === currentUserEmail);
@@ -1568,6 +1586,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     </div>
   );
 }
+
 
 
 
