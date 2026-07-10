@@ -441,6 +441,15 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 };
 
 
+  // MAGIA UX: Interceptor de fotos. Si ya hay foto, la amplía. Si no, abre la cámara.
+  const handlePhotoClick = (id, label) => {
+    if (formData.photos[id]) {
+      setFullScreenImage({ url: formData.photos[id], id, label });
+    } else {
+      openCamera(label, f => handlePic(f, id));
+    }
+  };
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
 
@@ -727,7 +736,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                              }
 
                              return (
-                               <button type="button" key={photoId} onClick={() => openCamera(`${label}`, f => handlePic(f, photoId))} className={`w-full h-32 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white shadow-sm transition-all ${formData.photos[photoId] ? 'border-purple-400 ring-2 ring-purple-100' : 'border-dashed border-purple-300 hover:bg-purple-50'}`}>
+                               <button type="button" key={photoId} onClick={() => handlePhotoClick(photoId, label)} className={`w-full h-32 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white shadow-sm transition-all ${formData.photos[photoId] ? 'border-purple-400 ring-2 ring-purple-100' : 'border-dashed border-purple-300 hover:bg-purple-50'}`}>
                                  {formData.photos[photoId] ? <><img src={formData.photos[photoId]} className="absolute inset-0 w-full h-full object-cover opacity-60"/><CheckCircle className="w-6 h-6 text-purple-600 relative z-10 bg-white rounded-full"/><span className="text-[10px] font-black text-purple-900 relative z-10 bg-white/80 px-2 rounded-md">{label}</span></> : <><Camera className="w-6 h-6 text-purple-400"/><span className="text-[10px] font-black text-purple-600 uppercase tracking-wide text-center leading-tight">{label}</span></>}
                                </button>
                              );
@@ -1118,8 +1127,8 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                     )}
 
 
-                    {(formData.detailPins || []).map(pin => (
-                      <div key={pin.id} className="absolute w-8 h-8 -ml-4 -mt-4 bg-red-500 rounded-full border-2 border-white shadow-xl flex items-center justify-center z-50 animate-in zoom-in" style={{ left: `${pin.x}%`, top: `${pin.y}%` }}>
+                                       {(formData.detailPins || []).map(pin => (
+                      <div key={pin.id} onClick={() => handlePhotoClick(pin.id, 'Detalle del Daño')} className="absolute w-8 h-8 -ml-4 -mt-4 bg-red-500 rounded-full border-2 border-white shadow-xl flex items-center justify-center z-50 animate-in zoom-in cursor-pointer" style={{ left: `${pin.x}%`, top: `${pin.y}%` }}>
                         <img src={formData.photos[pin.id]} className="w-full h-full object-cover rounded-full opacity-90" alt="Detalle" />
                         <button type="button" onClick={(e) => { e.stopPropagation(); setF('photos', {...formData.photos, [pin.id]: false}); setF('detailPins', formData.detailPins.filter(p => p.id !== pin.id)); }} className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] hover:bg-red-700 shadow-md"><X className="w-3 h-3"/></button>
                       </div>
@@ -1127,22 +1136,22 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                   </div>
 
 
-                  <button type="button" onClick={() => openCamera('FRENTE', f => handlePic(f, 'front'))} className={`absolute top-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.front ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
+                  <button type="button" onClick={() => handlePhotoClick('front', 'FRENTE')} className={`absolute top-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.front ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
                     {formData.photos.front ? <><img src={formData.photos.front} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-1"/><span className="text-[9px] font-black text-slate-500 tracking-wide">FRENTE</span></>}
                   </button>
 
 
-                  <button type="button" onClick={() => openCamera('ATRÁS', f => handlePic(f, 'back'))} className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.back ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
+                  <button type="button" onClick={() => handlePhotoClick('back', 'ATRÁS')} className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.back ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
                     {formData.photos.back ? <><img src={formData.photos.back} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-1"/><span className="text-[9px] font-black text-slate-500 tracking-wide">ATRÁS</span></>}
                   </button>
 
 
-                  <button type="button" onClick={() => openCamera('LATERAL PILOTO', f => handlePic(f, 'left'))} className={`absolute top-1/2 left-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.left ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
+                  <button type="button" onClick={() => handlePhotoClick('left', 'LATERAL PILOTO')} className={`absolute top-1/2 left-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.left ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
                     {formData.photos.left ? <><img src={formData.photos.left} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-0.5"/><span className="text-[8px] font-black text-slate-500 text-center leading-tight">LATERAL<br/>PILOTO</span></>}
                   </button>
 
 
-                  <button type="button" onClick={() => openCamera('LATERAL COPILOTO', f => handlePic(f, 'right'))} className={`absolute top-1/2 right-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.right ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
+                  <button type="button" onClick={() => handlePhotoClick('right', 'LATERAL COPILOTO')} className={`absolute top-1/2 right-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.right ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
                     {formData.photos.right ? <><img src={formData.photos.right} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50"/><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full"/></> : <><Camera className="w-5 h-5 text-blue-500 mb-0.5"/><span className="text-[8px] font-black text-slate-500 text-center leading-tight">LATERAL<br/>COPILOTO</span></>}
                   </button>
                 </div>
@@ -1150,7 +1159,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
                 <div className="grid grid-cols-2 gap-3 mt-6 border-t-2 border-slate-100 pt-4">
                   {[{id:'dashboard', l:'Tablero'}, {id:'tire', l:'Repuesto'}, {id:'interior_front', l:'Int. Adelante'}, {id:'interior_back', l:'Int. Atrás'}].map(p => (
-                     <button type="button" key={p.id} onClick={() => openCamera(p.l, f => handlePic(f, p.id))} className={`w-full h-12 rounded-xl border-2 flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white shadow-sm transition-all ${formData.photos[p.id] ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-slate-50'}`}>
+                     <button type="button" key={p.id} onClick={() => handlePhotoClick(p.id, p.l)} className={`w-full h-12 rounded-xl border-2 flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white shadow-sm transition-all ${formData.photos[p.id] ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-slate-50'}`}>
                        {formData.photos[p.id] ? <><img src={formData.photos[p.id]} className="absolute inset-0 w-full h-full object-cover opacity-30"/><CheckCircle className="w-5 h-5 text-green-500 relative z-10 bg-white rounded-full"/><span className="text-[10px] font-black text-green-800 relative z-10">{p.l}</span></> : <><Camera className="w-4 h-4 text-slate-400"/><span className="text-[10px] font-black text-slate-500 uppercase">{p.l}</span></>}
                      </button>
                   ))}
@@ -1491,7 +1500,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                                 src={dejaVuData.checklist.photos[pin.id]} 
                                 className="w-full h-24 object-cover rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:opacity-80 transition-opacity" 
                                 alt="Daño anterior" 
-                                onClick={() => { setShowDejaVuModal(false); setFullScreenImage(dejaVuData.checklist.photos[pin.id]); }}
+                                onClick={() => { setShowDejaVuModal(false); setFullScreenImage({ url: dejaVuData.checklist.photos[pin.id] }); }}
                               />
                             )
                          ))}
@@ -1534,11 +1543,24 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
       )}
 
       {fullScreenImage && (
-        <div className="fixed inset-0 bg-slate-900/95 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm cursor-zoom-out animate-in fade-in duration-200" onClick={() => setFullScreenImage(null)}>
-          <button onClick={() => setFullScreenImage(null)} className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 p-2 rounded-full text-white transition-colors shadow-lg">
+        <div className="fixed inset-0 bg-slate-900/95 z-[9999] flex flex-col items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setFullScreenImage(null)}>
+          <button onClick={() => setFullScreenImage(null)} className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 p-2 rounded-full text-white transition-colors shadow-lg z-10">
             <X className="w-6 h-6" />
           </button>
-          <img src={fullScreenImage} alt="Evidencia Ampliada" className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
+          <img src={fullScreenImage.url || fullScreenImage} alt="Evidencia Ampliada" className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl mb-6" onClick={(e) => e.stopPropagation()} />
+          
+          {fullScreenImage.id && fullScreenImage.label && (
+             <button 
+                onClick={(e) => {
+                   e.stopPropagation();
+                   setFullScreenImage(null);
+                   openCamera(fullScreenImage.label, f => handlePic(f, fullScreenImage.id));
+                }}
+                className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-black text-sm uppercase tracking-widest shadow-[0_0_20px_rgba(37,99,235,0.4)] flex items-center gap-2 active:scale-95 transition-all"
+             >
+                <Camera className="w-5 h-5"/> Tomar Nuevamente
+             </button>
+          )}
         </div>
       )}
 
@@ -1546,6 +1568,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     </div>
   );
 }
+
 
 
 
