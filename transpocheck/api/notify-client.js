@@ -36,19 +36,30 @@ export default async function handler(req, res) {
   const vehiculoDesc = jobDetails.vehicle || 'Vehículo';
   const vehiculoPatente = jobDetails.plate || 'S/N';
 
-  // "llegada_origen" agregado para mayor seguridad según tu flujo de estados
-  if (type === 'asignado' || type === 'llegada_origen') {
-    subject = `El conductor ${conductorName} ha llegado a retirar el vehículo ${vehiculoDesc} ${vehiculoPatente}`;
+  if (type === 'creado') {
+    subject = `Nuevo Requerimiento de Traslado: ${vehiculoDesc} ${vehiculoPatente}`;
+    title = 'Traslado Creado';
+    message = `Hola <strong>${clientName}</strong>.<br><br>Se ha registrado exitosamente un nuevo requerimiento de traslado para su vehículo. A continuación, puede revisar los detalles iniciales de la solicitud:`;
+  } else if (type === 'asignado') {
+    subject = `Conductor Asignado: ${conductorName} para ${vehiculoDesc} ${vehiculoPatente}`;
+    title = 'Conductor Asignado';
+    message = `Hola <strong>${clientName}</strong>.<br><br>El conductor <strong>${conductorName}</strong> ha aceptado la solicitud y ha sido asignado oficialmente a su servicio. Pronto se dirigirá al punto de retiro.`;
+  } else if (type === 'llegada_origen') {
+    subject = `El conductor ${conductorName} ha llegado al origen - ${vehiculoPatente}`;
     title = 'Vehículo en Origen';
-    message = `Hola <strong>${clientName}</strong>.<br><br>Te informamos que el conductor <strong>${conductorName}</strong> se encuentra en el punto de origen para retirar el vehículo y comenzar el servicio programado. A continuación, puedes revisar los detalles de la unidad:`;
+    message = `Hola <strong>${clientName}</strong>.<br><br>Te informamos que el conductor <strong>${conductorName}</strong> ha llegado a las instalaciones acordadas y se encuentra gestionando el retiro del vehículo.`;
   } else if (type === 'en_ruta') {
-    subject = `El conductor ${conductorName} va en camino con el vehículo ${vehiculoDesc} ${vehiculoPatente}`;
+    subject = `El conductor ${conductorName} está en ruta con el vehículo ${vehiculoPatente}`;
     title = 'Vehículo en Ruta';
-    message = `Hola <strong>${clientName}</strong>.<br><br>Te informamos que el conductor <strong>${conductorName}</strong> ya ha retirado el vehículo y actualmente se encuentra en ruta hacia su destino. A continuación, puedes revisar los detalles y hacer seguimiento:`;
+    message = `Hola <strong>${clientName}</strong>.<br><br>El conductor <strong>${conductorName}</strong> ha retirado el vehículo de manera exitosa y actualmente se encuentra en ruta hacia el destino.`;
+  } else if (type === 'llegada_destino') {
+    subject = `El conductor ${conductorName} ha llegado al destino - ${vehiculoPatente}`;
+    title = 'Llegada a Destino';
+    message = `Hola <strong>${clientName}</strong>.<br><br>Te informamos que el conductor <strong>${conductorName}</strong> ha llegado al destino y se encuentra a la espera para realizar la entrega oficial del vehículo.`;
   } else if (type === 'finalizado') {
-    subject = `El conductor ${conductorName} ha entregado el vehículo ${vehiculoDesc} ${vehiculoPatente}`;
+    subject = `Traslado Finalizado con Éxito - Acta de Recepción ${vehiculoPatente}`;
     title = 'Traslado Finalizado';
-    message = `Hola <strong>${clientName}</strong>.<br><br>El traslado ha concluido exitosamente. El conductor <strong>${conductorName}</strong> ha entregado el vehículo en su destino. Ya puedes revisar los detalles y descargar el Acta de Recepción (PDF) oficial.`;
+    message = `Hola <strong>${clientName}</strong>.<br><br>El conductor <strong>${conductorName}</strong> ha concluido el traslado con éxito. En la parte inferior de este correo, puede hacer seguimiento, revisar detalles o descargar el Acta de Recepción (PDF) oficial.`;
   } else {
     // Escudo de seguridad (Fallback): Si Firebase envía un estado desconocido, el asunto jamás volverá a estar vacío.
     subject = `Actualización de traslado: ${vehiculoDesc} ${vehiculoPatente}`;
