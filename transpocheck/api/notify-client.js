@@ -26,23 +26,34 @@ export default async function handler(req, res) {
     },
   });
 
-  // Textos dinámicos según el estado
+  // Textos dinámicos según el estado y requerimientos del cliente
   let title = '';
   let subject = '';
   let message = '';
+  
+  // Extraemos variables clave para no repetir código
+  const conductorName = jobDetails.driverName || 'asignado';
+  const vehiculoDesc = jobDetails.vehicle || 'Vehículo';
+  const vehiculoPatente = jobDetails.plate || 'S/N';
 
-  if (type === 'asignado') {
-    subject = `🚗 Traslado Agendado - Logística TS`;
-    title = 'Traslado Agendado';
-    message = `Hola <strong>${clientName}</strong>.<br><br>Hemos programado tu servicio. El conductor <strong>${jobDetails.driverName || 'asignado'}</strong> está en camino o próximo a dirigirse al punto de origen para iniciar el traslado.`;
+  // "llegada_origen" agregado para mayor seguridad según tu flujo de estados
+  if (type === 'asignado' || type === 'llegada_origen') {
+    subject = `El conductor ${conductorName} ha llegado a retirar el vehículo ${vehiculoDesc} ${vehiculoPatente}`;
+    title = 'Vehículo en Origen';
+    message = `Hola <strong>${clientName}</strong>.<br><br>Te informamos que el conductor <strong>${conductorName}</strong> se encuentra en el punto de origen para retirar el vehículo y comenzar el servicio programado. A continuación, puedes revisar los detalles de la unidad:`;
   } else if (type === 'en_ruta') {
-    subject = `📍 Vehículo en Ruta - Logística TS`;
+    subject = `El conductor ${conductorName} va en camino con el vehículo ${vehiculoDesc} ${vehiculoPatente}`;
     title = 'Vehículo en Ruta';
-    message = `Hola <strong>${clientName}</strong>.<br><br>¡El conductor <strong>${jobDetails.driverName}</strong> ya ha retirado el vehículo y se encuentra en ruta hacia su destino!`;
+    message = `Hola <strong>${clientName}</strong>.<br><br>Te informamos que el conductor <strong>${conductorName}</strong> ya ha retirado el vehículo y actualmente se encuentra en ruta hacia su destino. A continuación, puedes revisar los detalles y hacer seguimiento:`;
   } else if (type === 'finalizado') {
-    subject = `✅ Traslado Finalizado - Logística TS`;
+    subject = `El conductor ${conductorName} ha entregado el vehículo ${vehiculoDesc} ${vehiculoPatente}`;
     title = 'Traslado Finalizado';
-    message = `Hola <strong>${clientName}</strong>.<br><br>El traslado de tu vehículo ha concluido exitosamente en su destino. Ya puedes revisar los detalles y descargar el Acta de Recepción (PDF).`;
+    message = `Hola <strong>${clientName}</strong>.<br><br>El traslado ha concluido exitosamente. El conductor <strong>${conductorName}</strong> ha entregado el vehículo en su destino. Ya puedes revisar los detalles y descargar el Acta de Recepción (PDF) oficial.`;
+  } else {
+    // Escudo de seguridad (Fallback): Si Firebase envía un estado desconocido, el asunto jamás volverá a estar vacío.
+    subject = `Actualización de traslado: ${vehiculoDesc} ${vehiculoPatente}`;
+    title = 'Actualización de Servicio';
+    message = `Hola <strong>${clientName}</strong>.<br><br>Se ha registrado una actualización en el servicio realizado por el conductor <strong>${conductorName}</strong>. A continuación, los detalles del vehículo:`;
   }
 
   const htmlTemplate = `
@@ -60,7 +71,8 @@ export default async function handler(req, res) {
       </div>
       
       <div style="padding: 40px 30px; background-color: #ffffff;">
-        <h2 style="color: #0f172a; margin-top: 0; font-size: 22px; font-weight: 700; border-left: 4px solid #2563eb; padding-left: 15px;">${title}</h2>
+        <h2 style="color: #0f172a; margin-top: 0; font-size: 22px; font-weight: 700; border-left: 4px solid #2563eb; padding-left: 15px; margin-bottom: 20px;">${title}</h2>
+        
         <p style="font-size: 16px; color: #475569; line-height: 1.6; margin-bottom: 25px;">${message}</p>
         
         <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; margin: 30px 0;">
@@ -96,7 +108,7 @@ export default async function handler(req, res) {
       </div>
       
       <div style="background-color: #f1f5f9; border-top: 1px solid #e2e8f0; padding: 20px; text-align: center;">
-        <img src="${baseUrl}/LogoLogistica.png" alt="Logistica TS" style="width: auto; height: 35px; margin-bottom: 10px; opacity: 0.8;" />
+        <img src="${baseUrl}/LogoLogistica.png" alt="Logistica TS" width="140" style="display: block; margin: 0 auto 10px auto; opacity: 0.8; max-width: 100%; height: auto;" />
         <p style="margin: 0; color: #64748b; font-size: 12px; line-height: 1.5;">
           Este es un mensaje automático generado de forma segura.<br>
           <strong>Logística TS SpA</strong>
