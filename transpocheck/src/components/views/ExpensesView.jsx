@@ -144,6 +144,54 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
      });
   };
 
+  const exportAndClearExpenses = async () => {
+     if (expenses.length === 0) return showAlert("No hay movimientos para exportar.");
+     showConfirm("⚠️ ATENCIÓN: Esto descargará el historial en Excel (CSV) y luego BORRARÁ todos los registros de gastos, dejando los saldos en $0. ¿Estás completamente seguro?", async () => {
+        try {
+           setIsSubmitting(true);
+           
+           // 1. Construir el CSV con BOM para que Excel lea las tildes (UTF-8)
+           let csvContent = "Conductor,Email,Tipo de Movimiento,Monto,Detalle,Fecha\n";
+           
+           expenses.forEach(exp => {
+              const d = new Date(exp.createdAt);
+              const dateStr = isNaN(d.getTime()) ? 'Fecha inválida' : d.toLocaleString();
+              const typeStr = exp.type === 'assignment' ? 'Fondo Asignado' : (exp.type === 'expense' ? 'Gasto' : (exp.type === 'return' ? 'Rendición Aprobada' : 'Rendición Pendiente'));
+              const safeDetail = `"${(exp.detail || '').replace(/"/g, '""')}"`;
+              csvContent += `"${exp.driverName || 'Desconocido'}","${exp.driverEmail || ''}","${typeStr}",${exp.amount},${safeDetail},"${dateStr}"\n`;
+           });
+
+           // 2. Descargar el archivo
+           const blob = new Blob(["\uFEFF", csvContent], { type: 'text/csv;charset=utf-8;' });
+           const link = document.createElement("a");
+           link.href = URL.createObjectURL(blob);
+           link.download = `Historial_Viaticos_${new Date().toLocaleDateString().replace(/\//g,'-')}.csv`;
+           document.body.appendChild(link);
+           link.click();
+           document.body.removeChild(link);
+
+           // 3. Limpiar Base de Datos (Eliminar gastos masivamente)
+           for (const exp of expenses) {
+              await deleteDoc(doc(db, 'expenses', exp.id));
+           }
+
+           // 4. Reiniciar todos los saldos de conductores a $0
+           for (const d of drivers) {
+              if (d.balance && d.balance !== 0) {
+                 await updateDoc(doc(db, 'drivers', d.id), { balance: 0 });
+              }
+           }
+
+           showAlert("✅ Historial exportado y sistema limpiado correctamente.");
+        } catch(error) {
+           console.error(error);
+           showAlert("Error al exportar y limpiar el sistema.");
+        } finally {
+           setIsSubmitting(false);
+        }
+     });
+  };
+
   const TransactionIcon = ({ type }) => {
     if (type === 'assignment') return <ArrowUpCircle className="w-5 h-5 text-green-500 shrink-0"/>;
     if (type === 'pending_return') return <Clock className="w-5 h-5 text-amber-500 shrink-0"/>;
@@ -225,7 +273,17 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
         {editingExpense && <EditExpenseModal expense={editingExpense} onClose={() => setEditingExpense(null)} />}
         {viewingReceipt && <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[150] p-4"><div className="bg-white rounded-3xl p-4 w-full max-w-md relative"><button onClick={() => setViewingReceipt(null)} className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"><X className="w-5 h-5 text-slate-700"/></button><h3 className="font-extrabold text-slate-800 mb-4 ml-2">Comprobante</h3><img src={viewingReceipt} alt="Comprobante" className="w-full h-auto max-h-[70vh] object-contain rounded-xl shadow-sm" /></div></div>}
 
-       <h2 className="text-2xl font-extrabold mb-6 flex items-center gap-2"><Wallet className="text-blue-600"/> Control Viáticos</h2>
+       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+         <h2 className="text-2xl font-extrabold flex items-center gap-2"><Wallet className="text-blue-600"/> Control Viáticos</h2>
+         <button 
+            type="button" 
+            onClick={exportAndClearExpenses} 
+            disabled={isSubmitting || expenses.length === 0}
+            className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-colors shadow-sm disabled:opacity-50"
+         >
+            <Trash2 className="w-4 h-4" /> Cierre de Ciclo
+         </button>
+       </div>
         
         <div className="space-y-4 mb-8">
           <h3 className="text-sm font-extrabold text-slate-500 uppercase tracking-widest ml-2 mb-4">Directorio de Conductores</h3>
