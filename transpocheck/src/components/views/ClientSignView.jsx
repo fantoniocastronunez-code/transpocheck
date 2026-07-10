@@ -199,7 +199,31 @@ export default function ClientSignView({ jobId, db }) {
         const cleanPlate = job.plate || job.vin || 'SN';
         const dateStrForFile = (job.scheduledDate || new Date().toISOString().split('T')[0]).replace(/\//g, '-');
         const fileName = `Certificado.${dateStrForFile}.${(job.client || 'Cliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`; 
-        docPDF.save(fileName); 
+        
+        // MAGIA ANTI-BLOQUEO (Navegadores internos, WhatsApp, Safari, iOS)
+        const isWebView = /WhatsApp|Instagram|FBAN|wv/i.test(navigator.userAgent);
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+        if (isWebView || isIOS) {
+          // Generamos el archivo físico en la memoria temporal del celular
+          const pdfBlob = docPDF.output('blob');
+          
+          if (navigator.share) {
+            // Intenta abrir el menú nativo de "Compartir" o "Guardar en Archivos" del sistema operativo
+            const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+            navigator.share({ files: [file] }).catch(() => {
+              // Si el cliente cancela o falla, forzamos abrir el PDF en la pantalla
+              window.location.href = URL.createObjectURL(pdfBlob);
+            });
+          } else {
+            // Si el celular es antiguo y no tiene menú nativo, lo abrimos a la fuerza
+            window.location.href = URL.createObjectURL(pdfBlob);
+          }
+        } else {
+          // Descarga directa tradicional para Android (Chrome nativo) y Computadoras
+          docPDF.save(fileName); 
+        }
+
         setIsDownloading(false);
       } catch (error) {
         console.error("Error crítico generando PDF en Portal:", error);

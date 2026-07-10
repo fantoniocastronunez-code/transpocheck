@@ -46,49 +46,61 @@ export default async function handler(req, res) {
   }
 
   const htmlTemplate = `
-    <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; border: 1px solid #171717; border-radius: 12px; overflow: hidden; background-color: #f8fafc;">
+    <div style="font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Helvetica, Arial, sans-serif; max-w: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);">
       
-      <div style="background-color: #000000; padding: 15px 20px;">
+      <div style="background: #0f172a; padding: 30px 20px; text-align: center;">
         <table width="100%" border="0" cellspacing="0" cellpadding="0">
           <tr>
-            <td align="left" width="25%" valign="middle">
-              <div style="background-color: rgba(255,255,255,0.2); padding: 4px; border-radius: 12px; display: inline-block;">
-                <img src="${baseUrl}/logo.png" alt="App Logo" style="width: 45px; height: 45px; display: block;" />
-              </div>
-            </td>
-            <td align="center" width="50%" valign="middle">
-              <h1 style="margin: 0; color: #ffffff; font-family: 'Impact', 'Arial Black', sans-serif; font-size: 26px; letter-spacing: 1px;">LogisticAPP</h1>
-            </td>
-            <td align="right" width="25%" valign="middle">
-              <div style="background-color: rgba(255,255,255,0.2); padding: 4px; border-radius: 12px; display: inline-block;">
-                <img src="${baseUrl}/LogoLogistica.png" alt="Logistica TS" style="width: 45px; height: 45px; display: block;" />
-              </div>
+            <td align="center" valign="middle">
+              <img src="${baseUrl}/logo.png" alt="App Logo" style="width: 50px; height: 50px; display: inline-block; vertical-align: middle; margin-right: 15px; border-radius: 12px; background-color: rgba(255,255,255,0.1); padding: 5px;" />
+              <h1 style="display: inline-block; vertical-align: middle; margin: 0; color: #ffffff; font-family: 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 34px; font-weight: 800; letter-spacing: 0.5px;">LogisticAPP</h1>
             </td>
           </tr>
         </table>
       </div>
       
-      <div style="padding: 30px;">
-        <h2 style="color: #2563eb; margin-top: 0; text-align: center;">${title}</h2>
-        <p style="font-size: 16px; color: #334155; line-height: 1.5;">${message}</p>
+      <div style="padding: 40px 30px; background-color: #ffffff;">
+        <h2 style="color: #0f172a; margin-top: 0; font-size: 22px; font-weight: 700; border-left: 4px solid #2563eb; padding-left: 15px;">${title}</h2>
+        <p style="font-size: 16px; color: #475569; line-height: 1.6; margin-bottom: 25px;">${message}</p>
         
-        <div style="background-color: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px; margin: 25px 0;">
-          <h3 style="margin-top: 0; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">Detalles del Vehículo</h3>
-          <p style="margin: 10px 0; color: #475569;"><strong>Vehículo:</strong> ${jobDetails.vehicle}</p>
-          <p style="margin: 10px 0; color: #475569;"><strong>Patente/VIN:</strong> ${jobDetails.plate}</p>
-          <p style="margin: 10px 0; color: #475569;"><strong>Origen:</strong> ${jobDetails.origin}</p>
-          ${jobDetails.destination ? `<p style="margin: 10px 0; color: #475569;"><strong>Destino:</strong> ${jobDetails.destination}</p>` : ''}
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; margin: 30px 0;">
+          <h3 style="margin-top: 0; color: #1e293b; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 20px;">Detalles del Servicio</h3>
+          
+          <table width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 15px; color: #334155; line-height: 1.8;">
+            <tr>
+              <td width="35%" style="font-weight: 600; color: #64748b; padding-bottom: 8px;">Vehículo:</td>
+              <td width="65%" style="font-weight: 700; color: #0f172a; padding-bottom: 8px;">${jobDetails.vehicle}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: 600; color: #64748b; padding-bottom: 8px;">Patente/VIN:</td>
+              <td style="font-weight: 700; color: #0f172a; padding-bottom: 8px;">${jobDetails.plate}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: 600; color: #64748b; padding-bottom: 8px;">Origen:</td>
+              <td style="font-weight: 700; color: #0f172a; padding-bottom: 8px;">${jobDetails.origin}</td>
+            </tr>
+            ${jobDetails.destination ? `
+            <tr>
+              <td style="font-weight: 600; color: #64748b; padding-bottom: 8px;">Destino:</td>
+              <td style="font-weight: 700; color: #0f172a; padding-bottom: 8px;">${jobDetails.destination}</td>
+            </tr>
+            ` : ''}
+          </table>
         </div>
         
-        <div style="text-align: center; margin-top: 30px;">
-          <a href="${trackingLink}" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">
+        <div style="text-align: center; margin-top: 40px; margin-bottom: 10px;">
+          <a href="${trackingLink}" style="background-color: #2563eb; color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; display: inline-block; transition: background-color 0.3s; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);">
             ${type === 'finalizado' ? 'Ver Detalles y Descargar PDF' : 'Rastrear Estado en Vivo'}
           </a>
         </div>
       </div>
       
-      <div style="background-color: #1e293b; color: #94a3b8; padding: 15px; text-align: center; font-size: 12px;">
-        Este es un mensaje automático generado por Logística TS SpA.
+      <div style="background-color: #f1f5f9; border-top: 1px solid #e2e8f0; padding: 20px; text-align: center;">
+        <img src="${baseUrl}/LogoLogistica.png" alt="Logistica TS" style="width: auto; height: 35px; margin-bottom: 10px; opacity: 0.8;" />
+        <p style="margin: 0; color: #64748b; font-size: 12px; line-height: 1.5;">
+          Este es un mensaje automático generado de forma segura.<br>
+          <strong>Logística TS SpA</strong>
+        </p>
       </div>
     </div>
   `;
