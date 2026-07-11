@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate, useSearchParams } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useSearchParams, Navigate } from 'react-router-dom';
 import { signOut, signInWithPopup } from 'firebase/auth';
 import { doc, updateDoc, setDoc, deleteField, onSnapshot, collection, getDocs } from 'firebase/firestore';
 
@@ -869,12 +869,8 @@ function LogisticApp() {
               />
             </main>
           ) : (
-            <div className="flex flex-col items-center justify-center pt-40">
-               <div className="w-10 h-10 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
-               <p className="mt-4 text-xs font-bold text-slate-500 uppercase tracking-widest animate-pulse">Cargando...</p>
-               {/* Redirección automática si la memoria se borró al recargar */}
-               {setTimeout(() => window.location.replace('/'), 100) && null}
-            </div>
+             /* MAGIA REACT: Te redirige al inicio SOLO si entras directo a esta URL sin datos */
+             <Navigate to="/" replace />
           )
         } />
       </Routes>
