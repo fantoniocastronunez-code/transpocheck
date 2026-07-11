@@ -877,12 +877,15 @@ function LogisticApp() {
                                    const base64 = reader.result;
                                    const ext = f.type.includes('pdf') ? 'pdf' : 'jpg';
                                    
+
                                    // Subida dinámica que respeta el formato original (PDF o Imagen)
                                    const { getStorage, ref, uploadString, getDownloadURL } = await import('firebase/storage');
                                    const storage = getStorage();
                                    const fileRef = ref(storage, `inbox/${currentUserEmail}/doc_bandeja_${Date.now()}.${ext}`);
                                    
-                                   await uploadString(fileRef, base64, 'data_url');
+                                   // MAGIA: Declaramos explícitamente el contentType para evitar el bloqueo del navegador
+                                   const metadata = { contentType: f.type };
+                                   await uploadString(fileRef, base64, 'data_url', metadata);
                                    const url = await getDownloadURL(fileRef);
 
                                    const { addDoc, collection } = await import('firebase/firestore');
