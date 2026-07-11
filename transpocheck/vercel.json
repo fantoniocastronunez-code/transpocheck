@@ -8,5 +8,15 @@
       "path": "/api/cron-clean-db",
       "schedule": "0 5 3 * *"
     }
+  ],
+  "rewrites": [
+    { 
+      "source": "/api/(.*)", 
+      "destination": "/api/$1" 
+    },
+    { 
+      "source": "/(.*)", 
+      "destination": "/index.html" 
+    }
   ]
 }
