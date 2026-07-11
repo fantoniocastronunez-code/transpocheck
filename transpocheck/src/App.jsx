@@ -873,22 +873,42 @@ function LogisticApp() {
                          try {
                              const reader = new FileReader();
                              reader.onload = async () => {
-                                const base64 = reader.result;
-                                const ext = f.type.includes('pdf') ? 'pdf' : 'jpg';
-                                const url = await uploadImageToStorage(base64, `inbox/${currentUserEmail}`, `doc_bandeja_${Date.now()}.${ext}`);
-                                const { addDoc, collection } = await import('firebase/firestore');
-                                await addDoc(collection(db, 'inbox'), {
-                                    userEmail: currentUserEmail,
-                                    fileName: f.name || 'Documento Escaneado',
-                                    fileType: f.type,
-                                    url: url,
-                                    createdAt: Date.now()
-                                });
-                                showAlert("✅ Documento guardado en tu bandeja.");
+                                try {
+                                   const base64 = reader.result;
+                                   const ext = f.type.includes('pdf') ? 'pdf' : 'jpg';
+                                   
+
+                                   // Subida dinámica que respeta el formato original (PDF o Imagen)
+                                   const { getStorage, ref, uploadString, getDownloadURL } = await import('firebase/storage');
+                                   const storage = getStorage();
+                                   const fileRef = ref(storage, `inbox/${currentUserEmail}/doc_bandeja_${Date.now()}.${ext}`);
+                                   
+                                   // MAGIA: Declaramos explícitamente el contentType para evitar el bloqueo del navegador
+                                   const metadata = { contentType: f.type };
+                                   await uploadString(fileRef, base64, 'data_url', metadata);
+                                   const url = await getDownloadURL(fileRef);
+
+                                   const { addDoc, collection } = await import('firebase/firestore');
+                                   await addDoc(collection(db, 'inbox'), {
+                                       userEmail: currentUserEmail,
+                                       fileName: f.name || 'Documento Escaneado',
+                                       fileType: f.type,
+                                       url: url,
+                                       createdAt: Date.now()
+                                   });
+                                   
+                                   e.target.value = ''; // Limpiamos la memoria del botón
+                                   showAlert("✅ ¡Subida exitosa! Presiona Confirmar para cerrar este aviso.");
+                                } catch (uploadError) {
+                                   console.error("Error al subir:", uploadError);
+                                   e.target.value = '';
+                                   showAlert("❌ Error al subir el archivo.");
+                                }
                              };
                              reader.readAsDataURL(f);
                          } catch(err) {
-                             showAlert("❌ Error al subir el documento.");
+                             e.target.value = '';
+                             showAlert("❌ Error al leer el documento.");
                          }
                      }}/>
                      <div className="bg-indigo-100 p-3 rounded-full mb-1"><Plus className="w-6 h-6 text-indigo-600"/></div>
@@ -917,7 +937,10 @@ function LogisticApp() {
                                  }} className="p-2.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors"><Trash2 className="w-4 h-4"/></button>
                               </div>
                               <div className="flex gap-2 bg-slate-50 p-2 rounded-xl border border-slate-100">
-                                 <a href={docItem.url} target="_blank" rel="noreferrer" className="flex-1 bg-white border border-slate-200 text-slate-600 py-2.5 rounded-lg text-xs font-black flex items-center justify-center gap-1.5 shadow-sm hover:bg-slate-50"><Eye className="w-4 h-4"/> VER</a>
+
+                                 <a href={docItem.url} target="_blank" rel="noopener noreferrer" className="flex-1 bg-white border border-slate-200 text-slate-600 py-2.5 rounded-lg text-xs font-black flex items-center justify-center gap-1.5 shadow-sm hover:bg-slate-50">
+                                     <Eye className="w-4 h-4"/> VER
+                                 </a>
                                  
                                  <select onChange={async (e) => {
                                      const jobId = e.target.value;
@@ -1270,6 +1293,7 @@ export default function App() {
     </Router>
   );
 }
+
 
 
 
