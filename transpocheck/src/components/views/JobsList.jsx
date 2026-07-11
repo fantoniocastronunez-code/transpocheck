@@ -1148,12 +1148,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
           {/* Fila de Patente Agrandada al Máximo en el Centro de la caja */}
           {ident !== 'S/N' && (
-            <div className="flex flex-col items-center border-t border-slate-200/60 pt-2 mt-0.5 gap-0.5">
-              <span className="text-sm sm:text-base font-black tracking-widest text-slate-900 bg-slate-200/80 px-4 py-1 rounded-lg border border-slate-300 uppercase shadow-sm">
+            <div className="flex flex-col items-center border-t border-slate-200/60 pt-2 mt-2 gap-1 pb-1">
+              <span className="text-lg sm:text-xl font-black tracking-widest text-slate-900 bg-slate-200/80 px-6 py-2 rounded-xl border-2 border-slate-300 uppercase shadow-sm">
                 {ident}
               </span>
               {j.vin && ident !== j.vin && (
-                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">VIN: {j.vin}</span>
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">VIN: {j.vin}</span>
               )}
             </div>
           )}
