@@ -628,20 +628,23 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                     let driverName = d.assignedDriverName || currentUserEmail;
                     if (drivers) { const drv = drivers.find(x => x.email === currentUserEmail); if (drv) driverName = drv.name; }
 
+                    const emailType = job.tripType === 'revision' ? 'revision_tecnica' : 'finalizado';
+
                     fetch('/api/notify-client', { 
                        method: 'POST', 
                        headers: { 'Content-Type': 'application/json' }, 
                        body: JSON.stringify({ 
                           email: clientRecord.email, 
                           clientName: clientRecord.name, 
-                          type: 'finalizado', 
+                          type: emailType, 
                           jobDetails: { 
                              id: job.id === 'NEW_QUICK_JOB' ? 'N/A' : job.id, 
                              driverName: driverName, 
                              vehicle: job.tripType === 'simple' ? (job.description || 'Servicio en Terreno') : (`${fd.brand || ''} ${fd.model || ''}`.trim() || 'Vehículo'), 
                              plate: fd.plate || fd.vin || job.associatedPlate || 'S/N', 
                              origin: fd.origin || 'Origen', 
-                             destination: fd.destination || 'Destino' 
+                             destination: fd.destination || 'Destino',
+                             checklist: cleanD // <-- ¡CRÍTICO! Esto le pasa el documento PDF al Backend
                           }
                        }) 
                     });

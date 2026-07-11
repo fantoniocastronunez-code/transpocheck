@@ -60,8 +60,12 @@ export default async function handler(req, res) {
     subject = `Traslado Finalizado con Éxito - Acta de Recepción ${vehiculoPatente}`;
     title = 'Traslado Finalizado';
     message = `Hola <strong>${clientName}</strong>.<br><br>El conductor <strong>${conductorName}</strong> ha concluido el traslado con éxito. En la parte inferior de este correo, puede hacer seguimiento, revisar detalles o descargar el Acta de Recepción (PDF) oficial.`;
+  } else if (type === 'revision_tecnica') {
+    subject = `Documento de Revisión Técnica Listo - ${vehiculoPatente}`;
+    title = 'Documento PRT Disponible';
+    message = `Hola <strong>${clientName}</strong>.<br><br>El conductor <strong>${conductorName}</strong> ha finalizado la gestión de su revisión técnica. Tu documento de revisión técnica está listo para descarga en la parte inferior de este correo.`;
   } else {
-    // Escudo de seguridad (Fallback): Si Firebase envía un estado desconocido, el asunto jamás volverá a estar vacío.
+    // Escudo de seguridad (Fallback)
     subject = `Actualización de traslado: ${vehiculoDesc} ${vehiculoPatente}`;
     title = 'Actualización de Servicio';
     message = `Hola <strong>${clientName}</strong>.<br><br>Se ha registrado una actualización en el servicio realizado por el conductor <strong>${conductorName}</strong>. A continuación, los detalles del vehículo:`;

@@ -953,7 +953,32 @@ function LogisticApp() {
                                         
                                         await updateDoc(doc(db, 'transport_jobs', jobId), { checklist: newChecklist });
                                         await deleteDoc(doc(db, 'inbox', docItem.id));
-                                        showAlert("✅ Documento asignado exitosamente.");
+
+                                        // GATILLADOR: Envío de correo automático para Revisión Técnica desde la Bandeja
+                                        const clientRecord = customClients.find(c => c.name === jobToUpdate?.client);
+                                        const targetEmail = clientRecord?.email?.split(',')[0]?.trim();
+                                        if (targetEmail) {
+                                           fetch('/api/notify-client', {
+                                              method: 'POST',
+                                              headers: { 'Content-Type': 'application/json' },
+                                              body: JSON.stringify({
+                                                 email: targetEmail,
+                                                 clientName: jobToUpdate?.client || 'Cliente',
+                                                 type: 'revision_tecnica',
+                                                 jobDetails: {
+                                                    id: jobId,
+                                                    vehicle: `${jobToUpdate?.brand || ''} ${jobToUpdate?.model || ''}`.trim() || 'Vehículo',
+                                                    plate: jobToUpdate?.plate || jobToUpdate?.vin || 'S/N',
+                                                    origin: jobToUpdate?.origin || 'Origen',
+                                                    destination: jobToUpdate?.destination || '',
+                                                    driverName: drivers.find(d => d.email === currentUserEmail)?.name || 'Conductor',
+                                                    checklist: newChecklist
+                                                 }
+                                              })
+                                           }).catch(err => console.error("Error enviando correo PRT desde bandeja:", err));
+                                        }
+
+                                        showAlert("✅ Documento asignado y cliente notificado por correo.");
                                      } catch(err) {
                                         showAlert("❌ Error al asignar el documento.");
                                      }
