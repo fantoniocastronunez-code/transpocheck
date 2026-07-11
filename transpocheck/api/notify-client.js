@@ -111,10 +111,26 @@ export default async function handler(req, res) {
           </table>
         </div>
         
-        <div style="text-align: center; margin-top: 40px; margin-bottom: 10px;">
-          <a href="${trackingLink}" style="background-color: #2563eb; color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; display: inline-block; transition: background-color 0.3s; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);">
+        <div style="text-align: center; margin-top: 40px; margin-bottom: 10px; gap: 15px;">
+          <a href="${trackingLink}" style="background-color: #2563eb; color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; display: inline-block; transition: background-color 0.3s; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2); margin-bottom: 10px;">
             ${type === 'finalizado' ? 'Ver Detalles y Descargar PDF' : 'Rastrear Estado en Vivo'}
           </a>
+          
+          ${(() => {
+            if (type === 'finalizado' && jobDetails?.checklist) {
+               const chk = jobDetails.checklist;
+               const targetUrl = chk.scandocPdf || chk.scandocPdfInbox || chk.scannerLink;
+               if (targetUrl) {
+                  return `
+                    <br>
+                    <a href="${targetUrl}" target="_blank" style="background-color: #4f46e5; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; display: inline-block; transition: background-color 0.3s; box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2); margin-top: 5px;">
+                       📄 Ver Documentación PRT
+                    </a>
+                  `;
+               }
+            }
+            return '';
+          })()}
         </div>
       </div>
       

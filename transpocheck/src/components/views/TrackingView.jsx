@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, updateDoc, doc } from 'firebase/firestore';
-import { CheckCircle, Clock, FileDown, Navigation, MapPin, X, Search, LogOut, Sun, Moon } from 'lucide-react';
+import { CheckCircle, Clock, FileDown, Navigation, MapPin, X, Search, LogOut, Sun, Moon, FileText } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import WaitTimerBadge from '../ui/WaitTimerBadge';
 import SignaturePad from '../ui/SignaturePad';
@@ -459,9 +459,17 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                     </p>
                     <p className="text-slate-400 text-[9px] font-bold mt-0.5">{new Date(job.completedAt || job.createdAt).toLocaleDateString('es-CL')}</p>
                   </div>
-                  <button onClick={() => handleDownloadPDF(job)} disabled={downloadingId === job.id} className="flex items-center justify-center p-2.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors border border-blue-100 disabled:opacity-50" title="Descargar PDF">
-                    {downloadingId === job.id ? <Clock className="w-4 h-4 animate-spin"/> : <FileDown className="w-4 h-4"/>}
-                  </button>
+                  <div className="flex gap-2 items-center">
+                    {job.checklist && (job.checklist.scandocPdf || job.checklist.scandocPdfInbox || job.checklist.scannerLink) && (
+                      <a href={job.checklist.scandocPdf || job.checklist.scandocPdfInbox || job.checklist.scannerLink} target="_blank" rel="noreferrer" className="flex items-center justify-center p-2.5 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors border border-indigo-100 relative" title="Ver Documentación PRT">
+                        <span className="absolute -top-1.5 -right-1.5 bg-indigo-600 text-white text-[7px] font-black px-1 py-0.5 rounded shadow-sm">PRT</span>
+                        <FileText className="w-4 h-4"/>
+                      </a>
+                    )}
+                    <button onClick={() => handleDownloadPDF(job)} disabled={downloadingId === job.id} className="flex items-center justify-center p-2.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors border border-blue-100 disabled:opacity-50" title="Descargar PDF">
+                      {downloadingId === job.id ? <Clock className="w-4 h-4 animate-spin"/> : <FileDown className="w-4 h-4"/>}
+                    </button>
+                  </div>
                 </div>
               </div>
             )})}

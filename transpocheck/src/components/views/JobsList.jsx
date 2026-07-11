@@ -4,7 +4,7 @@ import { updateDoc, doc, deleteDoc, addDoc, collection, deleteField, getDocs, qu
 import { 
   Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, 
   Copy, X, XCircle, MapPin, Clock, FileDown, Search, ChevronUp, ChevronDown,
-  Trash2, Car, Repeat, PenTool, Truck, Plus
+  Trash2, Car, Repeat, PenTool, Truck, Plus, FileText
 } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import WaitTimerBadge from '../ui/WaitTimerBadge';
@@ -1164,6 +1164,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           {isAdminView && <button onClick={()=>onEditJob(j)} className="flex-1 py-1.5 flex justify-center bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg transition-colors" title="Editar Traslado"><Edit2 className="w-3.5 h-3.5"/></button>}
           {isAdminView && <button onClick={()=>handleDuplicateJob(j)} className="flex-1 py-1.5 flex justify-center bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg transition-colors" title="Repetir Vehículo"><Repeat className="w-3.5 h-3.5"/></button>}
           <button onClick={()=>cpyWapp(j)} className="flex-1 py-1.5 flex justify-center bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors" title="Copiar Resumen"><Copy className="w-3.5 h-3.5"/></button>
+          {j.checklist && (j.checklist.scandocPdf || j.checklist.scandocPdfInbox || j.checklist.scannerLink) && (
+            <a href={j.checklist.scandocPdf || j.checklist.scandocPdfInbox || j.checklist.scannerLink} target="_blank" rel="noreferrer" className="flex-1 py-1.5 flex justify-center items-center bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-colors relative" title="Ver Documentación PRT">
+               <span className="absolute -top-1.5 -right-1.5 bg-indigo-600 text-white text-[7px] font-black px-1 py-0.5 rounded shadow-sm">PRT</span>
+               <FileText className="w-3.5 h-3.5"/>
+            </a>
+          )}
           <button onClick={() => generatePDF(j)} disabled={processingId === `${j.id}-pdf`} className="flex-1 py-1.5 flex justify-center bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50" title="Descargar PDF">{processingId === `${j.id}-pdf` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : <FileDown className="w-3.5 h-3.5"/>}</button>
           <button onClick={() => handleShareWhatsAppPDF(j)} disabled={processingId === `${j.id}-wapp`} className="flex-1 py-1.5 flex justify-center items-center bg-green-50 text-green-600 hover:bg-green-100 rounded-lg transition-colors disabled:opacity-50" title="Compartir PDF por WhatsApp">
             {processingId === `${j.id}-wapp` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : <Share2 className="w-3.5 h-3.5"/>}
