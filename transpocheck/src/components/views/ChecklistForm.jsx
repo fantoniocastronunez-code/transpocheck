@@ -41,7 +41,10 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     observations: '', receiverName: '', receiverRut: '', noReception: false, signatureData: null, location: null,
     rtStatus: job.prt_result ? job.prt_result : 'aprobado', 
     rtRejectReason: job.prt_reason ? job.prt_reason : '', 
-    rtReturnOption: 'origin', rtReturnDestination: '' 
+    rtReturnOption: 'origin', rtReturnDestination: '',
+    scandocPdfInbox: job.checklist?.scandocPdfInbox || null,
+    scandocPdf: job.checklist?.scandocPdf || null,
+    scannerLink: job.checklist?.scannerLink || ''
   };
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState(defaultData);
@@ -316,6 +319,15 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
        } catch (err) {
          console.error("Error subiendo firma:", err);
        }
+    }
+
+    if (d.scandocPdf && d.scandocPdf.startsWith('data:')) {
+       try {
+         const ext = d.scandocPdf.includes('application/pdf') ? 'pdf' : 'jpg';
+         const url = await uploadImageToStorage(d.scandocPdf, `checklists/${jobIdFolder}`, `documento_adjunto_${Date.now()}.${ext}`);
+         d.scandocPdf = url; 
+         updateProgress('Documento Escaneado');
+       } catch (err) { console.error("Error subiendo el PDF:", err); }
     }
 
     d.photos = uploadedPhotos;
@@ -886,6 +898,46 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                     )}
                   </div>
                 ))}
+              </div>
+
+              {/* SECCIÓN DOCUMENTOS EXTERNOS Y BANDEJA */}
+              <div className="mt-8 border-t-2 border-slate-100 pt-5">
+                 <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-2"><FileText className="w-5 h-5 text-indigo-500"/> Documentos Adicionales</h3>
+                 <p className="text-[10px] font-bold text-slate-500 mb-4 leading-tight">Si escaneaste con CamScanner o Adobe Scan, pega el link aquí o adjunta el PDF directamente.</p>
+                 
+                 <div className="space-y-4">
+                    <div className="space-y-1">
+                       <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest ml-1">Enlace / Link del Documento</label>
+                       <input type="url" placeholder="Ej: https://acrobat.adobe.com/..." value={formData.scannerLink || ''} onChange={(e) => setF('scannerLink', e.target.value)} className="w-full border-2 border-indigo-100 bg-indigo-50/30 p-3 rounded-xl font-bold text-slate-700 text-sm outline-none focus:border-indigo-500 transition-colors" />
+                    </div>
+
+                    <div className="flex items-center gap-3 opacity-60"><div className="h-px bg-slate-300 flex-1"></div><span className="text-[10px] font-black uppercase text-slate-400">O Subir Archivo Físico</span><div className="h-px bg-slate-300 flex-1"></div></div>
+
+                    <label className="w-full bg-white border-2 border-dashed border-indigo-300 hover:bg-indigo-50 text-indigo-600 p-4 rounded-2xl font-black text-xs flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm">
+                       <input type="file" accept="application/pdf,image/*" className="hidden" onChange={(e) => {
+                          const f = e.target.files[0];
+                          if(!f) return;
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                             setF('scandocPdf', reader.result);
+                             showAlert("✅ Archivo adjuntado temporalmente. Se subirá al finalizar el acta.");
+                          };
+                          reader.readAsDataURL(f);
+                       }}/>
+                       <FileText className="w-6 h-6"/>
+                       <span className="text-center">{formData.scandocPdf ? '✅ ARCHIVO CARGADO (Toca para cambiar)' : 'ADJUNTAR PDF O FOTO LOCAL'}</span>
+                    </label>
+                 </div>
+                 
+                 {job.checklist?.scandocPdfInbox && (
+                    <div className="mt-4 bg-emerald-50 border border-emerald-200 p-3 rounded-xl flex items-center justify-between shadow-sm">
+                       <div className="flex items-center gap-2">
+                          <CheckCircle className="w-5 h-5 text-emerald-500"/>
+                          <p className="text-[11px] font-black text-emerald-800 uppercase tracking-tight">Doc. Asignado (Bandeja)</p>
+                       </div>
+                       <a href={job.checklist.scandocPdfInbox} target="_blank" rel="noreferrer" className="text-[10px] bg-emerald-600 text-white px-2.5 py-1.5 rounded-lg font-bold shadow-sm hover:bg-emerald-500">VER PDF</a>
+                    </div>
+                 )}
               </div>
             </div>
           )}

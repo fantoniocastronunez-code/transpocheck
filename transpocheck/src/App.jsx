@@ -109,6 +109,20 @@ function LogisticApp() {
     broadcast, dataLoaded, notificationsEnabled, requestNotificationPermission
   } = useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAlert);
 
+  // NUEVO: Estado en Tiempo Real para la Bandeja de Entrada de PDFs
+  const [inboxDocs, setInboxDocs] = useState([]); 
+  useEffect(() => {
+      if (!db || !currentUserEmail) return;
+      let unsub = () => {};
+      import('firebase/firestore').then(({ query, collection, where, onSnapshot }) => {
+          const q = query(collection(db, 'inbox'), where('userEmail', '==', currentUserEmail));
+          unsub = onSnapshot(q, snap => {
+             setInboxDocs(snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => b.createdAt - a.createdAt));
+          });
+      });
+      return () => unsub();
+  }, [db, currentUserEmail]);
+
   // --- AUTO-SELECCIÓN DE ROL (SALTO DIRECTO A ADMIN) ---
   useEffect(() => {
     // Si la base de datos confirma que eres admin, y no estás intentando simular a un conductor específico...
@@ -817,22 +831,122 @@ function LogisticApp() {
             {mainTab === 'ranking' && <LeaderboardView jobs={jobs} drivers={drivers} isAdminView={activeRole === 'admin'} db={db} />}
             {mainTab === 'expenses' && <ExpensesView role={activeRole} drivers={drivers} jobs={jobs} expenses={expenses} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />}
             
+            {mainTab === 'inbox' && (
+               <main className="max-w-2xl mx-auto p-4 pt-20 sm:pt-24 pb-32 animate-in fade-in duration-300">
+                  <div className="bg-indigo-600 text-white p-6 rounded-3xl shadow-lg mb-6 relative overflow-hidden">
+                     <div className="relative z-10">
+                        <h2 className="text-2xl font-black mb-1">Bandeja de Entrada</h2>
+                        <p className="text-xs font-bold text-indigo-200 leading-relaxed">Sube aquí los PDFs o fotos de otras apps (CamScanner, etc) para enlazarlos directamente a tus traslados.</p>
+                     </div>
+                     <FileDown className="w-24 h-24 absolute -bottom-4 -right-2 text-white opacity-10 transform -rotate-12"/>
+                  </div>
+
+                  <label className="w-full bg-white border-2 border-dashed border-indigo-300 hover:bg-indigo-50 text-indigo-600 p-6 rounded-3xl font-black text-sm flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm mb-6">
+                     <input type="file" accept="application/pdf,image/*" className="hidden" onChange={async (e) => {
+                         const f = e.target.files[0];
+                         if (!f) return;
+                         showAlert("⏳ Subiendo documento a tu bandeja...");
+                         try {
+                             const reader = new FileReader();
+                             reader.onload = async () => {
+                                const base64 = reader.result;
+                                const ext = f.type.includes('pdf') ? 'pdf' : 'jpg';
+                                const url = await uploadImageToStorage(base64, `inbox/${currentUserEmail}`, `doc_bandeja_${Date.now()}.${ext}`);
+                                const { addDoc, collection } = await import('firebase/firestore');
+                                await addDoc(collection(db, 'inbox'), {
+                                    userEmail: currentUserEmail,
+                                    fileName: f.name || 'Documento Escaneado',
+                                    fileType: f.type,
+                                    url: url,
+                                    createdAt: Date.now()
+                                });
+                                showAlert("✅ Documento guardado en tu bandeja.");
+                             };
+                             reader.readAsDataURL(f);
+                         } catch(err) {
+                             showAlert("❌ Error al subir el documento.");
+                         }
+                     }}/>
+                     <div className="bg-indigo-100 p-3 rounded-full mb-1"><Plus className="w-6 h-6 text-indigo-600"/></div>
+                     SUBIR NUEVO ARCHIVO
+                  </label>
+
+                  <div className="space-y-4">
+                     <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest px-2">Archivos Pendientes ({inboxDocs.length})</h3>
+                     {inboxDocs.length === 0 ? (
+                        <div className="bg-white border border-slate-100 rounded-3xl p-8 text-center shadow-sm">
+                           <FileText className="w-12 h-12 text-slate-200 mx-auto mb-3"/>
+                           <p className="text-sm font-bold text-slate-500">No tienes documentos sin asignar.</p>
+                        </div>
+                     ) : (
+                        inboxDocs.map(docItem => (
+                           <div key={docItem.id} className="bg-white p-4 rounded-2xl shadow-sm border-2 border-slate-100 flex flex-col gap-4 relative overflow-hidden">
+                              <div className="flex items-center gap-3">
+                                 <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-100"><FileText className="w-6 h-6 text-indigo-600"/></div>
+                                 <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-black text-slate-800 truncate">{docItem.fileName}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 mt-0.5">{new Date(docItem.createdAt).toLocaleString()}</p>
+                                 </div>
+                                 <button onClick={async () => {
+                                     const { deleteDoc, doc } = await import('firebase/firestore');
+                                     showConfirm("¿Eliminar este documento?", () => deleteDoc(doc(db, 'inbox', docItem.id)));
+                                 }} className="p-2.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors"><Trash2 className="w-4 h-4"/></button>
+                              </div>
+                              <div className="flex gap-2 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                                 <a href={docItem.url} target="_blank" rel="noreferrer" className="flex-1 bg-white border border-slate-200 text-slate-600 py-2.5 rounded-lg text-xs font-black flex items-center justify-center gap-1.5 shadow-sm hover:bg-slate-50"><Eye className="w-4 h-4"/> VER</a>
+                                 
+                                 <select onChange={async (e) => {
+                                     const jobId = e.target.value;
+                                     if (!jobId) return;
+                                     showAlert("⏳ Asignando al traslado...");
+                                     try {
+                                        const { updateDoc, doc, deleteDoc } = await import('firebase/firestore');
+                                        const jobToUpdate = jobs.find(j => j.id === jobId);
+                                        const newChecklist = { ...(jobToUpdate?.checklist || {}), scandocPdfInbox: docItem.url };
+                                        
+                                        await updateDoc(doc(db, 'transport_jobs', jobId), { checklist: newChecklist });
+                                        await deleteDoc(doc(db, 'inbox', docItem.id));
+                                        showAlert("✅ Documento asignado exitosamente.");
+                                     } catch(err) {
+                                        showAlert("❌ Error al asignar el documento.");
+                                     }
+                                 }} className="flex-[2] bg-indigo-600 text-white py-2.5 px-3 rounded-lg text-xs font-black outline-none cursor-pointer shadow-sm shadow-indigo-200 text-center appearance-none">
+                                    <option value="" className="text-center">AÑADIR A TRABAJO...</option>
+                                    {jobs.filter(j => j.status === 'accepted' && j.acceptedByEmail === currentUserEmail).map(j => (
+                                       <option key={j.id} value={j.id}>{j.plate || j.vin || 'S/N'} - {j.brand}</option>
+                                    ))}
+                                 </select>
+                              </div>
+                           </div>
+                        ))
+                     )}
+                  </div>
+               </main>
+            )}
+
             <nav className="fixed bottom-0 w-full bg-white border-t border-slate-200 flex justify-around items-center pt-2 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
-              <button onClick={() => setShowRequestJob('traslado')} className="flex flex-col items-center text-slate-400 hover:text-blue-600 transition-colors w-20 sm:w-24">
+              <button onClick={() => setShowRequestJob('traslado')} className="flex flex-col items-center text-slate-400 hover:text-blue-600 transition-colors flex-1">
                  <div className="bg-slate-100 p-2 rounded-xl mb-1"><Plus className="w-5 h-5"/></div>
-                 <span className="text-[10px] font-extrabold tracking-wide">Solicitar</span>
+                 <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Solicitar</span>
               </button>
-              <button onClick={() => setMainTab('jobs')} className={`flex flex-col items-center transition-colors w-20 sm:w-24 ${mainTab==='jobs' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}>
+              <button onClick={() => setMainTab('jobs')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='jobs' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}>
                  <div className={`${mainTab==='jobs' ? 'bg-blue-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><ClipboardList className="w-5 h-5"/></div>
-                 <span className="text-[10px] font-extrabold tracking-wide">Trabajos</span>
+                 <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Trabajos</span>
               </button>
-              <button onClick={() => setMainTab('ranking')} className={`flex flex-col items-center transition-colors w-20 sm:w-24 ${mainTab==='ranking' ? 'text-yellow-600' : 'text-slate-400 hover:text-yellow-600'}`}>
+              <button onClick={() => setMainTab('inbox')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='inbox' ? 'text-indigo-600' : 'text-slate-400 hover:text-indigo-600'}`}>
+                 <div className={`${mainTab==='inbox' ? 'bg-indigo-100' : 'bg-transparent'} p-2 rounded-xl mb-1 relative`}>
+                    <FileDown className="w-5 h-5"/>
+                    {inboxDocs?.length > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white font-black text-[9px] w-4 h-4 flex items-center justify-center rounded-full animate-pulse">{inboxDocs.length}</span>}
+                 </div>
+                 <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Bandeja</span>
+              </button>
+              <button onClick={() => setMainTab('ranking')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='ranking' ? 'text-yellow-600' : 'text-slate-400 hover:text-yellow-600'}`}>
                  <div className={`${mainTab==='ranking' ? 'bg-yellow-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Trophy className="w-5 h-5"/></div>
-                 <span className="text-[10px] font-extrabold tracking-wide">Ranking</span>
+                 <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Ranking</span>
               </button>
-              <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors w-20 sm:w-24 ${mainTab==='expenses' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}>
+              <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='expenses' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}>
                  <div className={`${mainTab==='expenses' ? 'bg-blue-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Wallet className="w-5 h-5"/></div>
-                 <span className="text-[10px] font-extrabold tracking-wide">Gastos</span>
+                 <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Gastos</span>
               </button>
             </nav>
           </>
