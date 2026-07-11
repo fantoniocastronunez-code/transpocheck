@@ -873,22 +873,28 @@ function LogisticApp() {
                          try {
                              const reader = new FileReader();
                              reader.onload = async () => {
-                                const base64 = reader.result;
-                                const ext = f.type.includes('pdf') ? 'pdf' : 'jpg';
-                                const url = await uploadImageToStorage(base64, `inbox/${currentUserEmail}`, `doc_bandeja_${Date.now()}.${ext}`);
-                                const { addDoc, collection } = await import('firebase/firestore');
-                                await addDoc(collection(db, 'inbox'), {
-                                    userEmail: currentUserEmail,
-                                    fileName: f.name || 'Documento Escaneado',
-                                    fileType: f.type,
-                                    url: url,
-                                    createdAt: Date.now()
-                                });
-                                showAlert("✅ Documento guardado en tu bandeja.");
+                                try {
+                                   const base64 = reader.result;
+                                   const ext = f.type.includes('pdf') ? 'pdf' : 'jpg';
+                                   const url = await uploadImageToStorage(base64, `inbox/${currentUserEmail}`, `doc_bandeja_${Date.now()}.${ext}`);
+                                   const { addDoc, collection } = await import('firebase/firestore');
+                                   await addDoc(collection(db, 'inbox'), {
+                                       userEmail: currentUserEmail,
+                                       fileName: f.name || 'Documento Escaneado',
+                                       fileType: f.type,
+                                       url: url,
+                                       createdAt: Date.now()
+                                   });
+                                   showAlert("✅ Documento guardado en tu bandeja.");
+                                } catch (uploadError) {
+                                   console.error("Error bloqueado por Firebase:", uploadError);
+                                   showAlert("❌ Error al subir: Revisa reglas de Storage/Firestore.");
+                                }
                              };
                              reader.readAsDataURL(f);
                          } catch(err) {
-                             showAlert("❌ Error al subir el documento.");
+                             console.error("Error local al leer archivo:", err);
+                             showAlert("❌ Error al leer el documento.");
                          }
                      }}/>
                      <div className="bg-indigo-100 p-3 rounded-full mb-1"><Plus className="w-6 h-6 text-indigo-600"/></div>
@@ -1270,6 +1276,7 @@ export default function App() {
     </Router>
   );
 }
+
 
 
 
