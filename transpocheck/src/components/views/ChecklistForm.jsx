@@ -3,7 +3,7 @@ import { updateDoc, doc, setDoc, addDoc, collection, query, where, getDocs, onSn
 import { 
   FileText, MapPin, CheckCircle, CloudOff, AlertCircle, Eye, 
   Trash2, Camera, Search, X, Fuel, Clock, Wallet, Receipt, 
-  Zap, Share2, QrCode, Save, Scan 
+  Zap, Share2, QrCode, Save 
 } from 'lucide-react';
 import SignaturePad from '../ui/SignaturePad';
 import { resizeImage, formatMoney } from '../../utils/helpers';
@@ -60,11 +60,11 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
 
   // --- MOTOR DE CÁMARA INTERNA MULTI-LENTE (WebRTC) ---
-  const [inAppCamera, setInAppCamera] = useState({ isOpen: false, onCapture: null, title: '', stream: null, devices: [], currentIndex: 0, isScannerMode: false });
+  const [inAppCamera, setInAppCamera] = useState({ isOpen: false, onCapture: null, title: '', stream: null, devices: [], currentIndex: 0 });
   const [landscapeAngle, setLandscapeAngle] = useState(0); // 0 = Vertical, 90 o -90 = Horizontal
   const videoRef = React.useRef(null);
 
-  const startCamera = async (deviceId = null, isFirst = false, title = '', callback = null, isScannerMode = false) => {
+  const startCamera = async (deviceId = null, isFirst = false, title = '', callback = null) => {
     if (inAppCamera.stream && !isFirst) inAppCamera.stream.getTracks().forEach(t => t.stop());
     
     try {
@@ -86,8 +86,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
        setInAppCamera(prev => ({ 
          ...prev, isOpen: true, onCapture: isFirst ? callback : prev.onCapture, 
          title: isFirst ? title : prev.title, stream, devices: allVideoDevices, 
-         currentIndex: isFirst ? cIndex : prev.currentIndex,
-         isScannerMode: isFirst ? isScannerMode : prev.isScannerMode
+         currentIndex: isFirst ? cIndex : prev.currentIndex 
        }));
     } catch (error) {
        console.warn("Error de hardware, usando respaldo:", error);
@@ -100,7 +99,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     }
   };
 
-  const openCamera = (title, callback, isScannerMode = false) => {
+  const openCamera = (title, callback) => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
        const input = document.createElement('input');
        input.type = 'file'; input.accept = 'image/*'; input.capture = 'environment';
@@ -113,7 +112,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
        DeviceOrientationEvent.requestPermission().catch(() => {});
     }
     
-    startCamera(null, true, title, callback, isScannerMode);
+    startCamera(null, true, title, callback);
   };
 
   const setLens = (index) => {
@@ -164,12 +163,10 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
       canvas.height = video.videoWidth;
       ctx.translate(canvas.width / 2, canvas.height / 2);
       ctx.rotate(-landscapeAngle * Math.PI / 180); 
-      if (inAppCamera.isScannerMode) ctx.filter = 'grayscale(100%) contrast(150%) brightness(110%)';
       ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2);
     } else {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      if (inAppCamera.isScannerMode) ctx.filter = 'grayscale(100%) contrast(150%) brightness(110%)';
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     }
 
@@ -618,53 +615,6 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                  if (notifs.finalizado && clientRecord.email) {
                     let driverName = d.assignedDriverName || currentUserEmail;
                     if (drivers) { const drv = drivers.find(x => x.email === currentUserEmail); if (drv) driverName = drv.name; }
-                    
-                    // --- MAGIA: GENERAR PDF DE DOCUMENTOS ESCANEADOS EN 2DO PLANO ---
-                    let pdfBase64 = null;
-                    if (formData.photos?.scandoc1 || formData.photos?.scandoc2) {
-                       try {
-                          const jsPDFModule = await import('jspdf');
-                          const JsPDFClass = jsPDFModule.default?.jsPDF || jsPDFModule.default || jsPDFModule.jsPDF;
-                          const pdf = new JsPDFClass();
-                          let added = false;
-                          
-                          for (let i = 1; i <= 2; i++) {
-                             const docKey = `scandoc${i}`;
-                             // Usamos la de formData porque está en Base64 puro antes de subir a Storage
-                             const rawImg = formData.photos[docKey] || d.photos[docKey]; 
-                             if (rawImg) {
-                                if (added) pdf.addPage();
-                                let base64Data = rawImg;
-                                
-                                if (!rawImg.startsWith('data:image')) {
-                                   try {
-                                      const res = await fetch(rawImg, { mode: 'cors' });
-                                      const blob = await res.blob();
-                                      base64Data = await new Promise(resolve => { const reader = new FileReader(); reader.onloadend = () => resolve(reader.result); reader.readAsDataURL(blob); });
-                                   } catch(e) { console.warn("No se pudo descargar foto escaneada", e); }
-                                }
-                                
-                                if (base64Data.startsWith('data:image')) {
-                                   const img = new Image();
-                                   img.src = base64Data;
-                                   await new Promise(res => { img.onload = res; img.onerror = res; });
-                                   if (img.width > 0) {
-                                       const ratio = img.height / img.width;
-                                       let imgW = 190; let imgH = imgW * ratio;
-                                       if (imgH > 277) { imgH = 277; imgW = imgH / ratio; }
-                                       pdf.addImage(base64Data, 'JPEG', 10, 10, imgW, imgH);
-                                       added = true;
-                                   }
-                                }
-                             }
-                          }
-                          if (added) {
-                             pdfBase64 = pdf.output('datauristring').split(',')[1]; // Extraemos sólo la trama Base64 pura
-                          }
-                       } catch (pdfErr) {
-                          console.error("Error armando PDF escaneado:", pdfErr);
-                       }
-                    }
 
                     fetch('/api/notify-client', { 
                        method: 'POST', 
@@ -680,8 +630,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                              plate: fd.plate || fd.vin || job.associatedPlate || 'S/N', 
                              origin: fd.origin || 'Origen', 
                              destination: fd.destination || 'Destino' 
-                          },
-                          scannedDocsPdf: pdfBase64 // Enviamos el PDF a tu backend
+                          }
                        }) 
                     });
                  }
@@ -937,39 +886,6 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                     )}
                   </div>
                 ))}
-              </div>
-
-              {/* SECCIÓN ESCÁNER DE DOCUMENTOS */}
-              <div className="mt-8 border-t-2 border-slate-100 pt-4">
-                 <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider mb-1 flex items-center gap-2"><Scan className="w-5 h-5 text-indigo-500"/> Escáner de Documentos</h3>
-                 <p className="text-[10px] font-bold text-slate-500 mb-3 leading-tight">Digitaliza certificados de Revisión Técnica u otros respaldos. Se convertirán a blanco y negro automáticamente.</p>
-                 
-                 <div className="grid grid-cols-2 gap-3">
-                    {['scandoc1', 'scandoc2'].map((docId, idx) => (
-                      <button 
-                        type="button" 
-                        key={docId} 
-                        onClick={() => {
-                          if (formData.photos[docId]) setFullScreenImage({ url: formData.photos[docId], id: docId, label: `Documento Escaneado ${idx+1}`, isScannerMode: true });
-                          else openCamera(`Documento Escaneado ${idx+1}`, f => handlePic(f, docId), true);
-                        }} 
-                        className={`w-full h-32 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white shadow-sm transition-all ${formData.photos[docId] ? 'border-indigo-400 ring-2 ring-indigo-100' : 'border-dashed border-indigo-300 hover:bg-indigo-50'}`}
-                      >
-                         {formData.photos[docId] ? (
-                           <>
-                             <img src={formData.photos[docId]} className="absolute inset-0 w-full h-full object-cover opacity-80 mix-blend-multiply filter contrast-125"/>
-                             <CheckCircle className="w-6 h-6 text-indigo-600 relative z-10 bg-white rounded-full"/>
-                             <span className="text-[10px] font-black text-indigo-900 relative z-10 bg-white/80 px-2 py-0.5 rounded-md">Doc {idx+1} Listo</span>
-                           </>
-                         ) : (
-                           <>
-                             <FileText className="w-6 h-6 text-indigo-400"/>
-                             <span className="text-[10px] font-black text-indigo-600 uppercase tracking-wide text-center leading-tight">Escanear<br/>Doc {idx+1}</span>
-                           </>
-                         )}
-                      </button>
-                    ))}
-                 </div>
               </div>
             </div>
           )}
@@ -1541,21 +1457,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
           <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
              <video ref={videoRef} playsInline autoPlay className="w-full h-full object-cover" />
              <div className="absolute inset-0 pointer-events-none border-[40px] border-black/40 flex items-center justify-center">
-               <div className={`w-full h-full border-2 transition-all duration-500 ${
-                 inAppCamera.isScannerMode 
-                  ? 'border-indigo-400 shadow-[0_0_80px_rgba(79,70,229,0.4)_inset] bg-indigo-500/10' 
-                  : (landscapeAngle !== 0 ? 'border-green-400 bg-green-500/10 shadow-[0_0_50px_rgba(34,197,94,0.3)_inset]' : 'border-dashed border-white/50')
-               }`}>
-                  {inAppCamera.isScannerMode && (
-                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <div className="w-16 h-16 border-4 border-indigo-400 border-t-0 border-l-0 absolute bottom-4 right-4 rounded-br-xl"></div>
-                        <div className="w-16 h-16 border-4 border-indigo-400 border-b-0 border-r-0 absolute top-4 left-4 rounded-tl-xl"></div>
-                        <div className="w-16 h-16 border-4 border-indigo-400 border-b-0 border-l-0 absolute top-4 right-4 rounded-tr-xl"></div>
-                        <div className="w-16 h-16 border-4 border-indigo-400 border-t-0 border-r-0 absolute bottom-4 left-4 rounded-bl-xl"></div>
-                        <p className="text-indigo-200 font-black text-[10px] uppercase tracking-widest bg-black/50 px-3 py-1 rounded-full animate-pulse mt-12">Encuadra el documento aquí</p>
-                     </div>
-                  )}
-               </div>
+               <div className={`w-full h-full border-2 border-dashed rounded-xl transition-all duration-500 ${landscapeAngle !== 0 ? 'border-green-400 bg-green-500/10 shadow-[0_0_50px_rgba(34,197,94,0.3)_inset]' : 'border-white/50'}`}></div>
              </div>
              
              {/* FEEDBACK INTELIGENTE (ALERTA VERDE ROTATORIA) */}
@@ -1589,9 +1491,9 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
           </div>
           
           <div className="bg-slate-900 pb-8 pt-5 px-6 flex flex-col gap-4 z-10 rounded-t-3xl shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
-             <button onClick={takeInAppPhoto} className={`w-full text-white py-4 rounded-2xl font-black text-lg flex justify-center items-center gap-3 active:scale-95 transition-all ${inAppCamera.isScannerMode ? 'bg-indigo-600 hover:bg-indigo-500 shadow-[0_0_20px_rgba(79,70,229,0.4)]' : 'bg-blue-600 hover:bg-blue-500 shadow-[0_0_20px_rgba(37,99,235,0.4)]'}`}>
+             <button onClick={takeInAppPhoto} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-black text-lg flex justify-center items-center gap-3 shadow-[0_0_20px_rgba(37,99,235,0.4)] active:scale-95 transition-all">
                 <div className="w-8 h-8 rounded-full border-4 border-white flex items-center justify-center"><div className="w-3 h-3 bg-white rounded-full"></div></div>
-                {inAppCamera.isScannerMode ? 'ESCANEAR DOCUMENTO' : 'TOMAR FOTO AHORA'}
+                TOMAR FOTO AHORA
              </button>
              <label className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-3.5 rounded-xl font-bold text-sm flex justify-center items-center gap-2 cursor-pointer transition-colors border border-slate-700 active:scale-95">
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => {
