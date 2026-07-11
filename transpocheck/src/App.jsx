@@ -761,7 +761,8 @@ function LogisticApp() {
       </header>
 
       <Routes>
-        <Route path="/" element={
+        {/* RUTA COMODÍN: Atrapa la raíz (/) y cualquier ruta alterada por Vercel */}
+        <Route path="*" element={
           <>
             {mainTab === 'jobs' && (
               <main className="max-w-5xl mx-auto p-4 pt-20 sm:pt-24">
@@ -838,7 +839,7 @@ function LogisticApp() {
         } />
         
         <Route path="/checklist" element={
-          selectedJob && (
+          selectedJob ? (
             <main className="max-w-2xl mx-auto p-4 pt-20 sm:pt-24 pb-24 animate-in zoom-in-[0.98] slide-in-from-bottom-8 duration-500 ease-out">
               <ChecklistForm 
                  job={selectedJob} db={db} currentUserEmail={currentUserEmail} 
@@ -867,6 +868,13 @@ function LogisticApp() {
                  pushSyncTask={pushSyncTask}
               />
             </main>
+          ) : (
+            <div className="flex flex-col items-center justify-center pt-40">
+               <div className="w-10 h-10 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
+               <p className="mt-4 text-xs font-bold text-slate-500 uppercase tracking-widest animate-pulse">Cargando...</p>
+               {/* Redirección automática si la memoria se borró al recargar */}
+               {setTimeout(() => window.location.replace('/'), 100) && null}
+            </div>
           )
         } />
       </Routes>
