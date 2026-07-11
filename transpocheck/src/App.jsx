@@ -44,6 +44,10 @@ function LogisticApp() {
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
   const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
+  
+  // VARIABLES MÁGICAS: Atrapan lo que Android nos comparte desde CamScanner o Adobe Scan
+  const sharedText = searchParams.get('shared_text');
+  const sharedUrl = searchParams.get('shared_url');
 
   const [adminTab, setAdminTab] = useState('dashboard');
   const [selectedJob, setSelectedJob] = useState(null);
@@ -122,6 +126,26 @@ function LogisticApp() {
       });
       return () => unsub();
   }, [db, currentUserEmail]);
+
+  // MAGIA ANDROID: Escuchar si nos acaban de compartir un Link desde CamScanner/Adobe Scan
+  useEffect(() => {
+      const incomingLink = sharedUrl || sharedText;
+      if (incomingLink && user && currentUserEmail && db) {
+         import('firebase/firestore').then(({ addDoc, collection }) => {
+            addDoc(collection(db, 'inbox'), {
+                userEmail: currentUserEmail,
+                fileName: 'Link Escaneado (Recibido Externo)',
+                fileType: 'link',
+                url: incomingLink,
+                createdAt: Date.now()
+            }).then(() => {
+                showAlert("✅ Link recibido desde otra App y guardado en tu Bandeja.");
+                setMainTab('inbox');
+                navigate('/', { replace: true }); // Limpia la URL para evitar que se duplique al recargar
+            });
+         });
+      }
+  }, [sharedUrl, sharedText, user, currentUserEmail, db]);
 
   // --- AUTO-SELECCIÓN DE ROL (SALTO DIRECTO A ADMIN) ---
   useEffect(() => {

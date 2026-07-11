@@ -21,6 +21,15 @@ export default defineConfig({
         background_color: '#000000',
         display: 'standalone',
         orientation: 'portrait',
+        share_target: {
+          action: "/",
+          method: "GET",
+          params: {
+            title: "shared_title",
+            text: "shared_text",
+            url: "shared_url"
+          }
+        },
         icons: [
           {
             src: '/logo.png',
