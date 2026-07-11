@@ -151,6 +151,14 @@ export default async function handler(req, res) {
     html: htmlTemplate,
   };
 
+// --- NUEVA LÓGICA: GATILLADOR DE REVISIÓN TÉCNICA ---
+  if (type === 'revision_tecnica' && jobDetails.checklist?.scandocPdfInbox) {
+      mailOptions.subject = `Documento de Revisión Técnica Listo - ${vehiculoPatente}`;
+      mailOptions.html = htmlTemplate.replace('Traslado Finalizado', 'Documento de Revisión Técnica Listo')
+                                     .replace('concluido el traslado con éxito', 'finalizado la gestión de su revisión técnica')
+                                     .replace('Ver Detalles y Descargar PDF', 'Tu documento de revisión técnica está listo para descarga');
+  }
+
   try {
     await transporter.sendMail(mailOptions);
     res.status(200).json({ success: true });
