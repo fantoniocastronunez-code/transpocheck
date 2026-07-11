@@ -381,12 +381,29 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
               return (
               <div key={job.id} className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden flex flex-col hover:shadow-md transition-shadow">
                 <div className={`absolute top-0 left-0 w-full h-1.5 ${isPending ? 'bg-amber-400' : 'bg-blue-500'}`}></div>
-                <div className="flex justify-between items-start mb-5 pb-4 border-b border-slate-100">
-                  <div>
-                    <h2 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">En Traslado</h2>
-                    <p className="text-xl font-black text-slate-800 leading-none">{job.brand} {job.model}</p>
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1 min-w-0 pr-2">
+                    <h2 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">
+                      {job.tripType === 'simple' ? 'Servicio en Terreno' : 'En Traslado'}
+                    </h2>
+                    <p className="text-xl font-black text-slate-800 leading-tight truncate">
+                      {job.tripType === 'simple' ? (job.description || 'Servicio') : `${job.brand} ${job.model}`}
+                    </p>
                   </div>
-                  <LicensePlateBadge text={job.plate || job.vin} />
+                  <div className="shrink-0">
+                    <LicensePlateBadge text={job.plate || job.vin} />
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs font-black flex items-center justify-between gap-1 mb-5 shadow-sm">
+                  <span className="truncate text-slate-700 max-w-[45%]" title={job.origin}>
+                     <MapPin className="inline w-3.5 h-3.5 mr-1 -mt-0.5 text-slate-400 shrink-0"/>
+                     {job.origin || 'Por definir'}
+                  </span>
+                  <span className="text-slate-300 font-black shrink-0">➔</span>
+                  <span className="truncate text-blue-600 max-w-[45%] text-right" title={job.destination}>
+                     {job.tripType === 'revision' ? 'Planta PRT' : (job.destination || 'Por definir')}
+                  </span>
                 </div>
                 
                 <div className="relative pl-8 space-y-6 flex-1 mt-2">
