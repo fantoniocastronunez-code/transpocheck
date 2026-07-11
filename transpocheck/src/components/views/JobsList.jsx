@@ -1119,7 +1119,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     return (
       <div key={j.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between relative pl-5 overflow-hidden hover:shadow-xl hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-default">
         <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
-        <div className="flex justify-between items-start mb-2 gap-2">
+        
+        <div className="flex justify-between items-center mb-2 gap-2">
           {j.tripType === 'simple' ? (
              <p className="text-sm font-black text-purple-800 leading-tight break-words mt-1 pr-2">{j.description || 'Servicio en Terreno'}</p>
           ) : (
@@ -1129,31 +1130,46 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             {j.tripType === 'simple' && (
                <span className="bg-purple-100 text-purple-800 border border-purple-200 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider shadow-sm mb-0.5">SERVICIO</span>
             )}
-            {ident !== 'S/N' && (
-               <>
-                 <LicensePlateBadge text={ident} />
-                 {j.vin && ident !== j.vin && (
-                   <span className="text-[8px] font-black bg-slate-100 border border-slate-200 text-slate-500 px-1 py-[1px] rounded uppercase tracking-widest mr-1">VIN: {j.vin}</span>
-                 )}
-               </>
-            )}
           </div>
         </div>
-        <div className="my-2 bg-slate-50 p-2 rounded-xl border border-slate-100 text-xs font-black flex items-center justify-between gap-1">
-          <span className="truncate text-slate-700 max-w-[45%]"><MapPin className="inline w-3.5 h-3.5 mr-1 -mt-0.5 text-slate-400 shrink-0"/>{j.origin}</span>
-          <span className="text-slate-400 font-bold shrink-0">➔</span>
-          <span className="truncate text-blue-600 max-w-[45%] text-right">{j.tripType === 'revision' ? 'PRT' : j.destination}</span>
+        
+        <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex flex-col gap-2 mb-3 shadow-inner">
+          {/* Fila de Ruta: Origen y Destino */}
+          <div className="text-[10px] font-black flex items-center justify-between gap-1">
+            <span className="truncate text-slate-700 max-w-[45%]" title={j.origin}>
+               <MapPin className="inline w-3 h-3 mr-0.5 -mt-0.5 text-slate-400 shrink-0"/>
+               {j.origin || '-'}
+            </span>
+            <span className="text-slate-300 font-black shrink-0">➔</span>
+            <span className="truncate text-blue-600 max-w-[45%] text-right" title={j.destination}>
+               {j.tripType === 'revision' ? 'PRT' : (j.destination || '-')}
+            </span>
+          </div>
+
+          {/* Fila de Patente Agrandada al Máximo en el Centro de la caja */}
+          {ident !== 'S/N' && (
+            <div className="flex flex-col items-center border-t border-slate-200/60 pt-2 mt-0.5 gap-0.5">
+              <span className="text-sm sm:text-base font-black tracking-widest text-slate-900 bg-slate-200/80 px-4 py-1 rounded-lg border border-slate-300 uppercase shadow-sm">
+                {ident}
+              </span>
+              {j.vin && ident !== j.vin && (
+                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">VIN: {j.vin}</span>
+              )}
+            </div>
+          )}
         </div>
+
         <div className="mb-3">
            <p className="text-blue-600 font-extrabold text-[10px] uppercase tracking-wide truncate">Conductor: <span className="text-slate-700">{driverName}</span></p>
            {isFailed && <p className="text-red-600 text-[10px] mt-0.5 font-bold line-clamp-1">Razón: {j.failedReason}</p>}
         </div>
+        
         <div className="flex justify-between items-end border-t border-slate-50 pt-2 mb-2">
           <p className={`text-[10px] font-black uppercase ${isFailed ? 'text-red-500' : 'text-green-600'}`}>{isFailed ? 'RECHAZADO' : 'ENTREGADO'}</p>
           <p className="text-slate-400 font-bold text-[9px]">{getDStr(j)}</p>
         </div>
 
-        {/* NUEVO: AVISO VISUAL DE ACTA YA COMPARTIDA/RENDIDA */}
+        {/* AVISO VISUAL DE ACTA YA COMPARTIDA/RENDIDA */}
         {j.sharedCount > 0 && (
            <div className="mb-2.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-black px-2 py-1.5 rounded-lg text-center flex items-center justify-center gap-1.5 shadow-sm animate-in zoom-in duration-300">
               <CheckCircle className="w-3.5 h-3.5" /> Ya rendido ({j.sharedCount} {j.sharedCount === 1 ? 'vez' : 'veces'})
@@ -1163,13 +1179,15 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
          <div className="flex gap-1.5 mt-auto">
           {isAdminView && <button onClick={()=>onEditJob(j)} className="flex-1 py-1.5 flex justify-center bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg transition-colors" title="Editar Traslado"><Edit2 className="w-3.5 h-3.5"/></button>}
           {isAdminView && <button onClick={()=>handleDuplicateJob(j)} className="flex-1 py-1.5 flex justify-center bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg transition-colors" title="Repetir Vehículo"><Repeat className="w-3.5 h-3.5"/></button>}
-          <button onClick={()=>cpyWapp(j)} className="flex-1 py-1.5 flex justify-center bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors" title="Copiar Resumen"><Copy className="w-3.5 h-3.5"/></button>
+          
           {j.checklist && (j.checklist.scandocPdf || j.checklist.scandocPdfInbox || j.checklist.scannerLink) && (
             <a href={j.checklist.scandocPdf || j.checklist.scandocPdfInbox || j.checklist.scannerLink} target="_blank" rel="noreferrer" className="flex-1 py-1.5 flex justify-center items-center bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-colors relative" title="Ver Documentación PRT">
                <span className="absolute -top-1.5 -right-1.5 bg-indigo-600 text-white text-[7px] font-black px-1 py-0.5 rounded shadow-sm">PRT</span>
                <FileText className="w-3.5 h-3.5"/>
             </a>
           )}
+
+          <button onClick={()=>cpyWapp(j)} className="flex-1 py-1.5 flex justify-center bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors" title="Copiar Resumen"><Copy className="w-3.5 h-3.5"/></button>
           <button onClick={() => generatePDF(j)} disabled={processingId === `${j.id}-pdf`} className="flex-1 py-1.5 flex justify-center bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50" title="Descargar PDF">{processingId === `${j.id}-pdf` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : <FileDown className="w-3.5 h-3.5"/>}</button>
           <button onClick={() => handleShareWhatsAppPDF(j)} disabled={processingId === `${j.id}-wapp`} className="flex-1 py-1.5 flex justify-center items-center bg-green-50 text-green-600 hover:bg-green-100 rounded-lg transition-colors disabled:opacity-50" title="Compartir PDF por WhatsApp">
             {processingId === `${j.id}-wapp` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : <Share2 className="w-3.5 h-3.5"/>}

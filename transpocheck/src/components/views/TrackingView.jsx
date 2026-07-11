@@ -459,15 +459,24 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
             ) : historyJobs.map(job => {
               const isFailed = job.status === 'failed';
               return (
-              <div key={job.id} className="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between relative pl-4 overflow-hidden hover:shadow-md transition-shadow h-[120px]">
+              <div key={job.id} className="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between relative pl-4 overflow-hidden hover:shadow-md transition-shadow">
                 <div className={`absolute top-0 left-0 bottom-0 w-2 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
                 
-                <div className="flex justify-between items-center mb-1">
+                <div className="flex justify-between items-center mb-2">
                   <p className="text-sm font-black text-slate-800 leading-tight truncate pr-2">{job.brand} {job.model}</p>
                   <LicensePlateBadge text={job.plate || job.vin} />
                 </div>
                 
-                <p className="text-slate-500 text-[10px] font-bold uppercase mb-2 flex items-center gap-1 truncate opacity-90"><MapPin className="w-3.5 h-3.5 shrink-0"/> {job.origin} ➔ {job.tripType === 'revision' ? 'PRT' : job.destination}</p>
+                <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-[10px] font-black flex items-center justify-between gap-1 mb-2 shadow-sm">
+                  <span className="truncate text-slate-700 max-w-[45%]" title={job.origin}>
+                     <MapPin className="inline w-3 h-3 mr-0.5 -mt-0.5 text-slate-400 shrink-0"/>
+                     {job.origin || '-'}
+                  </span>
+                  <span className="text-slate-300 font-black shrink-0">➔</span>
+                  <span className="truncate text-blue-600 max-w-[45%] text-right" title={job.destination}>
+                     {job.tripType === 'revision' ? 'PRT' : (job.destination || '-')}
+                  </span>
+                </div>
                 
                 <div className="flex justify-between items-end mt-auto pt-2 border-t border-slate-50">
                   <div>
