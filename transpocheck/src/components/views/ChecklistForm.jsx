@@ -10,6 +10,14 @@ import { resizeImage, formatMoney } from '../../utils/helpers';
 
 
 export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList: rawClients, drivers, expenses, vehicles, uploadImageToStorage, pushSyncTask }) {
+  // --- MAGIA: RED DE SEGURIDAD ANTI-PANTALLA BLANCA ---
+  // Si el conductor recarga la página en la ruta /checklist y la memoria de React se borra,
+  // lo devolvemos al inicio silenciosamente en lugar de colapsar la app en blanco.
+  if (!rawJob || Object.keys(rawJob).length === 0) {
+     window.location.replace('/');
+     return null;
+  }
+
   // SEGURO DE VIDA: Si Firebase demora en enviar los datos, usamos valores por defecto para evitar la Pantalla Blanca
   const job = rawJob || {};
   const allClientsList = rawClients || [];
