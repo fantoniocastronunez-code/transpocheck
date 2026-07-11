@@ -1,5 +1,6 @@
  import React, { useState, useEffect } from 'react';
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { getAuth, signInAnonymously } from 'firebase/auth';
 import { 
   Clock, XCircle, CheckCircle, Download, Camera, 
   X, AlertCircle, User 
@@ -17,6 +18,14 @@ export default function ClientSignView({ jobId, db }) {
   const [isDownloading, setIsDownloading] = useState(false); 
 
   useEffect(() => {
+    // Iniciar sesión anónima (fantasma) para que el cliente adquiera permisos de guardado
+    try {
+      const auth = getAuth();
+      signInAnonymously(auth).catch(err => console.warn("Aviso Auth Anónimo:", err));
+    } catch (e) {
+      console.error(e);
+    }
+
     const unsub = onSnapshot(doc(db, 'transport_jobs', jobId), (docSnap) => {
       if (docSnap.exists()) {
         setJob({ id: docSnap.id, ...docSnap.data() });
