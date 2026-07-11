@@ -876,7 +876,15 @@ function LogisticApp() {
                                 try {
                                    const base64 = reader.result;
                                    const ext = f.type.includes('pdf') ? 'pdf' : 'jpg';
-                                   const url = await uploadImageToStorage(base64, `inbox/${currentUserEmail}`, `doc_bandeja_${Date.now()}.${ext}`);
+                                   
+                                   // Subida dinámica que respeta el formato original (PDF o Imagen)
+                                   const { getStorage, ref, uploadString, getDownloadURL } = await import('firebase/storage');
+                                   const storage = getStorage();
+                                   const fileRef = ref(storage, `inbox/${currentUserEmail}/doc_bandeja_${Date.now()}.${ext}`);
+                                   
+                                   await uploadString(fileRef, base64, 'data_url');
+                                   const url = await getDownloadURL(fileRef);
+
                                    const { addDoc, collection } = await import('firebase/firestore');
                                    await addDoc(collection(db, 'inbox'), {
                                        userEmail: currentUserEmail,
@@ -885,15 +893,18 @@ function LogisticApp() {
                                        url: url,
                                        createdAt: Date.now()
                                    });
-                                   showAlert("✅ Documento guardado en tu bandeja.");
+                                   
+                                   e.target.value = ''; // Limpiamos la memoria del botón
+                                   showAlert("✅ ¡Subida exitosa! Presiona Confirmar para cerrar este aviso.");
                                 } catch (uploadError) {
-                                   console.error("Error bloqueado por Firebase:", uploadError);
-                                   showAlert("❌ Error al subir: Revisa reglas de Storage/Firestore.");
+                                   console.error("Error al subir:", uploadError);
+                                   e.target.value = '';
+                                   showAlert("❌ Error al subir el archivo.");
                                 }
                              };
                              reader.readAsDataURL(f);
                          } catch(err) {
-                             console.error("Error local al leer archivo:", err);
+                             e.target.value = '';
                              showAlert("❌ Error al leer el documento.");
                          }
                      }}/>
@@ -923,15 +934,10 @@ function LogisticApp() {
                                  }} className="p-2.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors"><Trash2 className="w-4 h-4"/></button>
                               </div>
                               <div className="flex gap-2 bg-slate-50 p-2 rounded-xl border border-slate-100">
-                                 <button onClick={() => {
-                                     if (docItem.fileType && docItem.fileType.includes('pdf')) {
-                                         window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(docItem.url)}&embedded=true`, '_blank');
-                                     } else {
-                                         window.open(docItem.url, '_blank');
-                                     }
-                                 }} className="flex-1 bg-white border border-slate-200 text-slate-600 py-2.5 rounded-lg text-xs font-black flex items-center justify-center gap-1.5 shadow-sm hover:bg-slate-50">
+
+                                 <a href={docItem.url} target="_blank" rel="noopener noreferrer" className="flex-1 bg-white border border-slate-200 text-slate-600 py-2.5 rounded-lg text-xs font-black flex items-center justify-center gap-1.5 shadow-sm hover:bg-slate-50">
                                      <Eye className="w-4 h-4"/> VER
-                                 </button>
+                                 </a>
                                  
                                  <select onChange={async (e) => {
                                      const jobId = e.target.value;
