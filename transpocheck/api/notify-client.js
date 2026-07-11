@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer';
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end('Method Not Allowed');
 
-  const { email, clientName, type, jobDetails } = req.body;
+  const { email, clientName, type, jobDetails, scannedDocsPdf } = req.body;
 
   if (!email) {
     return res.status(400).json({ error: 'No se proporcionó correo del cliente.' });
@@ -128,13 +128,35 @@ export default async function handler(req, res) {
     </div>
   `;
 
+  const mailOptions = {
+    from: `"Logística TS" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: subject,
+    html: htmlTemplate,
+  };
+
+  // Si la App nos envía un PDF con documentos escaneados, lo adjuntamos
+  if (scannedDocsPdf) {
+     mailOptions.attachments = [
+        {
+           filename: `Documentos_Escaneados_${jobDetails.plate || 'Vehiculo'}.pdf`,
+           content: scannedDocsPdf,
+           encoding: 'base64',
+           contentType: 'application/pdf'
+        }
+     ];
+     
+     // Modificamos sutilmente el mensaje HTML para avisarle al cliente que van adjuntos
+     if (type === 'finalizado') {
+        mailOptions.html = mailOptions.html.replace(
+           'descargar el Acta de Recepción (PDF) oficial.', 
+           'descargar el Acta de Recepción (PDF) oficial.<br><br><strong>📎 Adicionalmente, hemos adjuntado a este correo los documentos escaneados durante el servicio.</strong>'
+        );
+     }
+  }
+
   try {
-    await transporter.sendMail({
-      from: `"Logística TS" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: subject,
-      html: htmlTemplate,
-    });
+    await transporter.sendMail(mailOptions);
     res.status(200).json({ success: true });
   } catch (error) {
     console.error('Error enviando correo a cliente:', error);

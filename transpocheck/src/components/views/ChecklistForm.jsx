@@ -618,7 +618,72 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                  if (notifs.finalizado && clientRecord.email) {
                     let driverName = d.assignedDriverName || currentUserEmail;
                     if (drivers) { const drv = drivers.find(x => x.email === currentUserEmail); if (drv) driverName = drv.name; }
-                    fetch('/api/notify-client', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: clientRecord.email, clientName: clientRecord.name, type: 'finalizado', jobDetails: { id: job.id === 'NEW_QUICK_JOB' ? 'N/A' : job.id, driverName: driverName, vehicle: job.tripType === 'simple' ? (job.description || 'Servicio en Terreno') : (`${fd.brand || ''} ${fd.model || ''}`.trim() || 'Vehículo'), plate: fd.plate || fd.vin || job.associatedPlate || 'S/N', origin: fd.origin || 'Origen', destination: fd.destination || 'Destino' } }) });
+                    
+                    // --- MAGIA: GENERAR PDF DE DOCUMENTOS ESCANEADOS EN 2DO PLANO ---
+                    let pdfBase64 = null;
+                    if (formData.photos?.scandoc1 || formData.photos?.scandoc2) {
+                       try {
+                          const jsPDFModule = await import('jspdf');
+                          const JsPDFClass = jsPDFModule.default?.jsPDF || jsPDFModule.default || jsPDFModule.jsPDF;
+                          const pdf = new JsPDFClass();
+                          let added = false;
+                          
+                          for (let i = 1; i <= 2; i++) {
+                             const docKey = `scandoc${i}`;
+                             // Usamos la de formData porque está en Base64 puro antes de subir a Storage
+                             const rawImg = formData.photos[docKey] || d.photos[docKey]; 
+                             if (rawImg) {
+                                if (added) pdf.addPage();
+                                let base64Data = rawImg;
+                                
+                                if (!rawImg.startsWith('data:image')) {
+                                   try {
+                                      const res = await fetch(rawImg, { mode: 'cors' });
+                                      const blob = await res.blob();
+                                      base64Data = await new Promise(resolve => { const reader = new FileReader(); reader.onloadend = () => resolve(reader.result); reader.readAsDataURL(blob); });
+                                   } catch(e) { console.warn("No se pudo descargar foto escaneada", e); }
+                                }
+                                
+                                if (base64Data.startsWith('data:image')) {
+                                   const img = new Image();
+                                   img.src = base64Data;
+                                   await new Promise(res => { img.onload = res; img.onerror = res; });
+                                   if (img.width > 0) {
+                                       const ratio = img.height / img.width;
+                                       let imgW = 190; let imgH = imgW * ratio;
+                                       if (imgH > 277) { imgH = 277; imgW = imgH / ratio; }
+                                       pdf.addImage(base64Data, 'JPEG', 10, 10, imgW, imgH);
+                                       added = true;
+                                   }
+                                }
+                             }
+                          }
+                          if (added) {
+                             pdfBase64 = pdf.output('datauristring').split(',')[1]; // Extraemos sólo la trama Base64 pura
+                          }
+                       } catch (pdfErr) {
+                          console.error("Error armando PDF escaneado:", pdfErr);
+                       }
+                    }
+
+                    fetch('/api/notify-client', { 
+                       method: 'POST', 
+                       headers: { 'Content-Type': 'application/json' }, 
+                       body: JSON.stringify({ 
+                          email: clientRecord.email, 
+                          clientName: clientRecord.name, 
+                          type: 'finalizado', 
+                          jobDetails: { 
+                             id: job.id === 'NEW_QUICK_JOB' ? 'N/A' : job.id, 
+                             driverName: driverName, 
+                             vehicle: job.tripType === 'simple' ? (job.description || 'Servicio en Terreno') : (`${fd.brand || ''} ${fd.model || ''}`.trim() || 'Vehículo'), 
+                             plate: fd.plate || fd.vin || job.associatedPlate || 'S/N', 
+                             origin: fd.origin || 'Origen', 
+                             destination: fd.destination || 'Destino' 
+                          },
+                          scannedDocsPdf: pdfBase64 // Enviamos el PDF a tu backend
+                       }) 
+                    });
                  }
               }
            }
