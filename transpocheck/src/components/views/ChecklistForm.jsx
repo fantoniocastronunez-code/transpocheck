@@ -911,7 +911,44 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                  <div className="space-y-4">
                     <div className="space-y-1">
                        <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest ml-1">Enlace / Link del Documento</label>
-                       <input type="url" placeholder="Ej: https://acrobat.adobe.com/..." value={formData.scannerLink || ''} onChange={(e) => setF('scannerLink', e.target.value)} className="w-full border-2 border-indigo-100 bg-indigo-50/30 p-3 rounded-xl font-bold text-slate-700 text-sm outline-none focus:border-indigo-500 transition-colors" />
+                       <div className="flex gap-2">
+                          <input type="url" placeholder="Ej: https://acrobat.adobe.com/..." value={formData.scannerLink || ''} onChange={(e) => setF('scannerLink', e.target.value)} className="w-full border-2 border-indigo-100 bg-indigo-50/30 p-3 rounded-xl font-bold text-slate-700 text-sm outline-none focus:border-indigo-500 transition-colors" />
+                          <button type="button" onClick={async () => {
+                             if (!formData.scannerLink) return showAlert("⚠️ Pega un link primero.");
+                             if (job.id === 'NEW_QUICK_JOB') return showAlert("⚠️ Debes 'Finalizar y Guardar' el acta abajo para poder notificar este link.");
+                             
+                             showAlert("⏳ Guardando link y notificando al cliente...");
+                             try {
+                                const { updateDoc, doc } = await import('firebase/firestore');
+                                const newChecklist = { ...(job.checklist || {}), scannerLink: formData.scannerLink };
+                                await updateDoc(doc(db, 'transport_jobs', job.id), { checklist: newChecklist });
+
+                                const clientRecord = allClientsList.find(c => c.name === job.client);
+                                const targetEmail = clientRecord?.email?.split(',')[0]?.trim();
+                                if (targetEmail) {
+                                   fetch('/api/notify-client', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({
+                                         email: targetEmail,
+                                         clientName: job.client || 'Cliente',
+                                         type: 'revision_tecnica',
+                                         jobDetails: {
+                                            ...job,
+                                            driverName: drivers.find(d => d.email === currentUserEmail)?.name || 'Conductor',
+                                            checklist: newChecklist
+                                         }
+                                      })
+                                   }).catch(() => {});
+                                }
+                                showAlert("✅ Link guardado y cliente notificado exitosamente.");
+                             } catch(err) {
+                                showAlert("❌ Error al guardar el link.");
+                             }
+                          }} className="bg-indigo-600 text-white px-4 rounded-xl font-black text-[10px] shadow-sm hover:bg-indigo-700 active:scale-95 transition-all flex flex-col items-center justify-center leading-tight">
+                             <span>ENVIAR</span><span>AVISO</span>
+                          </button>
+                       </div>
                     </div>
 
                     <div className="flex items-center gap-3 opacity-60"><div className="h-px bg-slate-300 flex-1"></div><span className="text-[10px] font-black uppercase text-slate-400">O Subir Archivo Físico</span><div className="h-px bg-slate-300 flex-1"></div></div>
@@ -920,15 +957,72 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                        <input type="file" accept="application/pdf,image/*" className="hidden" onChange={(e) => {
                           const f = e.target.files[0];
                           if(!f) return;
-                          const reader = new FileReader();
-                          reader.onload = () => {
-                             setF('scandocPdf', reader.result);
-                             showAlert("✅ Archivo adjuntado temporalmente. Se subirá al finalizar el acta.");
-                          };
-                          reader.readAsDataURL(f);
+
+                          // Prevención: Si es un trabajo nuevo, se sube normal al final
+                          if (job.id === 'NEW_QUICK_JOB') {
+                              const reader = new FileReader();
+                              reader.onload = () => {
+                                 setF('scandocPdf', reader.result);
+                                 showAlert("✅ Archivo adjuntado temporalmente. Se subirá y notificará al finalizar el acta.");
+                              };
+                              reader.readAsDataURL(f);
+                              return;
+                          }
+
+                          showAlert("⏳ Subiendo documento y notificando al cliente...");
+                          try {
+                             const reader = new FileReader();
+                             reader.onload = async () => {
+                                try {
+                                   const base64 = reader.result;
+                                   const ext = f.type.includes('pdf') ? 'pdf' : 'jpg';
+
+                                   const { getStorage, ref, uploadString, getDownloadURL } = await import('firebase/storage');
+                                   const storage = getStorage();
+                                   const fileRef = ref(storage, `checklists/${job.id}/documento_PRT_directo_${Date.now()}.${ext}`);
+                                   
+                                   const metadata = { contentType: f.type };
+                                   await uploadString(fileRef, base64, 'data_url', metadata);
+                                   const url = await getDownloadURL(fileRef);
+
+                                   const { updateDoc, doc } = await import('firebase/firestore');
+                                   const newChecklist = { ...(job.checklist || {}), scandocPdf: url };
+                                   await updateDoc(doc(db, 'transport_jobs', job.id), { checklist: newChecklist });
+
+                                   setF('scandocPdf', url);
+
+                                   const clientRecord = allClientsList.find(c => c.name === job.client);
+                                   const targetEmail = clientRecord?.email?.split(',')[0]?.trim();
+                                   if (targetEmail) {
+                                      fetch('/api/notify-client', {
+                                         method: 'POST',
+                                         headers: { 'Content-Type': 'application/json' },
+                                         body: JSON.stringify({
+                                            email: targetEmail,
+                                            clientName: job.client || 'Cliente',
+                                            type: 'revision_tecnica',
+                                            jobDetails: {
+                                               ...job,
+                                               driverName: drivers.find(d => d.email === currentUserEmail)?.name || 'Conductor',
+                                               checklist: newChecklist
+                                            }
+                                         })
+                                      }).catch(() => {});
+                                   }
+
+                                   showAlert("✅ Documento guardado y cliente notificado exitosamente.");
+                                } catch (uploadError) {
+                                   console.error(uploadError);
+                                   showAlert("❌ Error al subir y notificar.");
+                                }
+                             };
+                             reader.readAsDataURL(f);
+                          } catch(err) {
+                             showAlert("❌ Error al leer el documento.");
+                          }
                        }}/>
                        <FileText className="w-6 h-6"/>
-                       <span className="text-center">{formData.scandocPdf ? '✅ ARCHIVO CARGADO (Toca para cambiar)' : 'ADJUNTAR PDF O FOTO LOCAL'}</span>
+                       <span className="text-center">{formData.scandocPdf ? '✅ ARCHIVO CARGADO (Toca para cambiar)' : 'ADJUNTAR PDF O FOTO Y NOTIFICAR AL CLIENTE'}</span>
                     </label>
                  </div>
                  

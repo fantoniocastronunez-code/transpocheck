@@ -121,7 +121,9 @@ export default async function handler(req, res) {
           </a>
           
           ${(() => {
-            if (type === 'finalizado' && jobDetails?.checklist) {
+            if (/* El botón se activa tanto para traslados terminados normales como para revisiones directas */
+                (type === 'finalizado' || type === 'revision_tecnica') && jobDetails?.checklist
+            ) {
                const chk = jobDetails.checklist;
                const targetUrl = chk.scandocPdf || chk.scandocPdfInbox || chk.scannerLink;
                if (targetUrl) {
