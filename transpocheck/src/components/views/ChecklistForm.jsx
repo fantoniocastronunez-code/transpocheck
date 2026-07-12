@@ -991,23 +991,35 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
                                    setF('scandocPdf', url);
 
-                                   const clientRecord = allClientsList.find(c => c.name === job.client);
-                                   const targetEmail = clientRecord?.email?.split(',')[0]?.trim();
-                                   if (targetEmail) {
-                                      fetch('/api/notify-client', {
-                                         method: 'POST',
-                                         headers: { 'Content-Type': 'application/json' },
-                                         body: JSON.stringify({
-                                            email: targetEmail,
-                                            clientName: job.client || 'Cliente',
-                                            type: 'revision_tecnica',
-                                            jobDetails: {
-                                               ...job,
-                                               driverName: drivers.find(d => d.email === currentUserEmail)?.name || 'Conductor',
-                                               checklist: newChecklist
-                                            }
-                                         })
-                                      }).catch(() => {});
+                                   // Buscamos al cliente directo en la colección segura para sacar el correo real
+                                   const { query, collection, where, getDocs } = await import('firebase/firestore');
+                                   const qClient = query(collection(db, 'clients'), where('name', '==', job.client || ''));
+                                   const snapClient = await getDocs(qClient);
+                                   
+                                   if (!snapClient.empty) {
+                                      const clientRecord = snapClient.docs[0].data();
+                                      const targetEmail = clientRecord.email?.split(',')[0]?.trim();
+                                      
+                                      if (targetEmail) {
+                                         fetch('/api/notify-client', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                               email: targetEmail,
+                                               clientName: clientRecord.name,
+                                               type: 'revision_tecnica',
+                                               jobDetails: {
+                                                  id: job.id === 'NEW_QUICK_JOB' ? 'N/A' : job.id,
+                                                  driverName: drivers?.find(x => x.email === currentUserEmail)?.name || currentUserEmail,
+                                                  vehicle: job.tripType === 'simple' ? (job.description || 'Servicio en Terreno') : (`${job.brand || ''} ${job.model || ''}`.trim() || 'Vehículo'),
+                                                  plate: job.plate || job.vin || job.associatedPlate || 'S/N',
+                                                  origin: job.origin || 'Origen',
+                                                  destination: job.destination || 'Destino',
+                                                  checklist: newChecklist
+                                               }
+                                            })
+                                         }).catch((err) => console.error("Error enviando correo:", err));
+                                      }
                                    }
 
                                    showAlert("✅ Documento guardado y cliente notificado exitosamente.");
