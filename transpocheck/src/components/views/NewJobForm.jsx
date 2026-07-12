@@ -216,7 +216,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     }
 
     // MAGIA UX: CIERRE INMEDIATO
-    showAlert("⏳ Guardando en segundo plano...");
+    showAlert("⏳ Creando y asignando traslado...");
     if (jobToEdit && onCancelEdit) onCancelEdit();
     else onSuccess();
     
@@ -269,9 +269,14 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
         }
 
         syncTask.finish(); // Marca en verde en el Ojo
+        
+        // Dispara el mensaje de éxito (El cual será detectado por App.jsx y se auto-cerrará en 1 seg)
+        showAlert("✅ ¡Listo! Traslado procesado con éxito.");
+        
       } catch (error) { 
         console.error(error); 
         syncTask.error("Error de conexión"); // Marca en rojo en el Ojo
+        showAlert("❌ Hubo un error al guardar el traslado.");
       } finally {
         setIsSubmitting(false);
       }

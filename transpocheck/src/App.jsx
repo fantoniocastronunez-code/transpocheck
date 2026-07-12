@@ -102,9 +102,21 @@ function LogisticApp() {
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
-  const showAlert = (message) => setDialogConfig({ type: 'alert', message });
-  const showConfirm = (message, onConfirm) => setDialogConfig({ type: 'confirm', message, onConfirm });
   const closeDialog = () => setDialogConfig(null);
+
+  const showAlert = (message) => {
+    setDialogConfig({ type: 'alert', message });
+    
+    // Auto-cierre inteligente: Si el mensaje contiene "✅", se cierra en 1 segundo (1000ms)
+    if (typeof message === 'string' && message.includes('✅')) {
+      setTimeout(() => {
+        // Solo cerramos si el modal sigue siendo el mismo mensaje (evita cerrar otros modales por error)
+        setDialogConfig(prev => (prev && prev.message === message) ? null : prev);
+      }, 1000);
+    }
+  };
+
+  const showConfirm = (message, onConfirm) => setDialogConfig({ type: 'confirm', message, onConfirm });
 
   // 🚀 LA MAGIA: EL HOOK QUE HACE TODO EL TRABAJO SUCIO
   const { 

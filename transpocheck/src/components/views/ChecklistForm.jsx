@@ -334,7 +334,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     
     if (totalFiles > 0) {
       setUploadProgress({ active: true, current: totalFiles, total: totalFiles, text: '¡Sincronización exitosa!' });
-      setTimeout(() => setUploadProgress({ active: false, current: 0, total: 0, text: '' }), 1500);
+      setTimeout(() => setUploadProgress({ active: false, current: 0, total: 0, text: '' }), 1000);
     }
     
     return d;
