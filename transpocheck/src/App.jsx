@@ -1005,13 +1005,6 @@ function LogisticApp() {
                  <div className={`${mainTab==='jobs' ? 'bg-blue-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><ClipboardList className="w-5 h-5"/></div>
                  <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Trabajos</span>
               </button>
-              <button onClick={() => setMainTab('inbox')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='inbox' ? 'text-indigo-600' : 'text-slate-400 hover:text-indigo-600'}`}>
-                 <div className={`${mainTab==='inbox' ? 'bg-indigo-100' : 'bg-transparent'} p-2 rounded-xl mb-1 relative`}>
-                    <FileDown className="w-5 h-5"/>
-                    {inboxDocs?.length > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white font-black text-[9px] w-4 h-4 flex items-center justify-center rounded-full animate-pulse">{inboxDocs.length}</span>}
-                 </div>
-                 <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Bandeja</span>
-              </button>
               <button onClick={() => setMainTab('ranking')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='ranking' ? 'text-yellow-600' : 'text-slate-400 hover:text-yellow-600'}`}>
                  <div className={`${mainTab==='ranking' ? 'bg-yellow-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Trophy className="w-5 h-5"/></div>
                  <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Ranking</span>
