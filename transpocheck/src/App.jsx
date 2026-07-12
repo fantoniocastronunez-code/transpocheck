@@ -1178,7 +1178,18 @@ function LogisticApp() {
                        </div>
                        <div className="space-y-1">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Patente / VIN (Opcional)</label>
-                          <input name="plateOrVin" placeholder="Ej: ABCD12 (Si aplica)" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-black uppercase text-slate-800 outline-none focus:border-purple-500"/>
+                          <input name="plateOrVin" placeholder="Ej: ABCD12 (Si aplica)" onChange={(e) => {
+                              const val = e.target.value.toUpperCase();
+                              e.target.value = val; // Fuerza mayúsculas visualmente
+                              if (val.length >= 5 && vehicles) {
+                                  const found = vehicles.find(v => v.plate === val || (v.vin && v.vin === val));
+                                  if (found && e.target.form.client && found.client) {
+                                      // Valida que el cliente exista en las opciones del selector
+                                      const exists = Array.from(e.target.form.client.options).some(opt => opt.value === found.client);
+                                      if (exists) e.target.form.client.value = found.client;
+                                  }
+                              }
+                          }} className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-black uppercase text-slate-800 outline-none focus:border-purple-500"/>
                        </div>
                     </>
                  ) : (
@@ -1195,7 +1206,23 @@ function LogisticApp() {
                        </div>
                        <div className="space-y-1">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Patente o VIN</label>
-                          <input name="plateOrVin" required placeholder="Ej: ABCD12" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-black uppercase text-slate-800 outline-none focus:border-blue-500"/>
+                          <input name="plateOrVin" required placeholder="Ej: ABCD12" onChange={(e) => {
+                              const val = e.target.value.toUpperCase();
+                              e.target.value = val; // Fuerza mayúsculas visualmente
+                              if (val.length >= 5 && vehicles) {
+                                  const found = vehicles.find(v => v.plate === val || (v.vin && v.vin === val));
+                                  if (found) {
+                                      const form = e.target.form;
+                                      if (form.brand && found.brand) form.brand.value = found.brand;
+                                      if (form.model && found.model) form.model.value = found.model;
+                                      if (form.client && found.client) {
+                                          // Evitamos romper el select verificando si la empresa existe en el listado
+                                          const exists = Array.from(form.client.options).some(opt => opt.value === found.client);
+                                          if (exists) form.client.value = found.client;
+                                      }
+                                  }
+                              }
+                          }} className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-black uppercase text-slate-800 outline-none focus:border-blue-500"/>
                        </div>
                     </>
                  )}

@@ -30,6 +30,7 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
   
   const defaultNotifs = { creado: false, asignado: true, llegada_origen: false, en_ruta: true, llegada_destino: false, finalizado: true };
   const [clientNotifs, setClientNotifs] = useState(defaultNotifs);
+  const [driverNotifs, setDriverNotifs] = useState(defaultNotifs);
 
   React.useEffect(() => {
     if (editingClient) {
@@ -399,7 +400,13 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
 
       {configSubTab === 'drivers' && (
         <div className="grid md:grid-cols-2 gap-6">
-          <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry'), ...driverDocs }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); showAlert("Perfil actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); showAlert("Conductor creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4 relative">
+          <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const enableNotifications = Object.values(driverNotifs).some(v => v); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry'), enableNotifications, notifications: driverNotifs, ...driverDocs }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultNotifs); showAlert("Perfil actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultNotifs); showAlert("Conductor creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4 relative">
+            
+            {/* Lógica silenciosa para cargar notificaciones previas al editar */}
+            <div className="hidden">
+               {editingDriver && driverNotifs === defaultNotifs && editingDriver.notifications && setDriverNotifs(editingDriver.notifications)}
+            </div>
+
             <div className="flex justify-between items-start">
               <h3 className="font-extrabold text-slate-800 flex items-center gap-2"><User className="text-blue-600"/> {editingDriver ? 'Perfil del Conductor' : 'Nuevo Conductor'}</h3>
               {editingDriver?.createdAt && (
@@ -456,8 +463,43 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                <input name="licenseExpiry" type="date" defaultValue={editingDriver?.licenseExpiry || ''} className="w-full border-2 p-2 rounded-xl text-sm font-semibold outline-none text-slate-700 bg-white" />
             </div>
 
-            <div className="flex gap-3 pt-2 border-t border-slate-100">
-              {editingDriver && <button type="button" onClick={() => { setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); }} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>}
+            {/* PANEL DE NOTIFICACIONES COPIADO EXACTAMENTE */}
+            <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl shadow-sm space-y-3 mt-4">
+               <div className="border-b border-blue-200/50 pb-2">
+                  <p className="text-xs font-extrabold text-blue-900 flex items-center gap-1.5"><Eye className="w-4 h-4"/> Correos al Conductor</p>
+                  <p className="text-[10px] font-bold text-blue-600 mt-0.5 leading-tight">Selecciona exactamente qué copias recibirá este conductor.</p>
+               </div>
+               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+                  {[
+                    { id: 'creado', label: 'Creado' },
+                    { id: 'asignado', label: 'Asignado' },
+                    { id: 'llegada_origen', label: 'En Origen' },
+                    { id: 'en_ruta', label: 'En Ruta' },
+                    { id: 'llegada_destino', label: 'En Destino' },
+                    { id: 'finalizado', label: 'Acta PDF' }
+                  ].map(notif => {
+                     const isActive = driverNotifs[notif.id];
+                     return (
+                       <button
+                         key={notif.id}
+                         type="button"
+                         onClick={() => setDriverNotifs({...driverNotifs, [notif.id]: !isActive})}
+                         className={`py-3 px-1.5 rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all duration-200 border-2 flex flex-col items-center justify-center gap-1.5 select-none ${
+                           isActive
+                             ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200 scale-100'
+                             : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 scale-[0.98]'
+                         }`}
+                       >
+                         {isActive ? <CheckCircle className="w-5 h-5 mb-0.5 animate-in zoom-in duration-200" /> : <div className="w-5 h-5 mb-0.5 rounded-full border-2 border-slate-300 bg-white"></div>}
+                         <span className="text-center leading-tight">{notif.label}</span>
+                       </button>
+                     );
+                  })}
+               </div>
+            </div>
+
+            <div className="flex gap-3 pt-2 border-t border-slate-100 mt-4">
+              {editingDriver && <button type="button" onClick={() => { setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultNotifs); }} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>}
               <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-sm transition-colors shadow-lg shadow-blue-200">{editingDriver ? 'Guardar Perfil' : 'Crear Conductor'}</button>
             </div>
           </form>
