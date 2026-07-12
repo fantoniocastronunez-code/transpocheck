@@ -270,8 +270,12 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
 
         syncTask.finish(); // Marca en verde en el Ojo
         
-        // Dispara el mensaje de éxito (El cual será detectado por App.jsx y se auto-cerrará en 1 seg)
-        showAlert("✅ ¡Listo! Traslado procesado con éxito.");
+        // Dispara el mensaje de éxito e inyecta un cierre ultra rápido de 500ms (medio segundo)
+        showAlert("✅ ¡Listo! Traslado procesado.");
+        setTimeout(() => {
+           // Si el modal sigue abierto, lo forzamos a cerrar anulando la alerta vacía
+           showAlert(null);
+        }, 500);
         
       } catch (error) { 
         console.error(error); 
