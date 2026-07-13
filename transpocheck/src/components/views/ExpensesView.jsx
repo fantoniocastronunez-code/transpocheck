@@ -65,6 +65,27 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
       updateDoc(doc(db, 'drivers', driverId), { balance: newBalance });
       addDoc(collection(db, 'expenses'), { driverId, driverEmail: dEmail, driverName: dName, type, amount, detail: detailString, jobId: assocJobId, deductedAmount, createdAt: Date.now() });
       
+      // --- NUEVO: NOTIFICACIÓN POR CORREO AL CONDUCTOR ---
+      const targetDriver = drivers.find(d => d.id === driverId);
+      if (targetDriver && targetDriver.notifications) {
+         const notifType = type === 'assignment' ? 'asignacion' : 'nuevo_monto';
+         if (targetDriver.notifications[notifType]) {
+            fetch('/api/notify-driver', {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({
+                  email: targetDriver.email,
+                  driverName: targetDriver.name,
+                  type: notifType,
+                  amount: amount,
+                  detail: detailString,
+                  newBalance: newBalance
+               })
+            }).catch(err => console.warn("Aviso de correo al conductor falló:", err));
+         }
+      }
+      // ---------------------------------------------------
+
       e.target.reset(); 
       showAlert(type === 'assignment' ? "Fondo asignado correctamente." : "Gasto registrado exitosamente.");
     } catch (err) { console.error(err); }
@@ -85,7 +106,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
       // Interfaz Optimista: Sin await en la base de datos
       addDoc(collection(db, 'expenses'), { driverId: myDriver.id, driverEmail: myDriver.email, driverName: myDriver.name, type: 'pending_return', amount: myDriver.balance, detail: det, receiptImage: returnReceipt, createdAt: Date.now() });
       
-      // Disparamos el correo en segundo plano (sin await)
+      // Disparamos el correo al administrador en segundo plano
               fetch('/api/notify-admin', {
                  method: 'POST',
                  headers: { 'Content-Type': 'application/json' },
@@ -97,6 +118,22 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
                  })
               }).catch(mailErr => console.warn("Aviso de correo al admin falló:", mailErr));
 
+      // --- NUEVO: COPIA AL CORREO DEL CONDUCTOR (RENDICIÓN PENDIENTE) ---
+              if (myDriver.notifications && myDriver.notifications.rendicion_pendiente) {
+                 fetch('/api/notify-driver', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                       email: myDriver.email,
+                       driverName: myDriver.name,
+                       type: 'rendicion_pendiente',
+                       amount: myDriver.balance,
+                       detail: det
+                    })
+                 }).catch(err => console.warn("Copia al conductor falló:", err));
+              }
+      // ------------------------------------------------------------------
+
               setIsReturnOpen(false); setReturnReceipt(null); showAlert("✅ Rendición enviada. Esperando validación de Admin.");
             } catch(e) {
               console.error("Error enviando rendición:", e);
@@ -105,11 +142,34 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
             finally { setTimeout(() => setIsSubmittingReturn(false), 300); }
           };
 
+
           const approveReturn = async (exp) => {
             try {
               const d = drivers.find(x => x.id === exp.driverId);
-              if (d) await updateDoc(doc(db, 'drivers', d.id), { balance: Math.max(0, (d.balance||0) - exp.amount) });
+              let newDriverBalance = 0;
+              if (d) {
+                 newDriverBalance = Math.max(0, (d.balance||0) - exp.amount);
+                 await updateDoc(doc(db, 'drivers', d.id), { balance: newDriverBalance });
+              }
               await updateDoc(doc(db, 'expenses', exp.id), { type: 'return', detail: 'Rendición Aprobada' });
+              
+              // --- NUEVO: NOTIFICAR APROBACIÓN AL CONDUCTOR ---
+              if (d && d.notifications && d.notifications.nuevo_monto) {
+                 fetch('/api/notify-driver', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                       email: d.email,
+                       driverName: d.name,
+                       type: 'rendicion_aprobada',
+                       amount: exp.amount,
+                       detail: 'Rendición Aprobada',
+                       newBalance: newDriverBalance
+                    })
+                 }).catch(err => console.warn("Aviso de aprobación falló:", err));
+              }
+              // ------------------------------------------------
+
               showAlert("✅ Rendición aprobada. El balance del conductor volvió a 0.");
             } catch(e){
               console.error("Error aprobando rendición:", e);
@@ -219,10 +279,9 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
       try {
         let newlyDeducted = newAmount;
         const driverSnapshot = drivers.find(d => d.id === expense.driverId);
+        let currentDriverBalance = driverSnapshot ? (driverSnapshot.balance || 0) : 0;
         
         if (driverSnapshot) {
-          let currentDriverBalance = driverSnapshot.balance || 0;
-          
           if (expense.type === 'assignment') {
              const amountDiff = newAmount - expense.amount;
              currentDriverBalance += amountDiff;
@@ -236,6 +295,25 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
           await updateDoc(doc(db, 'drivers', expense.driverId), { balance: currentDriverBalance });
         }
         await updateDoc(doc(db, 'expenses', expense.id), { amount: newAmount, detail: newDetail, deductedAmount: newlyDeducted });
+        
+        // --- NUEVO: NOTIFICACIÓN POR CORREO AL CONDUCTOR (MODIFICACIÓN) ---
+        if (driverSnapshot && driverSnapshot.notifications && driverSnapshot.notifications.modificacion) {
+           fetch('/api/notify-driver', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                 email: driverSnapshot.email,
+                 driverName: driverSnapshot.name,
+                 type: 'modificacion',
+                 oldAmount: expense.amount,
+                 newAmount: newAmount,
+                 detail: newDetail,
+                 newBalance: currentDriverBalance
+              })
+           }).catch(err => console.warn("Aviso de modificación falló:", err));
+        }
+        // ------------------------------------------------------------------
+
         showAlert("Registro actualizado."); onClose();
       } catch (error) { console.error(error); showAlert("Error actualizando."); }
     };
@@ -511,3 +589,4 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
     </main>
   );
 }
+
