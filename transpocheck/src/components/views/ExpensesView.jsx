@@ -70,7 +70,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
       if (targetDriver && targetDriver.notifications) {
          const notifType = type === 'assignment' ? 'asignacion' : 'nuevo_monto';
          if (targetDriver.notifications[notifType]) {
-            fetch('/api/notify-driver', {
+            fetch('/api/notify-finance', {
                method: 'POST',
                headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({
@@ -120,7 +120,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
 
       // --- NUEVO: COPIA AL CORREO DEL CONDUCTOR (RENDICIÓN PENDIENTE) ---
               if (myDriver.notifications && myDriver.notifications.rendicion_pendiente) {
-                 fetch('/api/notify-driver', {
+                 fetch('/api/notify-finance', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -155,7 +155,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
               
               // --- NUEVO: NOTIFICAR APROBACIÓN AL CONDUCTOR ---
               if (d && d.notifications && d.notifications.nuevo_monto) {
-                 fetch('/api/notify-driver', {
+                 fetch('/api/notify-finance', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -298,7 +298,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
         
         // --- NUEVO: NOTIFICACIÓN POR CORREO AL CONDUCTOR (MODIFICACIÓN) ---
         if (driverSnapshot && driverSnapshot.notifications && driverSnapshot.notifications.modificacion) {
-           fetch('/api/notify-driver', {
+           fetch('/api/notify-finance', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -589,4 +589,5 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
     </main>
   );
 }
+
 
