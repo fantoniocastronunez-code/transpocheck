@@ -1150,14 +1150,28 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             </span>
           </div>
 
-          {/* Fila de Patente Agrandada al Máximo en el Centro de la caja */}
+          {/* Fila de Patente Agrandada al Máximo en el Centro de la caja (Estilo Patente Chilena) */}
           {ident !== 'S/N' && (
-            <div className="flex flex-col items-center border-t border-slate-200/60 pt-2 mt-2 gap-1 pb-1">
-              <span className="text-lg sm:text-xl font-black tracking-widest text-slate-900 bg-slate-200/80 px-6 py-2 rounded-xl border-2 border-slate-300 uppercase shadow-sm">
-                {ident}
-              </span>
+            <div className="flex flex-col items-center border-t border-slate-200/60 pt-3 mt-2 gap-1 pb-1">
+              <div className="relative bg-white border-[3px] border-slate-300 rounded-xl shadow-md px-6 py-1.5 flex flex-col items-center justify-center min-w-[140px]">
+                {/* Tornillos Simulados */}
+                <div className="absolute top-1.5 left-2 w-1.5 h-1.5 bg-slate-400 rounded-full shadow-inner"></div>
+                <div className="absolute top-1.5 right-2 w-1.5 h-1.5 bg-slate-400 rounded-full shadow-inner"></div>
+                <div className="absolute bottom-1.5 left-2 w-1.5 h-1.5 bg-slate-400 rounded-full shadow-inner"></div>
+                <div className="absolute bottom-1.5 right-2 w-1.5 h-1.5 bg-slate-400 rounded-full shadow-inner"></div>
+                
+                {/* Texto Patente */}
+                <span className="text-2xl sm:text-3xl font-black tracking-[0.2em] text-slate-900 uppercase leading-none mt-1">
+                  {ident}
+                </span>
+                
+                {/* País */}
+                <span className="text-[8px] font-black text-slate-800 tracking-widest uppercase mt-0.5">
+                  CHILE
+                </span>
+              </div>
               {j.vin && ident !== j.vin && (
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">VIN: {j.vin}</span>
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-2">VIN: {j.vin}</span>
               )}
             </div>
           )}
@@ -1394,9 +1408,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                                               <p className="text-xs font-black text-slate-800 truncate">{j.brand} {j.model}</p>
                                           )}
                                           {j.tripType === 'simple' ? (
-                                              <span className="text-[9px] bg-purple-100 border border-purple-200 text-purple-800 px-1.5 py-0.5 rounded font-black uppercase">SERVICIO</span>
+                                              <span className="text-[9px] bg-purple-100 border border-purple-200 text-purple-800 px-1.5 py-0.5 rounded font-black uppercase shadow-sm">SERVICIO</span>
                                           ) : (
-                                              <span className="text-[9px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-black uppercase">{ident}</span>
+                                              <LicensePlateBadge text={ident} />
                                           )}
                                       </div>
                                       <p className="text-[10px] font-bold text-slate-500 truncate">
@@ -1725,6 +1739,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     </div>
   );
 }
+
 
 
 
