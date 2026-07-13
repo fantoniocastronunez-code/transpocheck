@@ -396,20 +396,6 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
   const setF = (f, v) => setFormData(p => ({...p, [f]:v}));
 
-
-  const handleReminderChange = (index, field, value) => {
-    const newRems = [...(formData.internalReminders || [])];
-    newRems[index][field] = value;
-    setF('internalReminders', newRems);
-  };
-  const addReminder = () => setF('internalReminders', [...(formData.internalReminders || []), { id: Date.now().toString(), text: '', photo: null, resolved: false }]);
-  const removeReminder = (index) => {
-    const newRems = [...(formData.internalReminders || [])];
-    newRems.splice(index, 1);
-    setF('internalReminders', newRems);
-  };
-
-
   const clearDraft = () => {
     showConfirm("¿Eliminar borrador y empezar de nuevo?", async () => {
       if (!isQuick) await updateDoc(doc(db, 'transport_jobs', job.id), { draft: null });

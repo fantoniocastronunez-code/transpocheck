@@ -86,44 +86,54 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
       addDoc(collection(db, 'expenses'), { driverId: myDriver.id, driverEmail: myDriver.email, driverName: myDriver.name, type: 'pending_return', amount: myDriver.balance, detail: det, receiptImage: returnReceipt, createdAt: Date.now() });
       
       // Disparamos el correo en segundo plano (sin await)
-      fetch('/api/notify-admin', {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({
-            type: 'rendicion',
-            driverName: myDriver.name,
-            amount: myDriver.balance,
-            detail: det
-         })
-      }).catch(mailErr => console.warn("Aviso de correo al admin falló:", mailErr));
+              fetch('/api/notify-admin', {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({
+                    type: 'rendicion',
+                    driverName: myDriver.name,
+                    amount: myDriver.balance,
+                    detail: det
+                 })
+              }).catch(mailErr => console.warn("Aviso de correo al admin falló:", mailErr));
 
-      setIsReturnOpen(false); setReturnReceipt(null); showAlert("Rendición enviada. Esperando validación de Admin.");
-    } catch(e) {}
-    finally { setTimeout(() => setIsSubmittingReturn(false), 300); }
-  };
+              setIsReturnOpen(false); setReturnReceipt(null); showAlert("✅ Rendición enviada. Esperando validación de Admin.");
+            } catch(e) {
+              console.error("Error enviando rendición:", e);
+              showAlert("❌ Ocurrió un error al enviar la rendición.");
+            }
+            finally { setTimeout(() => setIsSubmittingReturn(false), 300); }
+          };
 
-  const approveReturn = async (exp) => {
-    try {
-      const d = drivers.find(x => x.id === exp.driverId);
-      if (d) await updateDoc(doc(db, 'drivers', d.id), { balance: Math.max(0, (d.balance||0) - exp.amount) });
-      await updateDoc(doc(db, 'expenses', exp.id), { type: 'return', detail: 'Rendición Aprobada' });
-      showAlert("Rendición aprobada. El balance del conductor volvió a 0.");
-    } catch(e){}
-  };
+          const approveReturn = async (exp) => {
+            try {
+              const d = drivers.find(x => x.id === exp.driverId);
+              if (d) await updateDoc(doc(db, 'drivers', d.id), { balance: Math.max(0, (d.balance||0) - exp.amount) });
+              await updateDoc(doc(db, 'expenses', exp.id), { type: 'return', detail: 'Rendición Aprobada' });
+              showAlert("✅ Rendición aprobada. El balance del conductor volvió a 0.");
+            } catch(e){
+              console.error("Error aprobando rendición:", e);
+              showAlert("❌ Error al aprobar la rendición. Revisa tu conexión.");
+            }
+          };
 
-  const delExp = (exp) => {
-    if (!isAdminView && exp.type === 'assignment') return showAlert("No posees permisos.");
-    showConfirm("¿Eliminar registro financiero? El saldo se recalculará.", async () => {
-      try {
-        const d = drivers.find(x => x.id === exp.driverId);
-        if (d) {
-           let amountToRestore = exp.type === 'assignment' ? -exp.amount : (exp.deductedAmount !== undefined ? exp.deductedAmount : exp.amount);
-           await updateDoc(doc(db, 'drivers', d.id), { balance: (d.balance||0) + amountToRestore });
-        }
-        await deleteDoc(doc(db, 'expenses', exp.id));
-      } catch(e){}
-    });
-  };
+          const delExp = (exp) => {
+            if (!isAdminView && exp.type === 'assignment') return showAlert("No posees permisos.");
+            showConfirm("¿Eliminar registro financiero? El saldo se recalculará.", async () => {
+              try {
+                const d = drivers.find(x => x.id === exp.driverId);
+                if (d) {
+                   let amountToRestore = exp.type === 'assignment' ? -exp.amount : (exp.deductedAmount !== undefined ? exp.deductedAmount : exp.amount);
+                   await updateDoc(doc(db, 'drivers', d.id), { balance: (d.balance||0) + amountToRestore });
+                }
+                await deleteDoc(doc(db, 'expenses', exp.id));
+                showAlert("✅ Registro eliminado y saldo recalculado.");
+              } catch(e){
+                console.error("Error eliminando registro:", e);
+                showAlert("❌ Error al eliminar el registro financiero.");
+              }
+            });
+          };
 
   const resetBalance = (d) => {
      if (!d.balance || d.balance === 0) return showAlert("El saldo de este conductor ya es $0.");

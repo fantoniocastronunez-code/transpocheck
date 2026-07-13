@@ -146,11 +146,13 @@ export default function SignaturePad({ initialData, onSave, onClear }) {
 
         <canvas
           ref={canvasRef}
-          className={`w-full cursor-crosshair touch-none ${isFullscreen ? 'flex-1' : 'h-full'}`}
-          onPointerDown={startDrawing}
+          className={`w-full cursor-crosshair ${isFullscreen ? 'flex-1' : 'h-full'}`}
+          style={{ touchAction: 'none' }} 
+          onPointerDown={(e) => { e.target.releasePointerCapture(e.pointerId); startDrawing(e); }}
           onPointerMove={draw}
           onPointerUp={stopDrawing}
           onPointerLeave={stopDrawing}
+          onPointerCancel={stopDrawing}
         />
 
         {/* Controles Flotantes */}

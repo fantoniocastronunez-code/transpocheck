@@ -126,27 +126,31 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
     return () => unsub();
   }, []);
 
-  // Efecto 3: Auto-registro Blindado
+  // Efecto 3: Auto-registro Blindado Optimizado
   useEffect(() => {
-    const myDriver = user ? drivers.find(d => d.email === currentUserEmail) : null;
-    if (user && activeRole === 'driver' && dataLoaded && !myDriver && navigator.onLine && !registeringRef.current) {
-        const isClientAccount = customClients.some(c => c.email && c.email.toLowerCase().includes(currentUserEmail));
-        if (!isClientAccount && !isRealAdmin) {
-          registeringRef.current = true;
-          (async () => {
-            try {
-              const q = query(collection(db, 'drivers'), where('email', '==', currentUserEmail));
-              const snap = await getDocs(q);
-              if (snap.empty) {
-                await addDoc(collection(db, 'drivers'), {
-                  name: user.displayName || 'Conductor Nuevo',
-                  email: currentUserEmail, balance: 0, licenses: [], licenseExpiry: '', createdAt: Date.now()
-                });
-              }
-            } catch(e) { console.error("Error auto-registro", e); } 
-            finally { registeringRef.current = false; }
-          })();
+    if (!user || !dataLoaded || activeRole !== 'driver' || !navigator.onLine || registeringRef.current) return;
+    
+    // Todo en minúsculas estrictas para evitar duplicados fantasma
+    const safeEmail = currentUserEmail?.toLowerCase() || '';
+    const myDriver = drivers.find(d => d.email?.toLowerCase() === safeEmail);
+    const isClientAccount = customClients.some(c => c.email && c.email.toLowerCase().includes(safeEmail));
+    
+    if (!myDriver && !isClientAccount && !isRealAdmin) {
+      registeringRef.current = true;
+      (async () => {
+        try {
+          // Ya sabemos que no existe en el array local, lo creamos directamente sin consultar a la BD otra vez
+          await addDoc(collection(db, 'drivers'), {
+            name: user.displayName || 'Conductor Nuevo',
+            email: safeEmail, balance: 0, licenses: [], licenseExpiry: '', createdAt: Date.now()
+          });
+          console.log("✅ Auto-registro exitoso para:", safeEmail);
+        } catch(e) { 
+          console.error("Error auto-registro", e); 
+        } finally { 
+          registeringRef.current = false; 
         }
+      })();
     }
   }, [user, activeRole, dataLoaded, currentUserEmail, customClients, isRealAdmin, drivers]);
 

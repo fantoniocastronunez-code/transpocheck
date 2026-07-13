@@ -45,8 +45,7 @@ const CustomClientSelector = ({ value, onChange, clients, placeholder }) => {
           {value && value !== 'OTRO' ? (
             <>
               <div className="w-6 h-6 rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-                <img src={getLogoPath(value)} alt={value} className="w-full h-full object-contain bg-white" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
-                <span className={`w-full h-full flex items-center justify-center text-[10px] font-black ${getBadgeColor(value)}`} style={{display: 'none'}}>{value.substring(0, 2).toUpperCase()}</span>
+                <img src={getLogoPath(value)} alt={value} className="w-full h-full object-contain bg-white" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100' height='100' fill='%23e2e8f0'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='900' font-size='40' fill='%2364748b'>${value.substring(0, 2).toUpperCase()}</text></svg>`; }} />
               </div>
               <span className="truncate">{value}</span>
             </>
@@ -71,8 +70,7 @@ const CustomClientSelector = ({ value, onChange, clients, placeholder }) => {
           {clients.map(c => (
             <button key={c} type="button" onClick={() => { onChange(c); setIsOpen(false); }} className={`w-full flex items-center gap-3 p-3 hover:bg-blue-50 dark:hover:bg-slate-700/50 transition-colors text-left ${value === c ? 'bg-blue-50 dark:bg-slate-700/50' : ''}`}>
               <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm">
-                <img src={getLogoPath(c)} alt={c} className="w-full h-full object-contain p-1 bg-white" onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
-                <span className={`w-full h-full flex items-center justify-center text-xs font-black ${getBadgeColor(c)}`} style={{display: 'none'}}>{c.substring(0, 2).toUpperCase()}</span>
+                <img src={getLogoPath(c)} alt={c} className="w-full h-full object-contain p-1 bg-white" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100' height='100' fill='%23e2e8f0'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='900' font-size='40' fill='%2364748b'>${c.substring(0, 2).toUpperCase()}</text></svg>`; }} />
               </div>
               <span className={`text-sm font-bold flex-1 truncate ${value === c ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'}`}>{c}</span>
               {value === c && <CheckCircle className="w-4 h-4 text-blue-500 shrink-0" />}

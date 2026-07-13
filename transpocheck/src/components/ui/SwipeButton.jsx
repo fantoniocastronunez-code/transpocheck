@@ -32,21 +32,23 @@ const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600", isProc
   const handleMove = (clientX) => {
     if (isConfirmed || !startX.current) return;
     const containerWidth = containerRef.current.offsetWidth;
-    const maxLeft = containerWidth - 48; 
+    const maxLeft = containerWidth - 48;
     let newLeft = clientX - startX.current;
+    
+    // Validar límites
     if (newLeft < 0) newLeft = 0;
-
-    if (newLeft >= maxLeft * 0.9) {
-      setSliderLeft(maxLeft);
-      setIsConfirmed(true);
-      startX.current = 0;
-      if (navigator.vibrate) { try { navigator.vibrate([30, 40, 30]); } catch(e){} }
-      onConfirm();
-      return;
-    }
-
     if (newLeft > maxLeft) newLeft = maxLeft;
+
     setSliderLeft(newLeft);
+
+    // Disparo al superar el 85% del recorrido
+    if (newLeft >= maxLeft * 0.85) {
+      setIsConfirmed(true);
+      setSliderLeft(maxLeft);
+      startX.current = 0;
+      if (navigator.vibrate) { try { navigator.vibrate(50); } catch(e){} }
+      onConfirm();
+    }
   };
 
   const handleEnd = () => {
@@ -73,9 +75,10 @@ const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600", isProc
       <div className={`absolute top-0 left-0 h-full ${colorClass} transition-opacity duration-200`} style={{ width: `${sliderLeft + 24}px`, opacity: isConfirmed ? 1 : 0.3 }} />
       <div 
         className={`absolute top-1 bottom-1 w-10 rounded-lg flex items-center justify-center cursor-grab shadow-sm transition-colors z-10 ${isConfirmed ? 'bg-white text-green-600' : `${colorClass} text-white`}`}
-        style={{ left: `${sliderLeft + 4}px`, transition: startX.current ? 'none' : 'left 0.2s ease-out' }}
-        onTouchStart={e => handleStart(e.touches[0].clientX)}
-        onTouchMove={e => handleMove(e.touches[0].clientX)}
+        // Eliminamos la transición manual para evitar el "flicker" durante el arrastre y dejamos que el navegador gestione la posición
+        style={{ left: `${sliderLeft + 4}px`, transition: startX.current ? 'none' : 'left 0.1s linear' }}
+        onTouchStart={e => { e.stopPropagation(); handleStart(e.touches[0].clientX); }}
+        onTouchMove={e => { e.stopPropagation(); handleMove(e.touches[0].clientX); }}
         onTouchEnd={handleEnd}
         onTouchCancel={handleEnd}
         onMouseDown={e => handleStart(e.clientX)}

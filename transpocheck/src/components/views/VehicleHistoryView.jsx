@@ -12,9 +12,10 @@ export default function VehicleHistoryView({ db, showAlert }) {
 
   const handleSearch = async (e) => {
     e.preventDefault();
-    const term = searchTerm.trim().toUpperCase();
+    const term = searchTerm.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
     if (!term) return;
 
+    setSearchTerm(term); // Actualiza el input visualmente
     setIsSearching(true);
     setHasSearched(true);
     
@@ -148,15 +149,28 @@ export default function VehicleHistoryView({ db, showAlert }) {
                     
                     {/* Cabecera del Acta */}
                     <div className="bg-slate-50 p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{dateStr}</p>
-                        <div className="flex items-center gap-3">
-                          <h4 className="text-lg font-black text-slate-800">{job.brand} {job.model}</h4>
-                          <LicensePlateBadge text={job.plate || job.vin} />
+                        <div className="flex items-center gap-3 mb-2">
+                          <h4 className="text-lg font-black text-slate-800 truncate">{job.brand} {job.model}</h4>
+                          <div className="shrink-0"><LicensePlateBadge text={job.plate || job.vin} /></div>
                         </div>
-                        <p className="text-sm font-bold text-slate-500 mt-2 flex items-center gap-1.5"><MapPin className="w-4 h-4 text-slate-400"/> {job.origin} ➔ {job.destination || 'PRT'}</p>
+                        <div className="flex items-center gap-1 flex-wrap text-sm font-bold text-slate-500 mt-1">
+                           <MapPin className="w-4 h-4 text-slate-400 shrink-0"/> 
+                           <span className="text-slate-700">{job.origin}</span>
+                           {(job.destination || job.tripType !== 'simple') && (
+                              <>
+                                <span className="text-slate-300 font-black mx-1">➔</span>
+                                {job.waypoints && job.waypoints.length > 0 && (
+                                   <span className="text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 text-xs">+{job.waypoints.length} paradas</span>
+                                )}
+                                {job.waypoints && job.waypoints.length > 0 && <span className="text-slate-300 font-black mx-1">➔</span>}
+                                <span className="text-blue-600">{job.tripType === 'revision' ? 'PRT' : job.destination}</span>
+                              </>
+                           )}
+                        </div>
                       </div>
-                      <div className="text-left sm:text-right bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                      <div className="text-left sm:text-right bg-white p-3 rounded-xl border border-slate-100 shadow-sm shrink-0">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Responsable del Traslado</p>
                         <p className="text-sm font-bold text-blue-700 flex items-center sm:justify-end gap-1.5"><User className="w-4 h-4"/> {driverName}</p>
                       </div>

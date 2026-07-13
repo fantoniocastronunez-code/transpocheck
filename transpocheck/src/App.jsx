@@ -530,12 +530,6 @@ function LogisticApp() {
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
   };
 
-  const handleQuickChecklist = () => {
-    const today = new Date().toISOString().split('T')[0];
-    setSelectedJob({ id: 'NEW_QUICK_JOB', client: '', brand: '', model: '', plate: '', vin: '', origin: '', destination: '', tripType: 'traslado', scheduledDate: today });
-    navigate('/checklist');
-  };
-
   // --- CONTROL DE ONBOARDING ESTRICTO ---
   const needsOnboarding = myDriver && (
     !myDriver.photo || myDriver.photo === "" || 
@@ -1178,9 +1172,9 @@ function LogisticApp() {
                        </div>
                        <div className="space-y-1">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Patente / VIN (Opcional)</label>
-                          <input name="plateOrVin" placeholder="Ej: ABCD12 (Si aplica)" onChange={(e) => {
-                              const val = e.target.value.toUpperCase();
-                              e.target.value = val; // Fuerza mayúsculas visualmente
+                          <input name="plateOrVin" maxLength="17" placeholder="Ej: ABCD12 (Si aplica)" onChange={(e) => {
+                              const val = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                              e.target.value = val; // Fuerza mayúsculas visualmente y limpia basura
                               if (val.length >= 5 && vehicles) {
                                   const found = vehicles.find(v => v.plate === val || (v.vin && v.vin === val));
                                   if (found && e.target.form.client && found.client) {
@@ -1206,9 +1200,9 @@ function LogisticApp() {
                        </div>
                        <div className="space-y-1">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Patente o VIN</label>
-                          <input name="plateOrVin" required placeholder="Ej: ABCD12" onChange={(e) => {
-                              const val = e.target.value.toUpperCase();
-                              e.target.value = val; // Fuerza mayúsculas visualmente
+                          <input name="plateOrVin" required maxLength="17" placeholder="Ej: ABCD12" onChange={(e) => {
+                              const val = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                              e.target.value = val; // Fuerza mayúsculas visualmente y limpia basura
                               if (val.length >= 5 && vehicles) {
                                   const found = vehicles.find(v => v.plate === val || (v.vin && v.vin === val));
                                   if (found) {

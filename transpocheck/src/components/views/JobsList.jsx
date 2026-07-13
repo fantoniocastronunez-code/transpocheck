@@ -250,7 +250,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
   const handleDeleteJob = async (jobId) => {
     showConfirm("¿Estás seguro de eliminar este trabajo definitivamente?", async () => {
-      try { await deleteDoc(doc(db, 'transport_jobs', jobId)); } catch (e) { console.error(e); }
+      try { 
+        await deleteDoc(doc(db, 'transport_jobs', jobId)); 
+        showAlert("✅ Traslado eliminado correctamente de la base de datos.");
+      } catch (e) { 
+        console.error("Error eliminando traslado:", e); 
+        showAlert("❌ Error al eliminar el traslado. Revisa tu conexión.");
+      }
     });
   };
 
@@ -1707,7 +1713,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     </div>
                  </div>
                  <input type="text" placeholder="Nombre del Receptor" value={bulkReceiverName} onChange={e=>setBulkReceiverName(e.target.value)} className="w-full border-2 p-3 rounded-xl font-bold outline-none focus:border-emerald-500"/>
-                 <input type="text" placeholder="RUT Receptor" value={bulkReceiverRut} onChange={e=>setBulkReceiverRut(e.target.value)} className="w-full border-2 p-3 rounded-xl font-bold outline-none focus:border-emerald-500"/>
+                 <input type="text" placeholder="RUT Receptor" maxLength="12" value={bulkReceiverRut} onChange={(e)=>{ let val = e.target.value.replace(/[^0-9kK]/g, '').toUpperCase(); if (val.length > 1) { const dv = val.slice(-1); const body = val.slice(0, -1); val = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '-' + dv; } setBulkReceiverRut(val); }} className="w-full border-2 p-3 rounded-xl font-bold outline-none focus:border-emerald-500"/>
                  <div className="border-2 rounded-xl overflow-hidden">
                     <SignaturePad onSave={d=>setBulkSignature(d)} onClear={()=>setBulkSignature(null)}/>
                  </div>

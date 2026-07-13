@@ -3,7 +3,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { User, Camera, CheckCircle } from 'lucide-react';
 import { resizeImage } from '../../utils/helpers';
 
-export default function DriverOnboarding({ driver, db }) {
+export default function DriverOnboarding({ driver, db, showAlert }) {
   const [docs, setDocs] = useState({ 
     photo: driver.photo || null, 
     idFront: driver.idFront || null, 
@@ -20,7 +20,9 @@ export default function DriverOnboarding({ driver, db }) {
       const compressed = await resizeImage(file, 800, 0.5);
       setDocs(prev => ({ ...prev, [field]: compressed }));
     } catch (error) {
-      alert("Error al procesar la imagen. Intente de nuevo.");
+      console.error("Error de imagen:", error);
+      if (showAlert) showAlert("❌ Error al procesar la imagen. Intente de nuevo.");
+      else alert("Error al procesar la imagen. Intente de nuevo.");
     }
   };
 
@@ -32,7 +34,9 @@ export default function DriverOnboarding({ driver, db }) {
     try {
       await updateDoc(doc(db, 'drivers', driver.id), docs);
     } catch (error) {
-      alert("Error guardando los documentos.");
+      console.error("Error guardando docs:", error);
+      if (showAlert) showAlert("❌ Error al guardar los documentos. Revisa tu conexión.");
+      else alert("Error guardando los documentos.");
       setIsSubmitting(false);
     }
   };

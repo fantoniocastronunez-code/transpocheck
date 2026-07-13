@@ -39,6 +39,23 @@ export default function RelayAcceptView({ jobId, db, currentUserEmail, drivers }
           { from: job.acceptedByEmail, to: currentUserEmail, date: Date.now() }
         ]
       });
+
+      // Disparamos aviso silencioso al admin
+      const previousDriverName = drivers.find(d => d.email === job.acceptedByEmail)?.name || job.acceptedByEmail;
+      fetch('/api/notify-admin', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+            type: 'relay',
+            driverName: myDriver?.name || currentUserEmail,
+            jobDetails: {
+               client: previousDriverName, // Usamos el campo client para meter al conductor que entregó
+               vehicle: `${job.brand || ''} ${job.model || ''}`.trim() || 'Vehículo',
+               plate: job.plate || job.vin || 'S/N',
+               origin: 'Traspaso en Ruta'
+            }
+         })
+      }).catch(err => console.warn("Aviso de relevo al admin falló:", err));
       
       navigate('/');
     } catch (error) {
@@ -61,6 +78,10 @@ export default function RelayAcceptView({ jobId, db, currentUserEmail, drivers }
       );
   }
 
+  // Buscamos el nombre del conductor que entrega
+  const previousDriver = drivers?.find(d => d.email === job.acceptedByEmail);
+  const previousDriverName = previousDriver ? previousDriver.name : job.acceptedByEmail;
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 text-center">
       <div className="bg-white p-8 rounded-3xl shadow-xl max-w-sm w-full border-t-8 border-purple-500 animate-in zoom-in-95">
@@ -76,7 +97,7 @@ export default function RelayAcceptView({ jobId, db, currentUserEmail, drivers }
           </div>
           
           <p className="text-[10px] font-black text-slate-400 uppercase">Te lo entrega</p>
-          <p className="font-extrabold text-red-600 mb-2">{job.acceptedByEmail}</p>
+          <p className="font-extrabold text-red-600 mb-2">{previousDriverName}</p>
 
           <p className="text-[10px] font-black text-slate-400 uppercase">Ruta restante</p>
           <p className="font-bold text-slate-700 text-xs">{job.origin} ➔ {job.destination}</p>

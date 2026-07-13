@@ -128,7 +128,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     
     if (selectedDriverIds.length === 0) {
         setIsSubmitting(false);
-        return showAlert("Debes seleccionar al menos un conductor.");
+        return showAlert("❌ Debes seleccionar al menos un conductor.");
     }
 
     const assignedDriversList = drivers.filter(d => selectedDriverIds.includes(d.id));
@@ -350,8 +350,8 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                  {vehicleFoundStatus === 'found' && !isSearchingVehicle && <span className="text-xs font-black text-green-700 bg-green-200 px-2 py-1 rounded-md flex items-center gap-1"><CheckCircle className="w-3 h-3"/> ¡Encontrado!</span>}
                </div>
                <div className="grid grid-cols-2 gap-4">
-                 <input value={plate} onChange={e=>handleVehicleSearch(e.target.value, 'plate')} type="text" placeholder="Patente (Ej. ABCD12)" className={`w-full border-2 p-3 text-sm rounded-xl uppercase outline-none font-black bg-white shadow-sm transition-colors ${isSearchingVehicle ? 'border-blue-400 ring-2 ring-blue-100' : vehicleFoundStatus === 'found' ? 'border-green-400 text-green-800' : 'border-slate-300 focus:border-blue-500 text-slate-800'}`} />
-                 <input value={vin} onChange={e=>handleVehicleSearch(e.target.value, 'vin')} type="text" placeholder="VIN / Chasis" className={`w-full border-2 p-3 text-sm rounded-xl uppercase outline-none font-black bg-white shadow-sm transition-colors ${isSearchingVehicle ? 'border-blue-400 ring-2 ring-blue-100' : vehicleFoundStatus === 'found' ? 'border-green-400 text-green-800' : 'border-slate-300 focus:border-blue-500 text-slate-800'}`} />
+                 <input value={plate} onChange={e=>handleVehicleSearch(e.target.value.replace(/[^a-zA-Z0-9]/g, ''), 'plate')} maxLength="6" type="text" placeholder="Patente (Ej. ABCD12)" className={`w-full border-2 p-3 text-sm rounded-xl uppercase outline-none font-black bg-white shadow-sm transition-colors ${isSearchingVehicle ? 'border-blue-400 ring-2 ring-blue-100' : vehicleFoundStatus === 'found' ? 'border-green-400 text-green-800' : 'border-slate-300 focus:border-blue-500 text-slate-800'}`} />
+                 <input value={vin} onChange={e=>handleVehicleSearch(e.target.value.replace(/[^a-zA-Z0-9]/g, ''), 'vin')} maxLength="17" type="text" placeholder="VIN / Chasis" className={`w-full border-2 p-3 text-sm rounded-xl uppercase outline-none font-black bg-white shadow-sm transition-colors ${isSearchingVehicle ? 'border-blue-400 ring-2 ring-blue-100' : vehicleFoundStatus === 'found' ? 'border-green-400 text-green-800' : 'border-slate-300 focus:border-blue-500 text-slate-800'}`} />
                  <input value={brand} onChange={e=>setBrand(e.target.value)} type="text" placeholder="Marca" className={`w-full border-2 p-3 text-sm rounded-xl outline-none font-semibold bg-white transition-colors ${vehicleFoundStatus === 'found' ? 'border-green-300 text-green-800' : 'border-slate-200 focus:border-blue-500 text-slate-800'}`} />
                  <input value={model} onChange={e=>setModel(e.target.value)} type="text" placeholder="Modelo" className={`w-full border-2 p-3 text-sm rounded-xl outline-none font-semibold bg-white transition-colors ${vehicleFoundStatus === 'found' ? 'border-green-300 text-green-800' : 'border-slate-200 focus:border-blue-500 text-slate-800'}`} />
 

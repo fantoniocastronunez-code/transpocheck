@@ -395,15 +395,42 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                   </div>
                 </div>
 
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs font-black flex items-center justify-between gap-1 mb-5 shadow-sm">
-                  <span className="truncate text-slate-700 max-w-[45%]" title={job.origin}>
-                     <MapPin className="inline w-3.5 h-3.5 mr-1 -mt-0.5 text-slate-400 shrink-0"/>
-                     {job.origin || 'Por definir'}
-                  </span>
-                  <span className="text-slate-300 font-black shrink-0">➔</span>
-                  <span className="truncate text-blue-600 max-w-[45%] text-right" title={job.destination}>
-                     {job.tripType === 'revision' ? 'Planta PRT' : (job.destination || 'Por definir')}
-                  </span>
+                <div className="bg-slate-100 p-3 rounded-2xl border-2 border-slate-200 mb-5 shadow-inner">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-0.5">{job.tripType === 'simple' ? 'Lugar' : 'Desde'}</span>
+                      <p className="text-sm font-extrabold text-slate-800 truncate">{job.origin || 'Por definir'}</p>
+                    </div>
+                    {(job.destination || job.tripType !== 'simple') && (
+                      <>
+                        <div className="text-slate-400 font-black text-sm px-2">➔</div>
+                        {job.waypoints && job.waypoints.length > 0 && (
+                           <>
+                              <div className="flex-1 min-w-0 text-center">
+                                 <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest block mb-0.5">{job.waypoints.length === 1 ? 'Parada' : 'Paradas'}</span>
+                                 <p className="text-xs font-extrabold text-amber-600 truncate" title={job.waypoints.join(' ➔ ')}>{job.waypoints.length} int.</p>
+                              </div>
+                              <div className="text-slate-400 font-black text-sm px-2">➔</div>
+                           </>
+                        )}
+                        <div className="flex-1 min-w-0 text-right">
+                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-0.5">Hasta</span>
+                          <p className="text-sm font-extrabold text-blue-600 truncate">{job.tripType === 'revision' ? 'Planta PRT' : (job.destination || 'Por definir')}</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  
+                  {job.waypoints && job.waypoints.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-slate-200/60">
+                      <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1.5">Ruta intermedia:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {job.waypoints.map((wp, i) => (
+                           <span key={i} className="text-[10px] font-black bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md border border-blue-200 shadow-sm">{i + 1}. {wp}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="relative pl-8 space-y-6 flex-1 mt-2">
@@ -467,15 +494,27 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                   <LicensePlateBadge text={job.plate || job.vin} />
                 </div>
                 
-                <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-[10px] font-black flex items-center justify-between gap-1 mb-2 shadow-sm">
-                  <span className="truncate text-slate-700 max-w-[45%]" title={job.origin}>
-                     <MapPin className="inline w-3 h-3 mr-0.5 -mt-0.5 text-slate-400 shrink-0"/>
-                     {job.origin || '-'}
-                  </span>
-                  <span className="text-slate-300 font-black shrink-0">➔</span>
-                  <span className="truncate text-blue-600 max-w-[45%] text-right" title={job.destination}>
-                     {job.tripType === 'revision' ? 'PRT' : (job.destination || '-')}
-                  </span>
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex flex-col gap-2 mb-3 shadow-inner">
+                  <div className="text-[10px] font-black flex items-center justify-between gap-1">
+                    <span className="truncate text-slate-700 max-w-[45%]" title={job.origin}>
+                       <MapPin className="inline w-3 h-3 mr-0.5 -mt-0.5 text-slate-400 shrink-0"/>
+                       {job.origin || '-'}
+                    </span>
+                    <span className="text-slate-300 font-black shrink-0">➔</span>
+                    <span className="truncate text-blue-600 max-w-[45%] text-right" title={job.destination}>
+                       {job.tripType === 'revision' ? 'PRT' : (job.destination || '-')}
+                    </span>
+                  </div>
+                  {job.waypoints && job.waypoints.length > 0 && (
+                    <div className="border-t border-slate-200/60 pt-2">
+                       <p className="text-[8px] font-bold text-amber-600 uppercase mb-1">Ruta intermedia:</p>
+                       <div className="flex flex-wrap gap-1">
+                         {job.waypoints.map((wp, i) => (
+                            <span key={i} className="text-[9px] font-bold bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded border border-amber-200">{i + 1}. {wp}</span>
+                         ))}
+                       </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="flex justify-between items-end mt-auto pt-2 border-t border-slate-50">

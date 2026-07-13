@@ -50,8 +50,8 @@ export default function GhostCamera({ onClose, onCapture, defaultVehicleType = '
       const ctx = canvas.getContext('2d');
       // Dibujar el cuadro actual del video en el canvas
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      // Convertir a base64 (Formato WebP para que pese menos)
-      const photoUrl = canvas.toDataURL('image/webp', 0.8);
+      // Convertir a base64 (Usamos JPEG en 0.8 para no romper la compilación de jsPDF más adelante)
+      const photoUrl = canvas.toDataURL('image/jpeg', 0.8);
       setCapturedPhoto(photoUrl);
     }
   };
@@ -117,7 +117,8 @@ export default function GhostCamera({ onClose, onCapture, defaultVehicleType = '
       <div className="relative flex-1 bg-slate-900 overflow-hidden flex items-center justify-center">
         {!capturedPhoto ? (
           <>
-            <video ref={videoRef} autoPlay playsInline className="absolute w-full h-full object-cover"></video>
+            {/* INYECCIÓN DE SEGURIDAD PARA iOS/SAFARI: muted y autoFocus */}
+            <video ref={videoRef} autoPlay playsInline muted className="absolute w-full h-full object-cover"></video>
             
             {/* Capa Fantasma SVG */}
             <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none p-4 opacity-60">

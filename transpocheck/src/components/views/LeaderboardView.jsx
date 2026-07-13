@@ -75,9 +75,14 @@ export default function LeaderboardView({ jobs, drivers, isAdminView, db }) {
                         <span className="border px-1.5 py-0.5 rounded bg-white font-bold text-slate-600 uppercase shrink-0 text-[10px]">{j.plate || j.vin || 'S/N'}</span>
                      )}
                   </div>
-                  <p className="font-semibold text-slate-500 pl-2 mt-1 truncate">
-                     <MapPin className="inline w-3 h-3 mr-0.5 -mt-0.5"/> {j.origin} 
-                     {(j.destination || j.tripType !== 'simple') && <> <span className="text-slate-400 mx-1 text-[10px] font-black">➔</span> <Navigation className="inline w-3 h-3 mr-0.5 -mt-0.5"/> {j.tripType === 'revision' ? 'PRT' : j.destination}</>}
+                  <p className="font-bold text-slate-500 pl-2 mt-1.5 flex items-center flex-wrap gap-x-1.5 gap-y-1">
+                     <span className="flex items-center"><MapPin className="w-3 h-3 mr-1 text-slate-400"/> <span className="truncate max-w-[120px]">{j.origin}</span></span>
+                     {(j.destination || j.tripType !== 'simple') && (
+                        <span className="flex items-center">
+                           <span className="text-slate-300 mx-1 text-[10px] font-black">➔</span> 
+                           <Navigation className="w-3 h-3 mr-1 text-blue-400"/> <span className="truncate max-w-[120px]">{j.tripType === 'revision' ? 'PRT' : j.destination}</span>
+                        </span>
+                     )}
                   </p>
                   
                   {/* NUEVO: Controles de Administrador para el Ranking */}
