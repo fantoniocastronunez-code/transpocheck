@@ -1150,26 +1150,14 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             </span>
           </div>
 
-          {/* Fila de Patente Agrandada al Máximo en el Centro de la caja (Estilo Patente Chilena) */}
+          {/* Fila de Patente Agrandada al Máximo en el Centro de la caja */}
           {ident !== 'S/N' && (
-            <div className="flex flex-col items-center border-t border-slate-200/60 pt-3 mt-2 gap-1 pb-1">
-              <div className="relative bg-white border-[3px] border-slate-300 rounded-xl shadow-md px-6 py-1.5 flex flex-col items-center justify-center min-w-[140px]">
-                {/* Tornillos Simulados */}
-                <div className="absolute top-1.5 left-2 w-1.5 h-1.5 bg-slate-400 rounded-full shadow-inner"></div>
-                <div className="absolute top-1.5 right-2 w-1.5 h-1.5 bg-slate-400 rounded-full shadow-inner"></div>
-                <div className="absolute bottom-1.5 left-2 w-1.5 h-1.5 bg-slate-400 rounded-full shadow-inner"></div>
-                <div className="absolute bottom-1.5 right-2 w-1.5 h-1.5 bg-slate-400 rounded-full shadow-inner"></div>
-                
-                {/* Texto Patente */}
-                <span className="text-2xl sm:text-3xl font-black tracking-[0.2em] text-slate-900 uppercase leading-none mt-1">
-                  {ident}
-                </span>
-                
-                {/* País */}
-                <span className="text-[8px] font-black text-slate-800 tracking-widest uppercase mt-0.5">
-                  CHILE
-                </span>
+            <div className="flex flex-col items-center border-t border-slate-200/60 pt-4 mt-2 gap-2 pb-1">
+              {/* Usamos tu componente original que ya funciona perfecto, pero lo escalamos un 40% */}
+              <div className="transform scale-[1.4] origin-center my-2">
+                <LicensePlateBadge text={ident} />
               </div>
+              
               {j.vin && ident !== j.vin && (
                 <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-2">VIN: {j.vin}</span>
               )}
