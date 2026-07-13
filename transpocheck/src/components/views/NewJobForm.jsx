@@ -57,6 +57,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   const [revA_frenos, setRevA_frenos] = useState(jobToEdit?.rtData?.frenos || false);
   const [revB_tipo, setRevB_tipo] = useState(jobToEdit?.rtData?.tipoB || 'completa');
   const [selectedDriversUI, setSelectedDriversUI] = useState(() => jobToEdit?.assignedEmails ? drivers.filter(d => jobToEdit.assignedEmails.includes(d.email)).map(d => d.id) : []);
+  const [spotDriverEmail, setSpotDriverEmail] = useState(jobToEdit?.spotDriverEmail || ''); // NUEVO: Correo conductor externo
   
   // --- ESTADOS PARA TRABAJOS SIMPLES ---
   const [operationMode, setOperationMode] = useState(jobToEdit?.tripType === 'simple' ? 'servicio' : 'traslado');
@@ -126,12 +127,24 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     const formData = new FormData(e.target);
     const selectedDriverIds = formData.getAll('assignedDriverId');
     
-    if (selectedDriverIds.length === 0) {
+    const cleanSpotEmail = spotDriverEmail.trim().toLowerCase();
+    
+    if (selectedDriverIds.length === 0 && !cleanSpotEmail) {
         setIsSubmitting(false);
-        return showAlert("❌ Debes seleccionar al menos un conductor.");
+        return showAlert("❌ Debes seleccionar al menos un conductor de tu plantilla o ingresar un correo externo.");
     }
 
     const assignedDriversList = drivers.filter(d => selectedDriverIds.includes(d.id));
+    
+    // Si hay correo externo, creamos un conductor temporal simulado en la memoria de este trabajo
+    if (cleanSpotEmail) {
+        assignedDriversList.push({
+            id: `spot_${Date.now()}`,
+            name: `Conductor Externo (${cleanSpotEmail.split('@')[0]})`,
+            email: cleanSpotEmail
+        });
+    }
+
     const finalClient = selectedClient === 'OTRO' ? manualClient : selectedClient;
     
     const rtData = (operationMode === 'traslado' && tripType === 'revision') ? {
@@ -532,7 +545,20 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
         )}
         
         <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl space-y-4">
-           <h3 className="text-base font-bold text-slate-700">4. Conductores <span className="text-xs text-red-500 font-normal">(Obligatorio seleccionar al menos 1)</span></h3>
+           <h3 className="text-base font-bold text-slate-700">4. Conductores <span className="text-xs text-red-500 font-normal">(Seleccionar o ingresar correo)</span></h3>
+           
+           <div className="bg-blue-50/50 border border-blue-100 p-4 rounded-xl mb-4">
+              <label className="text-xs font-extrabold text-blue-800 uppercase tracking-wider mb-1 block">Conductor Externo (Spot / Única Vez)</label>
+              <input 
+                 type="email" 
+                 value={spotDriverEmail} 
+                 onChange={(e) => setSpotDriverEmail(e.target.value)} 
+                 placeholder="correo@ejemplo.com (Opcional si seleccionas uno de abajo)" 
+                 className="w-full border-2 border-blue-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-800 shadow-sm placeholder:text-slate-400"
+              />
+              <p className="text-[10px] text-blue-600 mt-1.5 font-bold">Escribe un correo aquí si esta persona no está en tu plantilla de conductores. Podrá iniciar sesión con este correo temporalmente para rendir gastos y hacer el checklist.</p>
+           </div>
+
            <div className="max-h-64 overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
               {drivers.length === 0 ? <p className="text-sm text-slate-400 p-4 font-semibold col-span-full text-center">No hay conductores registrados.</p> : drivers.map(d => {
                 const isSelected = selectedDriversUI.includes(d.id);
