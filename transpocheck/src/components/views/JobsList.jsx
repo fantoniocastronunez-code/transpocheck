@@ -1230,7 +1230,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           const zip = new JSZip();
           for (const job of jobsToExport) {
             const docPDF = await buildPDFDoc(job);
-            zip.file(`Respaldo_Acta_${job.id}.pdf`, docPDF.output('blob'));
+            const cleanPlate = getJobIdentifier(job);
+            const fileName = `Check.${getDStr(job).replace(/\//g, '-')}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`;
+            zip.file(fileName, docPDF.output('blob'));
           }
           
           const content = await zip.generateAsync({ type: 'blob' });
@@ -1267,7 +1269,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         const zip = new JSZip();
         for (const job of historyJobs.filter(j => j.checklist)) {
            const docPDF = await buildPDFDoc(job);
-           zip.file(`Acta_${job.id}.pdf`, docPDF.output('blob'));
+           const cleanPlate = getJobIdentifier(job);
+           const fileName = `Check.${getDStr(job).replace(/\//g, '-')}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`;
+           zip.file(fileName, docPDF.output('blob'));
         }
         const content = await zip.generateAsync({ type: 'blob' });
         const url = URL.createObjectURL(content);
