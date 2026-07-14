@@ -326,35 +326,32 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
           <>
             <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl space-y-4 animate-in fade-in slide-in-from-bottom-2">
               <h3 className="text-base font-bold text-slate-700">1. Tipo de Servicio</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {/* Traslado Local */}
-                <button type="button" onClick={()=>setTripType('traslado')} className={`relative flex flex-col items-start p-4 border-2 rounded-2xl transition-all duration-300 text-left w-full group overflow-hidden ${tripType === 'traslado' ? 'border-blue-500 bg-blue-50 shadow-[0_0_15px_rgba(59,130,246,0.15)]' : 'border-slate-200 bg-white hover:border-blue-300 hover:shadow-md hover:-translate-y-1'}`}>
-                   {tripType === 'traslado' && <div className="absolute top-3 right-3 bg-blue-500 rounded-full p-0.5 animate-in zoom-in"><CheckCircle className="w-4 h-4 text-white"/></div>}
-                   <div className={`p-2.5 rounded-xl mb-3 transition-colors ${tripType === 'traslado' ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-100 text-slate-500 group-hover:bg-blue-100 group-hover:text-blue-600'}`}>
+                <button type="button" onClick={()=>setTripType('traslado')} className={`relative flex items-center gap-3 p-3.5 border-2 rounded-2xl transition-all duration-300 w-full group overflow-hidden ${tripType === 'traslado' ? 'border-blue-500 bg-blue-50 shadow-[0_0_15px_rgba(59,130,246,0.15)]' : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50'}`}>
+                   <div className={`p-2 rounded-xl transition-colors shrink-0 ${tripType === 'traslado' ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-100 text-slate-500 group-hover:bg-blue-100 group-hover:text-blue-600'}`}>
                       📍
                    </div>
-                   <span className={`font-black text-base mb-1 ${tripType === 'traslado' ? 'text-blue-800' : 'text-slate-700'}`}>Traslado Local</span>
-                   <span className={`text-[10px] font-bold leading-tight ${tripType === 'traslado' ? 'text-blue-600/80' : 'text-slate-400'}`}>Movimiento de vehículos dentro de la ciudad o comunas cercanas.</span>
+                   <span className={`font-black text-sm flex-1 text-left ${tripType === 'traslado' ? 'text-blue-800' : 'text-slate-700'}`}>Traslado Local</span>
+                   {tripType === 'traslado' && <CheckCircle className="w-5 h-5 text-blue-500 animate-in zoom-in shrink-0"/>}
                 </button>
 
                 {/* A Regiones */}
-                <button type="button" onClick={()=>setTripType('viaje')} className={`relative flex flex-col items-start p-4 border-2 rounded-2xl transition-all duration-300 text-left w-full group overflow-hidden ${tripType === 'viaje' ? 'border-indigo-500 bg-indigo-50 shadow-[0_0_15px_rgba(99,102,241,0.15)]' : 'border-slate-200 bg-white hover:border-indigo-300 hover:shadow-md hover:-translate-y-1'}`}>
-                   {tripType === 'viaje' && <div className="absolute top-3 right-3 bg-indigo-500 rounded-full p-0.5 animate-in zoom-in"><CheckCircle className="w-4 h-4 text-white"/></div>}
-                   <div className={`p-2.5 rounded-xl mb-3 transition-colors ${tripType === 'viaje' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-slate-500 group-hover:bg-indigo-100 group-hover:text-indigo-600'}`}>
+                <button type="button" onClick={()=>setTripType('viaje')} className={`relative flex items-center gap-3 p-3.5 border-2 rounded-2xl transition-all duration-300 w-full group overflow-hidden ${tripType === 'viaje' ? 'border-indigo-500 bg-indigo-50 shadow-[0_0_15px_rgba(99,102,241,0.15)]' : 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-slate-50'}`}>
+                   <div className={`p-2 rounded-xl transition-colors shrink-0 ${tripType === 'viaje' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-slate-500 group-hover:bg-indigo-100 group-hover:text-indigo-600'}`}>
                       🛣️
                    </div>
-                   <span className={`font-black text-base mb-1 ${tripType === 'viaje' ? 'text-indigo-800' : 'text-slate-700'}`}>A Regiones</span>
-                   <span className={`text-[10px] font-bold leading-tight ${tripType === 'viaje' ? 'text-indigo-600/80' : 'text-slate-400'}`}>Viajes largos interurbanos. Asignación de viáticos y peajes.</span>
+                   <span className={`font-black text-sm flex-1 text-left ${tripType === 'viaje' ? 'text-indigo-800' : 'text-slate-700'}`}>A Regiones</span>
+                   {tripType === 'viaje' && <CheckCircle className="w-5 h-5 text-indigo-500 animate-in zoom-in shrink-0"/>}
                 </button>
 
                 {/* Revisión Técnica */}
-                <button type="button" onClick={()=>setTripType('revision')} className={`relative flex flex-col items-start p-4 border-2 rounded-2xl transition-all duration-300 text-left w-full group overflow-hidden ${tripType === 'revision' ? 'border-emerald-500 bg-emerald-50 shadow-[0_0_15px_rgba(16,185,129,0.15)]' : 'border-slate-200 bg-white hover:border-emerald-300 hover:shadow-md hover:-translate-y-1'}`}>
-                   {tripType === 'revision' && <div className="absolute top-3 right-3 bg-emerald-500 rounded-full p-0.5 animate-in zoom-in"><CheckCircle className="w-4 h-4 text-white"/></div>}
-                   <div className={`p-2.5 rounded-xl mb-3 transition-colors ${tripType === 'revision' ? 'bg-emerald-600 text-white shadow-md' : 'bg-slate-100 text-slate-500 group-hover:bg-emerald-100 group-hover:text-emerald-600'}`}>
+                <button type="button" onClick={()=>setTripType('revision')} className={`relative flex items-center gap-3 p-3.5 border-2 rounded-2xl transition-all duration-300 w-full group overflow-hidden ${tripType === 'revision' ? 'border-emerald-500 bg-emerald-50 shadow-[0_0_15px_rgba(16,185,129,0.15)]' : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-slate-50'}`}>
+                   <div className={`p-2 rounded-xl transition-colors shrink-0 ${tripType === 'revision' ? 'bg-emerald-600 text-white shadow-md' : 'bg-slate-100 text-slate-500 group-hover:bg-emerald-100 group-hover:text-emerald-600'}`}>
                       📋
                    </div>
-                   <span className={`font-black text-base mb-1 ${tripType === 'revision' ? 'text-emerald-800' : 'text-slate-700'}`}>Revisión Técnica</span>
-                   <span className={`text-[10px] font-bold leading-tight ${tripType === 'revision' ? 'text-emerald-600/80' : 'text-slate-400'}`}>Gestión de trámites en Planta PRT. Aprobación o Rechazo.</span>
+                   <span className={`font-black text-sm flex-1 text-left ${tripType === 'revision' ? 'text-emerald-800' : 'text-slate-700'}`}>Revisión Técnica</span>
+                   {tripType === 'revision' && <CheckCircle className="w-5 h-5 text-emerald-500 animate-in zoom-in shrink-0"/>}
                 </button>
               </div>
               {tripType === 'revision' && (
@@ -614,6 +611,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     </div>
   );
 }
+
 
 
 
