@@ -1047,7 +1047,25 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           )}
         </div>
 
-        {j.phase === 'arrived_pickup' && j.arrivedPickupAt && <WaitTimerBadge arrivedAt={j.arrivedPickupAt} role={role} />}
+        {j.phase === 'arrived_pickup' && j.arrivedPickupAt && (
+          <div className="flex items-center gap-2 mb-3">
+            <div className="flex-1">
+              <WaitTimerBadge arrivedAt={j.arrivedPickupAt} role={role} />
+            </div>
+            <button onClick={() => {
+              showConfirm("¿Deseas cancelar el contador de espera? (Se registrará como 0 minutos al avanzar)", async () => {
+                try {
+                  await updateDoc(doc(db, 'transport_jobs', j.id), {
+                    arrivedPickupAt: deleteField()
+                  });
+                  showAlert("✅ Tiempo de espera cancelado.");
+                } catch(e) { showAlert("Error al cancelar."); }
+              });
+            }} className="bg-red-50 hover:bg-red-100 text-red-600 p-2.5 rounded-xl border border-red-200 shadow-sm active:scale-95 transition-all flex items-center justify-center shrink-0" title="Cancelar Timer">
+              <XCircle className="w-5 h-5" />
+            </button>
+          </div>
+        )}
 
         {/* NUEVO: PANEL DE ALERTA DE DOCUMENTOS VENCIDOS O POR VENCER */}
         {expiringDocs.length > 0 && (
