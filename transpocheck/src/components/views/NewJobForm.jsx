@@ -569,18 +569,6 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
         
         <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl space-y-4">
            <h3 className="text-base font-bold text-slate-700">4. Conductores <span className="text-xs text-red-500 font-normal">(Seleccionar o ingresar correo)</span></h3>
-           
-           <div className="bg-blue-50/50 border border-blue-100 p-4 rounded-xl mb-4">
-              <label className="text-xs font-extrabold text-blue-800 uppercase tracking-wider mb-1 block">Conductor Externo (Spot / Única Vez)</label>
-              <input 
-                 type="email" 
-                 value={spotDriverEmail} 
-                 onChange={(e) => setSpotDriverEmail(e.target.value)} 
-                 placeholder="correo@ejemplo.com (Opcional si seleccionas uno de abajo)" 
-                 className="w-full border-2 border-blue-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-800 shadow-sm placeholder:text-slate-400"
-              />
-              <p className="text-[10px] text-blue-600 mt-1.5 font-bold">Escribe un correo aquí si esta persona no está en tu plantilla de conductores. Podrá iniciar sesión con este correo temporalmente para rendir gastos y hacer el checklist.</p>
-           </div>
 
            <div className="max-h-64 overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
               {drivers.length === 0 ? <p className="text-sm text-slate-400 p-4 font-semibold col-span-full text-center">No hay conductores registrados.</p> : drivers.map(d => {
@@ -602,6 +590,17 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                 </label>
               )})}
            </div>
+
+           <div className="bg-blue-50/50 border border-blue-100 p-4 rounded-xl mt-4">
+              <label className="text-xs font-extrabold text-blue-800 uppercase tracking-wider mb-1 block">Conductor Externo (Spot / Única Vez)</label>
+              <input 
+                 type="email" 
+                 value={spotDriverEmail} 
+                 onChange={(e) => setSpotDriverEmail(e.target.value)} 
+                 placeholder="correo@ejemplo.com (Opcional si seleccionaste uno arriba)" 
+                 className="w-full border-2 border-blue-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white text-slate-800 shadow-sm placeholder:text-slate-400"
+              />
+           </div>
         </div>
         <div className="flex gap-3 pt-2">
           {jobToEdit && <button type="button" onClick={onCancelEdit} className="w-1/3 bg-slate-200 hover:bg-slate-300 text-slate-700 px-8 py-3 rounded-2xl font-extrabold text-sm sm:text-lg transition-colors">Cancelar</button>}
@@ -611,6 +610,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     </div>
   );
 }
+
 
 
 
