@@ -610,7 +610,12 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
 
              const data = { 
                 placeName: fd.get('placeName')?.trim() || '', 
-                contact 
+                contactName: fd.get('contactName')?.trim() || '', 
+                contactPhone: phone,
+                address: fd.get('address')?.trim() || '',
+                commune: fd.get('commune')?.trim() || ''
+             }; 
+
              try { 
                 if (editingDir) { 
                    await updateDoc(doc(db, 'directory', editingDir.id), data); 

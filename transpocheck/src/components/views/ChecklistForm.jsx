@@ -177,7 +177,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
       if (!blob) return;
       inAppCamera.onCapture(new File([blob], "photo_capture.jpg", { type: "image/jpeg" }));
       closeCamera();
-    }, 'image/jpeg', 0.85);
+    }, 'image/jpeg', 0.95); // 🔥 Alta fidelidad en la captura inicial
   };
   // ----------------------------------------
 
@@ -410,7 +410,8 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
   const f = eOrFile.target ? eOrFile.target.files[0] : eOrFile; 
   if (!f) return;
   try {
-    const dataUrl = await resizeImage(f, 1280, 0.75); 
+    // 🔥 MAGIA: Aumentamos a Full HD (1920px) y Calidad 85% para un PDF ultra nítido
+    const dataUrl = await resizeImage(f, 1920, 0.85); 
     
     // PASO 1: Mostrar preview inmediato con Base64
     setFormData(prev => {
