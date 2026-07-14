@@ -596,13 +596,21 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
           <form key={editingDir ? editingDir.id : 'new-dir'} onSubmit={async (e) => { 
              e.preventDefault(); 
              const fd = new FormData(e.target); 
+
+             // Lógica inteligente para prefijo telefónico
+             let phone = fd.get('contactPhone')?.trim() || '';
+             if (phone) {
+                phone = phone.replace(/\s+/g, ''); // Limpiamos espacios en blanco
+                if (!phone.startsWith('+569')) {
+                   if (phone.startsWith('569')) phone = '+' + phone;
+                   else if (phone.startsWith('9')) phone = '+56' + phone;
+                   else phone = '+569' + phone.replace(/^\+/, '');
+                }
+             }
+
              const data = { 
                 placeName: fd.get('placeName')?.trim() || '', 
-                contactName: fd.get('contactName')?.trim() || '', 
-                contactPhone: fd.get('contactPhone')?.trim() || '',
-                address: fd.get('address')?.trim() || '',
-                commune: fd.get('commune')?.trim() || ''
-             }; 
+                contact 
              try { 
                 if (editingDir) { 
                    await updateDoc(doc(db, 'directory', editingDir.id), data); 
