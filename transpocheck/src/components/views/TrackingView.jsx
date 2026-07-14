@@ -421,9 +421,9 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                       </div>
 
                       {/* DESTINO */}
-                      <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100 z-10">
-                        <span className="flex items-center gap-1.5 text-[9px] font-black text-blue-500 uppercase tracking-widest mb-0.5">
-                          <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.6)]"></div>
+                      <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-[0_2PX_10px_rgba(0,0,0,0.04)] z-10">
+                        <span className="flex items-center gap-1.5 text-[9px] font-black text-blue-500 uppercase tracking-widest mb-1">
+                          <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
                           Hasta
                         </span>
                         <p className="text-sm font-extrabold text-blue-700 leading-snug break-words">{job.tripType === 'revision' ? 'Planta PRT' : (job.destination || 'Por definir')}</p>
