@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, updateDoc, doc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, updateDoc, doc, getDocs } from 'firebase/firestore';
 import { CheckCircle, Clock, FileDown, Navigation, MapPin, X, Search, LogOut, Sun, Moon, FileText } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import WaitTimerBadge from '../ui/WaitTimerBadge';
@@ -10,11 +10,26 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState(null); 
+  const [clientLogo, setClientLogo] = useState(null); // NUEVO: Estado para el logo
   
   // NUEVO: Atrapa el ID del trabajo desde la URL si viene desde el correo
   const [trackId, setTrackId] = useState(() => new URLSearchParams(window.location.search).get('track')); 
 
   useEffect(() => {
+    if (clientName) {
+      // Buscar el logo corporativo del cliente en la DB
+      const fetchClientData = async () => {
+         try {
+           const qClient = query(collection(db, 'clients'), where('name', '==', clientName));
+           const snap = await getDocs(qClient);
+           if (!snap.empty) {
+             setClientLogo(snap.docs[0].data().logo || null);
+           }
+         } catch(e) { console.error("Error al leer cliente", e); }
+      };
+      fetchClientData();
+    }
+
     const q = query(collection(db, 'transport_jobs'), where('client', '==', clientName));
     const unsub = onSnapshot(q, (snapshot) => {
       const fetched = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -304,11 +319,13 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
           <div className="mx-auto w-36 h-36 rounded-[28px] flex items-center justify-center mb-4 shadow-md border overflow-hidden transition-all duration-300 p-3" style={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0' }}>
              <img
                src={
-                 (clientName || '').toUpperCase().includes('KOVACS') ? '/logos/kovacs.png' :
-                 (clientName || '').toUpperCase().includes('SALFA') ? '/logos/salfa.png' :
-                 (clientName || '').toUpperCase().includes('GRANDLEASING') ? '/logos/grandleasing.png' :
-                 (clientName || '').toUpperCase().includes('ENEX') ? '/logos/enex.png' :
-                 `/logos/${clientName ? clientName.toLowerCase().replace(/[^a-z0-9]/g, '') : ''}.png`
+                 clientLogo || ( // NUEVO: Prioriza el logo de Firebase si existe
+                   (clientName || '').toUpperCase().includes('KOVACS') ? '/logos/kovacs.png' :
+                   (clientName || '').toUpperCase().includes('SALFA') ? '/logos/salfa.png' :
+                   (clientName || '').toUpperCase().includes('GRANDLEASING') ? '/logos/grandleasing.png' :
+                   (clientName || '').toUpperCase().includes('ENEX') ? '/logos/enex.png' :
+                   `/logos/${clientName ? clientName.toLowerCase().replace(/[^a-z0-9]/g, '') : ''}.png`
+                 )
                }
                alt={clientName}
                className="w-full h-full object-contain"
@@ -618,5 +635,6 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
     </div>
   );
 }
+
 
 
