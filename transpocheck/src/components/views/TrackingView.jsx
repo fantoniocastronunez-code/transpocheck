@@ -379,7 +379,7 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
               const step4Done = isAccepted && phase === 'prt_done';
 
               return (
-              <div key={job.id} className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+              <div key={job.id} className="bg-white w-full max-w-[calc(100vw-2rem)] sm:max-w-none p-5 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden flex flex-col hover:shadow-md transition-shadow">
                 <div className={`absolute top-0 left-0 w-full h-1.5 ${isPending ? 'bg-amber-400' : 'bg-blue-500'}`}></div>
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex-1 min-w-0 pr-2">
@@ -395,55 +395,56 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-b from-slate-50 to-white p-3.5 rounded-[1.25rem] border border-slate-200/80 mb-5 mt-2 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] relative z-10">
-                  <div className="flex items-center justify-between gap-3 relative">
-                    {/* Línea conectora base */}
-                    <div className="absolute left-[50%] top-[50%] -translate-y-[50%] -translate-x-[50%] w-[50%] h-[2px] border-b-2 border-dashed border-slate-200"></div>
+                <div className="bg-gradient-to-b from-slate-50 to-white p-3.5 rounded-[1.25rem] border border-slate-200/80 mb-5 mt-2 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] relative z-10 flex flex-col gap-2">
+                  {/* ORIGEN */}
+                  <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)] z-10">
+                    <span className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
+                      {job.tripType === 'simple' ? 'Lugar' : 'Desde'}
+                    </span>
+                    <p className="text-sm font-extrabold text-slate-800 leading-snug break-words">{job.origin || 'Por definir'}</p>
+                  </div>
 
-                    <div className="flex-1 min-w-0 bg-white p-2.5 rounded-2xl border border-slate-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)] z-10">
-                      <span className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                        <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
-                        {job.tripType === 'simple' ? 'Lugar' : 'Desde'}
-                      </span>
-                      <p className="text-sm font-extrabold text-slate-800 truncate">{job.origin || 'Por definir'}</p>
-                    </div>
-
-                    {(job.destination || job.tripType !== 'simple') && (
-                      <>
+                  {(job.destination || job.tripType !== 'simple') && (
+                    <>
+                      {/* ICONO CENTRAL */}
+                      <div className="flex justify-center -my-1.5 z-20">
                         {job.waypoints && job.waypoints.length > 0 ? (
-                           <div className="flex-1 min-w-0 text-center z-10">
-                              <div className="inline-flex flex-col items-center justify-center bg-amber-50 px-3 py-1 rounded-xl border border-amber-100 shadow-sm">
-                                <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-0.5">{job.waypoints.length === 1 ? 'Parada' : 'Paradas'}</span>
-                                <p className="text-xs font-extrabold text-amber-700" title={job.waypoints.join(' ➔ ')}>{job.waypoints.length} int.</p>
-                              </div>
+                           <div className="bg-amber-50 px-4 py-1 rounded-xl border border-amber-100 shadow-sm text-center">
+                             <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-0.5">{job.waypoints.length === 1 ? 'Parada' : 'Paradas'}</span>
+                             <p className="text-xs font-extrabold text-amber-700">{job.waypoints.length} int.</p>
                            </div>
                         ) : (
-                          <div className="z-10 bg-slate-50 p-1.5 rounded-full border border-slate-200 text-slate-400 shadow-sm"><Navigation className="w-3 h-3 rotate-90" /></div>
+                          <div className="bg-slate-50 p-1.5 rounded-full border border-slate-200 text-slate-400 shadow-sm">
+                            <Navigation className="w-4 h-4 rotate-180" />
+                          </div>
                         )}
-                        <div className="flex-1 min-w-0 text-right bg-white p-2.5 rounded-2xl border border-blue-50 shadow-[0_2px_10px_rgba(59,130,246,0.06)] z-10">
-                          <span className="flex items-center justify-end gap-1.5 text-[9px] font-black text-blue-500 uppercase tracking-widest mb-1">
-                            Hasta
-                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.6)]"></div>
-                          </span>
-                          <p className="text-sm font-extrabold text-blue-700 truncate">{job.tripType === 'revision' ? 'Planta PRT' : (job.destination || 'Por definir')}</p>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                      </div>
+
+                      {/* DESTINO */}
+                      <div className="bg-white p-3 rounded-2xl border border-blue-50 shadow-[0_2px_10px_rgba(59,130,246,0.06)] z-10">
+                        <span className="flex items-center gap-1.5 text-[9px] font-black text-blue-500 uppercase tracking-widest mb-1">
+                          <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.6)]"></div>
+                          Hasta
+                        </span>
+                        <p className="text-sm font-extrabold text-blue-700 leading-snug break-words">{job.tripType === 'revision' ? 'Planta PRT' : (job.destination || 'Por definir')}</p>
+                      </div>
+                    </>
+                  )}
                   
                   {job.waypoints && job.waypoints.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-slate-200/60">
+                    <div className="mt-2 pt-3 border-t border-slate-200/60">
                       <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-2 flex items-center gap-1"><MapPin className="w-3 h-3"/> Ruta intermedia:</p>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-col gap-1.5">
                         {job.waypoints.map((wp, i) => (
-                           <span key={i} className="text-[10px] font-black bg-white text-slate-600 px-2.5 py-1 rounded-lg border border-slate-200 shadow-sm">{i + 1}. {wp}</span>
+                           <span key={i} className="text-[11px] font-bold bg-white text-slate-600 px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm leading-snug break-words"><span className="font-black mr-1">{i + 1}.</span> {wp}</span>
                         ))}
                       </div>
                     </div>
                   )}
                 </div>
                 
-                <div className="relative pl-8 space-y-6 flex-1 mt-2">
+                <div className="relative pl-8 space-y-6 mt-2 mb-4">
                   <div className="absolute top-2 bottom-4 left-[11px] w-0.5 bg-slate-100 rounded-full"></div>
                   <div className="absolute top-2 left-[11px] w-0.5 bg-blue-500 rounded-full transition-all duration-1000 ease-out" 
                        style={{ height: step4Done ? '100%' : step3Done ? '66%' : step2Done ? '33%' : isAccepted ? '10%' : '0%' }}></div>
@@ -496,7 +497,7 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
             ) : historyJobs.map(job => {
               const isFailed = job.status === 'failed';
               return (
-              <div key={job.id} className="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between relative pl-4 overflow-hidden hover:shadow-md transition-shadow">
+              <div key={job.id} className="bg-white w-full max-w-[calc(100vw-2rem)] sm:max-w-none p-3.5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between relative pl-4 overflow-hidden hover:shadow-md transition-shadow">
                 <div className={`absolute top-0 left-0 bottom-0 w-2 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
                 
                 <div className="flex justify-between items-center mb-2">
@@ -504,48 +505,49 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                   <LicensePlateBadge text={job.plate || job.vin} />
                 </div>
                 
-                <div className="bg-gradient-to-b from-slate-50 to-white p-2.5 rounded-xl border border-slate-200/80 mb-3 mt-1 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] relative z-10">
-                  <div className="flex items-center justify-between gap-2 relative">
-                    {/* Línea conectora base */}
-                    <div className="absolute left-[50%] top-[50%] -translate-y-[50%] -translate-x-[50%] w-[40%] h-[2px] border-b-2 border-dashed border-slate-200"></div>
+                <div className="bg-gradient-to-b from-slate-50 to-white p-2.5 rounded-xl border border-slate-200/80 mb-3 mt-1 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] relative z-10 flex flex-col gap-1.5">
+                  {/* ORIGEN */}
+                  <div className="bg-white p-2.5 rounded-lg border border-slate-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)] z-10">
+                    <span className="flex items-center gap-1.5 text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
+                      <div className="w-1 h-1 rounded-full bg-slate-400"></div>
+                      {job.tripType === 'simple' ? 'Lugar' : 'Desde'}
+                    </span>
+                    <p className="text-xs font-extrabold text-slate-800 leading-snug break-words">{job.origin || 'Por definir'}</p>
+                  </div>
 
-                    <div className="flex-1 min-w-0 bg-white p-2 rounded-lg border border-slate-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)] z-10">
-                      <span className="flex items-center gap-1 text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
-                        <div className="w-1 h-1 rounded-full bg-slate-400"></div>
-                        {job.tripType === 'simple' ? 'Lugar' : 'Desde'}
-                      </span>
-                      <p className="text-xs font-extrabold text-slate-800 truncate" title={job.origin}>{job.origin || 'Por definir'}</p>
-                    </div>
-
-                    {(job.destination || job.tripType !== 'simple') && (
-                      <>
+                  {(job.destination || job.tripType !== 'simple') && (
+                    <>
+                      {/* ICONO CENTRAL */}
+                      <div className="flex justify-center -my-1 z-20">
                         {job.waypoints && job.waypoints.length > 0 ? (
-                           <div className="flex-1 min-w-0 text-center z-10">
-                              <div className="inline-flex flex-col items-center justify-center bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100 shadow-sm">
-                                <span className="text-[8px] font-black text-amber-600 uppercase tracking-widest">{job.waypoints.length === 1 ? 'Parada' : 'Paradas'}</span>
-                                <p className="text-[10px] font-extrabold text-amber-700" title={job.waypoints.join(' ➔ ')}>{job.waypoints.length} int.</p>
-                              </div>
+                           <div className="bg-amber-50 px-3 py-0.5 rounded-md border border-amber-100 shadow-sm text-center">
+                             <span className="text-[8px] font-black text-amber-600 uppercase tracking-widest">{job.waypoints.length === 1 ? 'Parada' : 'Paradas'}</span>
+                             <p className="text-[10px] font-extrabold text-amber-700">{job.waypoints.length} int.</p>
                            </div>
                         ) : (
-                          <div className="z-10 bg-slate-50 p-1 rounded-full border border-slate-200 text-slate-400 shadow-sm"><Navigation className="w-2.5 h-2.5 rotate-90" /></div>
+                          <div className="bg-slate-50 p-1 rounded-full border border-slate-200 text-slate-400 shadow-sm">
+                            <Navigation className="w-3 h-3 rotate-180" />
+                          </div>
                         )}
-                        <div className="flex-1 min-w-0 text-right bg-white p-2 rounded-lg border border-blue-50 shadow-[0_2px_10px_rgba(59,130,246,0.06)] z-10">
-                          <span className="flex items-center justify-end gap-1 text-[8px] font-black text-blue-500 uppercase tracking-widest mb-0.5">
-                            Hasta
-                            <div className="w-1 h-1 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.6)]"></div>
-                          </span>
-                          <p className="text-xs font-extrabold text-blue-700 truncate" title={job.destination}>{job.tripType === 'revision' ? 'Planta PRT' : (job.destination || 'Por definir')}</p>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                      </div>
+
+                      {/* DESTINO */}
+                      <div className="bg-white p-2.5 rounded-lg border border-blue-50 shadow-[0_2px_10px_rgba(59,130,246,0.06)] z-10">
+                        <span className="flex items-center gap-1.5 text-[8px] font-black text-blue-500 uppercase tracking-widest mb-0.5">
+                          <div className="w-1 h-1 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.6)]"></div>
+                          Hasta
+                        </span>
+                        <p className="text-xs font-extrabold text-blue-700 leading-snug break-words">{job.tripType === 'revision' ? 'Planta PRT' : (job.destination || 'Por definir')}</p>
+                      </div>
+                    </>
+                  )}
                   
                   {job.waypoints && job.waypoints.length > 0 && (
-                    <div className="mt-2 pt-2 border-t border-slate-200/60">
+                    <div className="mt-1.5 pt-2 border-t border-slate-200/60">
                       <p className="text-[8px] font-black text-amber-600 uppercase tracking-widest mb-1.5 flex items-center gap-1"><MapPin className="w-2.5 h-2.5"/> Ruta intermedia:</p>
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-col gap-1">
                         {job.waypoints.map((wp, i) => (
-                           <span key={i} className="text-[9px] font-black bg-white text-slate-600 px-2 py-0.5 rounded border border-slate-200 shadow-sm">{i + 1}. {wp}</span>
+                           <span key={i} className="text-[10px] font-bold bg-white text-slate-600 px-2 py-1 rounded border border-slate-200 shadow-sm leading-snug break-words"><span className="font-black mr-1">{i + 1}.</span> {wp}</span>
                         ))}
                       </div>
                     </div>

@@ -902,48 +902,49 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             </div>
           </div>
 
-          <div className="bg-gradient-to-b from-slate-50 to-white p-3.5 rounded-[1.25rem] border border-slate-200/80 mb-4 mt-2 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] relative z-10">
-            <div className="flex items-center justify-between gap-3 relative">
-              {/* Línea conectora base */}
-              <div className="absolute left-[50%] top-[50%] -translate-y-[50%] -translate-x-[50%] w-[50%] h-[2px] border-b-2 border-dashed border-slate-200"></div>
+          <div className="bg-gradient-to-b from-slate-50 to-white p-3.5 rounded-[1.25rem] border border-slate-200/80 mb-4 mt-2 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] relative z-10 flex flex-col gap-2">
+            {/* ORIGEN */}
+            <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)] z-10">
+              <span className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
+                {j.tripType === 'simple' ? 'Lugar' : 'Desde'}
+              </span>
+              <p className="text-sm font-extrabold text-slate-800 leading-snug break-words">{j.origin || 'Por definir'}</p>
+            </div>
 
-              <div className="flex-1 min-w-0 bg-white p-2.5 rounded-2xl border border-slate-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)] z-10">
-                <span className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
-                  {j.tripType === 'simple' ? 'Lugar' : 'Desde'}
-                </span>
-                <p className="text-sm font-extrabold text-slate-800 truncate">{j.origin || 'Por definir'}</p>
-              </div>
-
-              {(j.destination || j.tripType !== 'simple') && (
-                <>
+            {(j.destination || j.tripType !== 'simple') && (
+              <>
+                {/* ICONO CENTRAL */}
+                <div className="flex justify-center -my-1.5 z-20">
                   {j.waypoints && j.waypoints.length > 0 ? (
-                     <div className="flex-1 min-w-0 text-center z-10">
-                        <div className="inline-flex flex-col items-center justify-center bg-amber-50 px-3 py-1 rounded-xl border border-amber-100 shadow-sm">
-                          <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-0.5">{j.waypoints.length === 1 ? 'Parada' : 'Paradas'}</span>
-                          <p className="text-xs font-extrabold text-amber-700" title={j.waypoints.join(' ➔ ')}>{j.waypoints.length} int.</p>
-                        </div>
+                     <div className="bg-amber-50 px-4 py-1 rounded-xl border border-amber-100 shadow-sm text-center">
+                       <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-0.5">{j.waypoints.length === 1 ? 'Parada' : 'Paradas'}</span>
+                       <p className="text-xs font-extrabold text-amber-700">{j.waypoints.length} int.</p>
                      </div>
                   ) : (
-                    <div className="z-10 bg-slate-50 p-1.5 rounded-full border border-slate-200 text-slate-400 shadow-sm"><Navigation className="w-3 h-3 rotate-90" /></div>
+                    <div className="bg-slate-50 p-1.5 rounded-full border border-slate-200 text-slate-400 shadow-sm">
+                      <Navigation className="w-4 h-4 rotate-180" />
+                    </div>
                   )}
-                  <div className="flex-1 min-w-0 text-right bg-white p-2.5 rounded-2xl border border-blue-50 shadow-[0_2px_10px_rgba(59,130,246,0.06)] z-10">
-                    <span className="flex items-center justify-end gap-1.5 text-[9px] font-black text-blue-500 uppercase tracking-widest mb-1">
-                      Hasta
-                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.6)]"></div>
-                    </span>
-                    <p className="text-sm font-extrabold text-blue-700 truncate">{j.tripType === 'revision' ? 'Planta PRT' : (j.destination || 'Por definir')}</p>
-                  </div>
-                </>
-              )}
-            </div>
+                </div>
+
+                {/* DESTINO */}
+                <div className="bg-white p-3 rounded-2xl border border-blue-50 shadow-[0_2px_10px_rgba(59,130,246,0.06)] z-10">
+                  <span className="flex items-center gap-1.5 text-[9px] font-black text-blue-500 uppercase tracking-widest mb-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.6)]"></div>
+                    Hasta
+                  </span>
+                  <p className="text-sm font-extrabold text-blue-700 leading-snug break-words">{j.tripType === 'revision' ? 'Planta PRT' : (j.destination || 'Por definir')}</p>
+                </div>
+              </>
+            )}
             
             {j.waypoints && j.waypoints.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-slate-200/60">
+              <div className="mt-2 pt-3 border-t border-slate-200/60">
                 <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-2 flex items-center gap-1"><MapPin className="w-3 h-3"/> Ruta intermedia:</p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-col gap-1.5">
                   {j.waypoints.map((wp, i) => (
-                     <span key={i} className="text-[10px] font-black bg-white text-slate-600 px-2.5 py-1 rounded-lg border border-slate-200 shadow-sm">{i + 1}. {wp}</span>
+                     <span key={i} className="text-[11px] font-bold bg-white text-slate-600 px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm leading-snug break-words"><span className="font-black mr-1">{i + 1}.</span> {wp}</span>
                   ))}
                 </div>
               </div>
@@ -1037,7 +1038,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
              return <div className="mb-3 bg-red-50 border border-red-200 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-red-700 uppercase tracking-widest">⚠️ Atrasado ({d}/{m}/{y}{timeStr})</span></div>;
           })()}
 
-        <div className="relative pl-7 space-y-5 before:absolute before:inset-y-2 before:left-[10px] before:w-0.5 before:bg-slate-100 flex-1 mb-5">
+        <div className="relative pl-7 space-y-5 before:absolute before:top-2 before:bottom-2 before:left-[10px] before:w-0.5 before:bg-slate-100 mb-5">
           <div className="relative"><div className="absolute -left-7 bg-blue-500 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center"><CheckCircle className="w-2.5 h-2.5 text-white"/></div><p className="font-extrabold text-slate-800 text-sm leading-tight">{isAccepted ? (j.assignedDrivers?.find(d => d.email === j.acceptedByEmail)?.name || "Conductor") : "Buscando conductor"}</p><p className="text-xs font-bold text-slate-500">{isAccepted ? (j.tripType === 'simple' ? `Asignado a ${j.origin}` : `Retira en ${j.origin}`) : `Para ${j.origin}`}</p></div>
           <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step2Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step2Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step2Done ? 'text-slate-800' : 'text-slate-400'}`}>{j.tripType === 'simple' ? 'Realizando Trabajo' : 'Vehículo en Tránsito'}</p></div>
           <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step3Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step3Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step3Done ? 'text-slate-800' : 'text-slate-400'}`}>{j.tripType === 'simple' ? 'Trabajo Terminado' : (j.tripType === 'revision' ? 'En PRT' : 'Llegada a Destino')}</p><p className={`text-xs font-bold ${step3Done ? 'text-blue-600' : 'text-slate-400'}`}>{j.tripType === 'simple' ? (j.destination || '') : (j.tripType === 'revision' ? 'Planta' : j.destination)}</p></div>
@@ -1149,16 +1150,25 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
         
         <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex flex-col gap-2 mb-3 shadow-inner">
-          {/* Fila de Ruta: Origen y Destino */}
-          <div className="text-[10px] font-black flex items-center justify-between gap-1">
-            <span className="truncate text-slate-700 max-w-[45%]" title={j.origin}>
-               <MapPin className="inline w-3 h-3 mr-0.5 -mt-0.5 text-slate-400 shrink-0"/>
-               {j.origin || '-'}
-            </span>
-            <span className="text-slate-300 font-black shrink-0">➔</span>
-            <span className="truncate text-blue-600 max-w-[45%] text-right" title={j.destination}>
-               {j.tripType === 'revision' ? 'PRT' : (j.destination || '-')}
-            </span>
+          {/* Fila de Ruta: Origen y Destino (Vertical) */}
+          <div className="flex flex-col gap-1.5 w-full">
+            <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm flex items-start gap-2">
+               <div className="mt-0.5"><div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div></div>
+               <span className="text-[10px] font-black text-slate-700 leading-tight break-words">{j.origin || '-'}</span>
+            </div>
+            
+            <div className="flex justify-center -my-1.5 z-10 relative">
+               {j.waypoints && j.waypoints.length > 0 ? (
+                 <div className="bg-amber-100 text-amber-700 text-[8px] font-black px-2 py-0.5 rounded-md border border-amber-200">{j.waypoints.length} int.</div>
+               ) : (
+                 <div className="bg-slate-100 p-0.5 rounded-full border border-slate-200"><Navigation className="w-3 h-3 text-slate-400 rotate-180"/></div>
+               )}
+            </div>
+
+            <div className="bg-white p-2 rounded-lg border border-blue-100 shadow-sm flex items-start gap-2">
+               <div className="mt-0.5"><div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_4px_rgba(59,130,246,0.6)]"></div></div>
+               <span className="text-[10px] font-black text-blue-700 leading-tight break-words">{j.tripType === 'revision' ? 'PRT' : (j.destination || '-')}</span>
+            </div>
           </div>
 
           {/* Fila de Patente Agrandada al Máximo en el Centro de la caja */}
@@ -1339,7 +1349,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             {isRequestedOpen && (
               <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 px-4 pb-8 pt-2 -mx-4 lg:mx-0 lg:px-4 lg:flex-col lg:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {requestedJobsList.map(j => (
-                  <div key={j.id} className="w-[85vw] sm:w-[350px] lg:w-full shrink-0 snap-center [&>div]:h-full">
+                  <div key={j.id} className="w-[calc(100vw-2rem)] sm:w-[350px] lg:w-full shrink-0 snap-center [&>div]:h-full">
                     {renderActiveJobCard(j)}
                   </div>
                 ))}
@@ -1357,7 +1367,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           {isInProgressOpen && (
             <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 px-4 pb-8 pt-2 -mx-4 lg:mx-0 lg:px-4 lg:flex-col lg:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {inProgressJobsList.map(j => (
-                <div key={j.id} className="w-[85vw] sm:w-[350px] lg:w-full shrink-0 snap-center [&>div]:h-full">
+                <div key={j.id} className="w-[calc(100vw-2rem)] sm:w-[350px] lg:w-full shrink-0 snap-center [&>div]:h-full">
                   {renderActiveJobCard(j)}
                 </div>
               ))}
@@ -1374,7 +1384,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           {isPendingOpen && (
             <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 px-4 pb-8 pt-2 -mx-4 lg:mx-0 lg:px-4 lg:flex-col lg:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {pendingJobsList.map(j => (
-                <div key={j.id} className="w-[85vw] sm:w-[350px] lg:w-full shrink-0 snap-center [&>div]:h-full">
+                <div key={j.id} className="w-[calc(100vw-2rem)] sm:w-[350px] lg:w-full shrink-0 snap-center [&>div]:h-full">
                   {renderActiveJobCard(j)}
                 </div>
               ))}
