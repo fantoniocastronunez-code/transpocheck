@@ -395,10 +395,10 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-b from-slate-50 to-white p-3.5 rounded-[1.25rem] border border-slate-200/80 mb-5 mt-2 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] relative z-10 flex flex-col gap-2">
+                <div className="mb-4 mt-3 relative z-10 flex flex-col gap-1.5">
                   {/* ORIGEN */}
-                  <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)] z-10">
-                    <span className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 z-10">
+                    <span className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
                       <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
                       {job.tripType === 'simple' ? 'Lugar' : 'Desde'}
                     </span>
@@ -408,22 +408,21 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                   {(job.destination || job.tripType !== 'simple') && (
                     <>
                       {/* ICONO CENTRAL */}
-                      <div className="flex justify-center -my-1.5 z-20">
+                      <div className="flex justify-center -my-2.5 z-20">
                         {job.waypoints && job.waypoints.length > 0 ? (
-                           <div className="bg-amber-50 px-4 py-1 rounded-xl border border-amber-100 shadow-sm text-center">
-                             <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-0.5">{job.waypoints.length === 1 ? 'Parada' : 'Paradas'}</span>
-                             <p className="text-xs font-extrabold text-amber-700">{job.waypoints.length} int.</p>
+                           <div className="bg-amber-100 px-3 py-0.5 rounded-lg border border-amber-200 shadow-sm text-center">
+                             <p className="text-[10px] font-black text-amber-700">{job.waypoints.length} paradas</p>
                            </div>
                         ) : (
-                          <div className="bg-slate-50 p-1.5 rounded-full border border-slate-200 text-slate-400 shadow-sm">
-                            <Navigation className="w-4 h-4 rotate-180" />
+                          <div className="bg-white p-1 rounded-full border border-slate-200 text-slate-300 shadow-sm">
+                            <Navigation className="w-3 h-3 rotate-180" />
                           </div>
                         )}
                       </div>
 
                       {/* DESTINO */}
-                      <div className="bg-white p-3 rounded-2xl border border-blue-50 shadow-[0_2px_10px_rgba(59,130,246,0.06)] z-10">
-                        <span className="flex items-center gap-1.5 text-[9px] font-black text-blue-500 uppercase tracking-widest mb-1">
+                      <div className="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100 z-10">
+                        <span className="flex items-center gap-1.5 text-[9px] font-black text-blue-500 uppercase tracking-widest mb-0.5">
                           <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.6)]"></div>
                           Hasta
                         </span>
@@ -433,11 +432,11 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                   )}
                   
                   {job.waypoints && job.waypoints.length > 0 && (
-                    <div className="mt-2 pt-3 border-t border-slate-200/60">
-                      <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-2 flex items-center gap-1"><MapPin className="w-3 h-3"/> Ruta intermedia:</p>
-                      <div className="flex flex-col gap-1.5">
+                    <div className="mt-1 pt-2 border-t border-slate-100">
+                      <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1.5 flex items-center gap-1"><MapPin className="w-3 h-3"/> Ruta intermedia:</p>
+                      <div className="flex flex-col gap-1">
                         {job.waypoints.map((wp, i) => (
-                           <span key={i} className="text-[11px] font-bold bg-white text-slate-600 px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm leading-snug break-words"><span className="font-black mr-1">{i + 1}.</span> {wp}</span>
+                           <span key={i} className="text-[11px] font-bold text-slate-600 leading-snug break-words"><span className="font-black mr-1 text-slate-400">{i + 1}.</span> {wp}</span>
                         ))}
                       </div>
                     </div>
@@ -505,53 +504,17 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                   <LicensePlateBadge text={job.plate || job.vin} />
                 </div>
                 
-                <div className="bg-gradient-to-b from-slate-50 to-white p-2.5 rounded-xl border border-slate-200/80 mb-3 mt-1 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] relative z-10 flex flex-col gap-1.5">
-                  {/* ORIGEN */}
-                  <div className="bg-white p-2.5 rounded-lg border border-slate-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)] z-10">
-                    <span className="flex items-center gap-1.5 text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
-                      <div className="w-1 h-1 rounded-full bg-slate-400"></div>
-                      {job.tripType === 'simple' ? 'Lugar' : 'Desde'}
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex flex-col gap-2 mb-3 mt-1 shadow-inner relative z-10">
+                  <div className="text-[10px] font-black flex items-center justify-between gap-1">
+                    <span className="truncate text-slate-700 max-w-[45%]" title={job.origin}>
+                       <MapPin className="inline w-3 h-3 mr-0.5 -mt-0.5 text-slate-400 shrink-0"/>
+                       {job.origin || '-'}
                     </span>
-                    <p className="text-xs font-extrabold text-slate-800 leading-snug break-words">{job.origin || 'Por definir'}</p>
+                    <span className="text-slate-300 font-black shrink-0">➔</span>
+                    <span className="truncate text-blue-600 max-w-[45%] text-right" title={job.destination}>
+                       {job.tripType === 'revision' ? 'PRT' : (job.destination || '-')}
+                    </span>
                   </div>
-
-                  {(job.destination || job.tripType !== 'simple') && (
-                    <>
-                      {/* ICONO CENTRAL */}
-                      <div className="flex justify-center -my-1 z-20">
-                        {job.waypoints && job.waypoints.length > 0 ? (
-                           <div className="bg-amber-50 px-3 py-0.5 rounded-md border border-amber-100 shadow-sm text-center">
-                             <span className="text-[8px] font-black text-amber-600 uppercase tracking-widest">{job.waypoints.length === 1 ? 'Parada' : 'Paradas'}</span>
-                             <p className="text-[10px] font-extrabold text-amber-700">{job.waypoints.length} int.</p>
-                           </div>
-                        ) : (
-                          <div className="bg-slate-50 p-1 rounded-full border border-slate-200 text-slate-400 shadow-sm">
-                            <Navigation className="w-3 h-3 rotate-180" />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* DESTINO */}
-                      <div className="bg-white p-2.5 rounded-lg border border-blue-50 shadow-[0_2px_10px_rgba(59,130,246,0.06)] z-10">
-                        <span className="flex items-center gap-1.5 text-[8px] font-black text-blue-500 uppercase tracking-widest mb-0.5">
-                          <div className="w-1 h-1 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.6)]"></div>
-                          Hasta
-                        </span>
-                        <p className="text-xs font-extrabold text-blue-700 leading-snug break-words">{job.tripType === 'revision' ? 'Planta PRT' : (job.destination || 'Por definir')}</p>
-                      </div>
-                    </>
-                  )}
-                  
-                  {job.waypoints && job.waypoints.length > 0 && (
-                    <div className="mt-1.5 pt-2 border-t border-slate-200/60">
-                      <p className="text-[8px] font-black text-amber-600 uppercase tracking-widest mb-1.5 flex items-center gap-1"><MapPin className="w-2.5 h-2.5"/> Ruta intermedia:</p>
-                      <div className="flex flex-col gap-1">
-                        {job.waypoints.map((wp, i) => (
-                           <span key={i} className="text-[10px] font-bold bg-white text-slate-600 px-2 py-1 rounded border border-slate-200 shadow-sm leading-snug break-words"><span className="font-black mr-1">{i + 1}.</span> {wp}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
                 
                 <div className="flex justify-between items-end mt-auto pt-2 border-t border-slate-50">
