@@ -32,6 +32,7 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
   const defaultDriverNotifs = { asignacion: true, modificacion: true, nuevo_monto: true, rendicion_pendiente: true };
   const [clientNotifs, setClientNotifs] = useState(defaultNotifs);
   const [driverNotifs, setDriverNotifs] = useState(defaultDriverNotifs);
+  const [clientLogo, setClientLogo] = useState(null);
 
   React.useEffect(() => {
     if (editingClient) {
@@ -48,9 +49,11 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
           llegada_destino: false,
           finalizado: !!editingClient.enableNotifications
        });
+       setClientLogo(editingClient.logo || null);
     } else {
        setClientContacts([{ name: '', email: '' }]);
        setClientNotifs(defaultNotifs);
+       setClientLogo(null);
     }
   }, [editingClient]);
 
@@ -111,16 +114,17 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
              
              try { 
                  if(editingClient){ 
-                     await updateDoc(doc(db, 'clients', editingClient.id), { name, contactName, email, enableNotifications, notifications: clientNotifs }); 
+                     await updateDoc(doc(db, 'clients', editingClient.id), { name, contactName, email, enableNotifications, notifications: clientNotifs, logo: clientLogo }); 
                      setEditingClient(null); 
                      showAlert("Cliente y accesos actualizados."); 
                  } else { 
-                     await addDoc(collection(db, 'clients'), { name, contactName, email, enableNotifications, notifications: clientNotifs, createdAt: Date.now() }); 
+                     await addDoc(collection(db, 'clients'), { name, contactName, email, enableNotifications, notifications: clientNotifs, logo: clientLogo, createdAt: Date.now() }); 
                      showAlert("Cliente agregado."); 
                  } 
                  e.target.reset(); 
                  setClientContacts([{ name: '', email: '' }]);
                  setClientNotifs(defaultNotifs);
+                 setClientLogo(null);
              } catch(err){
                  console.error("Error guardando cliente:", err);
                  showAlert("❌ Error al guardar el cliente. Revisa tu conexión.");
@@ -172,6 +176,31 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                     required 
                     className={`w-full border-2 p-3 rounded-xl text-sm font-bold outline-none focus:border-blue-500 transition-colors shadow-sm ${editingClient ? 'border-slate-200 text-slate-800 bg-white' : 'border-blue-200 bg-blue-50 text-blue-900'}`} 
                  />
+               </div>
+               
+               <div className="animate-in fade-in slide-in-from-top-1 flex items-center gap-4 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                 <label className="relative w-16 h-16 shrink-0 rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center cursor-pointer overflow-hidden bg-white group hover:border-blue-500 transition-colors">
+                   <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                     const file = e.target.files[0];
+                     if (!file) return;
+                     try {
+                       const dataUrl = await resizeImage(file, 400, 0.6); // Optimizado a un máximo de 400px de ancho
+                       setClientLogo(dataUrl);
+                     } catch (err) { showAlert("Error procesando logo."); }
+                   }} />
+                   {clientLogo ? (
+                     <img src={clientLogo} alt="Logo" className="w-full h-full object-contain p-1" />
+                   ) : (
+                     <div className="text-center flex flex-col items-center justify-center text-slate-400 group-hover:text-blue-500">
+                       <Camera className="w-5 h-5 transition-colors" />
+                     </div>
+                   )}
+                 </label>
+                 <div className="flex flex-col">
+                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Logo Corporativo (Opcional)</span>
+                   <span className="text-xs font-bold text-slate-500 leading-tight">Aparecerá en el portal público y en tus listados.</span>
+                   {clientLogo && <button type="button" onClick={() => setClientLogo(null)} className="text-[10px] font-bold text-red-500 hover:underline w-fit mt-1">Quitar Logo</button>}
+                 </div>
                </div>
             </div>
 
@@ -251,6 +280,15 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
              <div className="space-y-3">
                 {customClients.map((clientRecord) => (
                    <div key={clientRecord.id} className="flex justify-between items-center p-3 sm:p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm hover:border-blue-200 transition-colors">
+                     
+                     <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-center shrink-0 mr-3 overflow-hidden">
+                       {clientRecord.logo ? (
+                         <img src={clientRecord.logo} alt="Logo" className="w-full h-full object-contain p-1" />
+                       ) : (
+                         <div className="text-xl font-black text-slate-300">{clientRecord.name.charAt(0).toUpperCase()}</div>
+                       )}
+                     </div>
+
                      <div className="flex-1 min-w-0 pr-2">
                         <p className="font-extrabold text-slate-800 text-sm truncate">{clientRecord.name}</p>
                         {clientRecord.contactName && <p className="text-xs font-bold text-slate-500 mt-1 truncate"><span className="text-slate-400 font-medium">Responsable(s):</span> {clientRecord.contactName}</p>}
@@ -650,5 +688,6 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
     </div>
   );
 }
+
 
 
