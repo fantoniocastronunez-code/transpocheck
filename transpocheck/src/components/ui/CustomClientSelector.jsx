@@ -1,6 +1,35 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, CheckCircle } from 'lucide-react';
 
+// --- OPTIMIZACIÓN: Funciones movidas fuera del componente para evitar recreación en memoria ---
+const getLogoPath = (name) => {
+  if (!name || name === 'OTRO') return null;
+  const upper = name.toUpperCase();
+  if (upper.includes('KOVACS')) return '/logos/kovacs.png';
+  if (upper.includes('SALFA')) return '/logos/salfa.png';
+  if (upper.includes('GRANDLEASING')) return '/logos/grandleasing.png';
+  if (upper.includes('ENEX')) return '/logos/enex.png';
+
+  const cleanName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+  return `/logos/${cleanName}.png`; 
+};
+
+const getBadgeColor = (name) => {
+  if (!name) return 'bg-slate-200 text-slate-500';
+  if (name === 'OTRO') return 'bg-slate-700 text-white';
+  const colors = ['bg-red-500', 'bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-purple-500', 'bg-sky-500', 'bg-pink-500'];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return `${colors[Math.abs(hash) % colors.length]} text-white`;
+};
+
+// --- OPTIMIZACIÓN: Generador de avatar SVG extraído para limpiar el código HTML/JSX ---
+const handleImageError = (e, name) => {
+  e.currentTarget.onerror = null;
+  const initials = name ? name.substring(0, 2).toUpperCase() : '??';
+  e.currentTarget.src = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100' height='100' fill='%23e2e8f0'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='900' font-size='40' fill='%2364748b'>${initials}</text></svg>`;
+};
+
 const CustomClientSelector = ({ value, onChange, clients, placeholder }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -13,27 +42,6 @@ const CustomClientSelector = ({ value, onChange, clients, placeholder }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const getLogoPath = (name) => {
-    if (!name || name === 'OTRO') return null;
-    const upper = name.toUpperCase();
-    if (upper.includes('KOVACS')) return '/logos/kovacs.png';
-    if (upper.includes('SALFA')) return '/logos/salfa.png';
-    if (upper.includes('GRANDLEASING')) return '/logos/grandleasing.png';
-    if (upper.includes('ENEX')) return '/logos/enex.png';
-
-    const cleanName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-    return `/logos/${cleanName}.png`; 
-  };
-
-  const getBadgeColor = (name) => {
-    if (!name) return 'bg-slate-200 text-slate-500';
-    if (name === 'OTRO') return 'bg-slate-700 text-white';
-    const colors = ['bg-red-500', 'bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-purple-500', 'bg-sky-500', 'bg-pink-500'];
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    return `${colors[Math.abs(hash) % colors.length]} text-white`;
-  };
-
   return (
     <div className="relative w-full" ref={dropdownRef}>
       <button
@@ -45,7 +53,7 @@ const CustomClientSelector = ({ value, onChange, clients, placeholder }) => {
           {value && value !== 'OTRO' ? (
             <>
               <div className="w-6 h-6 rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-                <img src={getLogoPath(value)} alt={value} className="w-full h-full object-contain bg-white" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100' height='100' fill='%23e2e8f0'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='900' font-size='40' fill='%2364748b'>${value.substring(0, 2).toUpperCase()}</text></svg>`; }} />
+                <img src={getLogoPath(value)} alt={value} className="w-full h-full object-contain bg-white" onError={(e) => handleImageError(e, value)} />
               </div>
               <span className="truncate">{value}</span>
             </>
@@ -70,7 +78,7 @@ const CustomClientSelector = ({ value, onChange, clients, placeholder }) => {
           {clients.map(c => (
             <button key={c} type="button" onClick={() => { onChange(c); setIsOpen(false); }} className={`w-full flex items-center gap-3 p-3 hover:bg-blue-50 dark:hover:bg-slate-700/50 transition-colors text-left ${value === c ? 'bg-blue-50 dark:bg-slate-700/50' : ''}`}>
               <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm">
-                <img src={getLogoPath(c)} alt={c} className="w-full h-full object-contain p-1 bg-white" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect width='100' height='100' fill='%23e2e8f0'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='900' font-size='40' fill='%2364748b'>${c.substring(0, 2).toUpperCase()}</text></svg>`; }} />
+                <img src={getLogoPath(c)} alt={c} className="w-full h-full object-contain p-1 bg-white" onError={(e) => handleImageError(e, c)} />
               </div>
               <span className={`text-sm font-bold flex-1 truncate ${value === c ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'}`}>{c}</span>
               {value === c && <CheckCircle className="w-4 h-4 text-blue-500 shrink-0" />}

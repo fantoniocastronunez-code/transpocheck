@@ -41,17 +41,27 @@ export default function DriverOnboarding({ driver, db, showAlert }) {
     }
   };
 
-  const uploadBtn = (field, label) => (
-    <label className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer shadow-sm ${docs[field] ? 'bg-green-50 border-green-400' : 'bg-white border-slate-200 hover:border-blue-400'}`}>
+  // --- OPTIMIZACIÓN: Añadimos un parámetro 'captureType' para saltarnos la galería y abrir la cámara directa ---
+  const uploadBtn = (field, label, captureType = "environment") => (
+    <label className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer shadow-sm active:scale-[0.98] ${docs[field] ? 'bg-green-50 border-green-400' : 'bg-white border-slate-200 hover:border-blue-400'}`}>
       <div className="flex items-center gap-3">
          <div className={`p-2.5 rounded-full shadow-inner ${docs[field] ? 'bg-green-500 text-white' : 'bg-blue-100 text-blue-600'}`}>
-            {docs[field] ? <CheckCircle className="w-5 h-5"/> : <Camera className="w-5 h-5"/>}
+            {docs[field] ? <CheckCircle className="w-5 h-5 animate-in zoom-in"/> : <Camera className="w-5 h-5"/>}
          </div>
          <span className={`font-bold text-sm ${docs[field] ? 'text-green-700' : 'text-slate-700'}`}>{label}</span>
       </div>
-      <input type="file" accept="image/*" className="hidden" onChange={(e) => handleUpload(e, field)} />
+      
+      {/* El atributo capture="user" abrirá la cámara frontal, "environment" la trasera. En PC pedirá archivo. */}
+      <input 
+        type="file" 
+        accept="image/*" 
+        capture={captureType} 
+        className="hidden" 
+        onChange={(e) => handleUpload(e, field)} 
+      />
+      
       {docs[field] ? (
-         <img src={docs[field]} alt="OK" className="w-10 h-10 object-cover rounded-lg border border-green-200 shadow-sm" />
+         <img src={docs[field]} alt="OK" className="w-10 h-10 object-cover rounded-lg border border-green-200 shadow-sm animate-in fade-in" />
       ) : (
          <span className="text-[10px] font-black uppercase text-blue-500 tracking-widest bg-blue-50 px-2 py-1 rounded-md">Subir</span>
       )}
@@ -67,11 +77,14 @@ export default function DriverOnboarding({ driver, db, showAlert }) {
       </div>
 
       <div className="space-y-3">
-         {uploadBtn('photo', 'Foto de Perfil (Selfie)')}
-         {uploadBtn('idFront', 'Carnet de Identidad (Frente)')}
-         {uploadBtn('idBack', 'Carnet de Identidad (Reverso)')}
-         {uploadBtn('licenseFront', 'Licencia de Conducir (Frente)')}
-         {uploadBtn('licenseBack', 'Licencia de Conducir (Reverso)')}
+         {/* A la selfie le pasamos 'user' para forzar la cámara frontal automáticamente */}
+         {uploadBtn('photo', 'Foto de Perfil (Selfie)', 'user')}
+         
+         {/* A los documentos les pasamos 'environment' para forzar la cámara trasera */}
+         {uploadBtn('idFront', 'Carnet de Identidad (Frente)', 'environment')}
+         {uploadBtn('idBack', 'Carnet de Identidad (Reverso)', 'environment')}
+         {uploadBtn('licenseFront', 'Licencia de Conducir (Frente)', 'environment')}
+         {uploadBtn('licenseBack', 'Licencia de Conducir (Reverso)', 'environment')}
       </div>
 
       <div className="pt-4 border-t border-slate-100">

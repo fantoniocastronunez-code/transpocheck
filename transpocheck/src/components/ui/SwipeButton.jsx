@@ -2,19 +2,29 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Clock, CheckCircle, ChevronRight } from 'lucide-react';
 
 const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600", isProcessing = false }) => {
-  const [sliderLeft, setSliderLeft] = useState(0);
   const [isConfirmed, setIsConfirmed] = useState(false);
   const containerRef = useRef(null);
+  const buttonRef = useRef(null);
+  const fillRef = useRef(null);
   const startX = useRef(0);
+  const currentLeft = useRef(0);
+  const isDragging = useRef(false);
   const prevProcessing = useRef(false);
 
+  // Resetear el botón cuando termina de procesar
   useEffect(() => {
     if (prevProcessing.current && !isProcessing && isConfirmed) {
       setIsConfirmed(false);
-      setSliderLeft(0);
+      resetSlider();
     }
     prevProcessing.current = isProcessing;
   }, [isProcessing, isConfirmed]);
+
+  const resetSlider = () => {
+    currentLeft.current = 0;
+    if (buttonRef.current) buttonRef.current.style.transform = `translateX(0px)`;
+    if (fillRef.current) fillRef.current.style.width = `24px`;
+  };
 
   if (isProcessing) {
     return (
@@ -26,67 +36,99 @@ const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600", isProc
 
   const handleStart = (clientX) => {
     if (isConfirmed) return;
-    startX.current = clientX - sliderLeft;
+    isDragging.current = true;
+    startX.current = clientX - currentLeft.current;
+    
+    // Quitar la transición CSS para que el arrastre sea instantáneo (1 a 1 con el dedo)
+    if (buttonRef.current) buttonRef.current.style.transition = 'none';
+    if (fillRef.current) fillRef.current.style.transition = 'none';
   };
 
   const handleMove = (clientX) => {
-    if (isConfirmed || !startX.current) return;
+    if (isConfirmed || !isDragging.current || !containerRef.current) return;
+    
     const containerWidth = containerRef.current.offsetWidth;
-    const maxLeft = containerWidth - 48;
+    const maxLeft = containerWidth - 48; // 48px es el ancho del botón + padding
     let newLeft = clientX - startX.current;
     
-    // Validar límites
+    // Validar límites visuales
     if (newLeft < 0) newLeft = 0;
     if (newLeft > maxLeft) newLeft = maxLeft;
 
-    setSliderLeft(newLeft);
+    currentLeft.current = newLeft;
 
-    // Disparo al superar el 85% del recorrido
-    if (newLeft >= maxLeft * 0.85) {
-      setIsConfirmed(true);
-      setSliderLeft(maxLeft);
-      startX.current = 0;
-      if (navigator.vibrate) { try { navigator.vibrate(50); } catch(e){} }
-      onConfirm();
+    // Actualización DIRECTA al DOM (¡60 FPS sin re-renderizar React!)
+    if (buttonRef.current) buttonRef.current.style.transform = `translateX(${newLeft}px)`;
+    if (fillRef.current) fillRef.current.style.width = `${newLeft + 24}px`;
+
+    // Disparo inmediato si llega al final
+    if (newLeft >= maxLeft * 0.90) {
+      finalizeSwipe(maxLeft);
     }
   };
 
   const handleEnd = () => {
-    if (isConfirmed || !startX.current) return;
+    if (isConfirmed || !isDragging.current || !containerRef.current) return;
+    isDragging.current = false;
+    
     const maxLeft = containerRef.current.offsetWidth - 48;
-    if (sliderLeft > maxLeft * 0.75) { 
-      setSliderLeft(maxLeft);
-      setIsConfirmed(true);
-      if (navigator.vibrate) { try { navigator.vibrate([30, 40, 30]); } catch(e){} }
-      onConfirm(); 
+    
+    // Devolver las transiciones CSS para que vuelva (o complete) suavemente
+    if (buttonRef.current) buttonRef.current.style.transition = 'transform 0.3s ease-out';
+    if (fillRef.current) fillRef.current.style.transition = 'width 0.3s ease-out';
+
+    // Si soltó el dedo después de la mitad, confirmar. Si no, devolver a 0.
+    if (currentLeft.current > maxLeft * 0.60) { 
+      finalizeSwipe(maxLeft);
     } else {
-      setSliderLeft(0); 
+      resetSlider();
     }
-    startX.current = 0;
+  };
+
+  const finalizeSwipe = (maxLeft) => {
+    isDragging.current = false;
+    currentLeft.current = maxLeft;
+    setIsConfirmed(true);
+    
+    if (buttonRef.current) buttonRef.current.style.transform = `translateX(${maxLeft}px)`;
+    if (fillRef.current) fillRef.current.style.width = `${maxLeft + 24}px`;
+    
+    if (navigator.vibrate) { try { navigator.vibrate([30, 40, 30]); } catch(e){} }
+    onConfirm();
   };
 
   return (
     <div ref={containerRef} className="relative w-full h-12 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 select-none" style={{ touchAction: 'none' }}>
+      
+      {/* Texto de fondo */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-         <span className={`text-xs font-extrabold ${isConfirmed ? 'text-white z-10' : 'text-slate-500'}`}>
+         <span className={`text-xs font-extrabold transition-colors duration-300 ${isConfirmed ? 'text-white z-10' : 'text-slate-500'}`}>
             {isConfirmed ? '¡Confirmado!' : text}
          </span>
       </div>
-      <div className={`absolute top-0 left-0 h-full ${colorClass} transition-opacity duration-200`} style={{ width: `${sliderLeft + 24}px`, opacity: isConfirmed ? 1 : 0.3 }} />
+
+      {/* Relleno de color que crece */}
       <div 
-        className={`absolute top-1 bottom-1 w-10 rounded-lg flex items-center justify-center cursor-grab shadow-sm transition-colors z-10 ${isConfirmed ? 'bg-white text-green-600' : `${colorClass} text-white`}`}
-        // Eliminamos la transición manual para evitar el "flicker" durante el arrastre y dejamos que el navegador gestione la posición
-        style={{ left: `${sliderLeft + 4}px`, transition: startX.current ? 'none' : 'left 0.1s linear' }}
+        ref={fillRef}
+        className={`absolute top-0 left-0 h-full ${colorClass}`} 
+        style={{ width: '24px', opacity: isConfirmed ? 1 : 0.3 }} 
+      />
+
+      {/* Botón arrastrable */}
+      <div 
+        ref={buttonRef}
+        className={`absolute top-1 bottom-1 left-1 w-10 rounded-lg flex items-center justify-center cursor-grab active:cursor-grabbing shadow-sm z-10 ${isConfirmed ? 'bg-white text-green-600' : `${colorClass} text-white`}`}
+        style={{ transform: 'translateX(0px)' }}
         onTouchStart={e => { e.stopPropagation(); handleStart(e.touches[0].clientX); }}
         onTouchMove={e => { e.stopPropagation(); handleMove(e.touches[0].clientX); }}
         onTouchEnd={handleEnd}
         onTouchCancel={handleEnd}
-        onMouseDown={e => handleStart(e.clientX)}
-        onMouseMove={e => startX.current && handleMove(e.clientX)}
+        onMouseDown={e => { e.stopPropagation(); handleStart(e.clientX); }}
+        onMouseMove={e => handleMove(e.clientX)}
         onMouseUp={handleEnd}
         onMouseLeave={handleEnd}
       >
-        {isConfirmed ? <CheckCircle className="w-4 h-4"/> : (icon || <ChevronRight className="w-4 h-4"/>)}
+        {isConfirmed ? <CheckCircle className="w-4 h-4 animate-in zoom-in"/> : (icon || <ChevronRight className="w-4 h-4"/>)}
       </div>
     </div>
   );
