@@ -1,11 +1,13 @@
-export default async function handler(req, res) {
-  // CRON DESACTIVADO:
-  // La limpieza automática de la base de datos ha sido desactivada.
-  // Ahora el administrador mantiene un historial de 60 días y limpia la 
-  // base de datos manualmente desde la aplicación usando el botón "Limpiar DB".
+export default function handler(req, res) {
+  // --- OPTIMIZACIÓN: Función sincrónica (sin async) para respuesta instantánea ---
+  // CRON DESACTIVADO: La limpieza de la base de datos ahora es manual desde la app ("Limpiar DB").
+  
+  // Evitamos que Vercel o el navegador guarden esta respuesta en caché
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
   
   return res.status(200).json({ 
     success: true, 
-    message: "Cron de limpieza desactivado. El proceso ahora es 100% manual." 
+    message: "Cron de limpieza desactivado. El proceso ahora es 100% manual.",
+    timestamp: new Date().toISOString()
   });
 }

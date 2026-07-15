@@ -2,19 +2,36 @@ import { getApps, initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import nodemailer from 'nodemailer';
 
-if (getApps().length === 0) {
-  initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : '',
-    }),
-  });
+// --- OPTIMIZACIÓN 1: Inicialización Segura Anti-Caídas ---
+try {
+  if (getApps().length === 0) {
+    initializeApp({
+      credential: cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        // Limpiamos saltos de línea estrictamente para evitar fallos de lectura de llaves privadas
+        privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : '',
+      }),
+    });
+  }
+} catch (error) {
+  console.error('CRÍTICO: Error inicializando Firebase Admin', error);
 }
 
 const db = getFirestore();
 
 export default async function handler(req, res) {
+  // --- OPTIMIZACIÓN 2: Seguridad Vercel Cron ---
+  // Evitamos que extraños ataquen tu endpoint saturando tus envíos de correo
+  if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).end('No autorizado');
+  }
+
+  // URL dinámica para imágenes y botones
+  const protocol = req.headers['x-forwarded-proto'] || 'https';
+  const host = req.headers.host;
+  const baseUrl = `${protocol}://${host}`;
+
   try {
     // 1. Obtenemos la hora actual exacta en Santiago de Chile
     const formatter = new Intl.DateTimeFormat('en-US', {
@@ -28,7 +45,7 @@ export default async function handler(req, res) {
     const dp = {}; parts.forEach(({ type, value }) => { dp[type] = value; });
     const nowInChile = new Date(dp.year, dp.month - 1, dp.day, dp.hour, dp.minute);
 
-    // 2. NUEVO: Buscar TODOS los trabajos que estén "Pendientes" o "Aceptados"
+    // 2. Buscar TODOS los trabajos que estén "Pendientes" o "Aceptados"
     const snapshot = await db.collection('transport_jobs').where('status', 'in', ['pending', 'accepted']).get();
     
     if (snapshot.empty) return res.status(200).json({ message: 'Sin trabajos en el radar.' });
@@ -37,6 +54,41 @@ export default async function handler(req, res) {
       host: 'smtp.gmail.com', port: 465, secure: true,
       auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
     });
+
+    // --- OPTIMIZACIÓN 3: Generador de Plantillas Maestro ---
+    // Nos permite crear correos hermosos sin repetir todo el HTML
+    const buildTemplate = (accentColor, title, message, cardHtml, buttonText) => `
+      <div style="background-color: #0f172a; padding: 40px 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+          
+          <div style="background-color: #1e293b; padding: 30px; text-align: center; border-bottom: 4px solid ${accentColor};">
+            <img src="${baseUrl}/logos/LogoLogistica.png" alt="Logística TS" style="height: 50px; margin-bottom: 10px;" onerror="this.style.display='none'">
+            <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 900; letter-spacing: 1px;">SISTEMA LOGISTICAPP</h1>
+          </div>
+
+          <div style="padding: 40px 30px;">
+            <h2 style="color: ${accentColor}; font-size: 22px; font-weight: 900; margin-top: 0; text-align: center; text-transform: uppercase;">${title}</h2>
+            
+            <div style="font-size: 16px; line-height: 1.6; color: #475569; text-align: center; margin-bottom: 30px;">
+              ${message}
+            </div>
+
+            <div style="background-color: #f8fafc; border-left: 4px solid ${accentColor}; padding: 20px; margin: 30px 0; border-radius: 0 8px 8px 0;">
+              ${cardHtml}
+            </div>
+
+            <div style="text-align: center; margin-top: 40px;">
+              <a href="${baseUrl}" style="background-color: #2563eb; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);">${buttonText}</a>
+            </div>
+          </div>
+
+          <div style="background-color: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0;">
+            <p style="color: #64748b; font-size: 12px; margin: 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Alerta de Monitoreo Generada Automáticamente</p>
+            <p style="color: #94a3b8; font-size: 11px; margin-top: 5px;">Logística TS SpA</p>
+          </div>
+        </div>
+      </div>
+    `;
 
     let emailsSent = 0;
 
@@ -60,31 +112,20 @@ export default async function handler(req, res) {
       // ----------------------------------------------------------------------
       if (job.status === 'pending' && !job.reminderSent && diffMinutes > 0 && diffMinutes <= 125) {
         
-        const htmlAdminTemplate = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 2px solid #ef4444; border-radius: 12px; overflow: hidden;">
-            <div style="background-color: #ef4444; padding: 15px; text-align: center; color: white;">
-              <h2 style="margin: 0; font-size: 22px;">⏰ ALERTA DE TRASLADO PRÓXIMO</h2>
-            </div>
-            <div style="padding: 20px; background-color: #fef2f2;">
-              <p style="font-size: 16px; color: #7f1d1d; font-weight: bold; text-align: center;">Faltan menos de 2 horas para este servicio.</p>
-              
-              <div style="background-color: white; border: 1px solid #fca5a5; border-radius: 8px; padding: 15px; margin-top: 20px;">
-                <p style="margin: 8px 0; color: #450a0a;"><strong>Hora Programada:</strong> ${job.scheduledTime} hrs.</p>
-                <p style="margin: 8px 0; color: #450a0a;"><strong>Cliente:</strong> ${job.client}</p>
-                <p style="margin: 8px 0; color: #450a0a;"><strong>Vehículo / Tarea:</strong> ${job.brand ? `${job.brand} ${job.model}` : job.description}</p>
-                <p style="margin: 8px 0; color: #450a0a;"><strong>Patente/VIN:</strong> ${job.plate || job.vin || 'N/A'}</p>
-                <p style="margin: 8px 0; color: #450a0a;"><strong>Origen:</strong> ${job.origin}</p>
-                <p style="margin: 8px 0; color: #450a0a;"><strong>Conductores Asignados:</strong> ${job.assignedDrivers?.map(d=>d.name).join(', ') || 'Ninguno'}</p>
-              </div>
-            </div>
-          </div>
+        const adminCard = `
+          <p style="margin: 0 0 10px 0; color: #334155; font-size: 15px;"><strong>Hora Programada:</strong> <span style="color: #ef4444; font-weight: 900;">${job.scheduledTime} hrs</span></p>
+          <p style="margin: 0 0 10px 0; color: #334155; font-size: 15px;"><strong>Cliente:</strong> ${job.client}</p>
+          <p style="margin: 0 0 10px 0; color: #334155; font-size: 15px;"><strong>Vehículo / Tarea:</strong> ${job.brand ? `${job.brand} ${job.model}` : job.description}</p>
+          <p style="margin: 0 0 10px 0; color: #334155; font-size: 15px;"><strong>Patente / VIN:</strong> <span style="color: #0f172a; font-weight: bold; background-color: #e2e8f0; padding: 4px 8px; border-radius: 6px;">${job.plate || job.vin || 'N/A'}</span></p>
+          <p style="margin: 0 0 10px 0; color: #334155; font-size: 15px;"><strong>Origen:</strong> ${job.origin}</p>
+          <p style="margin: 0; color: #334155; font-size: 15px;"><strong>Conductores Asignados:</strong> ${job.assignedDrivers?.map(d=>d.name).join(', ') || 'Ninguno'}</p>
         `;
 
         await transporter.sendMail({
-          from: `"Alertas LogisticAPP" <${process.env.EMAIL_USER}>`,
-          to: 'fcastro@logisticats.cl, hcastro@logisticats.cl', // Tu configuración previa respetada
-          subject: `⏰ URGENTE: Traslado en 2 Hrs - ${job.plate || job.vin || 'Servicio'}`,
-          html: htmlAdminTemplate,
+          from: `"Monitoreo LogisticAPP" <${process.env.EMAIL_USER}>`,
+          to: 'fcastro@logisticats.cl, hcastro@logisticats.cl',
+          subject: `🚨 URGENTE: Traslado sin aceptar en 2 Hrs - ${job.plate || job.vin || 'Servicio'}`,
+          html: buildTemplate('#ef4444', '⏰ ALERTA DE TRASLADO PRÓXIMO', 'Faltan menos de 2 horas para el inicio de este servicio y <strong>ningún conductor lo ha aceptado aún.</strong>', adminCard, 'Abrir Panel Administrativo ➔'),
         });
 
         await doc.ref.update({ reminderSent: true });
@@ -95,55 +136,37 @@ export default async function handler(req, res) {
       // ----------------------------------------------------------------------
       // CASO 2: ALERTA AL CONDUCTOR (Atraso de 15 minutos en el inicio)
       // ----------------------------------------------------------------------
-      // Verifica si el conductor NO ha deslizado el botón de llegada
       const hasNotStarted = !job.phase || job.phase === 'claimed';
       
-      // Si el conductor aceptó, no ha iniciado, y ya pasaron 15 minutos (diffMinutes es negativo cuando la hora ya pasó)
-      if (job.status === 'accepted' && hasNotStarted && !job.lateReminderSent && diffMinutes <= -15 && diffMinutes > -1440 /* Máximo 1 día de atraso */) {
+      // Si el conductor aceptó, no ha iniciado, y ya pasaron 15 minutos (diffMinutes negativo)
+      if (job.status === 'accepted' && hasNotStarted && !job.lateReminderSent && diffMinutes <= -15 && diffMinutes > -1440) {
         
-        // Si por algún motivo no hay correo registrado, saltamos
         if (!job.acceptedByEmail) continue;
 
         const driverName = job.assignedDrivers?.find(d => d.email === job.acceptedByEmail)?.name || 'Conductor';
 
-        const htmlDriverTemplate = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 2px solid #f59e0b; border-radius: 12px; overflow: hidden;">
-            <div style="background-color: #f59e0b; padding: 15px; text-align: center; color: white;">
-              <h2 style="margin: 0; font-size: 22px;">⏰ AVISO DE RETRASO EN RUTA</h2>
-            </div>
-            <div style="padding: 20px; background-color: #fffbeb;">
-              <p style="font-size: 16px; color: #b45309; text-align: center;">Hola <b>${driverName}</b>,</p>
-              <p style="font-size: 16px; color: #b45309; text-align: center; font-weight: bold;">Han pasado más de 15 minutos desde la hora programada y aún no has marcado tu llegada al origen.</p>
-              
-              <div style="background-color: white; border: 1px solid #fcd34d; border-radius: 8px; padding: 15px; margin-top: 20px;">
-                <p style="margin: 8px 0; color: #78350f;"><strong>Hora Programada:</strong> ${job.scheduledTime} hrs.</p>
-                <p style="margin: 8px 0; color: #78350f;"><strong>Vehículo / Tarea:</strong> ${job.brand ? `${job.brand} ${job.model}` : job.description}</p>
-                <p style="margin: 8px 0; color: #78350f;"><strong>Patente/VIN:</strong> ${job.plate || job.vin || 'N/A'}</p>
-                <p style="margin: 8px 0; color: #78350f;"><strong>Retiro en:</strong> ${job.origin}</p>
-              </div>
-              
-              <p style="text-align: center; margin-top: 20px; font-size: 14px; color: #92400e;">Por favor, entra a LogisticAPP y desliza el botón <b>"Llegué a retirar"</b> lo antes posible para mantener al cliente informado.</p>
-            </div>
-          </div>
+        const driverCard = `
+          <p style="margin: 0 0 10px 0; color: #334155; font-size: 15px;"><strong>Hora Programada:</strong> <span style="color: #f59e0b; font-weight: 900;">${job.scheduledTime} hrs</span></p>
+          <p style="margin: 0 0 10px 0; color: #334155; font-size: 15px;"><strong>Vehículo / Tarea:</strong> ${job.brand ? `${job.brand} ${job.model}` : job.description}</p>
+          <p style="margin: 0 0 10px 0; color: #334155; font-size: 15px;"><strong>Patente / VIN:</strong> <span style="color: #0f172a; font-weight: bold; background-color: #e2e8f0; padding: 4px 8px; border-radius: 6px;">${job.plate || job.vin || 'N/A'}</span></p>
+          <p style="margin: 0; color: #334155; font-size: 15px;"><strong>Retiro en:</strong> ${job.origin}</p>
         `;
 
         await transporter.sendMail({
-          from: `"Alertas LogisticAPP" <${process.env.EMAIL_USER}>`,
-          to: job.acceptedByEmail, // Va directo al correo personal del conductor
+          from: `"Monitoreo LogisticAPP" <${process.env.EMAIL_USER}>`,
+          to: job.acceptedByEmail, 
           subject: `⚠️ Alerta de Atraso - Patente: ${job.plate || job.vin || 'Servicio'}`,
-          html: htmlDriverTemplate,
+          html: buildTemplate('#f59e0b', '⏰ AVISO DE RETRASO EN RUTA', `Hola <strong>${driverName}</strong>.<br><br>Han pasado más de 15 minutos desde la hora programada y el sistema detecta que aún no has marcado tu llegada al punto de origen.`, driverCard, 'Deslizar Llegada en App ➔'),
         });
 
-        // Marcamos el registro para que no le lleguen 100 correos seguidos
         await doc.ref.update({ lateReminderSent: true });
         emailsSent++;
       }
-
     }
 
-    res.status(200).json({ success: true, sent: emailsSent, message: 'Revisión completada.' });
+    res.status(200).json({ success: true, sent: emailsSent, message: 'Revisión y envío de recordatorios completado con éxito.' });
   } catch (error) {
-    console.error("Error en cron:", error);
+    console.error("Error en cron de recordatorios:", error);
     res.status(500).json({ error: error.message });
   }
 }

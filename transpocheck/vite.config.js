@@ -7,12 +7,12 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    // CACHÉ AGRESIVO EXTREMO
+    // CACHÉ AGRESIVO EXTREMO PWA
     VitePWA({ 
       registerType: 'autoUpdate',
       includeAssets: ['logo.png', 'LogoLogistica.png', 'robots.txt', 'apple-touch-icon.png'],
       
-      // NUEVO: FORZAMOS EL COLOR NEGRO PARA LA BARRA DE NAVEGACIÓN DEL SISTEMA
+      // FORZAMOS EL COLOR NEGRO PARA LA BARRA DE NAVEGACIÓN DEL SISTEMA
       manifest: {
         name: 'LogisticAPP',
         short_name: 'LogisticAPP',
@@ -62,4 +62,28 @@ export default defineConfig({
       }
     }) 
   ],
+  
+  // --- OPTIMIZACIÓN: ESTRATEGIA DE EMPAQUETADO (CHUNKING) PARA VERCEL ---
+  build: {
+    target: 'esnext',
+    outDir: 'dist',
+    chunkSizeWarningLimit: 1500, // Evita la advertencia amarilla de Vite
+    rollupOptions: {
+      output: {
+        // Separa las librerías grandes en archivos (chunks) individuales para que la app cargue mucho más rápido.
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'firebase-vendor': ['firebase/app', 'firebase/firestore', 'firebase/auth', 'firebase/storage'],
+          'icons-vendor': ['lucide-react'],
+          'pdf-vendor': ['jspdf', 'html2canvas']
+        }
+      }
+    }
+  },
+  
+  // --- OPTIMIZACIÓN: SERVIDOR DE DESARROLLO ---
+  server: {
+    port: 3000,
+    open: true, // Abre el navegador automáticamente
+  }
 })

@@ -1,16 +1,20 @@
 import { getApps, initializeApp, cert } from 'firebase-admin/app';
 import { getMessaging } from 'firebase-admin/messaging';
 
-// Inicialización moderna y a prueba de fallos para Vercel (ESM)
-if (getApps().length === 0) {
-  initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      // Reemplazamos los saltos de línea para que las llaves privadas no se rompan
-      privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : '',
-    }),
-  });
+// --- OPTIMIZACIÓN: Inicialización Segura (Evita caídas del servidor por credenciales mal parseadas) ---
+try {
+  if (getApps().length === 0) {
+    initializeApp({
+      credential: cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        // Limpiamos los saltos de línea estrictamente (necesario en Vercel y variables de entorno crudas)
+        privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : '',
+      }),
+    });
+  }
+} catch (error) {
+  console.error('CRÍTICO: Error inicializando Firebase Admin para Push Notifications', error);
 }
 
 export default async function handler(req, res) {
@@ -19,24 +23,42 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Método no permitido' });
   }
 
-  const { tokens, title, body } = req.body;
+  // --- NUEVO: Atrapamos también 'data' por si queremos enviar información extra oculta en la push ---
+  const { tokens, title, body, data = {} } = req.body;
 
-  if (!tokens || tokens.length === 0) {
-    return res.status(400).json({ error: 'No se enviaron tokens de destino' });
+  if (!tokens || !Array.isArray(tokens) || tokens.length === 0) {
+    return res.status(400).json({ error: 'No se enviaron tokens válidos de destino' });
   }
 
   try {
+    // Construcción del Payload moderno para Firebase Cloud Messaging (FCM)
     const message = {
-      notification: { title, body },
-      tokens: tokens, // Enviamos el mensaje a todos los dispositivos en la lista
+      notification: { 
+        title, 
+        body 
+      },
+      // Agregamos data (útil para que el celular sepa qué pantalla abrir al tocar la notificación)
+      data: {
+        click_action: "FLUTTER_NOTIFICATION_CLICK",
+        ...data
+      },
+      tokens: tokens, // Array de IDs de dispositivo a notificar
     };
 
-    // SOLUCIÓN: Usamos la nueva función sendEachForMulticast requerida por las versiones recientes de Firebase
+    // sendEachForMulticast es la función recomendada (y no deprecada) para enviar a múltiples dispositivos
     const response = await getMessaging().sendEachForMulticast(message);
     
-    res.status(200).json({ success: true, response });
+    // Log para depuración interna en Vercel
+    console.log(`Push enviadas: ${response.successCount} exitosas, ${response.failureCount} fallidas.`);
+
+    return res.status(200).json({ 
+      success: true, 
+      sent: response.successCount,
+      failed: response.failureCount
+    });
+    
   } catch (error) {
     console.error('Error enviando notificaciones Push:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: 'Fallo interno al enviar las notificaciones Push' });
   }
 }

@@ -27,138 +27,100 @@ export default async function handler(req, res) {
   let title = 'Movimiento Financiero';
   let message = 'Se ha registrado una actualización en tus fondos.';
   let cardHtml = '';
+  
+  // --- optimización: variable de color dinámico ---
+  let accentcolor = '#3b82f6'; // azul por defecto
 
-  const formatMoneyLocal = (val) => {
-    return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(val || 0);
+  const formatmoneylocal = (val) => {
+    return new intl.numberformat('es-cl', { style: 'currency', currency: 'clp' }).format(val || 0);
   };
 
+  // --- LÓGICA Y COLORES ---
   if (type === 'asignacion') {
-    subject = `💰 Fondo Asignado Exitosamente - LogisticAPP`;
-    title = 'Asignación de Fondos';
-    message = `Hola ${driverName}. Se te ha asignado un nuevo monto de viático para tus rutas.`;
-    cardHtml = `
-      <div style="margin-bottom: 15px;">
-        <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">Monto Entregado</div>
-        <div style="font-size: 20px; color: #16a34a; font-weight: 800;">${formatMoneyLocal(amount)}</div>
-      </div>
-      <div style="margin-bottom: 5px;">
-        <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">Detalle</div>
-        <div style="font-size: 14px; color: #0f172a; font-weight: bold;">${detail || 'Asignación de fondos'}</div>
-      </div>
+    accentcolor = '#10b981'; // verde
+    subject = `💰 fondo asignado exitosamente - logisticapp`;
+    title = 'asignación de fondos';
+    message = `hola <strong>${drivername}</strong>.<br><br>se te ha asignado un nuevo monto de viático para tus rutas.`;
+    cardhtml = `
+      <p style="margin: 0 0 10px 0; color: #334155; font-size: 15px;"><strong>monto entregado:</strong> <span style="color: #10b981; font-weight: 900; font-size: 18px;">${formatmoneylocal(amount)}</span></p>
+      <p style="margin: 0; color: #334155; font-size: 15px;"><strong>Detalle:</strong> ${detail || 'Asignación de fondos'}</p>
     `;
   } else if (type === 'nuevo_monto') {
+    accentColor = '#ef4444'; // Rojo
     subject = `💵 Registro de Movimiento / Gasto - LogisticAPP`;
     title = 'Gasto Registrado';
-    message = `Hola ${driverName}. Se ha registrado un nuevo movimiento o descuento en tu cuenta.`;
+    message = `Hola <strong>${driverName}</strong>.<br><br>Se ha registrado un nuevo movimiento o descuento en tu cuenta.`;
     cardHtml = `
-      <div style="margin-bottom: 15px;">
-        <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">Monto del Gasto</div>
-        <div style="font-size: 20px; color: #dc2626; font-weight: 800;">-${formatMoneyLocal(amount)}</div>
-      </div>
-      <div style="margin-bottom: 5px;">
-        <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">Detalle del Gasto</div>
-        <div style="font-size: 14px; color: #0f172a; font-weight: bold;">${detail}</div>
-      </div>
+      <p style="margin: 0 0 10px 0; color: #334155; font-size: 15px;"><strong>Monto del Gasto:</strong> <span style="color: #ef4444; font-weight: 900; font-size: 18px;">-${formatMoneyLocal(amount)}</span></p>
+      <p style="margin: 0; color: #334155; font-size: 15px;"><strong>Detalle del Gasto:</strong> ${detail}</p>
     `;
   } else if (type === 'rendicion_pendiente') {
+    accentColor = '#f59e0b'; // Naranja
     subject = `⏳ Comprobante de Rendición Recibido - LogisticAPP`;
     title = 'Rendición en Revisión';
-    message = `Hola ${driverName}. Hemos recibido tu comprobante de rendición de vuelto. Está siendo evaluado por el administrador.`;
+    message = `Hola <strong>${driverName}</strong>.<br><br>Hemos recibido tu comprobante de rendición de vuelto. Está siendo evaluado por el administrador.`;
     cardHtml = `
-      <div style="margin-bottom: 15px;">
-        <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">Monto Rendido</div>
-        <div style="font-size: 20px; color: #d97706; font-weight: 800;">${formatMoneyLocal(amount)}</div>
-      </div>
-      <div style="margin-bottom: 5px;">
-        <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">Estado</div>
-        <div style="font-size: 14px; color: #d97706; font-weight: bold;">Pendiente de Validación Administrativa</div>
-      </div>
+      <p style="margin: 0 0 10px 0; color: #334155; font-size: 15px;"><strong>Monto Rendido:</strong> <span style="color: #f59e0b; font-weight: 900; font-size: 18px;">${formatMoneyLocal(amount)}</span></p>
+      <p style="margin: 0; color: #334155; font-size: 15px;"><strong>Estado:</strong> <span style="font-weight: bold;">Pendiente de Validación</span></p>
     `;
   } else if (type === 'rendicion_aprobada') {
+    accentColor = '#10b981'; // Verde
     subject = `✅ Rendición Aprobada - Balance Limpio - LogisticAPP`;
     title = 'Rendición Aprobada';
-    message = `Hola ${driverName}. El administrador ha aprobado exitosamente tu rendición de vuelto.`;
+    message = `Hola <strong>${driverName}</strong>.<br><br>El administrador ha aprobado exitosamente tu rendición de vuelto.`;
     cardHtml = `
-      <div style="margin-bottom: 15px;">
-        <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">Monto Validado</div>
-        <div style="font-size: 20px; color: #16a34a; font-weight: 800;">${formatMoneyLocal(amount)}</div>
-      </div>
-      <div style="margin-bottom: 5px;">
-        <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">Detalle</div>
-        <div style="font-size: 14px; color: #0f172a; font-weight: bold;">Tu saldo ha vuelto a cero de manera conforme.</div>
-      </div>
+      <p style="margin: 0 0 10px 0; color: #334155; font-size: 15px;"><strong>Monto Validado:</strong> <span style="color: #10b981; font-weight: 900; font-size: 18px;">${formatMoneyLocal(amount)}</span></p>
+      <p style="margin: 0; color: #334155; font-size: 15px;"><strong>Detalle:</strong> Tu saldo ha vuelto a cero de manera conforme.</p>
     `;
   } else if (type === 'modificacion') {
+    accentColor = '#3b82f6'; // Azul
     subject = `🔄 Corrección de Registro Financiero - LogisticAPP`;
-    title = 'Registro Financiero Modificado';
-    message = `Hola ${driverName}. El administrador ha corregido un monto o detalle en tu historial de viáticos.`;
+    title = 'Registro Modificado';
+    message = `Hola <strong>${driverName}</strong>.<br><br>El administrador ha corregido un monto o detalle en tu historial de viáticos.`;
     cardHtml = `
-      <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 15px;">
-        <tr>
-          <td width="50%" valign="top">
-            <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">Monto Anterior</div>
-            <div style="font-size: 14px; color: #64748b; text-decoration: line-through;">${formatMoneyLocal(oldAmount)}</div>
-          </td>
-          <td width="50%" valign="top">
-            <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">Monto Nuevo</div>
-            <div style="font-size: 16px; color: #2563eb; font-weight: 800;">${formatMoneyLocal(newAmount)}</div>
-          </td>
-        </tr>
-      </table>
-      <div style="margin-bottom: 5px;">
-        <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">Concepto/Detalle Actualizado</div>
-        <div style="font-size: 14px; color: #0f172a; font-weight: bold;">${detail}</div>
-      </div>
+      <p style="margin: 0 0 10px 0; color: #334155; font-size: 15px;"><strong>Monto Anterior:</strong> <span style="text-decoration: line-through; color: #94a3b8;">${formatMoneyLocal(oldAmount)}</span></p>
+      <p style="margin: 0 0 10px 0; color: #334155; font-size: 15px;"><strong>Monto Nuevo:</strong> <span style="color: #3b82f6; font-weight: 900; font-size: 18px;">${formatMoneyLocal(newAmount)}</span></p>
+      <p style="margin: 0; color: #334155; font-size: 15px;"><strong>Concepto Actualizado:</strong> ${detail}</p>
     `;
   }
 
+  // --- PLANTILLA CORPORATIVA MAESTRA ---
   const htmlTemplate = `
-    <div style="background-color: #f3f4f6; padding: 20px 0;">
-      <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+    <div style="background-color: #0f172a; padding: 40px 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
         
-        <div style="background-color: #0f172a; padding: 16px 24px; text-align: center;">
-          <table width="100%" border="0" cellspacing="0" cellpadding="0">
-            <tr>
-              <td align="left" valign="middle" width="20%">
-                <img src="${baseUrl}/logo.png" alt="LogisticAPP" style="height: 36px; display: block;" onError="this.style.display='none'" />
-              </td>
-              <td align="center" valign="middle" width="60%">
-                <span style="color: #ffffff; font-size: 20px; font-weight: 800; letter-spacing: 0.5px; font-family: 'Arial Black', Impact, sans-serif;">LogisticAPP</span>
-              </td>
-              <td align="right" valign="middle" width="20%">
-                <img src="${baseUrl}/LogoLogistica.png" alt="Logistica TS" style="height: 36px; display: block;" onError="this.style.display='none'" />
-              </td>
-            </tr>
-          </table>
+        <div style="background-color: #1e293b; padding: 30px; text-align: center; border-bottom: 4px solid ${accentColor};">
+          <img src="${baseUrl}/logos/LogoLogistica.png" alt="Logística TS" style="height: 50px; margin-bottom: 10px;" onerror="this.style.display='none'">
+          <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 900; letter-spacing: 1px;">SISTEMA LOGISTICAPP</h1>
         </div>
 
-        <div style="padding: 32px 24px;">
-          <h2 style="margin: 0 0 12px; font-size: 18px; color: #1e293b;">${title}</h2>
-          <p style="margin: 0 0 24px; font-size: 15px; color: #475569; line-height: 1.6;">${message}</p>
+        <div style="padding: 40px 30px;">
+          <h2 style="color: ${accentColor}; font-size: 22px; font-weight: 900; margin-top: 0; text-align: center; text-transform: uppercase;">${title}</h2>
+          
+          <div style="font-size: 16px; line-height: 1.6; color: #475569; text-align: center; margin-bottom: 30px;">
+            ${message}
+          </div>
 
-          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px;">
+          <div style="background-color: #f8fafc; border-left: 4px solid ${accentColor}; padding: 20px; margin: 30px 0; border-radius: 0 8px 8px 0;">
             ${cardHtml}
             
             ${newBalance !== undefined ? `
-              <div style="margin-top: 15px; border-top: 1px solid #e2e8f0; padding-top: 15px; background-color: #f1f5f9; padding: 10px; border-radius: 6px; text-align: right;">
-                 <span style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 2px; letter-spacing: 0.5px;">Tu Saldo Actual en App</span>
-                 <span style="font-size: 16px; color: #0f172a; font-weight: 900;">${formatMoneyLocal(newBalance)}</span>
+              <div style="margin-top: 20px; border-top: 2px dashed #cbd5e1; padding-top: 15px; text-align: right;">
+                <span style="font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 4px;">Tu Saldo Actual en App</span>
+                <span style="font-size: 22px; color: #0f172a; font-weight: 900; background-color: #e2e8f0; padding: 4px 12px; border-radius: 8px;">${formatMoneyLocal(newBalance)}</span>
               </div>
             ` : ''}
           </div>
 
-          <div style="text-align: center; margin-top: 32px;">
-            <a href="${baseUrl}" style="background-color: #2563eb; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 15px; display: inline-block;">
-              Ver mi Billetera en la App
-            </a>
+          <div style="text-align: center; margin-top: 40px;">
+            <a href="${baseUrl}" style="background-color: #2563eb; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);">Ver mi Billetera en la App ➔</a>
           </div>
         </div>
 
-        <div style="background-color: #f1f5f9; color: #64748b; padding: 20px; text-align: center; font-size: 12px; border-top: 1px solid #e2e8f0;">
-          <p style="margin: 0 0 4px;">Mensaje automático generado por <strong>Logística TS SpA</strong>.</p>
-          <p style="margin: 0;">Por favor, no respondas a este correo.</p>
+        <div style="background-color: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0;">
+          <p style="color: #64748b; font-size: 12px; margin: 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Alerta Generada Automáticamente</p>
+          <p style="color: #94a3b8; font-size: 11px; margin-top: 5px;">Logística TS SpA</p>
         </div>
-
       </div>
     </div>
   `;

@@ -9,6 +9,26 @@
       "schedule": "0 5 3 * *"
     }
   ],
+  "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [
+        {
+          "key": "cache-control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/index.html",
+      "headers": [
+        {
+          "key": "cache-control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    }
+  ],
   "rewrites": [
     { 
       "source": "/api/(.*)", 

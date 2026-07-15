@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 // Importamos las herramientas modernas de caché offline
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
@@ -13,10 +13,12 @@ const firebaseConfig = {
   appId: "1:522404772814:web:6ae1154eb945d36475099f"
 };
 
-const app = initializeApp(firebaseConfig);
+// --- OPTIMIZACIÓN: Patrón Singleton para evitar inicializaciones duplicadas en recargas rápidas ---
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+
 export const auth = getAuth(app);
 
-// 🚀 LA MAGIA: Motor Offline (Subterráneo) activado con la sintaxis moderna
+// 🚀 LA MAGIA: Motor Offline (Subterráneo) activado con la sintaxis moderna a prueba de choques
 export const db = initializeFirestore(app, {
   localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
 });

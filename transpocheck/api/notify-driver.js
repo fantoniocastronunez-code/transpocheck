@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'No se enviaron correos de destino.' });
   }
 
-  // Obtenemos el link exacto de tu aplicación en Vercel automáticamente
+  // --- OPTIMIZACIÓN: Obtener URL Base Dinámica ---
   const protocol = req.headers['x-forwarded-proto'] || 'https';
   const host = req.headers.host;
   const baseUrl = `${protocol}://${host}`;
@@ -24,102 +24,65 @@ export default async function handler(req, res) {
     },
   });
 
+  // Textos y colores dinámicos
   const subject = isEdit 
     ? `🔄 ACTUALIZACIÓN: Trabajo reasignado - LogisticAPP` 
     : `📍 NUEVO TRABAJO ASIGNADO - LogisticAPP`;
+  
+  const title = isEdit ? 'Asignación Actualizada' : 'Nueva Asignación';
+  const accentColor = isEdit ? '#f59e0b' : '#3b82f6'; // Naranja si es edición, Azul si es nuevo
 
-  // Plantilla HTML Corporativa (Reemplazar desde aquí)
+  // Construcción del contenido dinámico según el tipo de servicio
+  let detailsHtml = '';
+  
+  if (isService) {
+    detailsHtml = `
+      <p style="margin: 0 0 10px 0; color: #334155; font-size: 15px;"><strong>Tarea Asignada:</strong> ${jobDetails.description}</p>
+      <p style="margin: 0; color: #334155; font-size: 15px;"><strong>Punto de Inicio:</strong> <span style="color: #2563eb; font-weight: bold;">${jobDetails.origin}</span></p>
+    `;
+  } else {
+    detailsHtml = `
+      <p style="margin: 0 0 10px 0; color: #334155; font-size: 15px;"><strong>Vehículo / Tarea:</strong> ${jobDetails.vehicle}</p>
+      <p style="margin: 0 0 10px 0; color: #334155; font-size: 15px;"><strong>Patente / VIN:</strong> <span style="color: #0f172a; font-weight: bold; background-color: #e2e8f0; padding: 4px 8px; border-radius: 6px;">${jobDetails.plate}</span></p>
+      <p style="margin: 0 0 10px 0; color: #334155; font-size: 15px;"><strong>Punto de Inicio:</strong> <span style="color: #2563eb; font-weight: bold;">${jobDetails.origin}</span></p>
+      ${jobDetails.destination ? `
+        <div style="margin: 10px 0; border-left: 2px dashed #cbd5e1; height: 15px; margin-left: 8px;"></div>
+        <p style="margin: 0; color: #334155; font-size: 15px;"><strong>Destino Final:</strong> <span style="color: #0f172a; font-weight: bold;">${jobDetails.destination}</span></p>
+      ` : ''}
+    `;
+  }
+
+  // --- PLANTILLA CORPORATIVA MAESTRA ---
   const htmlTemplate = `
-    <div style="background-color: #f3f4f6; padding: 20px 0;">
-      <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-
-        <!-- CABECERA CORPORATIVA -->
-        <div style="background-color: #0f172a; padding: 16px 24px; text-align: center;">
-          <table width="100%" border="0" cellspacing="0" cellpadding="0">
-            <tr>
-              <td align="left" valign="middle" width="20%">
-                <img src="${baseUrl}/logo.png" alt="LogisticAPP" style="height: 36px; display: block;" />
-              </td>
-              <td align="center" valign="middle" width="60%">
-                <span style="color: #ffffff; font-size: 20px; font-weight: 800; letter-spacing: 0.5px; font-family: 'Arial Black', Impact, sans-serif;">LogisticAPP</span>
-              </td>
-              <td align="right" valign="middle" width="20%">
-                <img src="${baseUrl}/LogoLogistica.png" alt="Logistica TS" style="height: 36px; display: block;" />
-              </td>
-            </tr>
-          </table>
+    <div style="background-color: #0f172a; padding: 40px 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+        
+        <div style="background-color: #1e293b; padding: 30px; text-align: center; border-bottom: 4px solid ${accentColor};">
+          <img src="${baseUrl}/logos/LogoLogistica.png" alt="Logística TS" style="height: 50px; margin-bottom: 10px;" onerror="this.style.display='none'">
+          <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 900; letter-spacing: 1px;">SISTEMA LOGISTICAPP</h1>
         </div>
 
-        <!-- CUERPO DEL CORREO -->
-        <div style="padding: 32px 24px;">
-          <h2 style="margin: 0 0 12px; font-size: 18px; color: #1e293b;">Nueva Asignación</h2>
-          <p style="margin: 0 0 24px; font-size: 15px; color: #475569; line-height: 1.6;">
-            Hola. Tienes un nuevo <strong>${isService ? 'servicio' : 'traslado'}</strong> asignado a tu nombre. Por favor, revisa los detalles a continuación y abre la aplicación para aceptarlo.
-          </p>
-
-          <!-- TARJETA DE DATOS (Estilo Corporativo) -->
-          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px;">
-
-            <!-- Fila 1 -->
-            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 20px;">
-              <tr>
-                <td width="50%" valign="top">
-                  <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">Fecha Prog.</div>
-                  <div style="font-size: 14px; color: #0f172a; font-weight: bold;">${jobDetails.date}</div>
-                </td>
-                <td width="50%" valign="top">
-                  <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">Cliente</div>
-                  <div style="font-size: 14px; color: #0f172a; font-weight: bold;">${jobDetails.client}</div>
-                </td>
-              </tr>
-            </table>
-
-            <!-- Fila 2 -->
-            ${isService ? `
-              <div style="margin-bottom: 20px;">
-                <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">Tarea Asignada</div>
-                <div style="font-size: 14px; color: #0f172a; font-weight: bold;">${jobDetails.description}</div>
-              </div>
-            ` : `
-              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 20px;">
-                <tr>
-                  <td width="50%" valign="top">
-                    <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">Vehículo</div>
-                    <div style="font-size: 14px; color: #0f172a; font-weight: bold;">${jobDetails.vehicle}</div>
-                  </td>
-                  <td width="50%" valign="top">
-                    <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">Patente / VIN</div>
-                    <div style="font-size: 13px; color: #0f172a; font-weight: bold; background-color: #e2e8f0; display: inline-block; padding: 3px 8px; border-radius: 4px; letter-spacing: 1px;">${jobDetails.plate}</div>
-                  </td>
-                </tr>
-              </table>
-            `}
-
-            <!-- Fila 3: Ruta -->
-            <div style="background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px;">
-               <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">Punto de Inicio</div>
-               <div style="font-size: 14px; color: #2563eb; font-weight: bold;">${jobDetails.origin}</div>
-               
-               ${!isService && jobDetails.destination ? `
-                 <div style="margin: 8px 0; border-left: 2px dashed #94a3b8; height: 12px; margin-left: 6px;"></div>
-                 <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">Destino Final</div>
-                 <div style="font-size: 14px; color: #0f172a; font-weight: bold;">${jobDetails.destination}</div>
-               ` : ''}
-            </div>
+        <div style="padding: 40px 30px;">
+          <h2 style="color: ${accentColor}; font-size: 22px; font-weight: 900; margin-top: 0; text-align: center; text-transform: uppercase;">${title}</h2>
+          
+          <div style="font-size: 16px; line-height: 1.6; color: #475569; text-align: center; margin-bottom: 30px;">
+            Hola. Tienes un nuevo <strong>${isService ? 'servicio' : 'traslado'}</strong> asignado a tu nombre. Por favor, revisa los detalles a continuación.
           </div>
 
-          <!-- BOTÓN -->
-          <div style="text-align: center; margin-top: 32px;">
-            <a href="${baseUrl}" style="background-color: #2563eb; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 15px; display: inline-block;">
-              Abrir App y Aceptar
-            </a>
+          <div style="background-color: #f8fafc; border-left: 4px solid ${accentColor}; padding: 20px; margin: 30px 0; border-radius: 0 8px 8px 0;">
+            <p style="margin: 0 0 10px 0; color: #334155; font-size: 15px;"><strong>Fecha Prog.:</strong> ${jobDetails.date}</p>
+            <p style="margin: 0 0 15px 0; color: #334155; font-size: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px;"><strong>Cliente:</strong> ${jobDetails.client}</p>
+            ${detailsHtml}
+          </div>
+
+          <div style="text-align: center; margin-top: 40px;">
+            <a href="${baseUrl}" style="background-color: #2563eb; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);">Abrir App y Aceptar ➔</a>
           </div>
         </div>
 
-        <!-- FOOTER -->
-        <div style="background-color: #f1f5f9; color: #64748b; padding: 20px; text-align: center; font-size: 12px; border-top: 1px solid #e2e8f0;">
-          <p style="margin: 0 0 4px;">Mensaje automático generado por <strong>Logística TS SpA</strong>.</p>
-          <p style="margin: 0;">Por favor, no respondas a este correo.</p>
+        <div style="background-color: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0;">
+          <p style="color: #64748b; font-size: 12px; margin: 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Alerta Generada Automáticamente</p>
+          <p style="color: #94a3b8; font-size: 11px; margin-top: 5px;">Logística TS SpA</p>
         </div>
       </div>
     </div>
