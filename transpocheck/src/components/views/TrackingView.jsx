@@ -577,33 +577,38 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
       </main>
 
       {batchSignOpen && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[95vh] flex flex-col relative overflow-hidden animate-in fade-in zoom-in-95">
+        <div className="fixed inset-0 bg-slate-900/85 backdrop-blur-sm flex items-center justify-center z-[200] p-4 sm:p-6">
+          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-[420px] max-h-[92vh] flex flex-col relative overflow-hidden animate-in fade-in zoom-in-95">
             
-            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+            {/* CABECERA FLOTANTE */}
+            <div className="p-5 sm:p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
               <div>
-                <h2 className="text-xl font-black text-slate-800">Firma de Recepción</h2>
-                <p className="text-xs font-bold text-slate-500">Selecciona los vehículos a recepcionar</p>
+                <h2 className="text-xl font-black text-slate-800 tracking-tight">Firma de Recepción</h2>
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mt-1">Selecciona los vehículos a recepcionar</p>
               </div>
-              <button onClick={() => setBatchSignOpen(false)} className="bg-white hover:bg-slate-200 p-2 rounded-full transition-colors shadow-sm border border-slate-200"><X className="w-5 h-5 text-slate-700"/></button>
+              <button onClick={() => setBatchSignOpen(false)} className="bg-white hover:bg-slate-200 p-2.5 rounded-full transition-colors shadow-sm border border-slate-200"><X className="w-5 h-5 text-slate-700"/></button>
             </div>
 
-            <div className="p-5 overflow-y-auto flex-1 space-y-4">
-              <div className="space-y-2 border-b border-slate-100 pb-4">
+            {/* CUERPO CON SCROLL INTERNO */}
+            <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-6">
+              
+              {/* LISTA DE VEHÍCULOS (Más compacta) */}
+              <div className="space-y-2.5 border-b border-slate-100 pb-5">
                  {pendingSignatureJobs.map(j => (
-                   <label key={j.id} className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors ${batchFormData.selectedIds.includes(j.id) ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white'}`}>
+                   <label key={j.id} className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${batchFormData.selectedIds.includes(j.id) ? 'border-blue-500 bg-blue-50/50 shadow-sm' : 'border-slate-100 bg-white hover:border-slate-300'}`}>
                       <input type="checkbox" checked={batchFormData.selectedIds.includes(j.id)} onChange={(e) => {
                          const ids = e.target.checked ? [...batchFormData.selectedIds, j.id] : batchFormData.selectedIds.filter(id => id !== j.id);
                          setBatchFormData({...batchFormData, selectedIds: ids});
-                      }} className="w-6 h-6 accent-blue-600 rounded cursor-pointer shrink-0"/>
+                      }} className="w-5 h-5 accent-blue-600 rounded cursor-pointer shrink-0"/>
                       <div className="flex-1">
-                         <p className="font-extrabold text-sm text-slate-800 leading-tight">{j.brand} {j.model}</p>
-                         <p className="font-bold text-xs text-blue-600 uppercase mt-0.5">{j.plate || j.vin}</p>
+                         <p className="font-extrabold text-sm text-slate-800 leading-tight truncate">{j.brand} {j.model}</p>
+                         <p className="font-bold text-[11px] text-blue-600 uppercase mt-0.5 tracking-wider">{j.plate || j.vin}</p>
                       </div>
                    </label>
                  ))}
               </div>
 
+              {/* FORMULARIO CON MÁS AIRE */}
               <form id="batch-sign-form" onSubmit={async (e) => {
                  e.preventDefault();
                  if (batchFormData.selectedIds.length === 0) return alert("Debes seleccionar al menos un vehículo.");
@@ -629,20 +634,40 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                     console.error(error);
                     alert("Error guardando la firma.");
                  }
-              }} className="space-y-3">
-                 <input required type="text" placeholder="Nombre de quien recibe" value={batchFormData.name} onChange={e=>setBatchFormData({...batchFormData, name: e.target.value})} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500 text-sm" />
-                 <input required type="text" placeholder="RUT (Ej: 12.345.678-9)" maxLength="12" value={batchFormData.rut} onChange={(e)=>{ let val = e.target.value.replace(/[^0-9kK]/g, '').toUpperCase(); if (val.length > 1) { const dv = val.slice(-1); const body = val.slice(0, -1); val = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '-' + dv; } setBatchFormData({...batchFormData, rut: val}); }} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500 text-sm" />
-                 <textarea placeholder="Comentarios generales para el lote (Opcional)" value={batchFormData.comments} onChange={e=>setBatchFormData({...batchFormData, comments: e.target.value})} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500 h-16 text-sm" />
+              }} className="space-y-4">
                  
-                 <div className="pt-2">
-                    <h3 className="text-xs font-extrabold text-slate-500 uppercase mb-2">Firma Digital (Aplica para todos)</h3>
-                    <SignaturePad initialData={batchFormData.signature} onSave={d=>setBatchFormData({...batchFormData, signature: d})} onClear={()=>setBatchFormData({...batchFormData, signature: null})} />
+                 <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Nombre Receptor</label>
+                    <input required type="text" placeholder="¿Quién recibe?" value={batchFormData.name} onChange={e=>setBatchFormData({...batchFormData, name: e.target.value})} className="w-full border-2 border-slate-200 p-3.5 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500 text-sm transition-colors bg-white shadow-sm" />
+                 </div>
+
+                 <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1 block">RUT Receptor</label>
+                    <input required type="text" placeholder="Ej: 12.345.678-9" maxLength="12" value={batchFormData.rut} onChange={(e)=>{ let val = e.target.value.replace(/[^0-9kK]/g, '').toUpperCase(); if (val.length > 1) { const dv = val.slice(-1); const body = val.slice(0, -1); val = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '-' + dv; } setBatchFormData({...batchFormData, rut: val}); }} className="w-full border-2 border-slate-200 p-3.5 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500 text-sm transition-colors bg-white shadow-sm" />
+                 </div>
+
+                 <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Observaciones del Lote</label>
+                    <textarea placeholder="Comentarios generales (Opcional)" value={batchFormData.comments} onChange={e=>setBatchFormData({...batchFormData, comments: e.target.value})} className="w-full border-2 border-slate-200 p-3.5 rounded-xl font-bold text-slate-700 outline-none focus:border-blue-500 h-20 text-sm resize-none transition-colors bg-white shadow-sm" />
+                 </div>
+                 
+                 <div className="pt-3">
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest ml-1 block">Firma Digital</label>
+                      <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">Aplica para todos</span>
+                    </div>
+                    <div className="rounded-2xl overflow-hidden shadow-inner border border-slate-200">
+                      <SignaturePad initialData={batchFormData.signature} onSave={d=>setBatchFormData({...batchFormData, signature: d})} onClear={()=>setBatchFormData({...batchFormData, signature: null})} />
+                    </div>
                  </div>
               </form>
             </div>
             
-            <div className="p-4 bg-slate-50 border-t border-slate-100">
-              <button type="submit" form="batch-sign-form" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg transition-colors text-lg">Confirmar Lote ({batchFormData.selectedIds.length})</button>
+            {/* PIE DE PÁGINA (Botón Independiente) */}
+            <div className="p-5 sm:p-6 bg-slate-50 border-t border-slate-200 shrink-0">
+              <button type="submit" form="batch-sign-form" className="w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black py-4 rounded-2xl shadow-[0_8px_20px_rgba(37,99,235,0.3)] transition-all text-[15px] flex items-center justify-center gap-2">
+                <CheckCircle className="w-5 h-5"/> Confirmar Lote ({batchFormData.selectedIds.length})
+              </button>
             </div>
 
           </div>
