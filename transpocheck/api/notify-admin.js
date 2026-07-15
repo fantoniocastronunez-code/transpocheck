@@ -69,12 +69,14 @@ export default async function handler(req, res) {
 
     // --- PLANTILLA CORPORATIVA MAESTRA ---
     const htmlTemplate = `
-      <div style="background-color: #0f172a; padding: 40px 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333;">
+      <div style="background-color: #0f172a; padding: 40px 20px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333;">
         <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
           
           <div style="background-color: #1e293b; padding: 30px; text-align: center; border-bottom: 4px solid ${accentColor};">
-            <img src="${baseUrl}/logos/LogoLogistica.png" alt="Logística TS" style="height: 50px; margin-bottom: 10px;" onerror="this.style.display='none'">
-            <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 1px;">LOGISTICAPP</h1>
+            <img src="${baseUrl}/logo512.png" alt="LogisticAPP" style="height: 60px; width: auto; margin-bottom: 10px; display: inline-block;" onerror="this.style.display='none'">
+            <div style="color: #ffffff; font-size: 26px; font-weight: 800; letter-spacing: 0.5px; font-family: Arial, Helvetica, sans-serif;">
+              LogisticAPP
+            </div>
           </div>
 
           <div style="padding: 40px 30px;">
