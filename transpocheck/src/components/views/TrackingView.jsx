@@ -257,6 +257,8 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
     </div>
   );
 
+  const [historyLimit, setHistoryLimit] = useState(30); // Controla cuántos historiales se muestran a la vez
+
   const filteredJobs = jobs.filter(j => {
     // NUEVO: Si hay un ID de rastreo activo, ocultamos el resto de la flota
     if (trackId && j.id !== trackId) return false;
@@ -269,7 +271,8 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
   });
 
   const activeJobs = filteredJobs.filter(j => j.status === 'pending' || j.status === 'accepted');
-  const historyJobs = filteredJobs.filter(j => j.status === 'completed' || j.status === 'failed').slice(0, 30);
+  const allHistoryJobs = filteredJobs.filter(j => j.status === 'completed' || j.status === 'failed');
+  const historyJobs = allHistoryJobs.slice(0, historyLimit);
   
   const pendingSignatureJobs = activeJobs.filter(j => j.checklist && !j.checklist.clientSigned);
   
@@ -555,6 +558,20 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
               </div>
             )})}
           </div>
+
+          {/* nuevo: botón de cargar más historiales */}
+          {allhistoryjobs.length > historylimit && (
+            <div classname="mt-8 text-center pb-8 animate-in fade-in duration-300">
+              <button 
+                onclick={() => sethistorylimit(prev => prev + 30)}
+                classname="bg-white border-2 border-blue-100 hover:border-blue-300 text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-2xl font-black shadow-sm transition-all flex items-center justify-center gap-2 mx-auto"
+              >
+                cargar traslados anteriores <filedown classname="w-5 h-5"/>
+              </button>
+              <p classname="text-xs font-bold text-slate-400 mt-3">mostrando {historyjobs.length} de {allhistoryjobs.length} traslados históricos</p>
+            </div>
+          )}
+
         </div>
       </main>
 
