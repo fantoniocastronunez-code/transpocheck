@@ -99,7 +99,6 @@ export default async function handler(req, res) {
   }
 
   // --- PLANTILLA CORPORATIVA MAESTRA ---
-  // IMPORTANTE: Forzamos la URL cruda (hardcoded) para que los clientes de correo (Gmail/Outlook) no bloqueen las imágenes
   const hardcodedLogoUrl = "https://logisticapp.vercel.app/LogoLogistica.png";
 
   const htmlTemplate = `
@@ -137,34 +136,6 @@ export default async function handler(req, res) {
 
         <div style="background-color: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0;">
           <img src="${hardcodedLogoUrl}" alt="Logistica TS" width="140" style="display: block; margin: 0 auto 10px auto; opacity: 0.8; max-width: 100%; height: auto;" onerror="this.style.display='none'" />
-          <p style="color: #64748b; font-size: 12px; margin: 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Alerta Generada Automáticamente</p>
-          <p style="color: #94a3b8; font-size: 11px; margin-top: 5px;">Logística TS SpA</p>
-        </div>
-      </div>
-    </div>
-  `;
-
-        <div style="padding: 40px 30px;">
-          <h2 style="color: ${accentColor}; font-size: 22px; font-weight: 900; margin-top: 0; text-align: center; text-transform: uppercase;">${title}</h2>
-          
-          <div style="font-size: 16px; line-height: 1.6; color: #475569; text-align: center; margin-bottom: 30px;">
-            ${message}
-          </div>
-
-          <div style="background-color: #f8fafc; border-left: 4px solid ${accentColor}; padding: 20px; margin: 30px 0; border-radius: 0 8px 8px 0;">
-            <p style="margin: 0 0 10px 0; color: #334155; font-size: 15px;"><strong>Vehículo / Tarea:</strong> ${vehiculoDesc}</p>
-            <p style="margin: 0 0 10px 0; color: #334155; font-size: 15px;"><strong>Patente / VIN:</strong> <span style="color: #0f172a; font-weight: bold; background-color: #e2e8f0; padding: 4px 8px; border-radius: 6px;">${vehiculoPatente}</span></p>
-            <p style="margin: 0 0 10px 0; color: #334155; font-size: 15px;"><strong>Origen:</strong> ${jobDetails.origin || 'N/A'}</p>
-            ${jobDetails.destination ? `<p style="margin: 0; color: #334155; font-size: 15px;"><strong>Destino:</strong> ${jobDetails.destination}</p>` : ''}
-          </div>
-
-          <div style="text-align: center; margin-top: 40px;">
-            <a href="${trackingLink}" style="background-color: #2563eb; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);">➔ ${buttonText}</a>
-            ${docButtonHtml}
-          </div>
-        </div>
-
-        <div style="background-color: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0;">
           <p style="color: #64748b; font-size: 12px; margin: 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Alerta Generada Automáticamente</p>
           <p style="color: #94a3b8; font-size: 11px; margin-top: 5px;">Logística TS SpA</p>
         </div>
