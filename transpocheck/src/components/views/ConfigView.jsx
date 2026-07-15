@@ -26,7 +26,7 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
   const [driverDocs, setDriverDocs] = useState({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null });
   const [fullScreenDoc, setFullScreenDoc] = useState(null); 
   
-  const [clientContacts, setClientContacts] = useState([{ name: '', email: '' }]);
+  const [clientContacts, setClientContacts] = useState([{ name: '', email: '', pin: '' }]);
   
   const defaultNotifs = { creado: false, asignado: true, llegada_origen: false, en_ruta: true, llegada_destino: false, finalizado: true };
   const defaultDriverNotifs = { asignacion: true, modificacion: true, nuevo_monto: true, rendicion_pendiente: true };
@@ -38,8 +38,9 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
     if (editingClient) {
        const emails = editingClient.email ? editingClient.email.split(',').map(e => e.trim()).filter(Boolean) : [];
        const names = editingClient.contactName ? editingClient.contactName.split(',').map(n => n.trim()) : [];
-       const mapped = emails.map((e, i) => ({ email: e, name: names[i] || '' }));
-       setClientContacts(mapped.length > 0 ? mapped : [{ name: '', email: '' }]);
+       const pins = editingClient.contactPin ? editingClient.contactPin.split(',').map(p => p.trim()) : [];
+       const mapped = emails.map((e, i) => ({ email: e, name: names[i] || '', pin: pins[i] || '' }));
+       setClientContacts(mapped.length > 0 ? mapped : [{ name: '', email: '', pin: '' }]);
        
        setClientNotifs(editingClient.notifications || {
           creado: false,
@@ -51,7 +52,7 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
        });
        setClientLogo(editingClient.logo || null);
     } else {
-       setClientContacts([{ name: '', email: '' }]);
+       setClientContacts([{ name: '', email: '', pin: '' }]);
        setClientNotifs(defaultNotifs);
        setClientLogo(null);
     }
@@ -110,19 +111,20 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
              
              const email = validContacts.map(c => c.email.trim().toLowerCase()).join(','); 
              const contactName = validContacts.map(c => c.name.trim() || 'Usuario').join(','); 
+             const contactPin = validContacts.map(c => c.pin?.trim() || '0000').join(','); 
              const enableNotifications = Object.values(clientNotifs).some(v => v); 
              
              try { 
                  if(editingClient){ 
-                     await updateDoc(doc(db, 'clients', editingClient.id), { name, contactName, email, enableNotifications, notifications: clientNotifs, logo: clientLogo }); 
+                     await updateDoc(doc(db, 'clients', editingClient.id), { name, contactName, contactPin, email, enableNotifications, notifications: clientNotifs, logo: clientLogo }); 
                      setEditingClient(null); 
                      showAlert("Cliente y accesos actualizados."); 
                  } else { 
-                     await addDoc(collection(db, 'clients'), { name, contactName, email, enableNotifications, notifications: clientNotifs, logo: clientLogo, createdAt: Date.now() }); 
+                     await addDoc(collection(db, 'clients'), { name, contactName, contactPin, email, enableNotifications, notifications: clientNotifs, logo: clientLogo, createdAt: Date.now() }); 
                      showAlert("Cliente agregado."); 
                  } 
                  e.target.reset(); 
-                 setClientContacts([{ name: '', email: '' }]);
+                 setClientContacts([{ name: '', email: '', pin: '' }]);
                  setClientNotifs(defaultNotifs);
                  setClientLogo(null);
              } catch(err){
@@ -210,7 +212,7 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                      <label className="text-xs font-black text-slate-700 uppercase tracking-wide block">Cuentas de Acceso</label>
                      <p className="text-[9px] font-bold text-slate-500 leading-tight mt-0.5">Asocia a los usuarios que podrán ver a este cliente.</p>
                   </div>
-                  <button type="button" onClick={() => setClientContacts([...clientContacts, { name: '', email: '' }])} className="text-[10px] font-black bg-blue-100 text-blue-700 px-3 py-2 rounded-lg uppercase tracking-wider hover:bg-blue-200 transition-colors flex items-center gap-1 shadow-sm shrink-0">
+                  <button type="button" onClick={() => setClientContacts([...clientContacts, { name: '', email: '', pin: '' }])} className="text-[10px] font-black bg-blue-100 text-blue-700 px-3 py-2 rounded-lg uppercase tracking-wider hover:bg-blue-200 transition-colors flex items-center gap-1 shadow-sm shrink-0">
                      <Plus className="w-3.5 h-3.5"/> Añadir Otro
                   </button>
                </div>
@@ -218,14 +220,19 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                <div className="space-y-3">
                    {clientContacts.map((contact, index) => (
                        <div key={index} className="flex flex-col sm:flex-row gap-0 sm:gap-2 bg-white p-1 sm:p-2 rounded-xl border border-slate-200 shadow-sm relative group">
-                           <div className="flex-1 relative pt-3 px-2 sm:pt-0 sm:px-0">
+                           <div className="flex-[2] relative pt-3 px-2 sm:pt-0 sm:px-0">
                                <span className="absolute top-1 left-2 sm:-top-2 sm:left-2 sm:bg-white sm:px-1 text-[8px] font-black text-slate-400 uppercase">Nombre del Responsable</span>
                                <input type="text" placeholder="Ej. Juan Pérez" value={contact.name} onChange={(e) => { const newContacts = [...clientContacts]; newContacts[index].name = e.target.value; setClientContacts(newContacts); }} className="w-full bg-transparent p-2 pt-3 sm:pt-2.5 text-xs font-bold text-slate-700 outline-none focus:text-blue-600 border-b sm:border-b-0 border-slate-100" />
                            </div>
                            <div className="hidden sm:block w-px bg-slate-100 my-1"></div>
-                           <div className="flex-1 relative pt-3 px-2 pb-2 sm:p-0">
+                           <div className="flex-[2] relative pt-3 px-2 border-b sm:border-b-0 border-slate-100 sm:p-0">
                                <span className="absolute top-1 left-2 sm:-top-2 sm:left-2 sm:bg-white sm:px-1 text-[8px] font-black text-slate-400 uppercase">Correo Gmail</span>
                                <input type="email" placeholder="usuario@gmail.com" value={contact.email} onChange={(e) => { const newContacts = [...clientContacts]; newContacts[index].email = e.target.value; setClientContacts(newContacts); }} className="w-full bg-transparent p-2 pt-3 sm:pt-2.5 text-xs font-bold text-slate-700 outline-none focus:text-blue-600" />
+                           </div>
+                           <div className="hidden sm:block w-px bg-slate-100 my-1"></div>
+                           <div className="flex-[1] relative pt-3 px-2 pb-2 sm:p-0">
+                               <span className="absolute top-1 left-2 sm:-top-2 sm:left-2 sm:bg-white sm:px-1 text-[8px] font-black text-emerald-500 uppercase">PIN de Firma</span>
+                               <input type="text" maxLength="4" placeholder="Ej. 1234" value={contact.pin || ''} onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); const newContacts = [...clientContacts]; newContacts[index].pin = val; setClientContacts(newContacts); }} className="w-full bg-transparent p-2 pt-3 sm:pt-2.5 text-xs font-black text-emerald-600 tracking-[0.3em] outline-none focus:text-emerald-700" />
                            </div>
                            {clientContacts.length > 1 && (
                                <button type="button" onClick={() => { const newContacts = [...clientContacts]; newContacts.splice(index, 1); setClientContacts(newContacts); }} className="sm:self-center p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors absolute right-1 top-1 sm:relative sm:top-0 sm:right-0">
@@ -312,12 +319,15 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                              <div className="flex flex-wrap gap-2">
                                  {clientRecord.email.split(',').map((e, idx) => {
                                      const namesArray = clientRecord.contactName ? clientRecord.contactName.split(',') : [];
+                                     const pinsArray = clientRecord.contactPin ? clientRecord.contactPin.split(',') : [];
                                      const associatedName = namesArray[idx] ? namesArray[idx].trim() : 'Usuario';
+                                     const associatedPin = pinsArray[idx] ? pinsArray[idx].trim() : '0000';
                                      return (
                                        <span key={idx} className="text-[10px] font-bold text-slate-600 bg-white border border-slate-200 px-2 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm max-w-full">
                                          <User className="w-3 h-3 text-blue-500 shrink-0"/>
                                          <span className="font-black text-slate-800 truncate">{associatedName}</span> 
                                          <span className="text-slate-400 truncate hidden sm:inline">({e.trim()})</span>
+                                         <span className="ml-1 bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-black tracking-widest border border-emerald-200" title="PIN de Firma">*{associatedPin}</span>
                                        </span>
                                      );
                                  })}

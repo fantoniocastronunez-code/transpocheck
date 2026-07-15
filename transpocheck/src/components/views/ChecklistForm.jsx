@@ -53,6 +53,33 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
   const [fullScreenImage, setFullScreenImage] = useState(null); 
   const [uploadProgress, setUploadProgress] = useState({ active: false, current: 0, total: 0, text: '' }); 
 
+  // --- MAGIA: AUDITORÍA RÁPIDA CON PIN ---
+  const [clientPins, setClientPins] = useState([]);
+  const [enteredPin, setEnteredPin] = useState('');
+
+  useEffect(() => {
+    if (!formData.client || formData.client === 'OTRO') {
+       setClientPins([]);
+       return;
+    }
+    const fetchPins = async () => {
+       try {
+          const q = query(collection(db, 'clients'), where('name', '==', formData.client));
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+             const cData = snap.docs[0].data();
+             if (cData.contactPin && cData.contactName) {
+                const pins = cData.contactPin.split(',').map(p => p.trim());
+                const names = cData.contactName.split(',').map(n => n.trim());
+                const validPins = pins.map((p, i) => ({ pin: p, name: names[i] || 'Usuario' })).filter(x => x.pin && x.pin !== '0000');
+                setClientPins(validPins);
+             } else { setClientPins([]); }
+          }
+       } catch(e) { console.error("Error cargando PINs:", e); }
+    };
+    fetchPins();
+  }, [formData.client, db]);
+
   // MAGIA UX: Auto-scroll hacia arriba al cambiar de pestaña en el checklist
   useEffect(() => {
     window.scrollTo({
@@ -1531,7 +1558,46 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
                {!formData.noReception && (
                  <div className="space-y-3">
-                   <div className="flex items-center gap-2 my-2"><div className="h-px bg-slate-200 flex-1"></div><span className="text-[10px] font-bold text-slate-400 uppercase">O llenar manualmente</span><div className="h-px bg-slate-200 flex-1"></div></div>
+                   {clientPins.length > 0 && (
+                      <div className="bg-emerald-50 border-2 border-emerald-200 p-4 rounded-2xl animate-in zoom-in-95 mt-4">
+                         <h3 className="font-extrabold text-emerald-800 mb-1 flex items-center gap-2"><CheckCircle className="w-5 h-5"/> Auditoría Rápida con PIN</h3>
+                         <p className="text-[11px] font-bold text-emerald-600 mb-3">Si el receptor tiene un PIN asignado, ingrésalo aquí para firmar automáticamente.</p>
+                         <input 
+                            type="password" 
+                            maxLength="4" 
+                            value={enteredPin}
+                            placeholder="••••"
+                            onChange={(e) => {
+                               const val = e.target.value.replace(/\D/g, '');
+                               setEnteredPin(val);
+                               if (val.length === 4) {
+                                  const match = clientPins.find(p => p.pin === val);
+                                  if (match) {
+                                     // Generación de Sello Digital instantáneo
+                                     const canvas = document.createElement('canvas');
+                                     canvas.width = 400; canvas.height = 150;
+                                     const ctx = canvas.getContext('2d');
+                                     ctx.fillStyle = '#ecfdf5'; ctx.fillRect(0, 0, 400, 150);
+                                     ctx.fillStyle = '#065f46'; ctx.font = 'bold 18px sans-serif'; ctx.fillText('FIRMADO CON PIN DE SEGURIDAD', 20, 50);
+                                     ctx.fillStyle = '#047857'; ctx.font = '16px sans-serif'; ctx.fillText('Receptor: ' + match.name, 20, 90);
+                                     ctx.fillText('Fecha: ' + new Date().toLocaleString('es-CL'), 20, 120);
+                                     const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                                     
+                                     setF('receiverName', match.name);
+                                     setF('signatureData', dataUrl);
+                                     showAlert("✅ PIN Correcto. Acta firmada digitalmente por " + match.name);
+                                  } else {
+                                     showAlert("❌ PIN Incorrecto. Inténtalo de nuevo.");
+                                     setEnteredPin('');
+                                  }
+                               }
+                            }}
+                            className="w-full text-center tracking-[1em] font-black text-3xl border-2 border-emerald-300 focus:border-emerald-500 rounded-xl p-3 outline-none text-emerald-800 bg-white shadow-inner"
+                         />
+                      </div>
+                   )}
+
+                   <div className="flex items-center gap-2 my-2"><div className="h-px bg-slate-200 flex-1"></div><span className="text-[10px] font-bold text-slate-400 uppercase">{clientPins.length > 0 ? 'O firmar manualmente' : 'Llenar manualmente'}</span><div className="h-px bg-slate-200 flex-1"></div></div>
                    
                    <input required={!formData.noReception} value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
                    <input value={formData.receiverRut} onChange={(e)=>{ let val = e.target.value.replace(/[^0-9kK]/g, '').toUpperCase(); if (val.length > 1) { const dv = val.slice(-1); const body = val.slice(0, -1); val = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '-' + dv; } setF('receiverRut', val); }} placeholder="RUT Receptor (Opcional)" maxLength="12" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
