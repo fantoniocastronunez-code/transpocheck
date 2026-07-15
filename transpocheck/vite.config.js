@@ -70,12 +70,23 @@ export default defineConfig({
     chunkSizeWarningLimit: 1500, // Evita la advertencia amarilla de Vite
     rollupOptions: {
       output: {
-        // Separa las librerías grandes en archivos (chunks) individuales para que la app cargue mucho más rápido.
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          'firebase-vendor': ['firebase/app', 'firebase/firestore', 'firebase/auth', 'firebase/storage'],
-          'icons-vendor': ['lucide-react'],
-          'pdf-vendor': ['jspdf', 'html2canvas']
+        // --- FIX CRÍTICO: Rollup 4 exige que manualChunks sea una función ---
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'react-vendor';
+            }
+            if (id.includes('firebase')) {
+              return 'firebase-vendor';
+            }
+            if (id.includes('lucide-react')) {
+              return 'icons-vendor';
+            }
+            if (id.includes('jspdf') || id.includes('html2canvas')) {
+              return 'pdf-vendor';
+            }
+            return 'vendor'; // Cualquier otra librería pesada
+          }
         }
       }
     }
