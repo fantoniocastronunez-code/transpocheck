@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, updateDoc, doc, getDocs } from 'firebase/firestore';
-import { CheckCircle, Clock, FileDown, Navigation, MapPin, X, Search, LogOut, Sun, Moon, FileText } from 'lucide-react';
+import { CheckCircle, Clock, FileDown, Navigation, MapPin, X, Search, LogOut, Sun, Moon, FileText, ShieldCheck, Zap } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import WaitTimerBadge from '../ui/WaitTimerBadge';
 import SignaturePad from '../ui/SignaturePad';
@@ -18,15 +18,41 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
   // SOLUCIÓN AL ERROR 310: El estado de paginación DEBE ir siempre aquí arriba
   const [historyLimit, setHistoryLimit] = useState(30); 
 
+  // ESTADOS PARA EL PIN DEL CLIENTE
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [newPin, setNewPin] = useState('');
+  const [clientRecordId, setClientRecordId] = useState(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState(''); // Extraemos el email 
+
   useEffect(() => {
     if (clientName) {
-      // Buscar el logo corporativo del cliente en la DB
+      // Extraer el correo de currentUser (suponiendo que viene en un prop o global, si no, intentamos sacarlo de localStorage)
+      // Dado que no tenemos el currentUser completo aquí como prop directo, vamos a buscar al cliente y ver si NOSOTROS somos uno de sus correos.
+      const loggedEmail = localStorage.getItem('logisticapp_user_email'); 
+      if (loggedEmail) setCurrentUserEmail(loggedEmail);
+
       const fetchClientData = async () => {
          try {
            const qClient = query(collection(db, 'clients'), where('name', '==', clientName));
            const snap = await getDocs(qClient);
            if (!snap.empty) {
-             setClientLogo(snap.docs[0].data().logo || null);
+             const cDoc = snap.docs[0];
+             const cData = cDoc.data();
+             setClientRecordId(cDoc.id);
+             setClientLogo(cData.logo || null);
+
+             // Lógica para verificar PIN
+             if (loggedEmail && cData.email) {
+               const emails = cData.email.split(',').map(e => e.trim().toLowerCase());
+               const idx = emails.indexOf(loggedEmail.toLowerCase());
+               if (idx !== -1) {
+                  const pins = cData.contactPin ? cData.contactPin.split(',').map(p => p.trim()) : [];
+                  // Si no tiene PIN configurado (está vacío, undefined, o es '0000' por defecto)
+                  if (!pins[idx] || pins[idx] === '' || pins[idx] === '0000') {
+                     setShowPinModal(true);
+                  }
+               }
+             }
            }
          } catch(e) { console.error("Error al leer cliente", e); }
       };
@@ -278,9 +304,73 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
   
   const initials = clientName ? clientName.substring(0, 2).toUpperCase() : 'CL';
 
+  const handleSavePin = async () => {
+    if (newPin.length !== 4) return alert("El PIN debe tener exactamente 4 dígitos.");
+    if (!clientRecordId) return setShowPinModal(false);
+
+    try {
+      const cDoc = await getDocs(query(collection(db, 'clients'), where('name', '==', clientName)));
+      if (cDoc.empty) return;
+      const cData = cDoc.docs[0].data();
+      
+      const emails = cData.email.split(',').map(e => e.trim().toLowerCase());
+      const pins = cData.contactPin ? cData.contactPin.split(',').map(p => p.trim()) : [];
+      
+      // Asegurarse de que el array de pines tenga el mismo largo que el de correos
+      while (pins.length < emails.length) pins.push('0000');
+
+      const idx = emails.indexOf(currentUserEmail.toLowerCase());
+      if (idx !== -1) {
+        pins[idx] = newPin;
+        await updateDoc(doc(db, 'clients', clientRecordId), { contactPin: pins.join(',') });
+        setShowPinModal(false);
+        alert("¡PIN de Firma Rápida configurado exitosamente!");
+      }
+    } catch (error) {
+      console.error("Error guardando PIN", error);
+      alert("Hubo un error al guardar tu PIN. Intenta de nuevo.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10 transition-colors duration-300">
-      <header className={`fixed-nav-bar ${branding.primary} text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300`}>
+      
+      {/* MODAL DE CREACIÓN DE PIN (Solo aparece si no tiene uno) */}
+      {showPinModal && (
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white max-w-md w-full rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden animate-in zoom-in-95">
+            {/* Decoración de fondo */}
+            <div className="absolute top-0 left-0 w-full h-2 bg-emerald-500"></div>
+            
+            <div className="flex justify-center mb-5">
+              <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center border-4 border-emerald-50 shadow-sm">
+                <ShieldCheck className="w-8 h-8 text-emerald-600" />
+              </div>
+            </div>
+
+            <h2 className="text-2xl font-black text-slate-800 text-center mb-2">¡Crea tu Firma Rápida!</h2>
+            <p className="text-sm font-bold text-slate-500 text-center mb-6 leading-relaxed">
+              Configura un <span className="text-slate-800">PIN de 4 dígitos</span>. <br/>
+              Te servirá para firmar digitalmente la recepción de vehículos cuando el conductor te entregue, de forma instantánea y segura.
+            </p>
+
+            <div className="bg-slate-50 border-2 border-slate-100 rounded-2xl p-5 flex flex-col items-center mb-6 shadow-inner">
+              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Tu nuevo PIN Secreto</label>
+              <input 
+                type="password" 
+                maxLength="4" 
+                value={newPin} 
+                onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))} 
+                placeholder="••••" 
+                className="text-4xl tracking-[0.5em] font-black text-emerald-700 w-full text-center bg-transparent outline-none"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={() => setShowPinModal(false)} className="w-1/3 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-colors">
+                Omitir
+              </button>
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
           <div className="bg-white/20 p-1 sm:p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">
             <img src="/logo.png" alt="Logo App" className="w-7 h-7 sm:w-12 sm:h-12 object-contain" />
