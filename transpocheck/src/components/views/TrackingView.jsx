@@ -336,9 +336,8 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
              </div>
           </div>
 
-          <h2 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-1">Portal de Seguimiento</h2>
-             <p className="text-2xl font-black text-slate-800">{clientName}</p>
-           </div>
+          <p className="text-2xl font-black text-slate-800">{clientName}</p>
+        </div>
 
            {/* NUEVO: BANNER DE VISTA FILTRADA */}
            {trackId && (
