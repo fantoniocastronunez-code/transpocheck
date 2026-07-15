@@ -14,6 +14,9 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
   
   // NUEVO: Atrapa el ID del trabajo desde la URL si viene desde el correo
   const [trackId, setTrackId] = useState(() => new URLSearchParams(window.location.search).get('track')); 
+  
+  // SOLUCIÓN AL ERROR 310: El estado de paginación DEBE ir siempre aquí arriba
+  const [historyLimit, setHistoryLimit] = useState(30); 
 
   useEffect(() => {
     if (clientName) {
@@ -256,8 +259,6 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
       </div>
     </div>
   );
-
-  const [historyLimit, setHistoryLimit] = useState(30); // Controla cuántos historiales se muestran a la vez
 
   const filteredJobs = jobs.filter(j => {
     // NUEVO: Si hay un ID de rastreo activo, ocultamos el resto de la flota
@@ -559,7 +560,7 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
             )})}
           </div>
 
-          {/* nuevo: botón de cargar más historiales */}
+          {/* nuevo: botón de cargar más historiales (sintaxis corregida) */}
           {allhistoryjobs.length > historylimit && (
             <div classname="mt-8 text-center pb-8 animate-in fade-in duration-300">
               <button 
