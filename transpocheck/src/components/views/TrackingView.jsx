@@ -271,9 +271,21 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
            (j.model || '').toLowerCase().includes(term);
   });
 
+  // TU CÓDIGO ACTUAL ESTÁ ASÍ:
+  const filteredJobs = jobs.filter(j => {
+    // NUEVO: Si hay un ID de rastreo activo, ocultamos el resto de la flota
+    if (trackId && j.id !== trackId) return false;
+    
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (j.plate || '').toLowerCase().includes(term) || 
+           (j.brand || '').toLowerCase().includes(term) || 
+           (j.model || '').toLowerCase().includes(term);
+  });
+
   const activeJobs = filteredJobs.filter(j => j.status === 'pending' || j.status === 'accepted');
-  const allHistoryJobs = filteredJobs.filter(j => j.status === 'completed' || j.status === 'failed');
-  const historyJobs = allHistoryJobs.slice(0, historyLimit);
+  const allHistoryJobs = filteredJobs.filter(j => j.status === 'completed' || j.status === 'failed'); // <-- ¡TÚ TIENES ESTO!
+  const historyJobs = allHistoryJobs.slice(0, historyLimit); // <-- ¡Y ESTO!
   
   const pendingSignatureJobs = activeJobs.filter(j => j.checklist && !j.checklist.clientSigned);
   
@@ -560,7 +572,7 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
             )})}
           </div>
 
-          {/* nuevo: botón de cargar más historiales (sintaxis corregida) */}
+          {/* nuevo: botón de cargar más historiales */}
           {allhistoryjobs.length > historylimit && (
             <div classname="mt-8 text-center pb-8 animate-in fade-in duration-300">
               <button 
