@@ -60,9 +60,9 @@ export default async function handler(req, res) {
       <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
         
         <div style="background-color: #1e293b; padding: 30px; text-align: center; border-bottom: 4px solid ${accentColor};">
-          <img src="${logoUrl}" alt="logisticAPP" style="height: 50px; width: 50px; margin-bottom: 10px;" onerror="this.style.display='none'">
-          <div style="margin: 0; display: flex; align-items: center; justify-content: center; gap: 8px;">
-            <span style="color: #ffffff; font-size: 24px; font-weight: 900; letter-spacing: 1px; font-family: 'Nunito', 'Segoe UI', sans-serif;">logisticAPP</span>
+          <img src="${logoUrl}" alt="LogisticAPP" style="height: 50px; width: auto; margin-bottom: 10px; display: inline-block;" onerror="this.style.display='none'">
+          <div style="color: #ffffff; font-size: 26px; font-weight: 800; letter-spacing: 0.5px; font-family: Arial, Helvetica, sans-serif; text-transform: uppercase;">
+            LogisticAPP
           </div>
         </div>
 
