@@ -316,24 +316,26 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                         {clientRecord.email && (
                            <div className="flex flex-col gap-2 mt-4 border-t border-slate-200/60 pt-4">
                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Cuentas Autorizadas:</p>
-                             <div className="flex flex-col sm:flex-row flex-wrap gap-3">
+                             <div className="flex flex-col gap-2.5">
                                  {clientRecord.email.split(',').map((e, idx) => {
                                      const namesArray = clientRecord.contactName ? clientRecord.contactName.split(',') : [];
                                      const pinsArray = clientRecord.contactPin ? clientRecord.contactPin.split(',') : [];
                                      const associatedName = namesArray[idx] ? namesArray[idx].trim() : 'Usuario';
                                      const associatedPin = pinsArray[idx] ? pinsArray[idx].trim() : '0000';
                                      return (
-                                       <div key={idx} className="text-xs sm:text-sm font-bold text-slate-600 bg-white border-2 border-slate-200 px-3 py-2.5 rounded-xl flex items-center justify-between gap-3 shadow-sm w-full sm:w-auto">
+                                       <div key={idx} className="w-full text-xs sm:text-sm font-bold text-slate-600 bg-white border border-slate-200 px-3 py-2.5 rounded-xl flex items-center justify-between gap-3 shadow-sm">
                                          <div className="flex items-center gap-3 overflow-hidden">
-                                           <User className="w-5 h-5 text-blue-500 shrink-0"/>
+                                           <div className="w-8 h-8 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+                                             <User className="w-4 h-4 text-blue-600"/>
+                                           </div>
                                            <div className="flex flex-col truncate">
-                                             <span className="font-black text-slate-800 truncate">{associatedName}</span> 
-                                             <span className="text-[10px] text-slate-400 truncate">{e.trim()}</span>
+                                             <span className="font-black text-slate-800 text-sm truncate">{associatedName}</span> 
+                                             <span className="text-[10px] text-slate-500 font-bold truncate">{e.trim()}</span>
                                            </div>
                                          </div>
-                                         <div className="bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg font-black tracking-widest border border-emerald-200 shrink-0 flex flex-col items-center">
-                                           <span className="text-[8px] uppercase tracking-tighter leading-none mb-0.5 opacity-70">PIN</span>
-                                           <span className="leading-none text-sm">*{associatedPin}</span>
+                                         <div className="bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-200 shrink-0 flex flex-col items-center min-w-[60px]">
+                                           <span className="text-[8px] font-black uppercase tracking-widest text-emerald-500 mb-0.5">PIN</span>
+                                           <span className="leading-none text-base font-black tracking-widest">{associatedPin}</span>
                                          </div>
                                        </div>
                                      );

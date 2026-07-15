@@ -371,6 +371,15 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
               <button onClick={() => setShowPinModal(false)} className="w-1/3 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-colors">
                 Omitir
               </button>
+              <button onClick={handleSavePin} disabled={newPin.length !== 4} className="w-2/3 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl transition-colors shadow-md disabled:opacity-50 flex items-center justify-center gap-2">
+                <Zap className="w-4 h-4"/> Activar PIN
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <header className={`fixed-nav-bar ${branding.primary} text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300`}>
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
           <div className="bg-white/20 p-1 sm:p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">
             <img src="/logo.png" alt="Logo App" className="w-7 h-7 sm:w-12 sm:h-12 object-contain" />
