@@ -102,13 +102,13 @@ export default async function handler(req, res) {
   const logoUrl = `${baseUrl}/logo512.png`;
 
   const htmlTemplate = `
-    <div style="background-color: #0f172a; padding: 40px 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333;">
+    <div style="background-color: #0f172a; padding: 40px 20px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333;">
       <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
         
         <div style="background-color: #1e293b; padding: 30px; text-align: center; border-bottom: 4px solid ${accentColor};">
-          <img src="${logoUrl}" alt="logisticAPP" style="height: 50px; width: 50px; margin-bottom: 10px;" onerror="this.style.display='none'">
-          <div style="margin: 0; display: flex; align-items: center; justify-content: center; gap: 8px;">
-            <span style="color: #ffffff; font-size: 24px; font-weight: 900; letter-spacing: 1px; font-family: 'Nunito', 'Segoe UI', sans-serif;">logisticAPP</span>
+          <img src="${logoUrl}" alt="LogisticAPP" style="height: 60px; width: auto; margin-bottom: 15px;" onerror="this.style.display='none'">
+          <div style="color: #ffffff; font-size: 26px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">
+            LogisticAPP
           </div>
         </div>
 
