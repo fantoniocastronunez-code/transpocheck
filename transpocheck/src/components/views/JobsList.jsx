@@ -808,16 +808,22 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     }
 
     return (
-      <div key={j.id} className={`bg-white rounded-[2rem] border p-4 sm:p-5 flex flex-col shadow-sm relative hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 overflow-hidden cursor-default group ${j.fleetGroup ? 'border-indigo-200' : 'border-slate-100'}`}>
-        {/* Efecto de luz ambiental en la esquina */}
-        <div className={`absolute -right-16 -top-16 w-40 h-40 rounded-full blur-3xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none ${isRequested ? 'bg-pink-500' : (isPending ? 'bg-amber-500' : 'bg-blue-500')}`}></div>
-        {/* Borde izquierdo iluminado con gradiente */}
-        <div className={`absolute top-0 left-0 bottom-0 w-1.5 transition-all ${isRequested ? 'bg-gradient-to-b from-pink-400 to-pink-600' : (isPending ? 'bg-gradient-to-b from-amber-300 to-amber-500' : 'bg-gradient-to-b from-blue-400 to-blue-600 shadow-[0_0_8px_rgba(59,130,246,0.5)]')}`}></div>
+      // --- OPTIMIZACIÓN: Quitamos el overflow-hidden del padre para que el menú no se corte ---
+      // Además, si la tarjeta tiene el menú abierto, elevamos su z-index
+      <div key={j.id} className={`bg-white rounded-[2rem] border p-4 sm:p-5 flex flex-col shadow-sm relative hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-default group ${j.fleetGroup ? 'border-indigo-200' : 'border-slate-100'} ${menuOpenId === j.id ? 'z-50' : 'z-10'}`}>
         
-        <div className="flex justify-between items-start mb-5 border-b border-slate-100/80 pb-4 pl-2 relative z-10">
+        {/* --- OPTIMIZACIÓN: Los fondos decorativos ahora viven en un contenedor con overflow-hidden para no salirse de los bordes redondeados --- */}
+        <div className="absolute inset-0 rounded-[2rem] overflow-hidden pointer-events-none">
+            {/* Efecto de luz ambiental en la esquina */}
+            <div className={`absolute -right-16 -top-16 w-40 h-40 rounded-full blur-3xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none ${isRequested ? 'bg-pink-500' : (isPending ? 'bg-amber-500' : 'bg-blue-500')}`}></div>
+            {/* Borde izquierdo iluminado con gradiente */}
+            <div className={`absolute top-0 left-0 bottom-0 w-1.5 transition-all ${isRequested ? 'bg-gradient-to-b from-pink-400 to-pink-600' : (isPending ? 'bg-gradient-to-b from-amber-300 to-amber-500' : 'bg-gradient-to-b from-blue-400 to-blue-600 shadow-[0_0_8px_rgba(59,130,246,0.5)]')}`}></div>
+        </div>
+        
+        <div className="flex justify-between items-start mb-5 border-b border-slate-100/80 pb-4 pl-2 relative z-20">
           <div className="flex flex-col gap-3 w-full">
             <div className="flex justify-between items-start w-full gap-2">
-              <div className="shrink-0 relative z-20 flex flex-col items-end gap-1">
+              <div className="shrink-0 relative z-10 flex flex-col items-end gap-1">
                 {j.tripType === 'simple' && (
                    <span className="bg-purple-100 text-purple-800 border border-purple-200 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm max-w-[150px] text-center leading-tight mb-1">SERVICIO</span>
                 )}
@@ -831,11 +837,30 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                 )}
               </div>
               
-              <div className="flex items-center gap-1 relative shrink-0">
+              <div className="flex items-center gap-1 relative shrink-0 z-50">
                 {isAdminView && <button onClick={()=>onEditJob(j)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition-colors"><Edit2 className="w-5 h-5"/></button>}
                 <button onClick={()=>setMenuOpenId(menuOpenId===j.id?null:j.id)} className="p-2 text-slate-400 hover:bg-slate-50 rounded-xl transition-colors"><MoreVertical className="w-5 h-5"/></button>
+                {/* --- OPTIMIZACIÓN: z-[999] para aplastar cualquier capa inferior --- */}
                 {menuOpenId===j.id && (
-                  <div className="absolute right-0 top-10 bg-white border shadow-2xl rounded-xl w-48 z-50 overflow-hidden text-xs">
+                  <div className="absolute right-0 top-10 bg-white border shadow-[0_10px_40px_rgba(0,0,0,0.2)] rounded-xl w-56 z-[999] overflow-hidden text-xs">
+                    <button onClick={() => {
+                      const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
+                      const textToShare = `📍 Sigue en tiempo real todos los traslados de ${j.client || 'tu empresa'} aquí:\n${url}`;
+                      const textArea = document.createElement("textarea");
+                      textArea.value = textToShare; textArea.style.position = "fixed"; document.body.appendChild(textArea);
+                      textArea.focus(); textArea.select();
+                      try { document.execCommand('copy'); showAlert("✅ Portal de Cliente copiado. ¡Pégalo en WhatsApp!"); } catch(e) {}
+                      document.body.removeChild(textArea); setMenuOpenId(null);
+                    }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-blue-50 text-blue-600"><Navigation className="w-4 h-4"/> Portal Cliente</button>
+                    
+                    {isAccepted && (
+                      <button onClick={() => {
+                        const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
+                        const textToShare = `📍 Hola! El vehículo ${ident} va en camino a ${j.destination || 'su destino'}. Puedes seguir el traslado en tiempo real aquí:\n${url}`;
+                        window.open(`https://wa.me/?text=${encodeURIComponent(textToShare)}`, '_blank');
+                        setMenuOpenId(null);
+                      }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-green-50 text-green-600 border-t border-slate-50"><Share2 className="w-4 h-4"/> Notificar Receptor</button>
+                    )}
                     <button onClick={() => {
                       const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
                       const textToShare = `📍 Sigue en tiempo real todos los traslados de ${j.client || 'tu empresa'} aquí:\n${url}`;
