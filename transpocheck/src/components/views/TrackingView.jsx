@@ -358,6 +358,8 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
               <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Tu nuevo PIN Secreto</label>
               <input 
                 type="password" 
+                inputMode="numeric"
+                pattern="[0-9]*"
                 maxLength="4" 
                 value={newPin} 
                 onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))} 

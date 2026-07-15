@@ -1560,10 +1560,12 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                  <div className="space-y-3">
                    {clientPins.length > 0 && (
                       <div className="bg-emerald-50 border-2 border-emerald-200 p-4 rounded-2xl animate-in zoom-in-95 mt-4">
-                         <h3 className="font-extrabold text-emerald-800 mb-1 flex items-center gap-2"><CheckCircle className="w-5 h-5"/> Auditoría Rápida con PIN</h3>
+                         <h3 className="font-extrabold text-emerald-800 mb-1 flex items-center gap-2"><CheckCircle className="w-5 h-5"/> Firma con PIN</h3>
                          <p className="text-[11px] font-bold text-emerald-600 mb-3">Si el receptor tiene un PIN asignado, ingrésalo aquí para firmar automáticamente.</p>
                          <input 
                             type="password" 
+                            inputMode="numeric"
+                            pattern="[0-9]*"
                             maxLength="4" 
                             value={enteredPin}
                             placeholder="••••"
