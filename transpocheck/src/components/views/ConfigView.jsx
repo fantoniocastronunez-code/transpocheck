@@ -314,21 +314,28 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                         </div>
 
                         {clientRecord.email && (
-                           <div className="flex flex-col gap-1.5 mt-3 border-t border-slate-200/60 pt-3">
-                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Cuentas Autorizadas:</p>
-                             <div className="flex flex-wrap gap-2">
+                           <div className="flex flex-col gap-2 mt-4 border-t border-slate-200/60 pt-4">
+                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Cuentas Autorizadas:</p>
+                             <div className="flex flex-col sm:flex-row flex-wrap gap-3">
                                  {clientRecord.email.split(',').map((e, idx) => {
                                      const namesArray = clientRecord.contactName ? clientRecord.contactName.split(',') : [];
                                      const pinsArray = clientRecord.contactPin ? clientRecord.contactPin.split(',') : [];
                                      const associatedName = namesArray[idx] ? namesArray[idx].trim() : 'Usuario';
                                      const associatedPin = pinsArray[idx] ? pinsArray[idx].trim() : '0000';
                                      return (
-                                       <span key={idx} className="text-[10px] font-bold text-slate-600 bg-white border border-slate-200 px-2 py-1.5 rounded-lg flex items-center gap-1.5 shadow-sm max-w-full">
-                                         <User className="w-3 h-3 text-blue-500 shrink-0"/>
-                                         <span className="font-black text-slate-800 truncate">{associatedName}</span> 
-                                         <span className="text-slate-400 truncate hidden sm:inline">({e.trim()})</span>
-                                         <span className="ml-1 bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-black tracking-widest border border-emerald-200" title="PIN de Firma">*{associatedPin}</span>
-                                       </span>
+                                       <div key={idx} className="text-xs sm:text-sm font-bold text-slate-600 bg-white border-2 border-slate-200 px-3 py-2.5 rounded-xl flex items-center justify-between gap-3 shadow-sm w-full sm:w-auto">
+                                         <div className="flex items-center gap-3 overflow-hidden">
+                                           <User className="w-5 h-5 text-blue-500 shrink-0"/>
+                                           <div className="flex flex-col truncate">
+                                             <span className="font-black text-slate-800 truncate">{associatedName}</span> 
+                                             <span className="text-[10px] text-slate-400 truncate">{e.trim()}</span>
+                                           </div>
+                                         </div>
+                                         <div className="bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg font-black tracking-widest border border-emerald-200 shrink-0 flex flex-col items-center">
+                                           <span className="text-[8px] uppercase tracking-tighter leading-none mb-0.5 opacity-70">PIN</span>
+                                           <span className="leading-none text-sm">*{associatedPin}</span>
+                                         </div>
+                                       </div>
                                      );
                                  })}
                              </div>
