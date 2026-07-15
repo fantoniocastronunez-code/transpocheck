@@ -57,13 +57,17 @@ export default async function handler(req, res) {
 
     // --- OPTIMIZACIÓN 3: Generador de Plantillas Maestro ---
     // Nos permite crear correos hermosos sin repetir todo el HTML
+    const logoUrl = `${baseUrl}/logo512.png`;
+
     const buildTemplate = (accentColor, title, message, cardHtml, buttonText) => `
       <div style="background-color: #0f172a; padding: 40px 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333;">
         <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
           
           <div style="background-color: #1e293b; padding: 30px; text-align: center; border-bottom: 4px solid ${accentColor};">
-            <img src="${baseUrl}/logos/LogoLogistica.png" alt="Logística TS" style="height: 50px; margin-bottom: 10px;" onerror="this.style.display='none'">
-            <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 900; letter-spacing: 1px;">SISTEMA LOGISTICAPP</h1>
+            <img src="${logoUrl}" alt="logisticAPP" style="height: 50px; width: 50px; margin-bottom: 10px;" onerror="this.style.display='none'">
+            <div style="margin: 0; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <span style="color: #ffffff; font-size: 24px; font-weight: 900; letter-spacing: 1px; font-family: 'Nunito', 'Segoe UI', sans-serif;">logisticAPP</span>
+            </div>
           </div>
 
           <div style="padding: 40px 30px;">
@@ -83,8 +87,9 @@ export default async function handler(req, res) {
           </div>
 
           <div style="background-color: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0;">
+            <img src="${logoUrl}" alt="logisticAPP" style="height: 60px; width: 60px; display: block; margin: 0 auto 10px auto; opacity: 0.8;" onerror="this.style.display='none'" />
             <p style="color: #64748b; font-size: 12px; margin: 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Alerta de Monitoreo Generada Automáticamente</p>
-            <p style="color: #94a3b8; font-size: 11px; margin-top: 5px;">Logística TS SpA</p>
+            <p style="color: #94a3b8; font-size: 11px; margin-top: 5px;">logisticAPP</p>
           </div>
         </div>
       </div>
