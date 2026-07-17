@@ -923,6 +923,45 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                  <p className="text-[10px] font-bold text-slate-500 mb-4 leading-tight">Si escaneaste con CamScanner o Adobe Scan, pega el link aquí o adjunta el PDF directamente.</p>
                  
                  <div className="space-y-4">
+                    
+                    {/* NUEVO: ACTUALIZACIÓN DE FECHAS PRT PARA HISTORIAL AUTOMÁTICO */}
+                    {job.tripType === 'revision' && (
+                       <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl shadow-sm mb-4 animate-in zoom-in-95">
+                           <h4 className="text-xs font-black text-emerald-800 uppercase mb-2 flex items-center gap-1.5">📅 Nuevas Fechas de Vencimiento</h4>
+                           <p className="text-[10px] font-bold text-emerald-600 mb-4 leading-tight">Ingresa las fechas de los nuevos documentos. Al guardar el acta, <strong>esto actualizará la ficha del vehículo para el próximo conductor automáticamente</strong>.</p>
+                           <div className="grid grid-cols-2 gap-3">
+                               <div className="flex flex-col gap-1">
+                                   <label className="text-[10px] font-black text-emerald-700 uppercase">Rev. Técnica</label>
+                                   <input type="date" value={formData.docsExpiry?.revTecnica || ''} onChange={e => {
+                                      setF('docsExpiry', { ...(formData.docsExpiry || {}), revTecnica: e.target.value });
+                                      setF('docs', { ...(formData.docs || {}), revTecnica: true });
+                                   }} className="w-full bg-white border border-emerald-200 p-2 rounded-lg text-xs font-black text-slate-700 outline-none focus:border-emerald-500" />
+                               </div>
+                               <div className="flex flex-col gap-1">
+                                   <label className="text-[10px] font-black text-emerald-700 uppercase">Gases</label>
+                                   <input type="date" value={formData.docsExpiry?.gases || ''} onChange={e => {
+                                      setF('docsExpiry', { ...(formData.docsExpiry || {}), gases: e.target.value });
+                                      setF('docs', { ...(formData.docs || {}), gases: true });
+                                   }} className="w-full bg-white border border-emerald-200 p-2 rounded-lg text-xs font-black text-slate-700 outline-none focus:border-emerald-500" />
+                               </div>
+                               <div className="flex flex-col gap-1">
+                                   <label className="text-[10px] font-black text-emerald-700 uppercase">Permiso Circ.</label>
+                                   <input type="date" value={formData.docsExpiry?.permiso || ''} onChange={e => {
+                                      setF('docsExpiry', { ...(formData.docsExpiry || {}), permiso: e.target.value });
+                                      setF('docs', { ...(formData.docs || {}), permiso: true });
+                                   }} className="w-full bg-white border border-emerald-200 p-2 rounded-lg text-xs font-black text-slate-700 outline-none focus:border-emerald-500" />
+                               </div>
+                               <div className="flex flex-col gap-1">
+                                   <label className="text-[10px] font-black text-emerald-700 uppercase">SOAP</label>
+                                   <input type="date" value={formData.docsExpiry?.soap || ''} onChange={e => {
+                                      setF('docsExpiry', { ...(formData.docsExpiry || {}), soap: e.target.value });
+                                      setF('docs', { ...(formData.docs || {}), soap: true });
+                                   }} className="w-full bg-white border border-emerald-200 p-2 rounded-lg text-xs font-black text-slate-700 outline-none focus:border-emerald-500" />
+                               </div>
+                           </div>
+                       </div>
+                    )}
+
                     <div className="space-y-1">
                        <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest ml-1">Enlace / Link del Documento</label>
                        <div className="flex gap-2">
@@ -1836,6 +1875,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     </div>
   );
 }
+
 
 
 
