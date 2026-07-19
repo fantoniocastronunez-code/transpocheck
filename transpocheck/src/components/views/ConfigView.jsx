@@ -364,6 +364,25 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
 
                <div className="space-y-4 pt-5 border-t border-slate-100">
                   <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5"><CheckCircle className="w-4 h-4"/> 4. Seguridad y PIN</h4>
+                  <div className="bg-emerald-50 border border-emerald-100 p-5 rounded-2xl shadow-sm">
+                     <p className="text-xs font-bold text-slate-600 mb-3">La firma y PIN deben ser creados por el cliente desde su propio acceso al portal.</p>
+                     <p className="text-[10px] font-black text-emerald-700 bg-white p-3 rounded-xl border border-emerald-200 shadow-sm flex items-center gap-2">
+                        {editingProfile !== 'NEW' && editingProfile?.pin && editingProfile.pin !== '0000' 
+                           ? <><CheckCircle className="w-4 h-4"/> El cliente ya configuró su firma digital y PIN de 4 dígitos ({editingProfile.pin}).</> 
+                           : <><AlertCircle className="w-4 h-4 text-amber-500"/> El cliente aún no configura su firma digital (PIN actual: 0000).</>}
+                     </p>
+                  </div>
+               </div>
+
+               <div className="flex gap-3 pt-2 mt-4">
+                  <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-black text-sm transition-colors shadow-md shadow-blue-200">
+                     Guardar Perfil de Acceso
+                  </button>
+               </div>
+            </form>
+          )}
+        </div>
+      )}
 
       {configSubTab === 'vehicles' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full min-w-0">
