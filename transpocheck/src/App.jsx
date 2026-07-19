@@ -461,6 +461,8 @@ function LogisticApp() {
                      });
                      
                      if (foundClient) {
+                        // CORRECCIÓN CLAVE: Guardamos el correo en el navegador para que TrackingView sepa quién es y le pida su PIN
+                        localStorage.setItem('logisticapp_user_email', email);
                         navigate(`/?client=${encodeURIComponent(foundClient)}`);
                      } else {
                         alert("El correo no está registrado ni asociado a ninguna empresa. Contacta al administrador.");

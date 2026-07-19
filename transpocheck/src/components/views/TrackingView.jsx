@@ -35,30 +35,33 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
 
   useEffect(() => {
     if (clientName) {
-      // REPARACIÓN: Ampliamos la búsqueda del correo en localStorage y limpiamos espacios.
-      const loggedEmail = (localStorage.getItem('logisticapp_user_email') || localStorage.getItem('userEmail') || localStorage.getItem('clientEmail') || '').trim();
-      
-      if (loggedEmail) setCurrentUserEmail(loggedEmail);
-
       const fetchClientData = async () => {
          try {
-           // MEJORA VITAL: Leemos toda la colección para evitar el fallo cuando el 'clientName' 
-           // (Ej: "Grandleasing Las Torres") no coincide con el nombre raíz en la DB ("Grandleasing").
+           // ESCÁNER INTELIGENTE: Buscamos cualquier correo guardado en el navegador 
+           // sin necesidad de saber el nombre exacto de la llave que usa App.jsx
+           let possibleEmails = [];
+           for (let i = 0; i < localStorage.length; i++) {
+              const val = localStorage.getItem(localStorage.key(i));
+              if (val && typeof val === 'string' && val.includes('@')) {
+                 possibleEmails.push(val.trim().toLowerCase());
+              }
+           }
+
            const snap = await getDocs(collection(db, 'clients'));
            let foundClient = null;
-           let targetEmail = loggedEmail.toLowerCase();
+           let targetEmail = '';
 
-           // Buscamos a qué empresa pertenece el correo exacto
            for (const document of snap.docs) {
               const data = document.data();
-              if (data.email && targetEmail) {
-                 const emails = data.email.split(',').map(e => e.trim().toLowerCase());
-                 if (emails.includes(targetEmail)) {
-                    foundClient = { id: document.id, ...data, matchedIdx: emails.indexOf(targetEmail) };
-                    break;
-                 }
+              const emails = data.email ? data.email.split(',').map(e => e.trim().toLowerCase()) : [];
+              
+              const match = emails.find(e => possibleEmails.includes(e));
+              if (match) {
+                 targetEmail = match;
+                 foundClient = { id: document.id, ...data, matchedIdx: emails.indexOf(match) };
+                 break;
               }
-              // Fallback: coincidencia de nombre exacto (si no logueó con correo)
+              // Fallback por nombre de empresa
               if (!foundClient && data.name === clientName) {
                  foundClient = { id: document.id, ...data, matchedIdx: 0 };
               }
@@ -68,18 +71,23 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
              setClientRecordId(foundClient.id);
              setClientLogo(foundClient.logo || null);
 
-             if (targetEmail && foundClient.email) {
-                const rawNames = foundClient.contactName || foundClient.contactPerson || foundClient.contact || '';
-                const names = rawNames ? rawNames.split(',').map(n => n.trim()) : [];
-                let matchedName = names[foundClient.matchedIdx] || names[0] || '';
+             if (!targetEmail && foundClient.email) {
+                targetEmail = foundClient.email.split(',')[foundClient.matchedIdx || 0].trim().toLowerCase();
+             }
+             
+             setCurrentUserEmail(targetEmail);
 
-                if (matchedName) setCurrentUserName(matchedName);
+             const rawNames = foundClient.contactName || foundClient.contactPerson || foundClient.contact || '';
+             const names = rawNames ? rawNames.split(',').map(n => n.trim()) : [];
+             let matchedName = names[foundClient.matchedIdx || 0] || names[0] || '';
 
-                const pins = foundClient.contactPin ? foundClient.contactPin.split(',').map(p => p.trim()) : [];
-                // Disparamos el Modal si el PIN está vacío o es 0000
-                if (!pins[foundClient.matchedIdx] || pins[foundClient.matchedIdx] === '' || pins[foundClient.matchedIdx] === '0000') {
-                   setShowPinModal(true);
-                }
+             if (matchedName) setCurrentUserName(matchedName);
+
+             const pins = foundClient.contactPin ? foundClient.contactPin.split(',').map(p => p.trim()) : [];
+             const currentPin = pins[foundClient.matchedIdx || 0];
+             
+             if (!currentPin || currentPin === '' || currentPin === '0000') {
+                setShowPinModal(true);
              }
            }
          } catch(e) { console.error("Error al leer cliente", e); }
@@ -337,7 +345,6 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
     if (!clientRecordId) return setShowPinModal(false);
 
     try {
-      // REPARACIÓN: Buscamos por el ID exacto del cliente que ya atrapamos en el useEffect
       const snap = await getDocs(collection(db, 'clients'));
       const docSnap = snap.docs.find(d => d.id === clientRecordId);
       if (!docSnap) return;
@@ -346,18 +353,16 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
       const emails = cData.email ? cData.email.split(',').map(e => e.trim().toLowerCase()) : [];
       const pins = cData.contactPin ? cData.contactPin.split(',').map(p => p.trim()) : [];
       
-      // Asegurarse de que el array de pines tenga el mismo largo que el de correos
       while (pins.length < emails.length) pins.push('0000');
 
-      const idx = emails.indexOf((currentUserEmail || '').trim().toLowerCase());
-      if (idx !== -1) {
-        pins[idx] = newPin;
-        await updateDoc(doc(db, 'clients', clientRecordId), { contactPin: pins.join(',') });
-        setShowPinModal(false);
-        alert("¡PIN de Firma Rápida configurado exitosamente!");
-      } else {
-        alert("Hubo un error verificando tu usuario. Actualiza la página.");
-      }
+      let idx = emails.indexOf((currentUserEmail || '').trim().toLowerCase());
+      if (idx === -1) idx = 0; // Fallback forzado en caso de cruces anómalos
+
+      pins[idx] = newPin;
+      await updateDoc(doc(db, 'clients', clientRecordId), { contactPin: pins.join(',') });
+      setShowPinModal(false);
+      alert("¡PIN de Firma Rápida configurado exitosamente!");
+      
     } catch (error) {
       console.error("Error guardando PIN", error);
       alert("Hubo un error al guardar tu PIN. Intenta de nuevo.");
