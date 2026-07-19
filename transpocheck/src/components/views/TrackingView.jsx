@@ -55,9 +55,20 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                const emails = cData.email.split(',').map(e => e.trim().toLowerCase());
                const idx = emails.indexOf(loggedEmail.toLowerCase());
                if (idx !== -1) {
-                  // NUEVO: Extraemos el nombre correspondiente al correo
-                  const names = cData.contactName ? cData.contactName.split(',') : [];
-                  if (names[idx]) setCurrentUserName(names[idx].trim());
+                  // MEJORADO: Extracción de nombre blindada contra desajustes de base de datos
+                  const rawNames = cData.contactName || cData.contactPerson || cData.contact || '';
+                  const names = rawNames ? rawNames.split(',').map(n => n.trim()) : [];
+                  
+                  // Toma el nombre en su misma posición. Si no hay (ej. 2 correos, 1 nombre), toma el primero.
+                  let matchedName = names[idx] || names[0] || '';
+
+                  // Respaldo por si tu base de datos lo guardó en formato de lista de contactos
+                  if (!matchedName && cData.clientContacts && Array.isArray(cData.clientContacts)) {
+                     const obj = cData.clientContacts.find(c => c.email && c.email.toLowerCase() === loggedEmail.toLowerCase());
+                     if (obj && obj.name) matchedName = obj.name.trim();
+                  }
+
+                  if (matchedName) setCurrentUserName(matchedName);
 
                   const pins = cData.contactPin ? cData.contactPin.split(',').map(p => p.trim()) : [];
                   // Si no tiene PIN configurado (está vacío, undefined, o es '0000' por defecto)
