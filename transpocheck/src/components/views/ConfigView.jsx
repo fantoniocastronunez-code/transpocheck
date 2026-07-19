@@ -21,12 +21,11 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
 
   const [editingDriver, setEditingDriver] = useState(null);
   const [editingVehicle, setEditingVehicle] = useState(null);
-  const [editingClient, setEditingClient] = useState(null);
+  const [editingProfile, setEditingProfile] = useState(null);
+  const [selectedCompanyId, setSelectedCompanyId] = useState('');
   const [fleetFilter, setFleetFilter] = useState('');
   const [driverDocs, setDriverDocs] = useState({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null });
   const [fullScreenDoc, setFullScreenDoc] = useState(null); 
-  
-  const [clientContacts, setClientContacts] = useState([{ name: '', email: '', pin: '' }]);
   
   const defaultNotifs = { creado: false, asignado: true, llegada_origen: false, en_ruta: true, llegada_destino: false, finalizado: true };
   const defaultDriverNotifs = { asignacion: true, modificacion: true, nuevo_monto: true, rendicion_pendiente: true };
@@ -35,28 +34,142 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
   const [clientLogo, setClientLogo] = useState(null);
 
   React.useEffect(() => {
-    if (editingClient) {
-       const emails = editingClient.email ? editingClient.email.split(',').map(e => e.trim()).filter(Boolean) : [];
-       const names = editingClient.contactName ? editingClient.contactName.split(',').map(n => n.trim()) : [];
-       const pins = editingClient.contactPin ? editingClient.contactPin.split(',').map(p => p.trim()) : [];
-       const mapped = emails.map((e, i) => ({ email: e, name: names[i] || '', pin: pins[i] || '' }));
-       setClientContacts(mapped.length > 0 ? mapped : [{ name: '', email: '', pin: '' }]);
-       
-       setClientNotifs(editingClient.notifications || {
-          creado: false,
-          asignado: !!editingClient.enableNotifications,
-          llegada_origen: false,
-          en_ruta: !!editingClient.enableNotifications,
-          llegada_destino: false,
-          finalizado: !!editingClient.enableNotifications
-       });
-       setClientLogo(editingClient.logo || null);
+    if (editingProfile) {
+       if (editingProfile === 'NEW') {
+          setSelectedCompanyId('');
+          setClientLogo(null);
+          setClientNotifs(defaultNotifs);
+       } else {
+          setSelectedCompanyId(editingProfile.companyId);
+          setClientLogo(editingProfile.companyLogo || null);
+          setClientNotifs(editingProfile.notifications || defaultNotifs);
+       }
     } else {
-       setClientContacts([{ name: '', email: '', pin: '' }]);
-       setClientNotifs(defaultNotifs);
+       setSelectedCompanyId('');
        setClientLogo(null);
+       setClientNotifs(defaultNotifs);
     }
-  }, [editingClient]);
+  }, [editingProfile]);
+
+  const clientProfiles = React.useMemo(() => {
+    return customClients.flatMap(company => {
+       const emails = company.email ? company.email.split(',').map(e=>e.trim()).filter(Boolean) : [];
+       const names = company.contactName ? company.contactName.split(',').map(n=>n.trim()) : [];
+       const pins = company.contactPin ? company.contactPin.split(',').map(p=>p.trim()) : [];
+       
+       if (emails.length === 0) {
+          return [{ id: `${company.id}-empty`, companyId: company.id, companyName: company.name, companyLogo: company.logo, email: '', nombre: '', apellido: '', pin: '', notifications: company.notifications || defaultNotifs, isEmptyCompany: true }];
+       }
+       
+       return emails.map((e, i) => {
+          const fullName = names[i] || '';
+          const parts = fullName.split(' ');
+          const nombre = parts[0] || '';
+          const apellido = parts.slice(1).join(' ') || '';
+          return {
+             id: `${company.id}-${e}`,
+             companyId: company.id,
+             companyName: company.name,
+             companyLogo: company.logo,
+             email: e,
+             nombre,
+             apellido,
+             pin: pins[i] || '0000',
+             notifications: company.notifications || defaultNotifs,
+             isEmptyCompany: false
+          };
+       });
+    });
+  }, [customClients]);
+
+  const handleSaveProfile = async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const nombre = fd.get('nombre').trim();
+      const apellido = fd.get('apellido').trim();
+      const fullName = `${nombre} ${apellido}`.trim();
+      const email = fd.get('correo').trim().toLowerCase();
+      const companySelection = fd.get('empresa');
+      const pin = (editingProfile && editingProfile !== 'NEW' && editingProfile.pin) ? editingProfile.pin : '0000'; 
+      
+      try {
+          if (companySelection === 'NEW') {
+             const newCompanyName = fd.get('nuevaEmpresa').trim();
+             await addDoc(collection(db, 'clients'), {
+                name: newCompanyName,
+                email: email,
+                contactName: fullName,
+                contactPin: pin,
+                notifications: clientNotifs,
+                enableNotifications: Object.values(clientNotifs).some(v=>v),
+                logo: clientLogo,
+                createdAt: Date.now()
+             });
+          } else {
+             const company = customClients.find(c => c.id === companySelection);
+             if (!company) return;
+             
+             let emails = company.email ? company.email.split(',').map(e=>e.trim()).filter(Boolean) : [];
+             let names = company.contactName ? company.contactName.split(',').map(n=>n.trim()) : [];
+             let pins = company.contactPin ? company.contactPin.split(',').map(p=>p.trim()) : [];
+             
+             while(names.length < emails.length) names.push('Usuario');
+             while(pins.length < emails.length) pins.push('0000');
+             
+             if (editingProfile && editingProfile !== 'NEW' && editingProfile.email) {
+                const idx = emails.indexOf(editingProfile.email);
+                if (idx !== -1) {
+                   emails[idx] = email;
+                   names[idx] = fullName;
+                } else {
+                   emails.push(email);
+                   names.push(fullName);
+                   pins.push(pin);
+                }
+             } else {
+                if (emails.includes(email)) return showAlert("Este correo ya existe en esta empresa.");
+                emails.push(email);
+                names.push(fullName);
+                pins.push(pin);
+             }
+             
+             await updateDoc(doc(db, 'clients', company.id), {
+                email: emails.join(','),
+                contactName: names.join(','),
+                contactPin: pins.join(','),
+                notifications: clientNotifs, 
+                enableNotifications: Object.values(clientNotifs).some(v=>v),
+                logo: clientLogo !== null ? clientLogo : (company.logo || null)
+             });
+          }
+          setEditingProfile(null);
+          showAlert("Perfil guardado exitosamente.");
+      } catch (err) {
+          console.error(err);
+          showAlert("❌ Error al guardar el perfil.");
+      }
+  };
+
+  const handleDeleteProfile = async (profile) => {
+      const company = customClients.find(c => c.id === profile.companyId);
+      if (!company) return;
+      let emails = company.email ? company.email.split(',').map(e=>e.trim()).filter(Boolean) : [];
+      let names = company.contactName ? company.contactName.split(',').map(n=>n.trim()) : [];
+      let pins = company.contactPin ? company.contactPin.split(',').map(p=>p.trim()) : [];
+      
+      const idx = emails.indexOf(profile.email);
+      if (idx !== -1) {
+         emails.splice(idx, 1);
+         names.splice(idx, 1);
+         pins.splice(idx, 1);
+         
+         if (emails.length === 0) {
+            await updateDoc(doc(db, 'clients', company.id), { email: '', contactName: '', contactPin: '' });
+         } else {
+            await updateDoc(doc(db, 'clients', company.id), { email: emails.join(','), contactName: names.join(','), contactPin: pins.join(',') });
+         }
+      }
+  };
 
   const handleDocUpload = async (e, field, size) => {
     const file = e.target.files[0];
@@ -100,263 +213,157 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
       </div>
 
       {configSubTab === 'clients' && (
-        <div className="grid md:grid-cols-2 gap-6 w-full min-w-0">
-          <form onSubmit={async (e) => { 
-             e.preventDefault(); 
-             const fd = new FormData(e.target); 
-             const name = fd.get('name'); 
-             
-             const validContacts = clientContacts.filter(c => c.email.trim() !== '');
-             if (validContacts.length === 0) return showAlert("Debes agregar al menos un correo de acceso.");
-             
-             const email = validContacts.map(c => c.email.trim().toLowerCase()).join(','); 
-             const contactName = validContacts.map(c => c.name.trim() || 'Usuario').join(','); 
-             const contactPin = validContacts.map(c => c.pin?.trim() || '0000').join(','); 
-             const enableNotifications = Object.values(clientNotifs).some(v => v); 
-             
-             try { 
-                 if(editingClient){ 
-                     await updateDoc(doc(db, 'clients', editingClient.id), { name, contactName, contactPin, email, enableNotifications, notifications: clientNotifs, logo: clientLogo }); 
-                     setEditingClient(null); 
-                     showAlert("Cliente y accesos actualizados."); 
-                 } else { 
-                     await addDoc(collection(db, 'clients'), { name, contactName, contactPin, email, enableNotifications, notifications: clientNotifs, logo: clientLogo, createdAt: Date.now() }); 
-                     showAlert("Cliente agregado."); 
-                 } 
-                 e.target.reset(); 
-                 setClientContacts([{ name: '', email: '', pin: '' }]);
-                 setClientNotifs(defaultNotifs);
-                 setClientLogo(null);
-             } catch(err){
-                 console.error("Error guardando cliente:", err);
-                 showAlert("❌ Error al guardar el cliente. Revisa tu conexión.");
-             } 
-          }} className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 space-y-5 w-full min-w-0">
-            
-            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-               <h3 className="font-extrabold text-lg flex items-center gap-2 text-slate-800">
-                  <User className="text-blue-600"/> {editingClient ? 'Añadir/Editar Accesos' : 'Nuevo Cliente'}
-               </h3>
-               {editingClient && (
-                  <button type="button" onClick={() => setEditingClient(null)} className="text-[10px] font-bold text-slate-400 bg-slate-100 px-3 py-1.5 rounded-lg uppercase tracking-wider hover:bg-slate-200 transition-colors">
-                     Cancelar
-                  </button>
-               )}
-            </div>
-
-            <div className="space-y-4">
-               <div>
-                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Seleccionar Empresa</label>
-                 <select 
-                    value={editingClient ? editingClient.id : 'NEW'} 
-                    onChange={(e) => {
-                       if (e.target.value === 'NEW') {
-                          setEditingClient(null);
-                       } else {
-                          const found = customClients.find(c => c.id === e.target.value);
-                          if (found) setEditingClient(found);
-                       }
-                    }}
-                    className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-blue-500 bg-white shadow-sm"
-                 >
-                    <option value="NEW">✨ NUEVO CLIENTE (Crear desde cero)</option>
-                    {customClients.map(c => (
-                       <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                 </select>
-               </div>
-
-               <div className="animate-in fade-in slide-in-from-top-1">
-                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">
-                    {editingClient ? 'Nombre de la Empresa (Editable)' : 'Nombre de la Nueva Empresa'}
-                 </label>
-                 <input 
-                    name="name" 
-                    key={editingClient ? editingClient.id : 'new-input'}
-                    defaultValue={editingClient?.name || ''} 
-                    placeholder="Ej. Automotora Kovacs" 
-                    required 
-                    className={`w-full border-2 p-3 rounded-xl text-sm font-bold outline-none focus:border-blue-500 transition-colors shadow-sm ${editingClient ? 'border-slate-200 text-slate-800 bg-white' : 'border-blue-200 bg-blue-50 text-blue-900'}`} 
-                 />
-               </div>
-               
-               <div className="animate-in fade-in slide-in-from-top-1 flex items-center gap-4 bg-slate-50 p-3 rounded-xl border border-slate-200">
-                 <label className="relative w-16 h-16 shrink-0 rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center cursor-pointer overflow-hidden bg-white group hover:border-blue-500 transition-colors">
-                   <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                     const file = e.target.files[0];
-                     if (!file) return;
-                     try {
-                       const dataUrl = await resizeImage(file, 400, 0.6); // Optimizado a un máximo de 400px de ancho
-                       setClientLogo(dataUrl);
-                     } catch (err) { showAlert("Error procesando logo."); }
-                   }} />
-                   {clientLogo ? (
-                     <img src={clientLogo} alt="Logo" className="w-full h-full object-contain p-1" />
-                   ) : (
-                     <div className="text-center flex flex-col items-center justify-center text-slate-400 group-hover:text-blue-500">
-                       <Camera className="w-5 h-5 transition-colors" />
-                     </div>
-                   )}
-                 </label>
-                 <div className="flex flex-col">
-                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Logo Corporativo (Opcional)</span>
-                   <span className="text-xs font-bold text-slate-500 leading-tight">Aparecerá en el portal público y en tus listados.</span>
-                   {clientLogo && <button type="button" onClick={() => setClientLogo(null)} className="text-[10px] font-bold text-red-500 hover:underline w-fit mt-1">Quitar Logo</button>}
-                 </div>
-               </div>
-            </div>
-
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 shadow-inner">
-               <div className="flex justify-between items-center mb-4">
+        <div className="w-full min-w-0 flex flex-col gap-6">
+          
+          {!editingProfile ? (
+            <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 max-h-[85vh] overflow-y-auto">
+               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-slate-100 pb-5">
                   <div>
-                     <label className="text-xs font-black text-slate-700 uppercase tracking-wide block">Cuentas de Acceso</label>
-                     <p className="text-[9px] font-bold text-slate-500 leading-tight mt-0.5">Asocia a los usuarios que podrán ver a este cliente.</p>
+                     <h3 className="font-extrabold text-xl text-slate-800">Directorio de Clientes</h3>
+                     <p className="text-xs font-bold text-slate-500 mt-1">Administra los accesos individuales por usuario y empresa</p>
                   </div>
-                  <button type="button" onClick={() => setClientContacts([...clientContacts, { name: '', email: '', pin: '' }])} className="text-[10px] font-black bg-blue-100 text-blue-700 px-3 py-2 rounded-lg uppercase tracking-wider hover:bg-blue-200 transition-colors flex items-center gap-1 shadow-sm shrink-0">
-                     <Plus className="w-3.5 h-3.5"/> Añadir Otro
+                  <button onClick={() => setEditingProfile('NEW')} className="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-5 py-3 rounded-xl text-sm font-black shadow-md shadow-blue-200 flex items-center gap-2 transition-all shrink-0">
+                     <Plus className="w-4 h-4"/> Nuevo Perfil
                   </button>
                </div>
                
-               <div className="space-y-3">
-                   {clientContacts.map((contact, index) => (
-                       <div key={index} className="flex flex-col sm:flex-row gap-0 sm:gap-2 bg-white p-1 sm:p-2 rounded-xl border border-slate-200 shadow-sm relative group">
-                           <div className="flex-[2] relative pt-3 px-2 sm:pt-0 sm:px-0">
-                               <span className="absolute top-1 left-2 sm:-top-2 sm:left-2 sm:bg-white sm:px-1 text-[8px] font-black text-slate-400 uppercase">Nombre del Responsable</span>
-                               <input type="text" placeholder="Ej. Juan Pérez" value={contact.name} onChange={(e) => { const newContacts = [...clientContacts]; newContacts[index].name = e.target.value; setClientContacts(newContacts); }} className="w-full bg-transparent p-2 pt-3 sm:pt-2.5 text-xs font-bold text-slate-700 outline-none focus:text-blue-600 border-b sm:border-b-0 border-slate-100" />
+               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {clientProfiles.filter(p => !p.isEmptyCompany).map(profile => (
+                     <div key={profile.id} className="flex flex-col p-4 sm:p-5 bg-slate-50 border border-slate-100 rounded-2xl hover:border-blue-200 hover:shadow-md transition-all group relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
+                        <div className="flex justify-between items-start mb-4 pl-2">
+                           <div className="flex items-center gap-3 w-full min-w-0 pr-2">
+                              <div className="w-11 h-11 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center overflow-hidden shrink-0">
+                                 {profile.companyLogo ? <img src={profile.companyLogo} className="w-full h-full object-contain p-1" /> : <User className="w-5 h-5 text-slate-300"/>}
+                              </div>
+                              <div className="min-w-0">
+                                 <p className="font-black text-slate-800 truncate text-sm">{profile.nombre} {profile.apellido}</p>
+                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">{profile.companyName}</p>
+                              </div>
                            </div>
-                           <div className="hidden sm:block w-px bg-slate-100 my-1"></div>
-                           <div className="flex-[2] relative pt-3 px-2 border-b sm:border-b-0 border-slate-100 sm:p-0">
-                               <span className="absolute top-1 left-2 sm:-top-2 sm:left-2 sm:bg-white sm:px-1 text-[8px] font-black text-slate-400 uppercase">Correo Gmail</span>
-                               <input type="email" placeholder="usuario@gmail.com" value={contact.email} onChange={(e) => { const newContacts = [...clientContacts]; newContacts[index].email = e.target.value; setClientContacts(newContacts); }} className="w-full bg-transparent p-2 pt-3 sm:pt-2.5 text-xs font-bold text-slate-700 outline-none focus:text-blue-600" />
+                           <div className="flex gap-1 shrink-0 bg-white p-1 rounded-xl shadow-sm border border-slate-100">
+                              <button onClick={() => { setEditingProfile(profile); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"><Edit2 className="w-4 h-4"/></button>
+                              <button onClick={() => showConfirm("¿Eliminar este perfil de acceso?", () => handleDeleteProfile(profile))} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
                            </div>
-                           <div className="hidden sm:block w-px bg-slate-100 my-1"></div>
-                           <div className="flex-[1] relative pt-3 px-2 pb-2 sm:p-0">
-                               <span className="absolute top-1 left-2 sm:-top-2 sm:left-2 sm:bg-white sm:px-1 text-[8px] font-black text-emerald-500 uppercase">PIN de Firma</span>
-                               <input type="text" maxLength="4" placeholder="Ej. 1234" value={contact.pin || ''} onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); const newContacts = [...clientContacts]; newContacts[index].pin = val; setClientContacts(newContacts); }} className="w-full bg-transparent p-2 pt-3 sm:pt-2.5 text-xs font-black text-emerald-600 tracking-[0.3em] outline-none focus:text-emerald-700" />
-                           </div>
-                           {clientContacts.length > 1 && (
-                               <button type="button" onClick={() => { const newContacts = [...clientContacts]; newContacts.splice(index, 1); setClientContacts(newContacts); }} className="sm:self-center p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors absolute right-1 top-1 sm:relative sm:top-0 sm:right-0">
-                                   <Trash2 className="w-4 h-4"/>
-                               </button>
-                           )}
-                       </div>
-                   ))}
-               </div>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl shadow-sm space-y-3">
-               <div className="border-b border-blue-200/50 pb-2">
-                  <p className="text-xs font-extrabold text-blue-900 flex items-center gap-1.5"><Eye className="w-4 h-4"/> Panel de Notificaciones (Correos)</p>
-                  <p className="text-[10px] font-bold text-blue-600 mt-0.5 leading-tight">Selecciona exactamente qué actualizaciones recibirá el cliente en su correo.</p>
-               </div>
-               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-                  {[
-                    { id: 'creado', label: 'Creado' },
-                    { id: 'asignado', label: 'Asignado' },
-                    { id: 'llegada_origen', label: 'En Origen' },
-                    { id: 'en_ruta', label: 'En Ruta' },
-                    { id: 'llegada_destino', label: 'En Destino' },
-                    { id: 'finalizado', label: 'Acta PDF' }
-                  ].map(notif => {
-                     const isActive = clientNotifs[notif.id];
-                     return (
-                       <button
-                         key={notif.id}
-                         type="button"
-                         onClick={() => setClientNotifs({...clientNotifs, [notif.id]: !isActive})}
-                         className={`py-3 px-1.5 rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all duration-200 border-2 flex flex-col items-center justify-center gap-1.5 select-none ${
-                           isActive
-                             ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200 scale-100'
-                             : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 scale-[0.98]'
-                         }`}
-                       >
-                         {isActive ? <CheckCircle className="w-5 h-5 mb-0.5 animate-in zoom-in duration-200" /> : <div className="w-5 h-5 mb-0.5 rounded-full border-2 border-slate-300 bg-white"></div>}
-                         <span className="text-center leading-tight">{notif.label}</span>
-                       </button>
-                     );
-                  })}
-               </div>
-            </div>
-
-            <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-black text-sm shadow-md shadow-blue-200 transition-all active:scale-[0.98]">
-               {editingClient ? 'Guardar Cambios del Cliente' : 'Crear Cliente y Accesos'}
-            </button>
-          </form>
-          <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 max-h-[60vh] overflow-y-auto w-full min-w-0">
-             <h3 className="font-extrabold text-lg mb-4">Base de Clientes y Accesos</h3>
-             <div className="space-y-3">
-                {customClients.map((clientRecord) => (
-                   <div key={clientRecord.id} className="flex justify-between items-center p-3 sm:p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm hover:border-blue-200 transition-colors">
-                     
-                     <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-center shrink-0 mr-3 overflow-hidden">
-                       {clientRecord.logo ? (
-                         <img src={clientRecord.logo} alt="Logo" className="w-full h-full object-contain p-1" />
-                       ) : (
-                         <div className="text-xl font-black text-slate-300">{clientRecord.name.charAt(0).toUpperCase()}</div>
-                       )}
-                     </div>
-
-                     <div className="flex-1 min-w-0 pr-2">
-                        <p className="font-extrabold text-slate-800 text-sm truncate">{clientRecord.name}</p>
-                        {clientRecord.contactName && <p className="text-xs font-bold text-slate-500 mt-1 truncate"><span className="text-slate-400 font-medium">Responsable(s):</span> {clientRecord.contactName}</p>}
-                        <div className="mt-1 flex flex-wrap gap-1">
-                           {clientRecord.notifications ? (
-                             Object.entries(clientRecord.notifications).filter(([k,v]) => v).map(([k, v]) => (
-                               <span key={k} className="text-[8px] font-black text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded uppercase tracking-widest border border-blue-200 shrink-0">
-                                 {k.replace('_', ' ')}
-                               </span>
-                             ))
-                           ) : clientRecord.enableNotifications ? (
-                             <span className="text-[8px] font-black text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded uppercase tracking-widest border border-blue-200 shrink-0">🔔 Avisos On</span>
-                           ) : (
-                             <span className="text-[8px] font-black text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded uppercase tracking-widest border border-slate-300 shrink-0">🔕 Avisos Off</span>
-                           )}
                         </div>
-
-                        {clientRecord.email && (
-                           <div className="flex flex-col gap-2 mt-4 border-t border-slate-200/60 pt-4">
-                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Cuentas Autorizadas:</p>
-                             <div className="flex flex-col gap-2.5">
-                                 {clientRecord.email.split(',').map((e, idx) => {
-                                     const namesArray = clientRecord.contactName ? clientRecord.contactName.split(',') : [];
-                                     const pinsArray = clientRecord.contactPin ? clientRecord.contactPin.split(',') : [];
-                                     const associatedName = namesArray[idx] ? namesArray[idx].trim() : 'Usuario';
-                                     const associatedPin = pinsArray[idx] ? pinsArray[idx].trim() : '0000';
-                                     return (
-                                       <div key={idx} className="w-full text-xs sm:text-sm font-bold text-slate-600 bg-white border border-slate-200 px-3 py-2.5 rounded-xl flex items-center justify-between gap-3 shadow-sm">
-                                         <div className="flex items-center gap-3 overflow-hidden">
-                                           <div className="w-8 h-8 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
-                                             <User className="w-4 h-4 text-blue-600"/>
-                                           </div>
-                                           <div className="flex flex-col truncate">
-                                             <span className="font-black text-slate-800 text-sm truncate">{associatedName}</span> 
-                                             <span className="text-[10px] text-slate-500 font-bold truncate">{e.trim()}</span>
-                                           </div>
-                                         </div>
-                                         <div className="bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-200 shrink-0 flex flex-col items-center min-w-[60px]">
-                                           <span className="text-[8px] font-black uppercase tracking-widest text-emerald-500 mb-0.5">PIN</span>
-                                           <span className="leading-none text-base font-black tracking-widest">{associatedPin}</span>
-                                         </div>
-                                       </div>
-                                     );
-                                 })}
-                             </div>
+                        
+                        <div className="pt-3 border-t border-slate-200 flex justify-between items-center pl-2">
+                           <span className="text-[11px] font-bold text-slate-600 truncate flex items-center gap-1.5"><div className="w-5 h-5 bg-slate-200 rounded flex items-center justify-center shrink-0"><User className="w-3 h-3 text-slate-500"/></div> <span className="truncate">{profile.email}</span></span>
+                           <span className={`text-[9px] shrink-0 font-black px-2 py-1 rounded-md uppercase tracking-wider ${profile.pin !== '0000' && profile.pin !== '' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-amber-100 text-amber-700 border border-amber-200'}`}>
+                              {profile.pin !== '0000' && profile.pin !== '' ? 'Firma PIN Lista' : 'Sin Firma'}
+                           </span>
+                        </div>
+                     </div>
+                  ))}
+                  
+                  {clientProfiles.filter(p => p.isEmptyCompany).map(profile => (
+                     <div key={profile.id} className="flex flex-col p-4 sm:p-5 bg-slate-50 border border-slate-100 rounded-2xl hover:border-slate-300 transition-all opacity-60">
+                        <div className="flex justify-between items-center">
+                           <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center overflow-hidden shrink-0">
+                                 {profile.companyLogo ? <img src={profile.companyLogo} className="w-full h-full object-contain p-1" /> : <span className="font-black text-slate-300">{profile.companyName.charAt(0)}</span>}
+                              </div>
+                              <div>
+                                 <p className="font-black text-slate-800 text-sm">{profile.companyName}</p>
+                                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Empresa sin perfiles activos</p>
+                              </div>
                            </div>
-                        )}
+                           <button onClick={() => showConfirm("¿Eliminar empresa vacía?", async () => await deleteDoc(doc(db, 'clients', profile.companyId)))} className="p-2 bg-white shadow-sm border border-slate-100 text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
+                        </div>
                      </div>
-                     <div className="flex flex-col gap-1.5 shrink-0 ml-2 border-l border-slate-200 pl-3">
-                       <button onClick={()=>{setEditingClient(clientRecord); window.scrollTo({ top: 0, behavior: 'smooth' });}} className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition-colors shadow-sm"><Edit2 className="w-4 h-4"/></button>
-                       <button onClick={()=>showConfirm("¿Eliminar cliente y sus accesos?", async()=>await deleteDoc(doc(db,'clients',clientRecord.id)))} className="p-2 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-colors shadow-sm"><Trash2 className="w-4 h-4"/></button>
+                  ))}
+
+                  {clientProfiles.length === 0 && (
+                     <div className="col-span-full py-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
+                        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mx-auto mb-3"><User className="w-8 h-8 text-slate-300"/></div>
+                        <p className="text-sm font-black text-slate-600">Aún no hay perfiles en la base de datos.</p>
+                        <p className="text-xs font-bold text-slate-400 mt-1">Crea el primer perfil para empezar a operar.</p>
                      </div>
-                   </div>
-                ))}
-                {customClients.length === 0 && (
-                   <p className="text-sm font-bold text-slate-400 text-center py-6 border-2 border-dashed border-slate-200 rounded-2xl">Aún no hay clientes en la base de datos.</p>
-                )}
-             </div>
-          </div>
-        </div>
-      )}
+                  )}
+               </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSaveProfile} className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-100 space-y-8 animate-in fade-in zoom-in-95 max-w-3xl mx-auto w-full relative">
+               <div className="absolute top-0 left-0 w-full h-2 bg-blue-600 rounded-t-3xl"></div>
+               
+               <div className="flex justify-between items-center border-b border-slate-100 pb-5 pt-2">
+                  <div>
+                     <h3 className="font-black text-2xl text-slate-800">{editingProfile === 'NEW' ? 'Crear Nuevo Perfil' : 'Editar Perfil'}</h3>
+                     <p className="text-xs font-bold text-slate-500 mt-1">Configuración individual de acceso y notificaciones</p>
+                  </div>
+                  <button type="button" onClick={() => setEditingProfile(null)} className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-colors font-bold shadow-sm"><X className="w-5 h-5"/></button>
+               </div>
+
+               <div className="space-y-4">
+                  <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5"><User className="w-4 h-4"/> 1. Datos Personales</h4>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                     <div>
+                        <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Nombre</label>
+                        <input name="nombre" defaultValue={editingProfile !== 'NEW' ? editingProfile.nombre : ''} placeholder="Ej. Catalina" required className="w-full bg-slate-50 border-2 border-slate-200 p-3.5 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-colors shadow-sm"/>
+                     </div>
+                     <div>
+                        <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Apellido</label>
+                        <input name="apellido" defaultValue={editingProfile !== 'NEW' ? editingProfile.apellido : ''} placeholder="Ej. Pérez" required className="w-full bg-slate-50 border-2 border-slate-200 p-3.5 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-colors shadow-sm"/>
+                     </div>
+                     <div className="sm:col-span-2">
+                        <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Correo Electrónico (Acceso)</label>
+                        <input id="correoInput" name="correo" type="email" defaultValue={editingProfile !== 'NEW' ? editingProfile.email : ''} placeholder="catalina@empresa.com" required className="w-full bg-slate-50 border-2 border-slate-200 p-3.5 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-colors shadow-sm"/>
+                     </div>
+                  </div>
+               </div>
+
+               <div className="space-y-4 pt-5 border-t border-slate-100">
+                  <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5"><BookOpen className="w-4 h-4"/> 2. Empresa Asociada</h4>
+                  <div>
+                     <select name="empresa" value={selectedCompanyId} onChange={(e) => { setSelectedCompanyId(e.target.value); if (e.target.value === 'NEW') { setClientLogo(null); } else { const comp = customClients.find(c => c.id === e.target.value); if (comp) setClientLogo(comp.logo || null); } }} required className="w-full bg-slate-50 border-2 border-slate-200 p-4 rounded-xl text-sm font-black text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-colors shadow-sm cursor-pointer">
+                        <option value="" disabled>Selecciona a qué empresa pertenece...</option>
+                        {customClients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        <option value="NEW">✨ + Crear y asociar a Nueva Empresa</option>
+                     </select>
+                  </div>
+
+                  {selectedCompanyId === 'NEW' && (
+                     <div className="p-5 bg-blue-50 border-2 border-blue-100 rounded-2xl space-y-4 animate-in fade-in slide-in-from-top-2">
+                        <div>
+                           <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1.5 block ml-1">Nombre de la Nueva Empresa</label>
+                           <input name="nuevaEmpresa" placeholder="Ej. Automotora Kovacs" required className="w-full border-2 border-blue-200 bg-white p-3.5 rounded-xl text-sm font-black text-blue-900 outline-none focus:border-blue-500 shadow-sm" />
+                        </div>
+                        
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white p-3 rounded-xl border border-blue-100">
+                           <label className="relative w-16 h-16 shrink-0 rounded-xl border-2 border-dashed border-blue-300 flex items-center justify-center cursor-pointer overflow-hidden bg-slate-50 group hover:border-blue-500 transition-colors">
+                              <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const file = e.target.files[0]; if (!file) return; try { const dataUrl = await resizeImage(file, 400, 0.6); setClientLogo(dataUrl); } catch (err) { showAlert("Error procesando logo."); } }} />
+                              {clientLogo ? <img src={clientLogo} alt="Logo" className="w-full h-full object-contain p-1" /> : <div className="text-center text-blue-400 group-hover:text-blue-600"><Camera className="w-5 h-5" /></div>}
+                           </label>
+                           <div className="flex flex-col">
+                              <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-0.5">Logo Corporativo (Opcional)</span>
+                              <span className="text-[11px] font-bold text-slate-500 leading-tight">Aparecerá en el portal público.</span>
+                              {clientLogo && <button type="button" onClick={() => setClientLogo(null)} className="text-[10px] font-bold text-red-500 hover:underline w-fit mt-1">Quitar Logo</button>}
+                           </div>
+                        </div>
+                     </div>
+                  )}
+               </div>
+
+               <div className="space-y-4 pt-5 border-t border-slate-100">
+                  <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5"><Clock className="w-4 h-4"/> 3. Preferencias de Notificación</h4>
+                  <div className="bg-slate-50 border border-slate-100 p-5 rounded-2xl shadow-sm">
+                     <p className="text-xs font-bold text-slate-600 mb-4 leading-tight">Selecciona exactamente qué actualizaciones del sistema llegarán al correo de este perfil.</p>
+                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {[ { id: 'creado', label: 'Al Crear' }, { id: 'asignado', label: 'Asignación' }, { id: 'llegada_origen', label: 'En Origen' }, { id: 'en_ruta', label: 'En Ruta' }, { id: 'llegada_destino', label: 'En Destino' }, { id: 'finalizado', label: 'Acta PDF' } ].map(notif => {
+                           const isActive = clientNotifs[notif.id];
+                           return (
+                             <button key={notif.id} type="button" onClick={() => setClientNotifs({...clientNotifs, [notif.id]: !isActive})} className={`py-4 px-2 rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all duration-200 border-2 flex flex-col items-center justify-center gap-2 select-none ${ isActive ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200 scale-100' : 'bg-white border-slate-200 text-slate-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 scale-[0.98]' }`}>
+                                {isActive ? <CheckCircle className="w-6 h-6 animate-in zoom-in duration-200" /> : <div className="w-6 h-6 rounded-full border-2 border-slate-300 bg-slate-50"></div>}
+                                <span className="text-center leading-tight">{notif.label}</span>
+                             </button>
+                           );
+                        })}
+                     </div>
+                  </div>
+               </div>
+
+               <div className="space-y-4 pt-5 border-t border-slate-100">
+                  <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5"><CheckCircle className="w-4 h-4"/> 4. Seguridad y PIN</h4>
 
       {configSubTab === 'vehicles' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full min-w-0">
@@ -720,6 +727,4 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
     </div>
   );
 }
-
-
 
