@@ -23,6 +23,15 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
   const [newPin, setNewPin] = useState('');
   const [clientRecordId, setClientRecordId] = useState(null);
   const [currentUserEmail, setCurrentUserEmail] = useState(''); // Extraemos el email 
+  const [currentUserName, setCurrentUserName] = useState(''); // NUEVO: Extraemos el nombre
+
+  // NUEVO: Helper para el saludo según la hora
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return 'Buenos días';
+    if (hour >= 12 && hour < 20) return 'Buenas tardes';
+    return 'Buenas noches';
+  };
 
   useEffect(() => {
     if (clientName) {
@@ -46,6 +55,10 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                const emails = cData.email.split(',').map(e => e.trim().toLowerCase());
                const idx = emails.indexOf(loggedEmail.toLowerCase());
                if (idx !== -1) {
+                  // NUEVO: Extraemos el nombre correspondiente al correo
+                  const names = cData.contactName ? cData.contactName.split(',') : [];
+                  if (names[idx]) setCurrentUserName(names[idx].trim());
+
                   const pins = cData.contactPin ? cData.contactPin.split(',').map(p => p.trim()) : [];
                   // Si no tiene PIN configurado (está vacío, undefined, o es '0000' por defecto)
                   if (!pins[idx] || pins[idx] === '' || pins[idx] === '0000') {
@@ -440,6 +453,10 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
              </div>
           </div>
 
+          {/* NUEVO: Saludo dinámico con el nombre del usuario logueado */}
+          <p className="text-sm font-bold text-slate-500 mb-0.5">
+            {getGreeting()}{currentUserName ? `, ${currentUserName.split(' ')[0]}` : ''}
+          </p>
           <p className="text-2xl font-black text-slate-800">{clientName}</p>
         </div>
 
