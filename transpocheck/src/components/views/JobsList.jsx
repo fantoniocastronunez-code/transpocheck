@@ -529,7 +529,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     let currentY = 50;
 
     if (job.tripType === 'revision' && job.checklist?.rtStatus) {
-        const isApproved = job.checklist.rtStatus === 'aprobado';
+        const isApproved = job.checklist.rtStatus === 'aprobado' || job.checklist.rtStatus === 'aprobado_ayuda';
         const statusText = isApproved ? "APROBADO" : "RECHAZADO";
         docPDF.setFillColor(isApproved ? 220 : 254, isApproved ? 252 : 226, isApproved ? 231 : 226);
         docPDF.rect(0, 40, 210, 12, 'F');
@@ -584,7 +584,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         if (job.waypoints && job.waypoints.length > 0) { routeText += `  ->  ${job.waypoints.join('  ->  ')}`; }
         if (job.destination) { routeText += `  ->  ${job.destination}`; }
         
-        if (job.tripType === 'revision') { if (job.checklist?.rtStatus === 'aprobado') { const ret = job.checklist.rtReturnOption === 'other' ? job.checklist.rtReturnDestination : job.origin; routeText = `${job.origin || '-'}  ->  PRT  ->  ${ret || '-'}`; } else if (job.checklist?.rtStatus === 'rechazado') { routeText = `${job.origin || '-'}  ->  PRT (Rechazada)`; } else { routeText = `${job.origin || '-'}  ->  PRT`; } }
+        if (job.tripType === 'revision') { if (job.checklist?.rtStatus === 'aprobado' || job.checklist?.rtStatus === 'aprobado_ayuda') { const ret = job.checklist.rtReturnOption === 'other' ? job.checklist.rtReturnDestination : job.origin; routeText = `${job.origin || '-'}  ->  PRT  ->  ${ret || '-'}`; } else if (job.checklist?.rtStatus === 'rechazado') { routeText = `${job.origin || '-'}  ->  PRT (Rechazada)`; } else { routeText = `${job.origin || '-'}  ->  PRT`; } }
         let routeH = drawKV("Ruta Asignada", routeText, 15, currentY, leftColWidth);
         currentY += routeH + 8;
         sectionNum++;
@@ -606,7 +606,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         sectionNum++;
     }
 
-    if (job.tripType === 'revision') { currentY = drawSectionTitle(`${sectionNum}. Resultado`, currentY); if (job.checklist?.rtStatus === 'aprobado') { docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(16); docPDF.text("APROBADO", 15, currentY + 6); currentY += 18; } else { docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(16); docPDF.text("RECHAZADO", 15, currentY + 6); docPDF.setFontSize(10); docPDF.setTextColor(153, 27, 27); const rejSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.checklist?.rtRejectReason || job.failedReason || 'No especificada'}`), leftColWidth); docPDF.text(rejSplit, 15, currentY + 12); currentY += 20 + (rejSplit.length * 4); } sectionNum++; }
+    if (job.tripType === 'revision') { currentY = drawSectionTitle(`${sectionNum}. Resultado`, currentY); if (job.checklist?.rtStatus === 'aprobado' || job.checklist?.rtStatus === 'aprobado_ayuda') { docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(16); docPDF.text("APROBADO", 15, currentY + 6); currentY += 18; } else { docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(16); docPDF.text("RECHAZADO", 15, currentY + 6); docPDF.setFontSize(10); docPDF.setTextColor(153, 27, 27); const rejSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.checklist?.rtRejectReason || job.failedReason || 'No especificada'}`), leftColWidth); docPDF.text(rejSplit, 15, currentY + 12); currentY += 20 + (rejSplit.length * 4); } sectionNum++; }
 
     if (job.status === 'failed' && job.tripType !== 'revision') {
         currentY = drawSectionTitle(`${sectionNum}. Resultado del Traslado`, currentY, job.tripType === 'simple' ? 180 : leftColWidth);
@@ -704,6 +704,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     
     if (job.status === 'failed') {
       text = `❌ TRASLADO FALLIDO\nMotivo: ${job.failedReason || 'No especificada'}\n\n${text}`;
+    } else if (job.tripType === 'revision' && job.checklist?.rtStatus === 'aprobado_ayuda') {
+      text = `🤝 APROBACIÓN DE RT\n\n${text}`;
     }
 
     const textArea = document.createElement("textarea");
@@ -746,6 +748,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       
       if (job.status === 'failed') {
         textToShare = `❌ TRASLADO FALLIDO\nMotivo: ${job.failedReason || 'No especificada'}\n\n${textToShare}`;
+      } else if (job.tripType === 'revision' && job.checklist?.rtStatus === 'aprobado_ayuda') {
+        textToShare = `🤝 APROBACIÓN DE RT\n\n${textToShare}`;
       }
 
       const docPDF = await buildPDFDoc(job); 
