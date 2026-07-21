@@ -1717,7 +1717,35 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                                            try { await updateDoc(doc(db, 'transport_jobs', j.id), { fleetGroup: deleteField() }); showAlert("✅ Vehículo removido del convoy."); } catch (e) { showAlert("❌ Error al desagrupar."); }
                                         });
                                      }} className="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors shrink-0" title="Quitar de la flota">
-                                        <X classN        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+                                        <X className="w-4 h-4" />
+                                     </button>
+                                  </div>
+                               ))}
+                            </div>
+                            <div className="p-2 bg-slate-50 border-t border-slate-100">
+                               <button onClick={() => {
+                                  showConfirm("⚠️ ¿Estás seguro de desarmar y disolver este convoy completo? Los vehículos volverán a ser individuales.", async () => {
+                                      setProcessingId(`disband-${fleetId}`);
+                                      try {
+                                          for (const j of fleetJobs) { await updateDoc(doc(db, 'transport_jobs', j.id), { fleetGroup: deleteField() }); }
+                                          showAlert("✅ Convoy desarmado completamente.");
+                                      } catch(e) { showAlert("❌ Error al desarmar flota."); } finally { setProcessingId(null); }
+                                  });
+                               }} disabled={processingId === `disband-${fleetId}`} className="w-full text-center text-[11px] font-black text-red-500 hover:text-red-700 hover:bg-red-100 py-2.5 rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                  {processingId === `disband-${fleetId}` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : <Trash2 className="w-3.5 h-3.5"/>}
+                                  Disolver Convoy
+                               </button>
+                            </div>
+                         </div>
+                      ))
+                   )}
+                </div>
+             </div>
+          </div>
+      )}
+
+      {dupPromptJob && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
            <div className="bg-white rounded-3xl p-5 sm:p-6 w-full max-w-md shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 border-t-8 border-purple-500">
               <div className="flex justify-between items-start mb-4">
                  <div>
