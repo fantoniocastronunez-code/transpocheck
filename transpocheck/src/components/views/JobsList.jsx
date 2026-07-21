@@ -16,6 +16,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [jobToFail, setJobToFail] = useState(null);
   const [prtPromptJob, setPrtPromptJob] = useState(null); 
+  const [prtApprovePromptJob, setPrtApprovePromptJob] = useState(null); // <-- NUEVO: Estado para el pop-up de Aprobación
   const [relayPromptJob, setRelayPromptJob] = useState(null); 
   const [forceCloseJob, setForceCloseJob] = useState(null); 
   
@@ -1182,7 +1183,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                   
                   {j.phase === 'arrived_prt' && (
                     <div className="flex gap-2">
-                      <button onClick={()=>updatePhase(j, 'prt_done', { prt_result: 'aprobado' })} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-1 disabled:opacity-50">
+                      {/* NUEVO: En vez de actualizar directo, abrimos el popup de aprobación */}
+                      <button onClick={()=>setPrtApprovePromptJob(j)} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-1 disabled:opacity-50">
                          {processingId === `${j.id}-prt_done` ? <Clock className="w-3 h-3 animate-spin"/> : '✅'} Aprobado
                       </button>
                       <button onClick={()=>setPrtPromptJob(j)} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors disabled:opacity-50">❌ Rechazado</button>
@@ -1552,6 +1554,27 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               <button type="submit" className="flex-[2] py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm shadow-md transition-colors">Guardar Rechazo</button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* NUEVO: POP-UP DE TIPO DE APROBACIÓN PRT */}
+      {prtApprovePromptJob && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-xl border-t-8 border-green-500 animate-in zoom-in-95">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5"><CheckCircle className="text-green-500 w-6 h-6"/> Tipo de Aprobación</h3>
+              <button onClick={() => setPrtApprovePromptJob(null)} className="p-1.5 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-600"/></button>
+            </div>
+            <p className="text-sm font-bold text-slate-500">¿Cómo fue aprobada esta Revisión Técnica?</p>
+            <div className="flex flex-col gap-3 mt-4">
+              <button onClick={() => { updatePhase(prtApprovePromptJob, 'prt_done', { prt_result: 'aprobado' }); setPrtApprovePromptJob(null); }} className="w-full py-4 bg-green-50 hover:bg-green-100 border-2 border-green-500 text-green-700 rounded-xl font-black text-sm shadow-sm transition-colors flex items-center justify-center gap-2">
+                 ✅ Aprobado (Legal)
+              </button>
+              <button onClick={() => { updatePhase(prtApprovePromptJob, 'prt_done', { prt_result: 'aprobado_ayuda' }); setPrtApprovePromptJob(null); }} className="w-full py-4 bg-amber-50 hover:bg-amber-100 border-2 border-amber-500 text-amber-700 rounded-xl font-black text-sm shadow-sm transition-colors flex items-center justify-center gap-2">
+                 🤝 Aprobado (Con Ayuda)
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
