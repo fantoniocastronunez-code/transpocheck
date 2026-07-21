@@ -261,13 +261,36 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
       
       if (isFirstLoad) {
         if (data?.draft) {
-          setFormData(data.draft.formData);
+          // MAGIA: Cargamos el borrador, pero forzamos que el resultado PRT real de la base de datos mande
+          const draftData = data.draft.formData;
+          if (data.prt_result) {
+             draftData.rtStatus = data.prt_result;
+          }
+          if (data.prt_reason) {
+             draftData.rtRejectReason = data.prt_reason;
+          }
+          setFormData(draftData);
           setStep(data.draft.step || 1);
           setIsDraftLoaded(true);
+        } else if (data?.prt_result) {
+          // Si no hay borrador, aseguramos que la data en vivo actualice el estado
+          setFormData(prev => ({
+            ...prev,
+            rtStatus: data.prt_result,
+            rtRejectReason: data.prt_reason || prev.rtRejectReason
+          }));
         }
         isFirstLoad = false;
+      } else {
+        // MAGIA: Si el resultado cambia en la tarjeta mientras el checklist está abierto
+        if (data?.prt_result) {
+          setFormData(prev => ({
+            ...prev,
+            rtStatus: data.prt_result,
+            rtRejectReason: data.prt_reason || prev.rtRejectReason
+          }));
+        }
       }
-
 
       if (data?.checklist?.clientSigned) {
         setFormData(prev => ({
@@ -1890,6 +1913,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     </div>
   );
 }
+
 
 
 
