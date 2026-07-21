@@ -748,18 +748,24 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
           <form key={editingPrt ? editingPrt.id : 'new-prt'} onSubmit={async (e) => { 
              e.preventDefault(); 
              const fd = new FormData(e.target); 
+             
+             // Blindaje de texto para evitar incompatibilidades en navegadores móviles
+             const rawName = fd.get('name');
+             const rawAddress = fd.get('address');
+             const rawCommune = fd.get('commune');
+             
              const data = { 
-                name: fd.get('name')?.trim() || '', 
-                address: fd.get('address')?.trim() || '',
-                comuna: fd.get('commune')?.trim() || ''
+                name: rawName ? rawName.toString().trim() : '', 
+                address: rawAddress ? rawAddress.toString().trim() : '',
+                comuna: rawCommune ? rawCommune.toString().trim() : ''
              }; 
+             
              try { 
                 if (editingPrt) { 
                    await updateDoc(doc(db, 'prts', editingPrt.id), data); 
                    setEditingPrt(null); 
                    showAlert("✅ Planta RT actualizada."); 
                 } else { 
-                   // Campos por defecto al crear para el semáforo
                    data.status = 'green';
                    data.hasInspectors = false;
                    data.lastUpdated = Date.now();
@@ -769,7 +775,14 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                 const snap = await getDocs(collection(db, 'prts'));
                 setPrtList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
                 e.target.reset(); 
-             } catch (err) { showAlert("Error al guardar Planta RT."); } 
+             } catch (err) { 
+                console.error("Detalle del error PRT:", err);
+                if (err.message && err.message.toLowerCase().includes("permissions")) {
+                   showAlert("❌ Firebase bloqueó el acceso. Asegúrate de que agregaste la regla 'match /prts/{document=**}' en Firestore.");
+                } else {
+                   showAlert("❌ Error al guardar: " + err.message); 
+                }
+             } 
           }} className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
             <div className="flex justify-between items-center">
                <h3 className="font-extrabold flex items-center gap-2 text-slate-800"><Activity className="text-rose-600 w-5 h-5"/> {editingPrt ? 'Editar Planta RT' : 'Nueva Planta RT'}</h3>

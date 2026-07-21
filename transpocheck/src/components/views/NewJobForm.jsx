@@ -355,7 +355,18 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                 </button>
 
                 {/* Revisión Técnica */}
-                <button type="button" onClick={()=>setTripType('revision')} className={`relative flex items-center gap-3 p-3.5 border-2 rounded-2xl transition-all duration-300 w-full group overflow-hidden ${tripType === 'revision' ? 'border-emerald-500 bg-emerald-50 shadow-[0_0_15px_rgba(16,185,129,0.15)]' : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-slate-50'}`}>
+                <button type="button" onClick={() => {
+                   setTripType('revision');
+                   // MAGIA: Auto-asignamos la primera planta PRT si no hay destino previo,
+                   // o si el destino anterior no era una PRT
+                   const destInput = document.querySelector('select[name="destination"]');
+                   if (!jobToEdit && prtList.length > 0 && (!destInput || !destInput.value)) {
+                      setTimeout(() => {
+                         const select = document.querySelector('select[name="destination"]');
+                         if (select) select.value = prtList[0].name;
+                      }, 100);
+                   }
+                }} className={`relative flex items-center gap-3 p-3.5 border-2 rounded-2xl transition-all duration-300 w-full group overflow-hidden ${tripType === 'revision' ? 'border-emerald-500 bg-emerald-50 shadow-[0_0_15px_rgba(16,185,129,0.15)]' : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-slate-50'}`}>
                    <div className={`p-2 rounded-xl transition-colors shrink-0 ${tripType === 'revision' ? 'bg-emerald-600 text-white shadow-md' : 'bg-slate-100 text-slate-500 group-hover:bg-emerald-100 group-hover:text-emerald-600'}`}>
                       📋
                    </div>
@@ -439,7 +450,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <input name="origin" list="directory-destinations" defaultValue={jobToEdit?.origin || ''} required type="text" placeholder="Desde (Origen)" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
                 {tripType === 'revision' ? (
-                  <select name="destination" defaultValue={jobToEdit?.destination || ''} required className="w-full border-2 border-emerald-200 bg-emerald-50 p-3 text-sm rounded-xl outline-none focus:border-emerald-500 font-bold text-emerald-800 shadow-sm cursor-pointer">
+                  <select name="destination" defaultValue={jobToEdit?.destination || (prtList.length > 0 ? prtList[0].name : '')} required className="w-full border-2 border-emerald-200 bg-emerald-50 p-3 text-sm rounded-xl outline-none focus:border-emerald-500 font-bold text-emerald-800 shadow-sm cursor-pointer">
                     <option value="">Selecciona la Planta (Destino)...</option>
                     {prtList.map((p, idx) => <option key={idx} value={p.name}>{p.name}</option>)}
                   </select>
