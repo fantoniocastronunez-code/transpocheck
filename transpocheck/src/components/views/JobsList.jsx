@@ -33,6 +33,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [showFleetModal, setShowFleetModal] = useState(false);
   const [fleetSelectedIds, setFleetSelectedIds] = useState([]);
   const [showFleetMenu, setShowFleetMenu] = useState(false); // <-- NUEVO ESTADO PARA EL MENÚ
+  const [showActiveFleetsModal, setShowActiveFleetsModal] = useState(false); // <-- NUEVO: Para ver y editar flotas activas
 
   const [historyClientFilter, setHistoryClientFilter] = useState(''); 
   const [searchTerm, setSearchTerm] = useState('');
@@ -1622,11 +1623,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                  <button onClick={() => { setShowFleetMenu(false); setFleetSelectedIds([]); setShowFleetModal(true); }} className="w-full bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-extrabold py-3.5 rounded-xl transition-colors flex items-center gap-3 px-4 shadow-sm">
                    <Plus className="w-5 h-5"/> Crear Nueva Flota
                  </button>
-                 <button onClick={() => { setShowFleetMenu(false); showAlert("🔧 El módulo para modificar flotas está en construcción."); }} className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-extrabold py-3.5 rounded-xl transition-colors flex items-center gap-3 px-4 shadow-sm">
-                   <Edit2 className="w-5 h-5 text-slate-400"/> Modificar Flotas
+                 <button onClick={() => { setShowFleetMenu(false); setShowActiveFleetsModal(true); }} className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-extrabold py-3.5 rounded-xl transition-colors flex items-center gap-3 px-4 shadow-sm">
+                   <Edit2 className="w-5 h-5 text-indigo-500"/> Modificar Flotas
                  </button>
-                 <button onClick={() => { setShowFleetMenu(false); showAlert("📋 El módulo para ver flotas activas está en construcción."); }} className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-extrabold py-3.5 rounded-xl transition-colors flex items-center gap-3 px-4 shadow-sm">
-                   <Navigation className="w-5 h-5 text-slate-400"/> Flotas Activas
+                 <button onClick={() => { setShowFleetMenu(false); setShowActiveFleetsModal(true); }} className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-extrabold py-3.5 rounded-xl transition-colors flex items-center gap-3 px-4 shadow-sm">
+                   <Navigation className="w-5 h-5 text-indigo-500"/> Flotas Activas
                  </button>
               </div>
            </div>
@@ -1667,8 +1668,56 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           </div>
       )}
 
-      {dupPromptJob && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+      {/* NUEVO MODAL: GESTIÓN DE FLOTAS ACTIVAS */}
+      {showActiveFleetsModal && (
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+             <div className="bg-white rounded-3xl p-5 w-full max-w-lg shadow-2xl flex flex-col max-h-[95vh] border-t-8 border-indigo-500 animate-in zoom-in-95">
+                <div className="flex justify-between items-center mb-4">
+                   <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><Navigation className="w-5 h-5 text-indigo-600"/> Flotas Activas</h3>
+                   <button onClick={()=>setShowActiveFleetsModal(false)} className="bg-slate-100 p-2 rounded-full hover:bg-slate-200"><X className="w-5 h-5 text-slate-700"/></button>
+                </div>
+                <div className="overflow-y-auto space-y-4 flex-1 pr-1">
+                   <p className="text-xs font-bold text-slate-500 mb-2">Aquí puedes ver los convoyes en ruta, quitar un vehículo específico o disolver flotas enteras.</p>
+                   {Object.keys(activeJobs.reduce((acc, j) => { if(j.fleetGroup) acc[j.fleetGroup] = true; return acc; }, {})).length === 0 ? (
+                      <div className="bg-slate-50 border border-slate-100 rounded-2xl p-8 text-center flex flex-col items-center">
+                         <Truck className="w-12 h-12 text-slate-300 mb-3" />
+                         <p className="font-extrabold text-slate-500">No hay ninguna flota activa en este momento.</p>
+                      </div>
+                   ) : (
+                      Object.entries(activeJobs.reduce((acc, job) => {
+                         if (job.fleetGroup) {
+                             if (!acc[job.fleetGroup]) acc[job.fleetGroup] = [];
+                             acc[job.fleetGroup].push(job);
+                         }
+                         return acc;
+                      }, {})).map(([fleetId, fleetJobs]) => (
+                         <div key={fleetId} className="bg-white border-2 border-indigo-100 rounded-2xl overflow-hidden shadow-sm mb-3">
+                            <div className="bg-indigo-50 p-3 flex justify-between items-center border-b border-indigo-100">
+                               <p className="font-black text-indigo-800 text-sm flex items-center gap-2">
+                                  <Truck className="w-4 h-4"/> Convoy: <span className="font-bold text-indigo-500 text-xs">{fleetId.replace('FLT-', '')}</span>
+                               </p>
+                               <span className="bg-indigo-200 text-indigo-700 text-[10px] font-black px-2 py-0.5 rounded-lg">{fleetJobs.length} veh.</span>
+                            </div>
+                            <div className="p-3 space-y-2">
+                               {fleetJobs.map(j => (
+                                  <div key={j.id} className="flex justify-between items-center bg-slate-50 hover:bg-white p-2.5 rounded-xl border border-slate-100 transition-colors">
+                                     <div className="flex-1 min-w-0 flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full shrink-0"></div>
+                                        <div className="min-w-0">
+                                           <p className="font-extrabold text-slate-700 text-xs truncate flex items-center gap-1.5">
+                                              {getJobIdentifier(j)}
+                                           </p>
+                                           <p className="text-[9px] font-bold text-slate-400 truncate uppercase tracking-wide">
+                                              {j.tripType === 'simple' ? j.description : `${j.brand} ${j.model}`}
+                                           </p>
+                                        </div>
+                                     </div>
+                                     <button onClick={() => {
+                                        showConfirm(`¿Quitar la patente ${getJobIdentifier(j)} de este convoy?`, async () => {
+                                           try { await updateDoc(doc(db, 'transport_jobs', j.id), { fleetGroup: deleteField() }); showAlert("✅ Vehículo removido del convoy."); } catch (e) { showAlert("❌ Error al desagrupar."); }
+                                        });
+                                     }} className="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors shrink-0" title="Quitar de la flota">
+                                        <X classN        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
            <div className="bg-white rounded-3xl p-5 sm:p-6 w-full max-w-md shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 border-t-8 border-purple-500">
               <div className="flex justify-between items-start mb-4">
                  <div>
@@ -1808,6 +1857,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     </div>
   );
 }
+
 
 
 
