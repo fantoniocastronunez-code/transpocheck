@@ -8,7 +8,7 @@ import {
   AlertCircle, Users, ClipboardList, Trash2, FileDown, LogOut, MoreVertical, Copy, 
   Zap, Edit2, Bell, Share2, X, Wallet, ArrowUpCircle, ArrowDownCircle, Receipt, Truck, 
   XCircle, Trophy, Eye, Clock, Save, Search, CloudOff, Wifi, QrCode, Sun, Moon, 
-  Settings, ChevronUp, ChevronDown, ChevronRight, Fuel, Megaphone, Star, ShieldCheck
+  Settings, ChevronUp, ChevronDown, ChevronRight, Fuel, Megaphone, Star, ShieldCheck, Activity, AlertTriangle
 } from 'lucide-react';
 
 import SignaturePad from './components/ui/SignaturePad';
@@ -26,6 +26,7 @@ const ClientSignView = React.lazy(() => import('./components/views/ClientSignVie
 const ExpensesView = React.lazy(() => import('./components/views/ExpensesView'));
 const ConfigView = React.lazy(() => import('./components/views/ConfigView'));
 const TrackingView = React.lazy(() => import('./components/views/TrackingView'));
+const PRTDashboardView = React.lazy(() => import('./components/views/PRTDashboardView')); // NUEVO: Vista tipo Waze para PRT
 const NewJobForm = React.lazy(() => import('./components/views/NewJobForm'));
 const JobsList = React.lazy(() => import('./components/views/JobsList'));
 const ChecklistForm = React.lazy(() => import('./components/views/ChecklistForm'));
@@ -69,13 +70,13 @@ function LogisticApp() {
   
   const [showRequestJob, setShowRequestJob] = useState(false); // <-- NUEVO ESTADO PARA SOLICITAR TRASLADO
   const [directoryList, setDirectoryList] = useState([]); // <-- NUEVO: Memoria del Directorio
+  const [prtList, setPrtList] = useState([]); // <-- NUEVO: Memoria PRT
 
   // Carga el directorio en segundo plano de forma 100% segura
   useEffect(() => {
      import('firebase/firestore').then(({ getDocs, collection }) => {
-        getDocs(collection(db, 'directory'))
-          .then(snap => setDirectoryList(snap.docs.map(d => d.data())))
-          .catch(() => {});
+        getDocs(collection(db, 'directory')).then(snap => setDirectoryList(snap.docs.map(d => d.data()))).catch(() => {});
+        getDocs(collection(db, 'prts')).then(snap => setPrtList(snap.docs.map(d => d.data()))).catch(() => {});
      });
   }, [db]);
   
@@ -818,7 +819,7 @@ function LogisticApp() {
                       <button onClick={() => {setAdminTab('dashboard'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='dashboard'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><ClipboardList className="w-4 h-4 sm:w-5 sm:h-5"/> Monitor</button>
                       <button onClick={() => {setAdminTab('newJob'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='newJob'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Plus className="w-4 h-4 sm:w-5 sm:h-5"/> Crear</button>
                       <button onClick={() => setAdminTab('config')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='config'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Truck className="w-4 h-4 sm:w-5 sm:h-5"/> Config</button>
-                      <button onClick={() => setShowBroadcastAdmin(true)} className="flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors text-purple-600 bg-purple-50 hover:bg-purple-100"><Megaphone className="w-4 h-4 sm:w-5 sm:h-5"/> Aviso</button>
+                      <button onClick={() => { setMainTab('prt'); setAdminTab('dashboard'); }} className="flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors text-rose-600 bg-rose-50 hover:bg-rose-100 shadow-sm"><Activity className="w-4 h-4 sm:w-5 sm:h-5"/> PRTs</button>
                       <button onClick={() => setAdminTab('history')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='history'?'bg-slate-800 text-white shadow-md':'text-slate-500 hover:bg-slate-50'}`}><ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5"/> Peritaje</button>
                     </div>
                     
@@ -862,6 +863,7 @@ function LogisticApp() {
 
             {mainTab === 'ranking' && <LeaderboardView jobs={jobs} drivers={drivers} isAdminView={activeRole === 'admin'} db={db} />}
             {mainTab === 'expenses' && <ExpensesView role={activeRole} drivers={drivers} jobs={jobs} expenses={expenses} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />}
+            {mainTab === 'prt' && <div className="animate-in fade-in duration-300"><PRTDashboardView db={db} currentUserEmail={currentUserEmail} drivers={drivers} role={activeRole} showAlert={showAlert} /></div>}
             
             {mainTab === 'inbox' && (
                <main className="max-w-2xl mx-auto p-4 pt-20 sm:pt-24 pb-32 animate-in fade-in duration-300">
@@ -1020,6 +1022,10 @@ function LogisticApp() {
               <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='expenses' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}>
                  <div className={`${mainTab==='expenses' ? 'bg-blue-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Wallet className="w-5 h-5"/></div>
                  <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Gastos</span>
+              </button>
+              <button onClick={() => setMainTab('prt')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='prt' ? 'text-rose-600' : 'text-slate-400 hover:text-rose-600'}`}>
+                 <div className={`${mainTab==='prt' ? 'bg-rose-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Activity className="w-5 h-5"/></div>
+                 <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Radar PRT</span>
               </button>
             </nav>
           </>
@@ -1234,7 +1240,14 @@ function LogisticApp() {
                  </div>
                  <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Hasta (Destino)</label>
-                    <input name="destination" list="directory-places" required placeholder="Toca para buscar o escribe..." className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"/>
+                    {showRequestJob === 'revision' ? (
+                      <select name="destination" required className="w-full border-2 border-emerald-200 bg-emerald-50 rounded-xl p-3 text-sm font-bold text-emerald-800 outline-none focus:border-emerald-500 cursor-pointer">
+                        <option value="">Selecciona la Planta PRT...</option>
+                        {prtList.map((p, i) => <option key={i} value={p.name}>{p.name}</option>)}
+                      </select>
+                    ) : (
+                      <input name="destination" list="directory-places" required placeholder="Toca para buscar o escribe..." className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"/>
+                    )}
                  </div>
                  
                  <label className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-xl mt-3 cursor-pointer">

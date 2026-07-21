@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { updateDoc, doc, setDoc, addDoc, collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { 
   FileText, MapPin, CheckCircle, CloudOff, AlertCircle, Eye, 
@@ -39,9 +39,11 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     docsExpiry: job.checklist?.docsExpiry || initialDocsExpiry, 
     internalReminders: job.checklist?.internalReminders || initialReminders, 
     observations: '', receiverName: '', receiverRut: '', noReception: false, signatureData: null, location: null,
-    rtStatus: job.prt_result ? job.prt_result : 'aprobado', 
+    rtStatus: job.prt_result ? job.prt_result : 'pendiente', 
     rtRejectReason: job.prt_reason ? job.prt_reason : '', 
     rtReturnOption: 'origin', rtReturnDestination: '',
+    prtArrivalTime: job.checklist?.prtArrivalTime || null,
+    prtFinishTime: job.checklist?.prtFinishTime || null,
     scandocPdfInbox: job.checklist?.scandocPdfInbox || null,
     scandocPdf: job.checklist?.scandocPdf || null,
     scannerLink: job.checklist?.scannerLink || '',
@@ -54,6 +56,14 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
   const [qrOpen, setQrOpen] = useState(false); 
   const [fullScreenImage, setFullScreenImage] = useState(null); 
   const [uploadProgress, setUploadProgress] = useState({ active: false, current: 0, total: 0, text: '' }); 
+  const [nowTick, setNowTick] = useState(Date.now());
+
+  useEffect(() => {
+    if (formData.prtArrivalTime && formData.rtStatus === 'pendiente') {
+      const interval = setInterval(() => setNowTick(Date.now()), 60000); // Actualiza el UI del reloj cada 1 minuto
+      return () => clearInterval(interval);
+    }
+  }, [formData.prtArrivalTime, formData.rtStatus]); 
 
   // --- MAGIA: AUDITORÍA RÁPIDA CON PIN ---
   const [clientPins, setClientPins] = useState([]);
@@ -525,6 +535,8 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     e.preventDefault();
     if (isSubmitting) return;
     if (!formData.noReception && !formData.signatureData) return showAlert("La firma del receptor es mandatoria.");
+    if (job.tripType === 'revision' && !formData.prtArrivalTime) return showAlert("⚠️ Debes presionar 'Llegué a la PRT' e iniciar el tiempo en planta antes de finalizar.");
+    if (job.tripType === 'revision' && formData.rtStatus === 'pendiente') return showAlert("⚠️ Debes indicar el resultado de la Revisión Técnica (Aprobado o Rechazado) antes de finalizar el acta.");
     
     // Validación de Fotografías Obligatorias
     if (job.tripType === 'simple' && (job.isPintura || job.isGrabado)) {
@@ -901,17 +913,54 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
               {job.tripType === 'revision' && (
                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3 mt-4">
-                  <h3 className="text-sm font-extrabold text-blue-600 uppercase tracking-wider">Resultado de la Revisión</h3>
-                  <select value={formData.rtStatus} onChange={e=>setF('rtStatus', e.target.value)} className={`w-full border-2 p-3.5 rounded-xl outline-none font-extrabold text-sm ${formData.rtStatus === 'aprobado' ? 'border-green-200 bg-green-50 text-green-700' : formData.rtStatus === 'aprobado_ayuda' ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
-                    <option value="aprobado">✅ APROBADO</option>
-                    <option value="aprobado_ayuda">🤝 APROBADO CON AYUDA</option>
-                    <option value="rechazado">❌ RECHAZADO</option>
-                  </select>
+                  <h3 className="text-sm font-extrabold text-blue-600 uppercase tracking-wider flex items-center gap-2"><Clock className="w-5 h-5"/> Tiempo en Planta</h3>
+                  
+                  {(!formData.prtArrivalTime && formData.rtStatus === 'pendiente') && (
+                    <button type="button" onClick={() => setF('prtArrivalTime', Date.now())} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all active:scale-95">
+                       <MapPin className="w-5 h-5" /> LLEGUÉ A LA PRT (Iniciar Tiempo)
+                    </button>
+                  )}
+                  
+                  {formData.prtArrivalTime && (
+                    <div className="bg-blue-50 border-2 border-blue-200 p-3.5 rounded-xl flex justify-between items-center shadow-sm">
+                       <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-full ${formData.rtStatus === 'pendiente' ? 'bg-blue-200 text-blue-700 animate-spin' : 'bg-green-200 text-green-700'}`}>
+                             {formData.rtStatus === 'pendiente' ? <Clock className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
+                          </div>
+                          <div>
+                             <p className="text-[10px] font-black text-blue-800 uppercase tracking-widest">Cronómetro Trámite</p>
+                             <p className="text-sm font-bold text-blue-600">
+                               {formData.rtStatus === 'pendiente' 
+                                  ? `${Math.floor((nowTick - formData.prtArrivalTime) / 60000)} minutos corriendo...` 
+                                  : `${Math.floor(((formData.prtFinishTime || Date.now()) - formData.prtArrivalTime) / 60000)} min en total (Finalizado)`}
+                             </p>
+                          </div>
+                       </div>
+                    </div>
+                  )}
+
+                  {(formData.prtArrivalTime || formData.rtStatus !== 'pendiente') && (
+                    <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                      <h3 className="text-sm font-extrabold text-slate-700 uppercase tracking-wider mt-5 mb-2">Resultado de la Revisión</h3>
+                      <select value={formData.rtStatus} onChange={e=>{
+                        setF('rtStatus', e.target.value);
+                        if (e.target.value !== 'pendiente' && !formData.prtFinishTime && formData.prtArrivalTime) {
+                           setF('prtFinishTime', Date.now()); // Detiene el cronómetro para siempre
+                        }
+                      }} className={`w-full border-2 p-3.5 rounded-xl outline-none font-extrabold text-sm ${formData.rtStatus === 'pendiente' ? 'border-blue-300 bg-white text-blue-700' : formData.rtStatus === 'aprobado' ? 'border-green-200 bg-green-50 text-green-700' : formData.rtStatus === 'aprobado_ayuda' ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
+                        <option value="pendiente" disabled>⏳ TRÁMITE EN CURSO...</option>
+                        <option value="aprobado">✅ APROBADO</option>
+                        <option value="aprobado_ayuda">🤝 APROBADO CON AYUDA</option>
+                        <option value="rechazado">❌ RECHAZADO</option>
+                      </select>
+                    </div>
+                  )}
+
                   {formData.rtStatus === 'rechazado' && (
-                    <input value={formData.rtRejectReason} onChange={e=>setF('rtRejectReason', e.target.value)} placeholder="¿Cuál fue la razón del rechazo?" required={formData.rtStatus === 'rechazado'} className="w-full border-2 border-red-300 p-3 rounded-xl outline-none focus:border-red-500 font-bold text-red-900 bg-white mt-2" />
+                    <input value={formData.rtRejectReason} onChange={e=>setF('rtRejectReason', e.target.value)} placeholder="¿Cuál fue la razón del rechazo?" required={formData.rtStatus === 'rechazado'} className="w-full border-2 border-red-300 p-3 rounded-xl outline-none focus:border-red-500 font-bold text-red-900 bg-white mt-2 animate-in fade-in" />
                   )}
                   {(formData.rtStatus === 'aprobado' || formData.rtStatus === 'aprobado_ayuda') && (
-                    <div className="mt-2 p-3 border border-green-200 bg-white rounded-xl space-y-2">
+                    <div className="mt-2 p-3 border border-green-200 bg-white rounded-xl space-y-2 animate-in fade-in">
                       <p className="text-xs font-bold text-green-800">¿Hacia dónde se dirige el vehículo tras aprobar?</p>
                       <div className="flex gap-4">
                         <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-green-700">
@@ -1552,9 +1601,15 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
 
               <div className="grid grid-cols-2 gap-3 pt-2">
-                <div className={`flex flex-col items-center justify-center gap-1.5 h-24 rounded-2xl border-2 select-none shadow-sm ${job.waitTimeMinutes >= 1 ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
+                <div className={`flex flex-col items-center justify-center gap-1.5 h-24 rounded-2xl border-2 select-none shadow-sm ${(job.tripType === 'revision' && formData.prtArrivalTime) || job.waitTimeMinutes >= 1 ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
                   <Clock className="w-5 h-5"/>
-                  <span className="font-black text-xs uppercase tracking-wider text-center leading-tight">Espera: {job.waitTimeMinutes || 0} min</span>
+                  {job.tripType === 'revision' && formData.prtArrivalTime ? (
+                     <span className="font-black text-xs uppercase tracking-wider text-center leading-tight">
+                        Trámite PRT:<br/>{Math.floor(((formData.prtFinishTime || Date.now()) - formData.prtArrivalTime) / 60000)} min
+                     </span>
+                  ) : (
+                     <span className="font-black text-xs uppercase tracking-wider text-center leading-tight">Espera: {job.waitTimeMinutes || 0} min</span>
+                  )}
                 </div>
 
 

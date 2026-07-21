@@ -9,6 +9,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   // NUEVO: Estado para cargar el directorio de destinos
   const [directoryList, setDirectoryList] = useState([]);
   const [activeJobsList, setActiveJobsList] = useState([]); // NUEVO: Memoria de trabajos activos
+  const [prtList, setPrtList] = useState([]); // <-- NUEVO ESTADO PARA PLANTAS PRT
 
   useEffect(() => {
     const fetchDirectory = async () => {
@@ -27,8 +28,16 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
       } catch(e) { console.error("Error cargando trabajos activos:", e); }
     };
 
+    const fetchPRTs = async () => {
+      try {
+        const snap = await getDocs(collection(db, 'prts'));
+        setPrtList(snap.docs.map(d => d.data()));
+      } catch(e) { console.error("Error cargando PRTs:", e); }
+    };
+
     fetchDirectory();
     fetchActiveJobs();
+    fetchPRTs();
   }, [db]);
   
   const [manualClient, setManualClient] = useState(jobToEdit?.client && !allClientsList.includes(jobToEdit.client) ? jobToEdit.client : '');
@@ -429,7 +438,14 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <input name="origin" list="directory-destinations" defaultValue={jobToEdit?.origin || ''} required type="text" placeholder="Desde (Origen)" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
-                <input name="destination" list="directory-destinations" defaultValue={jobToEdit?.destination || ''} required type="text" placeholder={tripType === 'revision' ? 'Planta de Revisión (Destino)' : 'Hasta (Destino)'} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+                {tripType === 'revision' ? (
+                  <select name="destination" defaultValue={jobToEdit?.destination || ''} required className="w-full border-2 border-emerald-200 bg-emerald-50 p-3 text-sm rounded-xl outline-none focus:border-emerald-500 font-bold text-emerald-800 shadow-sm cursor-pointer">
+                    <option value="">Selecciona la Planta (Destino)...</option>
+                    {prtList.map((p, idx) => <option key={idx} value={p.name}>{p.name}</option>)}
+                  </select>
+                ) : (
+                  <input name="destination" list="directory-destinations" defaultValue={jobToEdit?.destination || ''} required type="text" placeholder="Hasta (Destino)" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+                )}
               </div>
 
               {/* PARADAS INTERMEDIAS */}
