@@ -813,7 +813,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     const phase = j.phase || 'claimed'; 
     const step2Done = isAccepted && ['picked_up', 'arrived_destination', 'arrived_prt', 'prt_done'].includes(phase);
     const step3Done = isAccepted && ['arrived_destination', 'arrived_prt', 'prt_done'].includes(phase);
-    const step4Done = isAccepted && phase === 'prt_done';
+    const step4Done = isAccepted && ['prt_done', 'arrived_destination'].includes(phase);
     
     const ident = getJobIdentifier(j);
 
@@ -1191,8 +1191,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     </div>
                   )}
 
-                  <button onClick={()=>onStartChecklist(j)} className={`w-full font-bold py-2 rounded-xl text-xs shadow-sm transition-colors ${(j.phase === 'arrived_destination' || j.phase === 'prt_done') ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'}`}>
-                    📸 {(j.phase === 'arrived_destination' || j.phase === 'prt_done') ? (j.tripType === 'simple' ? 'Cerrar Acta de Servicio' : 'Cerrar Checklist') : (j.tripType === 'simple' ? 'Pre-llenar Acta' : 'Pre-llenar Checklist')}
+                  {j.phase === 'prt_done' && (
+                    <SwipeButton key={`btn-dest-prt-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_destination')} text="Desliza: Llegué a Destino" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />
+                  )}
+
+                  <button onClick={()=>onStartChecklist(j)} className={`w-full font-bold py-2 rounded-xl text-xs shadow-sm transition-colors ${(j.phase === 'arrived_destination') ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'}`}>
+                    📸 {(j.phase === 'arrived_destination') ? (j.tripType === 'simple' ? 'Cerrar Acta de Servicio' : 'Cerrar Checklist') : (j.tripType === 'simple' ? 'Pre-llenar Acta' : 'Pre-llenar Checklist')}
                   </button>
                 </>
               )}
@@ -1926,6 +1930,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     </div>
   );
 }
+
 
 
 
