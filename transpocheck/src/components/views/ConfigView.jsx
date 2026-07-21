@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, updateDoc, doc, deleteDoc, getDocs } from 'firebase/firestore';
-import { Camera, Eye, EyeOff, User, Edit2, Trash2, Truck, Clock, X, Plus, BookOpen, Phone, CheckCircle, MapPin, AlertCircle, Activity } from 'lucide-react';
+import { Camera, Eye, EyeOff, User, Edit2, Trash2, Truck, Clock, X, Plus, BookOpen, Phone, CheckCircle, MapPin, AlertCircle, Activity, Video } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import { LICENCIAS, resizeImage } from '../../utils/helpers';
 
@@ -753,12 +753,14 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
              const rawName = fd.get('name');
              const rawAddress = fd.get('address');
              const rawCommune = fd.get('commune');
+             const rawCamUrl = fd.get('camUrl');
              const type = fd.get('type') || 'B'; // Clase B por defecto
              
              const data = { 
                 name: rawName ? rawName.toString().trim() : '', 
                 address: rawAddress ? rawAddress.toString().trim() : '',
                 comuna: rawCommune ? rawCommune.toString().trim() : '',
+                camUrl: rawCamUrl ? rawCamUrl.toString().trim() : '',
                 type: type
              }; 
              
@@ -818,6 +820,11 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                </div>
             </div>
 
+            <div className="space-y-1">
+               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Enlace a Cámara en Vivo (Opcional)</label>
+               <input type="url" name="camUrl" defaultValue={editingPrt?.camUrl} placeholder="Ej: https://chilevision.cl/camaras-prt..." className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-rose-500 font-bold bg-white"/>
+            </div>
+
             <button type="submit" className="w-full bg-rose-600 hover:bg-rose-700 text-white py-3.5 rounded-xl font-black text-sm transition-colors shadow-md shadow-rose-200 mt-2">
                {editingPrt ? 'Guardar Cambios' : 'Agregar Planta RT'}
             </button>
@@ -838,10 +845,11 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase shrink-0 ${p.type === 'A' ? 'bg-purple-100 text-purple-700' : p.type === 'B' ? 'bg-blue-100 text-blue-700' : 'bg-slate-200 text-slate-700'}`}>Clase {p.type || 'B'}</span>
                     </div>
                     {(p.address || p.comuna) && <p className="text-[11px] font-bold text-slate-500 mt-0.5 truncate flex items-center gap-1"><MapPin className="w-3 h-3 text-rose-500"/> {p.address}{p.address && p.comuna ? ', ' : ''}{p.comuna}</p>}
+                    {p.camUrl && <a href={p.camUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-blue-600 hover:text-blue-800 mt-1 flex items-center gap-1"><Video className="w-3 h-3"/> Ver Cámara en Vivo</a>}
                   </div>
                   <div className="flex flex-col gap-1.5 shrink-0 ml-2">
                      <button onClick={() => {setEditingPrt(p); window.scrollTo({ top: 0, behavior: 'smooth' });}} className="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-600 rounded-lg transition-colors shadow-sm" title="Editar"><Edit2 className="w-3.5 h-3.5"/></button>
-                     <button onClick={() => sadshowConfirm("¿Eliminar Planta RT?", async () => { 
+                     <button onClick={() => showConfirm("¿Eliminar Planta RT?", async () => { 
                          await deleteDoc(doc(db,'prts',p.id));
                          setPrtList(prtList.filter(item => item.id !== p.id));
                      })} className="p-1.5 bg-red-100 hover:bg-red-200 text-red-500 rounded-lg transition-colors shadow-sm" title="Eliminar"><Trash2 className="w-3.5 h-3.5"/></button>
