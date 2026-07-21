@@ -705,8 +705,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     
     if (job.status === 'failed') {
       text = `❌ TRASLADO FALLIDO\nMotivo: ${job.failedReason || 'No especificada'}\n\n${text}`;
-    } else if (job.tripType === 'revision' && job.checklist?.rtStatus === 'aprobado_ayuda') {
-      text = `🤝 APROBACIÓN DE RT\n\n${text}`;
+    } else if (job.tripType === 'revision') {
+      // Personalizamos el encabezado de WhatsApp según el tipo de aprobación
+      if (job.checklist?.rtStatus === 'aprobado') {
+         text = `✅ APROBADO (LEGAL)\n\n${text}`;
+      } else if (job.checklist?.rtStatus === 'aprobado_ayuda') {
+         text = `🤝 APROBADO (CON AYUDA)\n\n${text}`;
+      }
     }
 
     const textArea = document.createElement("textarea");
@@ -749,8 +754,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       
       if (job.status === 'failed') {
         textToShare = `❌ TRASLADO FALLIDO\nMotivo: ${job.failedReason || 'No especificada'}\n\n${textToShare}`;
-      } else if (job.tripType === 'revision' && job.checklist?.rtStatus === 'aprobado_ayuda') {
-        textToShare = `🤝 APROBACIÓN DE RT\n\n${textToShare}`;
+      } else if (job.tripType === 'revision') {
+        // Personalizamos el mensaje al compartir el PDF por WhatsApp
+        if (job.checklist?.rtStatus === 'aprobado') {
+           textToShare = `✅ APROBADO (LEGAL)\n\n${textToShare}`;
+        } else if (job.checklist?.rtStatus === 'aprobado_ayuda') {
+           textToShare = `🤝 APROBADO (CON AYUDA)\n\n${textToShare}`;
+        }
       }
 
       const docPDF = await buildPDFDoc(job); 
@@ -1885,6 +1895,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     </div>
   );
 }
+
 
 
 
