@@ -753,11 +753,13 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
              const rawName = fd.get('name');
              const rawAddress = fd.get('address');
              const rawCommune = fd.get('commune');
+             const type = fd.get('type') || 'B'; // Clase B por defecto
              
              const data = { 
                 name: rawName ? rawName.toString().trim() : '', 
                 address: rawAddress ? rawAddress.toString().trim() : '',
-                comuna: rawCommune ? rawCommune.toString().trim() : ''
+                comuna: rawCommune ? rawCommune.toString().trim() : '',
+                type: type
              }; 
              
              try { 
@@ -790,9 +792,19 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
             </div>
             <p className="text-[10px] font-bold text-slate-500 mb-2 leading-tight">Agrega las plantas a las que acude tu flota. Los conductores reportarán el estado de filas y fiscalizadores en tiempo real.</p>
             
-            <div className="space-y-1">
-               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre de la Planta <span className="text-red-500">*</span></label>
-               <input name="name" defaultValue={editingPrt?.name} placeholder="Ej: PRT SGS Quilicura" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-rose-500 font-bold"/>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+               <div className="space-y-1 sm:col-span-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre de la Planta <span className="text-red-500">*</span></label>
+                  <input name="name" defaultValue={editingPrt?.name} placeholder="Ej: PRT SGS Quilicura" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-rose-500 font-bold"/>
+               </div>
+               <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Clase <span className="text-red-500">*</span></label>
+                  <select name="type" defaultValue={editingPrt?.type || 'B'} className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-rose-500 font-black text-slate-700 bg-white">
+                     <option value="B">Clase B (Livianos)</option>
+                     <option value="A">Clase A (Pesados)</option>
+                     <option value="AB">Clase AB (Mixta)</option>
+                  </select>
+               </div>
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -815,14 +827,21 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
             <h3 className="font-extrabold text-slate-800 mb-4">Red de Plantas RT</h3>
             <div className="space-y-2">
               {prtList.length === 0 ? <p className="text-sm font-bold text-slate-400 text-center py-4">No hay Plantas RT guardadas</p> : prtList.map(p=>(
-                <div key={p.id} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-xl hover:border-rose-200 transition-all">
-                  <div className="flex-1 min-w-0 pr-2">
-                    <p className="text-sm font-extrabold text-slate-800 truncate">{p.name}</p>
+                <div key={p.id} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-xl hover:border-rose-200 transition-all relative overflow-hidden">
+                  {p.type === 'A' && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-purple-500"></div>}
+                  {p.type === 'B' && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500"></div>}
+                  {p.type === 'AB' && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-purple-500 to-blue-500"></div>}
+                  
+                  <div className="flex-1 min-w-0 pr-2 pl-2">
+                    <div className="flex items-center gap-2">
+                       <p className="text-sm font-extrabold text-slate-800 truncate">{p.name}</p>
+                       <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase shrink-0 ${p.type === 'A' ? 'bg-purple-100 text-purple-700' : p.type === 'B' ? 'bg-blue-100 text-blue-700' : 'bg-slate-200 text-slate-700'}`}>Clase {p.type || 'B'}</span>
+                    </div>
                     {(p.address || p.comuna) && <p className="text-[11px] font-bold text-slate-500 mt-0.5 truncate flex items-center gap-1"><MapPin className="w-3 h-3 text-rose-500"/> {p.address}{p.address && p.comuna ? ', ' : ''}{p.comuna}</p>}
                   </div>
                   <div className="flex flex-col gap-1.5 shrink-0 ml-2">
                      <button onClick={() => {setEditingPrt(p); window.scrollTo({ top: 0, behavior: 'smooth' });}} className="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-600 rounded-lg transition-colors shadow-sm" title="Editar"><Edit2 className="w-3.5 h-3.5"/></button>
-                     <button onClick={() => showConfirm("¿Eliminar Planta RT?", async () => { 
+                     <button onClick={() => sadshowConfirm("¿Eliminar Planta RT?", async () => { 
                          await deleteDoc(doc(db,'prts',p.id));
                          setPrtList(prtList.filter(item => item.id !== p.id));
                      })} className="p-1.5 bg-red-100 hover:bg-red-200 text-red-500 rounded-lg transition-colors shadow-sm" title="Eliminar"><Trash2 className="w-3.5 h-3.5"/></button>
