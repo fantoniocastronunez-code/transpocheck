@@ -167,13 +167,19 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const isAdminView = role === 'admin';
   
   const myFleetGroups = jobs.filter(j => 
-     (j.status === 'accepted' || j.status === 'pending') && 
-     (j.acceptedByEmail === currentUserEmail || j.assignedEmails?.includes(currentUserEmail)) && 
+     ((j.status === 'pending' && j.assignedEmails?.includes(currentUserEmail)) || 
+      (j.status === 'accepted' && j.acceptedByEmail === currentUserEmail)) && 
      j.fleetGroup
   ).map(j => j.fleetGroup);
 
   const filteredJobs = jobs.filter(job => {
     if (!isAdminView) {
+      // NUEVO: Ocultar inmediatamente trabajos aceptados por otros (salvo que sea un convoy donde ya participes)
+      if ((job.status === 'accepted' || job.status === 'completed' || job.status === 'failed') && job.acceptedByEmail !== currentUserEmail) {
+         const isMyFleet = job.fleetGroup && myFleetGroups.includes(job.fleetGroup);
+         if (!isMyFleet) return false; 
+      }
+
       const isMine = (job.status === 'pending' && job.assignedEmails?.includes(currentUserEmail)) || 
                      (job.status === 'accepted' && job.acceptedByEmail === currentUserEmail) || 
                      (job.status === 'requested' && job.requestedBy === currentUserEmail) || 
@@ -905,8 +911,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                       }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-green-50 text-green-600 border-t border-slate-50"><Share2 className="w-4 h-4"/> Notificar Receptor</button>
                     )}
 
-                    {/* El botón de traspaso ahora está siempre visible mientras el traslado esté activo */}
-                    {isAccepted && (
+                    {/* El botón de traspaso solo es visible para el dueño del trabajo o un admin */}
+                    {isAccepted && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
                       <button onClick={() => { setRelayPromptJob(j); setMenuOpenId(null); }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-purple-50 text-purple-600 border-t border-slate-50"><Users className="w-4 h-4"/> Traspaso a Compañero</button>
                     )}
                     
@@ -926,13 +932,15 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                        </button>
                     )}
                     
-                    {isAccepted && (!j.phase || j.phase === 'claimed' || j.phase === 'arrived_pickup') && (
+                    {isAccepted && (!j.phase || j.phase === 'claimed' || j.phase === 'arrived_pickup') && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
                       <button onClick={() => { showConfirm("¿Deseas cancelar la aceptación?", async () => { try { await updateDoc(doc(db, 'transport_jobs', j.id), { status: 'pending', acceptedByEmail: deleteField(), phase: deleteField(), liveLocation: deleteField(), arrivedPickupAt: deleteField(), waitTimeMinutes: deleteField() }); setMenuOpenId(null); showAlert("✅ Traslado liberado."); } catch (err) { showAlert("Error al liberar."); } }); }} className="w-full text-left p-3 font-bold flex gap-2 text-amber-600 hover:bg-amber-50 border-t border-slate-50">
                         <X className="w-4 h-4"/> Cancelar Aceptación (Soltar)
                       </button>
                     )}
 
-                    <button onClick={()=>{setJobToFail(j);setMenuOpenId(null);}} className="w-full text-left p-3 font-bold flex gap-2 text-red-600 hover:bg-red-50 border-t border-slate-50"><XCircle className="w-4 h-4"/> Cancelar / Falló</button>
+                    {(isAdminView || j.acceptedByEmail === currentUserEmail) && (
+                      <button onClick={()=>{setJobToFail(j);setMenuOpenId(null);}} className="w-full text-left p-3 font-bold flex gap-2 text-red-600 hover:bg-red-50 border-t border-slate-50"><XCircle className="w-4 h-4"/> Cancelar / Falló</button>
+                    )}
                   </div>
                 )}
               </div>
@@ -1151,15 +1159,15 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             </>
           )}
 
-          {(!isRequested && !isAdminView && j.acceptedByEmail !== currentUserEmail && !j.assignedEmails?.includes(currentUserEmail)) ? (
-             <div className="bg-slate-50 border border-slate-200 text-slate-500 text-xs font-bold text-center py-3 rounded-xl">Vehículo en convoy a cargo de un compañero.</div>
+          {(!isRequested && j.status === 'accepted' && j.acceptedByEmail !== currentUserEmail) ? (
+             <div className="bg-slate-50 border border-slate-200 text-slate-500 text-xs font-bold text-center py-3 rounded-xl">Vehículo a cargo de un compañero.</div>
           ) : (
             <>
               {isPending && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && (
                 <SwipeButton key={`btn-accept-${j.id}`} onConfirm={() => handleAcceptJob(j)} text="Desliza para Aceptar" colorClass="bg-blue-600" isProcessing={processingId === `${j.id}-accept`} />
               )}
 
-              {isAccepted && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
+              {isAccepted && (j.acceptedByEmail === currentUserEmail) && (
                 <>
                   {(!j.phase || j.phase === 'claimed') && <SwipeButton key={`btn-pickup-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_pickup', { arrivedPickupAt: Date.now() })} text={j.tripType === 'simple' ? "Desliza: Llegué al lugar" : "Desliza: Llegué a retirar"} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-amber-500" isProcessing={processingId === `${j.id}-arrived_pickup`} />}
                   
@@ -1895,6 +1903,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     </div>
   );
 }
+
 
 
 
