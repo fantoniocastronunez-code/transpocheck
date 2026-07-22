@@ -408,8 +408,20 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                <div className="grid grid-cols-2 gap-4">
                  <input value={plate} onChange={e=>handleVehicleSearch(e.target.value.replace(/[^a-zA-Z0-9]/g, ''), 'plate')} maxLength="6" type="text" placeholder="Patente (Ej. ABCD12)" className={`w-full border-2 p-3 text-sm rounded-xl uppercase outline-none font-black bg-white shadow-sm transition-colors ${isSearchingVehicle ? 'border-blue-400 ring-2 ring-blue-100' : vehicleFoundStatus === 'found' ? 'border-green-400 text-green-800' : 'border-slate-300 focus:border-blue-500 text-slate-800'}`} />
                  <input value={vin} onChange={e=>handleVehicleSearch(e.target.value.replace(/[^a-zA-Z0-9]/g, ''), 'vin')} maxLength="17" type="text" placeholder="VIN / Chasis" className={`w-full border-2 p-3 text-sm rounded-xl uppercase outline-none font-black bg-white shadow-sm transition-colors ${isSearchingVehicle ? 'border-blue-400 ring-2 ring-blue-100' : vehicleFoundStatus === 'found' ? 'border-green-400 text-green-800' : 'border-slate-300 focus:border-blue-500 text-slate-800'}`} />
-                 <input value={brand} onChange={e=>setBrand(e.target.value)} type="text" placeholder="Marca" className={`w-full border-2 p-3 text-sm rounded-xl outline-none font-semibold bg-white transition-colors ${vehicleFoundStatus === 'found' ? 'border-green-300 text-green-800' : 'border-slate-200 focus:border-blue-500 text-slate-800'}`} />
-                 <input value={model} onChange={e=>setModel(e.target.value)} type="text" placeholder="Modelo" className={`w-full border-2 p-3 text-sm rounded-xl outline-none font-semibold bg-white transition-colors ${vehicleFoundStatus === 'found' ? 'border-green-300 text-green-800' : 'border-slate-200 focus:border-blue-500 text-slate-800'}`} />
+                 {/* NUEVO: Listas de autocompletado inteligente (Aprende de tu propia flota) */}
+                 <datalist id="brands-list">
+                   {[...new Set(vehicles.map(v => v.brand?.toUpperCase().trim()).filter(Boolean))].sort().map((b, i) => (
+                     <option key={i} value={b} />
+                   ))}
+                 </datalist>
+                 <datalist id="models-list">
+                   {[...new Set(vehicles.filter(v => v.brand?.toUpperCase().trim() === brand?.toUpperCase().trim()).map(v => v.model?.toUpperCase().trim()).filter(Boolean))].sort().map((m, i) => (
+                     <option key={i} value={m} />
+                   ))}
+                 </datalist>
+
+                 <input value={brand} onChange={e=>setBrand(e.target.value.toUpperCase())} list="brands-list" type="text" placeholder="Marca (Ej. CHEVROLET)" className={`w-full border-2 p-3 text-sm rounded-xl outline-none font-semibold bg-white transition-colors uppercase ${vehicleFoundStatus === 'found' ? 'border-green-300 text-green-800' : 'border-slate-200 focus:border-blue-500 text-slate-800'}`} />
+                 <input value={model} onChange={e=>setModel(e.target.value.toUpperCase())} list="models-list" type="text" placeholder="Modelo (Ej. SPARK)" className={`w-full border-2 p-3 text-sm rounded-xl outline-none font-semibold bg-white transition-colors uppercase ${vehicleFoundStatus === 'found' ? 'border-green-300 text-green-800' : 'border-slate-200 focus:border-blue-500 text-slate-800'}`} />
 
                  <select value={vehicleType} onChange={e=>setVehicleType(e.target.value)} className={`w-full border-2 p-3 text-sm rounded-xl col-span-2 outline-none font-bold bg-white transition-colors ${vehicleFoundStatus === 'found' ? 'border-green-300 text-green-800' : 'border-slate-200 focus:border-blue-500 text-slate-700'}`}>
                    <option value="auto">🚙 Auto / SUV</option>
