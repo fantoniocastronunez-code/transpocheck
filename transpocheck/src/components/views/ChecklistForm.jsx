@@ -533,6 +533,15 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const checkIsExpired = (dateStr) => {
+    if (!dateStr) return false;
+    const [y, m, day] = dateStr.split('-');
+    if (!y || !m || !day) return false;
+    const exp = new Date(y, m - 1, day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return exp < today;
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -564,6 +573,19 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     if(d.noReception) { 
       d.receiverName="ENTREGA SIN RECEPCIÓN"; 
       d.receiverRut="N/A"; 
+    }
+
+    // MAGIA: Formatear documentos vencidos para que el PDF los lea como "Vencido" en lugar de "Al día"
+    if (d.docs) {
+       for (const key of Object.keys(d.docs)) {
+          if (d.docs[key] && d.docsExpiry?.[key]) {
+             if (checkIsExpired(d.docsExpiry[key])) {
+                d.docs[key] = "Vencido";
+             } else {
+                d.docs[key] = true; // Restaurar a true si cambió la fecha y ya no está vencido
+             }
+          }
+       }
     }
 
     // --- 1. VALIDACIÓN SINCRÓNICA (Dinero y Rendición) ANTES DE CERRAR ---
@@ -990,26 +1012,30 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Documentos del Vehículo</h3>
               <div className="grid grid-cols-2 gap-3 pt-2">
-                {[{ id: 'soap', label: 'SOAP', icon: <FileText className="w-5 h-5"/> }, { id: 'permiso', label: 'Permiso Circ.', icon: <MapPin className="w-5 h-5"/> }, { id: 'revTecnica', label: 'Rev. Técnica', icon: <CheckCircle className="w-5 h-5"/> }, { id: 'gases', label: 'Gases', icon: <CloudOff className="w-5 h-5"/> }].map(doc => (
+                {[{ id: 'soap', label: 'SOAP', icon: <FileText className="w-5 h-5"/> }, { id: 'permiso', label: 'Permiso Circ.', icon: <MapPin className="w-5 h-5"/> }, { id: 'revTecnica', label: 'Rev. Técnica', icon: <CheckCircle className="w-5 h-5"/> }, { id: 'gases', label: 'Gases', icon: <CloudOff className="w-5 h-5"/> }].map(doc => {
+                  const isExp = checkIsExpired(formData.docsExpiry?.[doc.id]);
+                  const isChecked = !!formData.docs[doc.id];
+
+                  return (
                   <div key={doc.id} className="flex flex-col gap-2">
                     <button 
                       type="button" 
-                      onClick={() => setF('docs', { ...formData.docs, [doc.id]: !formData.docs[doc.id] })} 
-                      className={`flex flex-col items-center justify-center gap-1.5 h-24 rounded-2xl border-2 active:scale-95 transition-all duration-200 select-none shadow-sm ${formData.docs[doc.id] ? 'border-green-500 bg-green-500 text-white shadow-green-200' : 'border-slate-200 bg-slate-50 text-slate-400 hover:bg-slate-100 hover:border-slate-300'}`}
+                      onClick={() => setF('docs', { ...formData.docs, [doc.id]: !isChecked })} 
+                      className={`flex flex-col items-center justify-center gap-1.5 h-24 rounded-2xl border-2 active:scale-95 transition-all duration-200 select-none shadow-sm ${!isChecked ? 'border-slate-200 bg-slate-50 text-slate-400 hover:bg-slate-100 hover:border-slate-300' : isExp ? 'border-red-500 bg-red-500 text-white shadow-red-200' : 'border-green-500 bg-green-500 text-white shadow-green-200'}`}
                     >
-                      {formData.docs[doc.id] ? <CheckCircle className="w-6 h-6 animate-in zoom-in"/> : doc.icon}
+                      {isChecked ? (isExp ? <AlertCircle className="w-6 h-6 animate-in zoom-in"/> : <CheckCircle className="w-6 h-6 animate-in zoom-in"/>) : doc.icon}
                       <span className="font-black text-xs uppercase tracking-wider">{doc.label}</span>
                     </button>
-                    {formData.docs[doc.id] && (
+                    {isChecked && (
                       <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="bg-green-50 border border-green-200 p-2 rounded-xl flex flex-col gap-1 shadow-inner">
-                          <p className="text-[9px] font-extrabold text-green-700 uppercase tracking-widest text-center">Vencimiento</p>
-                          <input type="date" value={formData.docsExpiry?.[doc.id] || ''} onChange={(e) => setF('docsExpiry', { ...(formData.docsExpiry || {}), [doc.id]: e.target.value })} className="w-full bg-white border border-green-200 p-1.5 rounded-lg text-xs font-black text-slate-700 outline-none focus:border-green-500 text-center" />
+                        <div className={`${isExp ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'} border p-2 rounded-xl flex flex-col gap-1 shadow-inner transition-colors`}>
+                          <p className={`text-[9px] font-extrabold uppercase tracking-widest text-center ${isExp ? 'text-red-700' : 'text-green-700'}`}>Vencimiento {isExp && '(VENCIDO)'}</p>
+                          <input type="date" value={formData.docsExpiry?.[doc.id] || ''} onChange={(e) => setF('docsExpiry', { ...(formData.docsExpiry || {}), [doc.id]: e.target.value })} className={`w-full bg-white border p-1.5 rounded-lg text-xs font-black text-slate-700 outline-none text-center transition-colors ${isExp ? 'border-red-300 focus:border-red-500' : 'border-green-200 focus:border-green-500'}`} />
                         </div>
                       </div>
                     )}
                   </div>
-                ))}
+                )})}
               </div>
 
               {/* SECCIÓN DOCUMENTOS EXTERNOS Y BANDEJA */}
@@ -1971,6 +1997,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     </div>
   );
 }
+
 
 
 
