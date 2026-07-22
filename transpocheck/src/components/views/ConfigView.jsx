@@ -216,6 +216,7 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
          <button onClick={()=>setConfigSubTab('vehicles')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='vehicles'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Vehículos</button>
          <button onClick={()=>setConfigSubTab('drivers')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='drivers'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Conductores</button>
          <button onClick={()=>setConfigSubTab('directory')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='directory'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Directorio</button>
+         <button onClick={()=>setConfigSubTab('prts')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='prts'?'bg-rose-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Plantas RT</button>
       </div>
 
       {configSubTab === 'clients' && (
@@ -870,5 +871,6 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
     </div>
   );
 }
+
 
 
