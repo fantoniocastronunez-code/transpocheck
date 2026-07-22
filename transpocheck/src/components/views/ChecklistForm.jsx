@@ -320,15 +320,18 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     if (isQuick || !job.id) return;
     const timer = setTimeout(() => {
       const draftData = JSON.parse(JSON.stringify(formData));
+      
+      // Mantenemos la limpieza de fotos en Base64 para evitar exceder el límite de 1MB de Firestore,
+      // ya que las fotos pesan muchísimo.
       for (const key in draftData.photos) {
          if (draftData.photos[key] && !draftData.photos[key].startsWith('http')) {
              draftData.photos[key] = false; 
          }
       }
-      if (draftData.signatureData && !draftData.signatureData.startsWith('http')) {
-         draftData.signatureData = null;
-      }
-
+      
+      // SOLUCIÓN: Eliminamos la regla que borraba la firma. 
+      // La firma es un trazo ligero y SEGURO de guardar temporalmente en la base de datos.
+      // Ahora, si el conductor sale a escanear un documento, la firma lo estará esperando intacta al volver.
 
       updateDoc(doc(db, 'transport_jobs', job.id), { draft: { step, formData: draftData } }).catch(() => {});
     }, 2000); 
@@ -1968,6 +1971,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     </div>
   );
 }
+
 
 
 
