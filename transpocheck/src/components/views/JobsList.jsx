@@ -642,6 +642,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     
     if (job.checklist?.location) { currentY += 2; const { lat, lng } = job.checklist.location; docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text(`UBICACION GPS:`, 15, currentY); docPDF.setFontSize(9); docPDF.setTextColor(...accentColor); docPDF.textWithLink('Clic aqui para ver mapa en Google', 15, currentY + 4, { url: `https://maps.google.com/?q=${lat},${lng}` }); }
 
+    const attachedDocHref = job.guideLink || job.guideUrl || job.docLink || job.docUrl || job.rtLink || job.rtDoc || (job.rtData && job.rtData.link) || job.pdfUrl || job.fileUrl;
+    if (attachedDocHref) { 
+      currentY += (job.checklist?.location ? 10 : 2);
+      docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text(`DOCUMENTO ADJUNTO (GUIA/RT):`, 15, currentY); 
+      docPDF.setFontSize(9); docPDF.setTextColor(...accentColor); docPDF.textWithLink('Clic aqui para abrir documento', 15, currentY + 4, { url: attachedDocHref }); 
+    }
+
     if (frontPhotoObj && job.tripType !== 'simple') { 
       try { 
         const dims = { w: frontPhotoObj.w, h: frontPhotoObj.h }; 
@@ -1126,6 +1133,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           </div>
         )}
 
+ 
         {/* NUEVO: PANEL DE ALERTA DE DOCUMENTOS VENCIDOS O POR VENCER */}
         {expiringDocs.length > 0 && (
           <div className="mb-2 mt-3 bg-red-50 border-2 border-red-200 p-3 rounded-xl shadow-sm animate-in fade-in">
@@ -1139,6 +1147,20 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
              </ul>
           </div>
         )}
+
+        {(() => {
+           const activeDocHref = j.guideLink || j.guideUrl || j.docLink || j.docUrl || j.rtLink || j.rtDoc || (j.rtData && j.rtData.link) || j.pdfUrl || j.fileUrl;
+           if (activeDocHref) {
+             return (
+               <div className="mt-3">
+                 <a href={activeDocHref} target="_blank" rel="noreferrer" className="w-full bg-cyan-50 border border-cyan-200 text-cyan-700 hover:bg-cyan-100 font-bold py-2.5 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-2">
+                    <FileText className="w-4 h-4"/> Ver Doc. Adjunto (Guía / RT)
+                 </a>
+               </div>
+             );
+           }
+           return null;
+        })()}
 
         <div className="mt-auto pt-3 border-t border-slate-100 flex flex-col gap-2">
           {isRequested && (
@@ -1288,12 +1310,26 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           {isAdminView && <button onClick={()=>onEditJob(j)} className="flex-1 py-1.5 flex justify-center bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg transition-colors" title="Editar Traslado"><Edit2 className="w-3.5 h-3.5"/></button>}
           {isAdminView && <button onClick={()=>handleDuplicateJob(j)} className="flex-1 py-1.5 flex justify-center bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg transition-colors" title="Repetir Vehículo"><Repeat className="w-3.5 h-3.5"/></button>}
           
+
           {j.checklist && (j.checklist.scandocPdf || j.checklist.scandocPdfInbox || j.checklist.scannerLink) && (
             <a href={j.checklist.scandocPdf || j.checklist.scandocPdfInbox || j.checklist.scannerLink} target="_blank" rel="noreferrer" className="flex-1 py-1.5 flex justify-center items-center bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-colors relative" title="Ver Documentación PRT">
                <span className="absolute -top-1.5 -right-1.5 bg-indigo-600 text-white text-[7px] font-black px-1 py-0.5 rounded shadow-sm">PRT</span>
                <FileText className="w-3.5 h-3.5"/>
             </a>
           )}
+          
+          {(() => {
+             const historyDocHref = j.guideLink || j.guideUrl || j.docLink || j.docUrl || j.rtLink || j.rtDoc || (j.rtData && j.rtData.link) || j.pdfUrl || j.fileUrl;
+             if (historyDocHref) {
+                return (
+                  <a href={historyDocHref} target="_blank" rel="noreferrer" className="flex-1 py-1.5 flex justify-center items-center bg-cyan-50 hover:bg-cyan-100 text-cyan-600 rounded-lg transition-colors relative" title="Ver Guía/Doc Adjunto">
+                     <span className="absolute -top-1.5 -right-1.5 bg-cyan-600 text-white text-[7px] font-black px-1 py-0.5 rounded shadow-sm">DOC</span>
+                     <FileText className="w-3.5 h-3.5"/>
+                  </a>
+                );
+             }
+             return null;
+          })()}
 
           <button onClick={() => generatePDF(j)} disabled={processingId === `${j.id}-pdf`} className="flex-1 py-1.5 flex justify-center bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50" title="Descargar PDF">{processingId === `${j.id}-pdf` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : <FileDown className="w-3.5 h-3.5"/>}</button>
           <button onClick={() => handleShareWhatsAppPDF(j)} disabled={processingId === `${j.id}-wapp`} className="flex-1 py-1.5 flex justify-center items-center bg-green-50 text-green-600 hover:bg-green-100 rounded-lg transition-colors disabled:opacity-50" title="Compartir PDF por WhatsApp">
@@ -1519,6 +1555,19 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                                   {isAdminView && <button onClick={()=>onEditJob(j)} className="p-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-md transition-colors" title="Editar Traslado"><Edit2 className="w-3.5 h-3.5"/></button>}
                                   {isAdminView && <button onClick={()=>handleDuplicateJob(j)} className="p-1.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-md transition-colors" title="Repetir Vehículo"><Repeat className="w-3.5 h-3.5"/></button>}
                                   <button onClick={()=>cpyWapp(j)} className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md transition-colors" title="Copiar Resumen"><Copy className="w-3.5 h-3.5"/></button>
+                                  
+                                  {(() => {
+                                     const oldHistDocHref = j.guideLink || j.guideUrl || j.docLink || j.docUrl || j.rtLink || j.rtDoc || (j.rtData && j.rtData.link) || j.pdfUrl || j.fileUrl;
+                                     if (oldHistDocHref) {
+                                        return (
+                                          <a href={oldHistDocHref} target="_blank" rel="noreferrer" className="p-1.5 bg-cyan-50 text-cyan-600 hover:bg-cyan-100 rounded-md transition-colors" title="Ver Guía/Doc Adjunto">
+                                             <FileText className="w-3.5 h-3.5"/>
+                                          </a>
+                                        );
+                                     }
+                                     return null;
+                                  })()}
+
                                   <button onClick={() => generatePDF(j)} className="p-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-md transition-colors" title="Descargar PDF"><FileDown className="w-3.5 h-3.5"/></button>
                                   <button onClick={() => handleShareWhatsAppPDF(j)} disabled={processingId === `${j.id}-wapp`} className="p-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-md transition-colors disabled:opacity-50" title="Compartir PDF">
                                     {processingId === `${j.id}-wapp` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : <Share2 className="w-3.5 h-3.5"/>}
@@ -1930,6 +1979,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     </div>
   );
 }
+
 
 
 
