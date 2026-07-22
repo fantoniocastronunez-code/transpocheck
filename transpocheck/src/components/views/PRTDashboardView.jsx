@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, doc, updateDoc, onSnapshot } from 'firebase/firestore';
-import { Activity, MapPin, AlertTriangle, ShieldAlert, CheckCircle, Clock, Navigation } from 'lucide-react';
+import { Activity, MapPin, AlertTriangle, ShieldAlert, CheckCircle, Clock, Navigation, Video } from 'lucide-react';
 
 export default function PRTDashboardView({ db, currentUserEmail, drivers, role, showAlert }) {
   const [prts, setPrts] = useState([]);
@@ -92,6 +92,18 @@ export default function PRTDashboardView({ db, currentUserEmail, drivers, role, 
                     <p className="text-[10px] font-bold text-slate-500 mt-1 flex items-center gap-1">
                       <MapPin className="w-3 h-3 text-slate-400"/> {prt.address}{prt.address && prt.comuna ? ', ' : ''}{prt.comuna}
                     </p>
+                  )}
+
+                  {/* NUEVO: Botón de Cámara en Vivo si existe la URL */}
+                  {prt.camUrl && (
+                    <a 
+                      href={prt.camUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-black transition-colors border border-blue-200 shadow-sm"
+                    >
+                      <Video className="w-4 h-4 text-blue-600 animate-pulse"/> Ver Cámara en Vivo
+                    </a>
                   )}
                 </div>
                 {/* Semáforo Visual Circular */}
