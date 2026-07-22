@@ -113,7 +113,7 @@ export default function PRTDashboardView({ db, currentUserEmail, drivers, role, 
               {/* Fiscalizadores Alert */}
               {prt.hasInspectors && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 mb-3 shadow-sm animate-pulse">
-                  <ShieldAlert className="w-4 h-4 shrink-0"/> Fiscalizadores en el perímetro
+                  <ShieldAlert className="w-4 h-4 shrink-0"/> Fiscalizadores en planta
                 </div>
               )}
 
