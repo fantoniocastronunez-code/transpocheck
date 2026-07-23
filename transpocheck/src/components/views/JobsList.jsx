@@ -675,6 +675,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         const frontPhotoStr = frontPhotoObj.data;
         const ratio = dims.h / dims.w; let imgW = 80; let imgH = imgW * ratio; if (imgH > 130) { imgH = 130; imgW = imgH / ratio; } const rightX = 115; const rightY = startY + 6; docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(rightX - 2, rightY - 8, imgW + 4, imgH + 12, 2, 2, 'S'); docPDF.setFillColor(...lightBg); docPDF.rect(rightX - 2, rightY - 8, imgW + 4, 8, 'F'); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor); docPDF.text("VISTA FRONTAL", rightX + (imgW/2), rightY - 3, { align: "center" }); 
         try { docPDF.addImage(frontPhotoStr, 'JPEG', rightX, rightY + 2, imgW, imgH); } catch(e) { docPDF.addImage(frontPhotoStr, 'PNG', rightX, rightY + 2, imgW, imgH); }
+        if (typeof photos.front === 'string' && photos.front.startsWith('http')) {
+          docPDF.link(rightX, rightY + 2, imgW, imgH, { url: photos.front });
+        }
       } catch (err) { console.error("Error al incrustar foto frontal:", err); } 
     }
 
@@ -696,6 +699,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         try { 
           const ratio = dims.h / dims.w; let imgW = 85; let imgH = imgW * ratio; if (imgH > 95) { imgH = 95; imgW = imgH / ratio; } const slotCenter = currentCol === 1 ? 55 : 155; const finalX = slotCenter - (imgW / 2); if (photoY + imgH > 275) { docPDF.addPage(); photoY = 46; drawHeader("ANEXO FOTOGRAFICO (CONT.)"); } docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S'); docPDF.setFillColor(...lightBg); docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F'); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor); docPDF.text((labels[key] || key).toUpperCase(), slotCenter, photoY - 3, { align: "center" }); 
           try { docPDF.addImage(base64Img, 'JPEG', finalX, photoY + 2, imgW, imgH); } catch(e) { docPDF.addImage(base64Img, 'PNG', finalX, photoY + 2, imgW, imgH); }
+          if (typeof photos[key] === 'string' && photos[key].startsWith('http')) {
+            docPDF.link(finalX, photoY + 2, imgW, imgH, { url: photos[key] });
+          }
           if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 20; } 
         } catch (err) { console.error("Error al incrustar la foto:", key, err); } 
       }
