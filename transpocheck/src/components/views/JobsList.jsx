@@ -609,12 +609,33 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         currentY += hGas + 8;
 
         docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("OBSERVACIONES:", 15, currentY); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor); const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin observaciones registradas.'}`), leftColWidth); docPDF.text(obsSplit, 15, currentY + 4); currentY += (obsSplit.length * 4) + 8;
+        
+        // NUEVO: IMPRIMIR EQUIPAMIENTO SI EXISTE
+        if (job.checklist?.hasEquipment && job.checklist?.equipment) {
+          docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("EQUIPAMIENTO VERIFICADO:", 15, currentY); currentY += 4;
+          const eqKeys = Object.keys(job.checklist.equipment).filter(k => job.checklist.equipment[k]);
+          docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
+          if (eqKeys.length > 0) {
+            const eqStr = docPDF.splitTextToSize(cleanStr(eqKeys.join(', ')), leftColWidth);
+            docPDF.text(eqStr, 15, currentY); currentY += (eqStr.length * 4) + 2;
+          } else {
+            docPDF.text("Ningún ítem marcado", 15, currentY); currentY += 6;
+          }
+          if (job.checklist?.equipmentDetails) {
+            docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("DETALLE HERRAMIENTAS:", 15, currentY); currentY += 4;
+            docPDF.setFontSize(8); docPDF.setFont("helvetica", "italic"); docPDF.setTextColor(...primaryColor);
+            const detStr = docPDF.splitTextToSize(cleanStr(job.checklist.equipmentDetails), leftColWidth);
+            docPDF.text(detStr, 15, currentY); currentY += (detStr.length * 4) + 4;
+          }
+        }
+
         if (job.waitTimeMinutes && job.waitTimeMinutes > 20) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38); const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA EN ORIGEN: ${job.waitTimeMinutes} minutos`, leftColWidth); docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2; } else if (job.checklist?.hasWaitTime) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38);  const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth);  docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2;  }
         if (job.checklist?.hasFuelCharge) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(37, 99, 235); const fcStr = docPDF.splitTextToSize(`CARGA DE COMBUSTIBLE: ${cleanStr(job.checklist.fuelChargeAmount || 'Sí')}`, leftColWidth); docPDF.text(fcStr, 15, currentY); currentY += (fcStr.length * 4) + 2; }
         sectionNum++;
     }
 
     if (job.tripType === 'revision') { currentY = drawSectionTitle(`${sectionNum}. Resultado`, currentY); if (job.checklist?.rtStatus === 'aprobado' || job.checklist?.rtStatus === 'aprobado_ayuda') { docPDF.setTextColor(22, 163, 74); docPDF.setFontSize(16); docPDF.text("APROBADO", 15, currentY + 6); currentY += 18; } else { docPDF.setTextColor(220, 38, 38); docPDF.setFontSize(16); docPDF.text("RECHAZADO", 15, currentY + 6); docPDF.setFontSize(10); docPDF.setTextColor(153, 27, 27); const rejSplit = docPDF.splitTextToSize(cleanStr(`Motivo: ${job.checklist?.rtRejectReason || job.failedReason || 'No especificada'}`), leftColWidth); docPDF.text(rejSplit, 15, currentY + 12); currentY += 20 + (rejSplit.length * 4); } sectionNum++; }
+>>>>
 
     if (job.status === 'failed' && job.tripType !== 'revision') {
         currentY = drawSectionTitle(`${sectionNum}. Resultado del Traslado`, currentY, job.tripType === 'simple' ? 180 : leftColWidth);

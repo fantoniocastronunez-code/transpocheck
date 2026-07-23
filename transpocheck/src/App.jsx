@@ -26,7 +26,6 @@ const ClientSignView = React.lazy(() => import('./components/views/ClientSignVie
 const ExpensesView = React.lazy(() => import('./components/views/ExpensesView'));
 const ConfigView = React.lazy(() => import('./components/views/ConfigView'));
 const TrackingView = React.lazy(() => import('./components/views/TrackingView'));
-const PRTDashboardView = React.lazy(() => import('./components/views/PRTDashboardView')); // NUEVO: Vista tipo Waze para PRT
 const NewJobForm = React.lazy(() => import('./components/views/NewJobForm'));
 const JobsList = React.lazy(() => import('./components/views/JobsList'));
 const ChecklistForm = React.lazy(() => import('./components/views/ChecklistForm'));
@@ -862,7 +861,6 @@ function LogisticApp() {
 
             {mainTab === 'ranking' && <LeaderboardView jobs={jobs} drivers={drivers} isAdminView={activeRole === 'admin'} db={db} />}
             {mainTab === 'expenses' && <ExpensesView role={activeRole} drivers={drivers} jobs={jobs} expenses={expenses} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />}
-            {mainTab === 'prt' && <div className="animate-in fade-in duration-300"><PRTDashboardView db={db} currentUserEmail={currentUserEmail} drivers={drivers} role={activeRole} showAlert={showAlert} /></div>}
             
             {mainTab === 'inbox' && (
                <main className="max-w-2xl mx-auto p-4 pt-20 sm:pt-24 pb-32 animate-in fade-in duration-300">
@@ -1021,10 +1019,6 @@ function LogisticApp() {
               <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='expenses' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}>
                  <div className={`${mainTab==='expenses' ? 'bg-blue-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Wallet className="w-5 h-5"/></div>
                  <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Gastos</span>
-              </button>
-              <button onClick={() => setMainTab('prt')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='prt' ? 'text-rose-600' : 'text-slate-400 hover:text-rose-600'}`}>
-                 <div className={`${mainTab==='prt' ? 'bg-rose-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Activity className="w-5 h-5"/></div>
-                 <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Radar PRT</span>
               </button>
             </nav>
           </>
@@ -1196,13 +1190,26 @@ function LogisticApp() {
                  ) : (
                     <>
                        <div className="grid grid-cols-2 gap-3">
+                          {/* NUEVO: Autocompletado Relacional Inteligente */}
+                          <datalist id="request-brands-list">
+                            {[...new Set(vehicles?.map(v => v.brand?.toUpperCase().trim()).filter(Boolean) || [])].sort().map((b, i) => (
+                              <option key={i} value={b} />
+                            ))}
+                          </datalist>
+                          <datalist id="request-models-list">
+                            {/* Nota: El filtro de modelo usa el valor actual de la marca desde el formulario */}
+                            {[...new Set(vehicles?.map(v => v.model?.toUpperCase().trim()).filter(Boolean) || [])].sort().map((m, i) => (
+                              <option key={i} value={m} />
+                            ))}
+                          </datalist>
+
                           <div className="space-y-1">
                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Marca</label>
-                             <input name="brand" required placeholder="Ej: Kia" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"/>
+                             <input name="brand" list="request-brands-list" required placeholder="Ej: CHEVROLET" onChange={(e) => e.target.value = e.target.value.toUpperCase()} className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500 uppercase"/>
                           </div>
                           <div className="space-y-1">
                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Modelo</label>
-                             <input name="model" required placeholder="Ej: Rio" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"/>
+                             <input name="model" list="request-models-list" required placeholder="Ej: SPARK" onChange={(e) => e.target.value = e.target.value.toUpperCase()} className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500 uppercase"/>
                           </div>
                        </div>
                        <div className="space-y-1">
