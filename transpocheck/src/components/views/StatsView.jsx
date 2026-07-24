@@ -59,38 +59,24 @@ export default function StatsView({ jobs, drivers, vehicles, allClientsList }) {
             }
         });
 
-        // --- 5. Especialización de Conductores (Líder por Categoría) ---
-        const categoryCounts = {
-            'auto': {}, 'camioneta': {}, 'furgon_pequeno': {}, 'furgon_grande': {},
-            'camion_simple': {}, 'camion_doble': {}, 'camion_2ejes': {},
-            'camion_3ejes': {}, 'camion_8x4': {}, 'carro_arrastre': {}
-        };
-
+        // --- 5. Kilometraje por Conductor ---
+        const driverKms = {};
         monthlyJobs.forEach(j => {
             if (j.status !== 'completed' || !j.acceptedByEmail) return;
-            const drvName = drivers.find(d => d.email === j.acceptedByEmail)?.name || 'Desconocido';
-            const vType = j.checklist?.vehicleType || 'auto'; // Si no hay, asumimos auto por defecto
             
-            if (categoryCounts[vType] !== undefined) {
-                categoryCounts[vType][drvName] = (categoryCounts[vType][drvName] || 0) + 1;
+            if (j.drivenDistance && j.drivenDistance.includes('km')) {
+                // Limpiamos el texto "145 km" para dejar solo el número matemático
+                const km = parseFloat(j.drivenDistance.replace(/[^\d.]/g, ''));
+                if (!isNaN(km)) {
+                    const drvName = drivers.find(d => d.email === j.acceptedByEmail)?.name || 'Desconocido';
+                    driverKms[drvName] = (driverKms[drvName] || 0) + km;
+                }
             }
         });
 
-        // Encontrar el conductor con más traslados por cada categoría
-        const topDriversByCategory = {};
-        for (const [cat, counts] of Object.entries(categoryCounts)) {
-            let topDriver = null;
-            let maxCount = 0;
-            for (const [drv, count] of Object.entries(counts)) {
-                if (count > maxCount) {
-                    maxCount = count;
-                    topDriver = drv;
-                }
-            }
-            if (topDriver) {
-                topDriversByCategory[cat] = { name: topDriver, count: maxCount };
-            }
-        }
+        // Convertimos el objeto en un arreglo y lo ordenamos del que manejó más al que manejó menos
+        const topDriversKm = Object.entries(driverKms)
+            .sort((a, b) => b[1] - a[1]);
 
         return {
             totalJobs: monthlyJobs.length,
@@ -99,7 +85,7 @@ export default function StatsView({ jobs, drivers, vehicles, allClientsList }) {
             regionJobs,
             totalKm: Math.round(totalKm),
             todayKm: Math.round(todayKm),
-            topDriversByCategory
+            topDriversKm
         };
 
     }, [jobs, drivers]);
@@ -223,47 +209,43 @@ export default function StatsView({ jobs, drivers, vehicles, allClientsList }) {
                     </div>
                 </div>
 
-                {/* 4. ESPECIALIZACIÓN DE CONDUCTORES (NUEVO DISEÑO VERTICAL) */}
+                {/* 4. TABLA DE KILOMETRAJE POR CONDUCTOR */}
                 <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
-                    <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-3">
-                        <div className="flex items-center gap-2">
-                            <div className="bg-indigo-100 p-2 rounded-xl"><Car className="w-4 h-4 text-indigo-600"/></div>
-                            <h3 className="font-extrabold text-slate-800">Líderes por Vehículo</h3>
-                        </div>
+                    <div className="flex items-center gap-2 mb-4 border-b border-slate-50 pb-3">
+                        <div className="bg-indigo-100 p-2 rounded-xl"><Map className="w-4 h-4 text-indigo-600"/></div>
+                        <h3 className="font-extrabold text-slate-800">Kilómetros por Conductor</h3>
                     </div>
                     
-                    {Object.keys(stats.topDriversByCategory).length === 0 ? (
-                        <p className="text-xs text-center text-slate-400 font-bold py-4">Aún no hay datos suficientes de categorías este mes.</p>
+                    {stats.topDriversKm.length === 0 ? (
+                        <p className="text-xs text-center text-slate-400 font-bold py-4">No hay kilómetros registrados este mes.</p>
                     ) : (
-                        <div className="space-y-3">
-                            {/* Mapeamos los nombres técnicos a nombres legibles para la UI */}
-                            {[
-                                { key: 'auto', label: 'Autos / SUV' },
-                                { key: 'camioneta', label: 'Camioneta' },
-                                { key: 'furgon_pequeno', label: 'Furgón Pequeño' },
-                                { key: 'furgon_grande', label: 'Furgón Grande' },
-                                { key: 'camion_simple', label: 'Camión Simple' },
-                                { key: 'camion_doble', label: 'Camión Doble Cabina' },
-                                { key: 'camion_2ejes', label: 'Camión (2 Ejes Traseros)' },
-                                { key: 'camion_3ejes', label: 'Camión (3 Ejes Traseros)' },
-                                { key: 'camion_8x4', label: 'Camión Rigid (8x4)' },
-                                { key: 'carro_arrastre', label: 'Carro de Arrastre' }
-                            ].map(({ key, label }) => {
-                                const leader = stats.topDriversByCategory[key];
-                                if (!leader) return null; // Solo muestra la categoría si hay alguien que la haya manejado
-
-                                return (
-                                    <div key={key} className="flex flex-col gap-1 border-b border-slate-50 pb-2 last:border-0">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</p>
-                                        <div className="flex justify-between items-center bg-slate-50 p-2 rounded-lg border border-slate-100">
-                                            <p className="text-xs font-bold text-slate-700 truncate pr-2">{leader.name}</p>
-                                            <div className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-black shrink-0">
-                                                {leader.count} Viajes
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                        <div className="overflow-x-auto scrollbar-none -mx-2 px-2">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr>
+                                        <th className="pb-2 text-[9px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100 w-8">Pos.</th>
+                                        <th className="pb-2 text-[9px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100">Conductor</th>
+                                        <th className="pb-2 text-[9px] font-black uppercase text-slate-400 tracking-widest text-right border-b border-slate-100">Distancia</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {stats.topDriversKm.map(([name, km], idx) => (
+                                        <tr key={name} className="hover:bg-slate-50 transition-colors">
+                                            <td className="py-2.5 pr-2 border-b border-slate-50 text-center">
+                                                <span className={`inline-flex w-5 h-5 rounded-full items-center justify-center text-[9px] font-black ${idx === 0 ? 'bg-amber-100 text-amber-700' : idx === 1 ? 'bg-slate-200 text-slate-600' : idx === 2 ? 'bg-orange-100 text-orange-700' : 'bg-slate-50 text-slate-400'}`}>
+                                                    {idx + 1}
+                                                </span>
+                                            </td>
+                                            <td className="py-2.5 pr-2 border-b border-slate-50">
+                                                <p className="text-xs font-bold text-slate-700 whitespace-nowrap">{name}</p>
+                                            </td>
+                                            <td className="py-2.5 pl-1 border-b border-slate-50 text-right">
+                                                <span className="text-xs font-black text-indigo-600">{Math.round(km).toLocaleString('es-CL')} <span className="text-[9px] text-indigo-400 uppercase tracking-widest ml-0.5">km</span></span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     )}
                 </div>
