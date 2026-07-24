@@ -229,32 +229,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                             </div>
                         </div>
                     )}
-                </div>
-
-                {/* 3. VIAJES A REGIONES VS KILOMETRAJE HOY */}
-                <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-5 rounded-3xl shadow-sm text-white flex flex-col justify-center">
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="font-extrabold text-slate-200">Operación en Terreno</h3>
-                        <Navigation className="w-5 h-5 text-slate-500" />
-                    </div>
-                    
-                    <div className="flex gap-4">
-                        <div className="flex-1 bg-white/10 p-4 rounded-2xl border border-white/10">
-                            <p className="text-[10px] font-black uppercase text-amber-400 mb-1">Traslados a Región</p>
-                            <div className="flex items-end gap-2">
-                                <p className="text-3xl font-black text-white">{stats.regionJobs || 0}</p>
-                                <p className="text-xs font-bold text-slate-400 mb-1">viajes largos</p>
-                            </div>
-                        </div>
-                        <div className="flex-1 bg-emerald-500/20 p-4 rounded-2xl border border-emerald-500/30">
-                            <p className="text-[10px] font-black uppercase text-emerald-300 mb-1">Kilómetros Hoy</p>
-                            <div className="flex items-end gap-2">
-                                <p className="text-3xl font-black text-white">{stats.todayKm || 0}</p>
-                                <p className="text-xs font-bold text-emerald-200 mb-1">km rutados</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                </div>            
 
                 {/* 4. TABLA DE KILOMETRAJE POR CONDUCTOR */}
                 <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
