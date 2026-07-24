@@ -121,17 +121,53 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     if (processingId) return;
     setProcessingId(`${job.id}-${phase}`);
     try { 
-       updateDoc(doc(db, 'transport_jobs', job.id), { phase, ...extra }).catch(e => {
-           console.error(e); showAlert("Error de conexión al actualizar fase.");
-       }); 
+       let finalExtra = { ...extra };
+
+       // --- NUEVO: CRONÓMETRO Y KILOMETRAJE CON GOOGLE MAPS ---
+       if (phase === 'arrived_destination' || phase === 'arrived_prt') {
+           if (!job.arrivedDestinationAt) { 
+               finalExtra.arrivedDestinationAt = Date.now();
+           }
+           
+           if (window.google && window.google.maps) {
+               try {
+                   const service = new window.google.maps.DistanceMatrixService();
+                   const orig = job.origin || '';
+                   const dest = job.destination || '';
+                   
+                   if (orig && dest) {
+                       const res = await service.getDistanceMatrix({
+                           origins: [orig],
+                           destinations: [dest],
+                           travelMode: 'DRIVING'
+                       });
+                       if (res && res.rows[0].elements[0].status === 'OK') {
+                           finalExtra.drivenDistance = res.rows[0].elements[0].distance.text;
+                       } else {
+                           finalExtra.drivenDistance = 'No calc.';
+                       }
+                   }
+               } catch (err) {
+                   console.error("Error Maps API:", err);
+                   finalExtra.drivenDistance = 'Error API';
+               }
+           } else {
+               finalExtra.drivenDistance = 'Sin Maps API';
+           }
+       }
+       // --------------------------------------------------------
+
+       await updateDoc(doc(db, 'transport_jobs', job.id), { phase, ...finalExtra });
+       
        if (phase === 'arrived_pickup') notifyClient(job, 'llegada_origen');
        if (phase === 'picked_up') notifyClient(job, 'en_ruta');
        if (phase === 'arrived_destination' || phase === 'arrived_prt') notifyClient(job, 'llegada_destino');
-    } 
-    finally { 
+    } catch(e) {
+       console.error(e); showAlert("Error de conexión al actualizar fase.");
+    } finally { 
        setTimeout(() => setProcessingId(null), 300); 
     }
-  }; 
+  };; 
 
   const handleAcceptJob = async (job) => {
     if (processingId) return;
@@ -688,27 +724,69 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
          ? { det1: 'Evidencia 1', det2: 'Evidencia 2', det3: 'Evidencia 3', det4: 'Evidencia 4', det5: 'Evidencia 5', det6: 'Evidencia 6', det7: 'Evidencia 7', det8: 'Evidencia 8', det9: 'Evidencia 9', det10: 'Evidencia 10' }
          : { left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', interior_front: 'Int. Adelante', interior_back: 'Int. Atras', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4', det5: 'Detalle 5', det6: 'Detalle 6', det7: 'Detalle 7', det8: 'Detalle 8' };
       
-      let photoY = 46; let currentCol = 1; let addedPage = false; let mapPageNum = -1;
+      let photoY = 46; let currentCol = 1; let addedPage = false; 
       const detailPins = job.checklist?.detailPins || [];
-      if (detailPins.length > 0 && job.tripType !== 'simple') { docPDF.addPage(); drawHeader("ESQUEMA DE DAÑOS Y DETALLES"); addedPage = true; mapPageNum = docPDF.internal.getNumberOfPages(); const mapX = 15; const mapY = 50; const mapW = 85; const mapH = 150; docPDF.setFillColor(248, 250, 252); docPDF.roundedRect(mapX, mapY, mapW, mapH, 3, 3, 'F'); docPDF.setDrawColor(203, 213, 225); docPDF.roundedRect(mapX, mapY, mapW, mapH, 3, 3, 'S'); const vType = job.checklist.vehicleType || 'auto'; const vx = mapX + 12; const vw = mapW - 24; const vy = mapY + 12; const vh = mapH - 24; docPDF.setFillColor(203, 213, 225); docPDF.setDrawColor(148, 163, 184); docPDF.setLineWidth(1); if (vType === 'camioneta') { docPDF.roundedRect(vx, vy, vw, vh*0.35, 3, 3, 'FD'); docPDF.setFillColor(71, 85, 105); docPDF.rect(vx+5, vy+5, vw-10, 8, 'F'); docPDF.setFillColor(226, 232, 240); docPDF.roundedRect(vx+2, vy+vh*0.38, vw-4, vh*0.62, 2, 2, 'FD'); } else if (vType === 'camion') { docPDF.setFillColor(191, 219, 254); docPDF.roundedRect(vx-2, vy, vw+4, vh*0.2, 2, 2, 'FD'); docPDF.setFillColor(226, 232, 240); docPDF.roundedRect(vx, vy+vh*0.22, vw, vh*0.78, 1, 1, 'FD'); } else { docPDF.roundedRect(vx, vy, vw, vh, 6, 6, 'FD'); docPDF.setFillColor(71, 85, 105); docPDF.rect(vx+5, vy+10, vw-10, 10, 'F'); docPDF.rect(vx+5, vy+vh-15, vw-10, 8, 'F'); } detailPins.forEach(pin => { const px = vx + (vw * (pin.x / 100)); const py = vy + (vh * (pin.y / 100)); docPDF.setFillColor(239, 68, 68); docPDF.circle(px, py, 6, 'F'); docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(11); docPDF.setFont("helvetica", "bold"); docPDF.text(pin.id.replace('det', ''), px, py + 1.5, {align: 'center', baseline: 'middle'}); }); docPDF.setFontSize(9); docPDF.setTextColor(100, 116, 139); docPDF.setFont("helvetica", "normal"); docPDF.text("Los numeros rojos indican daños en el anexo:", mapX + (mapW/2), mapY + mapH + 6, null, null, "center"); photoY = 50; }
+      if (detailPins.length > 0 && job.tripType !== 'simple') { 
+          docPDF.addPage(); drawHeader("ESQUEMA DE DAÑOS Y DETALLES"); addedPage = true; 
+          
+          // Silueta horizontal superior, más pequeña
+          const mapX = 65; const mapY = 45; const mapW = 80; const mapH = 45; 
+          docPDF.setFillColor(248, 250, 252); docPDF.roundedRect(mapX, mapY, mapW, mapH, 3, 3, 'F'); 
+          docPDF.setDrawColor(203, 213, 225); docPDF.roundedRect(mapX, mapY, mapW, mapH, 3, 3, 'S'); 
+          
+          const vType = job.checklist.vehicleType || 'auto'; 
+          const vx = mapX + 8; const vw = mapW - 16; const vy = mapY + 8; const vh = mapH - 16; 
+          
+          docPDF.setFillColor(203, 213, 225); docPDF.setDrawColor(148, 163, 184); docPDF.setLineWidth(1); 
+          
+          // Dibujar el auto rotado 90 grados (horizontal)
+          if (vType === 'camioneta') { 
+              docPDF.roundedRect(vx, vy, vw*0.35, vh, 3, 3, 'FD'); 
+              docPDF.setFillColor(71, 85, 105); docPDF.rect(vx+3, vy+4, 6, vh-8, 'F'); 
+              docPDF.setFillColor(226, 232, 240); docPDF.roundedRect(vx+vw*0.38, vy+2, vw*0.62, vh-4, 2, 2, 'FD'); 
+          } else if (vType === 'camion') { 
+              docPDF.setFillColor(191, 219, 254); docPDF.roundedRect(vx, vy-2, vw*0.2, vh+4, 2, 2, 'FD'); 
+              docPDF.setFillColor(226, 232, 240); docPDF.roundedRect(vx+vw*0.22, vy, vw*0.78, vh, 1, 1, 'FD'); 
+          } else { 
+              docPDF.roundedRect(vx, vy, vw, vh, 6, 6, 'FD'); 
+              docPDF.setFillColor(71, 85, 105); 
+              docPDF.rect(vx+6, vy+4, 8, vh-8, 'F'); // Parabrisas delantero
+              docPDF.rect(vx+vw-12, vy+4, 6, vh-8, 'f'); // parabrisas trasero
+          } 
+          
+          detailpins.foreach(pin => { 
+              // convertir coordenadas del eje y al eje x (para rotarlo)
+              const px = vx + (vw * (pin.y / 100)); 
+              // convertir coordenadas del eje x al eje y, e invertirlas para que coincidan con la rotación
+              const py = vy + (vh * ((100 - pin.x) / 100)); 
+              
+              docPDF.setFillColor(239, 68, 68); docPDF.circle(px, py, 4, 'F'); 
+              docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); 
+              docPDF.text(pin.id.replace('det', ''), px, py + 1, {align: 'center', baseline: 'middle'}); 
+          }); 
+          
+          docPDF.setFontSize(8); docPDF.setTextColor(100, 116, 139); docPDF.setFont("helvetica", "normal"); 
+          docPDF.text("Los numeros rojos indican daños descritos a continuación:", 105, mapY + mapH + 6, null, null, "center"); 
+          
+          // Ajustamos el Y para que las fotos empiecen debajo de la silueta
+          photoY = 105; 
+      }
       
       const sortedOtherPhotos = [...preloadedOtherPhotos].filter(Boolean).sort((a, b) => { const aIsDet = a.key.startsWith('det'); const bIsDet = b.key.startsWith('det'); if (aIsDet && !bIsDet) return -1; if (!aIsDet && bIsDet) return 1; if (aIsDet && bIsDet) return parseInt(a.key.replace('det','')) - parseInt(b.key.replace('det','')); return 0; });
       for (const item of sortedOtherPhotos) { 
-        const { key, base64Img, dims } = item; const isDetail = key.startsWith('det');
+        const { key, base64Img, dims } = item; 
         if (!addedPage) { docPDF.addPage(); drawHeader("ANEXO FOTOGRAFICO"); addedPage = true; } 
         try { 
           const ratio = dims.h / dims.w; let imgW = 85; let imgH = imgW * ratio; if (imgH > 95) { imgH = 95; imgW = imgH / ratio; }
-          let isMapPage = mapPageNum === docPDF.internal.getNumberOfPages();
-          if (isMapPage && !isDetail) { docPDF.addPage(); photoY = 46; currentCol = 1; isMapPage = false; drawHeader("ANEXO FOTOGRAFICO (CONT.)"); }
-          const isNextToMap = isMapPage && isDetail && photoY < 205;
-          if (isMapPage && isDetail && !isNextToMap) { docPDF.addPage(); photoY = 46; currentCol = 1; isMapPage = false; drawHeader("ANEXO FOTOGRAFICO (CONT.)"); }
-          if (isNextToMap) currentCol = 2;
+          
           const slotCenter = currentCol === 1 ? 55 : 155; let finalX = slotCenter - (imgW / 2);
-          if (!isMapPage && photoY + imgH > 275) { docPDF.addPage(); photoY = 46; currentCol = 1; drawHeader("ANEXO FOTOGRAFICO (CONT.)"); finalX = 55 - (imgW / 2); }
+          if (photoY + imgH > 275) { docPDF.addPage(); photoY = 46; currentCol = 1; drawHeader("ANEXO FOTOGRAFICO (CONT.)"); finalX = 55 - (imgW / 2); }
+          
           docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S'); docPDF.setFillColor(...lightBg); docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F'); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor); docPDF.text((labels[key] || key).toUpperCase(), finalX + (imgW/2), photoY - 3, { align: "center" }); 
           try { docPDF.addImage(base64Img, 'JPEG', finalX, photoY + 2, imgW, imgH); } catch(e) { docPDF.addImage(base64Img, 'PNG', finalX, photoY + 2, imgW, imgH); }
           if (typeof photos[key] === 'string' && photos[key].startsWith('http')) { docPDF.link(finalX, photoY + 2, imgW, imgH, { url: photos[key] }); }
-          if (isNextToMap) { photoY += (imgH > 80 ? imgH : 80) + 20; currentCol = 2; } else { if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 20; } }
+          
+          if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 20; } 
         } catch (err) { console.error("Error al incrustar la foto:", key, err); } 
       }
     }
@@ -1330,6 +1408,37 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           <p className={`text-[10px] font-black uppercase ${isFailed ? 'text-red-500' : 'text-green-600'}`}>{isFailed ? 'RECHAZADO' : 'ENTREGADO'}</p>
           <p className="text-slate-400 font-bold text-[9px]">{getDStr(j)}</p>
         </div>
+
+        {/* NUEVO: CRONÓMETRO Y KILOMETRAJE EN LA TARJETA FINALIZADA */}
+        {j.status === 'completed' && (j.arrivedDestinationAt || j.completedAt) && j.pickedUpAt && (
+            <div className="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-100 mb-3 shadow-inner">
+                <div className="flex items-center gap-2 flex-1">
+                    <div className="bg-blue-100 p-1.5 rounded-lg"><Clock className="w-3.5 h-3.5 text-blue-600"/></div>
+                    <div className="flex flex-col">
+                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">Tiempo en Ruta</span>
+                        <span className="text-xs font-extrabold text-slate-700 leading-tight">
+                            {(() => {
+                                const diffMs = (j.arrivedDestinationAt || j.completedAt) - j.pickedUpAt;
+                                const diffMins = Math.max(0, Math.floor(diffMs / 60000));
+                                const hrs = Math.floor(diffMins / 60);
+                                const mins = diffMins % 60;
+                                return hrs > 0 ? `${hrs}h ${mins}m` : `${mins} min`;
+                            })()}
+                        </span>
+                    </div>
+                </div>
+                <div className="w-px h-8 bg-slate-200 shrink-0 mx-2"></div>
+                <div className="flex items-center gap-2 flex-1">
+                    <div className="bg-emerald-100 p-1.5 rounded-lg"><MapPin className="w-3.5 h-3.5 text-emerald-600"/></div>
+                    <div className="flex flex-col">
+                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">Distancia</span>
+                        <span className="text-xs font-extrabold text-slate-700 leading-tight">
+                            {j.drivenDistance || 'No calculado'}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        )}
 
         {/* AVISO VISUAL DE ACTA YA COMPARTIDA/RENDIDA */}
         {j.sharedCount > 0 && (
