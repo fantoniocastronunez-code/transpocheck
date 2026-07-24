@@ -133,17 +133,20 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                try {
                    const service = new window.google.maps.DistanceMatrixService();
                    
-                   // 1. Detectar dirección exacta (Directorio) vs Nombre genérico
+                   // 1. Respaldo inteligente: Directorio -> O texto plano del Origen/Destino
                    let orig = (job.originAddress || job.originCommune) 
                        ? `${job.originAddress || ''} ${job.originCommune || ''}`.trim() 
                        : (job.origin || '');
-                       
+
                    let dest = (job.destAddress || job.destCommune) 
                        ? `${job.destAddress || ''} ${job.destCommune || ''}`.trim() 
-                       : (job.destination || '');
-                   
+                       : (job.destination || job.destName || '');
+
+                   // Si el texto plano dice nombres cortos (ej: "Las Torres"), le inyectamos una comuna por defecto de Santiago si no la tiene
+                   if (orig && !orig.toLowerCase().includes('chile')) orig = `${orig}, Santiago`;
+                   if (dest && !dest.toLowerCase().includes('chile')) dest = `${dest}, Santiago`;
+
                    if (orig && dest) {
-                       // 2. Forzamos a Google a buscar en Chile para mayor exactitud
                        const finalOrig = `${orig}, Chile`;
                        const finalDest = `${dest}, Chile`;
 
