@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { 
     BarChart3, TrendingUp, Users, Car, CheckCircle, 
-    XCircle, AlertTriangle, Map, Navigation 
+    XCircle, AlertTriangle, Map, Navigation, Repeat 
 } from 'lucide-react';
 
 export default function StatsView({ jobs, drivers, vehicles, allClientsList }) {
@@ -78,6 +78,22 @@ export default function StatsView({ jobs, drivers, vehicles, allClientsList }) {
         const topDriversKm = Object.entries(driverKms)
             .sort((a, b) => b[1] - a[1]);
 
+        // --- 6. Patentes más repetidas ---
+        const plateCounts = {};
+        monthlyJobs.forEach(j => {
+            // Buscamos si tiene patente o VIN válido (ignoramos los 'S/N')
+            const plate = (j.plate && j.plate !== 'S/N') ? j.plate : ((j.vin && j.vin !== 'S/N') ? j.vin : null);
+            if (plate) {
+                const cleanPlate = plate.toUpperCase().trim();
+                plateCounts[cleanPlate] = (plateCounts[cleanPlate] || 0) + 1;
+            }
+        });
+        
+        // Filtramos para mostrar solo el top 5
+        const topPlates = Object.entries(plateCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5);
+
         return {
             totalJobs: monthlyJobs.length,
             topClients,
@@ -85,7 +101,8 @@ export default function StatsView({ jobs, drivers, vehicles, allClientsList }) {
             regionJobs,
             totalKm: Math.round(totalKm),
             todayKm: Math.round(todayKm),
-            topDriversKm
+            topDriversKm,
+            topPlates
         };
 
     }, [jobs, drivers]);
@@ -246,6 +263,35 @@ export default function StatsView({ jobs, drivers, vehicles, allClientsList }) {
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+                    )}
+                </div>
+
+                {/* 5. vehículos más movidos (patentes repetidas) */}
+                <div classname="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                    <div classname="flex items-center gap-2 mb-4 border-b border-slate-50 pb-3">
+                        <div classname="bg-rose-100 p-2 rounded-xl"><repeat classname="w-4 h-4 text-rose-600"/></div>
+                        <h3 classname="font-extrabold text-slate-800">vehículos frecuentes</h3>
+                    </div>
+                    
+                    {stats.topplates.length === 0 ? (
+                        <p classname="text-xs text-center text-slate-400 font-bold py-4">no hay patentes registradas este mes.</p>
+                    ) : (
+                        <div classname="space-y-3">
+                            {stats.topplates.map(([plate, count], idx) => (
+                                <div key={plate} classname="flex items-center justify-between p-2 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-100">
+                                    <div classname="flex items-center gap-3">
+                                        <span classname={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${idx === 0 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>{idx + 1}</span>
+                                        {/* placa estilo chileno con tailwind puro */}
+                                        <div classname="bg-white border-2 border-slate-800 text-slate-800 px-2.5 py-0.5 rounded-md text-xs font-black tracking-widest shadow-sm">
+                                            {plate}
+                                        </div>
+                                    </div>
+                                    <div classname="bg-rose-50 text-rose-600 px-2 py-1 rounded-lg text-[10px] font-black tracking-widest border border-rose-100">
+                                        {count} viajes
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     )}
                 </div>
