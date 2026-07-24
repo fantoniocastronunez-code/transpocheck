@@ -791,7 +791,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               docPDF.rect(vx+vw-12, vy+4, 6, vh-8, 'f'); // parabrisas trasero
           } 
           
-          detailpins.foreach(pin => { 
+          detailPins.foreach(pin => { 
               // convertir coordenadas del eje y al eje x (para rotarlo)
               const px = vx + (vw * (pin.y / 100)); 
               // convertir coordenadas del eje x al eje y, e invertirlas para que coincidan con la rotación
