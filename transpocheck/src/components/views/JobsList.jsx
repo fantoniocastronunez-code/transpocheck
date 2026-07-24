@@ -692,17 +692,19 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       const detailPins = job.checklist?.detailPins || [];
       if (detailPins.length > 0 && job.tripType !== 'simple') { docPDF.addPage(); drawHeader("ESQUEMA DE DAÑOS Y DETALLES"); addedPage = true; mapPageNum = docPDF.internal.getNumberOfPages(); const mapX = 15; const mapY = 50; const mapW = 85; const mapH = 150; docPDF.setFillColor(248, 250, 252); docPDF.roundedRect(mapX, mapY, mapW, mapH, 3, 3, 'F'); docPDF.setDrawColor(203, 213, 225); docPDF.roundedRect(mapX, mapY, mapW, mapH, 3, 3, 'S'); const vType = job.checklist.vehicleType || 'auto'; const vx = mapX + 12; const vw = mapW - 24; const vy = mapY + 12; const vh = mapH - 24; docPDF.setFillColor(203, 213, 225); docPDF.setDrawColor(148, 163, 184); docPDF.setLineWidth(1); if (vType === 'camioneta') { docPDF.roundedRect(vx, vy, vw, vh*0.35, 3, 3, 'FD'); docPDF.setFillColor(71, 85, 105); docPDF.rect(vx+5, vy+5, vw-10, 8, 'F'); docPDF.setFillColor(226, 232, 240); docPDF.roundedRect(vx+2, vy+vh*0.38, vw-4, vh*0.62, 2, 2, 'FD'); } else if (vType === 'camion') { docPDF.setFillColor(191, 219, 254); docPDF.roundedRect(vx-2, vy, vw+4, vh*0.2, 2, 2, 'FD'); docPDF.setFillColor(226, 232, 240); docPDF.roundedRect(vx, vy+vh*0.22, vw, vh*0.78, 1, 1, 'FD'); } else { docPDF.roundedRect(vx, vy, vw, vh, 6, 6, 'FD'); docPDF.setFillColor(71, 85, 105); docPDF.rect(vx+5, vy+10, vw-10, 10, 'F'); docPDF.rect(vx+5, vy+vh-15, vw-10, 8, 'F'); } detailPins.forEach(pin => { const px = vx + (vw * (pin.x / 100)); const py = vy + (vh * (pin.y / 100)); docPDF.setFillColor(239, 68, 68); docPDF.circle(px, py, 6, 'F'); docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(11); docPDF.setFont("helvetica", "bold"); docPDF.text(pin.id.replace('det', ''), px, py + 1.5, {align: 'center', baseline: 'middle'}); }); docPDF.setFontSize(9); docPDF.setTextColor(100, 116, 139); docPDF.setFont("helvetica", "normal"); docPDF.text("Los numeros rojos indican daños en el anexo:", mapX + (mapW/2), mapY + mapH + 6, null, null, "center"); photoY = 50; }
       
-      for (const item of preloadedOtherPhotos) { 
-        if (!item) continue;
-        const { key, base64Img, dims } = item;
+      const sortedOtherPhotos = [...preloadedOtherPhotos].filter(Boolean).sort((a, b) => { const aIsDet = a.key.startsWith('det'); const bIsDet = b.key.startsWith('det'); if (aIsDet && !bIsDet) return -1; if (!aIsDet && bIsDet) return 1; if (aIsDet && bIsDet) return parseInt(a.key.replace('det','')) - parseInt(b.key.replace('det','')); return 0; });
+      for (const item of sortedOtherPhotos) { 
+        const { key, base64Img, dims } = item; const isDetail = key.startsWith('det');
         if (!addedPage) { docPDF.addPage(); drawHeader("ANEXO FOTOGRAFICO"); addedPage = true; } 
         try { 
           const ratio = dims.h / dims.w; let imgW = 85; let imgH = imgW * ratio; if (imgH > 95) { imgH = 95; imgW = imgH / ratio; }
-          const isMapPage = mapPageNum === docPDF.internal.getNumberOfPages();
-          const isNextToMap = isMapPage && photoY < 205;
+          let isMapPage = mapPageNum === docPDF.internal.getNumberOfPages();
+          if (isMapPage && !isDetail) { docPDF.addPage(); photoY = 46; currentCol = 1; isMapPage = false; drawHeader("ANEXO FOTOGRAFICO (CONT.)"); }
+          const isNextToMap = isMapPage && isDetail && photoY < 205;
+          if (isMapPage && isDetail && !isNextToMap) { docPDF.addPage(); photoY = 46; currentCol = 1; isMapPage = false; drawHeader("ANEXO FOTOGRAFICO (CONT.)"); }
           if (isNextToMap) currentCol = 2;
           const slotCenter = currentCol === 1 ? 55 : 155; let finalX = slotCenter - (imgW / 2);
-          if (photoY + imgH > 275) { docPDF.addPage(); photoY = 46; currentCol = 1; drawHeader("ANEXO FOTOGRAFICO (CONT.)"); finalX = 55 - (imgW / 2); }
+          if (!isMapPage && photoY + imgH > 275) { docPDF.addPage(); photoY = 46; currentCol = 1; drawHeader("ANEXO FOTOGRAFICO (CONT.)"); finalX = 55 - (imgW / 2); }
           docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S'); docPDF.setFillColor(...lightBg); docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F'); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor); docPDF.text((labels[key] || key).toUpperCase(), finalX + (imgW/2), photoY - 3, { align: "center" }); 
           try { docPDF.addImage(base64Img, 'JPEG', finalX, photoY + 2, imgW, imgH); } catch(e) { docPDF.addImage(base64Img, 'PNG', finalX, photoY + 2, imgW, imgH); }
           if (typeof photos[key] === 'string' && photos[key].startsWith('http')) { docPDF.link(finalX, photoY + 2, imgW, imgH, { url: photos[key] }); }
