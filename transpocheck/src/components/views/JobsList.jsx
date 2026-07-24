@@ -916,7 +916,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       if (job.status === 'failed') {
         textToShare = `❌ TRASLADO FALLIDO\nMotivo: ${job.failedReason || 'No especificada'}\n\n${textToShare}`;
       } else if (job.tripType === 'revision') {
-        // Personalizamos el mensaje al compartir el PDF por WhatsApp
         if (job.checklist?.rtStatus === 'aprobado') {
            textToShare = `✅ APROBADO (LEGAL)\n\n${textToShare}`;
         } else if (job.checklist?.rtStatus === 'aprobado_ayuda') {
@@ -938,23 +937,29 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       document.body.removeChild(textArea);
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) { 
-         await navigator.share({ 
-           title: fileName, 
-           text: textToShare,
-           files: [file] 
-         }); 
+         try {
+            await navigator.share({ 
+              title: fileName, 
+              text: textToShare,
+              files: [file] 
+            }); 
+         } catch (shareError) {
+            // Si el usuario no lo canceló manualmente, significa que el navegador bloqueó la ventana
+            if (shareError.name !== 'AbortError') {
+               showAlert("El dispositivo bloqueó compartir directamente. Descargando archivo y copiando texto...");
+               docPDF.save(fileName);
+               handleCopyWhatsApp(job);
+            }
+         }
       } else { 
-         showAlert("Tu dispositivo no soporta compartir el archivo directamente. Descárgalo primero."); 
+         showAlert("Tu dispositivo no soporta compartir el archivo directamente. Descargando PDF y copiando texto..."); 
+         docPDF.save(fileName); // Antes esto no estaba y no bajaba el archivo
          handleCopyWhatsApp(job); 
       }
 
-      // NUEVO: Sumar +1 al contador de compartidos en la base de datos
-      await updateDoc(doc(db, 'transport_jobs', job.id), {
-         sharedCount: (job.sharedCount || 0) + 1
-      });
-
     } catch (e) { 
-      console.error("Compartir cancelado o fallido:", e); 
+      console.error("Error general al intentar compartir:", e);
+      showAlert("Hubo un error al preparar el documento. Verifica tu conexión.");
     } finally { 
       setProcessingId(null); 
     }
