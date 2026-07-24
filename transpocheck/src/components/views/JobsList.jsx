@@ -132,13 +132,24 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
            if (window.google && window.google.maps) {
                try {
                    const service = new window.google.maps.DistanceMatrixService();
-                   const orig = job.origin || '';
-                   const dest = job.destination || '';
+                   
+                   // 1. Detectar dirección exacta (Directorio) vs Nombre genérico
+                   let orig = (job.originAddress || job.originCommune) 
+                       ? `${job.originAddress || ''} ${job.originCommune || ''}`.trim() 
+                       : (job.origin || '');
+                       
+                   let dest = (job.destAddress || job.destCommune) 
+                       ? `${job.destAddress || ''} ${job.destCommune || ''}`.trim() 
+                       : (job.destination || '');
                    
                    if (orig && dest) {
+                       // 2. Forzamos a Google a buscar en Chile para mayor exactitud
+                       const finalOrig = `${orig}, Chile`;
+                       const finalDest = `${dest}, Chile`;
+
                        const res = await service.getDistanceMatrix({
-                           origins: [orig],
-                           destinations: [dest],
+                           origins: [finalOrig],
+                           destinations: [finalDest],
                            travelMode: 'DRIVING'
                        });
                        if (res && res.rows[0].elements[0].status === 'OK') {
