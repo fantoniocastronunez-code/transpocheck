@@ -1490,6 +1490,54 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
            </div>
         )}
 
+        {/* NUEVO: SELECTOR RÁPIDO DE PRT PARA ADMIN */}
+        {isAdminView && j.tripType === 'revision' && (j.status === 'completed' || j.status === 'failed') && (
+            <div className="mb-3 bg-slate-50 border border-slate-200 rounded-xl p-2 flex flex-col gap-1.5 shadow-inner">
+                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest text-center">Auditar Resultado PRT:</span>
+                <div className="flex gap-1">
+                    <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            showConfirm("¿Cambiar el resultado de esta PRT a Aprobado Legal?", async () => {
+                                try {
+                                    await updateDoc(doc(db, 'transport_jobs', j.id), { prt_result: 'aprobado', checklist: { ...(j.checklist || {}), rtStatus: 'aprobado' }, status: 'completed', failedReason: deleteField() });
+                                    showAlert("✅ Corregido a Legal");
+                                } catch(err) { showAlert("Error al actualizar"); }
+                            });
+                        }}
+                        className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${j.prt_result === 'aprobado' || j.checklist?.rtStatus === 'aprobado' ? 'bg-green-500 text-white shadow-sm ring-2 ring-green-200' : 'bg-white border border-slate-200 text-slate-500 hover:bg-green-50 hover:text-green-600 hover:border-green-200'}`}>
+                        Legal
+                    </button>
+                    <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            showConfirm("¿Cambiar el resultado de esta PRT a Aprobado con Ayuda?", async () => {
+                                try {
+                                    await updateDoc(doc(db, 'transport_jobs', j.id), { prt_result: 'aprobado_ayuda', checklist: { ...(j.checklist || {}), rtStatus: 'aprobado_ayuda' }, status: 'completed', failedReason: deleteField() });
+                                    showAlert("✅ Corregido a Con Ayuda");
+                                } catch(err) { showAlert("Error al actualizar"); }
+                            });
+                        }}
+                        className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${j.prt_result === 'aprobado_ayuda' || j.checklist?.rtStatus === 'aprobado_ayuda' ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-200' : 'bg-white border border-slate-200 text-slate-500 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200'}`}>
+                        Ayuda
+                    </button>
+                    <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            showConfirm("¿Cambiar el resultado de esta PRT a Rechazado?", async () => {
+                                try {
+                                    await updateDoc(doc(db, 'transport_jobs', j.id), { prt_result: 'rechazado', checklist: { ...(j.checklist || {}), rtStatus: 'rechazado' }, status: 'failed', failedReason: 'Rechazo en Planta PRT (Editado por Admin)' });
+                                    showAlert("✅ Corregido a Rechazado");
+                                } catch(err) { showAlert("Error al actualizar"); }
+                            });
+                        }}
+                        className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${j.prt_result === 'rechazado' || j.checklist?.rtStatus === 'rechazado' ? 'bg-red-500 text-white shadow-sm ring-2 ring-red-200' : 'bg-white border border-slate-200 text-slate-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200'}`}>
+                        Rechazo
+                    </button>
+                </div>
+            </div>
+        )}
+
          <div className="flex gap-1.5 mt-auto">
           {isAdminView && <button onClick={()=>onEditJob(j)} className="flex-1 py-1.5 flex justify-center bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg transition-colors" title="Editar Traslado"><Edit2 className="w-3.5 h-3.5"/></button>}
           {isAdminView && <button onClick={()=>handleDuplicateJob(j)} className="flex-1 py-1.5 flex justify-center bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg transition-colors" title="Repetir Vehículo"><Repeat className="w-3.5 h-3.5"/></button>}
