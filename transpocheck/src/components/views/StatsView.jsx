@@ -59,29 +59,38 @@ export default function StatsView({ jobs, drivers, vehicles, allClientsList }) {
             }
         });
 
-        // --- 5. Especialización de Conductores ---
-        // ¿Qué chofer mueve más autos vs camiones?
-        const driverSpecialties = {};
+        // --- 5. Especialización de Conductores (Líder por Categoría) ---
+        const categoryCounts = {
+            'auto': {}, 'camioneta': {}, 'furgon_pequeno': {}, 'furgon_grande': {},
+            'camion_simple': {}, 'camion_doble': {}, 'camion_2ejes': {},
+            'camion_3ejes': {}, 'camion_8x4': {}, 'carro_arrastre': {}
+        };
+
         monthlyJobs.forEach(j => {
             if (j.status !== 'completed' || !j.acceptedByEmail) return;
-            const drv = drivers.find(d => d.email === j.acceptedByEmail)?.name || 'Desconocido';
+            const drvName = drivers.find(d => d.email === j.acceptedByEmail)?.name || 'Desconocido';
+            const vType = j.checklist?.vehicleType || 'auto'; // Si no hay, asumimos auto por defecto
             
-            if (!driverSpecialties[drv]) {
-                driverSpecialties[drv] = { total: 0, Auto: 0, Camioneta: 0, Camion: 0, Otro: 0 };
+            if (categoryCounts[vType] !== undefined) {
+                categoryCounts[vType][drvName] = (categoryCounts[vType][drvName] || 0) + 1;
             }
-            driverSpecialties[drv].total++;
-
-            // Determinar categoría
-            const vType = (j.checklist?.vehicleType || '').toLowerCase();
-            if (['auto', 'suv', 'hatchback', 'sedan'].includes(vType)) driverSpecialties[drv].Auto++;
-            else if (['camioneta', 'pickup'].includes(vType)) driverSpecialties[drv].Camioneta++;
-            else if (['camion', 'furgon'].includes(vType)) driverSpecialties[drv].Camion++;
-            else driverSpecialties[drv].Otro++;
         });
 
-        const topDrivers = Object.entries(driverSpecialties)
-            .sort((a, b) => b[1].total - a[1].total)
-            .slice(0, 5);
+        // Encontrar el conductor con más traslados por cada categoría
+        const topDriversByCategory = {};
+        for (const [cat, counts] of Object.entries(categoryCounts)) {
+            let topDriver = null;
+            let maxCount = 0;
+            for (const [drv, count] of Object.entries(counts)) {
+                if (count > maxCount) {
+                    maxCount = count;
+                    topDriver = drv;
+                }
+            }
+            if (topDriver) {
+                topDriversByCategory[cat] = { name: topDriver, count: maxCount };
+            }
+        }
 
         return {
             totalJobs: monthlyJobs.length,
@@ -90,7 +99,7 @@ export default function StatsView({ jobs, drivers, vehicles, allClientsList }) {
             regionJobs,
             totalKm: Math.round(totalKm),
             todayKm: Math.round(todayKm),
-            topDrivers
+            topDriversByCategory
         };
 
     }, [jobs, drivers]);
@@ -214,45 +223,47 @@ export default function StatsView({ jobs, drivers, vehicles, allClientsList }) {
                     </div>
                 </div>
 
-                {/* 4. ESPECIALIZACIÓN DE CONDUCTORES */}
+                {/* 4. ESPECIALIZACIÓN DE CONDUCTORES (NUEVO DISEÑO VERTICAL) */}
                 <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
-                    <div className="flex items-center gap-2 mb-4 border-b border-slate-50 pb-3">
-                        <div className="bg-indigo-100 p-2 rounded-xl"><Car className="w-4 h-4 text-indigo-600"/></div>
-                        <h3 className="font-extrabold text-slate-800">Especialización de Flota</h3>
+                    <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-3">
+                        <div className="flex items-center gap-2">
+                            <div className="bg-indigo-100 p-2 rounded-xl"><Car className="w-4 h-4 text-indigo-600"/></div>
+                            <h3 className="font-extrabold text-slate-800">Líderes por Vehículo</h3>
+                        </div>
                     </div>
                     
-                    {stats.topDrivers.length === 0 ? (
-                        <p className="text-xs text-center text-slate-400 font-bold py-4">No hay datos de conducción este mes.</p>
+                    {Object.keys(stats.topDriversByCategory).length === 0 ? (
+                        <p className="text-xs text-center text-slate-400 font-bold py-4">Aún no hay datos suficientes de categorías este mes.</p>
                     ) : (
-                        <div className="overflow-x-auto scrollbar-none -mx-2 px-2">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr>
-                                        <th className="pb-2 text-[9px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100">Conductor</th>
-                                        <th className="pb-2 text-[9px] font-black uppercase text-slate-400 tracking-widest text-center border-b border-slate-100">Autos</th>
-                                        <th className="pb-2 text-[9px] font-black uppercase text-slate-400 tracking-widest text-center border-b border-slate-100">Pickup</th>
-                                        <th className="pb-2 text-[9px] font-black uppercase text-slate-400 tracking-widest text-center border-b border-slate-100">Pesados</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {stats.topDrivers.map(([name, data]) => (
-                                        <tr key={name} className="hover:bg-slate-50 transition-colors">
-                                            <td className="py-2.5 pr-2 border-b border-slate-50">
-                                                <p className="text-xs font-bold text-slate-700 whitespace-nowrap">{name.split(' ')[0]} {name.split(' ')[1] ? name.split(' ')[1].charAt(0) + '.' : ''}</p>
-                                            </td>
-                                            <td className="py-2.5 px-1 border-b border-slate-50 text-center">
-                                                <span className={`text-xs font-black ${data.Auto > 0 ? 'text-indigo-600' : 'text-slate-300'}`}>{data.Auto}</span>
-                                            </td>
-                                            <td className="py-2.5 px-1 border-b border-slate-50 text-center">
-                                                <span className={`text-xs font-black ${data.Camioneta > 0 ? 'text-amber-600' : 'text-slate-300'}`}>{data.Camioneta}</span>
-                                            </td>
-                                            <td className="py-2.5 px-1 border-b border-slate-50 text-center">
-                                                <span className={`text-xs font-black ${data.Camion > 0 ? 'text-red-600' : 'text-slate-300'}`}>{data.Camion}</span>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                        <div className="space-y-3">
+                            {/* Mapeamos los nombres técnicos a nombres legibles para la UI */}
+                            {[
+                                { key: 'auto', label: 'Autos / SUV' },
+                                { key: 'camioneta', label: 'Camioneta' },
+                                { key: 'furgon_pequeno', label: 'Furgón Pequeño' },
+                                { key: 'furgon_grande', label: 'Furgón Grande' },
+                                { key: 'camion_simple', label: 'Camión Simple' },
+                                { key: 'camion_doble', label: 'Camión Doble Cabina' },
+                                { key: 'camion_2ejes', label: 'Camión (2 Ejes Traseros)' },
+                                { key: 'camion_3ejes', label: 'Camión (3 Ejes Traseros)' },
+                                { key: 'camion_8x4', label: 'Camión Rigid (8x4)' },
+                                { key: 'carro_arrastre', label: 'Carro de Arrastre' }
+                            ].map(({ key, label }) => {
+                                const leader = stats.topDriversByCategory[key];
+                                if (!leader) return null; // Solo muestra la categoría si hay alguien que la haya manejado
+
+                                return (
+                                    <div key={key} className="flex flex-col gap-1 border-b border-slate-50 pb-2 last:border-0">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</p>
+                                        <div className="flex justify-between items-center bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                            <p className="text-xs font-bold text-slate-700 truncate pr-2">{leader.name}</p>
+                                            <div className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-black shrink-0">
+                                                {leader.count} Viajes
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
                 </div>
