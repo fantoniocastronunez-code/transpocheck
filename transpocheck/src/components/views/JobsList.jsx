@@ -123,17 +123,18 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     try { 
        let finalExtra = { ...extra };
 
-       // --- NUEVO: CRONÓMETRO Y KILOMETRAJE CON GOOGLE MAPS ---
+       // --- NUEVO SEGURO: CRONÓMETRO Y KILOMETRAJE CON PROTECCIÓN ANTIBLOQUEO ---
        if (phase === 'arrived_destination' || phase === 'arrived_prt') {
            if (!job.arrivedDestinationAt) { 
                finalExtra.arrivedDestinationAt = Date.now();
            }
            
+           finalExtra.drivenDistance = 'No calculado';
+
            if (window.google && window.google.maps) {
                try {
                    const service = new window.google.maps.DistanceMatrixService();
                    
-                   // 1. Respaldo inteligente: Directorio -> O texto plano del Origen/Destino
                    let orig = (job.originAddress || job.originCommune) 
                        ? `${job.originAddress || ''} ${job.originCommune || ''}`.trim() 
                        : (job.origin || '');
@@ -142,7 +143,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                        ? `${job.destAddress || ''} ${job.destCommune || ''}`.trim() 
                        : (job.destination || job.destName || '');
 
-                   // Si el texto plano dice nombres cortos (ej: "Las Torres"), le inyectamos una comuna por defecto de Santiago si no la tiene
                    if (orig && !orig.toLowerCase().includes('chile')) orig = `${orig}, Santiago`;
                    if (dest && !dest.toLowerCase().includes('chile')) dest = `${dest}, Santiago`;
 
@@ -150,26 +150,33 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                        const finalOrig = `${orig}, Chile`;
                        const finalDest = `${dest}, Chile`;
 
-                       const res = await service.getDistanceMatrix({
-                           origins: [finalOrig],
-                           destinations: [finalDest],
-                           travelMode: 'DRIVING'
+                       // Creamos una promesa con límite de tiempo (timeout de 4 segundos) para que Google jamás cuelgue la app
+                       const distancePromise = new Promise((resolve, reject) => {
+                           service.getDistanceMatrix({
+                               origins: [finalOrig],
+                               destinations: [finalDest],
+                               travelMode: 'DRIVING'
+                           }, (response, status) => {
+                               if (status === 'OK') resolve(response);
+                               else reject(status);
+                           });
                        });
-                       if (res && res.rows[0].elements[0].status === 'OK') {
+
+                       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject('Timeout'), 4000));
+
+                       const res = await Promise.race([distancePromise, timeoutPromise]);
+                       
+                       if (res && res.rows && res.rows[0].elements[0].status === 'OK') {
                            finalExtra.drivenDistance = res.rows[0].elements[0].distance.text;
-                       } else {
-                           finalExtra.drivenDistance = 'No calc.';
                        }
                    }
                } catch (err) {
-                   console.error("Error Maps API:", err);
-                   finalExtra.drivenDistance = 'Error API';
+                   console.warn("Aviso Maps API (Continuando sin bloqueo):", err);
+                   finalExtra.drivenDistance = 'No calculado';
                }
-           } else {
-               finalExtra.drivenDistance = 'Sin Maps API';
            }
        }
-       // --------------------------------------------------------
+       // ------------------------------------------------------------------------
 
        await updateDoc(doc(db, 'transport_jobs', job.id), { phase, ...finalExtra });
        
