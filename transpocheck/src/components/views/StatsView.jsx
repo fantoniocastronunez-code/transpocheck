@@ -46,7 +46,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
 
         monthlyJobs.forEach(j => {
             if (j.drivenDistance && j.drivenDistance.includes('km')) {
-                const km = parseFloat(j.drivenDistance.replace(/[^\d.]/g, ''));
+                const km = parseFloat(j.drivenDistance.replace(',', '.').replace(/[^\d.]/g, ''));
                 if (!isNaN(km)) {
                     totalKm += km;
                     if (j.completedAt) {
@@ -62,7 +62,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
         monthlyJobs.forEach(j => {
             if (j.status !== 'completed' || !j.acceptedByEmail) return;
             if (j.drivenDistance && j.drivenDistance.includes('km')) {
-                const km = parseFloat(j.drivenDistance.replace(/[^\d.]/g, ''));
+                const km = parseFloat(j.drivenDistance.replace(',', '.').replace(/[^\d.]/g, ''));
                 if (!isNaN(km)) {
                     const drvName = (Array.isArray(drivers) ? drivers.find(d => d.email === j.acceptedByEmail)?.name : null) || 'Desconocido';
                     driverKms[drvName] = (driverKms[drvName] || 0) + km;
@@ -75,12 +75,18 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
         const categoryCounts = {
             'auto': {}, 'camioneta': {}, 'furgon_pequeno': {}, 'furgon_grande': {},
             'camion_simple': {}, 'camion_doble': {}, 'camion_2ejes': {},
-            'camion_3ejes': {}, 'camion_8x4': {}, 'carro_arrastre': {}
+            'camion_3ejes': {}, 'camion_8x4': {}, 'carro_arrastre': {}, 'servicio': {}
         };
         monthlyJobs.forEach(j => {
             if (j.status !== 'completed' || !j.acceptedByEmail) return;
             const drvName = (Array.isArray(drivers) ? drivers.find(d => d.email === j.acceptedByEmail)?.name : null) || 'Desconocido';
-            const vType = j.checklist?.vehicleType || 'auto';
+            
+            // Lógica corregida: Si el tipo de viaje es 'simple' (Servicio), lo enviamos a su propia categoría
+            let vType = (j.checklist?.vehicleType || 'auto').toLowerCase();
+            if (j.tripType === 'simple') {
+                vType = 'servicio';
+            }
+
             if (categoryCounts[vType] !== undefined) {
                 categoryCounts[vType][drvName] = (categoryCounts[vType][drvName] || 0) + 1;
             }
@@ -156,7 +162,11 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
     const handleCategoryClick = (categoryKey, driverName, categoryLabel) => {
         const filtered = stats.monthlyJobs.filter(j => {
             const drvName = (Array.isArray(drivers) ? drivers.find(d => d.email === j.acceptedByEmail)?.name : null) || 'Desconocido';
-            const vType = (j.checklist?.vehicleType || 'auto').toLowerCase();
+            let vType = (j.checklist?.vehicleType || 'auto').toLowerCase();
+            // Lógica corregida para que el filtro coincida con el cálculo
+            if (j.tripType === 'simple') {
+                vType = 'servicio';
+            }
             return drvName === driverName && vType === categoryKey;
         });
         setModalData({ title: `${categoryLabel} - ${driverName}`, jobs: filtered });
@@ -321,7 +331,8 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                                 { key: 'camion_2ejes', label: 'CAMIÓN (2 EJES TRASEROS)' },
                                 { key: 'camion_3ejes', label: 'CAMIÓN (3 EJES TRASEROS)' },
                                 { key: 'camion_8x4', label: 'CAMIÓN 8X4' },
-                                { key: 'carro_arrastre', label: 'CARRO DE ARRASTRE' }
+                                { key: 'carro_arrastre', label: 'CARRO DE ARRASTRE' },
+                                { key: 'servicio', label: 'SERVICIOS EN TERRENO' }
                             ].map(({ key, label }) => {
                                 const leader = stats.topDriversByCategory[key];
                                 if (!leader) return null;
