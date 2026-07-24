@@ -113,7 +113,7 @@ export default function StatsView({ jobs, drivers, vehicles, allClientsList }) {
                         <p className="text-3xl font-black">{stats.totalJobs}</p>
                     </div>
                     <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl flex-1 min-w-[120px]">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200 mb-1 flex items-center gap-1"><Map /> KM Este Mes</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200 mb-1 flex items-center gap-1"><Map className="w-3 h-3" /> KM Este Mes</p>
                         <p className="text-3xl font-black text-emerald-300">{stats.totalKm} <span className="text-sm font-bold text-emerald-100">km</span></p>
                     </div>
                 </div>
@@ -233,3 +233,31 @@ export default function StatsView({ jobs, drivers, vehicles, allClientsList }) {
                                         <th className="pb-2 text-[9px] font-black uppercase text-slate-400 tracking-widest text-center border-b border-slate-100">Pickup</th>
                                         <th className="pb-2 text-[9px] font-black uppercase text-slate-400 tracking-widest text-center border-b border-slate-100">Pesados</th>
                                     </tr>
+                                </thead>
+                                <tbody>
+                                    {stats.topDrivers.map(([name, data]) => (
+                                        <tr key={name} className="hover:bg-slate-50 transition-colors">
+                                            <td className="py-2.5 pr-2 border-b border-slate-50">
+                                                <p className="text-xs font-bold text-slate-700 whitespace-nowrap">{name.split(' ')[0]} {name.split(' ')[1] ? name.split(' ')[1].charAt(0) + '.' : ''}</p>
+                                            </td>
+                                            <td className="py-2.5 px-1 border-b border-slate-50 text-center">
+                                                <span className={`text-xs font-black ${data.Auto > 0 ? 'text-indigo-600' : 'text-slate-300'}`}>{data.Auto}</span>
+                                            </td>
+                                            <td className="py-2.5 px-1 border-b border-slate-50 text-center">
+                                                <span className={`text-xs font-black ${data.Camioneta > 0 ? 'text-amber-600' : 'text-slate-300'}`}>{data.Camioneta}</span>
+                                            </td>
+                                            <td className="py-2.5 px-1 border-b border-slate-50 text-center">
+                                                <span className={`text-xs font-black ${data.Camion > 0 ? 'text-red-600' : 'text-slate-300'}`}>{data.Camion}</span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+
+            </div>
+        </div>
+    );
+}
