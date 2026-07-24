@@ -123,7 +123,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     try { 
        let finalExtra = { ...extra };
 
-       // --- NUEVO SEGURO: CRONÓMETRO Y KILOMETRAJE CON PROTECCIÓN ANTIBLOQUEO ---
+       // --- NUEVO: CRONÓMETRO Y KILOMETRAJE CON BÚSQUEDA EN DIRECTORIO ---
        if (phase === 'arrived_destination' || phase === 'arrived_prt') {
            if (!job.arrivedDestinationAt) { 
                finalExtra.arrivedDestinationAt = Date.now();
@@ -135,26 +135,43 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                try {
                    const service = new window.google.maps.DistanceMatrixService();
                    
-                   let orig = (job.originAddress || job.originCommune) 
-                       ? `${job.originAddress || ''} ${job.originCommune || ''}`.trim() 
-                       : (job.origin || '');
+                   // 1. Buscamos primero en los campos guardados (Directorio) del trabajo
+                   let orig = job.originAddress ? `${job.originAddress}, ${job.originCommune || 'Santiago'}` : job.origin;
+                   let dest = job.destAddress ? `${job.destAddress}, ${job.destCommune || 'Santiago'}` : (job.destination || job.destName);
 
-                   let dest = (job.destAddress || job.destCommune) 
-                       ? `${job.destAddress || ''} ${job.destCommune || ''}`.trim() 
-                       : (job.destination || job.destName || '');
+                   // 2. Si no están guardados directamente en el job, intentamos consultar la colección 'clients' o 'directorio' en Firebase de forma dinámica
+                   if (!job.originAddress && job.origin) {
+                       try {
+                           const clientQuery = query(collection(db, 'clients'), where('name', '==', job.origin));
+                           const clientSnap = await getDocs(clientQuery);
+                           if (!clientSnap.empty) {
+                               const cData = clientSnap.docs[0].data();
+                               if (cData.address) orig = `${cData.address}, ${cData.commune || 'Santiago'}`;
+                           }
+                       } catch (e) { console.warn("No se pudo buscar origen en directorio:", e); }
+                   }
 
-                   if (orig && !orig.toLowerCase().includes('chile')) orig = `${orig}, Santiago`;
-                   if (dest && !dest.toLowerCase().includes('chile')) dest = `${dest}, Santiago`;
+                   if (!job.destAddress && (job.destination || job.destName)) {
+                       const targetDest = job.destination || job.destName;
+                       try {
+                           const clientQuery = query(collection(db, 'clients'), where('name', '==', targetDest));
+                           const clientSnap = await getDocs(clientQuery);
+                           if (!clientSnap.empty) {
+                               const cData = clientSnap.docs[0].data();
+                               if (cData.address) dest = `${cData.address}, ${cData.commune || 'Santiago'}`;
+                           }
+                       } catch (e) { console.warn("No se pudo buscar destino en directorio:", e); }
+                   }
+
+                   // Aseguramos que tengan la coletilla de Chile para Google Maps
+                   if (orig && !orig.toLowerCase().includes('chile')) orig = `${orig}, Chile`;
+                   if (dest && !dest.toLowerCase().includes('chile')) dest = `${dest}, Chile`;
 
                    if (orig && dest) {
-                       const finalOrig = `${orig}, Chile`;
-                       const finalDest = `${dest}, Chile`;
-
-                       // Creamos una promesa con límite de tiempo (timeout de 4 segundos) para que Google jamás cuelgue la app
                        const distancePromise = new Promise((resolve, reject) => {
                            service.getDistanceMatrix({
-                               origins: [finalOrig],
-                               destinations: [finalDest],
+                               origins: [orig],
+                               destinations: [dest],
                                travelMode: 'DRIVING'
                            }, (response, status) => {
                                if (status === 'OK') resolve(response);
@@ -163,7 +180,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                        });
 
                        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject('Timeout'), 4000));
-
                        const res = await Promise.race([distancePromise, timeoutPromise]);
                        
                        if (res && res.rows && res.rows[0].elements[0].status === 'OK') {
@@ -171,7 +187,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                        }
                    }
                } catch (err) {
-                   console.warn("Aviso Maps API (Continuando sin bloqueo):", err);
+                   console.warn("Aviso Maps API (Directorio):", err);
                    finalExtra.drivenDistance = 'No calculado';
                }
            }
