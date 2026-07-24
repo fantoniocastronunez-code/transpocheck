@@ -297,50 +297,8 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                     )}
                 </div>
 
-                {/* 5. ESPECIALIZACIÓN POR TIPO DE VEHÍCULO */}
+                {/* 5. VEHÍCULOS MÁS MOVIDOS (PATENTES REPETIDAS) */}
                 <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
-                    <div className="flex items-center gap-2 mb-4 border-b border-slate-50 pb-3">
-                        <div className="bg-blue-100 p-2 rounded-xl"><Car className="w-4 h-4 text-blue-600"/></div>
-                        <h3 className="font-extrabold text-slate-800">Líderes por Tipo de Vehículo</h3>
-                    </div>
-                    
-                    {(!stats.topDriversByCategory || Object.keys(stats.topDriversByCategory).length === 0) ? (
-                        <p className="text-xs text-center text-slate-400 font-bold py-4">Aún no hay datos de categorías este mes.</p>
-                    ) : (
-                        <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1 scrollbar-none">
-                            {[
-                                { key: 'auto', label: 'AUTOS / SUV' },
-                                { key: 'camioneta', label: 'CAMIONETA' },
-                                { key: 'furgon_pequeno', label: 'FURGÓN PEQUEÑO' },
-                                { key: 'furgon_grande', label: 'FURGÓN GRANDE' },
-                                { key: 'camion_simple', label: 'CAMIÓN SIMPLE' },
-                                { key: 'camion_doble', label: 'CAMIÓN DOBLE CABINA' },
-                                { key: 'camion_2ejes', label: 'CAMIÓN (2 EJES TRASEROS)' },
-                                { key: 'camion_3ejes', label: 'CAMIÓN (3 EJES TRASEROS)' },
-                                { key: 'camion_8x4', label: 'CAMIÓN 8X4' },
-                                { key: 'carro_arrastre', label: 'CARRO DE ARRASTRE' }
-                            ].map(({ key, label }) => {
-                                const leader = stats.topDriversByCategory[key];
-                                if (!leader) return null;
-
-                                return (
-                                    <div key={key} className="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                                        <div className="flex flex-col min-w-0 pr-2">
-                                            <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider truncate">{label}</span>
-                                            <span className="text-xs font-bold text-slate-800 truncate">{leader.name}</span>
-                                        </div>
-                                        <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-lg text-[10px] font-black shrink-0">
-                                            {leader.count} viajes
-                                        </span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                </div>
-
-                {/* 6. VEHÍCULOS MÁS MOVIDOS (PATENTES REPETIDAS) */}
-                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm md:col-span-2">
                     <div className="flex items-center gap-2 mb-4 border-b border-slate-50 pb-3">
                         <div className="bg-rose-100 p-2 rounded-xl"><Repeat className="w-4 h-4 text-rose-600"/></div>
                         <h3 className="font-extrabold text-slate-800">Vehículos Frecuentes del Mes</h3>
@@ -349,18 +307,18 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                     {(!stats.topPlates || stats.topPlates.length === 0) ? (
                         <p className="text-xs text-center text-slate-400 font-bold py-4">No hay patentes registradas este mes.</p>
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        <div className="space-y-3">
                             {stats.topPlates.map(([plate, count], idx) => (
-                                <div key={plate} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                                    <div className="flex items-center gap-2.5">
-                                        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black shrink-0 ${idx === 0 ? 'bg-amber-100 text-amber-700' : 'bg-slate-200 text-slate-600'}`}>{idx + 1}</span>
-                                        <div className="bg-white border-2 border-slate-800 text-slate-800 px-2 py-0.5 rounded-md text-xs font-black tracking-widest shadow-sm">
+                                <div key={plate} className="flex items-center justify-between p-2 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-100">
+                                    <div className="flex items-center gap-3">
+                                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${idx === 0 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>{idx + 1}</span>
+                                        <div className="bg-white border-2 border-slate-800 text-slate-800 px-2.5 py-0.5 rounded-md text-xs font-black tracking-widest shadow-sm">
                                             {plate}
                                         </div>
                                     </div>
-                                    <span className="bg-rose-50 text-rose-600 px-2 py-0.5 rounded-lg text-[10px] font-black tracking-wider border border-rose-100">
+                                    <div className="bg-rose-50 text-rose-600 px-2 py-1 rounded-lg text-[10px] font-black tracking-widest border border-rose-100">
                                         {count} VIAJES
-                                    </span>
+                                    </div>
                                 </div>
                             ))}
                         </div>
