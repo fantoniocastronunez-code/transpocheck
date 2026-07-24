@@ -1759,55 +1759,97 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                       const isFailed = j.status === 'failed';
                       const ident = getJobIdentifier(j);
                       return (
-                          <div key={j.id} className="p-2 sm:p-3 hover:bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between transition-colors gap-2 sm:gap-0">
-                              <div className="flex items-center gap-2 overflow-hidden">
-                                  <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                                  <div className="flex flex-col min-w-0">
-                                      <div className="flex items-center gap-2">
-                                          {j.tripType === 'simple' ? (
-                                              <p className="text-xs font-black text-purple-800 truncate">{j.description || 'Servicio en Terreno'}</p>
-                                          ) : (
-                                              <p className="text-xs font-black text-slate-800 truncate">{j.brand} {j.model}</p>
-                                          )}
-                                          {j.tripType === 'simple' ? (
-                                              <span className="text-[9px] bg-purple-100 border border-purple-200 text-purple-800 px-1.5 py-0.5 rounded font-black uppercase shadow-sm">SERVICIO</span>
-                                          ) : (
-                                              <LicensePlateBadge text={ident} />
-                                          )}
+                              <div key={j.id} className="p-2 sm:p-3 hover:bg-slate-50 flex flex-col transition-colors gap-2 border-b border-slate-100 last:border-0">
+                                  {/* FILA ORIGINAL COMPACTA */}
+                                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
+                                      <div className="flex items-center gap-2 overflow-hidden">
+                                          <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                                          <div className="flex flex-col min-w-0">
+                                              <div className="flex items-center gap-2">
+                                                  {j.tripType === 'simple' ? (
+                                                      <p className="text-xs font-black text-purple-800 truncate">{j.description || 'Servicio en Terreno'}</p>
+                                                  ) : (
+                                                      <p className="text-xs font-black text-slate-800 truncate">{j.brand} {j.model}</p>
+                                                  )}
+                                                  {j.tripType === 'simple' ? (
+                                                      <span className="text-[9px] bg-purple-100 border border-purple-200 text-purple-800 px-1.5 py-0.5 rounded font-black uppercase shadow-sm">SERVICIO</span>
+                                                  ) : (
+                                                      <LicensePlateBadge text={ident} />
+                                                  )}
+                                              </div>
+                                              <p className="text-[10px] font-bold text-slate-500 truncate">
+                                                 {j.origin} 
+                                                 {j.waypoints && j.waypoints.length > 0 ? ` ➔ +${j.waypoints.length} int.` : ''}
+                                                 {j.destination && j.tripType !== 'simple' ? ` ➔ ${j.destination}` : ''}
+                                              </p>
+                                          </div>
                                       </div>
-                                      <p className="text-[10px] font-bold text-slate-500 truncate">
-                                         {j.origin} 
-                                         {j.waypoints && j.waypoints.length > 0 ? ` ➔ +${j.waypoints.length} int.` : ''}
-                                         {j.destination && j.tripType !== 'simple' ? ` ➔ ${j.destination}` : ''}
-                                      </p>
-                                  </div>
-                              </div>
-                              <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
-                                  <span className="text-[9px] font-bold text-slate-400 mr-2">{new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL')}</span>
-                                  {isAdminView && <button onClick={()=>onEditJob(j)} className="p-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-md transition-colors" title="Editar Traslado"><Edit2 className="w-3.5 h-3.5"/></button>}
-                                  {isAdminView && <button onClick={()=>handleDuplicateJob(j)} className="p-1.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-md transition-colors" title="Repetir Vehículo"><Repeat className="w-3.5 h-3.5"/></button>}
-                                  <button onClick={()=>cpyWapp(j)} className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md transition-colors" title="Copiar Resumen"><Copy className="w-3.5 h-3.5"/></button>
-                                  
-                                  {(() => {
-                                     const oldHistDocHref = j.guideLink || j.guideUrl || j.docLink || j.docUrl || j.rtLink || j.rtDoc || (j.rtData && j.rtData.link) || j.pdfUrl || j.fileUrl;
-                                     if (oldHistDocHref) {
-                                        return (
-                                          <a href={oldHistDocHref} target="_blank" rel="noreferrer" className="p-1.5 bg-cyan-50 text-cyan-600 hover:bg-cyan-100 rounded-md transition-colors" title="Ver Guía/Doc Adjunto">
-                                             <FileText className="w-3.5 h-3.5"/>
-                                          </a>
-                                        );
-                                     }
-                                     return null;
-                                  })()}
+                                      <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
+                                          <span className="text-[9px] font-bold text-slate-400 mr-2">{new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL')}</span>
+                                          {isAdminView && <button onClick={()=>onEditJob(j)} className="p-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-md transition-colors" title="Editar Traslado"><Edit2 className="w-3.5 h-3.5"/></button>}
+                                          {isAdminView && <button onClick={()=>handleDuplicateJob(j)} className="p-1.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-md transition-colors" title="Repetir Vehículo"><Repeat className="w-3.5 h-3.5"/></button>}
+                                          <button onClick={()=>cpyWapp(j)} className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md transition-colors" title="Copiar Resumen"><Copy className="w-3.5 h-3.5"/></button>
+                                          
+                                          {(() => {
+                                             const oldHistDocHref = j.guideLink || j.guideUrl || j.docLink || j.docUrl || j.rtLink || j.rtDoc || (j.rtData && j.rtData.link) || j.pdfUrl || j.fileUrl;
+                                             if (oldHistDocHref) {
+                                                return (
+                                                  <a href={oldHistDocHref} target="_blank" rel="noreferrer" className="p-1.5 bg-cyan-50 text-cyan-600 hover:bg-cyan-100 rounded-md transition-colors" title="Ver Guía/Doc Adjunto">
+                                                     <FileText className="w-3.5 h-3.5"/>
+                                                  </a>
+                                                );
+                                             }
+                                             return null;
+                                          })()}
 
-                                  <button onClick={() => generatePDF(j)} className="p-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-md transition-colors" title="Descargar PDF"><FileDown className="w-3.5 h-3.5"/></button>
-                                  <button onClick={() => handleShareWhatsAppPDF(j)} disabled={processingId === `${j.id}-wapp`} className="p-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-md transition-colors disabled:opacity-50" title="Compartir PDF">
-                                    {processingId === `${j.id}-wapp` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : <Share2 className="w-3.5 h-3.5"/>}
-                                  </button>
-                                  {isAdminView && <button onClick={()=>handleDeleteJob(j.id)} className="p-1.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-md transition-colors" title="Eliminar Traslado"><Trash2 className="w-3.5 h-3.5"/></button>}
+                                          <button onClick={() => generatePDF(j)} className="p-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-md transition-colors" title="Descargar PDF"><FileDown className="w-3.5 h-3.5"/></button>
+                                          <button onClick={() => handleShareWhatsAppPDF(j)} disabled={processingId === `${j.id}-wapp`} className="p-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-md transition-colors disabled:opacity-50" title="Compartir PDF">
+                                            {processingId === `${j.id}-wapp` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : <Share2 className="w-3.5 h-3.5"/>}
+                                          </button>
+                                          {isAdminView && <button onClick={()=>handleDeleteJob(j.id)} className="p-1.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-md transition-colors" title="Eliminar Traslado"><Trash2 className="w-3.5 h-3.5"/></button>}
+                                      </div>
+                                  </div>
+
+                                  {/* NUEVO PANEL PRT AUDITORIA */}
+                                  {isAdminView && j.tripType === 'revision' && (j.status === 'completed' || j.status === 'failed') && (
+                                      <div className="bg-slate-100/50 border border-slate-200 rounded-lg p-2 mt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-inner ml-4">
+                                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Auditar Resultado PRT:</span>
+                                          <div className="flex gap-1">
+                                              <button 
+                                                  onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      showConfirm("¿Cambiar a Aprobado Legal?", async () => {
+                                                          try { await updateDoc(doc(db, 'transport_jobs', j.id), { prt_result: 'aprobado', checklist: { ...(j.checklist || {}), rtStatus: 'aprobado' }, status: 'completed', failedReason: deleteField() }); showAlert("✅ Corregido a Legal"); } catch(err) { showAlert("Error al actualizar"); }
+                                                      });
+                                                  }}
+                                                  className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${j.prt_result === 'aprobado' || j.checklist?.rtStatus === 'aprobado' ? 'bg-green-500 text-white shadow-sm ring-2 ring-green-200' : 'bg-white border border-slate-200 text-slate-500 hover:bg-green-50 hover:text-green-600 hover:border-green-200'}`}>
+                                                  Legal
+                                              </button>
+                                              <button 
+                                                  onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      showConfirm("¿Cambiar a Aprobado con Ayuda?", async () => {
+                                                          try { await updateDoc(doc(db, 'transport_jobs', j.id), { prt_result: 'aprobado_ayuda', checklist: { ...(j.checklist || {}), rtStatus: 'aprobado_ayuda' }, status: 'completed', failedReason: deleteField() }); showAlert("✅ Corregido a Con Ayuda"); } catch(err) { showAlert("Error al actualizar"); }
+                                                      });
+                                                  }}
+                                                  className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${j.prt_result === 'aprobado_ayuda' || j.checklist?.rtStatus === 'aprobado_ayuda' ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-200' : 'bg-white border border-slate-200 text-slate-500 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200'}`}>
+                                                  Ayuda
+                                              </button>
+                                              <button 
+                                                  onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      showConfirm("¿Cambiar a Rechazado?", async () => {
+                                                          try { await updateDoc(doc(db, 'transport_jobs', j.id), { prt_result: 'rechazado', checklist: { ...(j.checklist || {}), rtStatus: 'rechazado' }, status: 'failed', failedReason: 'Rechazo en Planta PRT (Editado por Admin)' }); showAlert("✅ Corregido a Rechazado"); } catch(err) { showAlert("Error al actualizar"); }
+                                                      });
+                                                  }}
+                                                  className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${j.prt_result === 'rechazado' || j.checklist?.rtStatus === 'rechazado' ? 'bg-red-500 text-white shadow-sm ring-2 ring-red-200' : 'bg-white border border-slate-200 text-slate-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200'}`}>
+                                                  Rechazo
+                                              </button>
+                                          </div>
+                                      </div>
+                                  )}
                               </div>
-                          </div>
-                      );
+                          );
                   })}
               </div>
               {onLoadMore && (
