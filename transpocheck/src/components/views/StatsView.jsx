@@ -231,4 +231,5 @@ export default function StatsView({ jobs, drivers, vehicles, allClientsList }) {
                                         <th className="pb-2 text-[9px] font-black uppercase text-slate-400 tracking-widest border-b border-slate-100">Conductor</th>
                                         <th className="pb-2 text-[9px] font-black uppercase text-slate-400 tracking-widest text-center border-b border-slate-100">Autos</th>
                                         <th className="pb-2 text-[9px] font-black uppercase text-slate-400 tracking-widest text-center border-b border-slate-100">Pickup</th>
-                                        <th className="pb-2 text-[9px] font-black uppercase text-slate-400 tracking-widest text
+                                        <th className="pb-2 text-[9px] font-black uppercase text-slate-400 tracking-widest text-center border-b border-slate-100">Pesados</th>
+                                    </tr>
