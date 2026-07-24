@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { 
-    BarChart3, Users, Car, CheckCircle, Map, Navigation, Repeat, X 
+    BarChart3, Users, Car, CheckCircle, Map, Navigation, Repeat, X, MapPin 
 } from 'lucide-react';
 
 export default function StatsView({ jobs = [], drivers = [], vehicles = [], allClientsList = [] }) {
@@ -394,17 +394,39 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                                 modalData.jobs.map(j => (
                                     <div key={j.id} className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
                                         <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500 group-hover:bg-blue-600 transition-colors"></div>
-                                        <div className="flex justify-between items-start mb-3 pl-1">
-                                            <div>
-                                                <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL')}</p>
-                                                <p className="text-sm font-black text-slate-800 leading-tight mt-0.5">{j.client || 'Sin cliente'}</p>
+                                        
+                                        {/* CABECERA: FECHA, CLIENTE Y VEHÍCULO */}
+                                        <div className="flex justify-between items-start mb-3 pl-1.5">
+                                            <div className="pr-2">
+                                                <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-0.5">{new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL')}</p>
+                                                <p className="text-sm font-black text-slate-800 leading-tight truncate">{j.client || 'Sin cliente'}</p>
+                                                <p className="text-[11px] font-bold text-slate-500 mt-0.5 uppercase tracking-wide">{j.brand || 'S/MARCA'} {j.model || ''}</p>
                                             </div>
-                                            <span className="bg-slate-800 text-white text-[10px] font-black px-2.5 py-1 rounded-md tracking-widest shadow-sm shrink-0 ml-2">{j.plate || j.vin || 'S/N'}</span>
+                                            <span className="bg-slate-800 text-white text-[10px] font-black px-2.5 py-1 rounded-md tracking-widest shadow-sm shrink-0">{j.plate || j.vin || 'S/N'}</span>
                                         </div>
-                                        <div className="text-xs font-bold text-slate-500 space-y-1.5 pl-1">
-                                            <p className="flex items-start gap-1.5"><Navigation className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5"/> <span className="line-clamp-2 leading-tight">{j.destination || j.destName || 'Destino no especificado'}</span></p>
+                                        
+                                        {/* RUTA: DESDE - HASTA */}
+                                        <div className="bg-slate-50 rounded-xl p-3 mb-3 border border-slate-100 space-y-2.5 ml-1.5">
+                                            <div className="flex items-start gap-2.5">
+                                                <div className="bg-blue-100 p-1.5 rounded-full shrink-0"><MapPin className="w-3.5 h-3.5 text-blue-600"/></div>
+                                                <div className="flex-1 min-w-0 pt-0.5">
+                                                    <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest leading-none mb-0.5">Desde (Origen)</p>
+                                                    <p className="text-xs font-bold text-slate-700 leading-snug line-clamp-2">{j.origin || 'Origen no especificado'}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-start gap-2.5">
+                                                <div className="bg-amber-100 p-1.5 rounded-full shrink-0"><Navigation className="w-3.5 h-3.5 text-amber-600"/></div>
+                                                <div className="flex-1 min-w-0 pt-0.5">
+                                                    <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest leading-none mb-0.5">Hasta (Destino)</p>
+                                                    <p className="text-xs font-bold text-slate-700 leading-snug line-clamp-2">{j.destination || j.destName || 'Destino no especificado'}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* CONDUCTOR Y DISTANCIA */}
+                                        <div className="flex items-center justify-between text-xs font-bold text-slate-500 pl-1.5">
                                             <p className="flex items-center gap-1.5"><Car className="w-3.5 h-3.5 text-slate-400 shrink-0"/> {Array.isArray(drivers) ? drivers.find(d => d.email === j.acceptedByEmail)?.name || 'Conductor' : 'Conductor'}</p>
-                                            {j.drivenDistance && <p className="flex items-center gap-1.5"><Map className="w-3.5 h-3.5 text-slate-400 shrink-0"/> {j.drivenDistance}</p>}
+                                            {j.drivenDistance && <span className="flex items-center gap-1.5 bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest border border-indigo-100"><Map className="w-3.5 h-3.5 text-indigo-500 shrink-0"/> {j.drivenDistance}</span>}
                                         </div>
                                     </div>
                                 ))
