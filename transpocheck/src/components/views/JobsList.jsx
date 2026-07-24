@@ -791,16 +791,18 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               docPDF.rect(vx+vw-12, vy+4, 6, vh-8, 'f'); // parabrisas trasero
           } 
           
-          detailPins.foreach(pin => { 
-              // convertir coordenadas del eje y al eje x (para rotarlo)
-              const px = vx + (vw * (pin.y / 100)); 
-              // convertir coordenadas del eje x al eje y, e invertirlas para que coincidan con la rotación
-              const py = vy + (vh * ((100 - pin.x) / 100)); 
-              
-              docPDF.setFillColor(239, 68, 68); docPDF.circle(px, py, 4, 'F'); 
-              docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); 
-              docPDF.text(pin.id.replace('det', ''), px, py + 1, {align: 'center', baseline: 'middle'}); 
-          }); 
+          if (Array.isArray(detailPins)) {
+              detailPins.forEach(pin => { 
+                  // convertir coordenadas del eje y al eje x (para rotarlo)
+                  const px = vx + (vw * ((pin?.y || 0) / 100)); 
+                  // convertir coordenadas del eje x al eje y, e invertirlas para que coincidan con la rotación
+                  const py = vy + (vh * ((100 - (pin?.x || 0)) / 100)); 
+                  
+                  docPDF.setFillColor(239, 68, 68); docPDF.circle(px, py, 4, 'F'); 
+                  docPDF.setTextColor(255, 255, 255); docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); 
+                  docPDF.text(String(pin?.id || '').replace('det', ''), px, py + 1, {align: 'center', baseline: 'middle'}); 
+              });
+          } 
           
           docPDF.setFontSize(8); docPDF.setTextColor(100, 116, 139); docPDF.setFont("helvetica", "normal"); 
           docPDF.text("Los numeros rojos indican daños descritos a continuación:", 105, mapY + mapH + 6, null, null, "center"); 
