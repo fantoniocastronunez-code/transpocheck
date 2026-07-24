@@ -898,7 +898,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     if (processingId) return;
     setProcessingId(`${job.id}-wapp`);
     
-    // MAGIA: Sumamos +1 en segundo plano
+    // MAGIA: Sumamos +1 en segundo plano sin detener el proceso ni esperar respuesta
     updateDoc(doc(db, 'transport_jobs', job.id), {
        sharedCount: (job.sharedCount || 0) + 1
     }).catch(e => console.log("Error contador:", e));
@@ -923,10 +923,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         }
       }
 
-      const docPDF = await buildPDFDoc(job); 
-      const pdfBlob = docPDF.output('blob'); 
-      const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-
+      // Copiamos el texto al portapapeles de inmediato, por si cualquier cosa falla después
       const textArea = document.createElement("textarea");
       textArea.value = textToShare;
       textArea.style.position = "fixed";
@@ -936,6 +933,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       try { document.execCommand('copy'); } catch (err) {}
       document.body.removeChild(textArea);
 
+      const docPDF = await buildPDFDoc(job); 
+      const pdfBlob = docPDF.output('blob'); 
+      const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
       if (navigator.canShare && navigator.canShare({ files: [file] })) { 
          try {
             await navigator.share({ 
@@ -944,22 +945,20 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               files: [file] 
             }); 
          } catch (shareError) {
-            // Si el usuario no lo canceló manualmente, significa que el navegador bloqueó la ventana
             if (shareError.name !== 'AbortError') {
-               showAlert("El dispositivo bloqueó compartir directamente. Descargando archivo y copiando texto...");
+               showAlert("El dispositivo bloqueó compartir directamente. Descargando archivo...");
                docPDF.save(fileName);
-               handleCopyWhatsApp(job);
             }
          }
       } else { 
-         showAlert("Tu dispositivo no soporta compartir el archivo directamente. Descargando PDF y copiando texto..."); 
-         docPDF.save(fileName); // Antes esto no estaba y no bajaba el archivo
-         handleCopyWhatsApp(job); 
+         showAlert("Tu dispositivo no soporta compartir el archivo directamente. Descargando PDF..."); 
+         docPDF.save(fileName); 
       }
 
     } catch (e) { 
       console.error("Error general al intentar compartir:", e);
-      showAlert("Hubo un error al preparar el documento. Verifica tu conexión.");
+      // Si ocurre un error real, ahora veremos el motivo técnico exacto en pantalla
+      showAlert(`Error técnico: ${e.message || 'No se pudo generar PDF'}`);
     } finally { 
       setProcessingId(null); 
     }
