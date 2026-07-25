@@ -75,12 +75,50 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
 
   const todayStr = new Date().toISOString().split('T')[0];
 
+  // --- NUEVO: Memoria Muscular Profunda para Tipo de Vehículo ---
   useEffect(() => {
-    if (brand && model && vehicles.length > 0) {
-      const match = vehicles.find(v => v.brand?.toLowerCase() === brand.toLowerCase() && v.model?.toLowerCase() === model.toLowerCase() && v.vehicleType);
-      if (match) setVehicleType(match.vehicleType);
-    }
-  }, [brand, model, vehicles]);
+    const autoSelectVehicleType = async () => {
+      if (brand && model && brand.length > 1 && model.length > 1) {
+        // 1. Buscar en la memoria rápida (lista de vehículos frecuentes o recientes)
+        const localMatch = vehicles.find(v => 
+          v.brand?.toUpperCase().trim() === brand.toUpperCase().trim() && 
+          v.model?.toUpperCase().trim() === model.toUpperCase().trim() && 
+          v.vehicleType
+        );
+        
+        if (localMatch) {
+          setVehicleType(localMatch.vehicleType);
+          return;
+        }
+
+        // 2. Buscar en el historial profundo de traslados antiguos en la base de datos
+        try {
+          const q = query(collection(db, 'transport_jobs'), where('model', '==', model.toUpperCase().trim()));
+          const snap = await getDocs(q);
+          
+          const docMatch = snap.docs.find(d => {
+            const docData = d.data();
+            const vType = docData.vehicleType || docData.checklist?.vehicleType; // Busca tanto en la raíz como en checklists cerrados
+            return docData.brand?.toUpperCase().trim() === brand.toUpperCase().trim() && vType;
+          });
+          
+          if (docMatch) {
+            const foundType = docMatch.data().vehicleType || docMatch.data().checklist?.vehicleType;
+            setVehicleType(foundType);
+          }
+        } catch(e) {
+          console.warn("Búsqueda profunda de modelo omitida:", e);
+        }
+      }
+    };
+
+    // Esperamos 600ms después de que termines de escribir para no saturar la base de datos
+    const delayDebounceFn = setTimeout(() => {
+      autoSelectVehicleType();
+    }, 600);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [brand, model, vehicles, db]);
 
   const handleVehicleSearch = async (searchValue, type) => {
     const val = searchValue.toUpperCase().trim();

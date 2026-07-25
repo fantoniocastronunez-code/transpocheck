@@ -1858,18 +1858,46 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                                               onChange={(e) => {
                                                   e.stopPropagation();
                                                   const newType = e.target.value;
-                                                  showConfirm(`¿Cambiar la categoría de este vehículo para corregir las estadísticas?`, async () => {
+                                                  const targetPlate = j.plate || j.vin;
+                                                  
+                                                  showConfirm(`¿Actualizar la categoría en TODOS los traslados de la patente ${targetPlate}?`, async () => {
+                                                      setProcessingId(`${j.id}-updating-cat`);
                                                       try {
-                                                          await updateDoc(doc(db, 'transport_jobs', j.id), { 
-                                                              'checklist.vehicleType': newType 
-                                                          });
-                                                          showAlert("✅ Categoría corregida con éxito");
+                                                          // 1. Buscamos TODOS los trabajos que tengan esta misma patente o VIN
+                                                          const q1 = query(collection(db, 'transport_jobs'), where('plate', '==', targetPlate));
+                                                          const q2 = query(collection(db, 'transport_jobs'), where('vin', '==', targetPlate));
+                                                          
+                                                          const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+                                                          
+                                                          // Unimos los resultados y evitamos duplicados
+                                                          const allDocsToUpdate = new Map();
+                                                          snap1.docs.forEach(d => allDocsToUpdate.set(d.id, d));
+                                                          snap2.docs.forEach(d => allDocsToUpdate.set(d.id, d));
+                                                          
+                                                          // 2. Actualizamos cada uno
+                                                          let count = 0;
+                                                          for (let [docId, documentSnap] of allDocsToUpdate) {
+                                                              const docData = documentSnap.data();
+                                                              // Solo si tiene checklist, actualizamos la categoría adentro
+                                                              if (docData.checklist) {
+                                                                  await updateDoc(doc(db, 'transport_jobs', docId), { 
+                                                                      'checklist.vehicleType': newType 
+                                                                  });
+                                                                  count++;
+                                                              }
+                                                          }
+                                                          
+                                                          showAlert(`✅ Categoría corregida con éxito en ${count} traslados.`);
                                                       } catch(err) { 
-                                                          showAlert("Error al actualizar la categoría"); 
+                                                          console.error(err);
+                                                          showAlert("Error al actualizar la categoría masivamente"); 
+                                                      } finally {
+                                                          setProcessingId(null);
                                                       }
                                                   });
                                               }}
-                                              className="bg-white border border-slate-200 text-slate-700 text-xs font-bold py-1 px-2 rounded-lg outline-none cursor-pointer focus:border-blue-500 shadow-sm transition-colors"
+                                              disabled={processingId === `${j.id}-updating-cat`}
+                                              className="bg-white border border-slate-200 text-slate-700 text-xs font-bold py-1 px-2 rounded-lg outline-none cursor-pointer focus:border-blue-500 shadow-sm transition-colors disabled:opacity-50"
                                           >
                                               <option value="auto">Autos / SUV</option>
                                               <option value="camioneta">Camioneta</option>
