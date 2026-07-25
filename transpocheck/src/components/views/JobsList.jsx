@@ -14,6 +14,7 @@ import { formatDateDisplay } from '../../utils/helpers';
 
 export default function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, onNewJob, db, currentUserEmail, showAlert, showConfirm, allClientsList, onLoadMore, vehicles }) {
   const [menuOpenId, setMenuOpenId] = useState(null);
+  const [auditMode, setAuditMode] = useState(false); // <-- NUEVO: Estado del switch de auditoría
   const [jobToFail, setJobToFail] = useState(null);
   const [prtPromptJob, setPrtPromptJob] = useState(null); 
   const [prtApprovePromptJob, setPrtApprovePromptJob] = useState(null); // <-- NUEVO: Estado para el pop-up de Aprobación
@@ -1750,9 +1751,21 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       {olderHistoryJobs.length > 0 && (
           <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden mb-8">
-              <div className="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
-                  <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">Historial Anterior</h4>
-                  <span className="bg-slate-200 text-slate-600 text-[10px] font-black px-2 py-0.5 rounded-full">{olderHistoryJobs.length} registros</span>
+              <div className="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center flex-wrap gap-3">
+                  <div className="flex items-center gap-3">
+                      <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">Historial Anterior</h4>
+                      <span className="bg-slate-200 text-slate-600 text-[10px] font-black px-2 py-0.5 rounded-full">{olderHistoryJobs.length} registros</span>
+                  </div>
+                  {isAdminView && (
+                      <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors">
+                          <span className={`text-[10px] font-black uppercase tracking-widest ${auditMode ? 'text-purple-600' : 'text-slate-400'}`}>Modo Auditoría</span>
+                          <div className="relative flex items-center">
+                              <input type="checkbox" className="sr-only" checked={auditMode} onChange={() => setAuditMode(!auditMode)} />
+                              <div className={`block w-8 h-4 rounded-full transition-colors ${auditMode ? 'bg-purple-500' : 'bg-slate-300'}`}></div>
+                              <div className={`absolute left-0.5 top-0.5 bg-white w-3 h-3 rounded-full transition-transform ${auditMode ? 'transform translate-x-4' : ''}`}></div>
+                          </div>
+                      </label>
+                  )}
               </div>
               <div className="divide-y divide-slate-100 max-h-[500px] overflow-y-auto">
                   {olderHistoryJobs.map(j => {
@@ -1811,7 +1824,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                                   </div>
 
                                   {/* NUEVO PANEL PRT AUDITORIA */}
-                                  {isAdminView && j.tripType === 'revision' && (j.status === 'completed' || j.status === 'failed') && (
+                                  {isAdminView && auditMode && j.tripType === 'revision' && (j.status === 'completed' || j.status === 'failed') && (
                                       <div className="bg-slate-100/50 border border-slate-200 rounded-lg p-2 mt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-inner ml-4">
                                           <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Auditar Resultado PRT:</span>
                                           <div className="flex gap-1">
@@ -1850,7 +1863,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                                   )}
 
                                   {/* NUEVO PANEL AUDITORIA CATEGORIA VEHICULO */}
-                                  {isAdminView && j.status === 'completed' && j.tripType !== 'simple' && (
+                                  {isAdminView && auditMode && j.status === 'completed' && j.tripType !== 'simple' && (
                                       <div className="bg-slate-100/50 border border-slate-200 rounded-lg p-2 mt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-inner ml-4">
                                           <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Corregir Categoría (Estadísticas):</span>
                                           <select
