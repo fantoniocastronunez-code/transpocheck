@@ -1848,6 +1848,42 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                                           </div>
                                       </div>
                                   )}
+
+                                  {/* NUEVO PANEL AUDITORIA CATEGORIA VEHICULO */}
+                                  {isAdminView && j.status === 'completed' && j.tripType !== 'simple' && (
+                                      <div className="bg-slate-100/50 border border-slate-200 rounded-lg p-2 mt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-inner ml-4">
+                                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Corregir Categoría (Estadísticas):</span>
+                                          <select
+                                              value={j.checklist?.vehicleType || 'auto'}
+                                              onChange={(e) => {
+                                                  e.stopPropagation();
+                                                  const newType = e.target.value;
+                                                  showConfirm(`¿Cambiar la categoría de este vehículo para corregir las estadísticas?`, async () => {
+                                                      try {
+                                                          await updateDoc(doc(db, 'transport_jobs', j.id), { 
+                                                              'checklist.vehicleType': newType 
+                                                          });
+                                                          showAlert("✅ Categoría corregida con éxito");
+                                                      } catch(err) { 
+                                                          showAlert("Error al actualizar la categoría"); 
+                                                      }
+                                                  });
+                                              }}
+                                              className="bg-white border border-slate-200 text-slate-700 text-xs font-bold py-1 px-2 rounded-lg outline-none cursor-pointer focus:border-blue-500 shadow-sm transition-colors"
+                                          >
+                                              <option value="auto">Autos / SUV</option>
+                                              <option value="camioneta">Camioneta</option>
+                                              <option value="furgon_pequeno">Furgón Pequeño</option>
+                                              <option value="furgon_grande">Furgón Grande</option>
+                                              <option value="camion_simple">Camión Simple</option>
+                                              <option value="camion_doble">Camión Doble Cabina</option>
+                                              <option value="camion_2ejes">Camión (2 Ejes Traseros)</option>
+                                              <option value="camion_3ejes">Camión (3 Ejes Traseros)</option>
+                                              <option value="camion_8x4">Camión 8x4</option>
+                                              <option value="carro_arrastre">Carro de Arrastre</option>
+                                          </select>
+                                      </div>
+                                  )}
                               </div>
                           );
                   })}
