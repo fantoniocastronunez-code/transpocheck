@@ -4,7 +4,7 @@ import { updateDoc, doc, deleteDoc, addDoc, collection, deleteField, getDocs, qu
 import { 
   Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, 
   Copy, X, XCircle, MapPin, Clock, FileDown, Search, ChevronUp, ChevronDown,
-  Trash2, Car, Repeat, PenTool, Truck, Plus, FileText, AlertCircle, DollarSign
+  Trash2, Car, Repeat, PenTool, Truck, Plus, FileText, AlertCircle, DollarSign, Map as MapIcon
 } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import WaitTimerBadge from '../ui/WaitTimerBadge';
@@ -1756,7 +1756,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                  <Trash2 className="w-5 h-5"/> Limpiar DB
                </button>
                <button type="button" onClick={handleRecalculateKm} disabled={isCalculatingKm} className="group bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 disabled:opacity-50 shadow-md">
-                 {isCalculatingKm ? <Clock className="w-5 h-5 animate-spin"/> : <Map className="w-5 h-5"/>} 
+                 {isCalculatingKm ? <Clock className="w-5 h-5 animate-spin"/> : <MapIcon className="w-5 h-5"/>} 
                  {isCalculatingKm ? `Calc: ${calcProgress}` : 'Recalcular KM'}
                </button>
                <button type="button" onClick={handleDownloadAllZIP} className="group bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0">
