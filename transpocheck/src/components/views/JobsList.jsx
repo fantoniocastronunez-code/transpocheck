@@ -2018,6 +2018,25 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                                           </div>
                                       </div>
                                   )}
+
+                                  {/* NUEVO PANEL AUDITORIA DISTANCIA (KM) */}
+                                  {isAdminView && auditMode && (j.status === 'completed' || j.status === 'failed') && (
+                                      <div className="bg-blue-50/50 border border-blue-200 rounded-lg p-2 mt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-inner ml-4">
+                                          <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Auditar Distancia (KM):</span>
+                                          <div className="flex items-center gap-2">
+                                              <span className="text-xs font-extrabold text-slate-700">{j.drivenDistance || 'No calculado'}</span>
+                                              <button
+                                                  onClick={(e) => { e.stopPropagation(); handleSingleRecalculate(j); }}
+                                                  disabled={processingId === `${j.id}-recalc-km`}
+                                                  className="bg-white border border-blue-200 text-blue-700 text-[10px] font-bold py-1 px-2 rounded-lg outline-none cursor-pointer hover:bg-blue-100 shadow-sm transition-colors flex items-center gap-1 disabled:opacity-50"
+                                                  title="Forzar Recálculo de Ruta"
+                                              >
+                                                  {processingId === `${j.id}-recalc-km` ? <Clock className="w-3 h-3 animate-spin"/> : <MapIcon className="w-3 h-3"/>}
+                                                  Recalcular
+                                              </button>
+                                          </div>
+                                      </div>
+                                  )}
                               </div>
                           );
                   })}
