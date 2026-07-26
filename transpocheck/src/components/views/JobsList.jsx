@@ -1962,8 +1962,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                                                           
                                                           const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
                                                           
-                                                          // Unimos los resultados y evitamos duplicados
-                                                          const allDocsToUpdate = new Map();
+                                                          // Unimos los resultados y evitamos duplicados (Protegido usando window.Map)
+                                                          const allDocsToUpdate = new window.Map();
                                                           snap1.docs.forEach(d => allDocsToUpdate.set(d.id, d));
                                                           snap2.docs.forEach(d => allDocsToUpdate.set(d.id, d));
                                                           
