@@ -526,19 +526,18 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
      }
   };
 
-  // Función Global (Solo procesa los que faltan por calcular)
+  // Función Global (Recalcula TODOS los traslados finalizados)
   const handleRecalculateKm = async () => {
     if (!window.google || !window.google.maps) return showAlert("La API de Google Maps no está disponible en este momento.");
 
     const jobsToUpdate = jobs.filter(j => 
       j.status === 'completed' && 
-      (!j.drivenDistance || j.drivenDistance === 'No calculado') &&
       j.origin && (j.destination || j.destName || j.tripType === 'revision')
     );
 
-    if (jobsToUpdate.length === 0) return showAlert("Todos los traslados finalizados ya tienen sus kilómetros calculados.");
+    if (jobsToUpdate.length === 0) return showAlert("No se encontraron traslados válidos para recalcular.");
 
-    showConfirm(`Se encontraron ${jobsToUpdate.length} traslados sin kilómetros. ¿Deseas recalcularlos ahora de forma automática?`, async () => {
+    showConfirm(`Se actualizarán las distancias de ${jobsToUpdate.length} traslados finalizados. ¿Deseas recalcularlos ahora de forma automática? (Puede tardar un momento)`, async () => {
       setIsCalculatingKm(true);
       let successCount = 0;
 
