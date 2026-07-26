@@ -122,82 +122,86 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
      } catch (e) { console.error("Error al notificar al cliente:", e); }
   };
 
+  // === MOTOR INTELIGENTE DE KILOMETRAJE (Con Ida y Vuelta para RT) ===
+  const calculateJobDistance = async (job) => {
+    if (!window.google || !window.google.maps) return 'No calculado';
+    try {
+      const service = new window.google.maps.DistanceMatrixService();
+      let orig = job.originAddress ? `${job.originAddress}, ${job.originCommune || 'Santiago'}` : job.origin;
+      let dest = job.destAddress ? `${job.destAddress}, ${job.destCommune || 'Santiago'}` : (job.destination || job.destName);
+
+      if (!job.originAddress && job.origin) {
+        try {
+          const clientSnap = await getDocs(query(collection(db, 'clients'), where('name', '==', job.origin)));
+          if (!clientSnap.empty && clientSnap.docs[0].data().address) {
+            orig = `${clientSnap.docs[0].data().address}, ${clientSnap.docs[0].data().commune || 'Santiago'}`;
+          }
+        } catch (e) {}
+      }
+
+      if (job.tripType === 'revision') {
+        try {
+          const prtSnap = await getDocs(query(collection(db, 'prts'), where('name', '==', job.destination || job.destName)));
+          if (!prtSnap.empty && prtSnap.docs[0].data().address) {
+             const pData = prtSnap.docs[0].data();
+             dest = `${pData.address}, ${pData.comuna || 'Santiago'}`;
+          }
+        } catch (e) {}
+      } else if (!job.destAddress && (job.destination || job.destName)) {
+        try {
+          const clientSnap = await getDocs(query(collection(db, 'clients'), where('name', '==', job.destination || job.destName)));
+          if (!clientSnap.empty && clientSnap.docs[0].data().address) {
+            dest = `${clientSnap.docs[0].data().address}, ${clientSnap.docs[0].data().commune || 'Santiago'}`;
+          }
+        } catch (e) {}
+      }
+
+      if (orig && !orig.toLowerCase().includes('chile')) orig += ', Chile';
+      if (dest && !dest.toLowerCase().includes('chile')) dest += ', Chile';
+
+      if (!orig || !dest) return 'No calculado';
+
+      let returnDest = null;
+      if (job.tripType === 'revision') {
+         returnDest = (job.checklist?.rtReturnOption === 'other' && job.checklist?.rtReturnDestination) 
+            ? job.checklist.rtReturnDestination 
+            : orig;
+         if (returnDest && !returnDest.toLowerCase().includes('chile')) returnDest += ', Chile';
+      }
+
+      const getMeters = (from, to) => new Promise((resolve, reject) => {
+        service.getDistanceMatrix({ origins: [from], destinations: [to], travelMode: 'DRIVING' }, (res, status) => {
+          if (status === 'OK' && res.rows && res.rows[0].elements[0].status === 'OK') resolve(res.rows[0].elements[0].distance.value);
+          else reject(status);
+        });
+      });
+
+      let totalMeters = await Promise.race([getMeters(orig, dest), new Promise((_, r) => setTimeout(() => r('Timeout'), 4000))]);
+      
+      if (returnDest && typeof totalMeters === 'number') {
+         let returnMeters = await Promise.race([getMeters(dest, returnDest), new Promise((_, r) => setTimeout(() => r('Timeout'), 4000))]);
+         if (typeof returnMeters === 'number') totalMeters += returnMeters;
+      }
+
+      if (typeof totalMeters === 'number') {
+         return (totalMeters / 1000).toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' km';
+      }
+      return 'No calculado';
+    } catch (err) {
+      return 'No calculado';
+    }
+  };
+
   const updatePhase = async (job, phase, extra = {}) => {
     if (processingId) return;
     setProcessingId(`${job.id}-${phase}`);
     try { 
        let finalExtra = { ...extra };
 
-       // --- NUEVO: CRONÓMETRO Y KILOMETRAJE CON BÚSQUEDA EN DIRECTORIO ---
        if (phase === 'arrived_destination' || phase === 'arrived_prt') {
-           if (!job.arrivedDestinationAt) { 
-               finalExtra.arrivedDestinationAt = Date.now();
-           }
-           
-           finalExtra.drivenDistance = 'No calculado';
-
-           if (window.google && window.google.maps) {
-               try {
-                   const service = new window.google.maps.DistanceMatrixService();
-                   
-                   // 1. Buscamos primero en los campos guardados (Directorio) del trabajo
-                   let orig = job.originAddress ? `${job.originAddress}, ${job.originCommune || 'Santiago'}` : job.origin;
-                   let dest = job.destAddress ? `${job.destAddress}, ${job.destCommune || 'Santiago'}` : (job.destination || job.destName);
-
-                   // 2. Si no están guardados directamente en el job, intentamos consultar la colección 'clients' o 'directorio' en Firebase de forma dinámica
-                   if (!job.originAddress && job.origin) {
-                       try {
-                           const clientQuery = query(collection(db, 'clients'), where('name', '==', job.origin));
-                           const clientSnap = await getDocs(clientQuery);
-                           if (!clientSnap.empty) {
-                               const cData = clientSnap.docs[0].data();
-                               if (cData.address) orig = `${cData.address}, ${cData.commune || 'Santiago'}`;
-                           }
-                       } catch (e) { console.warn("No se pudo buscar origen en directorio:", e); }
-                   }
-
-                   if (!job.destAddress && (job.destination || job.destName)) {
-                       const targetDest = job.destination || job.destName;
-                       try {
-                           const clientQuery = query(collection(db, 'clients'), where('name', '==', targetDest));
-                           const clientSnap = await getDocs(clientQuery);
-                           if (!clientSnap.empty) {
-                               const cData = clientSnap.docs[0].data();
-                               if (cData.address) dest = `${cData.address}, ${cData.commune || 'Santiago'}`;
-                           }
-                       } catch (e) { console.warn("No se pudo buscar destino en directorio:", e); }
-                   }
-
-                   // Aseguramos que tengan la coletilla de Chile para Google Maps
-                   if (orig && !orig.toLowerCase().includes('chile')) orig = `${orig}, Chile`;
-                   if (dest && !dest.toLowerCase().includes('chile')) dest = `${dest}, Chile`;
-
-                   if (orig && dest) {
-                       const distancePromise = new Promise((resolve, reject) => {
-                           service.getDistanceMatrix({
-                               origins: [orig],
-                               destinations: [dest],
-                               travelMode: 'DRIVING'
-                           }, (response, status) => {
-                               if (status === 'OK') resolve(response);
-                               else reject(status);
-                           });
-                       });
-
-                       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject('Timeout'), 4000));
-                       const res = await Promise.race([distancePromise, timeoutPromise]);
-                       
-                       if (res && res.rows && res.rows[0].elements[0].status === 'OK') {
-                           finalExtra.drivenDistance = res.rows[0].elements[0].distance.text;
-                       }
-                   }
-               } catch (err) {
-                   console.warn("Aviso Maps API (Directorio):", err);
-                   finalExtra.drivenDistance = 'No calculado';
-               }
-           }
+           if (!job.arrivedDestinationAt) finalExtra.arrivedDestinationAt = Date.now();
+           finalExtra.drivenDistance = await calculateJobDistance(job);
        }
-       // ------------------------------------------------------------------------
 
        await updateDoc(doc(db, 'transport_jobs', job.id), { phase, ...finalExtra });
        
@@ -209,7 +213,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     } finally { 
        setTimeout(() => setProcessingId(null), 300); 
     }
-  };; 
+  }; 
 
   const handleAcceptJob = async (job) => {
     if (processingId) return;
@@ -522,7 +526,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
      }
   };
 
-  // Función Global (Ahora procesa únicamente los traslados sin calcular)
+  // Función Global (Solo procesa los que faltan por calcular)
   const handleRecalculateKm = async () => {
     if (!window.google || !window.google.maps) return showAlert("La API de Google Maps no está disponible en este momento.");
 
@@ -537,111 +541,36 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     showConfirm(`Se encontraron ${jobsToUpdate.length} traslados sin kilómetros. ¿Deseas recalcularlos ahora de forma automática?`, async () => {
       setIsCalculatingKm(true);
       let successCount = 0;
-      const service = new window.google.maps.DistanceMatrixService();
 
       for (let i = 0; i < jobsToUpdate.length; i++) {
         const job = jobsToUpdate[i];
         setCalcProgress(`${i + 1}/${jobsToUpdate.length}`);
-        
-        try {
-          let orig = job.originAddress ? `${job.originAddress}, ${job.originCommune || 'Santiago'}` : job.origin;
-          let dest = job.destAddress ? `${job.destAddress}, ${job.destCommune || 'Santiago'}` : (job.destination || job.destName);
-
-          if (!job.originAddress && job.origin) {
-            try {
-              const clientQuery = query(collection(db, 'clients'), where('name', '==', job.origin));
-              const clientSnap = await getDocs(clientQuery);
-              if (!clientSnap.empty && clientSnap.docs[0].data().address) orig = `${clientSnap.docs[0].data().address}, ${clientSnap.docs[0].data().commune || 'Santiago'}`;
-            } catch (e) {}
-          }
-
-          if (!job.destAddress && (job.destination || job.destName)) {
-            const targetDest = job.destination || job.destName;
-            try {
-              const clientQuery = query(collection(db, 'clients'), where('name', '==', targetDest));
-              const clientSnap = await getDocs(clientQuery);
-              if (!clientSnap.empty && clientSnap.docs[0].data().address) dest = `${clientSnap.docs[0].data().address}, ${clientSnap.docs[0].data().commune || 'Santiago'}`;
-            } catch (e) {}
-          }
-
-          if (job.tripType === 'revision') dest = 'Planta PRT';
-
-          if (orig && !orig.toLowerCase().includes('chile')) orig = `${orig}, Chile`;
-          if (dest && !dest.toLowerCase().includes('chile')) dest = `${dest}, Chile`;
-
-          if (orig && dest) {
-            const distancePromise = new Promise((resolve, reject) => {
-              service.getDistanceMatrix({ origins: [orig], destinations: [dest], travelMode: 'DRIVING' }, (response, status) => {
-                if (status === 'OK') resolve(response); else reject(status);
-              });
-            });
-
-            const res = await Promise.race([distancePromise, new Promise((_, r) => setTimeout(() => r('Timeout'), 4000))]);
-            
-            if (res && res.rows && res.rows[0].elements[0].status === 'OK') {
-              await updateDoc(doc(db, 'transport_jobs', job.id), { drivenDistance: res.rows[0].elements[0].distance.text });
-              successCount++;
-            }
-          }
-        } catch (err) {}
-
+        const dist = await calculateJobDistance(job);
+        if (dist !== 'No calculado') {
+           await updateDoc(doc(db, 'transport_jobs', job.id), { drivenDistance: dist });
+           successCount++;
+        }
         await new Promise(r => setTimeout(r, 800)); // Delay para no saturar la API
       }
 
       setIsCalculatingKm(false);
       setCalcProgress('');
-      showAlert(`✅ Recálculo terminado. Se actualizaron los kilómetros de ${successCount} traslados correctamente.`);
+      showAlert(`✅ Recálculo terminado. Se actualizaron ${successCount} traslados correctamente.`);
     });
   };
 
-  // NUEVO: Función Individual de Recálculo (Para recalcular SÓLO los que tú modifiques)
+  // Función Individual de Recálculo (Usa el mismo motor inteligente)
   const handleSingleRecalculate = async (job) => {
     if (!window.google || !window.google.maps) return showAlert("La API de Google Maps no está disponible.");
     setProcessingId(`${job.id}-recalc-km`);
     
     try {
-      const service = new window.google.maps.DistanceMatrixService();
-      let orig = job.originAddress ? `${job.originAddress}, ${job.originCommune || 'Santiago'}` : job.origin;
-      let dest = job.destAddress ? `${job.destAddress}, ${job.destCommune || 'Santiago'}` : (job.destination || job.destName);
-
-      if (!job.originAddress && job.origin) {
-        try {
-          const clientQuery = query(collection(db, 'clients'), where('name', '==', job.origin));
-          const clientSnap = await getDocs(clientQuery);
-          if (!clientSnap.empty && clientSnap.docs[0].data().address) orig = `${clientSnap.docs[0].data().address}, ${clientSnap.docs[0].data().commune || 'Santiago'}`;
-        } catch (e) {}
-      }
-
-      if (!job.destAddress && (job.destination || job.destName)) {
-        const targetDest = job.destination || job.destName;
-        try {
-          const clientQuery = query(collection(db, 'clients'), where('name', '==', targetDest));
-          const clientSnap = await getDocs(clientQuery);
-          if (!clientSnap.empty && clientSnap.docs[0].data().address) dest = `${clientSnap.docs[0].data().address}, ${clientSnap.docs[0].data().commune || 'Santiago'}`;
-        } catch (e) {}
-      }
-
-      if (job.tripType === 'revision') dest = 'Planta PRT';
-      if (orig && !orig.toLowerCase().includes('chile')) orig = `${orig}, Chile`;
-      if (dest && !dest.toLowerCase().includes('chile')) dest = `${dest}, Chile`;
-
-      if (orig && dest) {
-        const distancePromise = new Promise((resolve, reject) => {
-          service.getDistanceMatrix({ origins: [orig], destinations: [dest], travelMode: 'DRIVING' }, (response, status) => {
-            if (status === 'OK') resolve(response); else reject(status);
-          });
-        });
-
-        const res = await Promise.race([distancePromise, new Promise((_, r) => setTimeout(() => r('Timeout'), 4000))]);
-        
-        if (res && res.rows && res.rows[0].elements[0].status === 'OK') {
-          await updateDoc(doc(db, 'transport_jobs', job.id), { drivenDistance: res.rows[0].elements[0].distance.text });
-          showAlert("✅ Kilómetros recalculados con éxito para este traslado.");
-        } else {
-          showAlert("❌ Maps no pudo trazar la ruta con esas direcciones.");
-        }
+      const dist = await calculateJobDistance(job);
+      if (dist !== 'No calculado') {
+        await updateDoc(doc(db, 'transport_jobs', job.id), { drivenDistance: dist });
+        showAlert("✅ Kilómetros recalculados con éxito para este traslado.");
       } else {
-        showAlert("❌ Faltan datos de origen o destino.");
+        showAlert("❌ Maps no pudo trazar la ruta con esas direcciones.");
       }
     } catch (err) {
       showAlert("❌ Error al procesar la ruta.");
@@ -649,7 +578,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       setProcessingId(null);
     }
   };
-
   const getRouteStr = (j) => {
     if (j.tripType === 'revision') {
        if (j.checklist?.rtStatus === 'aprobado') {
