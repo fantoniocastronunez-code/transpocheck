@@ -20,9 +20,13 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
         const currentMonth = viewDate.getMonth();
         const currentYear = viewDate.getFullYear();
 
+        // Rango exacto: Desde el día 1 (00:00:00) hasta el último día (23:59:59) del mes
+        const startOfMonth = new Date(currentYear, currentMonth, 1, 0, 0, 0, 0).getTime();
+        const endOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999).getTime();
+
         const monthlyJobs = jobs.filter(j => {
-            const jobDate = j.completedAt ? new Date(j.completedAt) : (j.createdAt ? new Date(j.createdAt) : null);
-            return jobDate && jobDate.getMonth() === currentMonth && jobDate.getFullYear() === currentYear && (j.status === 'completed' || j.status === 'failed');
+            const jobTime = j.completedAt ? Number(j.completedAt) : (j.createdAt ? Number(j.createdAt) : null);
+            return jobTime && jobTime >= startOfMonth && jobTime <= endOfMonth && (j.status === 'completed' || j.status === 'failed');
         });
 
         // --- Top Clientes e Ingresos Financieros ---
