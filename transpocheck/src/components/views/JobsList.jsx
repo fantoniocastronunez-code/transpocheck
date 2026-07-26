@@ -1781,9 +1781,37 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   if (!isAppReady) return null;
   const canBulkSign = inProgressJobsList.some(j => j.fleetGroup);
 
+  // --- LÓGICA DE KILOMETRAJE MENSUAL DEL CONDUCTOR ---
+  const parseDist = (str) => {
+      if (!str) return 0;
+      let s = str.toLowerCase().replace(/[^\d.,]/g, '');
+      if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+      else if (s.includes('.') && s.split('.').pop().length === 3) s = s.replace(/\./g, '');
+      return parseFloat(s) || 0;
+  };
+
+  const currMonth = new Date().getMonth();
+  const currYear = new Date().getFullYear();
+  const myMonthlyKm = jobs.filter(j => {
+      if (j.status !== 'completed' || j.acceptedByEmail !== currentUserEmail) return false;
+      const d = new Date(j.completedAt || j.createdAt);
+      return d.getMonth() === currMonth && d.getFullYear() === currYear;
+  }).reduce((acc, job) => acc + parseDist(job.drivenDistance), 0);
+
   return (
     <div className="pb-16">
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+      {!isAdminView && (
+         <div className="mb-6 bg-gradient-to-br from-indigo-800 to-blue-600 rounded-[2rem] p-6 sm:p-8 text-white shadow-xl flex items-center justify-between relative overflow-hidden">
+            <div className="absolute right-[-10%] top-[-20%] bottom-0 opacity-10 pointer-events-none">
+                <MapIcon className="w-48 h-48" />
+              </div>
+            <div className="relative z-10">
+               <p className="text-[10px] font-black uppercase tracking-widest text-indigo-200 mb-1 flex items-center gap-1.5"><MapPin className="w-3 h-3"/> Rendimiento Mensual</p>
+               <p className="text-2xl sm:text-3xl font-black leading-tight">Este mes has conducido <span className="text-amber-400">{myMonthlyKm.toLocaleString('es-CL')} km</span></p>
+            </div>
+         </div>
+      )}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6 relative z-10">
         <div className="relative flex-1">
            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Search className="w-5 h-5 text-slate-400" /></div>
            <input type="text" placeholder="Buscar patente, marca, cliente..." className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 transition-colors" value={localSearchTerm} onChange={(e) => setLocalSearchTerm(e.target.value)} />
