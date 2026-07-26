@@ -55,6 +55,22 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
             else prtApproved++; 
         });
 
+        // --- Helper Inteligente para Analizar KM (Puntos y Comas) ---
+        const parseDist = (str) => {
+            if (!str) return 0;
+            let s = str.toLowerCase().replace(/[^\d.,]/g, '');
+            // Si trae coma (ej: 1.628,5), la coma es el decimal y quitamos los puntos.
+            if (s.includes(',')) {
+                s = s.replace(/\./g, '').replace(',', '.');
+            } 
+            // Si no trae coma, pero tiene un punto seguido de 3 dígitos (ej: 1.628), es separador de miles.
+            else if (s.includes('.') && s.split('.').pop().length === 3) {
+                s = s.replace(/\./g, '');
+            }
+            // Si no cumple lo anterior (ej: 1.5), se asume formato gringo normal.
+            return parseFloat(s) || 0;
+        };
+
         // --- Kilometraje Global ---
         let totalKm = 0;
         let todayKm = 0;
@@ -62,8 +78,8 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
 
         monthlyJobs.forEach(j => {
             if (j.drivenDistance && j.drivenDistance.includes('km')) {
-                const km = parseFloat(j.drivenDistance.replace(',', '.').replace(/[^\d.]/g, ''));
-                if (!isNaN(km)) {
+                const km = parseDist(j.drivenDistance);
+                if (km > 0) {
                     totalKm += km;
                     if (j.completedAt) {
                         const jDate = new Date(j.completedAt).toISOString().split('T')[0];
@@ -78,8 +94,8 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
         monthlyJobs.forEach(j => {
             if (j.status !== 'completed' || !j.acceptedByEmail) return;
             if (j.drivenDistance && j.drivenDistance.includes('km')) {
-                const km = parseFloat(j.drivenDistance.replace(',', '.').replace(/[^\d.]/g, ''));
-                if (!isNaN(km)) {
+                const km = parseDist(j.drivenDistance);
+                if (km > 0) {
                     const drvName = (Array.isArray(drivers) ? drivers.find(d => d.email === j.acceptedByEmail)?.name : null) || 'Desconocido';
                     driverKms[drvName] = (driverKms[drvName] || 0) + km;
                 }
