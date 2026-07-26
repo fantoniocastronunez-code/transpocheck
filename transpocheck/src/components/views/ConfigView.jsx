@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, updateDoc, doc, deleteDoc, getDocs } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, deleteDoc, getDocs, query, where } from 'firebase/firestore';
 import { Camera, Eye, EyeOff, User, Edit2, Trash2, Truck, Clock, X, Plus, BookOpen, Phone, CheckCircle, MapPin, AlertCircle, Activity, Video, Wallet } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import { LICENCIAS, resizeImage } from '../../utils/helpers';
@@ -174,8 +174,35 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                 prices: clientPrices
              });
           }
+
+          // NUEVO: Retroactividad Inteligente (Actualizar todos los traslados previos)
+          try {
+             const targetCompanyName = companySelection === 'NEW' ? fd.get('nuevaEmpresa').trim() : customClients.find(c => c.id === companySelection)?.name;
+             
+             if (targetCompanyName) {
+                const qJobs = query(collection(db, 'transport_jobs'), where('client', '==', targetCompanyName));
+                const snapJobs = await getDocs(qJobs);
+                
+                const updatePromises = snapJobs.docs.map(jobDoc => {
+                    const jobData = jobDoc.data();
+                    let newPrice = 0;
+                    
+                    if (jobData.tripType === 'simple') newPrice = Number(clientPrices.servicio) || 0;
+                    else if (jobData.tripType === 'revision') newPrice = Number(clientPrices.prt) || 0;
+                    else if (jobData.tripType === 'viaje') newPrice = Number(clientPrices.region) || 0;
+                    else newPrice = Number(clientPrices.local) || 0;
+                    
+                    return updateDoc(doc(db, 'transport_jobs', jobDoc.id), { companyPrice: newPrice });
+                });
+                
+                await Promise.all(updatePromises);
+             }
+          } catch (errorRetro) {
+             console.error("Error al actualizar traslados antiguos de forma retroactiva:", errorRetro);
+          }
+
           setEditingProfile(null);
-          showAlert("Perfil guardado exitosamente.");
+          showAlert("Perfil y tarifas guardadas exitosamente.");
       } catch (err) {
           console.error(err);
           showAlert("❌ Error al guardar el perfil.");
