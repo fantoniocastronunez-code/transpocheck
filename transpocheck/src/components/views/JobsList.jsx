@@ -593,6 +593,62 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     });
   };
 
+  // NUEVO: Función Individual de Recálculo (Para recalcular SÓLO los que tú modifiques)
+  const handleSingleRecalculate = async (job) => {
+    if (!window.google || !window.google.maps) return showAlert("La API de Google Maps no está disponible.");
+    setProcessingId(`${job.id}-recalc-km`);
+    
+    try {
+      const service = new window.google.maps.DistanceMatrixService();
+      let orig = job.originAddress ? `${job.originAddress}, ${job.originCommune || 'Santiago'}` : job.origin;
+      let dest = job.destAddress ? `${job.destAddress}, ${job.destCommune || 'Santiago'}` : (job.destination || job.destName);
+
+      if (!job.originAddress && job.origin) {
+        try {
+          const clientQuery = query(collection(db, 'clients'), where('name', '==', job.origin));
+          const clientSnap = await getDocs(clientQuery);
+          if (!clientSnap.empty && clientSnap.docs[0].data().address) orig = `${clientSnap.docs[0].data().address}, ${clientSnap.docs[0].data().commune || 'Santiago'}`;
+        } catch (e) {}
+      }
+
+      if (!job.destAddress && (job.destination || job.destName)) {
+        const targetDest = job.destination || job.destName;
+        try {
+          const clientQuery = query(collection(db, 'clients'), where('name', '==', targetDest));
+          const clientSnap = await getDocs(clientQuery);
+          if (!clientSnap.empty && clientSnap.docs[0].data().address) dest = `${clientSnap.docs[0].data().address}, ${clientSnap.docs[0].data().commune || 'Santiago'}`;
+        } catch (e) {}
+      }
+
+      if (job.tripType === 'revision') dest = 'Planta PRT';
+      if (orig && !orig.toLowerCase().includes('chile')) orig = `${orig}, Chile`;
+      if (dest && !dest.toLowerCase().includes('chile')) dest = `${dest}, Chile`;
+
+      if (orig && dest) {
+        const distancePromise = new Promise((resolve, reject) => {
+          service.getDistanceMatrix({ origins: [orig], destinations: [dest], travelMode: 'DRIVING' }, (response, status) => {
+            if (status === 'OK') resolve(response); else reject(status);
+          });
+        });
+
+        const res = await Promise.race([distancePromise, new Promise((_, r) => setTimeout(() => r('Timeout'), 4000))]);
+        
+        if (res && res.rows && res.rows[0].elements[0].status === 'OK') {
+          await updateDoc(doc(db, 'transport_jobs', job.id), { drivenDistance: res.rows[0].elements[0].distance.text });
+          showAlert("✅ Kilómetros recalculados con éxito para este traslado.");
+        } else {
+          showAlert("❌ Maps no pudo trazar la ruta con esas direcciones.");
+        }
+      } else {
+        showAlert("❌ Faltan datos de origen o destino.");
+      }
+    } catch (err) {
+      showAlert("❌ Error al procesar la ruta.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   const getRouteStr = (j) => {
     if (j.tripType === 'revision') {
        if (j.checklist?.rtStatus === 'aprobado') {
@@ -1547,13 +1603,26 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     </div>
                 </div>
                 <div className="w-px h-8 bg-slate-200 shrink-0 mx-2"></div>
-                <div className="flex items-center gap-2 flex-1">
-                    <div className="bg-emerald-100 p-1.5 rounded-lg"><MapPin className="w-3.5 h-3.5 text-emerald-600"/></div>
-                    <div className="flex flex-col">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className="bg-emerald-100 p-1.5 rounded-lg shrink-0"><MapPin className="w-3.5 h-3.5 text-emerald-600"/></div>
+                    <div className="flex flex-col min-w-0">
                         <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">Distancia</span>
-                        <span className="text-xs font-extrabold text-slate-700 leading-tight">
-                            {j.drivenDistance || 'No calculado'}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-extrabold text-slate-700 leading-tight truncate">
+                                {j.drivenDistance || 'No calculado'}
+                            </span>
+                            {isAdminView && auditMode && (
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); handleSingleRecalculate(j); }}
+                                    disabled={processingId === `${j.id}-recalc-km`}
+                                    className="p-1 bg-white border border-slate-200 text-blue-600 rounded hover:bg-blue-50 transition-colors shadow-sm disabled:opacity-50 shrink-0 ml-1"
+                                    title="Forzar Recálculo de Ruta"
+                                >
+                                    {processingId === `${j.id}-recalc-km` ? <Clock className="w-3 h-3 animate-spin"/> : <MapIcon className="w-3 h-3"/>}
+                                </button>
+                            )}
+                        </div>
+                        
                     </div>
                 </div>
             </div>
