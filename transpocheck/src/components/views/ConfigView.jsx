@@ -8,8 +8,6 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
   const [configSubTab, setConfigSubTab] = useState('clients');
   const [editingDir, setEditingDir] = useState(null); 
   const [directoryList, setDirectoryList] = useState([]); 
-  const [prtList, setPrtList] = useState([]); // NUEVO: Memoria de Plantas RT
-  const [editingPrt, setEditingPrt] = useState(null); // NUEVO: Estado para editar PRT
   
   // NUEVO: Estado para la Lista de Equipamiento Modificable
   const [equipmentList, setEquipmentList] = useState([
@@ -32,10 +30,6 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
       try {
         const snapDir = await getDocs(collection(db, 'directory'));
         setDirectoryList(snapDir.docs.map(d => ({ id: d.id, ...d.data() })));
-        
-        // Descargamos las Plantas RT guardadas
-        const snapPrt = await getDocs(collection(db, 'prts'));
-        setPrtList(snapPrt.docs.map(d => ({ id: d.id, ...d.data() })));
       } catch(e) { console.error("Error cargando datos:", e); }
     };
     fetchData();
@@ -278,7 +272,6 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
          <button onClick={()=>setConfigSubTab('vehicles')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='vehicles'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Vehículos</button>
          <button onClick={()=>setConfigSubTab('drivers')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='drivers'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Conductores</button>
          <button onClick={()=>setConfigSubTab('directory')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='directory'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Directorio</button>
-         <button onClick={()=>setConfigSubTab('prts')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='prts'?'bg-rose-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Plantas RT</button>
          <button onClick={()=>setConfigSubTab('equipment')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='equipment'?'bg-amber-500 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Equipamiento</button>
       </div>
 
@@ -826,124 +819,6 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                      <button onClick={() => showConfirm("¿Eliminar destino del directorio?", async () => { 
                          await deleteDoc(doc(db,'directory',d.id));
                          setDirectoryList(directoryList.filter(item => item.id !== d.id));
-                     })} className="p-1.5 bg-red-100 hover:bg-red-200 text-red-500 rounded-lg transition-colors shadow-sm" title="Eliminar"><Trash2 className="w-3.5 h-3.5"/></button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {configSubTab === 'prts' && (
-        <div className="grid md:grid-cols-2 gap-6 w-full min-w-0 animate-in fade-in">
-          <form key={editingPrt ? editingPrt.id : 'new-prt'} onSubmit={async (e) => { 
-             e.preventDefault(); 
-             const fd = new FormData(e.target); 
-             
-             // Blindaje de texto para evitar incompatibilidades en navegadores móviles
-             const rawName = fd.get('name');
-             const rawAddress = fd.get('address');
-             const rawCommune = fd.get('commune');
-             const rawCamUrl = fd.get('camUrl');
-             const type = fd.get('type') || 'B'; // Clase B por defecto
-             
-             const data = { 
-                name: rawName ? rawName.toString().trim() : '', 
-                address: rawAddress ? rawAddress.toString().trim() : '',
-                comuna: rawCommune ? rawCommune.toString().trim() : '',
-                camUrl: rawCamUrl ? rawCamUrl.toString().trim() : '',
-                type: type
-             }; 
-             
-             try { 
-                if (editingPrt) { 
-                   await updateDoc(doc(db, 'prts', editingPrt.id), data); 
-                   setEditingPrt(null); 
-                   showAlert("✅ Planta RT actualizada."); 
-                } else { 
-                   data.status = 'green';
-                   data.hasInspectors = false;
-                   data.lastUpdated = Date.now();
-                   await addDoc(collection(db, 'prts'), data); 
-                   showAlert("✅ Planta RT agregada a la red."); 
-                } 
-                const snap = await getDocs(collection(db, 'prts'));
-                setPrtList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-                e.target.reset(); 
-             } catch (err) { 
-                console.error("Detalle del error PRT:", err);
-                if (err.message && err.message.toLowerCase().includes("permissions")) {
-                   showAlert("❌ Firebase bloqueó el acceso. Asegúrate de que agregaste la regla 'match /prts/{document=**}' en Firestore.");
-                } else {
-                   showAlert("❌ Error al guardar: " + err.message); 
-                }
-             } 
-          }} className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
-            <div className="flex justify-between items-center">
-               <h3 className="font-extrabold flex items-center gap-2 text-slate-800"><Activity className="text-rose-600 w-5 h-5"/> {editingPrt ? 'Editar Planta RT' : 'Nueva Planta RT'}</h3>
-               {editingPrt && <button type="button" onClick={()=>setEditingPrt(null)} className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-lg uppercase">Cancelar</button>}
-            </div>
-            <p className="text-[10px] font-bold text-slate-500 mb-2 leading-tight">Agrega las plantas a las que acude tu flota. Los conductores reportarán el estado de filas y fiscalizadores en tiempo real.</p>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-               <div className="space-y-1 sm:col-span-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre de la Planta <span className="text-red-500">*</span></label>
-                  <input name="name" defaultValue={editingPrt?.name} placeholder="Ej: PRT SGS Quilicura" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-rose-500 font-bold"/>
-               </div>
-               <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Clase <span className="text-red-500">*</span></label>
-                  <select name="type" defaultValue={editingPrt?.type || 'B'} className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-rose-500 font-black text-slate-700 bg-white">
-                     <option value="B">Clase B (Livianos)</option>
-                     <option value="A">Clase A (Pesados)</option>
-                     <option value="AB">Clase AB (Mixta)</option>
-                  </select>
-               </div>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-               <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Dirección (Opcional)</label>
-                  <input name="address" defaultValue={editingPrt?.address} placeholder="Ej: Av. Central 123" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-rose-500 font-bold"/>
-               </div>
-               <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Comuna (Opcional)</label>
-                  <input name="commune" defaultValue={editingPrt?.comuna} placeholder="Ej: Quilicura" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-rose-500 font-bold"/>
-               </div>
-            </div>
-
-            <div className="space-y-1">
-               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Enlace a Cámara en Vivo (Opcional)</label>
-               <input type="url" name="camUrl" defaultValue={editingPrt?.camUrl} placeholder="Ej: https://chilevision.cl/camaras-prt..." className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-rose-500 font-bold bg-white"/>
-            </div>
-
-            <button type="submit" className="w-full bg-rose-600 hover:bg-rose-700 text-white py-3.5 rounded-xl font-black text-sm transition-colors shadow-md shadow-rose-200 mt-2">
-               {editingPrt ? 'Guardar Cambios' : 'Agregar Planta RT'}
-            </button>
-          </form>
-
-          <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 max-h-[85vh] overflow-y-auto">
-            <h3 className="font-extrabold text-slate-800 mb-4">Red de Plantas RT</h3>
-            <div className="space-y-2">
-              {prtList.length === 0 ? <p className="text-sm font-bold text-slate-400 text-center py-4">No hay Plantas RT guardadas</p> : prtList.map(p=>(
-                <div key={p.id} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-xl hover:border-rose-200 transition-all relative overflow-hidden">
-                  {p.type === 'A' && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-purple-500"></div>}
-                  {p.type === 'B' && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500"></div>}
-                  {p.type === 'AB' && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-purple-500 to-blue-500"></div>}
-                  
-                  <div className="flex-1 min-w-0 pr-2 pl-2">
-                    <div className="flex items-center gap-2">
-                       <p className="text-sm font-extrabold text-slate-800 truncate">{p.name}</p>
-                       <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase shrink-0 ${p.type === 'A' ? 'bg-purple-100 text-purple-700' : p.type === 'B' ? 'bg-blue-100 text-blue-700' : 'bg-slate-200 text-slate-700'}`}>Clase {p.type || 'B'}</span>
-                    </div>
-                    {(p.address || p.comuna) && <p className="text-[11px] font-bold text-slate-500 mt-0.5 truncate flex items-center gap-1"><MapPin className="w-3 h-3 text-rose-500"/> {p.address}{p.address && p.comuna ? ', ' : ''}{p.comuna}</p>}
-                    {p.camUrl && <a href={p.camUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-blue-600 hover:text-blue-800 mt-1 flex items-center gap-1"><Video className="w-3 h-3"/> Ver Cámara en Vivo</a>}
-                  </div>
-                  <div className="flex flex-col gap-1.5 shrink-0 ml-2">
-                     <button onClick={() => {setEditingPrt(p); window.scrollTo({ top: 0, behavior: 'smooth' });}} className="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-600 rounded-lg transition-colors shadow-sm" title="Editar"><Edit2 className="w-3.5 h-3.5"/></button>
-                     <button onClick={() => showConfirm("¿Eliminar Planta RT?", async () => { 
-                         await deleteDoc(doc(db,'prts',p.id));
-                         setPrtList(prtList.filter(item => item.id !== p.id));
                      })} className="p-1.5 bg-red-100 hover:bg-red-200 text-red-500 rounded-lg transition-colors shadow-sm" title="Eliminar"><Trash2 className="w-3.5 h-3.5"/></button>
                   </div>
                 </div>
