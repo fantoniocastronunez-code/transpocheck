@@ -47,6 +47,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [isInProgressOpen, setIsInProgressOpen] = useState(true);
   const [processingId, setProcessingId] = useState(null); 
 
+  const [isCalculatingKm, setIsCalculatingKm] = useState(false); // NUEVO: Estado para recálculo de KM
+  const [calcProgress, setCalcProgress] = useState(''); // NUEVO: Progreso del recálculo
+
   const [isAppReady, setIsAppReady] = useState(false);
   
   useEffect(() => {
@@ -517,6 +520,78 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
      } finally {
         setProcessingId(null);
      }
+  };
+
+  // NUEVO: Función para recalcular los kilómetros faltantes de forma retroactiva
+  const handleRecalculateKm = async () => {
+    if (!window.google || !window.google.maps) return showAlert("La API de Google Maps no está disponible en este momento.");
+
+    const jobsToUpdate = jobs.filter(j => 
+      j.status === 'completed' && 
+      (!j.drivenDistance || j.drivenDistance === 'No calculado') &&
+      j.origin && (j.destination || j.destName || j.tripType === 'revision')
+    );
+
+    if (jobsToUpdate.length === 0) return showAlert("Todos los traslados finalizados ya tienen sus kilómetros calculados.");
+
+    showConfirm(`Se encontraron ${jobsToUpdate.length} traslados sin kilómetros. ¿Deseas recalcularlos ahora de forma automática? (Puede tardar un momento)`, async () => {
+      setIsCalculatingKm(true);
+      let successCount = 0;
+      const service = new window.google.maps.DistanceMatrixService();
+
+      for (let i = 0; i < jobsToUpdate.length; i++) {
+        const job = jobsToUpdate[i];
+        setCalcProgress(`${i + 1}/${jobsToUpdate.length}`);
+        
+        try {
+          let orig = job.originAddress ? `${job.originAddress}, ${job.originCommune || 'Santiago'}` : job.origin;
+          let dest = job.destAddress ? `${job.destAddress}, ${job.destCommune || 'Santiago'}` : (job.destination || job.destName);
+
+          if (!job.originAddress && job.origin) {
+            try {
+              const clientQuery = query(collection(db, 'clients'), where('name', '==', job.origin));
+              const clientSnap = await getDocs(clientQuery);
+              if (!clientSnap.empty && clientSnap.docs[0].data().address) orig = `${clientSnap.docs[0].data().address}, ${clientSnap.docs[0].data().commune || 'Santiago'}`;
+            } catch (e) {}
+          }
+
+          if (!job.destAddress && (job.destination || job.destName)) {
+            const targetDest = job.destination || job.destName;
+            try {
+              const clientQuery = query(collection(db, 'clients'), where('name', '==', targetDest));
+              const clientSnap = await getDocs(clientQuery);
+              if (!clientSnap.empty && clientSnap.docs[0].data().address) dest = `${clientSnap.docs[0].data().address}, ${clientSnap.docs[0].data().commune || 'Santiago'}`;
+            } catch (e) {}
+          }
+
+          if (job.tripType === 'revision') dest = 'Planta PRT';
+
+          if (orig && !orig.toLowerCase().includes('chile')) orig = `${orig}, Chile`;
+          if (dest && !dest.toLowerCase().includes('chile')) dest = `${dest}, Chile`;
+
+          if (orig && dest) {
+            const distancePromise = new Promise((resolve, reject) => {
+              service.getDistanceMatrix({ origins: [orig], destinations: [dest], travelMode: 'DRIVING' }, (response, status) => {
+                if (status === 'OK') resolve(response); else reject(status);
+              });
+            });
+
+            const res = await Promise.race([distancePromise, new Promise((_, r) => setTimeout(() => r('Timeout'), 4000))]);
+            
+            if (res && res.rows && res.rows[0].elements[0].status === 'OK') {
+              await updateDoc(doc(db, 'transport_jobs', job.id), { drivenDistance: res.rows[0].elements[0].distance.text });
+              successCount++;
+            }
+          }
+        } catch (err) {}
+
+        await new Promise(r => setTimeout(r, 800)); // Delay para no saturar la API
+      }
+
+      setIsCalculatingKm(false);
+      setCalcProgress('');
+      showAlert(`✅ Recálculo terminado. Se actualizaron los kilómetros de ${successCount} traslados correctamente.`);
+    });
   };
 
   const getRouteStr = (j) => {
@@ -1679,6 +1754,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                </button>
                <button type="button" onClick={handlePurgeOldJobs} className="group bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0">
                  <Trash2 className="w-5 h-5"/> Limpiar DB
+               </button>
+               <button type="button" onClick={handleRecalculateKm} disabled={isCalculatingKm} className="group bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 disabled:opacity-50 shadow-md">
+                 {isCalculatingKm ? <Clock className="w-5 h-5 animate-spin"/> : <Map className="w-5 h-5"/>} 
+                 {isCalculatingKm ? `Calc: ${calcProgress}` : 'Recalcular KM'}
                </button>
                <button type="button" onClick={handleDownloadAllZIP} className="group bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0">
                  <FileDown className="w-5 h-5"/> ZIP

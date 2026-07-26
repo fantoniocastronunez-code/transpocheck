@@ -1,11 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import { 
-    BarChart3, Users, Car, CheckCircle, Map, Navigation, Repeat, X, MapPin, DollarSign, Download 
+    BarChart3, Users, Car, CheckCircle, Map, Navigation, Repeat, X, MapPin, DollarSign, Download, ChevronLeft, ChevronRight, Calendar
 } from 'lucide-react';
 
 export default function StatsView({ jobs = [], drivers = [], vehicles = [], allClientsList = [] }) {
     // ESTADO DEL MODAL (Ventana flotante de detalles)
     const [modalData, setModalData] = useState(null);
+    
+    // NUEVO: Estado para controlar el mes que se está visualizando
+    const [viewDate, setViewDate] = useState(new Date());
 
     // 1. CÁLCULO DE MÉTRICAS
     const stats = useMemo(() => {
@@ -14,8 +17,8 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
         }
 
         const now = new Date();
-        const currentMonth = now.getMonth();
-        const currentYear = now.getFullYear();
+        const currentMonth = viewDate.getMonth();
+        const currentYear = viewDate.getFullYear();
 
         const monthlyJobs = jobs.filter(j => {
             const jobDate = j.completedAt ? new Date(j.completedAt) : (j.createdAt ? new Date(j.createdAt) : null);
@@ -222,22 +225,49 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
         <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500 pb-10">
             
             {/* ENCABEZADO */}
-            <div className="bg-gradient-to-r from-blue-700 to-indigo-800 p-6 rounded-3xl shadow-lg text-white relative overflow-hidden">
-                <BarChart3 className="absolute -right-6 -top-6 w-32 h-32 opacity-10" />
-                <h2 className="text-2xl font-black mb-1 relative z-10">Dashboard Analítico</h2>
-                <p className="text-blue-100 font-bold text-sm relative z-10">Métricas operativas interactivas (Presiona cualquier dato)</p>
+            <div className="bg-gradient-to-r from-blue-700 to-indigo-800 p-6 sm:p-8 rounded-3xl shadow-lg text-white relative overflow-hidden">
+                <BarChart3 className="absolute -right-6 -top-6 w-32 h-32 opacity-10 pointer-events-none" />
                 
-                <div className="mt-6 flex flex-wrap gap-4 relative z-10">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 relative z-10 mb-6">
+                    <div>
+                        <h2 className="text-2xl sm:text-3xl font-black mb-1">Dashboard Analítico</h2>
+                        <p className="text-blue-100 font-bold text-sm">Métricas operativas interactivas y exportables</p>
+                    </div>
+                    
+                    {/* CONTROLADOR DE MESES */}
+                    <div className="flex items-center gap-3 bg-white/10 p-1.5 rounded-2xl backdrop-blur-sm border border-white/20 w-fit shrink-0">
+                        <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))} className="p-2 hover:bg-white/20 rounded-xl transition-colors active:scale-95">
+                            <ChevronLeft className="w-5 h-5 text-white" />
+                        </button>
+                        <div className="flex flex-col items-center justify-center min-w-[120px]">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-blue-200 flex items-center gap-1"><Calendar className="w-3 h-3"/> Período</p>
+                            <p className="text-sm font-extrabold capitalize text-white">
+                                {viewDate.toLocaleString('es-CL', { month: 'long', year: 'numeric' })}
+                            </p>
+                        </div>
+                        <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))} disabled={viewDate.getMonth() === new Date().getMonth() && viewDate.getFullYear() === new Date().getFullYear()} className="p-2 hover:bg-white/20 rounded-xl transition-colors active:scale-95 disabled:opacity-30 disabled:pointer-events-none">
+                            <ChevronRight className="w-5 h-5 text-white" />
+                        </button>
+                    </div>
+                </div>
+
+                <div className="bg-white/5 border border-white/10 p-3 rounded-2xl mb-6 relative z-10 flex flex-col sm:flex-row justify-center items-center gap-2 text-center">
+                    <p className="text-xs font-bold text-blue-100">
+                        Mostrando registros desde el <span className="text-white font-black">1 de {viewDate.toLocaleString('es-CL', { month: 'long' })}</span> hasta el <span className="text-white font-black">{new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate()} de {viewDate.toLocaleString('es-CL', { month: 'long' })}</span>.
+                    </p>
+                </div>
+                
+                <div className="flex flex-wrap gap-4 relative z-10">
                     <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl flex-1 min-w-[120px]">
                         <p className="text-[10px] font-black uppercase tracking-widest text-blue-200 mb-1">Total Traslados</p>
                         <p className="text-3xl font-black">{stats.totalJobs || 0}</p>
                     </div>
                     <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl flex-1 min-w-[120px]">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200 mb-1 flex items-center gap-1"><Map className="w-3 h-3" /> KM Este Mes</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200 mb-1 flex items-center gap-1"><Map className="w-3 h-3" /> KM del Período</p>
                         <p className="text-3xl font-black text-emerald-300">{stats.totalKm || 0} <span className="text-sm font-bold text-emerald-100">km</span></p>
                     </div>
                     <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl flex-1 min-w-[120px]">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-200 mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> Ingresos del Mes</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-200 mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> Ingresos Totales</p>
                         <p className="text-3xl font-black text-amber-300"><span className="text-sm font-bold text-amber-100">$</span>{stats.totalRevenue ? stats.totalRevenue.toLocaleString('es-CL') : 0}</p>
                     </div>
                 </div>
@@ -249,7 +279,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                 <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
                     <div className="flex items-center gap-2 mb-4 border-b border-slate-50 pb-3">
                         <div className="bg-blue-100 p-2 rounded-xl"><Users className="w-4 h-4 text-blue-600"/></div>
-                        <h3 className="font-extrabold text-slate-800">Top Clientes del Mes</h3>
+                        <h3 className="font-extrabold text-slate-800">Top Clientes del Período</h3>
                     </div>
                     {(!stats.topClients || stats.topClients.length === 0) ? (
                         <p className="text-xs text-center text-slate-400 font-bold py-4">No hay datos suficientes este mes.</p>
