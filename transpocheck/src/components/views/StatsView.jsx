@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { 
-    BarChart3, Users, Car, CheckCircle, Map, Navigation, Repeat, X, MapPin, DollarSign, Download, ChevronLeft, ChevronRight, Calendar
+    BarChart3, Users, Car, CheckCircle, Map as MapIcon, Navigation, Repeat, X, MapPin, DollarSign, Download, ChevronLeft, ChevronRight, Calendar
 } from 'lucide-react';
 
 export default function StatsView({ jobs = [], drivers = [], vehicles = [], allClientsList = [] }) {
@@ -267,7 +267,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                         <p className="text-3xl font-black">{stats.totalJobs || 0}</p>
                     </div>
                     <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl flex-1 min-w-[120px]">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200 mb-1 flex items-center gap-1"><Map className="w-3 h-3" /> KM del Período</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200 mb-1 flex items-center gap-1"><MapIcon className="w-3 h-3" /> KM del Período</p>
                         <p className="text-3xl font-black text-emerald-300">{stats.totalKm || 0} <span className="text-sm font-bold text-emerald-100">km</span></p>
                     </div>
                     <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl flex-1 min-w-[120px]">
@@ -373,7 +373,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                 {/* 3. TABLA DE KILOMETRAJE POR CONDUCTOR */}
                 <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
                     <div className="flex items-center gap-2 mb-4 border-b border-slate-50 pb-3">
-                        <div className="bg-indigo-100 p-2 rounded-xl"><Map className="w-4 h-4 text-indigo-600"/></div>
+                        <div className="bg-indigo-100 p-2 rounded-xl"><MapIcon className="w-4 h-4 text-indigo-600"/></div>
                         <h3 className="font-extrabold text-slate-800">Kilómetros por Conductor</h3>
                     </div>
                     
@@ -543,7 +543,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                                         {/* CONDUCTOR Y DISTANCIA */}
                                         <div className="flex items-center justify-between text-xs font-bold text-slate-500 pl-1.5">
                                             <p className="flex items-center gap-1.5"><Car className="w-3.5 h-3.5 text-slate-400 shrink-0"/> {Array.isArray(drivers) ? drivers.find(d => d.email === j.acceptedByEmail)?.name || 'Conductor' : 'Conductor'}</p>
-                                            {j.drivenDistance && <span className="flex items-center gap-1.5 bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest border border-indigo-100"><Map className="w-3.5 h-3.5 text-indigo-500 shrink-0"/> {j.drivenDistance}</span>}
+                                            {j.drivenDistance && <span className="flex items-center gap-1.5 bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest border border-indigo-100"><MapIcon className="w-3.5 h-3.5 text-indigo-500 shrink-0"/> {j.drivenDistance}</span>}
                                         </div>
                                     </div>
                                 ))
