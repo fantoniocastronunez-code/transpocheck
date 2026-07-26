@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, updateDoc, doc, deleteDoc, getDocs } from 'firebase/firestore';
-import { Camera, Eye, EyeOff, User, Edit2, Trash2, Truck, Clock, X, Plus, BookOpen, Phone, CheckCircle, MapPin, AlertCircle, Activity, Video } from 'lucide-react';
+import { Camera, Eye, EyeOff, User, Edit2, Trash2, Truck, Clock, X, Plus, BookOpen, Phone, CheckCircle, MapPin, AlertCircle, Activity, Video, Wallet } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import { LICENCIAS, resizeImage } from '../../utils/helpers';
 
@@ -54,6 +54,10 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
   const [clientNotifs, setClientNotifs] = useState(defaultNotifs);
   const [driverNotifs, setDriverNotifs] = useState(defaultDriverNotifs);
   const [clientLogo, setClientLogo] = useState(null);
+  
+  // NUEVO: Estado para Tarifas Predefinidas
+  const defaultPrices = { local: '', region: '', prt: '', servicio: '' };
+  const [clientPrices, setClientPrices] = useState(defaultPrices);
 
   React.useEffect(() => {
     if (editingProfile) {
@@ -61,15 +65,18 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
           setSelectedCompanyId('');
           setClientLogo(null);
           setClientNotifs(defaultNotifs);
+          setClientPrices(defaultPrices);
        } else {
           setSelectedCompanyId(editingProfile.companyId);
           setClientLogo(editingProfile.companyLogo || null);
           setClientNotifs(editingProfile.notifications || defaultNotifs);
+          setClientPrices(editingProfile.prices || defaultPrices);
        }
     } else {
        setSelectedCompanyId('');
        setClientLogo(null);
        setClientNotifs(defaultNotifs);
+       setClientPrices(defaultPrices);
     }
   }, [editingProfile]);
 
@@ -80,7 +87,7 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
        const pins = company.contactPin ? company.contactPin.split(',').map(p=>p.trim()) : [];
        
        if (emails.length === 0) {
-          return [{ id: `${company.id}-empty`, companyId: company.id, companyName: company.name, companyLogo: company.logo, email: '', nombre: '', apellido: '', pin: '', notifications: company.notifications || defaultNotifs, isEmptyCompany: true }];
+          return [{ id: `${company.id}-empty`, companyId: company.id, companyName: company.name, companyLogo: company.logo, email: '', nombre: '', apellido: '', pin: '', notifications: company.notifications || defaultNotifs, prices: company.prices || defaultPrices, isEmptyCompany: true }];
        }
        
        return emails.map((e, i) => {
@@ -98,6 +105,7 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
              apellido,
              pin: pins[i] || '0000',
              notifications: company.notifications || defaultNotifs,
+             prices: company.prices || defaultPrices,
              isEmptyCompany: false
           };
        });
@@ -125,6 +133,7 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                 notifications: clientNotifs,
                 enableNotifications: Object.values(clientNotifs).some(v=>v),
                 logo: clientLogo,
+                prices: clientPrices,
                 createdAt: Date.now()
              });
           } else {
@@ -161,7 +170,8 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                 contactPin: pins.join(','),
                 notifications: clientNotifs, 
                 enableNotifications: Object.values(clientNotifs).some(v=>v),
-                logo: clientLogo !== null ? clientLogo : (company.logo || null)
+                logo: clientLogo !== null ? clientLogo : (company.logo || null),
+                prices: clientPrices
              });
           }
           setEditingProfile(null);
@@ -387,7 +397,32 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                </div>
 
                <div className="space-y-4 pt-5 border-t border-slate-100">
-                  <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5"><CheckCircle className="w-4 h-4"/> 4. Seguridad y PIN</h4>
+                  <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-1.5"><Wallet className="w-4 h-4"/> 4. Tarifas Predefinidas (Solo Admin)</h4>
+                  <div className="bg-indigo-50/50 border border-indigo-100 p-5 rounded-2xl shadow-sm">
+                     <p className="text-xs font-bold text-slate-600 mb-4 leading-tight">Define los valores a cobrar para automatizar los ingresos en cada trabajo de esta empresa.</p>
+                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div>
+                           <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Local ($)</label>
+                           <input type="number" value={clientPrices.local} onChange={(e) => setClientPrices({...clientPrices, local: e.target.value})} placeholder="15000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                        </div>
+                        <div>
+                           <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Región ($)</label>
+                           <input type="number" value={clientPrices.region} onChange={(e) => setClientPrices({...clientPrices, region: e.target.value})} placeholder="45000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                        </div>
+                        <div>
+                           <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Rev. Téc ($)</label>
+                           <input type="number" value={clientPrices.prt} onChange={(e) => setClientPrices({...clientPrices, prt: e.target.value})} placeholder="25000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                        </div>
+                        <div>
+                           <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Otros Serv. ($)</label>
+                           <input type="number" value={clientPrices.servicio} onChange={(e) => setClientPrices({...clientPrices, servicio: e.target.value})} placeholder="10000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+
+               <div className="space-y-4 pt-5 border-t border-slate-100">
+                  <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5"><CheckCircle className="w-4 h-4"/> 5. Seguridad y PIN</h4>
                   <div className="bg-emerald-50 border border-emerald-100 p-5 rounded-2xl shadow-sm">
                      <p className="text-xs font-bold text-slate-600 mb-3">La firma y PIN deben ser creados por el cliente desde su propio acceso al portal.</p>
                      <p className="text-[10px] font-black text-emerald-700 bg-white p-3 rounded-xl border border-emerald-200 shadow-sm flex items-center gap-2">

@@ -4,7 +4,7 @@ import { updateDoc, doc, deleteDoc, addDoc, collection, deleteField, getDocs, qu
 import { 
   Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, 
   Copy, X, XCircle, MapPin, Clock, FileDown, Search, ChevronUp, ChevronDown,
-  Trash2, Car, Repeat, PenTool, Truck, Plus, FileText, AlertCircle
+  Trash2, Car, Repeat, PenTool, Truck, Plus, FileText, AlertCircle, DollarSign
 } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import WaitTimerBadge from '../ui/WaitTimerBadge';
@@ -20,6 +20,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [prtApprovePromptJob, setPrtApprovePromptJob] = useState(null); // <-- NUEVO: Estado para el pop-up de Aprobación
   const [relayPromptJob, setRelayPromptJob] = useState(null); 
   const [forceCloseJob, setForceCloseJob] = useState(null); 
+  const [editPriceJob, setEditPriceJob] = useState(null); // <-- NUEVO: Estado para editar cobro
   
   const [dupPromptJob, setDupPromptJob] = useState(null);
   const [dupMode, setDupMode] = useState('clone');
@@ -1925,6 +1926,22 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                                           </select>
                                       </div>
                                   )}
+
+                                  {/* NUEVO PANEL AUDITORIA PRECIO / COBRO */}
+                                  {isAdminView && auditMode && (j.status === 'completed' || j.status === 'failed') && (
+                                      <div className="bg-emerald-50/50 border border-emerald-200 rounded-lg p-2 mt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-inner ml-4">
+                                          <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Corregir Ingreso ($):</span>
+                                          <div className="flex items-center gap-2">
+                                              <span className="text-xs font-extrabold text-slate-700">${Number(j.companyPrice || 0).toLocaleString('es-CL')}</span>
+                                              <button
+                                                  onClick={(e) => { e.stopPropagation(); setEditPriceJob(j); }}
+                                                  className="bg-white border border-emerald-200 text-emerald-700 text-[10px] font-bold py-1 px-2 rounded-lg outline-none cursor-pointer hover:bg-emerald-100 shadow-sm transition-colors"
+                                              >
+                                                  Modificar
+                                              </button>
+                                          </div>
+                                      </div>
+                                  )}
                               </div>
                           );
                   })}
@@ -2289,6 +2306,51 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                  </button>
               </div>
            </div>
+        </div>
+      )}
+
+      {/* NUEVO MODAL: EDITAR COBRO DEL TRASLADO */}
+      {editPriceJob && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+            <form onSubmit={async (e) => {
+                e.preventDefault();
+                const newPrice = Number(e.target.price.value) || 0;
+                setProcessingId(`${editPriceJob.id}-price`);
+                try {
+                    await updateDoc(doc(db, 'transport_jobs', editPriceJob.id), { companyPrice: newPrice });
+                    showAlert("✅ Ingreso actualizado correctamente.");
+                    setEditPriceJob(null);
+                } catch (err) {
+                    console.error(err);
+                    showAlert("❌ Error al actualizar el cobro.");
+                } finally {
+                    setProcessingId(null);
+                }
+            }} className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-5 shadow-2xl border-t-8 border-emerald-500 animate-in zoom-in-95">
+                <div className="flex justify-between items-center">
+                    <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                        <DollarSign className="w-6 h-6 text-emerald-600"/> Editar Cobro
+                    </h3>
+                    <button type="button" onClick={() => setEditPriceJob(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors">
+                        <X className="w-5 h-5 text-slate-600"/>
+                    </button>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Trabajo a editar</p>
+                    <p className="text-sm font-bold text-slate-700 truncate">
+                        {editPriceJob.tripType === 'simple' ? editPriceJob.description : `${editPriceJob.brand} ${editPriceJob.model}`}
+                    </p>
+                    <p className="text-xs font-bold text-slate-500">{getJobIdentifier(editPriceJob)}</p>
+                </div>
+                <div>
+                    <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest ml-1">Nuevo Valor del Servicio ($)</label>
+                    <input name="price" type="number" defaultValue={editPriceJob.companyPrice || 0} required autoFocus className="w-full border-2 border-emerald-200 bg-emerald-50 p-3.5 rounded-xl font-black text-xl text-emerald-900 outline-none focus:border-emerald-500 mt-1 shadow-sm" />
+                </div>
+                <button type="submit" disabled={processingId === `${editPriceJob.id}-price`} className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-sm shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                    {processingId === `${editPriceJob.id}-price` ? <Clock className="w-5 h-5 animate-spin"/> : <Save className="w-5 h-5"/>}
+                    {processingId === `${editPriceJob.id}-price` ? 'Guardando...' : 'Guardar Nuevo Valor'}
+                </button>
+            </form>
         </div>
       )}
 

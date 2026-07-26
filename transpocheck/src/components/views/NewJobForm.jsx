@@ -287,6 +287,32 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     // BURBUJA ASÍNCRONA (Segundo Plano)
     (async () => {
       try {
+        // --- 1. DETERMINAR PRECIO PREDEFINIDO DEL CLIENTE ---
+        let companyPrice = jobToEdit?.companyPrice || 0;
+        let clientRecord = null; // Lo guardamos para reutilizarlo en la notificación
+        
+        if (jobData.client && jobData.client !== 'Sin Cliente' && jobData.client !== 'OTRO') {
+            try {
+                const qClient = query(collection(db, 'clients'), where('name', '==', jobData.client));
+                const snapClient = await getDocs(qClient);
+                if (!snapClient.empty) {
+                    clientRecord = snapClient.docs[0].data();
+                    
+                    // Asignar el precio automático SOLO si es un trabajo nuevo o no tenía precio
+                    if (!jobToEdit || !jobToEdit.companyPrice) {
+                        const prices = clientRecord.prices || {};
+                        if (operationMode === 'servicio') companyPrice = Number(prices.servicio) || 0;
+                        else if (tripType === 'revision') companyPrice = Number(prices.prt) || 0;
+                        else if (tripType === 'viaje') companyPrice = Number(prices.region) || 0;
+                        else companyPrice = Number(prices.local) || 0;
+                    }
+                }
+            } catch (e) { console.error("Error buscando cliente:", e); }
+        }
+        
+        jobData.companyPrice = companyPrice; // Inyectamos el precio en los datos del trabajo
+
+        // --- 2. GUARDAR EN LA BASE DE DATOS ---
         if (jobToEdit) {
            await updateDoc(doc(db, 'transport_jobs', jobToEdit.id), jobData);
         } else {
@@ -300,6 +326,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
             await addDoc(collection(db, 'vehicles'), { plate: plate.toUpperCase(), vin: vin.toUpperCase(), vehicleType, brand, model, client: finalClient, createdAt: Date.now() });
         }
         
+        // --- 3. NOTIFICACIONES PUSH A CONDUCTORES ---
         const driverTokens = assignedDriversList.map(d => d.fcmToken).filter(token => token);
         if (driverTokens.length > 0) {
           const pushTitle = jobToEdit ? "🔄 Trabajo Actualizado" : (operationMode === 'servicio' ? "🛠️ ¡Nuevo Servicio Asignado!" : "📍 ¡Nuevo Traslado Asignado!");
@@ -307,6 +334,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
           try { await fetch('/api/send-notification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tokens: driverTokens, title: pushTitle, body: pushBody }) }); } catch (err) {}
         }
 
+        // --- 4. CORREOS A CONDUCTORES ---
         try {
            const driverEmails = assignedDriversList.map(d => d.email).filter(e => e);
            if (driverEmails.length > 0) {
@@ -314,16 +342,12 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
            }
         } catch (err) {}
         
-        if (!jobToEdit && jobData.client && jobData.client !== 'Sin Cliente' && jobData.client !== 'OTRO') {
+        // --- 5. CORREOS A CLIENTES (Usando la memoria del cliente) ---
+        if (!jobToEdit && clientRecord) {
            try {
-              const qClient = query(collection(db, 'clients'), where('name', '==', jobData.client));
-              const snapClient = await getDocs(qClient);
-              if (!snapClient.empty) {
-                 const clientRecord = snapClient.docs[0].data();
-                 const notifs = clientRecord.notifications || { creado: false };
-                 if (notifs.creado && clientRecord.email) {
-                    fetch('/api/notify-client', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: clientRecord.email, clientName: clientRecord.name, type: 'creado', jobDetails: { id: 'N/A', driverName: 'Buscando conductor...', vehicle: operationMode === 'servicio' ? (jobData.description || 'Servicio en Terreno') : (`${brand} ${model}`.trim() || 'Vehículo'), plate: plate || vin || jobData.associatedPlate || 'S/N', origin: jobData.origin || 'Origen', destination: jobData.destination || 'Destino' } }) }).catch(e => {});
-                 }
+              const notifs = clientRecord.notifications || { creado: false };
+              if (notifs.creado && clientRecord.email) {
+                 fetch('/api/notify-client', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: clientRecord.email, clientName: clientRecord.name, type: 'creado', jobDetails: { id: 'N/A', driverName: 'Buscando conductor...', vehicle: operationMode === 'servicio' ? (jobData.description || 'Servicio en Terreno') : (`${brand} ${model}`.trim() || 'Vehículo'), plate: plate || vin || jobData.associatedPlate || 'S/N', origin: jobData.origin || 'Origen', destination: jobData.destination || 'Destino' } }) }).catch(e => {});
               }
            } catch(e) {}
         }

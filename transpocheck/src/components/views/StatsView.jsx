@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { 
-    BarChart3, Users, Car, CheckCircle, Map, Navigation, Repeat, X, MapPin 
+    BarChart3, Users, Car, CheckCircle, Map, Navigation, Repeat, X, MapPin, DollarSign 
 } from 'lucide-react';
 
 export default function StatsView({ jobs = [], drivers = [], vehicles = [], allClientsList = [] }) {
@@ -22,13 +22,22 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
             return jobDate && jobDate.getMonth() === currentMonth && jobDate.getFullYear() === currentYear && (j.status === 'completed' || j.status === 'failed');
         });
 
-        // --- Top Clientes ---
+        // --- Top Clientes e Ingresos Financieros ---
         const clientCounts = {};
+        const clientRevenues = {};
+        let totalRevenue = 0;
+
         monthlyJobs.forEach(j => {
             const cName = j.client || 'Sin Cliente';
             clientCounts[cName] = (clientCounts[cName] || 0) + 1;
+            
+            // Cálculos de Ingresos
+            const price = Number(j.companyPrice) || 0;
+            clientRevenues[cName] = (clientRevenues[cName] || 0) + price;
+            totalRevenue += price;
         });
         const topClients = Object.entries(clientCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        const topClientsByRevenue = Object.entries(clientRevenues).sort((a, b) => b[1] - a[1]);
 
         // --- PRT ---
         const prtJobs = monthlyJobs.filter(j => j.tripType === 'revision');
@@ -116,6 +125,8 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
             monthlyJobs,
             totalJobs: monthlyJobs.length,
             topClients,
+            topClientsByRevenue,
+            totalRevenue,
             prtStats: { total: prtJobs.length, approved: prtApproved, help: prtApprovedHelp, rejected: prtRejected },
             totalKm: Math.round(totalKm),
             todayKm: Math.round(todayKm),
@@ -198,6 +209,10 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                         <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200 mb-1 flex items-center gap-1"><Map className="w-3 h-3" /> KM Este Mes</p>
                         <p className="text-3xl font-black text-emerald-300">{stats.totalKm || 0} <span className="text-sm font-bold text-emerald-100">km</span></p>
                     </div>
+                    <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl flex-1 min-w-[120px]">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-200 mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> Ingresos del Mes</p>
+                        <p className="text-3xl font-black text-amber-300"><span className="text-sm font-bold text-amber-100">$</span>{stats.totalRevenue ? stats.totalRevenue.toLocaleString('es-CL') : 0}</p>
+                    </div>
                 </div>
             </div>
 
@@ -225,6 +240,31 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                                             <div className="bg-blue-500 h-full rounded-full transition-all duration-1000" style={{ width: `${getPercent(count, stats.topClients[0][1])}%` }}></div>
                                         </div>
                                     </div>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* NUEVO: INGRESOS POR CLIENTE */}
+                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                    <div className="flex items-center gap-2 mb-4 border-b border-slate-50 pb-3">
+                        <div className="bg-emerald-100 p-2 rounded-xl"><DollarSign className="w-4 h-4 text-emerald-600"/></div>
+                        <h3 className="font-extrabold text-slate-800">Ingresos por Cliente</h3>
+                    </div>
+                    {(!stats.topClientsByRevenue || stats.topClientsByRevenue.length === 0) ? (
+                        <p className="text-xs text-center text-slate-400 font-bold py-4">No hay ingresos registrados este mes.</p>
+                    ) : (
+                        <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 scrollbar-none">
+                            {stats.topClientsByRevenue.map(([name, revenue], idx) => (
+                                <button key={name} onClick={() => handleClientClick(name)} className="w-full text-left flex items-center gap-3 p-2.5 hover:bg-slate-50 hover:scale-[1.01] active:scale-95 transition-all rounded-xl border border-transparent hover:border-slate-100 hover:shadow-sm">
+                                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${idx === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>{idx + 1}</span>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-bold text-slate-700 truncate">{name}</p>
+                                    </div>
+                                    <span className="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md shrink-0 border border-emerald-100">
+                                        ${revenue.toLocaleString('es-CL')}
+                                    </span>
                                 </button>
                             ))}
                         </div>
