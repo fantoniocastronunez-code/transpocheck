@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { 
-    BarChart3, Users, Car, CheckCircle, Map, Navigation, Repeat, X, MapPin, DollarSign 
+    BarChart3, Users, Car, CheckCircle, Map, Navigation, Repeat, X, MapPin, DollarSign, Download 
 } from 'lucide-react';
 
 export default function StatsView({ jobs = [], drivers = [], vehicles = [], allClientsList = [] }) {
@@ -189,6 +189,33 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
             return plate && plate.toUpperCase().trim() === targetPlate;
         });
         setModalData({ title: `Movimientos Patente: ${targetPlate}`, jobs: filtered });
+    };
+
+    // NUEVO: Exportar tabla a Excel (CSV)
+    const handleExportExcel = () => {
+        if (!modalData || !modalData.jobs) return;
+        const headers = ['Fecha', 'Marca', 'Modelo', 'Patente/VIN', 'Desde', 'Hasta', 'Valor ($)'];
+        
+        const rows = modalData.jobs.map(j => {
+            const date = new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL');
+            const brand = j.brand || '-';
+            const model = j.model || '-';
+            const plate = (j.plate && j.plate !== 'S/N') ? j.plate : (j.vin || 'S/N');
+            const origin = j.origin || '-';
+            const destination = j.destination || j.destName || '-';
+            const price = j.companyPrice || 0;
+            return `"${date}";"${brand}";"${model}";"${plate}";"${origin}";"${destination}";"${price}"`;
+        });
+
+        // \uFEFF fuerza a Excel a leer el archivo con codificación UTF-8 (mantiene los acentos y las ñ)
+        const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(';'), ...rows].join('\n');
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `Reporte_${modalData.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     return (
@@ -433,9 +460,14 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Auditoría de Registros</p>
                                 <h3 className="font-black text-slate-800 text-[15px] truncate">{modalData.title}</h3>
                             </div>
-                            <button onClick={() => setModalData(null)} className="p-2.5 bg-white border border-slate-200 rounded-full hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors shrink-0 shadow-sm active:scale-95">
-                                <X className="w-4 h-4"/>
-                            </button>
+                            <div className="flex items-center gap-2 shrink-0">
+                                <button onClick={handleExportExcel} className="p-2.5 bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl hover:bg-emerald-200 transition-colors shadow-sm active:scale-95 flex items-center gap-2" title="Descargar Tabla en Excel">
+                                    <Download className="w-4 h-4"/> <span className="hidden sm:inline text-xs font-black uppercase tracking-wider">Excel</span>
+                                </button>
+                                <button onClick={() => setModalData(null)} className="p-2.5 bg-white border border-slate-200 rounded-full hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors shadow-sm active:scale-95">
+                                    <X className="w-4 h-4"/>
+                                </button>
+                            </div>
                         </div>
                         
                         <div className="p-4 overflow-y-auto scrollbar-none flex-1 space-y-3 bg-slate-100/50 rounded-b-3xl">
