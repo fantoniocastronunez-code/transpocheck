@@ -11,8 +11,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   const [activeJobsList, setActiveJobsList] = useState([]); // NUEVO: Memoria de trabajos activos
   const [prtList, setPrtList] = useState([]); // <-- NUEVO ESTADO PARA PLANTAS PRT
 
-  useEffect(() => {
-    const fetchDirectory = async () => {
+  useEffect(() => {const handleCreateOrUpdateJob = async (e) => {
       try {
         const snap = await getDocs(collection(db, 'directory'));
         setDirectoryList(snap.docs.map(d => d.data()));
@@ -300,7 +299,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
       try {
         // --- 1. DETERMINAR PRECIO PREDEFINIDO DEL CLIENTE ---
         let companyPrice = jobToEdit?.companyPrice || 0;
-        let clientRecord = null; // Lo guardamos para reutilizarlo en la notificación
+        let clientRecord = null;
         
         if (jobData.client && jobData.client !== 'Sin Cliente' && jobData.client !== 'OTRO') {
             try {
@@ -309,7 +308,6 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                 if (!snapClient.empty) {
                     clientRecord = snapClient.docs[0].data();
                     
-                    // Asignar el precio automático SOLO si es un trabajo nuevo o no tenía precio
                     if (!jobToEdit || !jobToEdit.companyPrice) {
                         const prices = clientRecord.prices || {};
                         if (operationMode === 'servicio') companyPrice = Number(prices.servicio) || 0;
@@ -321,16 +319,14 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
             } catch (e) { console.error("Error buscando cliente:", e); }
         }
         
-        jobData.companyPrice = companyPrice; // Inyectamos el precio en los datos del trabajo
+        jobData.companyPrice = companyPrice;
 
         // --- NUEVO: DETERMINAR LISTA DE VEHÍCULOS PARA CREACIÓN MASIVA ---
         let vehiclesToProcess = [];
         if (operationMode === 'traslado' && !jobToEdit && multiVehicles.length > 0) {
             vehiclesToProcess = [...multiVehicles];
-            // Si dejó uno escrito a medias en los inputs (sin apretar el botón de añadir), lo sumamos también
             if (plate || vin) vehiclesToProcess.push({ plate, vin, brand, model, vehicleType });
         } else {
-            // Flujo normal: 1 solo vehículo, servicio en terreno, o estamos editando
             vehiclesToProcess = [{ plate, vin, brand, model, vehicleType }];
         }
 
@@ -355,7 +351,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                await updateDoc(doc(db, 'transport_jobs', jobToEdit.id), currentJobData);
             } else {
                currentJobData.status = 'pending';
-               currentJobData.createdAt = Date.now() + index; // Sumamos el index para tiempos únicos
+               currentJobData.createdAt = Date.now() + index; // ID de tiempo único
                currentJobData.checklist = null;
                await addDoc(collection(db, 'transport_jobs'), currentJobData);
             }
@@ -367,11 +363,10 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
             return { currentJobData, vPlate, vVin, vBrand, vModel };
         });
 
-        // 2. DISPARAR NOTIFICACIONES EN SEGUNDO PLANO (Sin "await", para que no congele la pantalla)
         // Esperamos a que TODOS se guarden en Firebase en paralelo
         const processedJobs = await Promise.all(savePromises);
 
-        // Disparamos las notificaciones en segundo plano sin congelar la app
+        // 2. DISPARAR NOTIFICACIONES EN SEGUNDO PLANO
         processedJobs.forEach(({ currentJobData, vPlate, vVin, vBrand, vModel }) => {
             const driverTokens = assignedDriversList.map(d => d.fcmToken).filter(token => token);
             if (driverTokens.length > 0) {
@@ -394,21 +389,16 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
         });
 
         syncTask.finish(); // Marca en verde en el Ojo
-                  }
-               } catch(e) {}
-            }
-        });
         
-        // Dispara el mensaje de éxito e inyecta un cierre ultra rápido de 500ms (medio segundo)
+        // Dispara el mensaje de éxito
         showAlert("✅ ¡Listo! Traslado procesado.");
         setTimeout(() => {
-           // Si el modal sigue abierto, lo forzamos a cerrar anulando la alerta vacía
            showAlert(null);
         }, 500);
         
       } catch (error) { 
         console.error(error); 
-        syncTask.error("Error de conexión"); // Marca en rojo en el Ojo
+        syncTask.error("Error de conexión");
         showAlert("❌ Hubo un error al guardar el traslado.");
       } finally {
         setIsSubmitting(false);
