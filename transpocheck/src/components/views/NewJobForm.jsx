@@ -56,6 +56,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   
   const [plate, setPlate] = useState(initPlate);
   const [vin, setVin] = useState(initVin);
+  const [multiVehicles, setMultiVehicles] = useState([]); // NUEVO: Lista para traslados masivos
   const [tripType, setTripType] = useState(jobToEdit?.tripType || 'traslado');
   const [vehicleType, setVehicleType] = useState(jobToEdit?.vehicleType || 'auto');
   
@@ -162,6 +163,16 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSearchingVehicle, setIsSearchingVehicle] = useState(false);
   const [vehicleFoundStatus, setVehicleFoundStatus] = useState(null); // 'found', 'not_found', null
+
+  const handleAddMultiVehicle = () => {
+    if (!plate && !vin) return showAlert("⚠️ Ingresa al menos la patente o el VIN para agregarlo a la lista masiva.");
+    setMultiVehicles([...multiVehicles, { plate, vin, brand, model, vehicleType }]);
+    setPlate(''); setVin(''); setBrand(''); setModel(''); setVehicleFoundStatus(null);
+  };
+
+  const handleRemoveMultiVehicle = (index) => {
+    const newList = [...multiVehicles]; newList.splice(index, 1); setMultiVehicles(newList);
+  };
 
   const handleAddWaypoint = () => setWaypoints([...waypoints, '']);
   const handleWaypointChange = (index, val) => { const nw = [...waypoints]; nw[index] = val; setWaypoints(nw); };
@@ -312,45 +323,74 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
         
         jobData.companyPrice = companyPrice; // Inyectamos el precio en los datos del trabajo
 
-        // --- 2. GUARDAR EN LA BASE DE DATOS ---
-        if (jobToEdit) {
-           await updateDoc(doc(db, 'transport_jobs', jobToEdit.id), jobData);
+        // --- NUEVO: DETERMINAR LISTA DE VEHÍCULOS PARA CREACIÓN MASIVA ---
+        let vehiclesToProcess = [];
+        if (operationMode === 'traslado' && !jobToEdit && multiVehicles.length > 0) {
+            vehiclesToProcess = [...multiVehicles];
+            // Si dejó uno escrito a medias en los inputs (sin apretar el botón de añadir), lo sumamos también
+            if (plate || vin) vehiclesToProcess.push({ plate, vin, brand, model, vehicleType });
         } else {
-           jobData.status = 'pending';
-           jobData.createdAt = Date.now();
-           jobData.checklist = null;
-           await addDoc(collection(db, 'transport_jobs'), jobData);
-        }
-        
-        if (operationMode === 'traslado' && (plate || vin) && !vehicles.find(v => (plate && v.plate === plate) || (vin && v.vin === vin))) {
-            await addDoc(collection(db, 'vehicles'), { plate: plate.toUpperCase(), vin: vin.toUpperCase(), vehicleType, brand, model, client: finalClient, createdAt: Date.now() });
-        }
-        
-        // --- 3. NOTIFICACIONES PUSH A CONDUCTORES ---
-        const driverTokens = assignedDriversList.map(d => d.fcmToken).filter(token => token);
-        if (driverTokens.length > 0) {
-          const pushTitle = jobToEdit ? "🔄 Trabajo Actualizado" : (operationMode === 'servicio' ? "🛠️ ¡Nuevo Servicio Asignado!" : "📍 ¡Nuevo Traslado Asignado!");
-          const pushBody = operationMode === 'servicio' ? `Tarea: ${description}\nLugar: ${jobData.origin}` : `Vehículo: ${brand} ${model} (${plate || 'S/N'})\nDesde: ${jobData.origin}`;
-          try { await fetch('/api/send-notification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tokens: driverTokens, title: pushTitle, body: pushBody }) }); } catch (err) {}
+            // Flujo normal: 1 solo vehículo, servicio en terreno, o estamos editando
+            vehiclesToProcess = [{ plate, vin, brand, model, vehicleType }];
         }
 
-        // --- 4. CORREOS A CONDUCTORES ---
-        try {
-           const driverEmails = assignedDriversList.map(d => d.email).filter(e => e);
-           if (driverEmails.length > 0) {
-              await fetch('/api/notify-driver', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ emails: driverEmails, isEdit: !!jobToEdit, isService: operationMode === 'servicio', jobDetails: { client: jobData.client || 'Sin cliente', origin: jobData.origin, destination: jobData.destination || '', date: jobData.scheduledDate, plate: plate || vin || jobData.associatedPlate || 'S/N', vehicle: operationMode === 'servicio' ? (jobData.description || 'Servicio en Terreno') : (`${brand} ${model}`.trim() || 'N/A'), description: description || '' } }) });
-           }
-        } catch (err) {}
-        
-        // --- 5. CORREOS A CLIENTES (Usando la memoria del cliente) ---
-        if (!jobToEdit && clientRecord) {
-           try {
-              const notifs = clientRecord.notifications || { creado: false };
-              if (notifs.creado && clientRecord.email) {
-                 fetch('/api/notify-client', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: clientRecord.email, clientName: clientRecord.name, type: 'creado', jobDetails: { id: 'N/A', driverName: 'Buscando conductor...', vehicle: operationMode === 'servicio' ? (jobData.description || 'Servicio en Terreno') : (`${brand} ${model}`.trim() || 'Vehículo'), plate: plate || vin || jobData.associatedPlate || 'S/N', origin: jobData.origin || 'Origen', destination: jobData.destination || 'Destino' } }) }).catch(e => {});
-              }
-           } catch(e) {}
-        }
+        // PROCESAMOS CADA VEHÍCULO EN UN LOOP (Puede ser 1 o pueden ser 10)
+        for (const v of vehiclesToProcess) {
+            const currentJobData = { ...jobData }; // Clonamos la base (mismo origen, destino, cliente, fecha)
+            
+            const vPlate = (v.plate || '').toUpperCase();
+            const vVin = (v.vin || '').toUpperCase();
+            const vBrand = v.brand || '';
+            const vModel = v.model || '';
+
+            if (operationMode === 'traslado') {
+                currentJobData.brand = vBrand;
+                currentJobData.model = vModel;
+                currentJobData.vin = vVin;
+                currentJobData.plate = vPlate;
+                currentJobData.vehicleType = v.vehicleType;
+            }
+
+            // --- 2. GUARDAR EN LA BASE DE DATOS ---
+            if (jobToEdit) {
+               await updateDoc(doc(db, 'transport_jobs', jobToEdit.id), currentJobData);
+            } else {
+               currentJobData.status = 'pending';
+               currentJobData.createdAt = Date.now();
+               currentJobData.checklist = null;
+               await addDoc(collection(db, 'transport_jobs'), currentJobData);
+            }
+            
+            if (operationMode === 'traslado' && (vPlate || vVin) && !vehicles.find(veh => (vPlate && veh.plate === vPlate) || (vVin && veh.vin === vVin))) {
+                await addDoc(collection(db, 'vehicles'), { plate: vPlate, vin: vVin, vehicleType: v.vehicleType, brand: vBrand, model: vModel, client: finalClient, createdAt: Date.now() });
+            }
+            
+            // --- 3. NOTIFICACIONES PUSH A CONDUCTORES ---
+            const driverTokens = assignedDriversList.map(d => d.fcmToken).filter(token => token);
+            if (driverTokens.length > 0) {
+              const pushTitle = jobToEdit ? "🔄 Trabajo Actualizado" : (operationMode === 'servicio' ? "🛠️ ¡Nuevo Servicio Asignado!" : "📍 ¡Nuevo Traslado Asignado!");
+              const pushBody = operationMode === 'servicio' ? `Tarea: ${description}\nLugar: ${currentJobData.origin}` : `Vehículo: ${vBrand} ${vModel} (${vPlate || 'S/N'})\nDesde: ${currentJobData.origin}`;
+              try { await fetch('/api/send-notification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tokens: driverTokens, title: pushTitle, body: pushBody }) }); } catch (err) {}
+            }
+
+            // --- 4. CORREOS A CONDUCTORES ---
+            try {
+               const driverEmails = assignedDriversList.map(d => d.email).filter(e => e);
+               if (driverEmails.length > 0) {
+                  await fetch('/api/notify-driver', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ emails: driverEmails, isEdit: !!jobToEdit, isService: operationMode === 'servicio', jobDetails: { client: currentJobData.client || 'Sin cliente', origin: currentJobData.origin, destination: currentJobData.destination || '', date: currentJobData.scheduledDate, plate: vPlate || vVin || currentJobData.associatedPlate || 'S/N', vehicle: operationMode === 'servicio' ? (currentJobData.description || 'Servicio en Terreno') : (`${vBrand} ${vModel}`.trim() || 'N/A'), description: description || '' } }) });
+               }
+            } catch (err) {}
+            
+            // --- 5. CORREOS A CLIENTES ---
+            if (!jobToEdit && clientRecord) {
+               try {
+                  const notifs = clientRecord.notifications || { creado: false };
+                  if (notifs.creado && clientRecord.email) {
+                     fetch('/api/notify-client', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: clientRecord.email, clientName: clientRecord.name, type: 'creado', jobDetails: { id: 'N/A', driverName: 'Buscando conductor...', vehicle: operationMode === 'servicio' ? (currentJobData.description || 'Servicio en Terreno') : (`${vBrand} ${vModel}`.trim() || 'Vehículo'), plate: vPlate || vVin || currentJobData.associatedPlate || 'S/N', origin: currentJobData.origin || 'Origen', destination: currentJobData.destination || 'Destino' } }) }).catch(e => {});
+                  }
+               } catch(e) {}
+            }
+        } // Fin del Loop
 
         syncTask.finish(); // Marca en verde en el Ojo
         
@@ -498,6 +538,29 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                    <option value="carro_arrastre">🛒 Carro Arrastre</option>
                  </select>
                </div>
+
+               {/* NUEVO: TRASLADO MASIVO DE VEHÍCULOS */}
+               {!jobToEdit && (
+                 <div className="pt-4 mt-4 border-t border-slate-200">
+                    {multiVehicles.length > 0 && (
+                      <div className="mb-3 space-y-2">
+                         <p className="text-xs font-extrabold text-blue-600 uppercase">Vehículos en Lista Masiva ({multiVehicles.length}):</p>
+                         {multiVehicles.map((v, idx) => (
+                           <div key={idx} className="flex justify-between items-center bg-white p-2.5 rounded-xl border border-blue-100 shadow-sm animate-in zoom-in">
+                              <div>
+                                 <p className="text-sm font-black text-slate-800 uppercase">{v.plate || v.vin || 'S/N'}</p>
+                                 <p className="text-[10px] font-bold text-slate-500 uppercase">{v.brand} {v.model}</p>
+                              </div>
+                              <button type="button" onClick={() => handleRemoveMultiVehicle(idx)} className="text-red-400 hover:text-red-600 bg-red-50 p-2 rounded-lg transition-colors"><X className="w-4 h-4"/></button>
+                           </div>
+                         ))}
+                      </div>
+                    )}
+                    <button type="button" onClick={handleAddMultiVehicle} className="w-full sm:w-auto text-xs font-extrabold text-slate-600 bg-white hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 py-2.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-1.5 border border-slate-200 shadow-sm">
+                       <Plus className="w-4 h-4"/> Añadir a Lista Masiva (Permite agregar otro)
+                    </button>
+                 </div>
+               )}
             </div>
             
             <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl space-y-4 animate-in fade-in slide-in-from-bottom-2">
