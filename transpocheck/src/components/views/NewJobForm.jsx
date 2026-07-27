@@ -334,10 +334,10 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
             vehiclesToProcess = [{ plate, vin, brand, model, vehicleType }];
         }
 
-        // PROCESAMOS CADA VEHÍCULO EN UN LOOP (Puede ser 1 o pueden ser 10)
-        for (const v of vehiclesToProcess) {
-            const currentJobData = { ...jobData }; // Clonamos la base (mismo origen, destino, cliente, fecha)
-            
+        // 1. GUARDADO EXPRÉS EN BASE DE DATOS (En Paralelo y con ID único)
+        const savePromises = vehiclesToProcess.map(async (v, index) => {
+            const currentJobData = { ...jobData };
+
             const vPlate = (v.plate || '').toUpperCase();
             const vVin = (v.vin || '').toUpperCase();
             const vBrand = v.brand || '';
@@ -351,48 +351,46 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                 currentJobData.vehicleType = v.vehicleType;
             }
 
-            // --- 2. GUARDAR EN LA BASE DE DATOS ---
             if (jobToEdit) {
                await updateDoc(doc(db, 'transport_jobs', jobToEdit.id), currentJobData);
             } else {
                currentJobData.status = 'pending';
-               currentJobData.createdAt = Date.now();
+               currentJobData.createdAt = Date.now() + index; // Sumamos el index para que JAMÁS choquen los tiempos en React
                currentJobData.checklist = null;
                await addDoc(collection(db, 'transport_jobs'), currentJobData);
             }
             
             if (operationMode === 'traslado' && (vPlate || vVin) && !vehicles.find(veh => (vPlate && veh.plate === vPlate) || (vVin && veh.vin === vVin))) {
-                await addDoc(collection(db, 'vehicles'), { plate: vPlate, vin: vVin, vehicleType: v.vehicleType, brand: vBrand, model: vModel, client: finalClient, createdAt: Date.now() });
+                await addDoc(collection(db, 'vehicles'), { plate: vPlate, vin: vVin, vehicleType: v.vehicleType, brand: vBrand, model: vModel, client: finalClient, createdAt: Date.now() + index });
             }
             
-            // --- 3. NOTIFICACIONES PUSH A CONDUCTORES ---
+            return { currentJobData, vPlate, vVin, vBrand, vModel };
+        });
+
+        // Obligamos a la app a esperar a que TODOS se guarden antes de seguir
+        const processedJobs = await Promise.all(savePromises);
+
+        // 2. DISPARAR NOTIFICACIONES EN SEGUNDO PLANO (Sin "await", para que no congele la pantalla)
+        processedJobs.forEach(({ currentJobData, vPlate, vVin, vBrand, vModel }) => {
             const driverTokens = assignedDriversList.map(d => d.fcmToken).filter(token => token);
             if (driverTokens.length > 0) {
               const pushTitle = jobToEdit ? "🔄 Trabajo Actualizado" : (operationMode === 'servicio' ? "🛠️ ¡Nuevo Servicio Asignado!" : "📍 ¡Nuevo Traslado Asignado!");
               const pushBody = operationMode === 'servicio' ? `Tarea: ${description}\nLugar: ${currentJobData.origin}` : `Vehículo: ${vBrand} ${vModel} (${vPlate || 'S/N'})\nDesde: ${currentJobData.origin}`;
-              try { await fetch('/api/send-notification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tokens: driverTokens, title: pushTitle, body: pushBody }) }); } catch (err) {}
+              fetch('/api/send-notification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tokens: driverTokens, title: pushTitle, body: pushBody }) }).catch(()=>{});
             }
 
-            // --- 4. CORREOS A CONDUCTORES ---
-            try {
-               const driverEmails = assignedDriversList.map(d => d.email).filter(e => e);
-               if (driverEmails.length > 0) {
-                  await fetch('/api/notify-driver', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ emails: driverEmails, isEdit: !!jobToEdit, isService: operationMode === 'servicio', jobDetails: { client: currentJobData.client || 'Sin cliente', origin: currentJobData.origin, destination: currentJobData.destination || '', date: currentJobData.scheduledDate, plate: vPlate || vVin || currentJobData.associatedPlate || 'S/N', vehicle: operationMode === 'servicio' ? (currentJobData.description || 'Servicio en Terreno') : (`${vBrand} ${vModel}`.trim() || 'N/A'), description: description || '' } }) });
-               }
-            } catch (err) {}
+            const driverEmails = assignedDriversList.map(d => d.email).filter(e => e);
+            if (driverEmails.length > 0) {
+               fetch('/api/notify-driver', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ emails: driverEmails, isEdit: !!jobToEdit, isService: operationMode === 'servicio', jobDetails: { client: currentJobData.client || 'Sin cliente', origin: currentJobData.origin, destination: currentJobData.destination || '', date: currentJobData.scheduledDate, plate: vPlate || vVin || currentJobData.associatedPlate || 'S/N', vehicle: operationMode === 'servicio' ? (currentJobData.description || 'Servicio en Terreno') : (`${vBrand} ${vModel}`.trim() || 'N/A'), description: description || '' } }) }).catch(()=>{});
+            }
             
-            // --- 5. CORREOS A CLIENTES ---
             if (!jobToEdit && clientRecord) {
-               try {
-                  const notifs = clientRecord.notifications || { creado: false };
-                  if (notifs.creado && clientRecord.email) {
-                     fetch('/api/notify-client', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: clientRecord.email, clientName: clientRecord.name, type: 'creado', jobDetails: { id: 'N/A', driverName: 'Buscando conductor...', vehicle: operationMode === 'servicio' ? (currentJobData.description || 'Servicio en Terreno') : (`${vBrand} ${vModel}`.trim() || 'Vehículo'), plate: vPlate || vVin || currentJobData.associatedPlate || 'S/N', origin: currentJobData.origin || 'Origen', destination: currentJobData.destination || 'Destino' } }) }).catch(e => {});
-                  }
-               } catch(e) {}
+                const notifs = clientRecord.notifications || { creado: false };
+                if (notifs.creado && clientRecord.email) {
+                   fetch('/api/notify-client', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: clientRecord.email, clientName: clientRecord.name, type: 'creado', jobDetails: { id: 'N/A', driverName: 'Buscando conductor...', vehicle: operationMode === 'servicio' ? (currentJobData.description || 'Servicio en Terreno') : (`${vBrand} ${vModel}`.trim() || 'Vehículo'), plate: vPlate || vVin || currentJobData.associatedPlate || 'S/N', origin: currentJobData.origin || 'Origen', destination: currentJobData.destination || 'Destino' } }) }).catch(()=>{});
+                }
             }
-        } // Fin del Loop
-
-        syncTask.finish(); // Marca en verde en el Ojo
+        });
         
         // Dispara el mensaje de éxito e inyecta un cierre ultra rápido de 500ms (medio segundo)
         showAlert("✅ ¡Listo! Traslado procesado.");
