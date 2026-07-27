@@ -11,7 +11,8 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   const [activeJobsList, setActiveJobsList] = useState([]); // NUEVO: Memoria de trabajos activos
   const [prtList, setPrtList] = useState([]); // <-- NUEVO ESTADO PARA PLANTAS PRT
 
-  useEffect(() => {const handleCreateOrUpdateJob = async (e) => {
+  useEffect(() => {
+    const fetchDirectory = async () => {
       try {
         const snap = await getDocs(collection(db, 'directory'));
         setDirectoryList(snap.docs.map(d => d.data()));
@@ -134,9 +135,6 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
 
       // Simulamos un retraso de red para dar retroalimentación visual de "procesando"
       await new Promise(resolve => setTimeout(resolve, 600));
-
-      // AQUÍ PUEDES CONECTAR UNA API EXTERNA CHILENA A FUTURO.
-      // Ejemplo: const response = await fetch(`https://api.patentes.cl/${val}`); const data = await response.json();
       
       // Por ahora, buscamos instantáneamente en nuestra base de datos:
       const v = vehicles.find(x => (val && x.plate === val) || (val && x.vin === val));
@@ -769,12 +767,3 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
