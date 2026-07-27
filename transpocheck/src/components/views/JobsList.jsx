@@ -1835,7 +1835,17 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Search className="w-5 h-5 text-slate-400" /></div>
            <input type="text" placeholder="Buscar patente, marca, cliente..." className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 transition-colors" value={localSearchTerm} onChange={(e) => setLocalSearchTerm(e.target.value)} />
         </div>
-        <div className="flex gap-2 shrink-0 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+        <div className="flex gap-2 shrink-0 overflow-x-auto pb-1 sm:pb-0 scrollbar-none items-center">
+           {isAdminView && (
+               <label className="flex items-center gap-2 cursor-pointer bg-white px-4 py-3.5 rounded-2xl border-2 border-slate-200 shadow-sm hover:bg-slate-50 transition-colors shrink-0">
+                   <span className={`text-xs font-black uppercase tracking-widest ${auditMode ? 'text-purple-600' : 'text-slate-400'}`}>Modo Auditoría</span>
+                   <div className="relative flex items-center">
+                       <input type="checkbox" className="sr-only" checked={auditMode} onChange={() => setAuditMode(!auditMode)} />
+                       <div className={`block w-8 h-4 rounded-full transition-colors ${auditMode ? 'bg-purple-500' : 'bg-slate-300'}`}></div>
+                       <div className={`absolute left-0.5 top-0.5 bg-white w-3 h-3 rounded-full transition-transform ${auditMode ? 'transform translate-x-4' : ''}`}></div>
+                   </div>
+               </label>
+           )}
  
            {canBulkSign && (
                <button onClick={() => { setBulkSelectedIds([]); setBulkReceiverName(''); setBulkReceiverRut(''); setBulkSignature(null); setShowBulkSign(true); }} className="group bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-md shrink-0">
@@ -1847,19 +1857,23 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                <button type="button" onClick={() => setShowFleetMenu(true)} className="group bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-md shrink-0">
                  <Truck className="w-5 h-5"/> Flotas
                </button>
-               <button type="button" onClick={handlePurgeOldJobs} className="group bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0">
-                 <Trash2 className="w-5 h-5"/> Limpiar DB
-               </button>
-               <button type="button" onClick={() => setShowReplaceModal(true)} className="group bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 transition-colors">
-                 <RefreshCw className="w-5 h-5"/> Renombrar Masivo
-               </button>
-               <button type="button" onClick={handleRecalculateKm} disabled={isCalculatingKm} className="group bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 disabled:opacity-50 shadow-md">
-                 {isCalculatingKm ? <Clock className="w-5 h-5 animate-spin"/> : <MapIcon className="w-5 h-5"/>} 
-                 {isCalculatingKm ? `Calc: ${calcProgress}` : 'Recalcular KM'}
-               </button>
-               <button type="button" onClick={handleDownloadAllZIP} className="group bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0">
-                 <FileDown className="w-5 h-5"/> ZIP
-               </button>
+               {auditMode && (
+                 <>
+                   <button type="button" onClick={handlePurgeOldJobs} className="group bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 transition-colors">
+                     <Trash2 className="w-5 h-5"/> Limpiar DB
+                   </button>
+                   <button type="button" onClick={() => setShowReplaceModal(true)} className="group bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 transition-colors">
+                     <RefreshCw className="w-5 h-5"/> Renombrar Masivo
+                   </button>
+                   <button type="button" onClick={handleRecalculateKm} disabled={isCalculatingKm} className="group bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 disabled:opacity-50 shadow-md transition-colors">
+                     {isCalculatingKm ? <Clock className="w-5 h-5 animate-spin"/> : <MapIcon className="w-5 h-5"/>} 
+                     {isCalculatingKm ? `Calc: ${calcProgress}` : 'Recalcular KM'}
+                   </button>
+                   <button type="button" onClick={handleDownloadAllZIP} className="group bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 transition-colors">
+                     <FileDown className="w-5 h-5"/> ZIP
+                   </button>
+                 </>
+               )}
              </>
            )}
         </div>
@@ -1934,16 +1948,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                       <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">Historial Anterior</h4>
                       <span className="bg-slate-200 text-slate-600 text-[10px] font-black px-2 py-0.5 rounded-full">{olderHistoryJobs.length} registros</span>
                   </div>
-                  {isAdminView && (
-                      <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors">
-                          <span className={`text-[10px] font-black uppercase tracking-widest ${auditMode ? 'text-purple-600' : 'text-slate-400'}`}>Modo Auditoría</span>
-                          <div className="relative flex items-center">
-                              <input type="checkbox" className="sr-only" checked={auditMode} onChange={() => setAuditMode(!auditMode)} />
-                              <div className={`block w-8 h-4 rounded-full transition-colors ${auditMode ? 'bg-purple-500' : 'bg-slate-300'}`}></div>
-                              <div className={`absolute left-0.5 top-0.5 bg-white w-3 h-3 rounded-full transition-transform ${auditMode ? 'transform translate-x-4' : ''}`}></div>
-                          </div>
-                      </label>
-                  )}
               </div>
               <div className="divide-y divide-slate-100 max-h-[500px] overflow-y-auto">
                   {olderHistoryJobs.map(j => {
