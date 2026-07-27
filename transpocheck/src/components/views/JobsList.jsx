@@ -169,10 +169,19 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       let returnDest = null;
       if (job.tripType === 'revision') {
-         returnDest = (job.checklist?.rtReturnOption === 'other' && job.checklist?.rtReturnDestination) 
-            ? job.checklist.rtReturnDestination 
-            : orig;
-         if (returnDest && !returnDest.toLowerCase().includes('chile')) returnDest += ', Chile';
+          if (job.checklist?.rtReturnOption === 'other' && job.checklist?.rtReturnDestination) {
+              returnDest = job.checklist.rtReturnDestination;
+              // Si escribió el nombre de un cliente en vez de una dirección, buscamos en DB
+              try {
+                  const retClientSnap = await getDocs(query(collection(db, 'clients'), where('name', '==', returnDest)));
+                  if (!retClientSnap.empty && retClientSnap.docs[0].data().address) {
+                      returnDest = `${retClientSnap.docs[0].data().address}, ${retClientSnap.docs[0].data().commune || 'Santiago'}`;
+                  }
+              } catch (e) {}
+              if (returnDest && !returnDest.toLowerCase().includes('chile')) returnDest += ', Chile';
+          } else {
+              returnDest = orig; // orig ya fue convertido a dirección real arriba y trae ", Chile"
+          }
       }
 
       const getMeters = (from, to) => new Promise((resolve, reject) => {
@@ -2430,7 +2439,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                           <p className={`font-extrabold text-sm ${dupMode === 'continue' ? 'text-purple-800' : 'text-slate-700'}`}>Continuar a Otro Destino</p>
                           {dupMode === 'continue' ? (
                              <div className="mt-2 animate-in fade-in slide-in-from-top-1 w-full">
-                                <input type="text" autoFocus placeholder="Escribe el nuevo destino..." value={dupDestination} onChange={e=>setDupDestination(e.target.value)} className="w-full bg-white border border-purple-200 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-400 font-bold" />
+                                <input type="text" list="directory-destinations" autoFocus placeholder="Escribe el nuevo destino..." value={dupDestination} onChange={e=>setDupDestination(e.target.value)} className="w-full bg-white border border-purple-200 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-400 font-bold" />
                              </div>
                           ) : (
                              <p className="text-[10px] font-bold text-slate-500 truncate">{dupPromptJob.tripType === 'revision' ? 'PRT' : (dupPromptJob.destination || dupPromptJob.origin)} ➔ ???</p>
