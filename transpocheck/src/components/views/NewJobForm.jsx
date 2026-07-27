@@ -355,7 +355,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                await updateDoc(doc(db, 'transport_jobs', jobToEdit.id), currentJobData);
             } else {
                currentJobData.status = 'pending';
-               currentJobData.createdAt = Date.now() + index; // Sumamos el index para que JAMÁS choquen los tiempos en React
+               currentJobData.createdAt = Date.now() + index; // Sumamos el index para tiempos únicos
                currentJobData.checklist = null;
                await addDoc(collection(db, 'transport_jobs'), currentJobData);
             }
@@ -367,10 +367,11 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
             return { currentJobData, vPlate, vVin, vBrand, vModel };
         });
 
-        // Obligamos a la app a esperar a que TODOS se guarden antes de seguir
+        // 2. DISPARAR NOTIFICACIONES EN SEGUNDO PLANO (Sin "await", para que no congele la pantalla)
+        // Esperamos a que TODOS se guarden en Firebase en paralelo
         const processedJobs = await Promise.all(savePromises);
 
-        // 2. DISPARAR NOTIFICACIONES EN SEGUNDO PLANO (Sin "await", para que no congele la pantalla)
+        // Disparamos las notificaciones en segundo plano sin congelar la app
         processedJobs.forEach(({ currentJobData, vPlate, vVin, vBrand, vModel }) => {
             const driverTokens = assignedDriversList.map(d => d.fcmToken).filter(token => token);
             if (driverTokens.length > 0) {
@@ -389,6 +390,12 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                 if (notifs.creado && clientRecord.email) {
                    fetch('/api/notify-client', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: clientRecord.email, clientName: clientRecord.name, type: 'creado', jobDetails: { id: 'N/A', driverName: 'Buscando conductor...', vehicle: operationMode === 'servicio' ? (currentJobData.description || 'Servicio en Terreno') : (`${vBrand} ${vModel}`.trim() || 'Vehículo'), plate: vPlate || vVin || currentJobData.associatedPlate || 'S/N', origin: currentJobData.origin || 'Origen', destination: currentJobData.destination || 'Destino' } }) }).catch(()=>{});
                 }
+            }
+        });
+
+        syncTask.finish(); // Marca en verde en el Ojo
+                  }
+               } catch(e) {}
             }
         });
         
@@ -772,6 +779,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     </div>
   );
 }
+
 
 
 
