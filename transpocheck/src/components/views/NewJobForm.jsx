@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { updateDoc, doc, addDoc, collection, getDocs, query, where } from 'firebase/firestore';
-import { X, User, CheckCircle, Plus } from 'lucide-react';
+import { X, User, CheckCircle, Plus, AlertCircle } from 'lucide-react';
 import CustomClientSelector from '../ui/CustomClientSelector';
 
 export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers, db, showAlert, onSuccess, pushSyncTask }) {
@@ -59,6 +59,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   const [multiVehicles, setMultiVehicles] = useState([]); // NUEVO: Lista para traslados masivos
   const [tripType, setTripType] = useState(jobToEdit?.tripType || 'traslado');
   const [vehicleType, setVehicleType] = useState(jobToEdit?.vehicleType || 'auto');
+  const [isUrgent, setIsUrgent] = useState(jobToEdit?.isUrgent || false);
   
   const [revType, setRevType] = useState(jobToEdit?.rtData?.type || 'A');
   const [revA_gases, setRevA_gases] = useState(jobToEdit?.rtData?.gases || false);
@@ -218,6 +219,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
       client: finalClient, 
       origin: formData.get('origin'), destination: formData.get('destination') || '',
       tripType: finalTripType,
+      isUrgent: isUrgent,
       assignedDrivers: assignedDriversList.map(d => ({id: d.id, name: d.name, email: d.email})), assignedEmails: assignedDriversList.map(d => d.email)
     };
 
@@ -368,7 +370,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
         processedJobs.forEach(({ currentJobData, vPlate, vVin, vBrand, vModel }) => {
             const driverTokens = assignedDriversList.map(d => d.fcmToken).filter(token => token);
             if (driverTokens.length > 0) {
-              const pushTitle = jobToEdit ? "🔄 Trabajo Actualizado" : (operationMode === 'servicio' ? "🛠️ ¡Nuevo Servicio Asignado!" : "📍 ¡Nuevo Traslado Asignado!");
+              const pushTitle = jobToEdit ? (isUrgent ? "🚨 URGENTE: Trabajo Actualizado" : "🔄 Trabajo Actualizado") : (operationMode === 'servicio' ? (isUrgent ? "🚨 URGENTE: Nuevo Servicio" : "🛠️ ¡Nuevo Servicio Asignado!") : (isUrgent ? "🚨 URGENTE: Nuevo Traslado" : "📍 ¡Nuevo Traslado Asignado!"));
               const pushBody = operationMode === 'servicio' ? `Tarea: ${description}\nLugar: ${currentJobData.origin}` : `Vehículo: ${vBrand} ${vModel} (${vPlate || 'S/N'})\nDesde: ${currentJobData.origin}`;
               fetch('/api/send-notification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tokens: driverTokens, title: pushTitle, body: pushBody }) }).catch(()=>{});
             }
@@ -419,6 +421,19 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
         {jobToEdit && <button type="button" onClick={onCancelEdit} className="text-slate-500 hover:bg-slate-100 p-2 rounded-xl transition"><X className="w-6 h-6"/></button>}
       </div>
       <form onSubmit={handleCreateOrUpdateJob} className="space-y-6">
+
+        {/* BOTÓN DE URGENCIA */}
+        <div className="flex justify-end -mt-2">
+          <label className={`flex items-center gap-2 cursor-pointer px-4 py-2.5 rounded-xl border-2 transition-all shadow-sm ${isUrgent ? 'bg-red-50 border-red-500 text-red-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
+            <AlertCircle className={`w-5 h-5 ${isUrgent ? 'animate-pulse text-red-600' : 'text-slate-400'}`} />
+            <span className="font-extrabold text-sm uppercase tracking-wider">{isUrgent ? '🚨 Trabajo Urgente' : 'Marcar como Urgente'}</span>
+            <div className="relative flex items-center ml-2">
+              <input type="checkbox" className="sr-only" checked={isUrgent} onChange={(e) => setIsUrgent(e.target.checked)} />
+              <div className={`block w-10 h-6 rounded-full transition-colors ${isUrgent ? 'bg-red-500' : 'bg-slate-300'}`}></div>
+              <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${isUrgent ? 'transform translate-x-4' : ''}`}></div>
+            </div>
+          </label>
+        </div>
         
         {/* NUEVO TABS DE MODO DE OPERACIÓN */}
         <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-2 shadow-inner">

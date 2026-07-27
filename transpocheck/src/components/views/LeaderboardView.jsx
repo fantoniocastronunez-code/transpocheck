@@ -44,16 +44,24 @@ export default function LeaderboardView({ jobs, drivers, isAdminView, db }) {
   // NUEVO: Obtenemos los datos frescos en CADA milisegundo para que el cuadro negro se actualice solo
   const activeModalData = selectedDriverEmail ? ranking.find(d => d.email === selectedDriverEmail) : null;
 
+  // NUEVO: Extraemos los puntajes únicos para calcular empates reales (Misma puntuación = misma copa)
+  const uniqueScores = [...new Set(ranking.map(d => d.score))].sort((a, b) => b - a);
+
   return (
     <main className="max-w-5xl mx-auto p-4 pt-20 sm:pt-24 pb-24">
       <h2 className="text-2xl font-extrabold mb-6 flex items-center gap-2"><Trophy className="text-yellow-500"/> Ranking Mensual</h2>
       <div className="bg-white rounded-3xl border p-2 sm:p-4 shadow-sm">
-        {ranking.length === 0 ? <p className="text-center py-6 text-sm font-bold text-slate-400">Sin datos de traslados este mes.</p> : ranking.map((dr, i) => (
+        {ranking.length === 0 ? <p className="text-center py-6 text-sm font-bold text-slate-400">Sin datos de traslados este mes.</p> : ranking.map((dr) => {
+          const rankIndex = uniqueScores.indexOf(dr.score);
+          const rankPosition = rankIndex + 1;
+          const rankColor = rankIndex === 0 ? 'text-yellow-500' : rankIndex === 1 ? 'text-slate-400' : rankIndex === 2 ? 'text-amber-700' : 'text-slate-300';
+          
+          return (
           <div key={dr.id} className="flex justify-between items-center p-4 border-b last:border-0 hover:bg-slate-50 rounded-xl text-sm transition-colors">
-             <div className="flex items-center gap-4"><span className={`text-xl font-black ${i===0?'text-yellow-500':i===1?'text-slate-400':i===2?'text-amber-700':'text-slate-300'}`}>#{i+1}</span><div><p className="font-extrabold text-slate-800">{dr.name}</p><p className="text-xs text-slate-500 font-bold">{dr.score} Traslados</p></div></div>
+             <div className="flex items-center gap-4"><span className={`text-xl font-black ${rankColor}`}>#{rankPosition}</span><div><p className="font-extrabold text-slate-800">{dr.name}</p><p className="text-xs text-slate-500 font-bold">{dr.score} Traslados</p></div></div>
                          {isAdminView && <button onClick={() => setSelectedDriverEmail(dr.email)} className="flex gap-1 text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-xl font-bold text-xs items-center transition-colors"><Eye className="w-3.5 h-3.5"/> Historial</button>}
           </div>
-        ))}
+        )})}
       </div>
       {activeModalData && (
         <div className="fixed inset-0 bg-slate-900/50 flex justify-center items-center z-[100] p-4">

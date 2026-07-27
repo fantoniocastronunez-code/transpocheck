@@ -312,6 +312,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     const order = isAdminView ? adminOrder : driverOrder;
     if (order[a.status] !== order[b.status]) return order[a.status] - order[b.status];
     if (a.status === 'completed' || a.status === 'failed') return (b.completedAt || b.createdAt) - (a.completedAt || a.createdAt);
+
+    // NUEVO: Prioridad Urgente bypass a la fecha (los sube al inicio de su lista)
+    if (a.isUrgent && !b.isUrgent) return -1;
+    if (!a.isUrgent && b.isUrgent) return 1;
+
     const getValidTime = (dateStr, fallback) => {
        if (!dateStr) return fallback || 0;
        const time = new Date(dateStr).getTime();
@@ -1077,7 +1082,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     return (
       // --- OPTIMIZACIÓN: Quitamos el overflow-hidden del padre para que el menú no se corte ---
       // Además, si la tarjeta tiene el menú abierto, elevamos su z-index
-      <div key={j.id} className={`bg-white rounded-[2rem] border p-4 sm:p-5 flex flex-col shadow-sm relative hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-default group ${j.fleetGroup ? 'border-indigo-200' : 'border-slate-100'} ${menuOpenId === j.id ? 'z-50' : 'z-10'}`}>
+      <div key={j.id} className={`bg-white rounded-[2rem] border p-4 sm:p-5 flex flex-col shadow-sm relative hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-default group ${j.isUrgent ? 'border-red-400 ring-2 ring-red-100' : (j.fleetGroup ? 'border-indigo-200' : 'border-slate-100')} ${menuOpenId === j.id ? 'z-50' : 'z-10'}`}>
         
         {/* --- OPTIMIZACIÓN: Los fondos decorativos ahora viven en un contenedor con overflow-hidden para no salirse de los bordes redondeados --- */}
         <div className="absolute inset-0 rounded-[2rem] overflow-hidden pointer-events-none">
@@ -1091,6 +1096,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           <div className="flex flex-col gap-3 w-full">
             <div className="flex justify-between items-start w-full gap-2">
               <div className="shrink-0 relative z-10 flex flex-col items-end gap-1">
+                {j.isUrgent && (
+                   <span className="bg-red-500 text-white border border-red-600 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm max-w-[150px] text-center leading-tight mb-1 flex items-center gap-1 animate-pulse">
+                     <AlertCircle className="w-3 h-3"/> URGENTE
+                   </span>
+                )}
                 {j.tripType === 'simple' && (
                    <span className="bg-purple-100 text-purple-800 border border-purple-200 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm max-w-[150px] text-center leading-tight mb-1">SERVICIO</span>
                 )}
