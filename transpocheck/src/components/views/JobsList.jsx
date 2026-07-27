@@ -301,7 +301,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       const matchBrand = (job.brand || '').toLowerCase().includes(term);
       const matchModel = (job.model || '').toLowerCase().includes(term);
       const matchClient = (job.client || '').toLowerCase().includes(term);
-      if (!matchPlate && !matchBrand && !matchModel && !matchClient) return false;
+      const matchOrigin = (job.origin || '').toLowerCase().includes(term);
+      const matchDest = (job.destination || job.destName || '').toLowerCase().includes(term);
+      
+      if (!matchPlate && !matchBrand && !matchModel && !matchClient && !matchOrigin && !matchDest) return false;
     }
     return true;
   });
@@ -1833,7 +1836,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       <div className="flex flex-col sm:flex-row gap-3 mb-6 relative z-10">
         <div className="relative flex-1">
            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Search className="w-5 h-5 text-slate-400" /></div>
-           <input type="text" placeholder="Buscar patente, marca, cliente..." className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 transition-colors" value={localSearchTerm} onChange={(e) => setLocalSearchTerm(e.target.value)} />
+           <input type="text" placeholder="Buscar patente, marca, cliente, origen o destino..." className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 transition-colors" value={localSearchTerm} onChange={(e) => setLocalSearchTerm(e.target.value)} />
         </div>
         <div className="flex gap-2 shrink-0 overflow-x-auto pb-1 sm:pb-0 scrollbar-none items-center">
            {isAdminView && (
