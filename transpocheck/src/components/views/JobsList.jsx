@@ -26,6 +26,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [dupMode, setDupMode] = useState('clone');
   const [dupDestination, setDupDestination] = useState('');
   const [dupDriverEmails, setDupDriverEmails] = useState([]); // AHORA ES UN ARREGLO
+  const [directoryMemory, setDirectoryMemory] = useState([]); // <-- NUEVO: Memoria de directorio para sugerencias
 
   const [showBulkSign, setShowBulkSign] = useState(false);
   const [bulkSelectedIds, setBulkSelectedIds] = useState([]);
@@ -66,6 +67,18 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
      const timer = setTimeout(() => setIsAppReady(true), 800);
      return () => clearTimeout(timer);
   }, []); 
+
+  // --- NUEVO: Cargar Directorio para sugerencias de Destino ---
+  useEffect(() => {
+     const loadDirectory = async () => {
+        try {
+           const snap = await getDocs(collection(db, 'directory'));
+           setDirectoryMemory(snap.docs.map(d => d.data()));
+        } catch (e) { console.error("Error cargando directorio:", e); }
+     };
+     if (db) loadDirectory();
+  }, [db]);
+  // ------------------------------------------------------------
 
   // --- NUEVO: Motor Anti-Lag (Debounce) para el Buscador ---
   useEffect(() => {
@@ -2475,6 +2488,15 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                           {dupMode === 'continue' ? (
                              <div className="mt-2 animate-in fade-in slide-in-from-top-1 w-full">
                                 <input type="text" list="directory-destinations" autoFocus placeholder="Escribe el nuevo destino..." value={dupDestination} onChange={e=>setDupDestination(e.target.value)} className="w-full bg-white border border-purple-200 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-400 font-bold" />
+                                <datalist id="directory-destinations">
+                                   {directoryMemory.map((dir, idx) => (
+                                      <option key={`dir-${idx}`} value={dir.name || dir.address} />
+                                   ))}
+                                   {/* También incluimos los nombres de clientes como destinos sugeridos para mayor rapidez */}
+                                   {allClientsList && allClientsList.map((client, idx) => (
+                                      <option key={`cli-${idx}`} value={client} />
+                                   ))}
+                                </datalist>
                              </div>
                           ) : (
                              <p className="text-[10px] font-bold text-slate-500 truncate">{dupPromptJob.tripType === 'revision' ? 'PRT' : (dupPromptJob.destination || dupPromptJob.origin)} ➔ ???</p>
