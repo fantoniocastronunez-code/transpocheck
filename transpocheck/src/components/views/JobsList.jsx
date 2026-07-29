@@ -56,6 +56,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [replaceSearchTerm, setReplaceSearchTerm] = useState('');
   const [replaceNewTerm, setReplaceNewTerm] = useState('');
 
+  const [guideUploadJob, setGuideUploadJob] = useState(null);
+  const [guideLink, setGuideLink] = useState('');
+  const [guideFileBase64, setGuideFileBase64] = useState(null);
+
   const [isAppReady, setIsAppReady] = useState(false);
   
   useEffect(() => {
@@ -266,20 +270,20 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   
   const myFleetGroups = jobs.filter(j => 
      ((j.status === 'pending' && j.assignedEmails?.includes(currentUserEmail)) || 
-      (j.status === 'accepted' && j.acceptedByEmail === currentUserEmail)) && 
+      ((j.status === 'accepted' || j.status === 'pending_guide') && j.acceptedByEmail === currentUserEmail)) && 
      j.fleetGroup
   ).map(j => j.fleetGroup);
 
   const filteredJobs = jobs.filter(job => {
     if (!isAdminView) {
       // NUEVO: Ocultar inmediatamente trabajos aceptados por otros (salvo que sea un convoy donde ya participes)
-      if ((job.status === 'accepted' || job.status === 'completed' || job.status === 'failed') && job.acceptedByEmail !== currentUserEmail) {
+      if ((job.status === 'accepted' || job.status === 'pending_guide' || job.status === 'completed' || job.status === 'failed') && job.acceptedByEmail !== currentUserEmail) {
          const isMyFleet = job.fleetGroup && myFleetGroups.includes(job.fleetGroup);
          if (!isMyFleet) return false; 
       }
 
       const isMine = (job.status === 'pending' && job.assignedEmails?.includes(currentUserEmail)) || 
-                     (job.status === 'accepted' && job.acceptedByEmail === currentUserEmail) || 
+                     ((job.status === 'accepted' || job.status === 'pending_guide') && job.acceptedByEmail === currentUserEmail) || 
                      (job.status === 'requested' && job.requestedBy === currentUserEmail) || 
                      ((job.status === 'completed' || job.status === 'failed') && job.acceptedByEmail === currentUserEmail);
       const isMyFleet = job.fleetGroup && myFleetGroups.includes(job.fleetGroup);
@@ -310,8 +314,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   });
 
   const sortedJobs = [...filteredJobs].sort((a, b) => {
-    const adminOrder = { requested: 1, pending: 2, accepted: 3, completed: 4, failed: 4 };
-    const driverOrder = { accepted: 1, requested: 2, pending: 3, completed: 4, failed: 4 };
+    const adminOrder = { requested: 1, pending: 2, accepted: 3, pending_guide: 3, completed: 4, failed: 4 };
+    const driverOrder = { accepted: 1, pending_guide: 1, requested: 2, pending: 3, completed: 4, failed: 4 };
     const order = isAdminView ? adminOrder : driverOrder;
     if (order[a.status] !== order[b.status]) return order[a.status] - order[b.status];
     if (a.status === 'completed' || a.status === 'failed') return (b.completedAt || b.createdAt) - (a.completedAt || a.createdAt);
@@ -328,7 +332,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     return getValidTime(a.scheduledDate, a.createdAt) - getValidTime(b.scheduledDate, b.createdAt);
   });
 
-  const activeJobs = sortedJobs.filter(j => j.status === 'requested' || j.status === 'pending' || j.status === 'accepted');
+  const activeJobs = sortedJobs.filter(j => j.status === 'requested' || j.status === 'pending' || j.status === 'accepted' || j.status === 'pending_guide');
   const historyJobsRaw = sortedJobs.filter(j => j.status === 'completed' || j.status === 'failed');
   
   const historyJobs = historyJobsRaw.filter(j => {
@@ -349,7 +353,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
   const requestedJobsList = activeJobs.filter(j => j.status === 'requested');
   const pendingJobsList = activeJobs.filter(j => j.status === 'pending');
-  const inProgressJobsList = activeJobs.filter(j => j.status === 'accepted');
+  const inProgressJobsList = activeJobs.filter(j => j.status === 'accepted' || j.status === 'pending_guide');
 
   const handleApproveRequest = async (job) => {
     if (processingId) return;
@@ -1052,7 +1056,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const renderActiveJobCard = (j) => {
     const isRequested = j.status === 'requested';
     const isPending = j.status === 'pending';
-    const isAccepted = j.status === 'accepted';
+    const isAccepted = j.status === 'accepted' || j.status === 'pending_guide';
+    const isPendingGuide = j.status === 'pending_guide';
     const phase = j.phase || 'claimed'; 
     const step2Done = isAccepted && ['picked_up', 'arrived_destination', 'arrived_prt', 'prt_done'].includes(phase);
     const step3Done = isAccepted && ['arrived_destination', 'arrived_prt', 'prt_done'].includes(phase);
@@ -1423,7 +1428,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             </>
           )}
 
-          {(!isRequested && j.status === 'accepted' && j.acceptedByEmail !== currentUserEmail) ? (
+          {(!isRequested && (j.status === 'accepted' || j.status === 'pending_guide') && j.acceptedByEmail !== currentUserEmail) ? (
              <div className="bg-slate-50 border border-slate-200 text-slate-500 text-xs font-bold text-center py-3 rounded-xl">Vehículo a cargo de un compañero.</div>
           ) : (
             <>
@@ -1433,34 +1438,47 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
               {isAccepted && (j.acceptedByEmail === currentUserEmail) && (
                 <>
-                  {(!j.phase || j.phase === 'claimed') && <SwipeButton key={`btn-pickup-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_pickup', { arrivedPickupAt: Date.now() })} text={j.tripType === 'simple' ? "Desliza: Llegué al lugar" : "Desliza: Llegué a retirar"} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-amber-500" isProcessing={processingId === `${j.id}-arrived_pickup`} />}
-                  
-                  {j.phase === 'arrived_pickup' && <SwipeButton key={`btn-power-${j.id}`} onConfirm={()=>{
-                    const waitMins = j.arrivedPickupAt ? Math.floor((Date.now() - j.arrivedPickupAt) / 60000) : 0;
-                    updatePhase(j, 'picked_up', { pickedUpAt: Date.now(), waitTimeMinutes: waitMins });
-                  }} text={j.tripType === 'simple' ? "Desliza: Iniciar Trabajo" : "Desliza: Vehículo en mi poder"} icon={j.tripType === 'simple' ? <Clock className="w-4 h-4"/> : <Car className="w-4 h-4"/>} colorClass="bg-indigo-600" isProcessing={processingId === `${j.id}-picked_up`} />}
-                  
-                  {j.phase === 'picked_up' && j.tripType !== 'revision' && <SwipeButton key={`btn-dest-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_destination')} text={j.tripType === 'simple' ? "Desliza: Finalizar Trabajo" : "Desliza: Llegué a Destino"} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />}
-                  
-                  {j.phase === 'picked_up' && j.tripType === 'revision' && <SwipeButton key={`btn-prt-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_prt')} text="Desliza: Llegué a PRT" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_prt`} />}
-                  
-                  {j.phase === 'arrived_prt' && (
-                    <div className="flex gap-2">
-                      {/* NUEVO: En vez de actualizar directo, abrimos el popup de aprobación */}
-                      <button onClick={()=>setPrtApprovePromptJob(j)} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-1 disabled:opacity-50">
-                         {processingId === `${j.id}-prt_done` ? <Clock className="w-3 h-3 animate-spin"/> : '✅'} Aprobado
-                      </button>
-                      <button onClick={()=>setPrtPromptJob(j)} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors disabled:opacity-50">❌ Rechazado</button>
+                  {isPendingGuide ? (
+                    <div className="flex flex-col gap-2">
+                       <div className="bg-orange-50 border border-orange-200 text-orange-700 text-[11px] font-black text-center py-3 rounded-xl animate-pulse flex items-center justify-center gap-1.5 shadow-sm">
+                         <Clock className="w-4 h-4"/> A ESPERA DE GUÍA DE DESPACHO
+                       </div>
+                       <button onClick={() => { setGuideUploadJob(j); setGuideLink(''); setGuideFileBase64(null); }} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-3.5 rounded-xl text-sm shadow-md transition-colors flex justify-center items-center gap-2">
+                          <FileText className="w-5 h-5"/> Subir Guía y Finalizar
+                       </button>
                     </div>
-                  )}
+                  ) : (
+                    <>
+                      {(!j.phase || j.phase === 'claimed') && <SwipeButton key={`btn-pickup-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_pickup', { arrivedPickupAt: Date.now() })} text={j.tripType === 'simple' ? "Desliza: Llegué al lugar" : "Desliza: Llegué a retirar"} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-amber-500" isProcessing={processingId === `${j.id}-arrived_pickup`} />}
+                      
+                      {j.phase === 'arrived_pickup' && <SwipeButton key={`btn-power-${j.id}`} onConfirm={()=>{
+                        const waitMins = j.arrivedPickupAt ? Math.floor((Date.now() - j.arrivedPickupAt) / 60000) : 0;
+                        updatePhase(j, 'picked_up', { pickedUpAt: Date.now(), waitTimeMinutes: waitMins });
+                      }} text={j.tripType === 'simple' ? "Desliza: Iniciar Trabajo" : "Desliza: Vehículo en mi poder"} icon={j.tripType === 'simple' ? <Clock className="w-4 h-4"/> : <Car className="w-4 h-4"/>} colorClass="bg-indigo-600" isProcessing={processingId === `${j.id}-picked_up`} />}
+                      
+                      {j.phase === 'picked_up' && j.tripType !== 'revision' && <SwipeButton key={`btn-dest-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_destination')} text={j.tripType === 'simple' ? "Desliza: Finalizar Trabajo" : "Desliza: Llegué a Destino"} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />}
+                      
+                      {j.phase === 'picked_up' && j.tripType === 'revision' && <SwipeButton key={`btn-prt-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_prt')} text="Desliza: Llegué a PRT" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_prt`} />}
+                      
+                      {j.phase === 'arrived_prt' && (
+                        <div className="flex gap-2">
+                          {/* NUEVO: En vez de actualizar directo, abrimos el popup de aprobación */}
+                          <button onClick={()=>setPrtApprovePromptJob(j)} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-1 disabled:opacity-50">
+                             {processingId === `${j.id}-prt_done` ? <Clock className="w-3 h-3 animate-spin"/> : '✅'} Aprobado
+                          </button>
+                          <button onClick={()=>setPrtPromptJob(j)} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors disabled:opacity-50">❌ Rechazado</button>
+                        </div>
+                      )}
 
-                  {j.phase === 'prt_done' && (
-                    <SwipeButton key={`btn-dest-prt-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_destination')} text="Desliza: Llegué a Destino" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />
-                  )}
+                      {j.phase === 'prt_done' && (
+                        <SwipeButton key={`btn-dest-prt-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_destination')} text="Desliza: Llegué a Destino" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />
+                      )}
 
-                  <button onClick={()=>onStartChecklist(j)} className={`w-full font-bold py-2 rounded-xl text-xs shadow-sm transition-colors ${(j.phase === 'arrived_destination') ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'}`}>
-                    📸 {(j.phase === 'arrived_destination') ? (j.tripType === 'simple' ? 'Cerrar Acta de Servicio' : 'Cerrar Checklist') : (j.tripType === 'simple' ? 'Pre-llenar Acta' : 'Pre-llenar Checklist')}
-                  </button>
+                      <button onClick={()=>onStartChecklist(j)} className={`w-full font-bold py-2 rounded-xl text-xs shadow-sm transition-colors ${(j.phase === 'arrived_destination') ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'}`}>
+                        📸 {(j.phase === 'arrived_destination') ? (j.tripType === 'simple' ? 'Cerrar Acta de Servicio' : 'Cerrar Checklist') : (j.tripType === 'simple' ? 'Pre-llenar Acta' : 'Pre-llenar Checklist')}
+                      </button>
+                    </>
+                  )}
                 </>
               )}
             </>
@@ -2645,6 +2663,92 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
            </div>
         </div>
       )}
+
+      {/* NUEVO MODAL: SUBIR GUÍA DE DESPACHO KOVACS */}
+      {guideUploadJob && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+           <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl flex flex-col animate-in zoom-in-95 border-t-8 border-orange-500">
+              <div className="flex justify-between items-start mb-4">
+                 <div>
+                   <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><FileText className="w-5 h-5 text-orange-500"/> Subir Guía de Despacho</h3>
+                   <p className="text-xs font-bold text-slate-500 mt-1">
+                      Finaliza el traslado adjuntando la guía firmada.
+                   </p>
+                 </div>
+                 <button onClick={()=>setGuideUploadJob(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-5 h-5"/></button>
+              </div>
+
+              <div className="space-y-4 mb-6">
+                 <div className="space-y-1">
+                    <label className="text-[10px] font-black text-orange-700 uppercase tracking-widest ml-1">Enlace del Documento</label>
+                    <input type="url" placeholder="Ej: https://acrobat.adobe.com/..." value={guideLink} onChange={(e) => setGuideLink(e.target.value)} className="w-full border-2 border-orange-200 bg-white p-3 rounded-xl font-bold text-slate-700 text-sm outline-none focus:border-orange-500 transition-colors" />
+                 </div>
+
+                 <div className="flex items-center gap-2 my-2 opacity-60"><div className="h-px bg-orange-300 flex-1"></div><span className="text-[10px] font-black uppercase text-orange-500">O Subir Archivo PDF/Foto</span><div className="h-px bg-orange-300 flex-1"></div></div>
+
+                 <label className="w-full bg-white border-2 border-dashed border-orange-300 hover:bg-orange-50 text-orange-600 p-4 rounded-2xl font-black text-xs flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm">
+                    <input type="file" accept="application/pdf,image/*" className="hidden" onChange={(e) => {
+                       const f = e.target.files[0];
+                       if(!f) return;
+                       const reader = new FileReader();
+                       reader.onload = () => {
+                           setGuideFileBase64(reader.result);
+                           showAlert("✅ Guía adjuntada correctamente.");
+                       };
+                       reader.readAsDataURL(f);
+                    }}/>
+                    <FileText className="w-6 h-6"/>
+                    <span className="text-center">{guideFileBase64 ? '✅ GUÍA CARGADA (Toca para cambiar)' : 'ADJUNTAR PDF O FOTO'}</span>
+                 </label>
+              </div>
+
+              <button 
+                 onClick={async () => {
+                    if (!guideLink && !guideFileBase64) return showAlert("⚠️ Debes adjuntar la Guía (Link o Archivo) para poder cerrar el traslado.");
+                    setProcessingId(`guide-${guideUploadJob.id}`);
+                    try {
+                       let finalUrl = guideLink;
+                       if (guideFileBase64) {
+                           const ext = guideFileBase64.includes('application/pdf') ? 'pdf' : 'jpg';
+                           const { getStorage, ref, uploadString, getDownloadURL } = await import('firebase/storage');
+                           const storage = getStorage();
+                           const fileRef = ref(storage, `checklists/${guideUploadJob.id}/guia_despacho_kovacs_${Date.now()}.${ext}`);
+                           const metadata = { contentType: guideFileBase64.includes('application/pdf') ? 'application/pdf' : 'image/jpeg' };
+                           await uploadString(fileRef, guideFileBase64, 'data_url', metadata);
+                           finalUrl = await getDownloadURL(fileRef);
+                       }
+
+                       const { deleteField } = await import('firebase/firestore');
+                       const newChecklist = { ...(guideUploadJob.checklist || {}) };
+                       if (guideLink) newChecklist.guiaDespachoLink = guideLink;
+                       if (finalUrl && finalUrl !== guideLink) newChecklist.guiaDespachoPdf = finalUrl;
+
+                       await updateDoc(doc(db, 'transport_jobs', guideUploadJob.id), {
+                          status: 'completed',
+                          checklist: newChecklist,
+                          draft: deleteField()
+                       });
+
+                       notifyClient({ ...guideUploadJob, checklist: newChecklist, status: 'completed' }, 'finalizado');
+                       showAlert("✅ Traslado finalizado y cliente notificado.");
+                       setGuideUploadJob(null);
+                    } catch (e) {
+                       console.error(e);
+                       showAlert("❌ Error al subir la guía o cerrar el traslado.");
+                    } finally {
+                       setProcessingId(null);
+                    }
+                 }} 
+                 disabled={processingId === `guide-${guideUploadJob.id}`} 
+                 className="w-full bg-orange-500 hover:bg-orange-600 text-white py-4 rounded-xl font-black shadow-md transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                 {processingId === `guide-${guideUploadJob.id}` ? <Clock className="w-5 h-5 animate-spin"/> : <CheckCircle className="w-5 h-5"/>}
+                 Finalizar Traslado
+              </button>
+           </div>
+        </div>
+      )}
+
     </div>
   );
 }

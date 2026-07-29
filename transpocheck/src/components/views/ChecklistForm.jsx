@@ -577,12 +577,6 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
        }
     }
 
-    // Validación KOVACS: Guía de Despacho obligatoria
-    const currentClientCheck = (formData.client === 'OTRO' ? formData.manualClient : formData.client) || '';
-    if (currentClientCheck.toUpperCase().includes('KOVACS') && !formData.guiaDespachoLink && !formData.guiaDespachoPdf) {
-        return showAlert("⚠️ ALERTA KOVACS: Es obligatorio adjuntar la Guía de Despacho Firmada (Subir Archivo o pegar Enlace) para poder finalizar este traslado.");
-    }
-
     setIsSubmitting(true);
     
     let d = {...formData}; 
@@ -670,6 +664,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
         // 🚨 FIX CRÍTICO: Firebase colapsa si detecta campos "undefined" (ej: campos no tocados por el conductor).
         // JSON.stringify purga mágicamente cualquier valor undefined del objeto para que Firebase guarde la data sin fallar.
         const cleanD = JSON.parse(JSON.stringify(d));
+        const isKovacs = (cleanD.client || '').toUpperCase().includes('KOVACS');
         
         const fd = { 
           scheduledDate: job.scheduledDate || new Date().toISOString().split('T')[0], 
@@ -680,7 +675,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
           plate: cleanD.plateOrVin || '', 
           origin: cleanD.origin || '', 
           destination: cleanD.destination || '', 
-          status: 'completed', 
+          status: isKovacs ? 'pending_guide' : 'completed', 
           completedAt: Date.now(), 
           checklist: cleanD, 
           tripType: job.tripType || 'traslado',
@@ -735,7 +730,8 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
               if (!snapClient.empty) {
                  const clientRecord = snapClient.docs[0].data();
                  const notifs = clientRecord.notifications || { finalizado: !!clientRecord.enableNotifications };
-                 if (notifs.finalizado && clientRecord.email) {
+                 // Solo notificamos si el trabajo está 100% completado (No en "A espera de guía")
+                 if (notifs.finalizado && clientRecord.email && fd.status === 'completed') {
                     let driverName = d.assignedDriverName || currentUserEmail;
                     if (drivers) { const drv = drivers.find(x => x.email === currentUserEmail); if (drv) driverName = drv.name; }
 
@@ -1710,39 +1706,6 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
           {( (job.tripType !== 'simple' && step === 6) || (job.tripType === 'simple' && step === 3) ) && (
                     <div className="space-y-4 animate-in fade-in duration-200">
                       <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Cierre y Conformidad</h3>
-
-                      {/* INICIO BLOQUE KOVACS */}
-                      {((formData.client === 'OTRO' ? formData.manualClient : formData.client) || '').toUpperCase().includes('KOVACS') && (
-                         <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-4 shadow-sm mb-4">
-                            <h3 className="font-extrabold text-orange-800 mb-1 flex items-center gap-2"><FileText className="w-5 h-5"/> Guía de Despacho KOVACS</h3>
-                            <p className="text-[11px] font-bold text-orange-600 mb-4 leading-tight">Por exigencia del cliente, es obligatorio adjuntar la guía de despacho firmada para poder cerrar este traslado.</p>
-                            
-                            <div className="space-y-4">
-                               <div className="space-y-1">
-                                  <label className="text-[10px] font-black text-orange-700 uppercase tracking-widest ml-1">Enlace del Documento (Ej: Adobe Scan)</label>
-                                  <input type="url" placeholder="Ej: https://acrobat.adobe.com/..." value={formData.guiaDespachoLink || ''} onChange={(e) => setF('guiaDespachoLink', e.target.value)} className="w-full border-2 border-orange-200 bg-white p-3 rounded-xl font-bold text-slate-700 text-sm outline-none focus:border-orange-500 transition-colors" />
-                               </div>
-
-                               <div className="flex items-center gap-2 my-2 opacity-60"><div className="h-px bg-orange-300 flex-1"></div><span className="text-[10px] font-black uppercase text-orange-500">O Subir Archivo PDF/Foto</span><div className="h-px bg-orange-300 flex-1"></div></div>
-
-                               <label className="w-full bg-white border-2 border-dashed border-orange-300 hover:bg-orange-50 text-orange-600 p-4 rounded-2xl font-black text-xs flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm">
-                                  <input type="file" accept="application/pdf,image/*" className="hidden" onChange={(e) => {
-                                     const f = e.target.files[0];
-                                     if(!f) return;
-                                     const reader = new FileReader();
-                                     reader.onload = () => {
-                                         setF('guiaDespachoPdf', reader.result);
-                                         showAlert("✅ Guía de Despacho adjuntada temporalmente. Se subirá al guardar el acta.");
-                                     };
-                                     reader.readAsDataURL(f);
-                                  }}/>
-                                  <FileText className="w-6 h-6"/>
-                                  <span className="text-center">{formData.guiaDespachoPdf ? '✅ GUÍA CARGADA (Toca para cambiar)' : 'ADJUNTAR PDF O FOTO'}</span>
-                               </label>
-                            </div>
-                         </div>
-                      )}
-                      {/* FIN BLOQUE KOVACS */}
               
               <label className="flex items-center gap-3 p-4 bg-slate-800 rounded-2xl border-slate-900 border-2 cursor-pointer shadow-md transition-colors hover:bg-slate-700">
                  <input type="checkbox" checked={formData.noReception} onChange={e=>setF('noReception',e.target.checked)} className="w-6 h-6 cursor-pointer accent-blue-500 rounded"/> 
