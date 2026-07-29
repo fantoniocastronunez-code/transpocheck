@@ -4,7 +4,17 @@ import { X, User, CheckCircle, Plus, AlertCircle } from 'lucide-react';
 import CustomClientSelector from '../ui/CustomClientSelector';
 
 export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers, db, showAlert, onSuccess, pushSyncTask }) {
-  const [selectedClient, setSelectedClient] = useState(jobToEdit?.client && allClientsList.includes(jobToEdit.client) ? jobToEdit.client : (jobToEdit?.client ? 'OTRO' : ''));
+  // NUEVO: Leer borrador silencioso (Solo se usa si NO estamos editando un trabajo existente)
+  const getDraft = () => {
+    if (jobToEdit) return null; // Si estamos editando, ignorar borrador
+    try {
+      const draft = localStorage.getItem('app_newJobDraft');
+      return draft ? JSON.parse(draft) : null;
+    } catch(e) { return null; }
+  };
+  const draft = getDraft();
+
+  const [selectedClient, setSelectedClient] = useState(jobToEdit?.client && allClientsList.includes(jobToEdit.client) ? jobToEdit.client : (jobToEdit?.client ? 'OTRO' : (draft?.selectedClient || '')));
   
   // NUEVO: Estado para cargar el directorio de destinos
   const [directoryList, setDirectoryList] = useState([]);
@@ -40,43 +50,56 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     fetchPRTs();
   }, [db]);
   
-  const [manualClient, setManualClient] = useState(jobToEdit?.client && !allClientsList.includes(jobToEdit.client) ? jobToEdit.client : '');
+  const [manualClient, setManualClient] = useState(jobToEdit?.client && !allClientsList.includes(jobToEdit.client) ? jobToEdit.client : (draft?.manualClient || ''));
   
   // NUEVOS ESTADOS: Pintura y Grabado
-  const [isPintura, setIsPintura] = useState(jobToEdit?.isPintura || false);
-  const [qtyPintura, setQtyPintura] = useState(jobToEdit?.qtyPintura || 1); // NUEVO
-  const [isGrabado, setIsGrabado] = useState(jobToEdit?.isGrabado || false);
-  const [qtyGrabado, setQtyGrabado] = useState(jobToEdit?.qtyGrabado || 1); // NUEVO
-  const [associatedJobId, setAssociatedJobId] = useState(jobToEdit?.associatedJobId || '');
-  const [brand, setBrand] = useState(jobToEdit?.brand || '');
-  const [model, setModel] = useState(jobToEdit?.model || '');
+  const [isPintura, setIsPintura] = useState(jobToEdit?.isPintura ?? (draft?.isPintura || false));
+  const [qtyPintura, setQtyPintura] = useState(jobToEdit?.qtyPintura || (draft?.qtyPintura || 1)); // NUEVO
+  const [isGrabado, setIsGrabado] = useState(jobToEdit?.isGrabado ?? (draft?.isGrabado || false));
+  const [qtyGrabado, setQtyGrabado] = useState(jobToEdit?.qtyGrabado || (draft?.qtyGrabado || 1)); // NUEVO
+  const [associatedJobId, setAssociatedJobId] = useState(jobToEdit?.associatedJobId || (draft?.associatedJobId || ''));
+  const [brand, setBrand] = useState(jobToEdit?.brand || (draft?.brand || ''));
+  const [model, setModel] = useState(jobToEdit?.model || (draft?.model || ''));
   
-  const initPlate = jobToEdit?.plate === jobToEdit?.vin && jobToEdit?.plate?.length !== 6 ? '' : (jobToEdit?.plate || '');
-  const initVin = jobToEdit?.plate === jobToEdit?.vin && jobToEdit?.vin?.length === 6 ? '' : (jobToEdit?.vin || '');
+  const initPlate = jobToEdit?.plate === jobToEdit?.vin && jobToEdit?.plate?.length !== 6 ? '' : (jobToEdit?.plate || (draft?.plate || ''));
+  const initVin = jobToEdit?.plate === jobToEdit?.vin && jobToEdit?.vin?.length === 6 ? '' : (jobToEdit?.vin || (draft?.vin || ''));
   
   const [plate, setPlate] = useState(initPlate);
   const [vin, setVin] = useState(initVin);
-  const [multiVehicles, setMultiVehicles] = useState([]); // NUEVO: Lista para traslados masivos
-  const [tripType, setTripType] = useState(jobToEdit?.tripType || 'traslado');
-  const [vehicleType, setVehicleType] = useState(jobToEdit?.vehicleType || 'auto');
-  const [isUrgent, setIsUrgent] = useState(jobToEdit?.isUrgent || false);
+  const [multiVehicles, setMultiVehicles] = useState(draft?.multiVehicles || []); // NUEVO: Lista para traslados masivos
+  const [tripType, setTripType] = useState(jobToEdit?.tripType || (draft?.tripType || 'traslado'));
+  const [vehicleType, setVehicleType] = useState(jobToEdit?.vehicleType || (draft?.vehicleType || 'auto'));
+  const [isUrgent, setIsUrgent] = useState(jobToEdit?.isUrgent ?? (draft?.isUrgent || false));
   
-  const [revType, setRevType] = useState(jobToEdit?.rtData?.type || 'A');
-  const [revModalidad, setRevModalidad] = useState(jobToEdit?.rtData?.modalidad || 'legal'); // NUEVO: Legal o Con Ayuda
-  const [revA_gases, setRevA_gases] = useState(jobToEdit?.rtData?.gases || false);
-  const [revA_revision, setRevA_revision] = useState(jobToEdit?.rtData?.revision || false);
-  const [revA_inspeccion, setRevA_inspeccion] = useState(jobToEdit?.rtData?.inspeccion || false);
-  const [revA_frenos, setRevA_frenos] = useState(jobToEdit?.rtData?.frenos || false);
-  const [revB_tipo, setRevB_tipo] = useState(jobToEdit?.rtData?.tipoB || 'completa');
-  const [selectedDriversUI, setSelectedDriversUI] = useState(() => jobToEdit?.assignedEmails ? drivers.filter(d => jobToEdit.assignedEmails.includes(d.email)).map(d => d.id) : []);
-  const [spotDriverEmail, setSpotDriverEmail] = useState(jobToEdit?.spotDriverEmail || ''); // NUEVO: Correo conductor externo
+  const [revType, setRevType] = useState(jobToEdit?.rtData?.type || (draft?.revType || 'A'));
+  const [revModalidad, setRevModalidad] = useState(jobToEdit?.rtData?.modalidad || (draft?.revModalidad || 'legal')); // NUEVO: Legal o Con Ayuda
+  const [revA_gases, setRevA_gases] = useState(jobToEdit?.rtData?.gases ?? (draft?.revA_gases || false));
+  const [revA_revision, setRevA_revision] = useState(jobToEdit?.rtData?.revision ?? (draft?.revA_revision || false));
+  const [revA_inspeccion, setRevA_inspeccion] = useState(jobToEdit?.rtData?.inspeccion ?? (draft?.revA_inspeccion || false));
+  const [revA_frenos, setRevA_frenos] = useState(jobToEdit?.rtData?.frenos ?? (draft?.revA_frenos || false));
+  const [revB_tipo, setRevB_tipo] = useState(jobToEdit?.rtData?.tipoB || (draft?.revB_tipo || 'completa'));
+  const [selectedDriversUI, setSelectedDriversUI] = useState(() => jobToEdit?.assignedEmails ? drivers.filter(d => jobToEdit.assignedEmails.includes(d.email)).map(d => d.id) : (draft?.selectedDriversUI || []));
+  const [spotDriverEmail, setSpotDriverEmail] = useState(jobToEdit?.spotDriverEmail || (draft?.spotDriverEmail || '')); // NUEVO: Correo conductor externo
   
   // --- ESTADOS PARA TRABAJOS SIMPLES ---
-  const [operationMode, setOperationMode] = useState(jobToEdit?.tripType === 'simple' ? 'servicio' : 'traslado');
-  const [description, setDescription] = useState(jobToEdit?.description || '');
-  const [waypoints, setWaypoints] = useState(jobToEdit?.waypoints || []);
+  const [operationMode, setOperationMode] = useState(jobToEdit?.tripType === 'simple' ? 'servicio' : (draft?.operationMode || 'traslado'));
+  const [description, setDescription] = useState(jobToEdit?.description || (draft?.description || ''));
+  const [waypoints, setWaypoints] = useState(jobToEdit?.waypoints || (draft?.waypoints || []));
 
   const todayStr = new Date().toISOString().split('T')[0];
+
+  // NUEVO: Autoguardado Silencioso (Motor de Memoria)
+  useEffect(() => {
+    if (!jobToEdit) { // Solo guarda si estamos creando uno nuevo
+      const currentDraft = {
+        selectedClient, manualClient, isPintura, qtyPintura, isGrabado, qtyGrabado, associatedJobId,
+        brand, model, plate, vin, multiVehicles, tripType, vehicleType, isUrgent,
+        revType, revModalidad, revA_gases, revA_revision, revA_inspeccion, revA_frenos, revB_tipo,
+        selectedDriversUI, spotDriverEmail, operationMode, description, waypoints
+      };
+      localStorage.setItem('app_newJobDraft', JSON.stringify(currentDraft));
+    }
+  }, [selectedClient, manualClient, isPintura, qtyPintura, isGrabado, qtyGrabado, associatedJobId, brand, model, plate, vin, multiVehicles, tripType, vehicleType, isUrgent, revType, revModalidad, revA_gases, revA_revision, revA_inspeccion, revA_frenos, revB_tipo, selectedDriversUI, spotDriverEmail, operationMode, description, waypoints, jobToEdit]);
 
   // --- NUEVO: Memoria Muscular Profunda para Tipo de Vehículo ---
   useEffect(() => {
@@ -290,6 +313,12 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
 
     // MAGIA UX: CIERRE INMEDIATO
     showAlert("⏳ Creando y asignando traslado...");
+    
+    // NUEVO: Si estamos creando uno nuevo y fue exitoso, destruimos el borrador
+    if (!jobToEdit) {
+      localStorage.removeItem('app_newJobDraft');
+    }
+
     if (jobToEdit && onCancelEdit) onCancelEdit();
     else onSuccess();
     

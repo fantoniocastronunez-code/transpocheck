@@ -1353,12 +1353,21 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
              const schedDate = new Date(y, m - 1, d); schedDate.setHours(0,0,0,0);
              const diffDays = Math.round((schedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
              const timeStr = j.scheduledTime ? ` a las ${j.scheduledTime}` : '';
+             
+             // Detectamos si el traslado ya fue iniciado por el conductor
+             const isStarted = ['picked_up', 'arrived_destination', 'arrived_prt', 'prt_done'].includes(j.phase);
+
              if (diffDays === 0) {
                  if (!j.scheduledTime) return null;
                  return <div className="mb-3 bg-blue-50 border border-blue-200 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-blue-700 uppercase tracking-widest">📅 HOY{timeStr}</span></div>;
              }
              if (diffDays === 1) return <div className="mb-3 bg-cyan-50 border border-cyan-200 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-cyan-700 uppercase tracking-widest">📅 Mañana{timeStr}</span></div>;
              if (diffDays > 1) return <div className="mb-3 bg-slate-100 border border-slate-200 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-slate-600 uppercase tracking-widest">📅 Para el {d}/{m}/{y}{timeStr}</span></div>;
+             
+             // Si ya pasó la fecha planificada pero el viaje ESTÁ EN PROCESO, evitamos el rojo
+             if (isStarted) return <div className="mb-3 bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-emerald-700 uppercase tracking-widest">🚀 EN RUTA ({d}/{m}/{y})</span></div>;
+
+             // Si se pasó la fecha y NADIE lo ha iniciado, ahí sí mostramos atrasado
              return <div className="mb-3 bg-red-50 border border-red-200 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-red-700 uppercase tracking-widest">⚠️ Atrasado ({d}/{m}/{y}{timeStr})</span></div>;
           })()}
 

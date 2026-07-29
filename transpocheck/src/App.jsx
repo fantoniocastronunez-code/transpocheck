@@ -50,16 +50,25 @@ function LogisticApp() {
   const sharedText = searchParams.get('shared_text');
   const sharedUrl = searchParams.get('shared_url');
 
-  const [adminTab, setAdminTab] = useState('dashboard');
+  // NUEVO: Memoria persistente para recordar la última pantalla y simulaciones activas
+  const [adminTab, setAdminTab] = useState(() => localStorage.getItem('app_adminTab') || 'dashboard');
   const [selectedJob, setSelectedJob] = useState(null);
   const [editingJob, setEditingJob] = useState(null);
-  const [currentView, setCurrentView] = useState('main');
-  const [mainTab, setMainTab] = useState('jobs');
-  const [activeRole, setActiveRole] = useState('driver');
+  const [currentView, setCurrentView] = useState(() => localStorage.getItem('app_currentView') || 'main');
+  const [mainTab, setMainTab] = useState(() => localStorage.getItem('app_mainTab') || 'jobs');
+  const [activeRole, setActiveRole] = useState(() => localStorage.getItem('app_activeRole') || 'driver');
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
-  const [simulatedClient, setSimulatedClient] = useState('');
-  const [simulatedDriverEmail, setSimulatedDriverEmail] = useState('');
+  const [simulatedClient, setSimulatedClient] = useState(() => localStorage.getItem('app_simulatedClient') || '');
+  const [simulatedDriverEmail, setSimulatedDriverEmail] = useState(() => localStorage.getItem('app_simulatedDriver') || '');
   const [favDriverEmail, setFavDriverEmail] = useState(() => localStorage.getItem('favDriverEmail') || '');
+
+  // NUEVO: Sincronización automática de la memoria cada vez que cambias de vista
+  useEffect(() => { localStorage.setItem('app_adminTab', adminTab); }, [adminTab]);
+  useEffect(() => { localStorage.setItem('app_currentView', currentView); }, [currentView]);
+  useEffect(() => { localStorage.setItem('app_mainTab', mainTab); }, [mainTab]);
+  useEffect(() => { localStorage.setItem('app_activeRole', activeRole); }, [activeRole]);
+  useEffect(() => { localStorage.setItem('app_simulatedClient', simulatedClient); }, [simulatedClient]);
+  useEffect(() => { localStorage.setItem('app_simulatedDriver', simulatedDriverEmail); }, [simulatedDriverEmail]);
   
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
