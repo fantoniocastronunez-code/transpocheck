@@ -62,6 +62,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   const [isUrgent, setIsUrgent] = useState(jobToEdit?.isUrgent || false);
   
   const [revType, setRevType] = useState(jobToEdit?.rtData?.type || 'A');
+  const [revModalidad, setRevModalidad] = useState(jobToEdit?.rtData?.modalidad || 'legal'); // NUEVO: Legal o Con Ayuda
   const [revA_gases, setRevA_gases] = useState(jobToEdit?.rtData?.gases || false);
   const [revA_revision, setRevA_revision] = useState(jobToEdit?.rtData?.revision || false);
   const [revA_inspeccion, setRevA_inspeccion] = useState(jobToEdit?.rtData?.inspeccion || false);
@@ -204,7 +205,9 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     const finalClient = selectedClient === 'OTRO' ? manualClient : selectedClient;
     
     const rtData = (operationMode === 'traslado' && tripType === 'revision') ? {
-      type: revType, gases: revType === 'A' ? revA_gases : (revB_tipo === 'gases'),
+      type: revType,
+      modalidad: revModalidad, // NUEVO
+      gases: revType === 'A' ? revA_gases : (revB_tipo === 'gases'),
       revision: revType === 'A' ? revA_revision : (revB_tipo === 'completa'),
       inspeccion: revType === 'A' ? revA_inspeccion : false,
       frenos: revType === 'A' ? revA_frenos : false,
@@ -310,10 +313,32 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                     
                     if (!jobToEdit || !jobToEdit.companyPrice) {
                         const prices = clientRecord.prices || {};
-                        if (operationMode === 'servicio') companyPrice = Number(prices.servicio) || 0;
-                        else if (tripType === 'revision') companyPrice = Number(prices.prt) || 0;
-                        else if (tripType === 'viaje') companyPrice = Number(prices.region) || 0;
-                        else companyPrice = Number(prices.local) || 0;
+                        if (operationMode === 'servicio') {
+                            companyPrice = Number(prices.servicio) || 0;
+                        } else if (tripType === 'revision') {
+                            let totalRev = 0;
+                            
+                            // Determinamos el valor base dependiendo si es Legal o Con Ayuda
+                            const basePriceA = revModalidad === 'ayuda' ? (Number(prices.prtAyuda) || 0) : (Number(prices.prt) || 0);
+                            const basePriceB = revModalidad === 'ayuda' ? (Number(prices.prtAyuda) || 0) : (Number(prices.prtB) || 0);
+
+                            if (revType === 'A') {
+                                if (revA_gases || revA_revision) totalRev += basePriceA;
+                                if (revA_inspeccion) totalRev += (Number(prices.inspVisualA) || 0);
+                                if (revA_frenos) totalRev += (Number(prices.frenosA) || 0); // Ocupa el nuevo cajón de Frenos
+                            } else if (revType === 'B') {
+                                if (revB_tipo === 'completa') {
+                                    totalRev += basePriceB;
+                                } else if (revB_tipo === 'gases') {
+                                    totalRev += (Number(prices.soloGasesB) || 0);
+                                }
+                            }
+                            companyPrice = totalRev;
+                        } else if (tripType === 'viaje') {
+                            companyPrice = Number(prices.region) || 0;
+                        } else {
+                            companyPrice = Number(prices.local) || 0;
+                        }
                     }
                 }
             } catch (e) { console.error("Error buscando cliente:", e); }
@@ -487,12 +512,18 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
               {tripType === 'revision' && (
                 <div className="p-4 bg-white border-2 border-blue-100 rounded-xl space-y-4 mt-4 animate-in fade-in">
                    <h4 className="text-xs font-extrabold text-blue-600 uppercase">Detalle Revisión Técnica</h4>
-                   <select value={revType} onChange={e=>setRevType(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700">
-                     <option value="A">Revisión Tipo A</option>
-                     <option value="B">Revisión Tipo B</option>
-                   </select>
+                   <div className="grid grid-cols-2 gap-3">
+                     <select value={revType} onChange={e=>setRevType(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700">
+                       <option value="A">Clase A</option>
+                       <option value="B">Clase B</option>
+                     </select>
+                     <select value={revModalidad} onChange={e=>setRevModalidad(e.target.value)} className={`w-full border-2 p-3 text-sm rounded-xl outline-none font-bold shadow-sm ${revModalidad === 'ayuda' ? 'border-amber-400 bg-amber-50 text-amber-800' : 'border-slate-200 bg-white text-slate-700 focus:border-blue-500'}`}>
+                       <option value="legal">Legal (Normal)</option>
+                       <option value="ayuda">Con Ayuda</option>
+                     </select>
+                   </div>
                    {revType === 'A' && (
-                     <div className="grid grid-cols-2 gap-3 text-sm font-bold text-slate-600">
+                     <div className="grid grid-cols-2 gap-3 text-sm font-bold text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">
                        <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_gases} onChange={e=>setRevA_gases(e.target.checked)} className="w-4 h-4 text-blue-600 rounded"/> Gases</label>
                        <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_revision} onChange={e=>setRevA_revision(e.target.checked)} className="w-4 h-4 text-blue-600 rounded"/> Revisión</label>
                        <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_inspeccion} onChange={e=>setRevA_inspeccion(e.target.checked)} className="w-4 h-4 text-blue-600 rounded"/> Insp. Visual</label>
@@ -500,7 +531,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                      </div>
                    )}
                    {revType === 'B' && (
-                     <select value={revB_tipo} onChange={e=>setRevB_tipo(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700">
+                     <select value={revB_tipo} onChange={e=>setRevB_tipo(e.target.value)} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700 bg-slate-50">
                        <option value="completa">Revisión Completa</option>
                        <option value="gases">Sólo Gases</option>
                      </select>

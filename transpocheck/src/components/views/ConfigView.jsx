@@ -50,7 +50,18 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
   const [clientLogo, setClientLogo] = useState(null);
   
   // NUEVO: Estado para Tarifas Predefinidas
-  const defaultPrices = { local: '', region: '', prt: '', prtAyuda: '', servicio: '' };
+  const defaultPrices = { 
+    local: '', 
+    region: '', 
+    prt: '', // Clase A
+    prtB: '', // Clase B
+    prtAyuda: '', 
+    servicio: '',
+    inspVisualA: '', // Inspección Visual Clase A
+    inspVisualB: '', // Inspección Visual Clase B
+    soloGasesB: '',  // Solo Gases Clase B
+    frenosA: ''      // Certificado de Frenos
+  };
   const [clientPrices, setClientPrices] = useState(defaultPrices);
 
   React.useEffect(() => {
@@ -186,6 +197,8 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                     } else if (jobData.tripType === 'revision') {
                        if (jobData.prt_result === 'aprobado_ayuda' || jobData.checklist?.rtStatus === 'aprobado_ayuda') {
                           newPrice = Number(clientPrices.prtAyuda) || 0;
+                       } else if (jobData.rtData?.type === 'B') {
+                          newPrice = Number(clientPrices.prtB) || 0;
                        } else {
                           newPrice = Number(clientPrices.prt) || 0;
                        }
@@ -429,7 +442,7 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                   <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-1.5"><Wallet className="w-4 h-4"/> 4. Tarifas Predefinidas (Solo Admin)</h4>
                   <div className="bg-indigo-50/50 border border-indigo-100 p-5 rounded-2xl shadow-sm">
                      <p className="text-xs font-bold text-slate-600 mb-4 leading-tight">Define los valores a cobrar para automatizar los ingresos en cada trabajo de esta empresa.</p>
-                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                         <div>
                            <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Local ($)</label>
                            <input type="number" value={clientPrices.local || ''} onChange={(e) => setClientPrices({...clientPrices, local: e.target.value})} placeholder="15000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
@@ -439,15 +452,35 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                            <input type="number" value={clientPrices.region || ''} onChange={(e) => setClientPrices({...clientPrices, region: e.target.value})} placeholder="45000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
                         </div>
                         <div>
-                           <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">RT Legal ($)</label>
+                           <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">RT Clase A ($)</label>
                            <input type="number" value={clientPrices.prt || ''} onChange={(e) => setClientPrices({...clientPrices, prt: e.target.value})} placeholder="25000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                        </div>
+                        <div>
+                           <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">RT Clase B ($)</label>
+                           <input type="number" value={clientPrices.prtB || ''} onChange={(e) => setClientPrices({...clientPrices, prtB: e.target.value})} placeholder="20000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
                         </div>
                         <div>
                            <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">RT Ayuda ($)</label>
                            <input type="number" value={clientPrices.prtAyuda || ''} onChange={(e) => setClientPrices({...clientPrices, prtAyuda: e.target.value})} placeholder="35000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
                         </div>
                         <div>
-                           <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Otros Serv.</label>
+                           <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Insp. Visual A ($)</label>
+                           <input type="number" value={clientPrices.inspVisualA || ''} onChange={(e) => setClientPrices({...clientPrices, inspVisualA: e.target.value})} placeholder="12000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                        </div>
+                        <div>
+                           <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Insp. Visual B ($)</label>
+                           <input type="number" value={clientPrices.inspVisualB || ''} onChange={(e) => setClientPrices({...clientPrices, inspVisualB: e.target.value})} placeholder="10000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                        </div>
+                        <div>
+                           <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Solo Gases B ($)</label>
+                           <input type="number" value={clientPrices.soloGasesB || ''} onChange={(e) => setClientPrices({...clientPrices, soloGasesB: e.target.value})} placeholder="12000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                        </div>
+                        <div>
+                           <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Cert. Frenos ($)</label>
+                           <input type="number" value={clientPrices.frenosA || ''} onChange={(e) => setClientPrices({...clientPrices, frenosA: e.target.value})} placeholder="15000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                        </div>
+                        <div>
+                           <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Otros Serv. ($)</label>
                            <input type="number" value={clientPrices.servicio || ''} onChange={(e) => setClientPrices({...clientPrices, servicio: e.target.value})} placeholder="10000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
                         </div>
                      </div>
