@@ -34,7 +34,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
   const defaultData = {
     client: job.client||'', manualClient: '', brand: job.brand||'', model: job.model||'', plateOrVin: job.plate||job.vin||'', origin: job.origin||'', destination: job.destination||'', vehicleType: job.vehicleType||'auto', fuelLevel: 50, 
-    photos: { front:false, left:false, right:false, back:false, tire:false, dashboard:false, ...Array.from({length: 30}).reduce((acc, _, i) => { acc[`det${i+1}`] = false; return acc; }, {}) }, 
+    photos: job.checklist?.photos || { front:false, left:false, right:false, back:false, tire:false, dashboard:false, ...Array.from({length: 30}).reduce((acc, _, i) => { acc[`det${i+1}`] = false; return acc; }, {}) }, 
     docs: job.checklist?.docs || initialDocs, 
     docsExpiry: job.checklist?.docsExpiry || initialDocsExpiry, 
     internalReminders: job.checklist?.internalReminders || initialReminders, 
@@ -297,11 +297,29 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
           if (data.prt_reason) {
              draftData.rtRejectReason = data.prt_reason;
           }
+
+          // RESCATE DE FOTOS: Si el borrador tenía las fotos en false pero el checklist principal ya las subió
+          if (data.checklist?.photos) {
+             for (const key in data.checklist.photos) {
+                if (data.checklist.photos[key] && !draftData.photos[key]) {
+                   draftData.photos[key] = data.checklist.photos[key];
+                }
+             }
+          }
+
           setFormData(draftData);
           setStep(data.draft.step || 1);
           setIsDraftLoaded(true);
+        } else if (data?.checklist) {
+          // Si no hay borrador pero el trabajo ya tiene checklist (ej. al abrirlo el admin), precargamos todo
+          setFormData(prev => ({
+             ...prev,
+             ...data.checklist,
+             rtStatus: data.prt_result || data.checklist.rtStatus || prev.rtStatus,
+             rtRejectReason: data.prt_reason || data.checklist.rtRejectReason || prev.rtRejectReason
+          }));
         } else if (data?.prt_result) {
-          // Si no hay borrador, aseguramos que la data en vivo actualice el estado
+          // Si no hay borrador ni checklist, aseguramos que la data en vivo actualice el estado
           setFormData(prev => ({
             ...prev,
             rtStatus: data.prt_result,
