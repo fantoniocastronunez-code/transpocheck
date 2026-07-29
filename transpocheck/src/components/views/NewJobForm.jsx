@@ -1,9 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { updateDoc, doc, addDoc, collection, getDocs, query, where } from 'firebase/firestore';
-import { X, User, CheckCircle, Plus, AlertCircle } from 'lucide-react';
+import { X, User, CheckCircle, Plus, AlertCircle, FileText, Loader2 } from 'lucide-react';
 import CustomClientSelector from '../ui/CustomClientSelector';
+import Tesseract from 'tesseract.js';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Configuramos el "cerebro" lector de PDFs usando su CDN oficial para no depender de configuraciones locales
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers, db, showAlert, onSuccess, pushSyncTask }) {
+  const [isOcrProcessing, setIsOcrProcessing] = useState(false);
+  
   // NUEVO: Leer borrador silencioso (Solo se usa si NO estamos editando un trabajo existente)
   const getDraft = () => {
     if (jobToEdit) return null; // Si estamos editando, ignorar borrador
@@ -199,6 +206,94 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   const handleAddWaypoint = () => setWaypoints([...waypoints, '']);
   const handleWaypointChange = (index, val) => { const nw = [...waypoints]; nw[index] = val; setWaypoints(nw); };
   const handleRemoveWaypoint = (index) => { const nw = [...waypoints]; nw.splice(index, 1); setWaypoints(nw); };
+
+  // --- NUEVO MOTOR OCR/PDF PARA GUÍAS DE DESPACHO ---
+  const handleOcrUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsOcrProcessing(true);
+    showAlert("⏳ Analizando documento... Esto puede tomar unos segundos.");
+
+    try {
+      let text = "";
+
+      if (file.type === 'application/pdf') {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+        
+        // 1. Intentar lectura de texto digital nativo (Velocidad rayo)
+        let nativeText = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            nativeText += content.items.map(item => item.str).join(" ") + " ";
+        }
+
+        if (nativeText.trim().length > 50) {
+            text = nativeText.toUpperCase();
+        } else {
+            // 2. Es un PDF escaneado (Foto pegada adentro). Renderizamos y pasamos a Tesseract
+            showAlert("📸 Detectado PDF escaneado. Aplicando motor OCR visual...");
+            const page = await pdf.getPage(1);
+            const viewport = page.getViewport({ scale: 2.0 }); // Escala alta para mejor resolución
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            await page.render({ canvasContext: context, viewport: viewport }).promise;
+            
+            const result = await Tesseract.recognize(canvas, 'spa');
+            text = result.data.text.toUpperCase();
+        }
+      } else {
+        // Es una imagen (JPG, PNG) va directo a Tesseract
+        const result = await Tesseract.recognize(file, 'spa');
+        text = result.data.text.toUpperCase();
+      }
+
+      // === APLICACIÓN DE REGLAS DE NEGOCIO AL TEXTO ENCONTRADO ===
+      
+      // 1. Buscar Patente Chilena (4 Letras 2 Números, o 2 Letras 4 Números)
+      const plateMatch = text.match(/[A-Z]{4}[0-9]{2}|[A-Z]{2}[0-9]{4}/);
+      if (plateMatch) setPlate(plateMatch[0]);
+
+      // 2. Buscar VIN (17 caracteres alfanuméricos)
+      const vinMatch = text.match(/[A-HJ-NPR-Z0-9]{17}/);
+      if (vinMatch) setVin(vinMatch[0]);
+
+      // 3. Deducir Marca buscando coincidencias de tu propia base de datos
+      const allBrands = [...new Set(vehicles.map(v => v.brand?.toUpperCase().trim()).filter(Boolean))];
+      let foundBrand = '';
+      for (const b of allBrands) {
+        if (b.length > 2 && text.includes(b)) {
+          foundBrand = b;
+          setBrand(b);
+          break;
+        }
+      }
+
+      // 4. Si encontramos la marca, deducimos el Modelo de esa marca específica
+      if (foundBrand) {
+        const modelsOfBrand = [...new Set(vehicles.filter(v => v.brand?.toUpperCase().trim() === foundBrand).map(v => v.model?.toUpperCase().trim()).filter(Boolean))];
+        for (const m of modelsOfBrand) {
+          if (m.length > 1 && text.includes(m)) {
+            setModel(m);
+            break;
+          }
+        }
+      }
+
+      showAlert("✅ ¡Documento analizado! Datos autocompletados.");
+    } catch (err) {
+      console.error("Error Leyendo Documento:", err);
+      showAlert("❌ Hubo un error al procesar el documento. Intenta que la foto sea más clara.");
+    } finally {
+      setIsOcrProcessing(false);
+      e.target.value = null; // Limpiar el input
+    }
+  };
 
   const handleCreateOrUpdateJob = async (e) => {
     e.preventDefault();
@@ -570,10 +665,22 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
             </div>
 
             <div className={`p-4 sm:p-6 rounded-2xl space-y-4 animate-in fade-in slide-in-from-bottom-2 transition-colors duration-300 ${vehicleFoundStatus === 'found' ? 'bg-green-50 border border-green-200' : 'bg-slate-50 border border-transparent'}`}>
-               <div className="flex justify-between items-center">
+               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                  <h3 className="text-base font-bold text-slate-700">2. Vehículo <span className="text-xs text-blue-500 font-bold">(Escribe para autocompletar)</span></h3>
-                 {isSearchingVehicle && <span className="text-xs font-black text-blue-600 bg-blue-100 px-2 py-1 rounded-md animate-pulse">Buscando...</span>}
-                 {vehicleFoundStatus === 'found' && !isSearchingVehicle && <span className="text-xs font-black text-green-700 bg-green-200 px-2 py-1 rounded-md flex items-center gap-1"><CheckCircle className="w-3 h-3"/> ¡Encontrado!</span>}
+                 
+                 {/* BOTÓN MÁGICO DE ESCÁNER DE GUÍA DE DESPACHO */}
+                 <div className="relative w-full sm:w-auto">
+                   <input type="file" accept="image/*,application/pdf" onChange={handleOcrUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" disabled={isOcrProcessing} />
+                   <button type="button" className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border-2 ${isOcrProcessing ? 'bg-indigo-100 border-indigo-200 text-indigo-600' : 'bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700 shadow-md'}`}>
+                     {isOcrProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                     {isOcrProcessing ? 'Leyendo guía...' : '📄 Subir Guía (Foto o PDF)'}
+                   </button>
+                 </div>
+               </div>
+
+               <div className="flex items-center -mt-2 min-h-[24px]">
+                 {isSearchingVehicle && <span className="text-xs font-black text-blue-600 bg-blue-100 px-2 py-1 rounded-md animate-pulse">Buscando en base de datos...</span>}
+                 {vehicleFoundStatus === 'found' && !isSearchingVehicle && <span className="text-xs font-black text-green-700 bg-green-200 px-2 py-1 rounded-md flex items-center gap-1"><CheckCircle className="w-3 h-3"/> ¡Vehículo encontrado en historial!</span>}
                </div>
                <div className="grid grid-cols-2 gap-4">
                  <input value={plate} onChange={e=>handleVehicleSearch(e.target.value.replace(/[^a-zA-Z0-9]/g, ''), 'plate')} maxLength="6" type="text" placeholder="Patente (Ej. ABCD12)" className={`w-full border-2 p-3 text-sm rounded-xl uppercase outline-none font-black bg-white shadow-sm transition-colors ${isSearchingVehicle ? 'border-blue-400 ring-2 ring-blue-100' : vehicleFoundStatus === 'found' ? 'border-green-400 text-green-800' : 'border-slate-300 focus:border-blue-500 text-slate-800'}`} />
