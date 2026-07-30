@@ -5,9 +5,9 @@ import CustomClientSelector from '../ui/CustomClientSelector';
 import Tesseract from 'tesseract.js';
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Forzamos el uso de la versión unificada (Legacy) para evitar problemas de importación en Vite.
-// Esto utiliza una URL pública confiable de unpkg con la versión exacta.
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
+// ✨ Solución 100% Nativa VITE: Importamos el motor interno. Cero bloqueos de CORS.
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers, db, showAlert, onSuccess, pushSyncTask }) {
   const [isOcrProcessing, setIsOcrProcessing] = useState(false);
@@ -220,8 +220,9 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
       let text = "";
 
       if (file.type === 'application/pdf') {
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+        // ✨ SOLUCIÓN AL ERROR: Convertimos el archivo local en una URL temporal segura para PDF.js
+        const fileUrl = URL.createObjectURL(file);
+        const pdf = await pdfjsLib.getDocument(fileUrl).promise;
         
         // 1. Intentar lectura de texto digital nativo (Velocidad rayo)
         let nativeText = "";
@@ -248,6 +249,9 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
             const result = await Tesseract.recognize(canvas, 'spa');
             text = result.data.text.toUpperCase();
         }
+        
+        // Liberamos memoria de la URL temporal
+        URL.revokeObjectURL(fileUrl);
       } else {
         // Es una imagen (JPG, PNG) va directo a Tesseract
         const result = await Tesseract.recognize(file, 'spa');
@@ -289,7 +293,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
       showAlert("✅ ¡Documento analizado! Datos autocompletados.");
     } catch (err) {
       console.error("Error Leyendo Documento:", err);
-      showAlert("❌ Hubo un error al procesar el documento. Intenta que la foto sea más clara.");
+      showAlert(`❌ Hubo un error procesando el archivo: ${err.message || 'Intente nuevamente'}`);
     } finally {
       setIsOcrProcessing(false);
       e.target.value = null; // Limpiar el input
