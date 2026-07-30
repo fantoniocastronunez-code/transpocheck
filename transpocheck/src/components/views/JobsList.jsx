@@ -727,14 +727,15 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   };
   const getRouteStr = (j) => {
     if (j.tripType === 'revision') {
-       if (j.checklist?.rtStatus === 'aprobado') {
-           const ret = j.checklist.rtReturnOption === 'other' ? j.checklist.rtReturnDestination : j.origin;
-           return `${j.origin} ➔ PRT ➔ ${ret || '-'}`;
+       const rtStat = j.checklist?.rtStatus || j.prt_result;
+       if (rtStat === 'aprobado' || rtStat === 'aprobado_ayuda') {
+           const ret = j.checklist?.rtReturnOption === 'other' ? j.checklist?.rtReturnDestination : j.origin;
+           return `${j.origin || '-'} ➔ PRT ➔ ${ret || '-'}`;
        }
-       if (j.checklist?.rtStatus === 'rechazado') {
-           return `${j.origin} ➔ PRT (Rechazada)`;
+       if (rtStat === 'rechazado') {
+           return `${j.origin || '-'} ➔ PRT (Rechazada)`;
        }
-       return `${j.origin} ➔ Planta de Revisión (PRT)`;
+       return `${j.origin || '-'} ➔ Planta de Revisión (PRT)`;
     }
     let route = j.origin || '';
     if (j.waypoints && j.waypoints.length > 0) route += ` ➔ ${j.waypoints.join(' ➔ ')}`;
@@ -1508,7 +1509,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step3Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step3Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step3Done ? 'text-slate-800' : 'text-slate-400'}`}>{j.tripType === 'simple' ? 'Trabajo Terminado' : (j.tripType === 'revision' ? 'En PRT' : 'Llegada a Destino')}</p><p className={`text-xs font-bold ${step3Done ? 'text-blue-600' : 'text-slate-400'}`}>{j.tripType === 'simple' ? (j.destination || '') : (j.tripType === 'revision' ? 'Planta' : j.destination)}</p></div>
           
           {j.tripType === 'revision' && (
-            <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step4Done ? (j.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200'}`}>{step4Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step4Done ? (j.prt_result === 'rechazado' ? 'text-red-600' : 'text-green-600') : 'text-slate-400'}`}>Resultado Revisión</p>{step4Done && <p className={`text-xs font-bold ${j.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-600'}`}>{j.prt_result === 'rechazado' ? `Rechazado` : 'Aprobado'}</p>}</div>
+            <>
+              <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step4Done ? (j.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200'}`}>{step4Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step4Done ? (j.prt_result === 'rechazado' ? 'text-red-600' : 'text-green-600') : 'text-slate-400'}`}>Resultado Revisión</p>{step4Done && <p className={`text-xs font-bold ${j.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-600'}`}>{j.prt_result === 'rechazado' ? `Rechazado` : 'Aprobado'}</p>}</div>
+              {/* NUEVO: Mostrar a dónde se dirige después de aprobar */}
+              {step4Done && (j.prt_result === 'aprobado' || j.prt_result === 'aprobado_ayuda') && (
+                <div className="relative pt-2"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center bg-blue-500`}><Navigation className="w-2.5 h-2.5 text-white"/></div><p className="font-extrabold text-sm leading-tight text-slate-800">En camino a:</p><p className="text-xs font-bold text-blue-600">{j.checklist?.rtReturnOption === 'other' ? j.checklist?.rtReturnDestination : j.origin}</p></div>
+              )}
+            </>
           )}
         </div>
 
@@ -1624,7 +1631,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                       )}
 
                       {j.phase === 'prt_done' && (
-                        <SwipeButton key={`btn-dest-prt-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_destination')} text="Desliza: Llegué a Destino" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />
+                        <SwipeButton key={`btn-dest-prt-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_destination')} text={`Desliza: Llegué a ${j.checklist?.rtReturnOption === 'other' ? (j.checklist?.rtReturnDestination?.substring(0,10) + '...') : 'Origen'}`} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />
                       )}
 
                       <button onClick={()=>onStartChecklist(j)} className={`w-full font-bold py-2 rounded-xl text-xs shadow-sm transition-colors ${(j.phase === 'arrived_destination') ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'}`}>
