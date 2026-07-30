@@ -1753,22 +1753,28 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                 <>
                    <div className="bg-white p-2 rounded-lg border border-amber-100 shadow-sm flex items-start gap-2">
                       <div className="mt-1"><div className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_4px_rgba(245,158,11,0.6)]"></div></div>
-                      <span className="text-[10px] font-black text-amber-700 leading-tight break-words whitespace-normal">PRT</span>
+                      <span className="text-[10px] font-black text-amber-700 leading-tight break-words whitespace-normal">
+                         {j.destination?.includes('->') ? j.destination.split('->')[0].trim() : 'PRT'}
+                      </span>
                    </div>
 
-                   {j.checklist?.rtReturnOption === 'other' && j.checklist?.rtReturnDestination && (
-                      <>
-                         <div className="flex justify-center -my-1.5 z-10 relative">
-                            <div className="bg-slate-100 p-0.5 rounded-full border border-slate-200"><Navigation className="w-3 h-3 text-slate-400 rotate-180"/></div>
-                         </div>
-                         <div className="bg-white p-2 rounded-lg border border-blue-100 shadow-sm flex items-start gap-2">
-                            <div className="mt-1"><div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_4px_rgba(59,130,246,0.6)]"></div></div>
-                            <span className="text-[10px] font-black text-blue-700 leading-tight break-words whitespace-normal">
-                               {j.checklist.rtReturnDestination}
-                            </span>
-                         </div>
-                      </>
-                   )}
+                   <>
+                      <div className="flex justify-center -my-1.5 z-10 relative">
+                         <div className="bg-slate-100 p-0.5 rounded-full border border-slate-200"><Navigation className="w-3 h-3 text-slate-400 rotate-180"/></div>
+                      </div>
+                      <div className="bg-white p-2 rounded-lg border border-blue-100 shadow-sm flex items-start gap-2">
+                         <div className="mt-1"><div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_4px_rgba(59,130,246,0.6)]"></div></div>
+                         <span className="text-[10px] font-black text-blue-700 leading-tight break-words whitespace-normal">
+                            {j.checklist?.rtReturnOption === 'other' && j.checklist?.rtReturnDestination 
+                               ? j.checklist.rtReturnDestination 
+                               : j.checklist?.rtReturnOption === 'origin' 
+                                 ? j.origin 
+                                 : j.destination?.includes('->') 
+                                   ? j.destination.split('->')[1].trim() 
+                                   : (j.destination && !j.destination.toLowerCase().includes('prt') ? j.destination : (j.origin || 'Por definir'))}
+                         </span>
+                      </div>
+                   </>
                 </>
             ) : (
                 <div className="bg-white p-2 rounded-lg border border-blue-100 shadow-sm flex items-start gap-2">
