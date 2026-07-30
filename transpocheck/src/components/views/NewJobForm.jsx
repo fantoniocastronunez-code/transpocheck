@@ -154,46 +154,10 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     return () => clearTimeout(delayDebounceFn);
   }, [brand, model, vehicles, db]);
 
-  const handleVehicleSearch = async (searchValue, type) => {
-    const val = searchValue.toUpperCase().trim();
-    if (type === 'plate') setPlate(val);
-    if (type === 'vin') setVin(val);
-
-    // Reseteamos estados visuales
-    setVehicleFoundStatus(null);
-
-    // Disparamos la búsqueda solo si la patente parece estar completa (mínimo 5 letras) o el VIN
-    if ((type === 'plate' && val.length >= 5) || (type === 'vin' && val.length >= 6)) {
-      setIsSearchingVehicle(true);
-
-      // Simulamos un retraso de red para dar retroalimentación visual de "procesando"
-      await new Promise(resolve => setTimeout(resolve, 600));
-      
-      // Por ahora, buscamos instantáneamente en nuestra base de datos:
-      const v = vehicles.find(x => (val && x.plate === val) || (val && x.vin === val));
-
-      if (v) {
-        setBrand(v.brand || ''); setModel(v.model || '');
-        if (v.plate && type === 'vin') setPlate(v.plate);
-        if (v.vin && type === 'plate') setVin(v.vin);
-        if (v.vehicleType) setVehicleType(v.vehicleType);
-        if (allClientsList.includes(v.client)) setSelectedClient(v.client); else { setSelectedClient('OTRO'); setManualClient(v.client); }
-        
-        setVehicleFoundStatus('found');
-        // Limpiamos el efecto verde después de 3 segundos
-        setTimeout(() => setVehicleFoundStatus(null), 3000);
-      } else {
-        setVehicleFoundStatus('not_found');
-      }
-      
-      setIsSearchingVehicle(false);
-    }
-  };
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSearchingVehicle, setIsSearchingVehicle] = useState(false);
   const [vehicleFoundStatus, setVehicleFoundStatus] = useState(null); // 'found', 'not_found', null
-  const [vehiclePhoto, setVehiclePhoto] = useState(jobToEdit?.checklist?.photos?.front || null); // <-- NUEVO: Memoria de foto
+  const [vehiclePhoto, setVehiclePhoto] = useState(jobToEdit?.checklist?.photos?.front || null);
 
   const handleVehicleSearch = async (searchValue, type) => {
     const val = searchValue.toUpperCase().trim();
@@ -202,13 +166,13 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
 
     // Reseteamos estados visuales
     setVehicleFoundStatus(null);
-    setVehiclePhoto(null); // Limpiamos la foto si cambia de patente
+    setVehiclePhoto(null);
 
     // Disparamos la búsqueda solo si la patente parece estar completa (mínimo 5 letras) o el VIN
     if ((type === 'plate' && val.length >= 5) || (type === 'vin' && val.length >= 6)) {
       setIsSearchingVehicle(true);
 
-      // Simulamos un retraso de red para dar retroalimentación visual de "procesando"
+      // Simulamos un retraso de red para dar retroalimentación visual
       await new Promise(resolve => setTimeout(resolve, 600));
       
       // Buscamos en nuestra base de datos local de vehículos:
@@ -227,13 +191,12 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
         setVehicleFoundStatus('not_found');
       }
 
-      // NUEVO: Buscar foto histórica en la BD para mostrarla de perfil
+      // Buscar foto histórica en la BD para mostrarla de perfil
       try {
          const searchField = type === 'plate' ? 'plate' : 'vin';
          const qPhoto = query(collection(db, 'transport_jobs'), where(searchField, '==', val));
          const snapPhoto = await getDocs(qPhoto);
          if (!snapPhoto.empty) {
-             // Ordenamos de más reciente a más antiguo
              const sorted = snapPhoto.docs.map(d => d.data()).sort((a,b) => (b.completedAt || b.createdAt || 0) - (a.completedAt || a.createdAt || 0));
              const foundPhotoJob = sorted.find(j => j.checklist?.photos?.front);
              if (foundPhotoJob) {
