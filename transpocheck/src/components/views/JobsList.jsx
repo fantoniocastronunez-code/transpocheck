@@ -61,6 +61,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [guideLink, setGuideLink] = useState('');
   const [guideFileBase64, setGuideFileBase64] = useState(null);
 
+  const [fullScreenPhoto, setFullScreenPhoto] = useState(null); // <-- NUEVO: Estado para foto en pantalla completa
+
   const [isAppReady, setIsAppReady] = useState(false);
   
   useEffect(() => {
@@ -1248,16 +1250,27 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               </div>
             </div>
             
-            <div>
-                {j.tripType === 'simple' ? (
-                   <p className="text-lg font-black text-purple-800 leading-tight mt-1 break-words pr-2">{j.description || 'Servicio en Terreno'}</p>
-                ) : (
-                   <p className="text-xl font-black text-slate-800 leading-tight mt-1 break-words pr-2">{j.brand} {j.model}</p>
+            <div className="flex items-center gap-3">
+                {/* NUEVO: Miniatura clickeable de la foto Frontal */}
+                {(j.checklist?.photos?.front || j.draft?.formData?.photos?.front) && (
+                    <img 
+                       src={j.checklist?.photos?.front || j.draft?.formData?.photos?.front} 
+                       alt="Frente" 
+                       onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(j.checklist?.photos?.front || j.draft?.formData?.photos?.front); }}
+                       className="w-12 h-12 rounded-lg object-cover border border-slate-200 shadow-sm cursor-pointer hover:opacity-80 transition-opacity shrink-0"
+                    />
                 )}
-                <p className="text-xs font-bold text-slate-500 mt-0.5 uppercase tracking-wide flex items-center flex-wrap gap-2">
-                   {j.client}
-                   {j.fleetGroup && <span className="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded text-[9px] font-black border border-indigo-200">EN FLOTA (CONVOY)</span>}
-                </p>
+                <div>
+                    {j.tripType === 'simple' ? (
+                       <p className="text-lg font-black text-purple-800 leading-tight mt-1 break-words pr-2">{j.description || 'Servicio en Terreno'}</p>
+                    ) : (
+                       <p className="text-xl font-black text-slate-800 leading-tight mt-1 break-words pr-2">{j.brand} {j.model}</p>
+                    )}
+                    <p className="text-xs font-bold text-slate-500 mt-0.5 uppercase tracking-wide flex items-center flex-wrap gap-2">
+                       {j.client}
+                       {j.fleetGroup && <span className="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded text-[9px] font-black border border-indigo-200">EN FLOTA (CONVOY)</span>}
+                    </p>
+                </div>
               </div>
             </div>
           </div>
@@ -1557,15 +1570,26 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
         
         <div className="flex justify-between items-center mb-2 gap-2">
-          {j.tripType === 'simple' ? (
-             <p className="text-sm font-black text-purple-800 leading-tight break-words mt-1 pr-2">{j.description || 'Servicio en Terreno'}</p>
-          ) : (
-             <p className="text-sm font-black text-slate-800 leading-tight break-words mt-1 pr-2">{j.brand} {j.model}</p>
-          )}
+          <div className="flex items-center gap-2">
+             {/* NUEVO: Miniatura clickeable de la foto Frontal */}
+             {j.checklist?.photos?.front && (
+                 <img 
+                    src={j.checklist.photos.front} 
+                    alt="Frente" 
+                    onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(j.checklist.photos.front); }}
+                    className="w-10 h-10 rounded-md object-cover border border-slate-200 shadow-sm cursor-pointer hover:opacity-80 transition-opacity shrink-0"
+                 />
+             )}
+             {j.tripType === 'simple' ? (
+                <p className="text-sm font-black text-purple-800 leading-tight break-words mt-1 pr-2">{j.description || 'Servicio en Terreno'}</p>
+             ) : (
+                <p className="text-sm font-black text-slate-800 leading-tight break-words mt-1 pr-2">{j.brand} {j.model}</p>
+             )}
+          </div>
           <div className="flex flex-col items-end shrink-0 gap-1">
-            {j.tripType === 'simple' && (
-               <span className="bg-purple-100 text-purple-800 border border-purple-200 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider shadow-sm mb-0.5">SERVICIO</span>
-            )}
+             {j.tripType === 'simple' && (
+                <span className="bg-purple-100 text-purple-800 border border-purple-200 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider shadow-sm mb-0.5">SERVICIO</span>
+             )}
           </div>
         </div>
         
@@ -2824,6 +2848,16 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                  Finalizar Traslado
               </button>
            </div>
+        </div>
+      )}
+
+      {/* NUEVO MODAL: VISOR DE FOTO PANTALLA COMPLETA */}
+      {fullScreenPhoto && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4 cursor-zoom-out" onClick={() => setFullScreenPhoto(null)}>
+           <button onClick={() => setFullScreenPhoto(null)} className="absolute top-4 right-4 bg-white/20 p-2 rounded-full hover:bg-white/40 transition-colors">
+              <X className="w-6 h-6 text-white"/>
+           </button>
+           <img src={fullScreenPhoto} alt="Ampliación" className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl cursor-default" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
 
