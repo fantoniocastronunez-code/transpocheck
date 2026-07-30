@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { updateDoc, doc, setDoc, addDoc, collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { 
   FileText, MapPin, CheckCircle, CloudOff, AlertCircle, Eye, 
@@ -583,7 +583,9 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     e.preventDefault();
     if (isSubmitting) return;
     if (!formData.noReception && !formData.signatureData) return showAlert("La firma del receptor es mandatoria.");
-    if (job.tripType === 'revision' && !formData.prtArrivalTime) return showAlert("⚠️ Debes presionar 'Llegué a la PRT' e iniciar el tiempo en planta antes de finalizar.");
+    // MAGIA: Solo exigimos marcar el tiempo si el resultado sigue pendiente. 
+    // Si un Admin forzó el resultado desde afuera, permitimos cerrar el acta sin tiempo.
+    if (job.tripType === 'revision' && !formData.prtArrivalTime && formData.rtStatus === 'pendiente') return showAlert("⚠️ Debes presionar 'Llegué a la PRT' e iniciar el tiempo en planta antes de finalizar.");
     if (job.tripType === 'revision' && formData.rtStatus === 'pendiente') return showAlert("⚠️ Debes indicar el resultado de la Revisión Técnica (Aprobado o Rechazado) antes de finalizar el acta.");
     
     // Validación de Fotografías Obligatorias
@@ -2026,6 +2028,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     </div>
   );
 }
+
 
 
 
