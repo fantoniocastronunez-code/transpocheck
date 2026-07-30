@@ -1202,17 +1202,23 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     const ident = getJobIdentifier(j);
 
     const getRtFinalDestination = (job) => {
+      // Si ya cerró el acta, tomamos su decisión final
       if (job.checklist?.rtReturnOption === 'other' && job.checklist?.rtReturnDestination) {
         return job.checklist.rtReturnDestination;
       }
       if (job.checklist?.rtReturnOption === 'origin') {
         return job.origin;
       }
-      if (job.destination && job.destination !== 'Planta PRT' && !job.destination.toLowerCase().includes('planta prt')) {
-        return job.destination;
-      }
-      if (job.destName && job.destName !== 'Planta PRT' && !job.destName.toLowerCase().includes('planta prt')) {
-        return job.destName;
+      // Si no ha cerrado, extraemos el destino final programado desde el string maestro
+      if (job.destination) {
+        const parts = job.destination.split('->');
+        if (parts.length > 1) {
+          return parts[1].trim();
+        }
+        // Si no tiene flecha, pero es distinto a PRT, devolvemos eso
+        if (!job.destination.toLowerCase().includes('planta prt')) {
+          return job.destination.trim();
+        }
       }
       return job.origin || 'Por definir';
     };
