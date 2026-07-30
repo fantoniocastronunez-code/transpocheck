@@ -220,9 +220,11 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
       let text = "";
 
       if (file.type === 'application/pdf') {
-        // ✨ SOLUCIÓN AL ERROR: Convertimos el archivo local en una URL temporal segura para PDF.js
-        const fileUrl = URL.createObjectURL(file);
-        const pdf = await pdfjsLib.getDocument(fileUrl).promise;
+        // ✨ SOLUCIÓN AL ERROR: Alimentamos a la librería con los bytes crudos
+        const arrayBuffer = await file.arrayBuffer();
+        // Convertimos explícitamente a Uint8Array (el formato estricto que exige data)
+        const uint8Array = new Uint8Array(arrayBuffer);
+        const pdf = await pdfjsLib.getDocument({ data: uint8Array }).promise;
         
         // 1. Intentar lectura de texto digital nativo (Velocidad rayo)
         let nativeText = "";
@@ -249,9 +251,6 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
             const result = await Tesseract.recognize(canvas, 'spa');
             text = result.data.text.toUpperCase();
         }
-        
-        // Liberamos memoria de la URL temporal
-        URL.revokeObjectURL(fileUrl);
       } else {
         // Es una imagen (JPG, PNG) va directo a Tesseract
         const result = await Tesseract.recognize(file, 'spa');
