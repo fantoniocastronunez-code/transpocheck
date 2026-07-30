@@ -17,7 +17,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [auditMode, setAuditMode] = useState(false); // <-- NUEVO: Estado del switch de auditoría
   const [jobToFail, setJobToFail] = useState(null);
   const [prtPromptJob, setPrtPromptJob] = useState(null); 
-  const [prtApprovePromptJob, setPrtApprovePromptJob] = useState(null); // <-- NUEVO: Estado para el pop-up de Aprobación
+  const [prtApprovePromptJob, setPrtApprovePromptJob] = useState(null);
+  const [prtApproveType, setPrtApproveType] = useState('aprobado');
+  const [prtReturnOpt, setPrtReturnOpt] = useState('origin');
+  const [prtReturnDest, setPrtReturnDest] = useState('');
   const [relayPromptJob, setRelayPromptJob] = useState(null); 
   const [forceCloseJob, setForceCloseJob] = useState(null); 
   const [editPriceJob, setEditPriceJob] = useState(null); // <-- NUEVO: Estado para editar cobro
@@ -1612,8 +1615,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                       
                       {j.phase === 'arrived_prt' && (
                         <div className="flex gap-2">
-                          {/* NUEVO: En vez de actualizar directo, abrimos el popup de aprobación */}
-                          <button onClick={()=>setPrtApprovePromptJob(j)} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-1 disabled:opacity-50">
+                          {/* NUEVO: Al presionar, reseteamos las opciones para que el pop-up aparezca limpio */}
+                          <button onClick={() => { setPrtApproveType('aprobado'); setPrtReturnOpt('origin'); setPrtReturnDest(''); setPrtApprovePromptJob(j); }} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-1 disabled:opacity-50">
                              {processingId === `${j.id}-prt_done` ? <Clock className="w-3 h-3 animate-spin"/> : '✅'} Aprobado
                           </button>
                           <button onClick={()=>setPrtPromptJob(j)} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors disabled:opacity-50">❌ Rechazado</button>
@@ -2375,24 +2378,81 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
       )}
 
-      {/* NUEVO: POP-UP DE TIPO DE APROBACIÓN PRT */}
+      {/* NUEVO: POP-UP DE TIPO DE APROBACIÓN PRT CON DESTINO */}
       {prtApprovePromptJob && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-xl border-t-8 border-green-500 animate-in zoom-in-95">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5"><CheckCircle className="text-green-500 w-6 h-6"/> Tipo de Aprobación</h3>
-              <button onClick={() => setPrtApprovePromptJob(null)} className="p-1.5 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-600"/></button>
+          <form onSubmit={(e) => {
+              e.preventDefault();
+              if (prtReturnOpt === 'other' && !prtReturnDest.trim()) return showAlert("Debes ingresar el nuevo destino para continuar.");
+              
+              const mergedChecklist = {
+                  ...(prtApprovePromptJob.checklist || {}),
+                  rtStatus: prtApproveType,
+                  rtReturnOption: prtReturnOpt,
+                  rtReturnDestination: prtReturnOpt === 'other' ? prtReturnDest : ''
+              };
+              updatePhase(prtApprovePromptJob, 'prt_done', {
+                  prt_result: prtApproveType,
+                  checklist: mergedChecklist
+              });
+              setPrtApprovePromptJob(null);
+          }} className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl border-t-8 border-green-500 animate-in zoom-in-95 flex flex-col max-h-[90vh]">
+            <div className="flex justify-between items-center mb-4 shrink-0">
+              <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5"><CheckCircle className="text-green-500 w-5 h-5"/> Aprobación PRT</h3>
+              <button type="button" onClick={() => setPrtApprovePromptJob(null)} className="p-1.5 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-600"/></button>
             </div>
-            <p className="text-sm font-bold text-slate-500">¿Cómo fue aprobada esta Revisión Técnica?</p>
-            <div className="flex flex-col gap-3 mt-4">
-              <button onClick={() => { updatePhase(prtApprovePromptJob, 'prt_done', { prt_result: 'aprobado' }); setPrtApprovePromptJob(null); }} className="w-full py-4 bg-green-50 hover:bg-green-100 border-2 border-green-500 text-green-700 rounded-xl font-black text-sm shadow-sm transition-colors flex items-center justify-center gap-2">
-                 ✅ Aprobado (Legal)
-              </button>
-              <button onClick={() => { updatePhase(prtApprovePromptJob, 'prt_done', { prt_result: 'aprobado_ayuda' }); setPrtApprovePromptJob(null); }} className="w-full py-4 bg-amber-50 hover:bg-amber-100 border-2 border-amber-500 text-amber-700 rounded-xl font-black text-sm shadow-sm transition-colors flex items-center justify-center gap-2">
-                 🤝 Aprobado (Con Ayuda)
-              </button>
+
+            <div className="overflow-y-auto space-y-5 pr-1 pb-2">
+                <div className="space-y-2.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">1. Tipo de Aprobación</label>
+                    <div className="flex gap-2">
+                        <button type="button" onClick={() => setPrtApproveType('aprobado')} className={`flex-1 py-3 rounded-xl font-black text-xs transition-all border-2 ${prtApproveType === 'aprobado' ? 'bg-green-50 border-green-500 text-green-700 shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-500 hover:bg-slate-100'}`}>✅ Legal</button>
+                        <button type="button" onClick={() => setPrtApproveType('aprobado_ayuda')} className={`flex-1 py-3 rounded-xl font-black text-xs transition-all border-2 ${prtApproveType === 'aprobado_ayuda' ? 'bg-amber-50 border-amber-500 text-amber-700 shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-500 hover:bg-slate-100'}`}>🤝 Con Ayuda</button>
+                    </div>
+                </div>
+
+                <div className="space-y-2.5 pt-4 border-t border-slate-100">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">2. ¿Hacia dónde se dirige ahora?</label>
+                    <button type="button" onClick={() => { setPrtReturnOpt('origin'); setPrtReturnDest(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${prtReturnOpt === 'origin' ? 'border-green-500 bg-green-50 shadow-sm' : 'border-slate-100 bg-slate-50 hover:border-green-200'}`}>
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${prtReturnOpt === 'origin' ? 'border-green-500' : 'border-slate-300'}`}>
+                            {prtReturnOpt === 'origin' && <div className="w-2 h-2 bg-green-500 rounded-full"></div>}
+                        </div>
+                        <div className="min-w-0">
+                            <p className={`font-extrabold text-sm ${prtReturnOpt === 'origin' ? 'text-green-800' : 'text-slate-700'}`}>Retornar al Origen</p>
+                            <p className="text-[10px] font-bold text-slate-500 truncate">Volver a {prtApprovePromptJob.origin}</p>
+                        </div>
+                    </button>
+
+                    <button type="button" onClick={() => setPrtReturnOpt('other')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-start gap-3 ${prtReturnOpt === 'other' ? 'border-green-500 bg-green-50 shadow-sm' : 'border-slate-100 bg-slate-50 hover:border-green-200'}`}>
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${prtReturnOpt === 'other' ? 'border-green-500' : 'border-slate-300'}`}>
+                            {prtReturnOpt === 'other' && <div className="w-2 h-2 bg-green-500 rounded-full"></div>}
+                        </div>
+                        <div className="w-full min-w-0">
+                            <p className={`font-extrabold text-sm ${prtReturnOpt === 'other' ? 'text-green-800' : 'text-slate-700'}`}>Ir a Otro Destino</p>
+                            {prtReturnOpt === 'other' ? (
+                                <div className="mt-2 w-full animate-in fade-in slide-in-from-top-1">
+                                    <input type="text" list="directory-destinations-prt" autoFocus required placeholder="Escribe el destino..." value={prtReturnDest} onChange={e=>setPrtReturnDest(e.target.value)} className="w-full bg-white border border-green-300 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-green-500 font-bold" onClick={(e)=>e.stopPropagation()} />
+                                    <datalist id="directory-destinations-prt">
+                                       {directoryMemory.map((dir, idx) => (
+                                          <option key={`dir-prt-${idx}`} value={dir.name || dir.address} />
+                                       ))}
+                                       {allClientsList && allClientsList.map((client, idx) => (
+                                          <option key={`cli-prt-${idx}`} value={client} />
+                                       ))}
+                                    </datalist>
+                                </div>
+                            ) : (
+                                <p className="text-[10px] font-bold text-slate-500 truncate">Elige un nuevo lugar</p>
+                            )}
+                        </div>
+                    </button>
+                </div>
             </div>
-          </div>
+
+            <button type="submit" disabled={processingId === `${prtApprovePromptJob.id}-prt_done`} className="w-full shrink-0 py-4 bg-green-600 hover:bg-green-700 text-white rounded-xl font-black text-sm shadow-md transition-colors mt-2 flex justify-center items-center gap-2 disabled:opacity-50">
+                Confirmar y Continuar
+            </button>
+          </form>
         </div>
       )}
 
