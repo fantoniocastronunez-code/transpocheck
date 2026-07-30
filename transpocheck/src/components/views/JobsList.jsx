@@ -89,6 +89,39 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   }, [localSearchTerm]);
   // ----------------------------------------------------------
 
+  // --- NUEVO: Auto-reprogramar traslados atrasados al día actual ---
+  useEffect(() => {
+     if (!jobs || jobs.length === 0 || !db) return;
+     // Solo permitimos que la app del 'admin' dispare la actualización para evitar 
+     // múltiples sobreescrituras en Firebase si hay varios conductores conectados
+     if (role !== 'admin') return;
+
+     const todayStr = new Date().toISOString().split('T')[0];
+     const todayTime = new Date();
+     todayTime.setHours(0,0,0,0);
+
+     const lateJobs = jobs.filter(j => {
+        if (!j.scheduledDate) return false;
+        if (j.status === 'completed' || j.status === 'failed') return false;
+        
+        // Si ya está en proceso (el conductor lo inició pero pasó la hora media noche), no lo tocamos
+        const isStarted = ['picked_up', 'arrived_destination', 'arrived_prt', 'prt_done'].includes(j.phase);
+        if (isStarted) return false;
+
+        const [y, m, d] = j.scheduledDate.split('-');
+        const schedDate = new Date(y, m - 1, d);
+        schedDate.setHours(0,0,0,0);
+
+        return schedDate.getTime() < todayTime.getTime();
+     });
+
+     lateJobs.forEach(job => {
+        updateDoc(doc(db, 'transport_jobs', job.id), { scheduledDate: todayStr })
+          .catch(e => console.error("Error auto-reprogramando:", e));
+     });
+  }, [jobs, db, role]);
+  // ----------------------------------------------------------
+
   const getJobIdentifier = (j) => {
      if (j.plate && j.plate !== 'S/N') return j.plate;
      if (j.associatedPlate && j.associatedPlate !== 'S/N') return j.associatedPlate;
@@ -1367,8 +1400,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
              // Si ya pasó la fecha planificada pero el viaje ESTÁ EN PROCESO, evitamos el rojo
              if (isStarted) return <div className="mb-3 bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-emerald-700 uppercase tracking-widest">🚀 EN RUTA ({d}/{m}/{y})</span></div>;
 
-             // Si se pasó la fecha y NADIE lo ha iniciado, ahí sí mostramos atrasado
-             return <div className="mb-3 bg-red-50 border border-red-200 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-red-700 uppercase tracking-widest">⚠️ Atrasado ({d}/{m}/{y}{timeStr})</span></div>;
+             // Si se pasó la fecha, no ha iniciado y sigue activo, se trata visualmente como HOY (Reprogramación automática)
+             if (!j.scheduledTime) return null;
+             return <div className="mb-3 bg-blue-50 border border-blue-200 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-blue-700 uppercase tracking-widest">📅 HOY{timeStr}</span></div>;
           })()}
 
         <div className="relative pl-7 space-y-5 before:absolute before:top-2 before:bottom-2 before:left-[10px] before:w-0.5 before:bg-slate-100 mb-5">
