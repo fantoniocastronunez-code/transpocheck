@@ -1775,7 +1775,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
 
         {/* NUEVO: CRONÓMETRO Y KILOMETRAJE EN LA TARJETA FINALIZADA */}
-        {j.status === 'completed' && (j.arrivedDestinationAt || j.completedAt) && j.pickedUpAt && (
+        {j.status === 'completed' && (
             <div className="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-100 mb-3 shadow-inner">
                 <div className="flex items-center gap-2 flex-1">
                     <div className="bg-blue-100 p-1.5 rounded-lg"><Clock className="w-3.5 h-3.5 text-blue-600"/></div>
@@ -1783,7 +1783,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                         <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">Tiempo en Ruta</span>
                         <span className="text-xs font-extrabold text-slate-700 leading-tight">
                             {(() => {
-                                const diffMs = (j.arrivedDestinationAt || j.completedAt) - j.pickedUpAt;
+                                const endTime = j.arrivedDestinationAt || j.completedAt || Date.now();
+                                const startTime = j.pickedUpAt || j.createdAt || endTime;
+                                const diffMs = endTime - startTime;
                                 const diffMins = Math.max(0, Math.floor(diffMs / 60000));
                                 const hrs = Math.floor(diffMins / 60);
                                 const mins = diffMins % 60;
