@@ -298,6 +298,58 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     }
   }; 
 
+  // === NUEVO: FUNCIÓN PARA DESHACER FASE ===
+  const handleUndoPhase = async (job) => {
+    if (processingId) return;
+    
+    let prevPhase = null;
+    let updates = {};
+
+    switch(job.phase) {
+        case 'arrived_pickup':
+            prevPhase = deleteField();
+            updates.arrivedPickupAt = deleteField();
+            break;
+        case 'picked_up':
+            prevPhase = 'arrived_pickup';
+            updates.pickedUpAt = deleteField();
+            updates.waitTimeMinutes = deleteField();
+            break;
+        case 'arrived_prt':
+            prevPhase = 'picked_up';
+            updates.arrivedDestinationAt = deleteField();
+            updates.drivenDistance = deleteField();
+            break;
+        case 'prt_done':
+            prevPhase = 'arrived_prt';
+            updates.prt_result = deleteField();
+            updates.prt_reason = deleteField();
+            break;
+        case 'arrived_destination':
+            prevPhase = job.tripType === 'revision' ? 'prt_done' : 'picked_up';
+            updates.arrivedDestinationAt = deleteField();
+            updates.drivenDistance = deleteField();
+            break;
+        default:
+            return showAlert("No hay ningún paso anterior para deshacer.");
+    }
+
+    showConfirm("¿Estás seguro de deshacer el último estado y volver un paso atrás?", async () => {
+        setProcessingId(`${job.id}-undo`);
+        try {
+            await updateDoc(doc(db, 'transport_jobs', job.id), { phase: prevPhase, ...updates });
+            showAlert("⏪ Paso atrás realizado con éxito.");
+            setMenuOpenId(null);
+        } catch (e) {
+            console.error(e);
+            showAlert("Error al deshacer el estado.");
+        } finally {
+            setProcessingId(null);
+        }
+    });
+  };
+  // ==========================================
+
   const handleAcceptJob = async (job) => {
     if (processingId) return;
     setProcessingId(`${job.id}-accept`);
@@ -1229,6 +1281,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                         window.open(`https://wa.me/?text=${encodeURIComponent(textToShare)}`, '_blank');
                         setMenuOpenId(null);
                       }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-green-50 text-green-600 border-t border-slate-50"><Share2 className="w-4 h-4"/> Notificar Receptor</button>
+                    )}
+
+                    {/* NUEVO BOTÓN: DESHACER PASO */}
+                    {isAccepted && j.phase && j.phase !== 'claimed' && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
+                      <button onClick={() => handleUndoPhase(j)} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-orange-50 text-orange-600 border-t border-slate-50">
+                        <RefreshCw className="w-4 h-4"/> Deshacer último paso
+                      </button>
                     )}
 
                     {/* El botón de traspaso solo es visible para el dueño del trabajo o un admin */}
