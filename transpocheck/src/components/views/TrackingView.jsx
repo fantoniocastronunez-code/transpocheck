@@ -305,6 +305,21 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
     return { primary: 'bg-blue-600', text: 'text-blue-600', fill: 'bg-blue-500', light: 'bg-blue-50' };
   }, [clientName]);
 
+  // NUEVO: Diccionario histórico (Puesto en un lugar seguro, antes de los retornos)
+  const latestVehiclePhotos = React.useMemo(() => {
+     const photoMap = {};
+     const sortedAll = [...jobs].sort((a, b) => (b.completedAt || b.createdAt || 0) - (a.completedAt || a.createdAt || 0));
+     sortedAll.forEach(j => {
+        const ident = j.plate || j.vin || j.associatedPlate;
+        if (ident && ident !== 'S/N' && !photoMap[ident]) {
+           if (j.checklist?.photos?.front) {
+              photoMap[ident] = j.checklist.photos.front;
+           }
+        }
+     });
+     return photoMap;
+  }, [jobs]);
+
   if (loading) return (
     <div className="min-h-screen bg-slate-50 p-4 pt-24 space-y-6 max-w-5xl mx-auto">
       <div className="bg-white p-6 rounded-3xl border border-slate-100 max-w-2xl mx-auto h-32 flex flex-col items-center justify-center animate-pulse shadow-sm">
@@ -336,21 +351,6 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
   const activeJobs = filteredJobs.filter(j => j.status === 'pending' || j.status === 'accepted');
   const allHistoryJobs = filteredJobs.filter(j => j.status === 'completed' || j.status === 'failed');
   const historyJobs = allHistoryJobs.slice(0, historyLimit);
-
-  // NUEVO: Diccionario histórico para TrackingView
-  const latestVehiclePhotos = React.useMemo(() => {
-     const photoMap = {};
-     const sortedAll = [...jobs].sort((a, b) => (b.completedAt || b.createdAt || 0) - (a.completedAt || a.createdAt || 0));
-     sortedAll.forEach(j => {
-        const ident = j.plate || j.vin || j.associatedPlate;
-        if (ident && ident !== 'S/N' && !photoMap[ident]) {
-           if (j.checklist?.photos?.front) {
-              photoMap[ident] = j.checklist.photos.front;
-           }
-        }
-     });
-     return photoMap;
-  }, [jobs]);
   
   const pendingSignatureJobs = activeJobs.filter(j => j.checklist && !j.checklist.clientSigned);
   
