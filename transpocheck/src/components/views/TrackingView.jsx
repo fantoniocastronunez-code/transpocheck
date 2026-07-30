@@ -555,6 +555,14 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
               const step3Done = isAccepted && ['arrived_destination', 'arrived_prt', 'prt_done'].includes(phase);
               const step4Done = isAccepted && phase === 'prt_done';
 
+              const getRtFinalDestination = (j) => {
+                if (j.checklist?.rtReturnOption === 'other' && j.checklist?.rtReturnDestination) return j.checklist.rtReturnDestination;
+                if (j.checklist?.rtReturnOption === 'origin') return j.origin;
+                if (j.destination && !j.destination.toLowerCase().includes('planta prt')) return j.destination;
+                if (j.destName && !j.destName.toLowerCase().includes('planta prt')) return j.destName;
+                return j.origin || 'Por definir';
+              };
+
               return (
               <div key={job.id} className="bg-white w-full max-w-[calc(100vw-2rem)] sm:max-w-none p-5 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden flex flex-col hover:shadow-md transition-shadow">
                 <div className={`absolute top-0 left-0 w-full h-1.5 ${isPending ? 'bg-amber-400' : 'bg-blue-500'}`}></div>
@@ -598,9 +606,13 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
 
                   {(job.destination || job.tripType !== 'simple') && (
                     <>
-                      {/* ICONO CENTRAL */}
+                      {/* ICONO CENTRAL O 1ra PARADA PRT */}
                       <div className="flex justify-center -my-2.5 z-20">
-                        {job.waypoints && job.waypoints.length > 0 ? (
+                        {job.tripType === 'revision' ? (
+                           <div className="bg-amber-100 px-3 py-0.5 rounded-lg border border-amber-200 shadow-sm text-center">
+                             <p className="text-[10px] font-black text-amber-800 uppercase">1ra Parada: PRT</p>
+                           </div>
+                        ) : job.waypoints && job.waypoints.length > 0 ? (
                            <div className="bg-amber-100 px-3 py-0.5 rounded-lg border border-amber-200 shadow-sm text-center">
                              <p className="text-[10px] font-black text-amber-700">{job.waypoints.length} paradas</p>
                            </div>
@@ -617,7 +629,9 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                           <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
                           Hasta
                         </span>
-                        <p className="text-sm font-extrabold text-blue-700 leading-snug break-words">{job.tripType === 'revision' ? 'Planta PRT' : (job.destination || 'Por definir')}</p>
+                        <p className="text-sm font-extrabold text-blue-700 leading-snug break-words">
+                          {job.tripType === 'revision' ? getRtFinalDestination(job) : (job.destination || 'Por definir')}
+                        </p>
                       </div>
                     </>
                   )}
@@ -649,8 +663,8 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                   <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 transition-all duration-500 ${step4Done ? (job.prt_result === 'rechazado' ? 'bg-red-500 scale-110' : 'bg-green-500 scale-110') : 'bg-slate-200'}`}>{step4Done && <CheckCircle className="w-3 h-3 text-white animate-in zoom-in"/>}</div><p className={`font-extrabold text-sm transition-colors duration-500 ${step4Done ? (job.prt_result === 'rechazado' ? 'text-red-600' : 'text-green-600') : 'text-slate-400'}`}>Resultado de Revisión</p>{step4Done ? (<p className={`text-xs font-bold mt-0.5 ${job.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-600'}`}>{job.prt_result === 'rechazado' ? `Rechazado: ${job.prt_reason}` : 'Aprobado Exitosamente'}</p>) : (<p className="text-xs font-bold text-slate-400 mt-0.5">Esperando documento de la planta</p>)}</div>
                   )}
 
-                  {job.tripType === 'revision' && step4Done && (
-                  <div className="relative"><div className="absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 bg-blue-500 scale-110"><div className="w-2 h-2 bg-white rounded-full animate-ping"></div></div><p className="font-extrabold text-sm text-slate-800">Camino a destino</p><p className="text-xs font-bold text-blue-600 mt-0.5">El vehículo va en ruta a su destino final</p></div>
+                  {job.tripType === 'revision' && step4Done && (job.prt_result === 'aprobado' || job.prt_result === 'aprobado_ayuda') && (
+                  <div className="relative pt-2"><div className="absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 bg-blue-500 scale-110"><Navigation className="w-3 h-3 text-white"/></div><p className="font-extrabold text-sm text-slate-800">Camino a destino</p><p className="text-xs font-bold text-blue-600 mt-0.5">{job.checklist?.rtReturnOption === 'other' ? job.checklist?.rtReturnDestination : job.origin}</p></div>
                   )}
                 </div>
 
