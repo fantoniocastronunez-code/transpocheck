@@ -1423,7 +1423,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
                     Hasta
                   </span>
-                  <p className="text-sm font-extrabold text-blue-700 leading-snug break-words">
+                  <p className="text-sm font-extrabold text-blue-700 leading-snug break-words whitespace-normal">
                     {j.tripType === 'revision' ? getRtFinalDestination(j) : (j.destination || 'Por definir')}
                   </p>
                 </div>
@@ -1540,16 +1540,16 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           })()}
 
         <div className="relative pl-7 space-y-5 before:absolute before:top-2 before:bottom-2 before:left-[10px] before:w-0.5 before:bg-slate-100 mb-5">
-          <div className="relative"><div className="absolute -left-7 bg-blue-500 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center"><CheckCircle className="w-2.5 h-2.5 text-white"/></div><p className="font-extrabold text-slate-800 text-sm leading-tight">{isAccepted ? (j.assignedDrivers?.find(d => d.email === j.acceptedByEmail)?.name || "Conductor") : "Buscando conductor"}</p><p className="text-xs font-bold text-slate-500">{isAccepted ? (j.tripType === 'simple' ? `Asignado a ${j.origin}` : `Retira en ${j.origin}`) : `Para ${j.origin}`}</p></div>
+          <div className="relative"><div className="absolute -left-7 bg-blue-500 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center"><CheckCircle className="w-2.5 h-2.5 text-white"/></div><p className="font-extrabold text-slate-800 text-sm leading-tight break-words">{isAccepted ? (j.assignedDrivers?.find(d => d.email === j.acceptedByEmail)?.name || "Conductor") : "Buscando conductor"}</p><p className="text-xs font-bold text-slate-500 break-words whitespace-normal">{isAccepted ? (j.tripType === 'simple' ? `Asignado a ${j.origin}` : `Retira en ${j.origin}`) : `Para ${j.origin}`}</p></div>
           <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step2Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step2Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step2Done ? 'text-slate-800' : 'text-slate-400'}`}>{j.tripType === 'simple' ? 'Realizando Trabajo' : 'Vehículo en Tránsito'}</p></div>
-          <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step3Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step3Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step3Done ? 'text-slate-800' : 'text-slate-400'}`}>{j.tripType === 'simple' ? 'Trabajo Terminado' : (j.tripType === 'revision' ? 'En PRT' : 'Llegada a Destino')}</p><p className={`text-xs font-bold ${step3Done ? 'text-blue-600' : 'text-slate-400'}`}>{j.tripType === 'simple' ? (j.destination || '') : (j.tripType === 'revision' ? 'Planta' : j.destination)}</p></div>
+          <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step3Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step3Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step3Done ? 'text-slate-800' : 'text-slate-400'}`}>{j.tripType === 'simple' ? 'Trabajo Terminado' : (j.tripType === 'revision' ? 'En PRT' : 'Llegada a Destino')}</p><p className={`text-xs font-bold whitespace-normal break-words pr-2 ${step3Done ? 'text-blue-600' : 'text-slate-400'}`}>{j.tripType === 'simple' ? (j.destination || '') : (j.tripType === 'revision' ? 'Planta' : j.destination)}</p></div>
           
           {j.tripType === 'revision' && (
             <>
               <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step4Done ? (j.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200'}`}>{step4Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step4Done ? (j.prt_result === 'rechazado' ? 'text-red-600' : 'text-green-600') : 'text-slate-400'}`}>Resultado Revisión</p>{step4Done && <p className={`text-xs font-bold ${j.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-600'}`}>{j.prt_result === 'rechazado' ? `Rechazado` : 'Aprobado'}</p>}</div>
               {/* NUEVO: Mostrar a dónde se dirige después de aprobar */}
               {step4Done && (j.prt_result === 'aprobado' || j.prt_result === 'aprobado_ayuda') && (
-                <div className="relative pt-2"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center bg-blue-500`}><Navigation className="w-2.5 h-2.5 text-white"/></div><p className="font-extrabold text-sm leading-tight text-slate-800">En camino a:</p><p className="text-xs font-bold text-blue-600">{j.checklist?.rtReturnOption === 'other' ? j.checklist?.rtReturnDestination : j.origin}</p></div>
+                <div className="relative pt-2"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center bg-blue-500`}><Navigation className="w-2.5 h-2.5 text-white"/></div><p className="font-extrabold text-sm leading-tight text-slate-800">En camino a:</p><p className="text-xs font-bold text-blue-600 whitespace-normal break-words pr-2">{j.checklist?.rtReturnOption === 'other' ? j.checklist?.rtReturnDestination : j.origin}</p></div>
               )}
             </>
           )}
@@ -1731,8 +1731,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           {/* Fila de Ruta: Origen y Destino (Vertical) */}
           <div className="flex flex-col gap-1.5 w-full">
             <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm flex items-start gap-2">
-               <div className="mt-0.5"><div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div></div>
-               <span className="text-[10px] font-black text-slate-700 leading-tight break-words">{j.origin || '-'}</span>
+               <div className="mt-1"><div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div></div>
+               <span className="text-[10px] font-black text-slate-700 leading-tight break-words whitespace-normal">{j.origin || '-'}</span>
             </div>
             
             <div className="flex justify-center -my-1.5 z-10 relative">
@@ -1744,8 +1744,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             </div>
 
             <div className="bg-white p-2 rounded-lg border border-blue-100 shadow-sm flex items-start gap-2">
-               <div className="mt-0.5"><div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_4px_rgba(59,130,246,0.6)]"></div></div>
-               <span className="text-[10px] font-black text-blue-700 leading-tight break-words">{j.tripType === 'revision' ? 'PRT' : (j.destination || '-')}</span>
+               <div className="mt-1"><div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_4px_rgba(59,130,246,0.6)]"></div></div>
+               <span className="text-[10px] font-black text-blue-700 leading-tight break-words whitespace-normal">{j.tripType === 'revision' ? 'PRT' : (j.destination || '-')}</span>
             </div>
           </div>
 
