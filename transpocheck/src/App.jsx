@@ -652,8 +652,8 @@ function LogisticApp() {
                   {/* Estado de Red */}
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-bold text-slate-700">Señal de Red</span>
-                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm border ${isOnline ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200 animate-pulse'}`}>
-                      {isOnline ? <><Wifi className="w-3.5 h-3.5"/> Online</> : <><CloudOff className="w-3.5 h-3.5"/> Offline</>}
+                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-black tracking-widest uppercase shadow-sm border transition-all duration-300 ${isOnline ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-red-100 text-red-600 border-red-300 animate-pulse'}`}>
+                      {isOnline ? <><Wifi className="w-4 h-4"/> EN LÍNEA</> : <><CloudOff className="w-4 h-4"/> SIN CONEXIÓN</>}
                     </div>
                   </div>
                   {/* Switch Modo Oscuro */}
@@ -735,7 +735,7 @@ function LogisticApp() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.2.9</p>
+                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.3.0</p>
                 </div>
               </div>
             )}
