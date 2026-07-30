@@ -1187,6 +1187,22 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     
     const ident = getJobIdentifier(j);
 
+    const getRtFinalDestination = (job) => {
+      if (job.checklist?.rtReturnOption === 'other' && job.checklist?.rtReturnDestination) {
+        return job.checklist.rtReturnDestination;
+      }
+      if (job.checklist?.rtReturnOption === 'origin') {
+        return job.origin;
+      }
+      if (job.destination && job.destination !== 'Planta PRT' && !job.destination.toLowerCase().includes('planta prt')) {
+        return job.destination;
+      }
+      if (job.destName && job.destName !== 'Planta PRT' && !job.destName.toLowerCase().includes('planta prt')) {
+        return job.destName;
+      }
+      return job.origin || 'Por definir';
+    };
+
     // NUEVO: Motor de Alertas de Documentos por Vencer (30 días) o Vencidos
     let expiringDocs = [];
     if (vehicles && ident && ident !== 'S/N' && j.tripType !== 'simple') {
@@ -1370,9 +1386,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
             {(j.destination || j.tripType !== 'simple') && (
               <>
-                {/* ICONO CENTRAL */}
+                {/* ICONO CENTRAL O 1ra PARADA PRT */}
                 <div className="flex justify-center -my-2.5 z-20">
-                  {j.waypoints && j.waypoints.length > 0 ? (
+                  {j.tripType === 'revision' ? (
+                     <div className="bg-amber-100 px-3 py-0.5 rounded-lg border border-amber-200 shadow-sm text-center">
+                       <p className="text-[10px] font-black text-amber-800 uppercase">1ra Parada: PRT</p>
+                     </div>
+                  ) : j.waypoints && j.waypoints.length > 0 ? (
                      <div className="bg-amber-100 px-3 py-0.5 rounded-lg border border-amber-200 shadow-sm text-center">
                        <p className="text-[10px] font-black text-amber-700">{j.waypoints.length} paradas</p>
                      </div>
@@ -1389,7 +1409,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
                     Hasta
                   </span>
-                  <p className="text-sm font-extrabold text-blue-700 leading-snug break-words">{j.tripType === 'revision' ? 'Planta PRT' : (j.destination || 'Por definir')}</p>
+                  <p className="text-sm font-extrabold text-blue-700 leading-snug break-words">
+                    {j.tripType === 'revision' ? getRtFinalDestination(j) : (j.destination || 'Por definir')}
+                  </p>
                 </div>
               </>
             )}
