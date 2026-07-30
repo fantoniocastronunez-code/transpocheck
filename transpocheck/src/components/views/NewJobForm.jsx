@@ -5,8 +5,9 @@ import CustomClientSelector from '../ui/CustomClientSelector';
 import Tesseract from 'tesseract.js';
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Configuramos el "cerebro" lector de PDFs usando su CDN oficial para no depender de configuraciones locales
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Solución 100% Nativa VITE: Importamos el motor interno directamente desde node_modules. Cero CDNs, cero errores 404.
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers, db, showAlert, onSuccess, pushSyncTask }) {
   const [isOcrProcessing, setIsOcrProcessing] = useState(false);
