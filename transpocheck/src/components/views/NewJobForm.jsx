@@ -193,6 +193,58 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSearchingVehicle, setIsSearchingVehicle] = useState(false);
   const [vehicleFoundStatus, setVehicleFoundStatus] = useState(null); // 'found', 'not_found', null
+  const [vehiclePhoto, setVehiclePhoto] = useState(jobToEdit?.checklist?.photos?.front || null); // <-- NUEVO: Memoria de foto
+
+  const handleVehicleSearch = async (searchValue, type) => {
+    const val = searchValue.toUpperCase().trim();
+    if (type === 'plate') setPlate(val);
+    if (type === 'vin') setVin(val);
+
+    // Reseteamos estados visuales
+    setVehicleFoundStatus(null);
+    setVehiclePhoto(null); // Limpiamos la foto si cambia de patente
+
+    // Disparamos la búsqueda solo si la patente parece estar completa (mínimo 5 letras) o el VIN
+    if ((type === 'plate' && val.length >= 5) || (type === 'vin' && val.length >= 6)) {
+      setIsSearchingVehicle(true);
+
+      // Simulamos un retraso de red para dar retroalimentación visual de "procesando"
+      await new Promise(resolve => setTimeout(resolve, 600));
+      
+      // Buscamos en nuestra base de datos local de vehículos:
+      const v = vehicles.find(x => (val && x.plate === val) || (val && x.vin === val));
+
+      if (v) {
+        setBrand(v.brand || ''); setModel(v.model || '');
+        if (v.plate && type === 'vin') setPlate(v.plate);
+        if (v.vin && type === 'plate') setVin(v.vin);
+        if (v.vehicleType) setVehicleType(v.vehicleType);
+        if (allClientsList.includes(v.client)) setSelectedClient(v.client); else { setSelectedClient('OTRO'); setManualClient(v.client); }
+        
+        setVehicleFoundStatus('found');
+        setTimeout(() => setVehicleFoundStatus(null), 3000);
+      } else {
+        setVehicleFoundStatus('not_found');
+      }
+
+      // NUEVO: Buscar foto histórica en la BD para mostrarla de perfil
+      try {
+         const searchField = type === 'plate' ? 'plate' : 'vin';
+         const qPhoto = query(collection(db, 'transport_jobs'), where(searchField, '==', val));
+         const snapPhoto = await getDocs(qPhoto);
+         if (!snapPhoto.empty) {
+             // Ordenamos de más reciente a más antiguo
+             const sorted = snapPhoto.docs.map(d => d.data()).sort((a,b) => (b.completedAt || b.createdAt || 0) - (a.completedAt || a.createdAt || 0));
+             const foundPhotoJob = sorted.find(j => j.checklist?.photos?.front);
+             if (foundPhotoJob) {
+                 setVehiclePhoto(foundPhotoJob.checklist.photos.front);
+             }
+         }
+      } catch (e) { console.error("Error buscando foto histórica:", e); }
+      
+      setIsSearchingVehicle(false);
+    }
+  };
 
   const handleAddMultiVehicle = () => {
     if (!plate && !vin) return showAlert("⚠️ Ingresa al menos la patente o el VIN para agregarlo a la lista masiva.");
@@ -670,10 +722,23 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
 
             <div className={`p-4 sm:p-6 rounded-2xl space-y-4 animate-in fade-in slide-in-from-bottom-2 transition-colors duration-300 ${vehicleFoundStatus === 'found' ? 'bg-green-50 border border-green-200' : 'bg-slate-50 border border-transparent'}`}>
                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                 <h3 className="text-base font-bold text-slate-700">2. Vehículo <span className="text-xs text-blue-500 font-bold">(Escribe para autocompletar)</span></h3>
+                 
+                 <div className="flex items-center gap-3">
+                    {vehiclePhoto && (
+                       <img 
+                          src={vehiclePhoto} 
+                          alt="Perfil Vehículo" 
+                          className="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-md animate-in zoom-in shrink-0"
+                       />
+                    )}
+                    <h3 className="text-base font-bold text-slate-700 flex flex-col sm:block">
+                       2. Vehículo 
+                       <span className="text-xs text-blue-500 font-bold sm:ml-2">(Escribe para autocompletar)</span>
+                    </h3>
+                 </div>
                  
                  {/* BOTÓN MÁGICO DE ESCÁNER DE GUÍA DE DESPACHO */}
-                 <div className="relative w-full sm:w-auto">
+                 <div className="relative w-full sm:w-auto shrink-0">
                    <input type="file" accept="image/*,application/pdf" onChange={handleOcrUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" disabled={isOcrProcessing} />
                    <button type="button" className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border-2 ${isOcrProcessing ? 'bg-indigo-100 border-indigo-200 text-indigo-600' : 'bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700 shadow-md'}`}>
                      {isOcrProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
