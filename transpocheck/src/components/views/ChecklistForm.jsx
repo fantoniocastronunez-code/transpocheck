@@ -29,8 +29,18 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
   const initialDocsExpiry = matchedVehicle?.docsExpiry || {};
   const initialReminders = matchedVehicle?.internalReminders || []; 
 
-
-
+  // --- MAGIA: AUTO-DETECTAR DESTINO FINAL DE REVISIÓN TÉCNICA ---
+  // Evita que un destino personalizado ("Av. San José") se sobreescriba con "Eratec" (Origen) por defecto
+  let autoReturnOpt = 'origin';
+  let autoReturnDest = '';
+  if (job.tripType === 'revision' && job.destination) {
+    const parts = job.destination.split('->');
+    const finalLeg = (parts.length > 1 ? parts[1] : job.destination).trim();
+    if (finalLeg && job.origin && finalLeg.toLowerCase() !== job.origin.toLowerCase()) {
+      autoReturnOpt = 'other';
+      autoReturnDest = finalLeg;
+    }
+  }
 
   const defaultData = {
     client: job.client||'', manualClient: '', brand: job.brand||'', model: job.model||'', plateOrVin: job.plate||job.vin||'', origin: job.origin||'', destination: job.destination||'', vehicleType: job.vehicleType||'auto', fuelLevel: 50, 
@@ -44,7 +54,8 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     equipmentDetails: job.checklist?.equipmentDetails || '',
     rtStatus: job.prt_result ? job.prt_result : 'pendiente', 
     rtRejectReason: job.prt_reason ? job.prt_reason : '', 
-    rtReturnOption: 'origin', rtReturnDestination: '',
+    rtReturnOption: job.checklist?.rtReturnOption || autoReturnOpt,
+    rtReturnDestination: job.checklist?.rtReturnDestination || autoReturnDest,
     prtArrivalTime: job.checklist?.prtArrivalTime || null,
     prtFinishTime: job.checklist?.prtFinishTime || null,
     scandocPdfInbox: job.checklist?.scandocPdfInbox || null,
@@ -686,6 +697,18 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
         const cleanD = JSON.parse(JSON.stringify(d));
         const isKovacs = (cleanD.client || '').toUpperCase().includes('KOVACS');
         
+        // MAGIA: Sincronizar el destino global del traslado con la elección real de la PRT
+        let globalDestination = cleanD.destination || '';
+        if (job.tripType === 'revision' && (cleanD.rtStatus === 'aprobado' || cleanD.rtStatus === 'aprobado_ayuda')) {
+            const basePrt = globalDestination.split('->')[0].trim(); // Extrae "PRT Nombre"
+            if (cleanD.rtReturnOption === 'other' && cleanD.rtReturnDestination) {
+                globalDestination = `${basePrt} -> ${cleanD.rtReturnDestination}`;
+            } else {
+                globalDestination = `${basePrt} -> ${cleanD.origin}`;
+            }
+            cleanD.destination = globalDestination; // Aseguramos que el checklist interno también tenga la info actualizada
+        }
+
         const fd = { 
           scheduledDate: job.scheduledDate || new Date().toISOString().split('T')[0], 
           client: cleanD.client || '', 
@@ -694,7 +717,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
           vin: cleanD.plateOrVin || '', 
           plate: cleanD.plateOrVin || '', 
           origin: cleanD.origin || '', 
-          destination: cleanD.destination || '', 
+          destination: globalDestination, 
           status: isKovacs ? 'pending_guide' : 'completed', 
           completedAt: Date.now(), 
           checklist: cleanD, 
