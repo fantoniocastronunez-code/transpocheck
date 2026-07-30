@@ -835,7 +835,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     
     if (job.checklist?.location) { currentY += 2; const { lat, lng } = job.checklist.location; docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text(`UBICACION GPS:`, 15, currentY); docPDF.setFontSize(9); docPDF.setTextColor(...accentColor); docPDF.textWithLink('Clic aqui para ver mapa en Google', 15, currentY + 4, { url: `https://maps.google.com/?q=${lat},${lng}` }); }
 
-    const attachedDocHref = job.guideLink || job.guideUrl || job.docLink || job.docUrl || job.rtLink || job.rtDoc || (job.rtData && job.rtData.link) || job.pdfUrl || job.fileUrl;
+    const attachedDocHref = job.guideLink || job.guideUrl || job.docLink || job.docUrl || job.rtLink || job.rtDoc || (job.rtData && job.rtData.link) || job.pdfUrl || job.fileUrl || job.checklist?.guiaDespachoPdf || job.checklist?.guiaDespachoLink;
     if (attachedDocHref) { 
       currentY += (job.checklist?.location ? 10 : 2);
       docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text(`DOCUMENTO ADJUNTO (GUIA/RT):`, 15, currentY); 
@@ -1417,7 +1417,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         )}
 
         {(() => {
-           const activeDocHref = j.guideLink || j.guideUrl || j.docLink || j.docUrl || j.rtLink || j.rtDoc || (j.rtData && j.rtData.link) || j.pdfUrl || j.fileUrl;
+           const activeDocHref = j.guideLink || j.guideUrl || j.docLink || j.docUrl || j.rtLink || j.rtDoc || (j.rtData && j.rtData.link) || j.pdfUrl || j.fileUrl || j.checklist?.guiaDespachoPdf || j.checklist?.guiaDespachoLink;
            if (activeDocHref) {
              return (
                <div className="mt-3">
@@ -1692,7 +1692,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           )}
           
           {(() => {
-             const historyDocHref = j.guideLink || j.guideUrl || j.docLink || j.docUrl || j.rtLink || j.rtDoc || (j.rtData && j.rtData.link) || j.pdfUrl || j.fileUrl;
+             const historyDocHref = j.guideLink || j.guideUrl || j.docLink || j.docUrl || j.rtLink || j.rtDoc || (j.rtData && j.rtData.link) || j.pdfUrl || j.fileUrl || j.checklist?.guiaDespachoPdf || j.checklist?.guiaDespachoLink;
              if (historyDocHref) {
                 return (
                   <a href={historyDocHref} target="_blank" rel="noreferrer" className="flex-1 py-1.5 flex justify-center items-center bg-cyan-50 hover:bg-cyan-100 text-cyan-600 rounded-lg transition-colors relative" title="Ver Guía/Doc Adjunto">
@@ -2029,7 +2029,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                                           <button onClick={()=>cpyWapp(j)} className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md transition-colors" title="Copiar Resumen"><Copy className="w-3.5 h-3.5"/></button>
                                           
                                           {(() => {
-                                             const oldHistDocHref = j.guideLink || j.guideUrl || j.docLink || j.docUrl || j.rtLink || j.rtDoc || (j.rtData && j.rtData.link) || j.pdfUrl || j.fileUrl;
+                                             const oldHistDocHref = j.guideLink || j.guideUrl || j.docLink || j.docUrl || j.rtLink || j.rtDoc || (j.rtData && j.rtData.link) || j.pdfUrl || j.fileUrl || j.checklist?.guiaDespachoPdf || j.checklist?.guiaDespachoLink;
                                              if (oldHistDocHref) {
                                                 return (
                                                   <a href={oldHistDocHref} target="_blank" rel="noreferrer" className="p-1.5 bg-cyan-50 text-cyan-600 hover:bg-cyan-100 rounded-md transition-colors" title="Ver Guía/Doc Adjunto">
