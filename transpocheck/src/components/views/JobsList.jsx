@@ -135,6 +135,22 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
      return 'S/N';
   };
 
+  // NUEVO: Diccionario histórico inteligente para encontrar la última foto de cada vehículo
+  const latestVehiclePhotos = React.useMemo(() => {
+     const photoMap = {};
+     // Ordenamos de más nuevo a más viejo para quedarnos con la última foto
+     const sortedAll = [...(jobs || [])].sort((a, b) => (b.completedAt || b.createdAt || 0) - (a.completedAt || a.createdAt || 0));
+     sortedAll.forEach(j => {
+        const ident = getJobIdentifier(j);
+        if (ident && ident !== 'S/N' && !photoMap[ident]) {
+           if (j.checklist?.photos?.front) {
+              photoMap[ident] = j.checklist.photos.front;
+           }
+        }
+     });
+     return photoMap;
+  }, [jobs]);
+
   const notifyClient = async (jobData, statusType) => {
      try {
         if (!jobData.client || jobData.client === 'Sin Cliente') return;
@@ -1251,15 +1267,19 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             </div>
             
             <div className="flex items-center gap-3">
-                {/* NUEVO: Miniatura clickeable de la foto Frontal */}
-                {(j.checklist?.photos?.front || j.draft?.formData?.photos?.front) && (
-                    <img 
-                       src={j.checklist?.photos?.front || j.draft?.formData?.photos?.front} 
-                       alt="Frente" 
-                       onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(j.checklist?.photos?.front || j.draft?.formData?.photos?.front); }}
-                       className="w-12 h-12 rounded-lg object-cover border border-slate-200 shadow-sm cursor-pointer hover:opacity-80 transition-opacity shrink-0"
-                    />
-                )}
+                {/* NUEVO: Miniatura con inteligencia histórica (Busca la foto actual o la última registrada) */}
+                {(() => {
+                   const displayPhoto = j.checklist?.photos?.front || j.draft?.formData?.photos?.front || latestVehiclePhotos[ident];
+                   if (!displayPhoto) return null;
+                   return (
+                      <img 
+                         src={displayPhoto} 
+                         alt="Frente" 
+                         onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(displayPhoto); }}
+                         className="w-12 h-12 rounded-lg object-cover border border-slate-200 shadow-sm cursor-pointer hover:opacity-80 transition-opacity shrink-0"
+                      />
+                   );
+                })()}
                 <div>
                     {j.tripType === 'simple' ? (
                        <p className="text-lg font-black text-purple-800 leading-tight mt-1 break-words pr-2">{j.description || 'Servicio en Terreno'}</p>
@@ -1570,16 +1590,20 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
         
         <div className="flex justify-between items-center mb-2 gap-2">
-          <div className="flex items-center gap-2">
-             {/* NUEVO: Miniatura clickeable de la foto Frontal */}
-             {j.checklist?.photos?.front && (
-                 <img 
-                    src={j.checklist.photos.front} 
-                    alt="Frente" 
-                    onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(j.checklist.photos.front); }}
-                    className="w-10 h-10 rounded-md object-cover border border-slate-200 shadow-sm cursor-pointer hover:opacity-80 transition-opacity shrink-0"
-                 />
-             )}
+          <div className="flex items-center gap-2 overflow-hidden">
+             {/* NUEVO: Miniatura con inteligencia histórica */}
+             {(() => {
+                 const displayPhoto = j.checklist?.photos?.front || latestVehiclePhotos[ident];
+                 if (!displayPhoto) return null;
+                 return (
+                    <img 
+                       src={displayPhoto} 
+                       alt="Frente" 
+                       onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(displayPhoto); }}
+                       className="w-10 h-10 rounded-md object-cover border border-slate-200 shadow-sm cursor-pointer hover:opacity-80 transition-opacity shrink-0"
+                    />
+                 );
+             })()}
              {j.tripType === 'simple' ? (
                 <p className="text-sm font-black text-purple-800 leading-tight break-words mt-1 pr-2">{j.description || 'Servicio en Terreno'}</p>
              ) : (

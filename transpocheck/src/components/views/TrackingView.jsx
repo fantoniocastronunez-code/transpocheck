@@ -336,6 +336,21 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
   const activeJobs = filteredJobs.filter(j => j.status === 'pending' || j.status === 'accepted');
   const allHistoryJobs = filteredJobs.filter(j => j.status === 'completed' || j.status === 'failed');
   const historyJobs = allHistoryJobs.slice(0, historyLimit);
+
+  // NUEVO: Diccionario histórico para TrackingView
+  const latestVehiclePhotos = React.useMemo(() => {
+     const photoMap = {};
+     const sortedAll = [...jobs].sort((a, b) => (b.completedAt || b.createdAt || 0) - (a.completedAt || a.createdAt || 0));
+     sortedAll.forEach(j => {
+        const ident = j.plate || j.vin || j.associatedPlate;
+        if (ident && ident !== 'S/N' && !photoMap[ident]) {
+           if (j.checklist?.photos?.front) {
+              photoMap[ident] = j.checklist.photos.front;
+           }
+        }
+     });
+     return photoMap;
+  }, [jobs]);
   
   const pendingSignatureJobs = activeJobs.filter(j => j.checklist && !j.checklist.clientSigned);
   
@@ -544,15 +559,20 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
               <div key={job.id} className="bg-white w-full max-w-[calc(100vw-2rem)] sm:max-w-none p-5 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden flex flex-col hover:shadow-md transition-shadow">
                 <div className={`absolute top-0 left-0 w-full h-1.5 ${isPending ? 'bg-amber-400' : 'bg-blue-500'}`}></div>
                 <div className="flex justify-between items-start mb-3 gap-3">
-                  {/* NUEVO: Miniatura clickeable de la foto Frontal */}
-                  {(job.checklist?.photos?.front || job.draft?.formData?.photos?.front) && (
-                     <img 
-                        src={job.checklist?.photos?.front || job.draft?.formData?.photos?.front} 
-                        alt="Frente" 
-                        onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(job.checklist?.photos?.front || job.draft?.formData?.photos?.front); }}
-                        className="w-12 h-12 rounded-lg object-cover border border-slate-200 shadow-sm cursor-pointer hover:opacity-80 transition-opacity shrink-0"
-                     />
-                  )}
+                  {/* NUEVO: Miniatura con inteligencia histórica */}
+                  {(() => {
+                     const ident = job.plate || job.vin || job.associatedPlate;
+                     const displayPhoto = job.checklist?.photos?.front || job.draft?.formData?.photos?.front || latestVehiclePhotos[ident];
+                     if (!displayPhoto) return null;
+                     return (
+                        <img 
+                           src={displayPhoto} 
+                           alt="Frente" 
+                           onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(displayPhoto); }}
+                           className="w-12 h-12 rounded-lg object-cover border border-slate-200 shadow-sm cursor-pointer hover:opacity-80 transition-opacity shrink-0"
+                        />
+                     );
+                  })()}
                   <div className="flex-1 min-w-0 pr-2">
                     <h2 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">
                       {job.tripType === 'simple' ? 'Servicio en Terreno' : 'En Traslado'}
@@ -672,16 +692,21 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                 
                 <div className="flex justify-between items-center mb-2 gap-2">
                   <div className="flex items-center gap-2 overflow-hidden">
-                    {/* NUEVO: Miniatura clickeable de la foto Frontal */}
-                    {job.checklist?.photos?.front && (
-                       <img 
-                          src={job.checklist.photos.front} 
-                          alt="Frente" 
-                          onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(job.checklist.photos.front); }}
-                          className="w-10 h-10 rounded-md object-cover border border-slate-200 shadow-sm cursor-pointer hover:opacity-80 transition-opacity shrink-0"
-                       />
-                    )}
-                    <p className="text-sm font-black text-slate-800 leading-tight truncate pr-2">{job.brand} {job.model}</p>
+                     {/* NUEVO: Miniatura con inteligencia histórica */}
+                     {(() => {
+                         const ident = job.plate || job.vin || job.associatedPlate;
+                         const displayPhoto = job.checklist?.photos?.front || latestVehiclePhotos[ident];
+                         if (!displayPhoto) return null;
+                         return (
+                            <img 
+                               src={displayPhoto} 
+                               alt="Frente" 
+                               onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(displayPhoto); }}
+                               className="w-10 h-10 rounded-md object-cover border border-slate-200 shadow-sm cursor-pointer hover:opacity-80 transition-opacity shrink-0"
+                            />
+                         );
+                     })()}
+                     <p className="text-sm font-black text-slate-800 leading-tight truncate pr-2">{job.brand} {job.model}</p>
                   </div>
                   <div className="shrink-0">
                     <LicensePlateBadge text={job.plate || job.vin} />
