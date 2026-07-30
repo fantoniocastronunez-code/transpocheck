@@ -321,6 +321,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   ).map(j => j.fleetGroup);
 
   const filteredJobs = jobs.filter(job => {
+    if (job.isArchived) return false; // <-- NUEVO: Oculta los purgados de la interfaz pero mantienen las estadísticas
+
     if (!isAdminView) {
       // NUEVO: Ocultar inmediatamente trabajos aceptados por otros (salvo que sea un convoy donde ya participes)
       if ((job.status === 'accepted' || job.status === 'pending_guide' || job.status === 'completed' || job.status === 'failed') && job.acceptedByEmail !== currentUserEmail) {
@@ -1792,11 +1794,22 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         
         let count = 0;
         for (const document of snap.docs) {
-          await deleteDoc(doc(db, 'transport_jobs', document.id));
+          // En lugar de borrar el documento (deleteDoc), eliminamos solo los datos pesados (fotos y PDFs)
+          // Así se libera espacio en la DB, pero se conservan los datos numéricos e historial para las estadísticas.
+          await updateDoc(doc(db, 'transport_jobs', document.id), {
+            'checklist.photos': deleteField(),
+            'checklist.signatureData': deleteField(),
+            'checklist.docs': deleteField(),
+            'checklist.scandocPdf': deleteField(),
+            'checklist.scandocPdfInbox': deleteField(),
+            'checklist.guiaDespachoPdf': deleteField(),
+            'draft': deleteField(),
+            isArchived: true // Oculta el trabajo de la lista visual
+          });
           count++;
         }
-        showAlert(`✅ Limpieza completada: ${count} traslados eliminados.`);
-      } catch (err) { showAlert("Error al limpiar."); }
+        showAlert(`✅ Limpieza completada: ${count} traslados respaldados en ZIP y archivados (Estadísticas conservadas).`);
+      } catch (err) { console.error(err); showAlert("Error al limpiar."); }
     });
   };
 
