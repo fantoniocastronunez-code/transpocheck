@@ -353,11 +353,23 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
 
     const finalTripType = operationMode === 'servicio' ? 'simple' : tripType;
 
+    // MAGIA: Si es Revisión Técnica y anotaron Destino Final, lo estructuramos
+    let finalDestination = formData.get('destination') || '';
+    if (finalTripType === 'revision') {
+      const prtSelected = formData.get('prtSelect') || '';
+      const destFinal = formData.get('destFinal') || '';
+      if (prtSelected && destFinal) {
+        finalDestination = `${prtSelected} -> ${destFinal}`;
+      } else if (prtSelected) {
+        finalDestination = prtSelected;
+      }
+    }
+
     const jobData = {
       scheduledDate: formData.get('scheduledDate'), 
       scheduledTime: formData.get('scheduledTime') || '', // <-- NUEVO CAMPO
       client: finalClient, 
-      origin: formData.get('origin'), destination: formData.get('destination') || '',
+      origin: formData.get('origin'), destination: finalDestination,
       tripType: finalTripType,
       isUrgent: isUrgent,
       assignedDrivers: assignedDriversList.map(d => ({id: d.id, name: d.name, email: d.email})), assignedEmails: assignedDriversList.map(d => d.email)
@@ -792,14 +804,30 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                <input name="origin" list="directory-destinations" defaultValue={jobToEdit?.origin || ''} required type="text" placeholder="Desde (Origen)" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+                <div className="space-y-1">
+                   <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider ml-1">Lugar de Retiro (Origen)</label>
+                   <input name="origin" list="directory-destinations" defaultValue={jobToEdit?.origin || ''} required type="text" placeholder="Desde (Origen)" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+                </div>
+                
                 {tripType === 'revision' ? (
-                  <select name="destination" defaultValue={jobToEdit?.destination || (prtList.length > 0 ? prtList[0].name : '')} required className="w-full border-2 border-emerald-200 bg-emerald-50 p-3 text-sm rounded-xl outline-none focus:border-emerald-500 font-bold text-emerald-800 shadow-sm cursor-pointer">
-                    <option value="">Selecciona la Planta (Destino)...</option>
-                    {prtList.map((p, idx) => <option key={idx} value={p.name}>{p.name}</option>)}
-                  </select>
+                  <div className="space-y-3 md:row-span-2">
+                     <div className="space-y-1">
+                        <label className="text-xs font-extrabold text-emerald-600 uppercase tracking-wider ml-1">Planta de Revisión</label>
+                        <select name="prtSelect" defaultValue={jobToEdit?.destination?.split('->')[0]?.trim() || (prtList.length > 0 ? prtList[0].name : '')} required className="w-full border-2 border-emerald-200 bg-emerald-50 p-3 text-sm rounded-xl outline-none focus:border-emerald-500 font-bold text-emerald-800 shadow-sm cursor-pointer">
+                          <option value="">Selecciona la Planta...</option>
+                          {prtList.map((p, idx) => <option key={idx} value={p.name}>{p.name}</option>)}
+                        </select>
+                     </div>
+                     <div className="space-y-1 relative z-10">
+                        <label className="text-xs font-extrabold text-blue-600 uppercase tracking-wider ml-1">Destino Final (Post-PRT)</label>
+                        <input name="destFinal" list="directory-destinations" defaultValue={jobToEdit?.destination?.split('->')[1]?.trim() || ''} type="text" placeholder="Ej: Av. San José (Opcional)" className="w-full border-2 border-blue-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+                     </div>
+                  </div>
                 ) : (
-                  <input name="destination" list="directory-destinations" defaultValue={jobToEdit?.destination || ''} required type="text" placeholder="Hasta (Destino)" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+                  <div className="space-y-1">
+                     <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider ml-1">Destino Final</label>
+                     <input name="destination" list="directory-destinations" defaultValue={jobToEdit?.destination || ''} required type="text" placeholder="Hasta (Destino)" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+                  </div>
                 )}
               </div>
 
