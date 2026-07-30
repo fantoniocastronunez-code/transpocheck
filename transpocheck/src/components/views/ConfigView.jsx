@@ -423,13 +423,24 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                <div className="space-y-4 pt-5 border-t border-slate-100">
                   <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5"><Clock className="w-4 h-4"/> 3. Preferencias de Notificación</h4>
                   <div className="bg-slate-50 border border-slate-100 p-5 rounded-2xl shadow-sm">
-                     <p className="text-xs font-bold text-slate-600 mb-4 leading-tight">Selecciona exactamente qué actualizaciones del sistema llegarán al correo de este perfil.</p>
-                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        {[ { id: 'creado', label: 'Al Crear' }, { id: 'asignado', label: 'Asignación' }, { id: 'llegada_origen', label: 'En Origen' }, { id: 'en_ruta', label: 'En Ruta' }, { id: 'llegada_destino', label: 'En Destino' }, { id: 'finalizado', label: 'Acta PDF' } ].map(notif => {
+                     <p className="text-xs font-bold text-slate-600 mb-4 leading-tight">Selecciona qué correos llegarán a este cliente.</p>
+                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {[ 
+                          { id: 'creado', label: 'Al Crear' }, 
+                          { id: 'asignado', label: 'Asignación' }, 
+                          { id: 'llegada_origen', label: 'En Origen' }, 
+                          { id: 'en_ruta', label: 'En Ruta' }, 
+                          { id: 'llegada_prt', label: 'Llegó a PRT' }, 
+                          { id: 'rt_aprobada', label: 'RT Aprobada' }, 
+                          { id: 'rt_rechazada', label: 'RT Rechazada' }, 
+                          { id: 'en_ruta_destino', label: 'Ruta Destino' }, 
+                          { id: 'llegada_destino', label: 'En Destino' }, 
+                          { id: 'finalizado', label: 'Acta PDF' } 
+                        ].map(notif => {
                            const isActive = clientNotifs[notif.id];
                            return (
-                             <button key={notif.id} type="button" onClick={() => setClientNotifs({...clientNotifs, [notif.id]: !isActive})} className={`py-4 px-2 rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all duration-200 border-2 flex flex-col items-center justify-center gap-2 select-none ${ isActive ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200 scale-100' : 'bg-white border-slate-200 text-slate-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 scale-[0.98]' }`}>
-                                {isActive ? <CheckCircle className="w-6 h-6 animate-in zoom-in duration-200" /> : <div className="w-6 h-6 rounded-full border-2 border-slate-300 bg-slate-50"></div>}
+                             <button key={notif.id} type="button" onClick={() => setClientNotifs({...clientNotifs, [notif.id]: !isActive})} className={`py-4 px-2 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 border-2 flex flex-col items-center justify-center gap-2 select-none ${ isActive ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200 scale-100' : 'bg-white border-slate-200 text-slate-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 scale-[0.98]' }`}>
+                                {isActive ? <CheckCircle className="w-5 h-5 animate-in zoom-in duration-200" /> : <div className="w-5 h-5 rounded-full border-2 border-slate-300 bg-slate-50"></div>}
                                 <span className="text-center leading-tight">{notif.label}</span>
                              </button>
                            );

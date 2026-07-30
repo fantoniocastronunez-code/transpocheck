@@ -293,7 +293,21 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
        
        if (phase === 'arrived_pickup') notifyClient(job, 'llegada_origen');
        if (phase === 'picked_up') notifyClient(job, 'en_ruta');
-       if (phase === 'arrived_destination' || phase === 'arrived_prt') notifyClient(job, 'llegada_destino');
+       
+       if (phase === 'arrived_prt') notifyClient(job, 'llegada_prt');
+       if (phase === 'prt_done') {
+           if (extra.prt_result === 'rechazado') notifyClient(job, 'rt_rechazada');
+           else notifyClient(job, 'rt_aprobada');
+       }
+       
+       if (phase === 'arrived_destination') {
+           if (job.tripType === 'revision' && job.phase === 'prt_done') {
+               // Si viene saliendo de la PRT, es llegada a destino
+               notifyClient(job, 'llegada_destino');
+           } else {
+               notifyClient(job, 'llegada_destino');
+           }
+       }
     } catch(e) {
        console.error(e); showAlert("Error de conexión al actualizar fase.");
     } finally { 
@@ -1653,7 +1667,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                       )}
 
                       {j.phase === 'prt_done' && (
-                        <SwipeButton key={`btn-dest-prt-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_destination')} text={`Desliza: Llegué a ${j.checklist?.rtReturnOption === 'other' ? (j.checklist?.rtReturnDestination?.substring(0,10) + '...') : 'Origen'}`} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />
+                        <SwipeButton key={`btn-dest-prt-${j.id}`} onConfirm={()=>{
+                            // Si deslizó esto, significa que estaba en la PRT y empezó a conducir al destino,
+                            // por lo que notificamos primero que va en ruta, y pasamos el estado real
+                            notifyClient(j, 'en_ruta_destino');
+                            updatePhase(j, 'arrived_destination');
+                        }} text={`Desliza: Llegué a ${j.checklist?.rtReturnOption === 'other' ? (j.checklist?.rtReturnDestination?.substring(0,10) + '...') : 'Origen'}`} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />
                       )}
 
                       <button onClick={()=>onStartChecklist(j)} className={`w-full font-bold py-2 rounded-xl text-xs shadow-sm transition-colors ${(j.phase === 'arrived_destination') ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'}`}>

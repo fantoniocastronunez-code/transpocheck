@@ -53,29 +53,43 @@ export default async function handler(req, res) {
     accentColor = '#f59e0b'; // Naranja
     subject = `El conductor ${conductorName} ha llegado al origen - ${vehiculoPatente}`;
     title = 'Vehículo en Origen';
-    message = `Hola <strong>${clientName}</strong>.<br><br>Te informamos que el conductor <strong>${conductorName}</strong> ha llegado a las instalaciones acordadas y se encuentra gestionando el retiro del vehículo.`;
+    message = `Hola <strong>${clientName}</strong>.<br><br>Te informamos que el conductor <strong>${conductorName}</strong> ha llegado a las instalaciones acordadas y se encuentra a la espera para el retiro del vehículo.`;
   } else if (type === 'en_ruta') {
     accentColor = '#0ea5e9'; // Celeste
-    subject = `El conductor ${conductorName} está en ruta con el vehículo ${vehiculoPatente}`;
+    subject = `Vehículo en Ruta con conductor ${conductorName} - ${vehiculoPatente}`;
     title = 'Vehículo en Ruta';
-    message = `Hola <strong>${clientName}</strong>.<br><br>El conductor <strong>${conductorName}</strong> ha retirado el vehículo de manera exitosa y actualmente se encuentra en ruta hacia el destino.`;
+    message = `Hola <strong>${clientName}</strong>.<br><br>El conductor <strong>${conductorName}</strong> tiene el vehículo en su poder y actualmente se encuentra en ruta hacia su ${jobDetails.tripType === 'revision' ? 'Planta de Revisión Técnica (PRT)' : 'destino'}.`;
+  } else if (type === 'llegada_prt') {
+    accentColor = '#6366f1'; // Indigo
+    subject = `Llegada a Planta PRT: ${vehiculoPatente}`;
+    title = 'Llegada a PRT';
+    message = `Hola <strong>${clientName}</strong>.<br><br>Te informamos que el conductor <strong>${conductorName}</strong> ya se encuentra en las instalaciones de la Planta de Revisión Técnica y está a la espera de ser atendido.`;
+  } else if (type === 'rt_aprobada') {
+    accentColor = '#22c55e'; // Verde claro
+    subject = `Revisión Técnica Aprobada ✅ - ${vehiculoPatente}`;
+    title = 'Revisión Aprobada';
+    message = `Hola <strong>${clientName}</strong>.<br><br>¡Excelentes noticias! El conductor <strong>${conductorName}</strong> nos informa que el vehículo ha <strong>APROBADO</strong> su revisión técnica exitosamente.`;
+  } else if (type === 'rt_rechazada') {
+    accentColor = '#ef4444'; // Rojo
+    subject = `Revisión Técnica Rechazada ❌ - ${vehiculoPatente}`;
+    title = 'Revisión Rechazada';
+    message = `Hola <strong>${clientName}</strong>.<br><br>El conductor <strong>${conductorName}</strong> nos informa que el vehículo ha sido <strong>RECHAZADO</strong> en su revisión técnica. Puedes ver el motivo específico ingresando al panel de rastreo.`;
+  } else if (type === 'en_ruta_destino') {
+    accentColor = '#0ea5e9'; // Celeste
+    subject = `Vehículo en ruta hacia destino final - ${vehiculoPatente}`;
+    title = 'Camino a Destino';
+    message = `Hola <strong>${clientName}</strong>.<br><br>Luego de salir de la PRT, el conductor <strong>${conductorName}</strong> se encuentra en camino hacia su destino final (o lugar de retorno).`;
   } else if (type === 'llegada_destino') {
     accentColor = '#14b8a6'; // Turquesa
     subject = `El conductor ${conductorName} ha llegado al destino - ${vehiculoPatente}`;
     title = 'Llegada a Destino';
-    message = `Hola <strong>${clientName}</strong>.<br><br>Te informamos que el conductor <strong>${conductorName}</strong> ha llegado al destino y se encuentra a la espera para realizar la entrega oficial del vehículo.`;
+    message = `Hola <strong>${clientName}</strong>.<br><br>Te informamos que el conductor <strong>${conductorName}</strong> ya llegó al punto de destino y se encuentra a la espera para realizar la entrega oficial del vehículo.`;
   } else if (type === 'finalizado') {
     accentColor = '#10b981'; // Verde Éxito
     subject = `Traslado Finalizado con Éxito - Acta de Recepción ${vehiculoPatente}`;
     title = 'Traslado Finalizado';
-    message = `Hola <strong>${clientName}</strong>.<br><br>El conductor <strong>${conductorName}</strong> ha concluido el traslado con éxito. En la parte inferior de este correo, puede hacer seguimiento, revisar los detalles o descargar el <strong>Acta de Recepción (PDF)</strong> oficial.`;
+    message = `Hola <strong>${clientName}</strong>.<br><br>El conductor <strong>${conductorName}</strong> ha concluido el traslado con éxito. En la parte inferior de este correo, puedes descargar el <strong>Acta de Recepción (PDF)</strong> oficial.`;
     buttonText = 'Ver Detalles y Descargar PDF';
-  } else if (type === 'revision_tecnica') {
-    accentColor = '#6366f1'; // Indigo
-    subject = `Documento de Revisión Técnica Listo - ${vehiculoPatente}`;
-    title = 'Documento PRT Disponible';
-    message = `Hola <strong>${clientName}</strong>.<br><br>El conductor <strong>${conductorName}</strong> ha finalizado la gestión de su revisión técnica. Tu documento oficial está listo para ser visualizado en la parte inferior de este correo.`;
-    buttonText = 'Ver Detalles del Traslado';
   } else {
     // Escudo de seguridad (Fallback)
     accentColor = '#64748b'; // Gris
