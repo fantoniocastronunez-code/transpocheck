@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { addDoc, collection } from 'firebase/firestore';
+import { addDoc, collection, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { 
   Calculator, MapPin, Fuel, DollarSign, Plus, CheckCircle, 
   User, Truck, Receipt, Printer, Send, Save, ArrowRight, X
@@ -646,33 +646,6 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                 </div>
               )}
             </div>
-                  const correlativo = q.quoteNumber || `COT-${idx + 1}`;
-                  return (
-                    <tr key={q.id} className="hover:bg-slate-50">
-                    <td className="p-3 font-black text-purple-700">{q.quoteNumber || `COT-${idx + 1}`}</td>
-                    <td className="p-3 font-black">{q.client}</td>
-                    <td className="p-3 font-medium">{q.origin} ➔ {q.destination} ({q.distanceKm} KM)</td>
-                    <td className="p-3">{q.brand} {q.model} <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded">{q.plateOrVin || 'S/N'}</span></td>
-                    <td className="p-3 font-black text-slate-900">{formatMoney(q.finalPrice)}</td>
-                    <td className="p-3">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                        q.status === 'aceptada' ? 'bg-emerald-100 text-emerald-700' :
-                        q.status === 'enviada' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
-                      }`}>
-                        {q.status || 'pendiente'}
-                      </span>
-                    </td>
-                    <td className="p-3 text-right space-x-2">
-                      <button onClick={() => handleEditQuote(q)} className="text-blue-600 hover:underline font-extrabold">Modificar</button>
-                      <button onClick={async () => {
-                        await updateDoc(doc(db, 'quotes', q.id), { status: 'aceptada' });
-                        showAlert("✅ Cotización marcada como aceptada.");
-                      }} className="text-emerald-600 hover:underline font-extrabold">Aceptar</button>
-                      <button onClick={() => handleDeleteQuote(q.id)} className="text-red-500 hover:underline font-extrabold">Eliminar</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
           </div>
 
         </div>
@@ -754,7 +727,6 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="bg-slate-50 text-slate-400 uppercase tracking-widest border-b">
-                  <th className="p-3">N° Correlativo</th>
                   <th className="p-3">Cliente</th>
                   <th className="p-3">Ruta</th>
                   <th className="p-3">Vehículo / Patente</th>
