@@ -581,7 +581,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-6 pt-8 md:pt-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
       {/* Cabecera */}
       <div className="bg-gradient-to-r from-purple-700 to-indigo-600 rounded-3xl p-6 shadow-xl text-white relative overflow-hidden">
@@ -644,7 +644,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                  <div className="flex gap-2">
                    <input type="text" name="destination" list="quotes-directory-list" value={quoteData.destination} onChange={handleInputChange} placeholder="Hasta dónde..." className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500"/>
                    <button type="button" onClick={calculateRouteDistance} disabled={isCalculatingRoute} className="bg-purple-600 hover:bg-purple-700 text-white px-4 rounded-xl text-xs font-black shadow-sm shrink-0 transition-colors disabled:opacity-50" title="Calcular distancia de ruta real por carretera">
-                     {isCalculatingRoute ? '...' : 'Ruta KM'}
+                     {isCalculatingRoute ? '...' : 'Calcular KM'}
                    </button>
                  </div>
               </div>
@@ -746,7 +746,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                      className="bg-purple-100 hover:bg-purple-200 text-purple-700 px-3 rounded-xl text-[10px] font-black shadow-sm shrink-0 transition-colors disabled:opacity-50 flex items-center gap-1 uppercase" 
                      title="Consultar precio estimado con IA"
                    >
-                     {isFetchingFuel ? '...' : <><Sparkles className="w-3 h-3"/> IA</>}
+                     {isFetchingFuel ? '...' : <><Sparkles className="w-3 h-3"/> Obtener precio</>}
                    </button>
                  </div>
               </div>
