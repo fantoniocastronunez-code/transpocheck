@@ -204,6 +204,20 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
     setQuoteData(prev => ({ ...prev, [name]: value }));
   };
 
+  // Forzar Valor Neto y recalcular Margen Empresa automáticamente
+  const handleNetPriceChange = (e) => {
+    const rawVal = e.target.value.replace(/[^0-9]/g, '');
+    if (!rawVal) {
+      setQuoteData(prev => ({ ...prev, marginPct: '' }));
+      return;
+    }
+    const customNet = parseInt(rawVal, 10);
+    if (subtotalCosts > 0) {
+      const exactMargin = ((customNet / subtotalCosts) - 1) * 100;
+      setQuoteData(prev => ({ ...prev, marginPct: exactMargin }));
+    }
+  };
+
   // Consultar precio sugerido a la IA (Gemini)
   const fetchFuelPriceWithAI = async () => {
     setIsFetchingFuel(true);
@@ -370,7 +384,8 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
           status: 'pending', 
           createdAt: Date.now(),
           scheduledDate: new Date().toISOString().split('T')[0],
-          quotedPrice: Math.round(finalPrice || 0), 
+          quotedPrice: Math.round(finalPrice || 0),
+          price: Math.round(finalPrice || 0), // <-- NUEVO: Alimenta las estadísticas globales
           requestedBy: currentUserEmail || ''
         };
 
@@ -419,12 +434,13 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
         vehicleType: acceptQuoteData.vehicleType || 'Auto / SUV',
         plate: acceptQuoteData.plateOrVin || 'S/N',
         tripType: 'traslado',
-        status: jobDetails.assignedDriver ? 'assigned' : 'pending',
+        status: 'pending', // <-- CORRECCIÓN: El estado ahora siempre es 'pending' para que el Monitor lo pueda detectar
         assignedDriver: jobDetails.assignedDriver || '',
         assignedEmails: assignedEmails,
         createdAt: Date.now(),
         scheduledDate: jobDetails.scheduledDate || new Date().toISOString().split('T')[0],
         quotedPrice: Math.round(acceptQuoteData.finalPrice || 0),
+        price: Math.round(acceptQuoteData.finalPrice || 0), // <-- NUEVO: Alimenta las estadísticas globales
         requestedBy: currentUserEmail || ''
       };
 
@@ -586,8 +602,19 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
     if (method === 'whatsapp') {
       try {
         showAlert("⏳ Generando documento PDF...");
-        const html2pdf = (await import('html2pdf.js')).default;
         
+        // 1. Copiar el texto al portapapeles silenciosamente
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try { document.execCommand('copy'); } catch (err) {}
+        document.body.removeChild(textArea);
+
+        // 2. Generar el PDF
+        const html2pdf = (await import('html2pdf.js')).default;
         const element = document.createElement('div');
         element.innerHTML = getPDFHtml();
         
@@ -602,15 +629,16 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
         const pdfBlob = await html2pdf().from(element).set(opt).output('blob');
         const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
+        // 3. Compartir (SIN la propiedad 'text' para evitar el bug de Android que borra el PDF)
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({
             title: fileName,
-            text: text,
             files: [file]
           });
+          showAlert("✅ PDF adjunto. ¡Mantén presionado para pegar el texto en el chat!");
         } else {
           // Fallback para PC o navegadores que no soportan share API con archivos
-          showAlert("Dispositivo no soporta adjunto directo. Abriendo WhatsApp Web...");
+          showAlert("Abriendo WhatsApp Web... Pega el texto que ya fue copiado.");
           html2pdf().from(element).set(opt).save(); // Descarga el PDF
           setTimeout(() => {
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
@@ -806,7 +834,28 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
               <div className="space-y-1">
                  <label className="text-[10px] font-black text-purple-600 uppercase tracking-widest ml-1">Margen Empresa (%)</label>
                  <div className="relative">
-                   <input type="number" name="marginPct" value={quoteData.marginPct} onChange={handleInputChange} className="w-full border-2 border-purple-200 bg-purple-50 rounded-xl p-3 text-sm font-black text-purple-800 outline-none focus:border-purple-500"/>
+                   <input 
+                     type="number" 
+                     step="0.01"
+                     name="marginPct" 
+                     value={typeof quoteData.marginPct === 'number' ? Number(quoteData.marginPct).toFixed(2) : quoteData.marginPct} 
+                     onChange={handleInputChange} 
+                     className="w-full border-2 border-purple-200 bg-purple-50 rounded-xl p-3 text-sm font-black text-purple-800 outline-none focus:border-purple-500"
+                   />
+                 </div>
+              </div>
+
+              <div className="space-y-1">
+                 <label className="text-[10px] font-black text-purple-600 uppercase tracking-widest ml-1">Forzar Neto ($)</label>
+                 <div className="relative">
+                   <input 
+                     type="text" 
+                     value={netPrice > 0 ? new Intl.NumberFormat('es-CL').format(netPrice) : ''} 
+                     onChange={handleNetPriceChange} 
+                     placeholder="Ej: 1200000" 
+                     className="w-full border-2 border-purple-200 bg-purple-50 rounded-xl p-3 pl-10 text-sm font-black text-purple-800 outline-none focus:border-purple-500"
+                   />
+                   <DollarSign className="w-4 h-4 text-purple-500 absolute left-3.5 top-3.5" />
                  </div>
               </div>
             </div>
