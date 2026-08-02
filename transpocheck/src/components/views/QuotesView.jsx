@@ -90,9 +90,11 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
 
   // Cargar Peaje para modificar sus valores
   const handleEditToll = (toll) => {
+    const isStandard = ['Ruta 5 Norte', 'Ruta 5 Sur', 'Ruta 68', 'Ruta 78'].includes(toll.route);
     setNewTollData({
       name: toll.name || '',
-      route: toll.route || 'Ruta 5 Norte',
+      route: isStandard ? toll.route : 'Otra Ruta',
+      customRoute: isStandard ? '' : (toll.route || ''),
       km: toll.km || '',
       prices: toll.prices || {}
     });
@@ -128,8 +130,12 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
   const handleSaveNewToll = async (e) => {
     e.preventDefault();
     if (!newTollData.name || !newTollData.km) return showAlert("Completa el nombre y el kilómetro del peaje.");
+    if (newTollData.route === 'Otra Ruta' && !newTollData.customRoute) return showAlert("⚠️ Escribe el nombre de la ruta manual.");
+    
     try {
-      const payload = { ...newTollData, km: parseFloat(newTollData.km) || 0 };
+      const finalRoute = newTollData.route === 'Otra Ruta' ? newTollData.customRoute : newTollData.route;
+      const payload = { ...newTollData, route: finalRoute, km: parseFloat(newTollData.km) || 0 };
+      delete payload.customRoute; // Limpiamos la variable temporal antes de subir a Firebase
 
       if (editingTollId) {
         await updateDoc(doc(db, 'tolls', editingTollId), payload);
@@ -144,7 +150,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
 
       setShowNewTollModal(false);
       setNewTollData({
-        name: '', route: 'Ruta 5 Norte', km: '',
+        name: '', route: 'Ruta 5 Norte', customRoute: '', km: '',
         prices: { 'Auto / SUV': '', 'Camioneta': '', 'Furgón Pequeño': '', 'Furgón Grande': '', 'Camión Simple': '', 'Camión Doble Cabina': '', 'Camión (2 Ejes traseros)': '', 'Camión (3 Ejes traseros)': '', 'Camión Rigid (8x4)': '', 'Carro Arrastre': '' }
       });
     } catch (err) {
@@ -1139,6 +1145,16 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                     <option value="Ruta 78">Ruta 78</option>
                     <option value="Otra Ruta">Otra Ruta</option>
                   </select>
+                  {newTollData.route === 'Otra Ruta' && (
+                    <input 
+                      type="text" 
+                      value={newTollData.customRoute || ''} 
+                      onChange={e => setNewTollData({...newTollData, customRoute: e.target.value})} 
+                      placeholder="Escribe la ruta aquí..." 
+                      required
+                      className="w-full mt-2 border-2 border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500 animate-in fade-in"
+                    />
+                  )}
                 </div>
               </div>
 
