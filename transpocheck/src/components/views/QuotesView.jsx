@@ -333,7 +333,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
     });
   };
 
-  // Generador de PDF Elegante (Impresión HTML nativa) con todos los datos nuevos
+  // Generador de PDF Elegante en Formato A4 (Impresión HTML nativa)
   const handleGeneratePDF = () => {
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
@@ -341,89 +341,109 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
         <head>
           <title>Cotización Logística - ${quoteData.client || 'Cliente'}</title>
           <style>
-            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; padding: 40px; margin: 0; background: #fff; }
-            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #2563eb; padding-bottom: 20px; margin-bottom: 30px; }
-            .logo { max-height: 70px; }
+            @page { size: A4 portrait; margin: 15mm; }
+            @media print {
+              body { margin: 0; background: #fff !important; }
+              .page-container { box-shadow: none !important; border: none !important; padding: 0 !important; width: 100% !important; }
+              * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            }
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #0f172a; margin: 0; background: #cbd5e1; display: flex; justify-content: center; padding: 20px 0; }
+            
+            /* Contenedor estricto A4 */
+            .page-container { background: #fff; width: 210mm; min-height: 297mm; padding: 20mm; box-sizing: border-box; box-shadow: 0 15px 35px rgba(0,0,0,0.15); border-radius: 8px; }
+            
+            .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 4px solid #7c3aed; padding-bottom: 25px; margin-bottom: 30px; }
+            .logo { max-height: 65px; }
             .title { text-align: right; }
-            .title h1 { margin: 0; color: #1e293b; font-size: 26px; text-transform: uppercase; letter-spacing: 2px; }
-            .title p { margin: 5px 0 0 0; color: #64748b; font-size: 13px; }
-            .section-title { font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
-            .info-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px; margin-bottom: 25px; }
-            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-            .info-item h4 { margin: 0 0 3px 0; color: #94a3b8; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
-            .info-item p { margin: 0; font-size: 14px; font-weight: bold; color: #0f172a; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
-            th { background: #2563eb; color: white; text-align: left; padding: 12px; font-size: 13px; text-transform: uppercase; }
-            td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
-            .totals { width: 320px; margin-left: auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
-            .totals-row { display: flex; justify-content: space-between; padding: 10px 20px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
-            .totals-row.final { background: #2563eb; color: white; font-weight: bold; font-size: 16px; border: none; }
-            .footer { margin-top: 40px; text-align: center; color: #94a3b8; font-size: 11px; }
+            .title h1 { margin: 0; color: #1e293b; font-size: 28px; text-transform: uppercase; font-weight: 900; letter-spacing: -0.5px; }
+            .title p { margin: 6px 0 0 0; color: #64748b; font-size: 13px; font-weight: 600; }
+            .title p strong { color: #7c3aed; }
+            
+            .section-title { font-size: 12px; font-weight: 800; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; border-bottom: 2px solid #f1f5f9; padding-bottom: 6px; }
+            .info-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px; margin-bottom: 30px; }
+            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+            .info-item h4 { margin: 0 0 4px 0; color: #64748b; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+            .info-item p { margin: 0; font-size: 14px; font-weight: 800; color: #0f172a; }
+            
+            table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 30px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+            th { background: #f8fafc; color: #475569; text-align: left; padding: 15px; font-size: 12px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; }
+            td { padding: 15px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+            td:last-child, th:last-child { text-align: right; }
+            tbody tr:last-child td { border-bottom: none; }
+            
+            .totals { width: 350px; margin-left: auto; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
+            .totals-row { display: flex; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid #e2e8f0; font-size: 14px; font-weight: 600; color: #475569; background: #fff; }
+            .totals-row:last-child { border-bottom: none; }
+            .totals-row.final { background: #7c3aed; color: white; font-weight: 900; font-size: 18px; border: none; }
+            
+            .footer { margin-top: 50px; text-align: center; color: #94a3b8; font-size: 11px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-weight: 500; }
           </style>
         </head>
         <body>
-          <div class="header">
-            <img src="${window.location.origin}/LogoLogistica.png" class="logo" alt="LogisticAPP Logo" onerror="this.style.display='none'" />
-            <div class="title">
-              <h1>Cotización de Traslado</h1>
-              <p><strong>N° ${quoteData.quoteNumber || 'COT-Nueva'}</strong></p>
-              <p>Fecha: ${new Date().toLocaleDateString()}</p>
-            </div>
-          </div>
-
-          <div class="info-box">
-            <div class="section-title">Información de la Ruta y Cliente</div>
-            <div class="info-grid" style="margin-bottom: 15px;">
-              <div class="info-item"><h4>Cliente Empresa</h4><p>${quoteData.client || 'A Quien Corresponda'}</p></div>
-              <div class="info-item"><h4>Distancia Total</h4><p>${quoteData.distanceKm ? quoteData.distanceKm + ' KM' : 'N/A'}</p></div>
-              <div class="info-item"><h4>Origen</h4><p>${quoteData.origin || 'No especificado'}</p></div>
-              <div class="info-item"><h4>Destino</h4><p>${quoteData.destination || 'No especificado'}</p></div>
+          <div class="page-container">
+            <div class="header">
+              <img src="${window.location.origin}/LogoLogistica.png" class="logo" alt="LogisticAPP Logo" onerror="this.style.display='none'" />
+              <div class="title">
+                <h1>Cotización de Traslado</h1>
+                <p><strong>N° ${quoteData.quoteNumber || 'COT-Nueva'}</strong></p>
+                <p>Fecha: ${new Date().toLocaleDateString()}</p>
+              </div>
             </div>
 
-            <div class="section-title" style="margin-top: 15px;">Detalles del Vehículo y Carga</div>
-            <div class="info-grid">
-              <div class="info-item"><h4>Tipo de Vehículo</h4><p>${quoteData.vehicleType || 'No especificado'}</p></div>
-              <div class="info-item"><h4>Marca / Modelo</h4><p>${quoteData.brand || ''} ${quoteData.model || ''}</p></div>
-              <div class="info-item" style="grid-column: span 2;"><h4>Patente / VIN</h4><p>${quoteData.plateOrVin || 'S/N'}</p></div>
-            </div>
-          </div>
+            <div class="info-box">
+              <div class="section-title">Información de la Ruta y Cliente</div>
+              <div class="info-grid" style="margin-bottom: 15px;">
+                <div class="info-item"><h4>Cliente Empresa</h4><p>${quoteData.client || 'A Quien Corresponda'}</p></div>
+                <div class="info-item"><h4>Distancia Total</h4><p>${quoteData.distanceKm ? quoteData.distanceKm + ' KM' : 'N/A'}</p></div>
+                <div class="info-item"><h4>Origen</h4><p>${quoteData.origin || 'No especificado'}</p></div>
+                <div class="info-item"><h4>Destino</h4><p>${quoteData.destination || 'No especificado'}</p></div>
+              </div>
 
-          <table>
-            <thead>
-              <tr>
-                <th>Descripción del Servicio</th>
-                <th style="text-align: right;">Total Neto</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>
-                  <strong>${quoteData.description || 'Servicio de traslado logístico de vehículo'}</strong><br/>
-                  <span style="font-size: 12px; color: #64748b;">Incluye gestión de ruta, peajes, combustible y traslado profesional.</span>
-                </td>
-                <td style="text-align: right; font-weight: bold; vertical-align: top;">${formatMoney(netPrice)}</td>
-              </tr>
-            </tbody>
-          </table>
+              <div class="section-title" style="margin-top: 20px;">Detalles del Vehículo y Carga</div>
+              <div class="info-grid">
+                <div class="info-item"><h4>Tipo de Vehículo</h4><p>${quoteData.vehicleType || 'No especificado'}</p></div>
+                <div class="info-item"><h4>Marca / Modelo</h4><p>${quoteData.brand || ''} ${quoteData.model || ''}</p></div>
+                <div class="info-item" style="grid-column: span 2;"><h4>Patente / VIN</h4><p>${quoteData.plateOrVin || 'S/N'}</p></div>
+              </div>
+            </div>
 
-          <div class="totals">
-            <div class="totals-row">
-              <span>Subtotal Neto</span>
-              <span>${formatMoney(netPrice)}</span>
-            </div>
-            <div class="totals-row">
-              <span>IVA (19%)</span>
-              <span>${formatMoney(ivaAmount)}</span>
-            </div>
-            <div class="totals-row final">
-              <span>Total con IVA</span>
-              <span>${formatMoney(finalPrice)}</span>
-            </div>
-          </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Descripción del Servicio</th>
+                  <th>Total Neto</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <strong>${quoteData.description || 'Servicio de traslado logístico de vehículo'}</strong><br/>
+                    <span style="font-size: 12px; color: #64748b; font-weight: normal; margin-top: 4px; display: inline-block;">Incluye gestión de ruta, peajes, combustible y traslado profesional.</span>
+                  </td>
+                  <td style="font-weight: 800; vertical-align: top; color: #1e293b;">${formatMoney(netPrice)}</td>
+                </tr>
+              </tbody>
+            </table>
 
-          <div class="footer">
-            <p>Esta cotización es válida por 15 días hábiles desde su emisión.</p>
-            <p>Generado automáticamente por LogisticAPP - Plataforma de Gestión de Flotas</p>
+            <div class="totals">
+              <div class="totals-row">
+                <span>Subtotal Neto</span>
+                <span>${formatMoney(netPrice)}</span>
+              </div>
+              <div class="totals-row">
+                <span>IVA (19%)</span>
+                <span>${formatMoney(ivaAmount)}</span>
+              </div>
+              <div class="totals-row final">
+                <span>Total a Pagar</span>
+                <span>${formatMoney(finalPrice)}</span>
+              </div>
+            </div>
+
+            <div class="footer">
+              <p>Esta cotización es válida por 15 días hábiles desde su emisión.</p>
+              <p>Generado automáticamente por LogisticAPP - Sistema de Gestión Logística</p>
+            </div>
           </div>
         </body>
       </html>
