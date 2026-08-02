@@ -168,7 +168,8 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
             topPlates
         };
 
-    }, [jobs, drivers]);
+    // Al agregar viewDate a este arreglo, React recalculará las métricas cada vez que cambies de mes
+    }, [jobs, drivers, viewDate]);
 
     // UI HELPER
     const getPercent = (value, total) => total === 0 ? 0 : Math.round((value / total) * 100);
