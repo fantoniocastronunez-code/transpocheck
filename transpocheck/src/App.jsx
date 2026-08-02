@@ -131,7 +131,7 @@ function LogisticApp() {
 
   // 🚀 LA MAGIA: EL HOOK QUE HACE TODO EL TRABAJO SUCIO
   const { 
-    user, actualUserEmail, currentUserEmail, isRealAdmin, isQuoter,
+    user, actualUserEmail, currentUserEmail, isRealAdmin, isQuoter, isPartTime,
     jobs, drivers, expenses, vehicles, customClients, 
     broadcast, dataLoaded, notificationsEnabled, requestNotificationPermission
   } = useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAlert);
@@ -550,7 +550,8 @@ function LogisticApp() {
   };
 
   // --- CONTROL DE ONBOARDING ESTRICTO ---
-  const needsOnboarding = myDriver && (
+  // Se excluye a los conductores con rol Part-Time de la exigencia de fotos de documentos
+  const needsOnboarding = myDriver && myDriver.role !== 'part_time' && (
     !myDriver.photo || myDriver.photo === "" || 
     !myDriver.idFront || myDriver.idFront === "" || 
     !myDriver.idBack || myDriver.idBack === "" || 
@@ -559,8 +560,8 @@ function LogisticApp() {
   );
 
   // BLOQUEO ABSOLUTO: Nadie en modo "Conductor" pasa a la app sin sus 5 fotos.
-  // EXCEPCIÓN: Si es un conductor Part-Time asignado a un trabajo específico, entra directo.
-  if (activeRole === 'driver' && !isPartTimeAssigned && (needsOnboarding || !myDriver)) {
+  // EXCEPCIÓN: Conductores con rol part_time o asignados temporalmente entran directo a trabajar.
+  if (activeRole === 'driver' && !isPartTimeAssigned && myDriver?.role !== 'part_time' && (needsOnboarding || !myDriver)) {
     return (
       <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10 transition-colors duration-300 dark:bg-slate-950">
         {globalStyles}
@@ -863,7 +864,7 @@ function LogisticApp() {
                     
                     {adminTab === 'stats' && <div className="animate-in zoom-in-[0.98] duration-300"><StatsView jobs={jobs} drivers={drivers} vehicles={vehicles} allClientsList={allClientsList} /></div>}
 
-                    {adminTab === 'config' && <div className="animate-in zoom-in-[0.98] duration-300"><ConfigView allClientsList={allClientsList} customClients={customClients} vehicles={vehicles} drivers={drivers} db={db} showAlert={showAlert} showConfirm={showConfirm} /></div>}
+                    {adminTab === 'config' && <div className="animate-in zoom-in-[0.98] duration-300"><ConfigView currentUserEmail={currentUserEmail} allClientsList={allClientsList} customClients={customClients} vehicles={vehicles} drivers={drivers} db={db} showAlert={showAlert} showConfirm={showConfirm} /></div>}
                   </>
                 ) : (
                   <div className="space-y-6">

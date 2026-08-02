@@ -4,7 +4,7 @@ import { Camera, Eye, EyeOff, User, Edit2, Trash2, Truck, Clock, X, Plus, BookOp
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import { LICENCIAS, resizeImage } from '../../utils/helpers';
 
-export default function ConfiView({ allClientsList, customClients, vehicles, drivers, db, showAlert, showConfirm }) {
+export default function ConfiView({ currentUserEmail, allClientsList, customClients, vehicles, drivers, db, showAlert, showConfirm }) {
   const [configSubTab, setConfigSubTab] = useState('clients');
   const [editingDir, setEditingDir] = useState(null); 
   const [directoryList, setDirectoryList] = useState([]); 
@@ -663,10 +663,11 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
               <div className="space-y-1">
                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Rol en el Sistema</label>
                  <select name="role" defaultValue={editingDriver?.role || 'driver'} className="w-full border-2 border-purple-200 bg-purple-50 p-3 rounded-xl text-sm font-black text-purple-900 outline-none focus:border-purple-500">
-                    <option value="driver">Conductor (App Móvil)</option>
+                    <option value="driver">Conductor Titular (Con documentos)</option>
+                    <option value="part_time">Conductor Part-Time (Sin validación docs)</option>
                     <option value="quoter">Cotizador / Ventas</option>
                     <option value="admin">Administrador (Oficina)</option>
-                    <option value="super_admin">Super Administrador</option>
+                    {currentUserEmail === 'fcastro@logisticats.cl' && <option value="super_admin">Super Administrador</option>}
                  </select>
               </div>
               <input name="driverName" defaultValue={editingDriver?.name} placeholder="Nombre completo" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
@@ -765,9 +766,10 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                            d.role === 'super_admin' ? 'bg-red-50 text-red-600 border-red-200' :
                            d.role === 'admin' ? 'bg-purple-50 text-purple-600 border-purple-200' :
                            d.role === 'quoter' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                           d.role === 'part_time' ? 'bg-blue-50 text-blue-600 border-blue-200' :
                            'bg-emerald-50 text-emerald-600 border-emerald-200'
                         }`}>
-                           {d.role === 'super_admin' ? 'Super Admin' : d.role === 'admin' ? 'Admin' : d.role === 'quoter' ? 'Cotizador' : 'Conductor'}
+                           {d.role === 'super_admin' ? 'Super Admin' : d.role === 'admin' ? 'Admin' : d.role === 'quoter' ? 'Cotizador' : d.role === 'part_time' ? 'Part-Time' : 'Conductor'}
                         </span>
                         {(!d.role || d.role === 'driver') && d.licenses && d.licenses.length > 0 && (
                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-md border ${d.isHidden ? 'bg-slate-200 text-slate-500 border-slate-300' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
