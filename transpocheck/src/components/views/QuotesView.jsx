@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { addDoc, collection, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { 
   Calculator, MapPin, Fuel, DollarSign, Plus, CheckCircle, 
-  User, Truck, Receipt, Printer, Send, Save, ArrowRight, X, MessageCircle, Mail
+  User, Truck, Receipt, Printer, Send, Save, ArrowRight, X, MessageCircle, Mail, MoreVertical, Calendar
 } from 'lucide-react';
 import { formatMoney } from '../../utils/helpers';
 
@@ -28,11 +28,20 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
     quoteNumber: '' // <-- Correlativo
   });
 
-  // Estados para Clientes, Peajes, Edición y Modal de Envío
+  // Estados para Clientes, Peajes, Edición, Menús y Modales
   const [showNewClientForm, setShowNewClientForm] = useState(false);
   const [newClientData, setNewClientData] = useState({ name: '', lastName: '', email: '' });
   const [editingQuoteId, setEditingQuoteId] = useState(null);
-  const [showSendModal, setShowSendModal] = useState(false); // <-- Nuevo estado para el Pop-up
+  const [showSendModal, setShowSendModal] = useState(false);
+  
+  // Estados del Historial (Menú de 3 puntos y Modal de Traslado)
+  const [activeActionMenu, setActiveActionMenu] = useState(null);
+  const [showAcceptModal, setShowAcceptModal] = useState(false);
+  const [acceptQuoteData, setAcceptQuoteData] = useState(null);
+  const [jobDetails, setJobDetails] = useState({
+    scheduledDate: new Date().toISOString().split('T')[0],
+    assignedDriver: ''
+  });
   
   const [showNewTollModal, setShowNewTollModal] = useState(false);
   const [editingTollId, setEditingTollId] = useState(null); // <-- Para modificar peajes existentes
@@ -335,6 +344,56 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
       }
     });
   };
+
+// Procesar Cotización Aceptada y Crear Traslado
+  const handleConfirmAcceptQuote = async (e) => {
+    e.preventDefault();
+    if (!acceptQuoteData) return;
+
+    try {
+      // 1. Marcar la cotización como aceptada
+      await updateDoc(doc(db, 'quotes', acceptQuoteData.id), { status: 'aceptada' });
+
+      // 2. Generar el traslado en la base de datos
+      const matchedOrigin = directoryList?.find(d => d.placeName.toLowerCase() === acceptQuoteData.origin?.toLowerCase());
+      const matchedDest = directoryList?.find(d => d.placeName.toLowerCase() === acceptQuoteData.destination?.toLowerCase());
+
+      const newJob = {
+        client: acceptQuoteData.client,
+        origin: acceptQuoteData.origin,
+        destination: acceptQuoteData.destination,
+        originContactName: matchedOrigin?.contactName || '',
+        originContactPhone: matchedOrigin?.contactPhone || '',
+        originAddress: matchedOrigin?.address || '',
+        destContactName: matchedDest?.contactName || '',
+        destContactPhone: matchedDest?.contactPhone || '',
+        destAddress: matchedDest?.address || '',
+        description: `(Cotización ${acceptQuoteData.quoteNumber || 'S/N'}) ${acceptQuoteData.description || ''}`,
+        brand: acceptQuoteData.vehicleType || 'Por definir',
+        plate: acceptQuoteData.plateOrVin || 'S/N',
+        tripType: 'traslado',
+        status: jobDetails.assignedDriver ? 'assigned' : 'pending',
+        assignedDriver: jobDetails.assignedDriver || '',
+        createdAt: Date.now(),
+        scheduledDate: jobDetails.scheduledDate,
+        quotedPrice: Math.round(acceptQuoteData.finalPrice || 0),
+        requestedBy: currentUserEmail
+      };
+
+      await addDoc(collection(db, 'transport_jobs'), newJob);
+      showAlert("✅ ¡Cotización aceptada y traslado agendado exitosamente!");
+
+      setShowAcceptModal(false);
+      setAcceptQuoteData(null);
+      setJobDetails({ scheduledDate: new Date().toISOString().split('T')[0], assignedDriver: '' });
+    } catch (error) {
+      console.error("Error al aceptar cotización:", error);
+      showAlert("❌ Hubo un error al generar el traslado.");
+    }
+  };
+
+  // Generador de PDF Elegante (Impresión HTML nativa)
+  const handleGeneratePDF = () => {
 
   // Generador de PDF Elegante en Formato A4 (Impresión HTML nativa)
   const handleGeneratePDF = () => {
@@ -785,7 +844,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                   <th className="p-3">Vehículo / Patente</th>
                   <th className="p-3">Total</th>
                   <th className="p-3">Estado</th>
-                  <th className="p-3 text-right">Acciones</th>
+                  <th className="p-3 text-right"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-bold text-slate-700">
@@ -806,13 +865,21 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                           {q.status || 'pendiente'}
                         </span>
                       </td>
-                      <td className="p-3 text-right space-x-2">
-                        <button onClick={() => handleEditQuote(q)} className="text-blue-600 hover:underline font-extrabold">Modificar</button>
-                        <button onClick={async () => {
-                          await updateDoc(doc(db, 'quotes', q.id), { status: 'aceptada' });
-                          showAlert("✅ Cotización marcada como aceptada.");
-                        }} className="text-emerald-600 hover:underline font-extrabold">Aceptar</button>
-                        <button onClick={() => handleDeleteQuote(q.id)} className="text-red-500 hover:underline font-extrabold">Eliminar</button>
+                      <td className="p-3 text-right relative">
+                        <button onClick={() => setActiveActionMenu(activeActionMenu === q.id ? null : q.id)} className="p-2 hover:bg-slate-200 bg-slate-100 text-slate-600 rounded-xl transition-colors">
+                          <MoreVertical className="w-4 h-4"/>
+                        </button>
+                        
+                        {/* Menú Desplegable */}
+                        {activeActionMenu === q.id && (
+                          <div className="absolute right-12 top-10 bg-white border border-slate-200 shadow-xl rounded-xl w-48 py-2 z-50 animate-in fade-in zoom-in-95">
+                            <button onClick={() => { handleEditQuote(q); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">Modificar</button>
+                            <button onClick={() => { handleEditQuote(q); setShowSendModal(true); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-blue-600 hover:bg-blue-50 transition-colors">Enviar Cotización</button>
+                            <button onClick={() => { setAcceptQuoteData(q); setShowAcceptModal(true); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-emerald-600 hover:bg-emerald-50 transition-colors">Cotización Aceptada</button>
+                            <div className="my-1 border-t border-slate-100"></div>
+                            <button onClick={() => { handleDeleteQuote(q.id); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors">Eliminar</button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );
@@ -939,6 +1006,39 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
             </div>
 
             <button type="submit" className="w-full mt-5 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 text-xs transition-colors">{editingTollId ? 'Actualizar Peaje' : 'Guardar Peaje'}</button>
+          </form>
+        </div>
+      )}
+
+      {/* MODAL: ACEPTAR COTIZACIÓN Y CREAR TRASLADO */}
+      {showAcceptModal && acceptQuoteData && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+          <form onSubmit={handleConfirmAcceptQuote} className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl relative animate-in zoom-in-95">
+            <button type="button" onClick={() => setShowAcceptModal(false)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-700"/></button>
+            <h3 className="text-lg font-black text-slate-800 mb-1">¡Cotización Aceptada! 🎉</h3>
+            <p className="text-xs font-bold text-slate-500 mb-5">¿Creemos el traslado de inmediato? Configura la fecha y el conductor.</p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Fecha Programada</label>
+                <div className="relative mt-1">
+                  <input type="date" required value={jobDetails.scheduledDate} onChange={e => setJobDetails({...jobDetails, scheduledDate: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 pl-10 text-sm font-bold text-slate-700 outline-none focus:border-emerald-500"/>
+                  <Calendar className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Conductor Asignado (Opcional)</label>
+                <div className="relative mt-1">
+                  <input type="text" value={jobDetails.assignedDriver} onChange={e => setJobDetails({...jobDetails, assignedDriver: e.target.value})} placeholder="Nombre del conductor..." className="w-full border-2 border-slate-200 rounded-xl p-3 pl-10 text-sm font-bold text-slate-700 outline-none focus:border-emerald-500"/>
+                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                </div>
+              </div>
+            </div>
+            
+            <button type="submit" className="w-full mt-6 bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3.5 rounded-xl shadow-lg shadow-emerald-200 text-sm transition-colors flex items-center justify-center gap-2">
+              <CheckCircle className="w-5 h-5"/> Generar Traslado
+            </button>
           </form>
         </div>
       )}
