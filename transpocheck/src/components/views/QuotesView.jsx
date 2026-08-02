@@ -218,38 +218,6 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          tools: [{ googleSearch: {} }] // Forzamos a la IA a buscar en internet el dato de hoy
-        })
-      });
-
-      const data = await res.json();
-      
-      if (data.candidates && data.candidates.length > 0) {
-        const respuestaTexto = data.candidates[0].content.parts[0].text;
-        
-        // Limpiamos la respuesta de la IA para extraer matemáticamente solo los números
-        const precioLimpio = parseInt(respuestaTexto.replace(/[^0-9]/g, ''), 10);
-
-        if (!isNaN(precioLimpio) && precioLimpio > 500 && precioLimpio < 2000) {
-          setQuoteData(prev => ({ ...prev, fuelPrice: precioLimpio }));
-          showAlert(`🤖 IA Gemini: Precio Diésel actualizado a $${precioLimpio}/L.`);
-        } else {
-          showAlert("⚠️ La IA respondió, pero no pudimos extraer el número exacto.");
-        }
-      }
-    } catch (err) {
-      console.error(err);
-      showAlert("❌ Error al intentar contactar a la inteligencia artificial.");
-    } finally {
-      setIsFetchingFuel(false);
-    }
-  };
-
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }]
         })
       });
