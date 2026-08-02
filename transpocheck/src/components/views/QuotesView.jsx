@@ -827,7 +827,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
         {savedQuotes.length === 0 ? (
           <p className="text-xs font-bold text-slate-400 text-center py-6">No hay cotizaciones registradas aún.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto pb-24 min-h-[280px]">
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="bg-slate-50 text-slate-400 uppercase tracking-widest border-b">
@@ -859,13 +859,13 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                         </span>
                       </td>
                       <td className="p-3 text-right relative">
-                        <button onClick={() => setActiveActionMenu(activeActionMenu === q.id ? null : q.id)} className="p-2 hover:bg-slate-200 bg-slate-100 text-slate-600 rounded-xl transition-colors">
+                        <button onClick={() => setActiveActionMenu(activeActionMenu === q.id ? null : q.id)} className="p-2 hover:bg-slate-200 bg-slate-100 text-slate-600 rounded-xl transition-colors shadow-sm">
                           <MoreVertical className="w-4 h-4"/>
                         </button>
                         
-                        {/* Menú Desplegable */}
+                        {/* Menú Desplegable Inteligente */}
                         {activeActionMenu === q.id && (
-                          <div className="absolute right-12 top-10 bg-white border border-slate-200 shadow-xl rounded-xl w-48 py-2 z-50 animate-in fade-in zoom-in-95">
+                          <div className={`absolute right-12 ${idx > 0 && idx === savedQuotes.length - 1 ? 'bottom-10' : 'top-10'} bg-white border border-slate-200 shadow-2xl rounded-xl w-48 py-2 z-[99] animate-in fade-in zoom-in-95`}>
                             <button onClick={() => { handleEditQuote(q); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">Modificar</button>
                             <button onClick={() => { handleEditQuote(q); setShowSendModal(true); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-blue-600 hover:bg-blue-50 transition-colors">Enviar Cotización</button>
                             <button onClick={() => { setAcceptQuoteData(q); setShowAcceptModal(true); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-emerald-600 hover:bg-emerald-50 transition-colors">Cotización Aceptada</button>
