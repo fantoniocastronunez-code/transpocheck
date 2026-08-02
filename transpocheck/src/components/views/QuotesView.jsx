@@ -8,7 +8,7 @@ import { formatMoney } from '../../utils/helpers';
 
 import { useEffect } from 'react'; // Asegúrate de tener useEffect importado arriba de React
 
-export default function QuotesView({ db, customClients, vehicles, directoryList, showAlert, showConfirm, currentUserEmail }) {
+export default function QuotesView({ db, customClients, vehicles, directoryList, drivers, showAlert, showConfirm, currentUserEmail }) {
   // Estados de la Cotización
   const [quoteData, setQuoteData] = useState({
     client: '',
@@ -1023,8 +1023,19 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Conductor Asignado (Opcional)</label>
                 <div className="relative mt-1">
-                  <input type="text" value={jobDetails.assignedDriver} onChange={e => setJobDetails({...jobDetails, assignedDriver: e.target.value})} placeholder="Nombre del conductor..." className="w-full border-2 border-slate-200 rounded-xl p-3 pl-10 text-sm font-bold text-slate-700 outline-none focus:border-emerald-500"/>
-                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                  <select 
+                    value={jobDetails.assignedDriver} 
+                    onChange={e => setJobDetails({...jobDetails, assignedDriver: e.target.value})} 
+                    className="w-full border-2 border-slate-200 rounded-xl p-3 pl-10 text-sm font-bold text-slate-700 outline-none focus:border-emerald-500 bg-white"
+                  >
+                    <option value="">Sin asignar (Dejar como Pendiente)</option>
+                    {drivers && drivers.map((driver, idx) => (
+                      <option key={idx} value={driver.name || driver.email}>
+                        {driver.name || driver.email}
+                      </option>
+                    ))}
+                  </select>
+                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
                 </div>
               </div>
             </div>
