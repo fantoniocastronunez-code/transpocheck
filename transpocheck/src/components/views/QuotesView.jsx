@@ -462,16 +462,16 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
         <head>
           <title>Cotización Logística - ${quoteData.client || 'Cliente'}</title>
           <style>
-            @page { size: A4 portrait; margin: 15mm; }
+            @page { margin: 10mm; }
             @media print {
               body { margin: 0; background: #fff !important; }
               .page-container { box-shadow: none !important; border: none !important; padding: 0 !important; width: 100% !important; }
               * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             }
-            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #0f172a; margin: 0; background: #cbd5e1; display: flex; justify-content: center; padding: 20px 0; }
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #0f172a; margin: 0; background: #fff; display: block; }
             
-            /* Contenedor estricto A4 */
-            .page-container { background: #fff; width: 210mm; min-height: 297mm; padding: 20mm; box-sizing: border-box; box-shadow: 0 15px 35px rgba(0,0,0,0.15); border-radius: 8px; }
+            /* Contenedor dinámico (Evita hojas en blanco) */
+            .page-container { background: #fff; width: 100%; max-width: 800px; margin: 0 auto; padding: 30px; box-sizing: border-box; }
             
             .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 4px solid #7c3aed; padding-bottom: 25px; margin-bottom: 30px; }
             .logo { max-height: 65px; }
