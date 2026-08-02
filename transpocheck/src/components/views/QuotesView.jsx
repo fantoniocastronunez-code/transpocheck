@@ -610,7 +610,8 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
               </div>
             </div>
 
-            {/* SECCIÓN DE SELECCIÓN DE PEAJES (CON BOTÓN DE MODIFICAR CADA PEAJE) */}
+
+              {/* SECCIÓN DE SELECCIÓN DE PEAJES (CON BOTÓN DE MODIFICAR CADA PEAJE) */}
             <div className="border-t border-slate-100 pt-4">
               <div className="flex justify-between items-center mb-3">
                 <span className="text-xs font-black text-slate-700 uppercase tracking-wider">Seleccionar Peajes ({tollsList.length})</span>
@@ -645,7 +646,6 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                 </div>
               )}
             </div>
-          </div>
                   const correlativo = q.quoteNumber || `COT-${idx + 1}`;
                   return (
                     <tr key={q.id} className="hover:bg-slate-50">
@@ -763,7 +763,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                   <th className="p-3 text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-bold text-slate-700">
+              <<tbody className="divide-y divide-slate-100 font-bold text-slate-700">
                 {savedQuotes.map((q, idx) => {
                   const correlativo = q.quoteNumber || `COT-${idx + 1}`;
                   return (
@@ -784,7 +784,6 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                       <td className="p-3 text-right space-x-2">
                         <button onClick={() => handleEditQuote(q)} className="text-blue-600 hover:underline font-extrabold">Modificar</button>
                         <button onClick={async () => {
-                          const { updateDoc, doc } = await import('firebase/firestore');
                           await updateDoc(doc(db, 'quotes', q.id), { status: 'aceptada' });
                           showAlert("✅ Cotización marcada como aceptada.");
                         }} className="text-emerald-600 hover:underline font-extrabold">Aceptar</button>
