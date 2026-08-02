@@ -27,9 +27,31 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
     plateOrVin: ''
   });
 
-  // Estados para Nuevo Cliente
+  // Estados para Nuevo Cliente y Nuevo Peaje
   const [showNewClientForm, setShowNewClientForm] = useState(false);
   const [newClientData, setNewClientData] = useState({ name: '', lastName: '', email: '' });
+  
+  const [showNewTollModal, setShowNewTollModal] = useState(false);
+  const [newTollData, setNewTollData] = useState({
+    name: '',
+    route: 'Ruta 5 Norte',
+    km: '',
+    prices: {
+      'Auto / SUV': '',
+      'Camioneta': '',
+      'Furgón Pequeño': '',
+      'Furgón Grande': '',
+      'Camión Simple': '',
+      'Camión Doble Cabina': '',
+      'Camión (2 Ejes traseros)': '',
+      'Camión (3 Ejes traseros)': '',
+      'Camión Rigid (8x4)': '',
+      'Carro Arrastre': ''
+    }
+  });
+
+  // Estados para Peajes Seleccionados en la Cotización
+  const [selectedTollIds, setSelectedTollIds] = useState([]);
 
   // Estados para Tabla de Peajes y Cotizaciones Guardadas
   const [tollsList, setTollsList] = useState([]);
@@ -50,6 +72,47 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
       return () => unsubQuotes();
     });
   }, [db]);
+
+  // Función para guardar un nuevo peaje en Firestore
+  const handleSaveNewToll = async (e) => {
+    e.preventDefault();
+    if (!newTollData.name || !newTollData.km) return showAlert("Completa el nombre y el kilómetro del peaje.");
+    try {
+      const { addDoc, collection } = await import('firebase/firestore');
+      const docRef = await addDoc(collection(db, 'tolls'), {
+        ...newTollData,
+        km: parseFloat(newTollData.km) || 0,
+        createdAt: Date.now()
+      });
+      setTollsList(prev => [...prev, { id: docRef.id, ...newTollData }]);
+      showAlert(`✅ Peaje "${newTollData.name}" registrado correctamente.`);
+      setShowNewTollModal(false);
+      setNewTollData({
+        name: '', route: 'Ruta 5 Norte', km: '',
+        prices: { 'Auto / SUV': '', 'Camioneta': '', 'Furgón Pequeño': '', 'Furgón Grande': '', 'Camión Simple': '', 'Camión Doble Cabina': '', 'Camión (2 Ejes traseros)': '', 'Camión (3 Ejes traseros)': '', 'Camión Rigid (8x4)': '', 'Carro Arrastre': '' }
+      });
+    } catch (err) {
+      showAlert("Error al guardar peaje.");
+    }
+  };
+
+  // Auto-calcular suma de peajes cuando cambian los seleccionados o el tipo de vehículo
+  const toggleTollSelection = (tollId) => {
+    setSelectedTollIds(prev => {
+      const exists = prev.includes(tollId);
+      const updated = exists ? prev.filter(id => id !== tollId) : [...prev, tollId];
+      
+      // Calcular la suma de los peajes seleccionados según el vehículo actual
+      const totalTolls = updated.reduce((sum, id) => {
+        const toll = tollsList.find(t => t.id === id);
+        const priceForVehicle = toll?.prices?.[quoteData.vehicleType] || 0;
+        return sum + parseFloat(priceForVehicle || 0);
+      }, 0);
+
+      setQuoteData(q => ({ ...q, tollsCost: totalTolls > 0 ? totalTolls : '' }));
+      return updated;
+    });
+  };
 
   // Cálculos Automáticos en Tiempo Real
   const distance = parseFloat(quoteData.distanceKm) || 0;
@@ -200,7 +263,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
     });
   };
 
-  // Generador de PDF Elegante (Impresión HTML nativa)
+  // Generador de PDF Elegante (Impresión HTML nativa) con todos los datos nuevos
   const handleGeneratePDF = () => {
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
@@ -208,23 +271,24 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
         <head>
           <title>Cotización Logística - ${quoteData.client || 'Cliente'}</title>
           <style>
-            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; padding: 40px; }
+            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; padding: 40px; margin: 0; background: #fff; }
             .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #2563eb; padding-bottom: 20px; margin-bottom: 30px; }
-            .logo { max-height: 80px; }
+            .logo { max-height: 70px; }
             .title { text-align: right; }
-            .title h1 { margin: 0; color: #1e293b; font-size: 28px; text-transform: uppercase; letter-spacing: 2px; }
-            .title p { margin: 5px 0 0 0; color: #64748b; }
-            .info-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px; margin-bottom: 30px; }
-            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-            .info-item h4 { margin: 0 0 5px 0; color: #94a3b8; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
-            .info-item p { margin: 0; font-size: 16px; font-weight: bold; color: #0f172a; }
-            table { w-full; width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-            th { background: #2563eb; color: white; text-align: left; padding: 12px; font-size: 14px; text-transform: uppercase; }
-            td { padding: 15px 12px; border-bottom: 1px solid #e2e8f0; font-size: 15px; }
-            .totals { width: 350px; margin-left: auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
-            .totals-row { display: flex; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid #e2e8f0; }
-            .totals-row.final { background: #2563eb; color: white; font-weight: bold; font-size: 18px; border: none; }
-            .footer { margin-top: 50px; text-align: center; color: #94a3b8; font-size: 12px; }
+            .title h1 { margin: 0; color: #1e293b; font-size: 26px; text-transform: uppercase; letter-spacing: 2px; }
+            .title p { margin: 5px 0 0 0; color: #64748b; font-size: 13px; }
+            .section-title { font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
+            .info-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px; margin-bottom: 25px; }
+            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+            .info-item h4 { margin: 0 0 3px 0; color: #94a3b8; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+            .info-item p { margin: 0; font-size: 14px; font-weight: bold; color: #0f172a; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
+            th { background: #2563eb; color: white; text-align: left; padding: 12px; font-size: 13px; text-transform: uppercase; }
+            td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+            .totals { width: 320px; margin-left: auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+            .totals-row { display: flex; justify-content: space-between; padding: 10px 20px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+            .totals-row.final { background: #2563eb; color: white; font-weight: bold; font-size: 16px; border: none; }
+            .footer { margin-top: 40px; text-align: center; color: #94a3b8; font-size: 11px; }
           </style>
         </head>
         <body>
@@ -237,11 +301,19 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
           </div>
 
           <div class="info-box">
-            <div class="info-grid">
+            <div class="section-title">Información de la Ruta y Cliente</div>
+            <div class="info-grid" style="margin-bottom: 15px;">
               <div class="info-item"><h4>Cliente Empresa</h4><p>${quoteData.client || 'A Quien Corresponda'}</p></div>
-              <div class="info-item"><h4>Tipo de Vehículo</h4><p>${quoteData.vehicleType || 'No especificado'}</p></div>
+              <div class="info-item"><h4>Distancia Total</h4><p>${quoteData.distanceKm ? quoteData.distanceKm + ' KM' : 'N/A'}</p></div>
               <div class="info-item"><h4>Origen</h4><p>${quoteData.origin || 'No especificado'}</p></div>
               <div class="info-item"><h4>Destino</h4><p>${quoteData.destination || 'No especificado'}</p></div>
+            </div>
+
+            <div class="section-title" style="margin-top: 15px;">Detalles del Vehículo y Carga</div>
+            <div class="info-grid">
+              <div class="info-item"><h4>Tipo de Vehículo</h4><p>${quoteData.vehicleType || 'No especificado'}</p></div>
+              <div class="info-item"><h4>Marca / Modelo</h4><p>${quoteData.brand || ''} ${quoteData.model || ''}</p></div>
+              <div class="info-item" style="grid-column: span 2;"><h4>Patente / VIN</h4><p>${quoteData.plateOrVin || 'S/N'}</p></div>
             </div>
           </div>
 
@@ -249,20 +321,23 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
             <thead>
               <tr>
                 <th>Descripción del Servicio</th>
-                <th style="text-align: right;">Distancia</th>
+                <th style="text-align: right;">Total Estimado</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td>${quoteData.description || 'Servicio de traslado logístico de vehículo'}</td>
-                <td style="text-align: right;">${quoteData.distanceKm ? quoteData.distanceKm + ' KM' : 'N/A'}</td>
+                <td>
+                  <strong>${quoteData.description || 'Servicio de traslado logístico de vehículo'}</strong><br/>
+                  <span style="font-size: 12px; color: #64748b;">Incluye gestión de ruta, peajes, combustible y traslado profesional.</span>
+                </td>
+                <td style="text-align: right; font-weight: bold; vertical-align: top;">${formatMoney(finalPrice)}</td>
               </tr>
             </tbody>
           </table>
 
           <div class="totals">
             <div class="totals-row">
-              <span>Subtotal Neto</span>
+              <span>Subtotal Servicios</span>
               <span>${formatMoney(finalPrice)}</span>
             </div>
             <div class="totals-row final">
@@ -279,7 +354,6 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
       </html>
     `);
     printWindow.document.close();
-    // Le damos un pequeño respiro para que cargue el logo antes de imprimir
     setTimeout(() => {
       printWindow.focus();
       printWindow.print();
@@ -355,10 +429,16 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
               <div className="space-y-1">
                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Vehículo</label>
                  <select name="vehicleType" value={quoteData.vehicleType} onChange={handleInputChange} className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500 bg-white">
-                    <option value="auto">Auto / SUV</option>
-                    <option value="camioneta">Camioneta</option>
-                    <option value="furgon">Furgón Pequeño</option>
-                    <option value="camion">Camión</option>
+                    <option value="Auto / SUV">Auto / SUV</option>
+                    <option value="Camioneta">Camioneta</option>
+                    <option value="Furgón Pequeño">Furgón Pequeño</option>
+                    <option value="Furgón Grande">Furgón Grande</option>
+                    <option value="Camión Simple">Camión Simple</option>
+                    <option value="Camión Doble Cabina">Camión Doble Cabina</option>
+                    <option value="Camión (2 Ejes traseros)">Camión (2 Ejes traseros)</option>
+                    <option value="Camión (3 Ejes traseros)">Camión (3 Ejes traseros)</option>
+                    <option value="Camión Rigid (8x4)">Camión Rigid (8x4)</option>
+                    <option value="Carro Arrastre">Carro Arrastre</option>
                  </select>
               </div>
 
@@ -374,7 +454,34 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
 
               <div className="space-y-1">
                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Patente o VIN</label>
-                 <input type="text" name="plateOrVin" maxLength="17" value={quoteData.plateOrVin} onChange={handleInputChange} placeholder="Ej: ABCD12" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-black uppercase text-slate-800 outline-none focus:border-purple-500"/>
+                 <input 
+                   type="text" 
+                   name="plateOrVin" 
+                   maxLength="17" 
+                   value={quoteData.plateOrVin} 
+                   onChange={(e) => {
+                     const val = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                     setQuoteData(prev => {
+                       let updated = { ...prev, plateOrVin: val };
+                       // Búsqueda inteligente en la base de datos de vehículos
+                       if (val.length >= 4 && vehicles) {
+                         const found = vehicles.find(v => 
+                           (v.plate && v.plate.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() === val) || 
+                           (v.vin && v.vin.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().includes(val))
+                         );
+                         if (found) {
+                           if (found.brand) updated.brand = found.brand;
+                           if (found.model) updated.model = found.model;
+                           if (found.vehicleType) updated.vehicleType = found.vehicleType;
+                           if (found.client) updated.client = found.client;
+                         }
+                       }
+                       return updated;
+                     });
+                   }} 
+                   placeholder="Ej: ABCD12" 
+                   className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-black uppercase text-slate-800 outline-none focus:border-purple-500"
+                 />
               </div>
 
               <div className="space-y-1">
@@ -385,8 +492,8 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
           </div>
 
           {/* Tarjeta 2: Gastos Operativos y Calculadora */}
-          <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-            <h3 className="text-sm font-black text-slate-800 flex items-center gap-2 mb-4 border-b border-slate-100 pb-3"><DollarSign className="w-4 h-4 text-emerald-600"/> Estructura de Costos</h3>
+          <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-5">
+            <h3 className="text-sm font-black text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3"><DollarSign className="w-4 h-4 text-emerald-600"/> Estructura de Costos y Peajes</h3>
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-1">
@@ -403,7 +510,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
               </div>
 
               <div className="space-y-1">
-                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Costo Peajes ($)</label>
+                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Costo Peajes ($ Auto-calculado)</label>
                  <input type="number" name="tollsCost" value={quoteData.tollsCost} onChange={handleInputChange} placeholder="Total peajes..." className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500"/>
               </div>
 
@@ -421,6 +528,39 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                    <input type="number" name="marginPct" value={quoteData.marginPct} onChange={handleInputChange} className="w-full border-2 border-purple-200 bg-purple-50 rounded-xl p-3 text-sm font-black text-purple-800 outline-none focus:border-purple-500"/>
                  </div>
               </div>
+            </div>
+
+            {/* SECCIÓN DE SELECCIÓN DE PEAJES DE LA RUTA */}
+            <div className="border-t border-slate-100 pt-4">
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-xs font-black text-slate-700 uppercase tracking-wider">Seleccionar Peajes de la Ruta ({tollsList.length} registrados)</span>
+                <button type="button" onClick={() => setShowNewTollModal(true)} className="text-[11px] font-bold bg-purple-100 text-purple-700 px-3 py-1.5 rounded-xl hover:bg-purple-200 transition-colors flex items-center gap-1">
+                  <Plus className="w-3.5 h-3.5"/> Registrar Nuevo Peaje
+                </button>
+              </div>
+
+              {tollsList.length === 0 ? (
+                <p className="text-xs font-bold text-slate-400 italic bg-slate-50 p-4 rounded-2xl text-center">No hay peajes creados aún. Registra el primero con el botón superior para calcular automáticamente.</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1 scrollbar-none border border-slate-100 rounded-2xl bg-slate-50">
+                  {tollsList.map(toll => {
+                    const isChecked = selectedTollIds.includes(toll.id);
+                    const price = toll.prices?.[quoteData.vehicleType] || 0;
+                    return (
+                      <label key={toll.id} className={`flex items-center justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${isChecked ? 'bg-purple-50 border-purple-300 shadow-sm' : 'bg-white border-slate-200 hover:border-slate-300'}`}>
+                        <div className="flex items-center gap-2.5">
+                          <input type="checkbox" checked={isChecked} onChange={() => toggleTollSelection(toll.id)} className="w-4 h-4 accent-purple-600 rounded cursor-pointer"/>
+                          <div>
+                            <p className="text-xs font-black text-slate-800">{toll.name}</p>
+                            <p className="text-[10px] font-bold text-slate-400">{toll.route} • KM {toll.km}</p>
+                          </div>
+                        </div>
+                        <span className="text-xs font-black text-purple-700">{formatMoney(price)}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
@@ -562,6 +702,67 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
               </div>
             </div>
             <button type="submit" className="w-full mt-5 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 text-xs transition-colors">Guardar Cliente</button>
+          </form>
+        </div>
+      )}
+
+      {/* MODAL: NUEVO PEAJE CON PRECIOS POR TIPO DE VEHÍCULO */}
+      {showNewTollModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+          <form onSubmit={handleSaveNewToll} className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl relative animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+            <button type="button" onClick={() => setShowNewTollModal(false)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-700"/></button>
+            <h3 className="text-lg font-black text-slate-800 mb-1">Registrar Nuevo Peaje</h3>
+            <p className="text-xs font-bold text-slate-400 mb-4">Configura los valores de este peaje según cada tipo de vehículo.</p>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase">Nombre del Peaje</label>
+                  <input type="text" required value={newTollData.name} onChange={e => setNewTollData({...newTollData, name: e.target.value})} placeholder="Ej: Peaje Lampa" className="w-full border-2 border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500"/>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase">Ruta / Dirección</label>
+                  <select value={newTollData.route} onChange={e => setNewTollData({...newTollData, route: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500 bg-white">
+                    <option value="Ruta 5 Norte">Ruta 5 Norte</option>
+                    <option value="Ruta 5 Sur">Ruta 5 Sur</option>
+                    <option value="Ruta 68">Ruta 68</option>
+                    <option value="Ruta 78">Ruta 78</option>
+                    <option value="Otra Ruta">Otra Ruta</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase">Kilómetro de la Ruta (KM)</label>
+                <input type="number" required value={newTollData.km} onChange={e => setNewTollData({...newTollData, km: e.target.value})} placeholder="Ej: 30" className="w-full border-2 border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500"/>
+              </div>
+
+              <div className="border-t pt-3">
+                <p className="text-xs font-black text-slate-700 mb-2 uppercase tracking-wider">Tarifas por Tipo de Vehículo ($)</p>
+                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                  {Object.keys(newTollData.prices).map(vType => (
+                    <div key={vType} className="bg-slate-50 p-2 rounded-xl border border-slate-200">
+                      <label className="text-[9px] font-bold text-slate-500 block truncate">{vType}</label>
+                      <input 
+                        type="number" 
+                        value={newTollData.prices[vType]} 
+                        onChange={e => {
+                          const val = e.target.value;
+                          setNewTollData(prev => ({
+                            ...prev,
+                            prices: { ...prev.prices, [vType]: val }
+                          }));
+                        }} 
+                        placeholder="$ Costo" 
+                        className="w-full mt-1 border border-slate-300 rounded-lg p-1.5 text-xs font-black text-purple-700 outline-none focus:border-purple-500 bg-white"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" className="w-full mt-5 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 text-xs transition-colors">Guardar Peaje</button>
           </form>
         </div>
       )}
