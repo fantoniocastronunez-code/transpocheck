@@ -1984,27 +1984,92 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           link.download = `Respaldo_Limpieza_LogisticAPP_${new Date().toISOString().split('T')[0]}.zip`;
           link.click();
           
-          showAlert("✅ Respaldo ZIP descargado. Borrando de la nube...");
+          showAlert("✅ Respaldo ZIP descargado. Consolidando estadísticas y borrando...");
+        }
+
+        // NUEVO: Agrupar traslados a eliminar por mes para crear la "fotografía estática"
+        const { getDoc, setDoc } = await import('firebase/firestore');
+        const jobsByMonth = {};
+        
+        snap.docs.forEach(documentSnap => {
+            const j = { id: documentSnap.id, ...documentSnap.data() };
+            if (j.status === 'completed' || j.status === 'failed') {
+                const d = new Date(j.completedAt || j.createdAt);
+                const key = `${d.getFullYear()}-${d.getMonth()}`;
+                if (!jobsByMonth[key]) jobsByMonth[key] = [];
+                jobsByMonth[key].push(j);
+            }
+        });
+
+        // Guardar estadísticas estáticas en Firebase
+        for (const [monthKey, monthJobs] of Object.entries(jobsByMonth)) {
+            const statRef = doc(db, 'historical_stats', monthKey);
+            const statSnap = await getDoc(statRef);
+            let monthStats = statSnap.exists() ? statSnap.data() : {
+                isStaticSnapshot: true,
+                totalJobs: 0, totalKm: 0, totalRevenue: 0,
+                prtStats: { total: 0, approved: 0, help: 0, rejected: 0 },
+                clientCounts: {}, clientRevenues: {}, driverKms: {}, categoryCounts: {}, plateCounts: {}
+            };
+
+            monthJobs.forEach(j => {
+                monthStats.totalJobs += 1;
+
+                const cName = j.client || 'Sin Cliente';
+                monthStats.clientCounts[cName] = (monthStats.clientCounts[cName] || 0) + 1;
+
+                const price = Number(j.companyPrice) || 0;
+                monthStats.clientRevenues[cName] = (monthStats.clientRevenues[cName] || 0) + price;
+                monthStats.totalRevenue += price;
+
+                if (j.tripType === 'revision') {
+                    monthStats.prtStats.total += 1;
+                    if (j.status === 'failed' || j.prt_result === 'rechazado') monthStats.prtStats.rejected += 1;
+                    else if (j.prt_result === 'aprobado_ayuda') monthStats.prtStats.help += 1;
+                    else monthStats.prtStats.approved += 1;
+                }
+
+                let km = 0;
+                if (j.drivenDistance && j.drivenDistance.includes('km')) {
+                    let s = j.drivenDistance.toLowerCase().replace(/[^\d.,]/g, '');
+                    if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+                    else if (s.includes('.') && s.split('.').pop().length === 3) s = s.replace(/\./g, '');
+                    km = parseFloat(s) || 0;
+                }
+
+                if (km > 0) {
+                    monthStats.totalKm += km;
+                    const drvName = (Array.isArray(drivers) ? drivers.find(d => d.email === j.acceptedByEmail)?.name : null) || j.acceptedByEmail || 'Desconocido';
+                    monthStats.driverKms[drvName] = (monthStats.driverKms[drvName] || 0) + km;
+                }
+
+                if (j.status === 'completed' && j.acceptedByEmail) {
+                    const drvName = (Array.isArray(drivers) ? drivers.find(d => d.email === j.acceptedByEmail)?.name : null) || j.acceptedByEmail || 'Desconocido';
+                    let vType = (j.checklist?.vehicleType || 'auto').toLowerCase();
+                    if (j.tripType === 'simple') vType = 'servicio';
+
+                    if (!monthStats.categoryCounts[vType]) monthStats.categoryCounts[vType] = {};
+                    monthStats.categoryCounts[vType][drvName] = (monthStats.categoryCounts[vType][drvName] || 0) + 1;
+                }
+
+                const plate = (j.plate && j.plate !== 'S/N') ? j.plate : ((j.vin && j.vin !== 'S/N') ? j.vin : null);
+                if (plate) {
+                    const cleanPlate = plate.toUpperCase().trim();
+                    monthStats.plateCounts[cleanPlate] = (monthStats.plateCounts[cleanPlate] || 0) + 1;
+                }
+            });
+
+            await setDoc(statRef, monthStats);
         }
         
         let count = 0;
         for (const document of snap.docs) {
-          // En lugar de borrar el documento (deleteDoc), eliminamos solo los datos pesados (fotos y PDFs)
-          // Así se libera espacio en la DB, pero se conservan los datos numéricos e historial para las estadísticas.
-          await updateDoc(doc(db, 'transport_jobs', document.id), {
-            'checklist.photos': deleteField(),
-            'checklist.signatureData': deleteField(),
-            'checklist.docs': deleteField(),
-            'checklist.scandocPdf': deleteField(),
-            'checklist.scandocPdfInbox': deleteField(),
-            'checklist.guiaDespachoPdf': deleteField(),
-            'draft': deleteField(),
-            isArchived: true // Oculta el trabajo de la lista visual
-          });
-          count++;
+            // AHORA SÍ: Eliminamos el documento por completo para liberar espacio 100% real
+            await deleteDoc(doc(db, 'transport_jobs', document.id));
+            count++;
         }
-        showAlert(`✅ Limpieza completada: ${count} traslados respaldados en ZIP y archivados (Estadísticas conservadas).`);
-      } catch (err) { console.error(err); showAlert("Error al limpiar."); }
+        showAlert(`✅ Limpieza Maestra: ${count} traslados respaldados en ZIP y eliminados de la nube (Fotografía estadística guardada con éxito).`);
+      } catch (err) { console.error(err); showAlert("Error al limpiar la base de datos."); }
     });
   };
 
