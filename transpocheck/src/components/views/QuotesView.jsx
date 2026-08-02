@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { addDoc, collection } from 'firebase/firestore';
 import { 
   Calculator, MapPin, Fuel, DollarSign, Plus, CheckCircle, 
-  User, Truck, Receipt, Printer, Send, Save, ArrowRight
+  User, Truck, Receipt, Printer, Send, Save, ArrowRight, X
 } from 'lucide-react';
 import { formatMoney } from '../../utils/helpers';
 
