@@ -727,6 +727,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="bg-slate-50 text-slate-400 uppercase tracking-widest border-b">
+                  <th className="p-3">N° Correlativo</th>
                   <th className="p-3">Cliente</th>
                   <th className="p-3">Ruta</th>
                   <th className="p-3">Vehículo / Patente</th>
