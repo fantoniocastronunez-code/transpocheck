@@ -24,12 +24,14 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
     vehicleType: 'auto',
     brand: '',
     model: '',
-    plateOrVin: ''
+    plateOrVin: '',
+    tollMultiplier: '1' // <-- NUEVO: Modificador de peajes (1x Solo Ida, 2x Ida y Vuelta, etc.)
   });
 
-  // Estados para Nuevo Cliente y Nuevo Peaje
+  // Estados para Nuevo Cliente, Nuevo Peaje y Edición
   const [showNewClientForm, setShowNewClientForm] = useState(false);
   const [newClientData, setNewClientData] = useState({ name: '', lastName: '', email: '' });
+  const [editingQuoteId, setEditingQuoteId] = useState(null); // <-- ID de la cotización que se está modificando
   
   const [showNewTollModal, setShowNewTollModal] = useState(false);
   const [newTollData, setNewTollData] = useState({
@@ -49,6 +51,30 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
       'Carro Arrastre': ''
     }
   });
+
+  // Función para cargar una cotización al formulario y modificarla
+  const handleEditQuote = (q) => {
+    setQuoteData({
+      client: q.client || '',
+      origin: q.origin || '',
+      destination: q.destination || '',
+      distanceKm: q.distanceKm || '',
+      kmPerLiter: q.kmPerLiter || '10',
+      fuelPrice: q.fuelPrice || 1050,
+      tollsCost: q.tollsCost || '',
+      driverFee: q.driverFee || '',
+      marginPct: q.marginPct || 30,
+      description: q.description || '',
+      vehicleType: q.vehicleType || 'Auto / SUV',
+      brand: q.brand || '',
+      model: q.model || '',
+      plateOrVin: q.plateOrVin || '',
+      tollMultiplier: q.tollMultiplier || '1'
+    });
+    setEditingQuoteId(q.id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    showAlert("📝 Cotización cargada para edición.");
+  };
 
   // Estados para Peajes Seleccionados en la Cotización
   const [selectedTollIds, setSelectedTollIds] = useState([]);
@@ -96,20 +122,25 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
     }
   };
 
-  // Auto-calcular suma de peajes cuando cambian los seleccionados o el tipo de vehículo
+  // Función auxiliar para recalcular los peajes totales aplicando el multiplicador actual
+  const recalculateTolls = (selectedIds, multiplier, vType) => {
+    const baseTolls = selectedIds.reduce((sum, id) => {
+      const toll = tollsList.find(t => t.id === id);
+      const priceForVehicle = toll?.prices?.[vType] || 0;
+      return sum + parseFloat(priceForVehicle || 0);
+    }, 0);
+
+    const mult = parseFloat(multiplier) || 1;
+    const finalTolls = baseTolls * mult;
+    setQuoteData(q => ({ ...q, tollsCost: finalTolls > 0 ? Math.round(finalTolls) : '' }));
+  };
+
+  // Auto-calcular suma de peajes cuando cambian los seleccionados
   const toggleTollSelection = (tollId) => {
     setSelectedTollIds(prev => {
       const exists = prev.includes(tollId);
       const updated = exists ? prev.filter(id => id !== tollId) : [...prev, tollId];
-      
-      // Calcular la suma de los peajes seleccionados según el vehículo actual
-      const totalTolls = updated.reduce((sum, id) => {
-        const toll = tollsList.find(t => t.id === id);
-        const priceForVehicle = toll?.prices?.[quoteData.vehicleType] || 0;
-        return sum + parseFloat(priceForVehicle || 0);
-      }, 0);
-
-      setQuoteData(q => ({ ...q, tollsCost: totalTolls > 0 ? totalTolls : '' }));
+      recalculateTolls(updated, quoteData.tollMultiplier, quoteData.vehicleType);
       return updated;
     });
   };
@@ -196,22 +227,36 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
     }
   };
 
-  // Guardar Cotización en Firestore con Estado
+  // Guardar o Actualizar Cotización en Firestore con Estado
   const handleSaveQuoteStatus = async (status = 'pendiente') => {
     if (!quoteData.client || !quoteData.origin || !quoteData.destination) {
       return showAlert("⚠️ Faltan datos obligatorios (Cliente, Origen y Destino).");
     }
     try {
-      const { addDoc, collection } = await import('firebase/firestore');
-      await addDoc(collection(db, 'quotes'), {
+      const { addDoc, updateDoc, doc, collection } = await import('firebase/firestore');
+      const payload = {
         ...quoteData,
         finalPrice: Math.round(finalPrice),
         status,
-        createdAt: Date.now(),
-        createdBy: currentUserEmail
-      });
-      showAlert(`✅ Cotización guardada como [${status.toUpperCase()}].`);
+        updatedAt: Date.now()
+      };
+
+      if (editingQuoteId) {
+        // Si estamos editando una existente, la actualizamos
+        await updateDoc(doc(db, 'quotes', editingQuoteId), payload);
+        showAlert(`✅ Cotización actualizada con éxito [${status.toUpperCase()}].`);
+        setEditingQuoteId(null);
+      } else {
+        // Si es nueva, la creamos
+        await addDoc(collection(db, 'quotes'), {
+          ...payload,
+          createdAt: Date.now(),
+          createdBy: currentUserEmail
+        });
+        showAlert(`✅ Cotización guardada como [${status.toUpperCase()}].`);
+      }
     } catch (err) {
+      console.error(err);
       showAlert("Error al guardar cotización.");
     }
   };
@@ -369,6 +414,17 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
         <h2 className="text-2xl font-black mb-1 relative z-10">Cotizador Inteligente</h2>
         <p className="text-purple-200 text-sm font-bold relative z-10">Calcula costos de ruta, peajes, bencina y genera PDFs al instante.</p>
       </div>
+
+      {/* AVISO DE MODO EDICIÓN */}
+      {editingQuoteId && (
+        <div className="bg-amber-50 border-2 border-amber-300 p-4 rounded-2xl flex justify-between items-center shadow-sm animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-ping"></span>
+            <p className="text-xs font-black text-amber-800">Estás modificando una cotización existente. Al guardar o aprobar, se actualizará el registro actual.</p>
+          </div>
+          <button onClick={() => { setEditingQuoteId(null); showAlert("Edición cancelada."); }} className="text-xs font-black text-amber-900 bg-amber-200 hover:bg-amber-300 px-3 py-1 rounded-xl transition-colors">Cancelar Edición</button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
@@ -530,11 +586,32 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
               </div>
             </div>
 
-            {/* SECCIÓN DE SELECCIÓN DE PEAJES DE LA RUTA */}
+            {/* SECCIÓN DE SELECCIÓN DE PEAJES DE LA RUTA CON MODIFICADOR */}
             <div className="border-t border-slate-100 pt-4">
-              <div className="flex justify-between items-center mb-3">
-                <span className="text-xs font-black text-slate-700 uppercase tracking-wider">Seleccionar Peajes de la Ruta ({tollsList.length} registrados)</span>
-                <button type="button" onClick={() => setShowNewTollModal(true)} className="text-[11px] font-bold bg-purple-100 text-purple-700 px-3 py-1.5 rounded-xl hover:bg-purple-200 transition-colors flex items-center gap-1">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                <span className="text-xs font-black text-slate-700 uppercase tracking-wider">Seleccionar Peajes ({tollsList.length})</span>
+                
+                {/* MODIFICADOR DE PEAJES */}
+                <div className="flex items-center gap-2 bg-purple-50 border border-purple-200 px-3 py-1.5 rounded-xl">
+                  <span className="text-[10px] font-black text-purple-700 uppercase tracking-wider">Modificador:</span>
+                  <select 
+                    name="tollMultiplier" 
+                    value={quoteData.tollMultiplier} 
+                    onChange={e => {
+                      const val = e.target.value;
+                      setQuoteData(q => ({ ...q, tollMultiplier: val }));
+                      recalculateTolls(selectedTollIds, val, quoteData.vehicleType);
+                    }} 
+                    className="bg-white border border-purple-300 rounded-lg text-xs font-black text-purple-900 px-2 py-1 outline-none cursor-pointer"
+                  >
+                    <option value="1">1x (Solo Ida)</option>
+                    <option value="2">2x (Ida y Vuelta)</option>
+                    <option value="3">3x (Triple Trayecto)</option>
+                    <option value="0.5">0.5x (Parcial)</option>
+                  </select>
+                </div>
+
+                <button type="button" onClick={() => setShowNewTollModal(true)} className="text-[11px] font-bold bg-purple-100 text-purple-700 px-3 py-1.5 rounded-xl hover:bg-purple-200 transition-colors flex items-center gap-1 shrink-0">
                   <Plus className="w-3.5 h-3.5"/> Registrar Nuevo Peaje
                 </button>
               </div>
@@ -666,12 +743,13 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                         {q.status || 'pendiente'}
                       </span>
                     </td>
-                    <td className="p-3 text-right space-x-2">
+                    <td className="p-3 text-right space-x-3">
+                      <button onClick={() => handleEditQuote(q)} className="text-blue-600 hover:underline font-extrabold">Modificar</button>
                       <button onClick={async () => {
                         const { updateDoc, doc } = await import('firebase/firestore');
                         await updateDoc(doc(db, 'quotes', q.id), { status: 'aceptada' });
                         showAlert("✅ Cotización marcada como aceptada.");
-                      }} className="text-emerald-600 hover:underline">Aceptar</button>
+                      }} className="text-emerald-600 hover:underline font-extrabold">Aceptar</button>
                     </td>
                   </tr>
                 ))}
