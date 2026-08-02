@@ -298,7 +298,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
     }
   };
 
-  // Crear Traslado Automáticamente
+// Crear Traslado Automáticamente
   const handleApproveQuote = async () => {
     if (!quoteData.client || !quoteData.origin || !quoteData.destination) {
       return showAlert("⚠️ Faltan datos clave (Cliente, Origen o Destino) para crear el traslado.");
@@ -323,10 +323,10 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
           brand: quoteData.vehicleType || 'Por definir',
           plate: 'S/N',
           tripType: 'traslado',
-          status: 'pending', // Se va directo a la central de trabajos disponibles
+          status: 'pending', 
           createdAt: Date.now(),
           scheduledDate: new Date().toISOString().split('T')[0],
-          quotedPrice: Math.round(finalPrice), // Guardamos el valor cobrado
+          quotedPrice: Math.round(finalPrice), 
           requestedBy: currentUserEmail
         };
 
@@ -345,16 +345,14 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
     });
   };
 
-// Procesar Cotización Aceptada y Crear Traslado
+  // Procesar Cotización Aceptada y Crear Traslado
   const handleConfirmAcceptQuote = async (e) => {
     e.preventDefault();
     if (!acceptQuoteData) return;
 
     try {
-      // 1. Marcar la cotización como aceptada
       await updateDoc(doc(db, 'quotes', acceptQuoteData.id), { status: 'aceptada' });
 
-      // 2. Generar el traslado en la base de datos
       const matchedOrigin = directoryList?.find(d => d.placeName.toLowerCase() === acceptQuoteData.origin?.toLowerCase());
       const matchedDest = directoryList?.find(d => d.placeName.toLowerCase() === acceptQuoteData.destination?.toLowerCase());
 
@@ -391,9 +389,6 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
       showAlert("❌ Hubo un error al generar el traslado.");
     }
   };
-
-  // Generador de PDF Elegante (Impresión HTML nativa)
-  const handleGeneratePDF = () => {
 
   // Generador de PDF Elegante en Formato A4 (Impresión HTML nativa)
   const handleGeneratePDF = () => {
@@ -536,10 +531,8 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                  `_Generado por LogisticAPP_`;
 
     if (method === 'whatsapp') {
-      // Abrir API de WhatsApp
       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     } else if (method === 'email') {
-      // Abrir cliente de correo predeterminado
       const subject = `Cotización de Traslado - ${quoteData.client}`;
       window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`, '_self');
     }
