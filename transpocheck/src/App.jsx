@@ -31,6 +31,7 @@ const JobsList = React.lazy(() => import('./components/views/JobsList'));
 const ChecklistForm = React.lazy(() => import('./components/views/ChecklistForm'));
 const VehicleHistoryView = React.lazy(() => import('./components/views/VehicleHistoryView'));
 const StatsView = React.lazy(() => import('./components/views/StatsView'));
+const QuotesView = React.lazy(() => import('./components/views/QuotesView')); // <-- NUEVO MÓDULO DE COTIZACIONES
 
 // EL NUEVO MOTOR (Hook)
 import { auth, db, googleProvider, uploadImageToStorage, useFirebase } from './hooks/useFirebase';
@@ -879,6 +880,7 @@ function LogisticApp() {
 
             {mainTab === 'ranking' && <LeaderboardView jobs={jobs} drivers={drivers} isAdminView={activeRole === 'admin'} db={db} />}
             {mainTab === 'expenses' && <ExpensesView role={activeRole} drivers={drivers} jobs={jobs} expenses={expenses} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />}
+            {mainTab === 'quotes' && <QuotesView db={db} customClients={customClients} vehicles={vehicles} directoryList={directoryList} showAlert={showAlert} showConfirm={showConfirm} drivers={drivers} currentUserEmail={currentUserEmail} />}
             
             {mainTab === 'inbox' && (
                <main className="max-w-2xl mx-auto p-4 pt-20 sm:pt-24 pb-32 animate-in fade-in duration-300">
@@ -1022,10 +1024,17 @@ function LogisticApp() {
             )}
 
             <nav className="fixed bottom-0 w-full bg-white border-t border-slate-200 flex justify-around items-center pt-2 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
-              <button onClick={() => setShowRequestJob('traslado')} className="flex flex-col items-center text-slate-400 hover:text-blue-600 transition-colors flex-1">
-                 <div className="bg-slate-100 p-2 rounded-xl mb-1"><Plus className="w-5 h-5"/></div>
-                 <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Solicitar</span>
-              </button>
+              {activeRole === 'admin' ? (
+                <button onClick={() => setMainTab('quotes')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='quotes' ? 'text-purple-600' : 'text-slate-400 hover:text-purple-600'}`}>
+                   <div className={`${mainTab==='quotes' ? 'bg-purple-100' : 'bg-slate-100'} p-2 rounded-xl mb-1`}><Receipt className="w-5 h-5"/></div>
+                   <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Cotizar</span>
+                </button>
+              ) : (
+                <button onClick={() => setShowRequestJob('traslado')} className="flex flex-col items-center text-slate-400 hover:text-blue-600 transition-colors flex-1">
+                   <div className="bg-slate-100 p-2 rounded-xl mb-1"><Plus className="w-5 h-5"/></div>
+                   <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Solicitar</span>
+                </button>
+              )}
               <button onClick={() => setMainTab('jobs')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='jobs' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}>
                  <div className={`${mainTab==='jobs' ? 'bg-blue-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><ClipboardList className="w-5 h-5"/></div>
                  <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Trabajos</span>
