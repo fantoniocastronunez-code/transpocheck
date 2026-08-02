@@ -581,15 +581,8 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
   };
 
   return (
-    <div className="space-y-6 pt-24 md:pt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-6 pt-24 md:pt-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
-      {/* Cabecera */}
-      <div className="bg-gradient-to-r from-purple-700 to-indigo-600 rounded-3xl p-6 shadow-xl text-white relative overflow-hidden">
-        <Calculator className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10 transform rotate-12" />
-        <h2 className="text-2xl font-black mb-1 relative z-10">Cotizador Inteligente</h2>
-        <p className="text-purple-200 text-sm font-bold relative z-10">Calcula costos de ruta, peajes, bencina y genera PDFs al instante.</p>
-      </div>
-
       {/* AVISO DE MODO EDICIÓN */}
       {editingQuoteId && (
         <div className="bg-amber-50 border-2 border-amber-300 p-4 rounded-2xl flex justify-between items-center shadow-sm animate-in fade-in">
