@@ -53,6 +53,8 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
   // Variables de identidad derivadas
   const actualUserEmail = user?.email?.toLowerCase();
   const isRealAdmin = ['fcastro@logisticats.cl', 'hcastro@logisticats.cl'].includes(actualUserEmail);
+  // NUEVO: Lista de correos con acceso EXCLUSIVO a Cotizaciones (puedes cambiar estos correos por los reales)
+  const isQuoter = ['ventas@logisticats.cl', 'comercial@logisticats.cl'].includes(actualUserEmail);
   const currentUserEmail = (activeRole === 'driver' && simulatedDriverEmail) ? simulatedDriverEmail : actualUserEmail;
 
   const isFirstLoad = useRef(true);
@@ -135,7 +137,8 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
     const myDriver = drivers.find(d => d.email?.toLowerCase() === safeEmail);
     const isClientAccount = customClients.some(c => c.email && c.email.toLowerCase().includes(safeEmail));
     
-    if (!myDriver && !isClientAccount && !isRealAdmin) {
+    // Agregamos !isQuoter para que a tu equipo de ventas no les pida licencia ni los anote como choferes
+    if (!myDriver && !isClientAccount && !isRealAdmin && !isQuoter) {
       registeringRef.current = true;
       (async () => {
         try {
@@ -208,7 +211,7 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
   }, [user, currentUserEmail, isRealAdmin, jobLimit, activeRole]);
 
   return {
-    user, actualUserEmail, currentUserEmail, isRealAdmin,
+    user, actualUserEmail, currentUserEmail, isRealAdmin, isQuoter,
     jobs, drivers, expenses, vehicles, customClients,
     broadcast, dataLoaded, notificationsEnabled,
     requestNotificationPermission

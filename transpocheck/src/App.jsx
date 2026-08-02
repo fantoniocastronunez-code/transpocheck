@@ -131,7 +131,7 @@ function LogisticApp() {
 
   // 🚀 LA MAGIA: EL HOOK QUE HACE TODO EL TRABAJO SUCIO
   const { 
-    user, actualUserEmail, currentUserEmail, isRealAdmin, 
+    user, actualUserEmail, currentUserEmail, isRealAdmin, isQuoter,
     jobs, drivers, expenses, vehicles, customClients, 
     broadcast, dataLoaded, notificationsEnabled, requestNotificationPermission
   } = useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAlert);
@@ -170,13 +170,15 @@ function LogisticApp() {
       }
   }, [sharedUrl, sharedText, user, currentUserEmail, db]);
 
-  // --- AUTO-SELECCIÓN DE ROL (SALTO DIRECTO A ADMIN) ---
+  // --- AUTO-SELECCIÓN DE ROL Y BLOQUEO COMERCIAL ---
   useEffect(() => {
-    // Si la base de datos confirma que eres admin, y no estás intentando simular a un conductor específico...
-    if (isRealAdmin && activeRole === 'driver' && !simulatedDriverEmail) {
-      setActiveRole('admin'); // Te enviamos directo a tu panel de control
+    if (isQuoter) {
+      setActiveRole('quoter');
+      setMainTab('quotes'); // Obligamos a que la pantalla sea siempre la de cotizaciones
+    } else if (isRealAdmin && activeRole === 'driver' && !simulatedDriverEmail) {
+      setActiveRole('admin');
     }
-  }, [isRealAdmin, activeRole, simulatedDriverEmail]);
+  }, [isRealAdmin, isQuoter, activeRole, simulatedDriverEmail]);
 
   // --- MOTOR DE ACTUALIZACIÓN AUTOMÁTICA (3:00 AM) ---
   useEffect(() => {
@@ -1024,29 +1026,38 @@ function LogisticApp() {
             )}
 
             <nav className="fixed bottom-0 w-full bg-white border-t border-slate-200 flex justify-around items-center pt-2 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
-              {activeRole === 'admin' ? (
-                <button onClick={() => setMainTab('quotes')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='quotes' ? 'text-purple-600' : 'text-slate-400 hover:text-purple-600'}`}>
-                   <div className={`${mainTab==='quotes' ? 'bg-purple-100' : 'bg-slate-100'} p-2 rounded-xl mb-1`}><Receipt className="w-5 h-5"/></div>
-                   <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Cotizar</span>
+              {activeRole === 'quoter' ? (
+                <button onClick={() => setMainTab('quotes')} className="flex flex-col items-center text-purple-600 transition-colors flex-1">
+                   <div className="bg-purple-100 p-2 rounded-xl mb-1"><Receipt className="w-5 h-5"/></div>
+                   <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Panel Comercial</span>
                 </button>
               ) : (
-                <button onClick={() => setShowRequestJob('traslado')} className="flex flex-col items-center text-slate-400 hover:text-blue-600 transition-colors flex-1">
-                   <div className="bg-slate-100 p-2 rounded-xl mb-1"><Plus className="w-5 h-5"/></div>
-                   <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Solicitar</span>
-                </button>
+                <>
+                  {activeRole === 'admin' ? (
+                    <button onClick={() => setMainTab('quotes')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='quotes' ? 'text-purple-600' : 'text-slate-400 hover:text-purple-600'}`}>
+                       <div className={`${mainTab==='quotes' ? 'bg-purple-100' : 'bg-slate-100'} p-2 rounded-xl mb-1`}><Receipt className="w-5 h-5"/></div>
+                       <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Cotizar</span>
+                    </button>
+                  ) : (
+                    <button onClick={() => setShowRequestJob('traslado')} className="flex flex-col items-center text-slate-400 hover:text-blue-600 transition-colors flex-1">
+                       <div className="bg-slate-100 p-2 rounded-xl mb-1"><Plus className="w-5 h-5"/></div>
+                       <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Solicitar</span>
+                    </button>
+                  )}
+                  <button onClick={() => setMainTab('jobs')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='jobs' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}>
+                     <div className={`${mainTab==='jobs' ? 'bg-blue-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><ClipboardList className="w-5 h-5"/></div>
+                     <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Trabajos</span>
+                  </button>
+                  <button onClick={() => setMainTab('ranking')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='ranking' ? 'text-yellow-600' : 'text-slate-400 hover:text-yellow-600'}`}>
+                     <div className={`${mainTab==='ranking' ? 'bg-yellow-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Trophy className="w-5 h-5"/></div>
+                     <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Ranking</span>
+                  </button>
+                  <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='expenses' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}>
+                     <div className={`${mainTab==='expenses' ? 'bg-blue-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Wallet className="w-5 h-5"/></div>
+                     <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Gastos</span>
+                  </button>
+                </>
               )}
-              <button onClick={() => setMainTab('jobs')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='jobs' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}>
-                 <div className={`${mainTab==='jobs' ? 'bg-blue-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><ClipboardList className="w-5 h-5"/></div>
-                 <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Trabajos</span>
-              </button>
-              <button onClick={() => setMainTab('ranking')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='ranking' ? 'text-yellow-600' : 'text-slate-400 hover:text-yellow-600'}`}>
-                 <div className={`${mainTab==='ranking' ? 'bg-yellow-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Trophy className="w-5 h-5"/></div>
-                 <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Ranking</span>
-              </button>
-              <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='expenses' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}>
-                 <div className={`${mainTab==='expenses' ? 'bg-blue-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Wallet className="w-5 h-5"/></div>
-                 <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Gastos</span>
-              </button>
             </nav>
           </>
         } />
