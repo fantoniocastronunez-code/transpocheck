@@ -212,7 +212,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
       const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
       
       // Prompt usando Grounding con Google Search para asegurar datos actualizados del Diésel
-      const prompt = "Busca el precio promedio actual del litro de combustible Diésel en estaciones de servicio en Chile el día de hoy. Es muy importante que sea el valor del Diésel y no de la gasolina. Responde ÚNICAMENTE con el número entero, sin puntos, sin comas, sin signos de peso y sin texto adicional. Por ejemplo, si el precio es $1.050, responde: 1050";
+      const prompt = "Busca en la web oficial de Bencina en Línea o de la Comisión Nacional de Energía (CNE) de Chile el precio promedio actual del litro de combustible Diésel para el día de hoy. Ignora reportes antiguos. Responde ÚNICAMENTE con el número entero en pesos chilenos, sin puntos, sin comas, sin signos de peso y sin texto adicional. Por ejemplo: 1150";
 
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_API_KEY}`, {
         method: 'POST',
