@@ -56,8 +56,8 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
   // MAGIA: Buscamos el perfil del usuario logueado en la base de datos en tiempo real
   const currentUserProfile = drivers.find(d => d.email?.toLowerCase() === actualUserEmail);
 
-  // Super Admin EXCLUSIVO para Felipe Castro
-  const isSuperAdmin = actualUserEmail === 'fcastro@logisticats.cl';
+  // Super Admin estricto (Felipe Castro o rol explícito de super_admin en base de datos)
+  const isSuperAdmin = actualUserEmail === 'fcastro@logisticats.cl' || currentUserProfile?.role === 'super_admin';
 
   // Asignación de permisos 100% dinámicos
   const isRealAdmin = isSuperAdmin || ['hcastro@logisticats.cl'].includes(actualUserEmail) || 
@@ -222,7 +222,7 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
   }, [user, currentUserEmail, isRealAdmin, jobLimit, activeRole]);
 
   return {
-    user, actualUserEmail, currentUserEmail, isRealAdmin, isQuoter, isPartTime,
+    user, actualUserEmail, currentUserEmail, isRealAdmin, isSuperAdmin, isQuoter, isPartTime,
     jobs, drivers, expenses, vehicles, customClients,
     broadcast, dataLoaded, notificationsEnabled,
     requestNotificationPermission

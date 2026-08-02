@@ -131,7 +131,7 @@ function LogisticApp() {
 
   // 🚀 LA MAGIA: EL HOOK QUE HACE TODO EL TRABAJO SUCIO
   const { 
-    user, actualUserEmail, currentUserEmail, isRealAdmin, isQuoter, isPartTime,
+    user, actualUserEmail, currentUserEmail, isRealAdmin, isSuperAdmin, isQuoter, isPartTime,
     jobs, drivers, expenses, vehicles, customClients, 
     broadcast, dataLoaded, notificationsEnabled, requestNotificationPermission
   } = useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAlert);
@@ -834,12 +834,14 @@ function LogisticApp() {
                 {activeRole === 'admin' ? (
                   <>
                     <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-6 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
-                      <button onClick={() => {setAdminTab('dashboard'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='dashboard'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><ClipboardList className="w-4 h-4 sm:w-5 sm:h-5"/> Monitor</button>
-                      <button onClick={() => {setAdminTab('newJob'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='newJob'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Plus className="w-4 h-4 sm:w-5 sm:h-5"/> Crear</button>
-                      <button onClick={() => setAdminTab('stats')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='stats'?'bg-amber-100 text-amber-700 shadow-sm':'text-slate-500 hover:bg-slate-50'}`}><Activity className="w-4 h-4 sm:w-5 sm:h-5"/> Estadísticas</button>
+                    <button onClick={() => {setAdminTab('dashboard'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='dashboard'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><ClipboardList className="w-4 h-4 sm:w-5 sm:h-5"/> Monitor</button>
+                    <button onClick={() => {setAdminTab('newJob'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='newJob'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Plus className="w-4 h-4 sm:w-5 sm:h-5"/> Crear</button>
+                    <button onClick={() => setAdminTab('stats')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='stats'?'bg-amber-100 text-amber-700 shadow-sm':'text-slate-500 hover:bg-slate-50'}`}><Activity className="w-4 h-4 sm:w-5 sm:h-5"/> Estadísticas</button>
+                    {isSuperAdmin && (
                       <button onClick={() => setAdminTab('config')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='config'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Truck className="w-4 h-4 sm:w-5 sm:h-5"/> Config</button>
-                      <button onClick={() => setAdminTab('history')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='history'?'bg-slate-800 text-white shadow-md':'text-slate-500 hover:bg-slate-50'}`}><ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5"/> Peritaje</button>
-                    </div>
+                    )}
+                    <button onClick={() => setAdminTab('history')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='history'?'bg-slate-800 text-white shadow-md':'text-slate-500 hover:bg-slate-50'}`}><ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5"/> Peritaje</button>
+                  </div>
                     
                     {adminTab === 'dashboard' && (
                       <div className="space-y-6">
@@ -864,7 +866,7 @@ function LogisticApp() {
                     
                     {adminTab === 'stats' && <div className="animate-in zoom-in-[0.98] duration-300"><StatsView jobs={jobs} drivers={drivers} vehicles={vehicles} allClientsList={allClientsList} /></div>}
 
-                    {adminTab === 'config' && <div className="animate-in zoom-in-[0.98] duration-300"><ConfigView currentUserEmail={currentUserEmail} allClientsList={allClientsList} customClients={customClients} vehicles={vehicles} drivers={drivers} db={db} showAlert={showAlert} showConfirm={showConfirm} /></div>}
+                    {isSuperAdmin && adminTab === 'config' && <div className="animate-in zoom-in-[0.98] duration-300"><ConfigView currentUserEmail={currentUserEmail} allClientsList={allClientsList} customClients={customClients} vehicles={vehicles} drivers={drivers} db={db} showAlert={showAlert} showConfirm={showConfirm} /></div>}
                   </>
                 ) : (
                   <div className="space-y-6">
