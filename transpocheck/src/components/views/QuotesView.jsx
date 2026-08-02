@@ -212,7 +212,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
       const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
       
       // Prompt usando Grounding con Google Search para asegurar datos actualizados del Diésel
-      const prompt = "Busca en la web oficial de Bencina en Línea o de la Comisión Nacional de Energía (CNE) de Chile el precio promedio actual del litro de combustible Diésel para el día de hoy. Ignora reportes antiguos. Responde ÚNICAMENTE con el número entero en pesos chilenos, sin puntos, sin comas, sin signos de peso y sin texto adicional. Por ejemplo: 1150";
+      const prompt = "Busca estrictamente en internet el precio promedio actual del litro de petróleo Diésel en Chile para esta semana de agosto de 2026 (el valor actual de mercado está entre 1250 y 1350 pesos chilenos). Ignora por completo valores antiguos o de años anteriores. Responde ÚNICAMENTE con el número entero exacto, sin puntos, sin comas, sin signos de peso y sin texto adicional. Por ejemplo: 1280";
 
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GEMINI_API_KEY}`, {
         method: 'POST',
