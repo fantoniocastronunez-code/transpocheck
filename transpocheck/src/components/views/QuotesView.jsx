@@ -28,10 +28,11 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
     quoteNumber: '' // <-- Correlativo
   });
 
-  // Estados para Clientes, Peajes y Edición
+  // Estados para Clientes, Peajes, Edición y Modal de Envío
   const [showNewClientForm, setShowNewClientForm] = useState(false);
   const [newClientData, setNewClientData] = useState({ name: '', lastName: '', email: '' });
   const [editingQuoteId, setEditingQuoteId] = useState(null);
+  const [showSendModal, setShowSendModal] = useState(false); // <-- Nuevo estado para el Pop-up
   
   const [showNewTollModal, setShowNewTollModal] = useState(false);
   const [editingTollId, setEditingTollId] = useState(null); // <-- Para modificar peajes existentes
@@ -749,49 +750,18 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
 
           {/* Botones de Acción */}
           <div className="grid grid-cols-1 gap-3">
-            
-            {/* Nuevos botones de Compartir */}
-            <div className="grid grid-cols-2 gap-3">
-              <button 
-                onClick={() => handleShare('whatsapp')}
-                className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-black py-3 rounded-2xl transition-colors shadow-sm flex items-center justify-center gap-2 text-xs"
-              >
-                <MessageCircle className="w-4 h-4"/> WhatsApp
-              </button>
-              <button 
-                onClick={() => handleShare('email')}
-                className="w-full bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-black py-3 rounded-2xl transition-colors shadow-sm flex items-center justify-center gap-2 text-xs"
-              >
-                <Mail className="w-4 h-4 text-slate-500"/> Correo
-              </button>
-            </div>
-
             <button 
               onClick={() => handleSaveQuoteStatus('pendiente')}
-              className="w-full bg-slate-800 hover:bg-slate-900 text-white font-black py-3.5 rounded-2xl transition-colors shadow-md flex items-center justify-center gap-2 text-xs"
+              className="w-full bg-slate-800 hover:bg-slate-900 text-white font-black py-4 rounded-2xl transition-colors shadow-md flex items-center justify-center gap-2 text-sm"
             >
-              <Save className="w-4 h-4"/> Guardar como Pendiente
+              <Save className="w-5 h-5"/> Guardar como Pendiente
             </button>
 
             <button 
-              onClick={() => handleSaveQuoteStatus('enviada')}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 rounded-2xl transition-colors shadow-md flex items-center justify-center gap-2 text-xs"
+              onClick={() => setShowSendModal(true)}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl transition-colors shadow-md shadow-blue-200 flex items-center justify-center gap-2 text-sm"
             >
-              <Send className="w-4 h-4"/> Marcar como Enviada
-            </button>
-
-            <button 
-              onClick={handleGeneratePDF}
-              className="w-full bg-white border-2 border-slate-200 hover:bg-slate-50 text-slate-700 font-black py-3.5 rounded-2xl transition-colors shadow-sm flex items-center justify-center gap-2 text-xs"
-            >
-              <Printer className="w-4 h-4 text-slate-500" /> Exportar Cotización (PDF)
-            </button>
-            
-            <button 
-              onClick={handleApproveQuote}
-              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-4 rounded-2xl transition-colors shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 text-sm"
-            >
-              <CheckCircle className="w-5 h-5" /> Aprobar y Crear Traslado
+              <Send className="w-5 h-5"/> Enviar
             </button>
           </div>
 
@@ -875,6 +845,40 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
             </div>
             <button type="submit" className="w-full mt-5 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 text-xs transition-colors">Guardar Cliente</button>
           </form>
+        </div>
+      )}
+
+      {/* MODAL: ENVIAR COTIZACIÓN */}
+      {showSendModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl relative animate-in zoom-in-95">
+            <button type="button" onClick={() => setShowSendModal(false)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-700"/></button>
+            <h3 className="text-lg font-black text-slate-800 mb-2">Enviar Cotización</h3>
+            <p className="text-xs font-bold text-slate-500 mb-5">Elige cómo enviar esta cotización. Al enviarla o descargarla, se guardará automáticamente como <span className="text-blue-600">ENVIADA</span>.</p>
+            
+            <div className="space-y-3">
+              <button 
+                onClick={() => { handleShare('whatsapp'); handleSaveQuoteStatus('enviada'); setShowSendModal(false); }}
+                className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-black py-3.5 rounded-2xl transition-colors shadow-sm flex items-center justify-center gap-2 text-sm"
+              >
+                <MessageCircle className="w-5 h-5"/> Enviar por WhatsApp
+              </button>
+              
+              <button 
+                onClick={() => { handleShare('email'); handleSaveQuoteStatus('enviada'); setShowSendModal(false); }}
+                className="w-full bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 font-black py-3.5 rounded-2xl transition-colors shadow-sm flex items-center justify-center gap-2 text-sm"
+              >
+                <Mail className="w-5 h-5 text-slate-500"/> Enviar por Correo
+              </button>
+              
+              <button 
+                onClick={() => { handleGeneratePDF(); handleSaveQuoteStatus('enviada'); setShowSendModal(false); }}
+                className="w-full bg-purple-100 hover:bg-purple-200 border border-purple-200 text-purple-700 font-black py-3.5 rounded-2xl transition-colors shadow-sm flex items-center justify-center gap-2 text-sm"
+              >
+                <Printer className="w-5 h-5 text-purple-600"/> Descargar PDF
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
