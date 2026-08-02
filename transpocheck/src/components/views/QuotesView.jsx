@@ -613,8 +613,14 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
         try { document.execCommand('copy'); } catch (err) {}
         document.body.removeChild(textArea);
 
-        // 2. Generar el PDF
-        const html2pdf = (await import('html2pdf.js')).default;
+        // 2. Generar el PDF cargando la librería dinámicamente para evadir el error de Vercel
+        const html2pdf = await new Promise((resolve) => {
+          if (window.html2pdf) return resolve(window.html2pdf);
+          const script = document.createElement('script');
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+          script.onload = () => resolve(window.html2pdf);
+          document.body.appendChild(script);
+        });
         const element = document.createElement('div');
         element.innerHTML = getPDFHtml();
         
