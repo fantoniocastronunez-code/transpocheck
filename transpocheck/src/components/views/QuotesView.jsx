@@ -581,7 +581,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
   };
 
   return (
-    <div className="space-y-6 pt-8 md:pt-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-6 pt-24 md:pt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
       {/* Cabecera */}
       <div className="bg-gradient-to-r from-purple-700 to-indigo-600 rounded-3xl p-6 shadow-xl text-white relative overflow-hidden">
