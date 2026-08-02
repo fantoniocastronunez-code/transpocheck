@@ -25,8 +25,18 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
         const endOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999).getTime();
 
         const monthlyJobs = jobs.filter(j => {
-            const jobTime = j.completedAt ? Number(j.completedAt) : (j.createdAt ? Number(j.createdAt) : null);
-            return jobTime && jobTime >= startOfMonth && jobTime <= endOfMonth && (j.status === 'completed' || j.status === 'failed');
+            // Helper para garantizar que extraemos un timestamp válido (milisegundos) sin importar cómo se guardó
+            let jobTime = null;
+            if (j.completedAt) {
+                jobTime = new Date(j.completedAt).getTime();
+            } else if (j.createdAt) {
+                jobTime = new Date(j.createdAt).getTime();
+            }
+            
+            // Verificamos si es un timestamp válido y no NaN
+            if (!jobTime || isNaN(jobTime)) return false;
+
+            return jobTime >= startOfMonth && jobTime <= endOfMonth && (j.status === 'completed' || j.status === 'failed');
         });
 
         // --- Top Clientes e Ingresos Financieros ---

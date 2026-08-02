@@ -308,6 +308,10 @@ function LogisticApp() {
   
   const myDriver = user ? (drivers.find(d => d.email === currentUserEmail && d.photo) || drivers.find(d => d.email === currentUserEmail)) : null;
   const loggedClientRecord = user ? customClients.find(c => c.email && c.email.toLowerCase().split(',').map(e => e.trim()).includes(currentUserEmail)) : null;
+  
+  // NUEVO: Detector de Part-Time. Si el usuario no existe en la DB de conductores pero SÍ tiene un trabajo asignado, lo dejamos entrar sin pedir fotos.
+  const isPartTimeAssigned = user && !myDriver && jobs.some(j => j.assignedEmails && j.assignedEmails.includes(currentUserEmail));
+
   const globalStyles = (
     <style>{`
       @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Alfa+Slab+One&display=swap');
@@ -551,8 +555,9 @@ function LogisticApp() {
     !myDriver.licenseBack || myDriver.licenseBack === ""
   );
 
-  // BLOQUEO ABSOLUTO: Nadie en modo "Conductor" pasa a la app sin sus 5 fotos (sin excepciones)
-  if (activeRole === 'driver' && (needsOnboarding || !myDriver)) {
+  // BLOQUEO ABSOLUTO: Nadie en modo "Conductor" pasa a la app sin sus 5 fotos.
+  // EXCEPCIÓN: Si es un conductor Part-Time asignado a un trabajo específico, entra directo.
+  if (activeRole === 'driver' && !isPartTimeAssigned && (needsOnboarding || !myDriver)) {
     return (
       <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10 transition-colors duration-300 dark:bg-slate-950">
         {globalStyles}
