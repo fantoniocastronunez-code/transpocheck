@@ -52,9 +52,17 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
 
   // Variables de identidad derivadas
   const actualUserEmail = user?.email?.toLowerCase();
-  const isRealAdmin = ['fcastro@logisticats.cl', 'hcastro@logisticats.cl'].includes(actualUserEmail);
-  // NUEVO: Lista de correos con acceso EXCLUSIVO a Cotizaciones (puedes cambiar estos correos por los reales)
-  const isQuoter = ['ventas@logisticats.cl', 'comercial@logisticats.cl'].includes(actualUserEmail);
+  
+  // MAGIA: Buscamos el perfil del usuario logueado en la base de datos en tiempo real
+  const currentUserProfile = drivers.find(d => d.email?.toLowerCase() === actualUserEmail);
+
+  // Asignación de permisos 100% dinámicos. Mantenemos tus correos como "Llave Maestra" por máxima seguridad.
+  const isRealAdmin = ['fcastro@logisticats.cl', 'hcastro@logisticats.cl'].includes(actualUserEmail) || 
+                      currentUserProfile?.role === 'admin' || 
+                      currentUserProfile?.role === 'super_admin';
+  
+  const isQuoter = currentUserProfile?.role === 'quoter';
+  
   const currentUserEmail = (activeRole === 'driver' && simulatedDriverEmail) ? simulatedDriverEmail : actualUserEmail;
 
   const isFirstLoad = useRef(true);
@@ -144,8 +152,8 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
         try {
           // Ya sabemos que no existe en el array local, lo creamos directamente sin consultar a la BD otra vez
           await addDoc(collection(db, 'drivers'), {
-            name: user.displayName || 'Conductor Nuevo',
-            email: safeEmail, balance: 0, licenses: [], licenseExpiry: '', createdAt: Date.now()
+            name: user.displayName || 'Usuario Nuevo',
+            email: safeEmail, balance: 0, licenses: [], licenseExpiry: '', createdAt: Date.now(), role: 'driver'
           });
           console.log("✅ Auto-registro exitoso para:", safeEmail);
         } catch(e) { 

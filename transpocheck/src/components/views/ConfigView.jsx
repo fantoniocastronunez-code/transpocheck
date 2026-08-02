@@ -283,7 +283,7 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
       <div className="flex gap-2 pb-2 overflow-x-auto scrollbar-none w-full">
          <button onClick={()=>setConfigSubTab('clients')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='clients'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Clientes</button>
          <button onClick={()=>setConfigSubTab('vehicles')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='vehicles'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Vehículos</button>
-         <button onClick={()=>setConfigSubTab('drivers')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='drivers'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Conductores</button>
+         <button onClick={()=>setConfigSubTab('drivers')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='drivers'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Usuarios</button>
          <button onClick={()=>setConfigSubTab('directory')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='directory'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Directorio</button>
          <button onClick={()=>setConfigSubTab('equipment')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='equipment'?'bg-amber-500 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Equipamiento</button>
       </div>
@@ -625,7 +625,7 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
 
       {configSubTab === 'drivers' && (
         <div className="grid md:grid-cols-2 gap-6">
-          <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const enableNotifications = Object.values(driverNotifs).some(v => v); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry'), enableNotifications, notifications: driverNotifs, ...driverDocs }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); showAlert("Perfil actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); showAlert("Conductor creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4 relative">
+          <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const enableNotifications = Object.values(driverNotifs).some(v => v); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), role: fd.get('role'), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry'), enableNotifications, notifications: driverNotifs, ...driverDocs }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); showAlert("Perfil actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); showAlert("Usuario creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4 relative">
             
             {/* Lógica silenciosa para cargar notificaciones previas al editar */}
             <div className="hidden">
@@ -633,7 +633,7 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
             </div>
 
             <div className="flex justify-between items-start">
-              <h3 className="font-extrabold text-slate-800 flex items-center gap-2"><User className="text-blue-600"/> {editingDriver ? 'Perfil del Conductor' : 'Nuevo Conductor'}</h3>
+              <h3 className="font-extrabold text-slate-800 flex items-center gap-2"><User className="text-blue-600"/> {editingDriver ? 'Perfil de Usuario' : 'Nuevo Usuario'}</h3>
               {editingDriver?.createdAt && (
                 <div className="text-right">
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Registro en App</span>
@@ -659,8 +659,19 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
               {driverDocs.photo && <button type="button" onClick={() => setDriverDocs(prev => ({...prev, photo: null}))} className="text-[10px] font-bold text-red-500 hover:underline">Quitar foto</button>}
             </div>
 
-            <input name="driverName" defaultValue={editingDriver?.name} placeholder="Nombre completo" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
-            <input name="driverEmail" defaultValue={editingDriver?.email} placeholder="Correo Gmail del conductor" required type="email" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+            <div className="grid grid-cols-1 gap-3">
+              <div className="space-y-1">
+                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Rol en el Sistema</label>
+                 <select name="role" defaultValue={editingDriver?.role || 'driver'} className="w-full border-2 border-purple-200 bg-purple-50 p-3 rounded-xl text-sm font-black text-purple-900 outline-none focus:border-purple-500">
+                    <option value="driver">Conductor (App Móvil)</option>
+                    <option value="quoter">Cotizador / Ventas</option>
+                    <option value="admin">Administrador (Oficina)</option>
+                    <option value="super_admin">Super Administrador</option>
+                 </select>
+              </div>
+              <input name="driverName" defaultValue={editingDriver?.name} placeholder="Nombre completo" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+              <input name="driverEmail" defaultValue={editingDriver?.email} placeholder="Correo Gmail de acceso" required type="email" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+            </div>
             
             <div className="pt-2 border-t border-slate-100">
                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Documentación de Respaldo</h4>
@@ -724,12 +735,12 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
 
             <div className="flex gap-3 pt-2 border-t border-slate-100 mt-4">
               {editingDriver && <button type="button" onClick={() => { setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); }} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>}
-              <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-sm transition-colors shadow-lg shadow-blue-200">{editingDriver ? 'Guardar Perfil' : 'Crear Conductor'}</button>
+              <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-sm transition-colors shadow-lg shadow-blue-200">{editingDriver ? 'Guardar Cambios' : 'Guardar Usuario'}</button>
             </div>
           </form>
           
           <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 max-h-[85vh] overflow-y-auto">
-            <h3 className="font-extrabold text-slate-800 mb-4">Directorio Logístico</h3>
+            <h3 className="font-extrabold text-slate-800 mb-4">Gestión de Usuarios</h3>
             <div className="space-y-2">
               {drivers.length === 0 ? <p className="text-sm font-semibold text-slate-400">Directorio vacío</p> : drivers.map(d=>(
                 <div key={d.id} className={`flex justify-between items-center p-3 border rounded-xl group transition-all ${d.isHidden ? 'bg-slate-100 border-slate-200 opacity-75' : 'bg-slate-50 border-slate-100'}`}>
@@ -749,8 +760,22 @@ export default function ConfiView({ allClientsList, customClients, vehicles, dri
                          {d.isHidden && <span className="bg-slate-200 text-slate-500 border border-slate-300 text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest shrink-0">Oculto</span>}
                       </div>
                       <p className="text-xs font-bold text-slate-400 truncate leading-tight">{d.email}</p>
-                      {d.createdAt && <p className="text-[9px] font-bold text-slate-400 mt-0.5 flex items-center gap-1"><Clock className="w-3 h-3"/> Ingreso: {new Date(d.createdAt).toLocaleDateString('es-CL')}</p>}
-                      {d.licenses && d.licenses.length > 0 && <p className={`text-[9px] font-black px-2 py-0.5 rounded-md mt-1.5 w-fit border ${d.isHidden ? 'bg-slate-200 text-slate-500 border-slate-300' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>Licencias: {d.licenses.join(', ')}</p>}
+                      <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider border ${
+                           d.role === 'super_admin' ? 'bg-red-50 text-red-600 border-red-200' :
+                           d.role === 'admin' ? 'bg-purple-50 text-purple-600 border-purple-200' :
+                           d.role === 'quoter' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                           'bg-emerald-50 text-emerald-600 border-emerald-200'
+                        }`}>
+                           {d.role === 'super_admin' ? 'Super Admin' : d.role === 'admin' ? 'Admin' : d.role === 'quoter' ? 'Cotizador' : 'Conductor'}
+                        </span>
+                        {(!d.role || d.role === 'driver') && d.licenses && d.licenses.length > 0 && (
+                           <span className={`text-[9px] font-black px-2 py-0.5 rounded-md border ${d.isHidden ? 'bg-slate-200 text-slate-500 border-slate-300' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
+                             Licencias: {d.licenses.join(', ')}
+                           </span>
+                        )}
+                      </div>
+                      {d.createdAt && <p className="text-[9px] font-bold text-slate-400 mt-1.5 flex items-center gap-1"><Clock className="w-3 h-3"/> Ingreso: {new Date(d.createdAt).toLocaleDateString('es-CL')}</p>}
                     </div>
                   </div>
                   <div className="flex gap-1.5 shrink-0 ml-2">
