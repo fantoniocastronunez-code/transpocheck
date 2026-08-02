@@ -181,8 +181,10 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
   
   const subtotalCosts = fuelCost + tolls + driver;
   const marginMultiplier = 1 + ((parseFloat(quoteData.marginPct) || 0) / 100);
-  const finalPrice = subtotalCosts * marginMultiplier;
-  const profit = finalPrice - subtotalCosts;
+  const netPrice = subtotalCosts * marginMultiplier;
+  const ivaAmount = netPrice * 0.19;
+  const finalPrice = netPrice * 1.19; // Total con IVA incluido
+  const profit = netPrice - subtotalCosts;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -390,7 +392,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
             <thead>
               <tr>
                 <th>Descripción del Servicio</th>
-                <th style="text-align: right;">Total Estimado</th>
+                <th style="text-align: right;">Total Neto</th>
               </tr>
             </thead>
             <tbody>
@@ -399,18 +401,22 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                   <strong>${quoteData.description || 'Servicio de traslado logístico de vehículo'}</strong><br/>
                   <span style="font-size: 12px; color: #64748b;">Incluye gestión de ruta, peajes, combustible y traslado profesional.</span>
                 </td>
-                <td style="text-align: right; font-weight: bold; vertical-align: top;">${formatMoney(finalPrice)}</td>
+                <td style="text-align: right; font-weight: bold; vertical-align: top;">${formatMoney(netPrice)}</td>
               </tr>
             </tbody>
           </table>
 
           <div class="totals">
             <div class="totals-row">
-              <span>Subtotal Servicios</span>
-              <span>${formatMoney(finalPrice)}</span>
+              <span>Subtotal Neto</span>
+              <span>${formatMoney(netPrice)}</span>
+            </div>
+            <div class="totals-row">
+              <span>IVA (19%)</span>
+              <span>${formatMoney(ivaAmount)}</span>
             </div>
             <div class="totals-row final">
-              <span>Total a Cobrar</span>
+              <span>Total con IVA</span>
               <span>${formatMoney(finalPrice)}</span>
             </div>
           </div>
@@ -677,8 +683,17 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
             </div>
 
             <div className="bg-purple-600 rounded-2xl p-4 text-center border border-purple-500 shadow-inner">
-              <p className="text-[10px] font-black text-purple-200 uppercase tracking-widest mb-1">Precio Sugerido al Cliente</p>
-              <p className="text-3xl font-black text-white">{formatMoney(finalPrice)}</p>
+              <p className="text-[10px] font-black text-purple-200 uppercase tracking-widest mb-1">Precio Sugerido (Neto)</p>
+              <p className="text-2xl font-black text-white mb-2">{formatMoney(netPrice)}</p>
+              <div className="border-t border-purple-500/50 pt-2 mt-2 flex justify-between text-xs font-bold text-purple-100 px-2">
+                <span>IVA (19%):</span>
+                <span>{formatMoney(ivaAmount)}</span>
+              </div>
+            </div>
+
+            <div className="bg-slate-900 rounded-2xl p-4 text-center border border-slate-700 shadow-inner">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total con IVA</p>
+              <p className="text-3xl font-black text-emerald-400">{formatMoney(finalPrice)}</p>
             </div>
           </div>
 
