@@ -352,24 +352,26 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
         const matchedDest = directoryList.find(d => d.placeName.toLowerCase() === quoteData.destination.toLowerCase());
 
         const newJob = {
-          client: quoteData.client,
-          origin: quoteData.origin,
-          destination: quoteData.destination,
+          client: quoteData.client || '',
+          origin: quoteData.origin || '',
+          destination: quoteData.destination || '',
           originContactName: matchedOrigin?.contactName || '',
           originContactPhone: matchedOrigin?.contactPhone || '',
           originAddress: matchedOrigin?.address || '',
           destContactName: matchedDest?.contactName || '',
           destContactPhone: matchedDest?.contactPhone || '',
           destAddress: matchedDest?.address || '',
-          description: `(Viene de Cotización) ${quoteData.description}`,
-          brand: quoteData.vehicleType || 'Por definir',
-          plate: 'S/N',
+          description: `(Viene de Cotización) ${quoteData.description || ''}`,
+          brand: quoteData.brand || 'Por definir',
+          model: quoteData.model || '',
+          vehicleType: quoteData.vehicleType || 'Auto / SUV',
+          plate: quoteData.plateOrVin || 'S/N',
           tripType: 'traslado',
           status: 'pending', 
           createdAt: Date.now(),
           scheduledDate: new Date().toISOString().split('T')[0],
-          quotedPrice: Math.round(finalPrice), 
-          requestedBy: currentUserEmail
+          quotedPrice: Math.round(finalPrice || 0), 
+          requestedBy: currentUserEmail || ''
         };
 
         await addDoc(collection(db, 'transport_jobs'), newJob);
@@ -398,10 +400,13 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
       const matchedOrigin = directoryList?.find(d => d.placeName.toLowerCase() === acceptQuoteData.origin?.toLowerCase());
       const matchedDest = directoryList?.find(d => d.placeName.toLowerCase() === acceptQuoteData.destination?.toLowerCase());
 
+      const selectedDriverObj = drivers?.find(d => (d.name || d.email) === jobDetails.assignedDriver);
+      const assignedEmails = selectedDriverObj ? [selectedDriverObj.email] : [];
+
       const newJob = {
-        client: acceptQuoteData.client,
-        origin: acceptQuoteData.origin,
-        destination: acceptQuoteData.destination,
+        client: acceptQuoteData.client || '',
+        origin: acceptQuoteData.origin || '',
+        destination: acceptQuoteData.destination || '',
         originContactName: matchedOrigin?.contactName || '',
         originContactPhone: matchedOrigin?.contactPhone || '',
         originAddress: matchedOrigin?.address || '',
@@ -409,15 +414,18 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
         destContactPhone: matchedDest?.contactPhone || '',
         destAddress: matchedDest?.address || '',
         description: `(Cotización ${acceptQuoteData.quoteNumber || 'S/N'}) ${acceptQuoteData.description || ''}`,
-        brand: acceptQuoteData.vehicleType || 'Por definir',
+        brand: acceptQuoteData.brand || 'Por definir',
+        model: acceptQuoteData.model || '',
+        vehicleType: acceptQuoteData.vehicleType || 'Auto / SUV',
         plate: acceptQuoteData.plateOrVin || 'S/N',
         tripType: 'traslado',
         status: jobDetails.assignedDriver ? 'assigned' : 'pending',
         assignedDriver: jobDetails.assignedDriver || '',
+        assignedEmails: assignedEmails,
         createdAt: Date.now(),
-        scheduledDate: jobDetails.scheduledDate,
+        scheduledDate: jobDetails.scheduledDate || new Date().toISOString().split('T')[0],
         quotedPrice: Math.round(acceptQuoteData.finalPrice || 0),
-        requestedBy: currentUserEmail
+        requestedBy: currentUserEmail || ''
       };
 
       await addDoc(collection(db, 'transport_jobs'), newJob);
@@ -432,10 +440,8 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
     }
   };
 
-  // Generador de PDF Elegante en Formato A4 (Impresión HTML nativa)
-  const handleGeneratePDF = () => {
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
+  // Generador de PDF Elegante en Formato A4 (Impresión HTML nativa) y generador de Blob para compartir
+  const getPDFHtml = () => `
       <html>
         <head>
           <title>Cotización Logística - ${quoteData.client || 'Cliente'}</title>
@@ -546,7 +552,11 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
           </div>
         </body>
       </html>
-    `);
+  `;
+
+  const handleGeneratePDF = () => {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(getPDFHtml());
     printWindow.document.close();
     setTimeout(() => {
       printWindow.focus();
@@ -554,12 +564,13 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
     }, 500);
   };
 
-  // Función para Compartir por WhatsApp o Correo
-  const handleShare = (method) => {
+  // Función para Compartir por WhatsApp o Correo con PDF Adjunto nativo
+  const handleShare = async (method) => {
     if (!quoteData.client || !quoteData.origin || !quoteData.destination) {
       return showAlert("⚠️ Faltan datos (Cliente, Origen, Destino) para poder compartir.");
     }
     const correlativo = quoteData.quoteNumber || `COT-${savedQuotes.length + 1}`;
+    const fileName = `${correlativo}_${quoteData.client.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
     
     // Crear el texto del mensaje con formato legible
     const text = `*Cotización de Traslado ${correlativo}*\n\n` +
@@ -573,7 +584,42 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                  `_Generado por LogisticAPP_`;
 
     if (method === 'whatsapp') {
-      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+      try {
+        showAlert("⏳ Generando documento PDF...");
+        const html2pdf = (await import('html2pdf.js')).default;
+        
+        const element = document.createElement('div');
+        element.innerHTML = getPDFHtml();
+        
+        const opt = {
+          margin: 0,
+          filename: fileName,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        const pdfBlob = await html2pdf().from(element).set(opt).output('blob');
+        const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: fileName,
+            text: text,
+            files: [file]
+          });
+        } else {
+          // Fallback para PC o navegadores que no soportan share API con archivos
+          showAlert("Dispositivo no soporta adjunto directo. Abriendo WhatsApp Web...");
+          html2pdf().from(element).set(opt).save(); // Descarga el PDF
+          setTimeout(() => {
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+          }, 1500);
+        }
+      } catch (error) {
+        console.error("Error compartiendo PDF:", error);
+        showAlert("❌ Hubo un error al intentar compartir el PDF.");
+      }
     } else if (method === 'email') {
       const subject = `Cotización de Traslado - ${quoteData.client}`;
       window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`, '_self');
