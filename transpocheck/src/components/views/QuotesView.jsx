@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { addDoc, collection, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { 
   Calculator, MapPin, Fuel, DollarSign, Plus, CheckCircle, 
-  User, Truck, Receipt, Printer, Send, Save, ArrowRight, X, MessageCircle, Mail, MoreVertical, Calendar
+  User, Truck, Receipt, Printer, Send, Save, ArrowRight, X, MessageCircle, Mail, MoreVertical, Calendar, Sparkles
 } from 'lucide-react';
 import { formatMoney } from '../../utils/helpers';
 
@@ -106,6 +106,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
   const [tollsList, setTollsList] = useState([]);
   const [savedQuotes, setSavedQuotes] = useState([]);
   const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
+  const [isFetchingFuel, setIsFetchingFuel] = useState(false);
 
   // Cargar Peajes y Cotizaciones desde Firestore
   useEffect(() => {
@@ -201,6 +202,79 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setQuoteData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Consultar precio sugerido a la IA (Gemini)
+  const fetchFuelPriceWithAI = async () => {
+    setIsFetchingFuel(true);
+    try {
+      // API KEY DE GOOGLE AI STUDIO (Oculta en variables de entorno)
+      const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
+      
+      // Prompt usando Grounding con Google Search para asegurar datos actualizados del Diésel
+      const prompt = "Busca el precio promedio actual del litro de combustible Diésel en estaciones de servicio en Chile el día de hoy. Es muy importante que sea el valor del Diésel y no de la gasolina. Responde ÚNICAMENTE con el número entero, sin puntos, sin comas, sin signos de peso y sin texto adicional. Por ejemplo, si el precio es $1.050, responde: 1050";
+
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          tools: [{ googleSearch: {} }] // Forzamos a la IA a buscar en internet el dato de hoy
+        })
+      });
+
+      const data = await res.json();
+      
+      if (data.candidates && data.candidates.length > 0) {
+        const respuestaTexto = data.candidates[0].content.parts[0].text;
+        
+        // Limpiamos la respuesta de la IA para extraer matemáticamente solo los números
+        const precioLimpio = parseInt(respuestaTexto.replace(/[^0-9]/g, ''), 10);
+
+        if (!isNaN(precioLimpio) && precioLimpio > 500 && precioLimpio < 2000) {
+          setQuoteData(prev => ({ ...prev, fuelPrice: precioLimpio }));
+          showAlert(`🤖 IA Gemini: Precio Diésel actualizado a $${precioLimpio}/L.`);
+        } else {
+          showAlert("⚠️ La IA respondió, pero no pudimos extraer el número exacto.");
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      showAlert("❌ Error al intentar contactar a la inteligencia artificial.");
+    } finally {
+      setIsFetchingFuel(false);
+    }
+  };
+
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }]
+        })
+      });
+
+      const data = await res.json();
+      
+      if (data.candidates && data.candidates.length > 0) {
+        const respuestaTexto = data.candidates[0].content.parts[0].text;
+        
+        // Limpiamos la respuesta de la IA (extraemos solo los números por si decide agregar texto extra)
+        const precioLimpio = parseInt(respuestaTexto.replace(/[^0-9]/g, ''), 10);
+
+        if (!isNaN(precioLimpio) && precioLimpio > 500 && precioLimpio < 2000) {
+          setQuoteData(prev => ({ ...prev, fuelPrice: precioLimpio }));
+          showAlert(`🤖 IA Gemini: Precio sugerido actualizado a $${precioLimpio}/L.`);
+        } else {
+          showAlert("⚠️ La IA respondió con un formato que no pudimos procesar.");
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      showAlert("❌ Error al intentar contactar a la inteligencia artificial.");
+    } finally {
+      setIsFetchingFuel(false);
+    }
   };
 
   // MAGIA: Cálculo automático de distancia real por carretera usando OSRM (OpenStreetMap sin API Key)
@@ -695,7 +769,18 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
 
               <div className="space-y-1">
                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Precio Combustible ($/L)</label>
-                 <input type="number" name="fuelPrice" value={quoteData.fuelPrice} onChange={handleInputChange} className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500"/>
+                 <div className="flex gap-2">
+                   <input type="number" name="fuelPrice" value={quoteData.fuelPrice} onChange={handleInputChange} className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500"/>
+                   <button 
+                     type="button" 
+                     onClick={fetchFuelPriceWithAI} 
+                     disabled={isFetchingFuel} 
+                     className="bg-purple-100 hover:bg-purple-200 text-purple-700 px-3 rounded-xl text-[10px] font-black shadow-sm shrink-0 transition-colors disabled:opacity-50 flex items-center gap-1 uppercase" 
+                     title="Consultar precio estimado con IA"
+                   >
+                     {isFetchingFuel ? '...' : <><Sparkles className="w-3 h-3"/> IA</>}
+                   </button>
+                 </div>
               </div>
 
               <div className="space-y-1">
