@@ -81,11 +81,12 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
       model: q.model || '',
       plateOrVin: q.plateOrVin || '',
       quoteNumber: q.quoteNumber || ''
-    });
-    setEditingQuoteId(q.id);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    showAlert("📝 Cotización cargada para edición.");
-  };
+        });
+        setSelectedTollIds(q.selectedTollIds || []); // <-- NUEVO: Recupera los peajes de esta cotización
+        setEditingQuoteId(q.id);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        showAlert("📝 Cotización cargada para edición.");
+      };
 
   // Cargar Peaje para modificar sus valores
   const handleEditToll = (toll) => {
@@ -151,22 +152,46 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
     }
   };
 
-  // Auto-calcular suma de peajes cuando cambian los seleccionados o el tipo de vehículo
-  const toggleTollSelection = (tollId) => {
-    setSelectedTollIds(prev => {
-      const exists = prev.includes(tollId);
-      const updated = exists ? prev.filter(id => id !== tollId) : [...prev, tollId];
-      
-      const totalTolls = updated.reduce((sum, id) => {
-        const toll = tollsList.find(t => t.id === id);
-        const priceForVehicle = toll?.prices?.[quoteData.vehicleType] || 0;
-        return sum + parseFloat(priceForVehicle || 0);
-      }, 0);
-
-      setQuoteData(q => ({ ...q, tollsCost: totalTolls > 0 ? totalTolls : '' }));
-      return updated;
+  // Efecto de Auto-cálculo: Reacciona automáticamente si cambias de vehículo o agregas peajes
+  useEffect(() => {
+    const totalTolls = selectedTollIds.reduce((sum, id) => {
+      const toll = tollsList.find(t => t.id === id);
+      const priceForVehicle = toll?.prices?.[quoteData.vehicleType] || 0;
+      return sum + parseFloat(priceForVehicle || 0);
+    }, 0);
+    
+    setQuoteData(q => {
+      const newTollsCost = totalTolls > 0 ? totalTolls : '';
+      if (q.tollsCost === newTollsCost) return q; // Evita saturar la memoria
+      return { ...q, tollsCost: newTollsCost };
     });
+  }, [selectedTollIds, quoteData.vehicleType, tollsList]);
+
+  const toggleTollSelection = (tollId) => {
+    setSelectedTollIds(prev => prev.includes(tollId) ? prev.filter(id => id !== tollId) : [...prev, tollId]);
   };
+
+  // NUEVO: Memoria Predictiva de Rutas
+  useEffect(() => {
+    if (!quoteData.origin || !quoteData.destination || savedQuotes.length === 0) return;
+    
+    const originClean = quoteData.origin.trim().toLowerCase();
+    const destClean = quoteData.destination.trim().toLowerCase();
+
+    // Si detecta que escribiste una ruta y no has marcado peajes manuales...
+    if (originClean.length > 3 && destClean.length > 3 && selectedTollIds.length === 0) {
+      const pastQuote = savedQuotes.find(q => 
+        q.origin?.trim().toLowerCase() === originClean && 
+        q.destination?.trim().toLowerCase() === destClean &&
+        q.selectedTollIds && q.selectedTollIds.length > 0
+      );
+
+      if (pastQuote) {
+        setSelectedTollIds(pastQuote.selectedTollIds);
+        showAlert("🧠 Ruta reconocida: Peajes cargados automáticamente.");
+      }
+    }
+  }, [quoteData.origin, quoteData.destination]);
 
   // Eliminar Cotización del Historial
   const handleDeleteQuote = (quoteId) => {
@@ -333,6 +358,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
         quoteNumber: correlativo,
         finalPrice: Math.round(finalPrice),
         status,
+        selectedTollIds, // <-- NUEVO: Guardamos la lista de peajes para que la memoria los recuerde luego
         updatedAt: Date.now()
       };
 
@@ -397,6 +423,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
           client: '', origin: '', destination: '', distanceKm: '', kmPerLiter: '', 
           fuelPrice: 1050, tollsCost: '', driverFee: '', marginPct: 30, description: '', vehicleType: ''
         });
+        setSelectedTollIds([]); // <-- NUEVO: Limpiamos los peajes visuales para la siguiente cotización
       } catch (error) {
         console.error("Error al crear traslado de cotización:", error);
         showAlert("❌ Hubo un error al generar el traslado.");
