@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { addDoc, collection, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { 
   Calculator, MapPin, Fuel, DollarSign, Plus, CheckCircle, 
-  User, Truck, Receipt, Printer, Send, Save, ArrowRight, X
+  User, Truck, Receipt, Printer, Send, Save, ArrowRight, X, MessageCircle, Mail
 } from 'lucide-react';
 import { formatMoney } from '../../utils/helpers';
 
@@ -181,9 +181,11 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
   
   const subtotalCosts = fuelCost + tolls + driver;
   const marginMultiplier = 1 + ((parseFloat(quoteData.marginPct) || 0) / 100);
-  const netPrice = subtotalCosts * marginMultiplier;
-  const ivaAmount = netPrice * 0.19;
-  const finalPrice = netPrice * 1.19; // Total con IVA incluido
+  
+  // Redondeo exacto para moneda chilena (sin decimales)
+  const netPrice = Math.round(subtotalCosts * marginMultiplier);
+  const ivaAmount = Math.round(netPrice * 0.19);
+  const finalPrice = netPrice + ivaAmount; // Total con IVA (cuadra exacto)
   const profit = netPrice - subtotalCosts;
 
   const handleInputChange = (e) => {
@@ -455,6 +457,34 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
     }, 500);
   };
 
+  // Función para Compartir por WhatsApp o Correo
+  const handleShare = (method) => {
+    if (!quoteData.client || !quoteData.origin || !quoteData.destination) {
+      return showAlert("⚠️ Faltan datos (Cliente, Origen, Destino) para poder compartir.");
+    }
+    const correlativo = quoteData.quoteNumber || `COT-${savedQuotes.length + 1}`;
+    
+    // Crear el texto del mensaje con formato legible
+    const text = `*Cotización de Traslado ${correlativo}*\n\n` +
+                 `🏢 *Cliente:* ${quoteData.client}\n` +
+                 `📍 *Ruta:* ${quoteData.origin} ➔ ${quoteData.destination} (${quoteData.distanceKm || 0} KM)\n` +
+                 `🚘 *Vehículo:* ${quoteData.vehicleType} ${quoteData.brand ? `- ${quoteData.brand} ${quoteData.model}` : ''}\n` +
+                 `📋 *Servicio:* ${quoteData.description || 'Traslado logístico'}\n\n` +
+                 `💰 *Total Neto:* ${formatMoney(netPrice)}\n` +
+                 `🧾 *IVA (19%):* ${formatMoney(ivaAmount)}\n` +
+                 `✅ *Total a Pagar:* ${formatMoney(finalPrice)}\n\n` +
+                 `_Generado por LogisticAPP_`;
+
+    if (method === 'whatsapp') {
+      // Abrir API de WhatsApp
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    } else if (method === 'email') {
+      // Abrir cliente de correo predeterminado
+      const subject = `Cotización de Traslado - ${quoteData.client}`;
+      window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`, '_self');
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
@@ -719,6 +749,23 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
 
           {/* Botones de Acción */}
           <div className="grid grid-cols-1 gap-3">
+            
+            {/* Nuevos botones de Compartir */}
+            <div className="grid grid-cols-2 gap-3">
+              <button 
+                onClick={() => handleShare('whatsapp')}
+                className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-black py-3 rounded-2xl transition-colors shadow-sm flex items-center justify-center gap-2 text-xs"
+              >
+                <MessageCircle className="w-4 h-4"/> WhatsApp
+              </button>
+              <button 
+                onClick={() => handleShare('email')}
+                className="w-full bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-black py-3 rounded-2xl transition-colors shadow-sm flex items-center justify-center gap-2 text-xs"
+              >
+                <Mail className="w-4 h-4 text-slate-500"/> Correo
+              </button>
+            </div>
+
             <button 
               onClick={() => handleSaveQuoteStatus('pendiente')}
               className="w-full bg-slate-800 hover:bg-slate-900 text-white font-black py-3.5 rounded-2xl transition-colors shadow-md flex items-center justify-center gap-2 text-xs"
