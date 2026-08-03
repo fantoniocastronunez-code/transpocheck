@@ -264,11 +264,24 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         });
       });
 
-      let totalMeters = await Promise.race([getMeters(orig, dest), new Promise((_, r) => setTimeout(() => r('Timeout'), 4000))]);
+      // Cálculo del tramo 1 (Ida) con salvavidas de errores
+      let totalMeters = await Promise.race([getMeters(orig, dest), new Promise((_, r) => setTimeout(() => r('Timeout'), 4000))]).catch(() => 'Error');
       
       if (returnDest && typeof totalMeters === 'number') {
-         let returnMeters = await Promise.race([getMeters(dest, returnDest), new Promise((_, r) => setTimeout(() => r('Timeout'), 4000))]);
-         if (typeof returnMeters === 'number') totalMeters += returnMeters;
+         // Anti-Bloqueo: Pausa breve para evitar que Google Maps rechace la segunda consulta rápida
+         await new Promise(r => setTimeout(r, 600)); 
+         
+         let returnMeters = await Promise.race([getMeters(dest, returnDest), new Promise((_, r) => setTimeout(() => r('Timeout'), 4500))]).catch(() => 'Error');
+         
+         if (typeof returnMeters === 'number') {
+             totalMeters += returnMeters; // Suma la vuelta exitosamente
+         } else {
+             // SALVAVIDAS MATEMÁTICO: Si Google Maps da timeout en la vuelta, 
+             // y el retorno es el mismo lugar que el origen, multiplicamos la ida x 2.
+             if (orig === returnDest) {
+                 totalMeters *= 2;
+             }
+         }
       }
 
       if (typeof totalMeters === 'number') {
