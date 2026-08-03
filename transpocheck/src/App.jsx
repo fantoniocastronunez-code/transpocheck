@@ -790,18 +790,18 @@ function LogisticApp() {
                      )}
 
                      {/* LISTA SCROLLEABLE INTERNA DE CONDUCTORES */}
-                     <div className="bg-white border border-slate-200 rounded-xl max-h-40 overflow-y-auto shadow-inner divide-y divide-slate-50">
+                     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl max-h-40 overflow-y-auto shadow-inner divide-y divide-slate-50 dark:divide-slate-800/50">
                        {drivers.filter(d => !d.isHidden).sort((a, b) => a.name.localeCompare(b.name)).map(d => {
                          const isCurrentActive = activeRole === 'driver' && simulatedDriverEmail === d.email;
                          return (
-                         <div key={d.id} className={`flex items-center justify-between p-1 transition-colors group ${isCurrentActive ? 'bg-purple-50 dark:bg-purple-950/40 border-l-4 border-purple-500' : 'hover:bg-blue-50 dark:hover:bg-slate-800'}`}>
+                         <div key={d.id} className={`flex items-center justify-between p-1 transition-colors group ${isCurrentActive ? 'bg-purple-50 dark:bg-purple-900/30 border-l-4 border-purple-500' : 'hover:bg-blue-50 dark:hover:bg-blue-900/20'}`}>
                             {/* Al tocar el nombre, entras directo */}
-                            <button onClick={() => { setSimulatedDriverEmail(d.email); setActiveRole('driver'); setMainTab('jobs'); setRoleMenuOpen(false); }} className={`flex-1 text-left px-2 py-2 text-xs truncate transition-colors ${isCurrentActive ? 'text-purple-700 dark:text-purple-400 font-black' : 'text-slate-700 font-bold group-hover:text-blue-800 dark:group-hover:!text-blue-400'}`}>
+                            <button onClick={() => { setSimulatedDriverEmail(d.email); setActiveRole('driver'); setMainTab('jobs'); setRoleMenuOpen(false); }} className={`flex-1 text-left px-2 py-2 text-xs truncate transition-colors ${isCurrentActive ? 'text-purple-700 dark:text-purple-400 font-black' : 'text-slate-700 dark:text-slate-300 font-bold group-hover:text-blue-800 dark:group-hover:text-blue-300'}`}>
                                {d.name} {isCurrentActive && <span className="text-[9px] bg-purple-200 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded ml-1 animate-pulse">ACTIVO</span>}
                             </button>
                             {/* Estrella para fijarlo como favorito arriba */}
-                            <button onClick={(e) => { e.stopPropagation(); setFavDriverEmail(d.email); localStorage.setItem('favDriverEmail', d.email); }} className="p-2 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors" title="Fijar como Favorito">
-                               <Star className={`w-4 h-4 transition-colors ${favDriverEmail === d.email ? 'fill-amber-400 text-amber-400' : 'text-slate-300 dark:text-slate-500 group-hover:text-amber-400 hover:text-amber-500'}`} />
+                            <button onClick={(e) => { e.stopPropagation(); setFavDriverEmail(d.email); localStorage.setItem('favDriverEmail', d.email); }} className="p-2 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors" title="Fijar como Favorito">
+                               <Star className={`w-4 h-4 transition-colors ${favDriverEmail === d.email ? 'fill-amber-400 text-amber-400' : 'text-slate-300 dark:text-slate-600 group-hover:text-amber-400 hover:text-amber-500'}`} />
                             </button>
                          </div>
                          );
