@@ -12,6 +12,7 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
   const [downloadingId, setDownloadingId] = useState(null); 
   const [clientLogo, setClientLogo] = useState(null); // NUEVO: Estado para el logo
   const [fullScreenPhoto, setFullScreenPhoto] = useState(null); // <-- NUEVO: Estado para foto en pantalla completa
+  const [selectedHistoryJob, setSelectedHistoryJob] = useState(null); // <-- NUEVO: Estado para Ficha Técnica interactiva
   
   // NUEVO: Atrapa el ID del trabajo desde la URL si viene desde el correo
   const [trackId, setTrackId] = useState(() => new URLSearchParams(window.location.search).get('track')); 
@@ -701,7 +702,7 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
             ) : historyJobs.map(job => {
               const isFailed = job.status === 'failed';
               return (
-              <div key={job.id} className="bg-white w-full max-w-[calc(100vw-2rem)] sm:max-w-none p-3.5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between relative pl-4 overflow-hidden hover:shadow-md transition-shadow">
+              <div key={job.id} onClick={() => setSelectedHistoryJob(job)} className="bg-white w-full max-w-[calc(100vw-2rem)] sm:max-w-none p-3.5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between relative pl-4 overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
                 <div className={`absolute top-0 left-0 bottom-0 w-2 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
                 
                 <div className="flex justify-between items-center mb-2 gap-2">
@@ -749,12 +750,12 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                   </div>
                   <div className="flex gap-2 items-center">
                     {job.checklist && (job.checklist.scandocPdf || job.checklist.scandocPdfInbox || job.checklist.scannerLink) && (
-                      <a href={job.checklist.scandocPdf || job.checklist.scandocPdfInbox || job.checklist.scannerLink} target="_blank" rel="noreferrer" className="flex items-center justify-center p-2.5 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors border border-indigo-100 relative" title="Ver Documentación PRT">
+                      <a href={job.checklist.scandocPdf || job.checklist.scandocPdfInbox || job.checklist.scannerLink} onClick={(e) => e.stopPropagation()} target="_blank" rel="noreferrer" className="flex items-center justify-center p-2.5 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors border border-indigo-100 relative" title="Ver Documentación PRT">
                         <span className="absolute -top-1.5 -right-1.5 bg-indigo-600 text-white text-[7px] font-black px-1 py-0.5 rounded shadow-sm">PRT</span>
                         <FileText className="w-4 h-4"/>
                       </a>
                     )}
-                    <button onClick={() => handleDownloadPDF(job)} disabled={downloadingId === job.id} className="flex items-center justify-center p-2.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors border border-blue-100 disabled:opacity-50" title="Descargar PDF">
+                    <button onClick={(e) => { e.stopPropagation(); handleDownloadPDF(job); }} disabled={downloadingId === job.id} className="flex items-center justify-center p-2.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors border border-blue-100 disabled:opacity-50" title="Descargar PDF">
                       {downloadingId === job.id ? <Clock className="w-4 h-4 animate-spin"/> : <FileDown className="w-4 h-4"/>}
                     </button>
                   </div>
@@ -884,6 +885,146 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
               <X className="w-6 h-6 text-white"/>
            </button>
            <img src={fullScreenPhoto} alt="Ampliación" className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl cursor-default" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
+
+      {/* NUEVO MODAL: FICHA TÉCNICA DE HISTORIAL */}
+      {selectedHistoryJob && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[300] flex items-center justify-center p-4 cursor-default">
+          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95">
+            <div className="bg-slate-50 border-b border-slate-100 p-4 sm:p-5 flex justify-between items-start shrink-0 relative">
+              <div className="flex gap-3 items-center">
+                <div className="bg-blue-100 p-2.5 rounded-xl"><FileText className="w-6 h-6 text-blue-600"/></div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-800 leading-tight">Ficha Técnica</h3>
+                  <p className="text-xs font-bold text-slate-500">
+                    {new Date(selectedHistoryJob.completedAt || selectedHistoryJob.createdAt).toLocaleString('es-CL')}
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setSelectedHistoryJob(null)} className="p-2 bg-white border border-slate-200 rounded-full hover:bg-slate-100 transition-colors">
+                <X className="w-5 h-5 text-slate-600"/>
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto space-y-6 flex-1">
+              
+              {/* 1. INFO VEHÍCULO */}
+              <div>
+                <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 pb-1">1. Información del Vehículo</h4>
+                <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <div>
+                    <p className="text-[9px] font-bold text-slate-500 uppercase">Marca / Modelo</p>
+                    <p className="text-sm font-black text-slate-800">{selectedHistoryJob.tripType === 'simple' ? selectedHistoryJob.description : `${selectedHistoryJob.brand} ${selectedHistoryJob.model}`}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-bold text-slate-500 uppercase">Identificador</p>
+                    <p className="text-sm font-black text-slate-800">
+                      {selectedHistoryJob.plate || selectedHistoryJob.vin || selectedHistoryJob.associatedPlate || 'S/N'} 
+                      {selectedHistoryJob.vin && selectedHistoryJob.vin !== selectedHistoryJob.plate ? ` (VIN: ${selectedHistoryJob.vin})` : ''}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-bold text-slate-500 uppercase">Cliente</p>
+                    <p className="text-xs font-bold text-slate-700">{selectedHistoryJob.client || 'Sin Cliente'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-bold text-slate-500 uppercase">Conductor</p>
+                    <p className="text-xs font-bold text-slate-700">{selectedHistoryJob.checklist?.assignedDriverName || selectedHistoryJob.assignedDrivers?.find(d => d.email === selectedHistoryJob.acceptedByEmail)?.name || selectedHistoryJob.acceptedByEmail || 'No registrado'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. VIAJE Y KILOMETRAJE */}
+              <div>
+                <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 pb-1">2. Ruta y Kilometraje</h4>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <div className="flex items-start gap-2 mb-2">
+                    <MapPin className="w-4 h-4 text-slate-400 mt-0.5 shrink-0"/>
+                    <div>
+                      <p className="text-xs font-bold text-slate-700 break-words">
+                        {selectedHistoryJob.origin || '-'} ➔ {selectedHistoryJob.waypoints?.length ? `(+${selectedHistoryJob.waypoints.length} int) ➔ ` : ''}{selectedHistoryJob.tripType === 'revision' ? (selectedHistoryJob.checklist?.rtReturnOption === 'other' ? selectedHistoryJob.checklist.rtReturnDestination : selectedHistoryJob.origin) : (selectedHistoryJob.destination || '-')}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-slate-200">
+                    <div>
+                      <p className="text-[9px] font-bold text-slate-500 uppercase">Odómetro Reportado</p>
+                      <p className="text-sm font-black text-slate-800">{selectedHistoryJob.checklist?.mileage || 'No registrado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold text-slate-500 uppercase">Distancia GPS (Maps)</p>
+                      <p className="text-sm font-black text-blue-600">{selectedHistoryJob.drivenDistance || 'No calculado'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. FECHAS VENCIMIENTO DOCUMENTOS */}
+              {(() => {
+                 const vDocs = selectedHistoryJob.checklist?.docsExpiry;
+                 if (!vDocs) return null;
+
+                 const formatExp = (dateStr) => {
+                    if (!dateStr) return <span className="text-slate-400 text-xs">No reg.</span>;
+                    const [y,m,d] = dateStr.split('-');
+                    const expDate = new Date(y, m-1, d);
+                    const today = new Date(); today.setHours(0,0,0,0);
+                    if (expDate < today) return <span className="text-red-600 font-bold text-xs">{d}/{m}/{y} (Vencido)</span>;
+                    return <span className="text-green-700 font-bold text-xs">{d}/{m}/{y}</span>;
+                 };
+
+                 return (
+                   <div>
+                     <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 pb-1">3. Vencimiento Documentos</h4>
+                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                       <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-center"><p className="text-[9px] font-bold text-slate-500 uppercase mb-0.5">Rev. Técnica</p>{formatExp(vDocs.revTecnica)}</div>
+                       <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-center"><p className="text-[9px] font-bold text-slate-500 uppercase mb-0.5">Gases</p>{formatExp(vDocs.gases)}</div>
+                       <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-center"><p className="text-[9px] font-bold text-slate-500 uppercase mb-0.5">Permiso Circ.</p>{formatExp(vDocs.permiso)}</div>
+                       <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-center"><p className="text-[9px] font-bold text-slate-500 uppercase mb-0.5">SOAP</p>{formatExp(vDocs.soap)}</div>
+                     </div>
+                   </div>
+                 );
+              })()}
+
+              {/* 4. RECEPCIÓN */}
+              {selectedHistoryJob.checklist && (
+                <div>
+                  <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 pb-1">4. Recepción</h4>
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col sm:flex-row gap-4 justify-between items-center">
+                    <div className="flex-1 text-center sm:text-left">
+                      <p className="text-[9px] font-bold text-slate-500 uppercase">Recibido por</p>
+                      <p className="text-sm font-black text-slate-800">{selectedHistoryJob.checklist.noReception ? 'Sin Recepción Formal' : (selectedHistoryJob.checklist.receiverName || 'No registrado')}</p>
+                      {selectedHistoryJob.checklist.receiverRut && <p className="text-xs font-bold text-slate-500">RUT: {selectedHistoryJob.checklist.receiverRut}</p>}
+                    </div>
+                    {selectedHistoryJob.checklist.signatureData && (
+                      <div className="bg-white p-2 rounded-lg border border-slate-200 shrink-0">
+                        <img src={selectedHistoryJob.checklist.signatureData} alt="Firma" className="h-12 object-contain" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 5. GALERÍA DE FOTOS */}
+              {selectedHistoryJob.checklist?.photos && Object.values(selectedHistoryJob.checklist.photos).filter(p => typeof p === 'string' && p.startsWith('http')).length > 0 && (
+                <div>
+                  <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 pb-1">5. Galería Fotográfica</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {Object.entries(selectedHistoryJob.checklist.photos).filter(([k,v]) => typeof v === 'string' && v.startsWith('http')).map(([k,v]) => (
+                      <div key={k} className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-square cursor-pointer" onClick={() => setFullScreenPhoto(v)}>
+                        <img src={v} alt={k} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                          <p className="text-white text-[9px] font-black uppercase truncate">{k.replace('det', 'Detalle ')}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </div>
         </div>
       )}
 

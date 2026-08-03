@@ -66,6 +66,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [guideFileBase64, setGuideFileBase64] = useState(null);
 
   const [fullScreenPhoto, setFullScreenPhoto] = useState(null); // <-- NUEVO: Estado para foto en pantalla completa
+  const [selectedHistoryJob, setSelectedHistoryJob] = useState(null); // <-- NUEVO: Estado para Ficha Técnica interactiva
 
   const [isAppReady, setIsAppReady] = useState(false);
   
@@ -1703,7 +1704,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     const ident = getJobIdentifier(j);
     
     return (
-      <div key={j.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between relative pl-5 overflow-hidden hover:shadow-xl hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-default">
+      <div key={j.id} onClick={() => setSelectedHistoryJob(j)} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between relative pl-5 overflow-hidden hover:shadow-xl hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-pointer">
         <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
         
         <div className="flex justify-between items-center mb-2 gap-2">
@@ -1919,12 +1920,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         )}
 
          <div className="flex gap-1.5 mt-auto">
-          {isAdminView && <button onClick={()=>onEditJob(j)} className="flex-1 py-1.5 flex justify-center bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg transition-colors" title="Editar Traslado"><Edit2 className="w-3.5 h-3.5"/></button>}
-          {isAdminView && <button onClick={()=>handleDuplicateJob(j)} className="flex-1 py-1.5 flex justify-center bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg transition-colors" title="Repetir Vehículo"><Repeat className="w-3.5 h-3.5"/></button>}
+          {isAdminView && <button onClick={(e)=>{e.stopPropagation(); onEditJob(j);}} className="flex-1 py-1.5 flex justify-center bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg transition-colors" title="Editar Traslado"><Edit2 className="w-3.5 h-3.5"/></button>}
+          {isAdminView && <button onClick={(e)=>{e.stopPropagation(); handleDuplicateJob(j);}} className="flex-1 py-1.5 flex justify-center bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg transition-colors" title="Repetir Vehículo"><Repeat className="w-3.5 h-3.5"/></button>}
           
 
           {j.checklist && (j.checklist.scandocPdf || j.checklist.scandocPdfInbox || j.checklist.scannerLink) && (
-            <a href={j.checklist.scandocPdf || j.checklist.scandocPdfInbox || j.checklist.scannerLink} target="_blank" rel="noreferrer" className="flex-1 py-1.5 flex justify-center items-center bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-colors relative" title="Ver Documentación PRT">
+            <a href={j.checklist.scandocPdf || j.checklist.scandocPdfInbox || j.checklist.scannerLink} onClick={(e)=>e.stopPropagation()} target="_blank" rel="noreferrer" className="flex-1 py-1.5 flex justify-center items-center bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-colors relative" title="Ver Documentación PRT">
                <span className="absolute -top-1.5 -right-1.5 bg-indigo-600 text-white text-[7px] font-black px-1 py-0.5 rounded shadow-sm">PRT</span>
                <FileText className="w-3.5 h-3.5"/>
             </a>
@@ -1934,7 +1935,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
              const historyDocHref = j.guideLink || j.guideUrl || j.docLink || j.docUrl || j.rtLink || j.rtDoc || (j.rtData && j.rtData.link) || j.pdfUrl || j.fileUrl || j.checklist?.guiaDespachoPdf || j.checklist?.guiaDespachoLink;
              if (historyDocHref) {
                 return (
-                  <a href={historyDocHref} target="_blank" rel="noreferrer" className="flex-1 py-1.5 flex justify-center items-center bg-cyan-50 hover:bg-cyan-100 text-cyan-600 rounded-lg transition-colors relative" title="Ver Guía/Doc Adjunto">
+                  <a href={historyDocHref} onClick={(e)=>e.stopPropagation()} target="_blank" rel="noreferrer" className="flex-1 py-1.5 flex justify-center items-center bg-cyan-50 hover:bg-cyan-100 text-cyan-600 rounded-lg transition-colors relative" title="Ver Guía/Doc Adjunto">
                      <span className="absolute -top-1.5 -right-1.5 bg-cyan-600 text-white text-[7px] font-black px-1 py-0.5 rounded shadow-sm">DOC</span>
                      <FileText className="w-3.5 h-3.5"/>
                   </a>
@@ -1943,11 +1944,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
              return null;
           })()}
 
-          <button onClick={() => generatePDF(j)} disabled={processingId === `${j.id}-pdf`} className="flex-1 py-1.5 flex justify-center bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50" title="Descargar PDF">{processingId === `${j.id}-pdf` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : <FileDown className="w-3.5 h-3.5"/>}</button>
-          <button onClick={() => handleShareWhatsAppPDF(j)} disabled={processingId === `${j.id}-wapp`} className="flex-1 py-1.5 flex justify-center items-center bg-green-50 text-green-600 hover:bg-green-100 rounded-lg transition-colors disabled:opacity-50" title="Compartir PDF por WhatsApp">
+          <button onClick={(e) => {e.stopPropagation(); generatePDF(j);}} disabled={processingId === `${j.id}-pdf`} className="flex-1 py-1.5 flex justify-center bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50" title="Descargar PDF">{processingId === `${j.id}-pdf` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : <FileDown className="w-3.5 h-3.5"/>}</button>
+          <button onClick={(e) => {e.stopPropagation(); handleShareWhatsAppPDF(j);}} disabled={processingId === `${j.id}-wapp`} className="flex-1 py-1.5 flex justify-center items-center bg-green-50 text-green-600 hover:bg-green-100 rounded-lg transition-colors disabled:opacity-50" title="Compartir PDF por WhatsApp">
             {processingId === `${j.id}-wapp` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : <Share2 className="w-3.5 h-3.5"/>}
           </button>
-          {isAdminView && <button onClick={()=>handleDeleteJob(j.id)} className="flex-1 py-1.5 flex justify-center bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Eliminar Traslado"><Trash2 className="w-3.5 h-3.5"/></button>}
+          {isAdminView && <button onClick={(e)=>{e.stopPropagation(); handleDeleteJob(j.id);}} className="flex-1 py-1.5 flex justify-center bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Eliminar Traslado"><Trash2 className="w-3.5 h-3.5"/></button>}
         </div>
       </div>
     );
@@ -2312,7 +2313,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                       const isFailed = j.status === 'failed';
                       const ident = getJobIdentifier(j);
                       return (
-                              <div key={j.id} className="p-2 sm:p-3 hover:bg-slate-50 flex flex-col transition-colors gap-2 border-b border-slate-100 last:border-0">
+                              <div key={j.id} onClick={() => setSelectedHistoryJob(j)} className="p-2 sm:p-3 hover:bg-slate-50 flex flex-col transition-colors gap-2 border-b border-slate-100 last:border-0 cursor-pointer">
                                   {/* FILA ORIGINAL COMPACTA */}
                                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
                                       <div className="flex items-center gap-2 overflow-hidden">
@@ -2346,15 +2347,15 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                                                 </button>
                                              )}
                                           </span>
-                                          {isAdminView && <button onClick={()=>onEditJob(j)} className="p-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-md transition-colors" title="Editar Traslado"><Edit2 className="w-3.5 h-3.5"/></button>}
-                                          {isAdminView && <button onClick={()=>handleDuplicateJob(j)} className="p-1.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-md transition-colors" title="Repetir Vehículo"><Repeat className="w-3.5 h-3.5"/></button>}
-                                          <button onClick={()=>cpyWapp(j)} className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md transition-colors" title="Copiar Resumen"><Copy className="w-3.5 h-3.5"/></button>
+                                          {isAdminView && <button onClick={(e)=>{e.stopPropagation(); onEditJob(j);}} className="p-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-md transition-colors" title="Editar Traslado"><Edit2 className="w-3.5 h-3.5"/></button>}
+                                          {isAdminView && <button onClick={(e)=>{e.stopPropagation(); handleDuplicateJob(j);}} className="p-1.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-md transition-colors" title="Repetir Vehículo"><Repeat className="w-3.5 h-3.5"/></button>}
+                                          <button onClick={(e)=>{e.stopPropagation(); cpyWapp(j);}} className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md transition-colors" title="Copiar Resumen"><Copy className="w-3.5 h-3.5"/></button>
                                           
                                           {(() => {
                                              const oldHistDocHref = j.guideLink || j.guideUrl || j.docLink || j.docUrl || j.rtLink || j.rtDoc || (j.rtData && j.rtData.link) || j.pdfUrl || j.fileUrl || j.checklist?.guiaDespachoPdf || j.checklist?.guiaDespachoLink;
                                              if (oldHistDocHref) {
                                                 return (
-                                                  <a href={oldHistDocHref} target="_blank" rel="noreferrer" className="p-1.5 bg-cyan-50 text-cyan-600 hover:bg-cyan-100 rounded-md transition-colors" title="Ver Guía/Doc Adjunto">
+                                                  <a href={oldHistDocHref} onClick={(e)=>e.stopPropagation()} target="_blank" rel="noreferrer" className="p-1.5 bg-cyan-50 text-cyan-600 hover:bg-cyan-100 rounded-md transition-colors" title="Ver Guía/Doc Adjunto">
                                                      <FileText className="w-3.5 h-3.5"/>
                                                   </a>
                                                 );
@@ -2362,11 +2363,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                                              return null;
                                           })()}
 
-                                          <button onClick={() => generatePDF(j)} className="p-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-md transition-colors" title="Descargar PDF"><FileDown className="w-3.5 h-3.5"/></button>
-                                          <button onClick={() => handleShareWhatsAppPDF(j)} disabled={processingId === `${j.id}-wapp`} className="p-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-md transition-colors disabled:opacity-50" title="Compartir PDF">
+                                          <button onClick={(e) => {e.stopPropagation(); generatePDF(j);}} className="p-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-md transition-colors" title="Descargar PDF"><FileDown className="w-3.5 h-3.5"/></button>
+                                          <button onClick={(e) => {e.stopPropagation(); handleShareWhatsAppPDF(j);}} disabled={processingId === `${j.id}-wapp`} className="p-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-md transition-colors disabled:opacity-50" title="Compartir PDF">
                                             {processingId === `${j.id}-wapp` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : <Share2 className="w-3.5 h-3.5"/>}
                                           </button>
-                                          {isAdminView && <button onClick={()=>handleDeleteJob(j.id)} className="p-1.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-md transition-colors" title="Eliminar Traslado"><Trash2 className="w-3.5 h-3.5"/></button>}
+                                          {isAdminView && <button onClick={(e)=>{e.stopPropagation(); handleDeleteJob(j.id);}} className="p-1.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-md transition-colors" title="Eliminar Traslado"><Trash2 className="w-3.5 h-3.5"/></button>}
                                       </div>
                                   </div>
 
@@ -3221,6 +3222,146 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               <X className="w-6 h-6 text-white"/>
            </button>
            <img src={fullScreenPhoto} alt="Ampliación" className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl cursor-default" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
+
+      {/* NUEVO MODAL: FICHA TÉCNICA DE HISTORIAL */}
+      {selectedHistoryJob && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[300] flex items-center justify-center p-4 cursor-default">
+          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95">
+            <div className="bg-slate-50 border-b border-slate-100 p-4 sm:p-5 flex justify-between items-start shrink-0 relative">
+              <div className="flex gap-3 items-center">
+                <div className="bg-blue-100 p-2.5 rounded-xl"><FileText className="w-6 h-6 text-blue-600"/></div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-800 leading-tight">Ficha Técnica</h3>
+                  <p className="text-xs font-bold text-slate-500">
+                    {new Date(selectedHistoryJob.completedAt || selectedHistoryJob.createdAt).toLocaleString('es-CL')}
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setSelectedHistoryJob(null)} className="p-2 bg-white border border-slate-200 rounded-full hover:bg-slate-100 transition-colors">
+                <X className="w-5 h-5 text-slate-600"/>
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto space-y-6 flex-1">
+              
+              {/* 1. INFO VEHÍCULO */}
+              <div>
+                <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 pb-1">1. Información del Vehículo</h4>
+                <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <div>
+                    <p className="text-[9px] font-bold text-slate-500 uppercase">Marca / Modelo</p>
+                    <p className="text-sm font-black text-slate-800">{selectedHistoryJob.tripType === 'simple' ? selectedHistoryJob.description : `${selectedHistoryJob.brand} ${selectedHistoryJob.model}`}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-bold text-slate-500 uppercase">Identificador</p>
+                    <p className="text-sm font-black text-slate-800">{getJobIdentifier(selectedHistoryJob)} {selectedHistoryJob.vin && selectedHistoryJob.vin !== getJobIdentifier(selectedHistoryJob) ? `(VIN: ${selectedHistoryJob.vin})` : ''}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-bold text-slate-500 uppercase">Cliente</p>
+                    <p className="text-xs font-bold text-slate-700">{selectedHistoryJob.client || 'Sin Cliente'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-bold text-slate-500 uppercase">Conductor</p>
+                    <p className="text-xs font-bold text-slate-700">{selectedHistoryJob.checklist?.assignedDriverName || drivers?.find(d => d.email === selectedHistoryJob.acceptedByEmail)?.name || selectedHistoryJob.acceptedByEmail}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. VIAJE Y KILOMETRAJE */}
+              <div>
+                <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 pb-1">2. Ruta y Kilometraje</h4>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                  <div className="flex items-start gap-2 mb-2">
+                    <MapPin className="w-4 h-4 text-slate-400 mt-0.5 shrink-0"/>
+                    <div>
+                      <p className="text-xs font-bold text-slate-700 break-words">{getRouteStr(selectedHistoryJob)}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-slate-200">
+                    <div>
+                      <p className="text-[9px] font-bold text-slate-500 uppercase">Odómetro Reportado</p>
+                      <p className="text-sm font-black text-slate-800">{selectedHistoryJob.checklist?.mileage || 'No registrado'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold text-slate-500 uppercase">Distancia GPS (Maps)</p>
+                      <p className="text-sm font-black text-blue-600">{selectedHistoryJob.drivenDistance || 'No calculado'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. FECHAS VENCIMIENTO DOCUMENTOS */}
+              {(() => {
+                 const ident = getJobIdentifier(selectedHistoryJob);
+                 let vDocs = selectedHistoryJob.checklist?.docsExpiry;
+                 if (!vDocs && vehicles && ident && ident !== 'S/N') {
+                     const v = vehicles.find(x => x.plate === ident.toUpperCase());
+                     if (v && v.docsExpiry) vDocs = v.docsExpiry;
+                 }
+                 if (!vDocs) return null;
+
+                 const formatExp = (dateStr) => {
+                    if (!dateStr) return <span className="text-slate-400 text-xs">No reg.</span>;
+                    const [y,m,d] = dateStr.split('-');
+                    const expDate = new Date(y, m-1, d);
+                    const today = new Date(); today.setHours(0,0,0,0);
+                    if (expDate < today) return <span className="text-red-600 font-bold text-xs">{d}/{m}/{y} (Vencido)</span>;
+                    return <span className="text-green-700 font-bold text-xs">{d}/{m}/{y}</span>;
+                 };
+
+                 return (
+                   <div>
+                     <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 pb-1">3. Vencimiento Documentos</h4>
+                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                       <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-center"><p className="text-[9px] font-bold text-slate-500 uppercase mb-0.5">Rev. Técnica</p>{formatExp(vDocs.revTecnica)}</div>
+                       <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-center"><p className="text-[9px] font-bold text-slate-500 uppercase mb-0.5">Gases</p>{formatExp(vDocs.gases)}</div>
+                       <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-center"><p className="text-[9px] font-bold text-slate-500 uppercase mb-0.5">Permiso Circ.</p>{formatExp(vDocs.permiso)}</div>
+                       <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-center"><p className="text-[9px] font-bold text-slate-500 uppercase mb-0.5">SOAP</p>{formatExp(vDocs.soap)}</div>
+                     </div>
+                   </div>
+                 );
+              })()}
+
+              {/* 4. RECEPCIÓN */}
+              {selectedHistoryJob.checklist && (
+                <div>
+                  <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 pb-1">4. Recepción</h4>
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col sm:flex-row gap-4 justify-between items-center">
+                    <div className="flex-1 text-center sm:text-left">
+                      <p className="text-[9px] font-bold text-slate-500 uppercase">Recibido por</p>
+                      <p className="text-sm font-black text-slate-800">{selectedHistoryJob.checklist.noReception ? 'Sin Recepción Formal' : (selectedHistoryJob.checklist.receiverName || 'No registrado')}</p>
+                      {selectedHistoryJob.checklist.receiverRut && <p className="text-xs font-bold text-slate-500">RUT: {selectedHistoryJob.checklist.receiverRut}</p>}
+                    </div>
+                    {selectedHistoryJob.checklist.signatureData && (
+                      <div className="bg-white p-2 rounded-lg border border-slate-200 shrink-0">
+                        <img src={selectedHistoryJob.checklist.signatureData} alt="Firma" className="h-12 object-contain" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 5. GALERÍA DE FOTOS */}
+              {selectedHistoryJob.checklist?.photos && Object.values(selectedHistoryJob.checklist.photos).filter(p => typeof p === 'string' && p.startsWith('http')).length > 0 && (
+                <div>
+                  <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 pb-1">5. Galería Fotográfica</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {Object.entries(selectedHistoryJob.checklist.photos).filter(([k,v]) => typeof v === 'string' && v.startsWith('http')).map(([k,v]) => (
+                      <div key={k} className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-square cursor-pointer" onClick={() => setFullScreenPhoto(v)}>
+                        <img src={v} alt={k} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                          <p className="text-white text-[9px] font-black uppercase truncate">{k.replace('det', 'Detalle ')}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </div>
         </div>
       )}
 
