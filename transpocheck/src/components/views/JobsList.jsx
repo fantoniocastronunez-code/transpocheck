@@ -2630,7 +2630,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                             <p className={`font-extrabold text-sm ${prtReturnOpt === 'other' ? 'text-red-800' : 'text-slate-700'}`}>Ir a Otro Destino</p>
                             {prtReturnOpt === 'other' ? (
                                 <div className="mt-2 w-full animate-in fade-in slide-in-from-top-1">
-                                    <input type="text" list="directory-destinations-prt-rej" autoFocus required placeholder="Escribe el destino..." value={prtReturnDest} onChange={e=>setPrtReturnDest(e.target.value)} className="w-full bg-white border border-red-300 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-red-500 font-bold" onClick={(e)=>e.stopPropagation()} />
+                                    <input type="text" list="directory-destinations-prt-rej" autoFocus required placeholder="Escribe el destino..." value={prtReturnDest} onChange={e=>setPrtReturnDest(e.target.value.toUpperCase())} className="w-full bg-white border border-red-300 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-red-500 font-bold" onClick={(e)=>e.stopPropagation()} />
+
                                     <datalist id="directory-destinations-prt-rej">
                                        {directoryMemory.map((dir, idx) => (
                                           <option key={`dir-prt-rej-${idx}`} value={dir.name || dir.address} />
@@ -2708,7 +2709,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                             <p className={`font-extrabold text-sm ${prtReturnOpt === 'other' ? 'text-green-800' : 'text-slate-700'}`}>Ir a Otro Destino</p>
                             {prtReturnOpt === 'other' ? (
                                 <div className="mt-2 w-full animate-in fade-in slide-in-from-top-1">
-                                    <input type="text" list="directory-destinations-prt" autoFocus required placeholder="Escribe el destino..." value={prtReturnDest} onChange={e=>setPrtReturnDest(e.target.value)} className="w-full bg-white border border-green-300 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-green-500 font-bold" onClick={(e)=>e.stopPropagation()} />
+                                    <input type="text" list="directory-destinations-prt" autoFocus required placeholder="Escribe el destino..." value={prtReturnDest} onChange={e=>setPrtReturnDest(e.target.value.toUpperCase())} className="w-full bg-white border border-green-300 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-green-500 font-bold" onClick={(e)=>e.stopPropagation()} />
+
+
                                     <datalist id="directory-destinations-prt">
                                        {directoryMemory.map((dir, idx) => (
                                           <option key={`dir-prt-${idx}`} value={dir.name || dir.address} />
@@ -2987,7 +2990,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                           <p className={`font-extrabold text-sm ${dupMode === 'continue' ? 'text-purple-800' : 'text-slate-700'}`}>Continuar a Otro Destino</p>
                           {dupMode === 'continue' ? (
                              <div className="mt-2 animate-in fade-in slide-in-from-top-1 w-full">
-                                <input type="text" list="directory-destinations" autoFocus placeholder="Escribe el nuevo destino..." value={dupDestination} onChange={e=>setDupDestination(e.target.value)} className="w-full bg-white border border-purple-200 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-400 font-bold" />
+                                <input type="text" list="directory-destinations" autoFocus placeholder="Escribe el nuevo destino..." value={dupDestination} onChange={e=>setDupDestination(e.target.value.toUpperCase())} className="w-full bg-white border border-purple-200 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-400 font-bold" />
                                 <datalist id="directory-destinations">
                                    {directoryMemory.map((dir, idx) => (
                                       <option key={`dir-${idx}`} value={dir.name || dir.address} />
