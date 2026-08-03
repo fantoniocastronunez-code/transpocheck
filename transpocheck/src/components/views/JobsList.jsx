@@ -744,22 +744,21 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const getRouteStr = (j) => {
     if (j.tripType === 'revision') {
        const rtStat = j.checklist?.rtStatus || j.prt_result;
+       const manualDest = j.destination?.includes('->') 
+                       ? j.destination.split('->')[j.destination.split('->').length - 1].trim() 
+                       : null;
+       
+       const ret = manualDest 
+          ? manualDest 
+          : (j.checklist?.rtReturnOption === 'other' && j.checklist?.rtReturnDestination
+             ? j.checklist.rtReturnDestination 
+             : (j.checklist?.rtReturnOption === 'origin' ? j.origin : (j.destination && !j.destination.toLowerCase().includes('prt') ? j.destination : j.origin)));
+
        if (rtStat === 'aprobado' || rtStat === 'aprobado_ayuda') {
-           const manualDest = j.destination?.includes('->') 
-                           ? j.destination.split('->')[j.destination.split('->').length - 1].trim() 
-                           : null;
-           
-           // MAGIA: El destino manual (editado por Admin) gana siempre sobre el Checklist
-           const ret = manualDest 
-              ? manualDest 
-              : (j.checklist?.rtReturnOption === 'other' && j.checklist?.rtReturnDestination
-                 ? j.checklist.rtReturnDestination 
-                 : (j.checklist?.rtReturnOption === 'origin' ? j.origin : (j.destination && !j.destination.toLowerCase().includes('prt') ? j.destination : j.origin)));
-              
            return `${j.origin || '-'} ➔ PRT ➔ ${ret || '-'}`;
        }
        if (rtStat === 'rechazado') {
-           return `${j.origin || '-'} ➔ PRT (Rechazada)`;
+           return `${j.origin || '-'} ➔ PRT (Rechazada) ➔ ${ret || '-'}`;
        }
        return `${j.origin || '-'} ➔ Planta de Revisión (PRT)`;
     }
@@ -1566,12 +1565,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           {j.tripType === 'revision' && (
             <>
               <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step4Done ? (j.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200'}`}>{step4Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step4Done ? (j.prt_result === 'rechazado' ? 'text-red-600' : 'text-green-600') : 'text-slate-400'}`}>Resultado Revisión</p>{step4Done && <p className={`text-xs font-bold ${j.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-600'}`}>{j.prt_result === 'rechazado' ? `Rechazado` : 'Aprobado'}</p>}</div>
-              {/* NUEVO: Mostrar a dónde se dirige después de aprobar */}
-              {step4Done && (j.prt_result === 'aprobado' || j.prt_result === 'aprobado_ayuda') && (
+              {/* Mostrar a dónde se dirige después de PRT (sea aprobado o rechazado) */}
+              {step4Done && (
                 <div className="relative pt-2"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center bg-blue-500`}><Navigation className="w-2.5 h-2.5 text-white"/></div><p className="font-extrabold text-sm leading-tight text-slate-800">En camino a:</p><p className="text-xs font-bold text-blue-600 whitespace-normal break-words pr-2">
-                    {j.destination?.includes('->') 
-                       ? j.destination.split('->')[j.destination.split('->').length - 1].trim() 
-                       : (j.checklist?.rtReturnOption === 'other' && j.checklist?.rtReturnDestination ? j.checklist.rtReturnDestination : (j.checklist?.rtReturnOption === 'origin' ? j.origin : (j.destination && !j.destination.toLowerCase().includes('prt') ? j.destination : j.origin)))}
+                    {getRtFinalDestination(j)}
                 </p></div>
               )}
             </>
@@ -1685,7 +1682,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                           <button onClick={() => { setPrtApproveType('aprobado'); setPrtReturnOpt('origin'); setPrtReturnDest(''); setPrtApprovePromptJob(j); }} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-1 disabled:opacity-50">
                              {processingId === `${j.id}-prt_done` ? <Clock className="w-3 h-3 animate-spin"/> : '✅'} Aprobado
                           </button>
-                          <button onClick={()=>setPrtPromptJob(j)} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors disabled:opacity-50">❌ Rechazado</button>
+                          <button onClick={() => { setPrtReturnOpt('origin'); setPrtReturnDest(''); setPrtPromptJob(j); }} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors disabled:opacity-50">❌ Rechazado</button>
                         </div>
                       )}
 
@@ -2546,15 +2543,81 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
       )}
       
-      {prtPromptJob && (
+            {prtPromptJob && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-          <form onSubmit={(e) => { e.preventDefault(); updatePhase(prtPromptJob, 'prt_done', { prt_result: 'rechazado', prt_reason: e.target.reason.value }); setPrtPromptJob(null); }} className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-xl border-t-8 border-red-500">
-            <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5"><XCircle className="text-red-500"/> Motivo del Rechazo PRT</h3>
-            <textarea name="reason" required placeholder="Escribe por qué rechazaron el vehículo en la planta..." className="w-full border-2 p-3 rounded-xl font-bold text-sm outline-none focus:border-red-500" rows="3"></textarea>
-            <div className="flex gap-3">
-              <button type="button" onClick={()=>setPrtPromptJob(null)} className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-sm text-slate-600 transition-colors">Cancelar</button>
-              <button type="submit" className="flex-[2] py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-sm shadow-md transition-colors">Guardar Rechazo</button>
+          <form onSubmit={(e) => {
+              e.preventDefault();
+              if (prtReturnOpt === 'other' && !prtReturnDest.trim()) return showAlert("Debes ingresar el nuevo destino para continuar.");
+              
+              const reasonText = e.target.reason.value;
+              const mergedChecklist = {
+                  ...(prtPromptJob.checklist || {}),
+                  rtStatus: 'rechazado',
+                  rtRejectReason: reasonText,
+                  rtReturnOption: prtReturnOpt,
+                  rtReturnDestination: prtReturnOpt === 'other' ? prtReturnDest : ''
+              };
+              
+              updatePhase(prtPromptJob, 'prt_done', {
+                  prt_result: 'rechazado',
+                  prt_reason: reasonText,
+                  checklist: mergedChecklist
+              });
+              setPrtPromptJob(null);
+          }} className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl border-t-8 border-red-500 animate-in zoom-in-95 flex flex-col max-h-[90vh]">
+            
+            <div className="flex justify-between items-center mb-4 shrink-0">
+              <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5"><XCircle className="text-red-500 w-5 h-5"/> Rechazo PRT</h3>
+              <button type="button" onClick={() => setPrtPromptJob(null)} className="p-1.5 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-600"/></button>
             </div>
+
+            <div className="overflow-y-auto space-y-5 pr-1 pb-2">
+                <div className="space-y-2.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">1. Motivo del Rechazo</label>
+                    <textarea name="reason" required placeholder="Escribe por qué rechazaron el vehículo..." className="w-full border-2 p-3 rounded-xl font-bold text-sm outline-none focus:border-red-500" rows="2"></textarea>
+                </div>
+
+                <div className="space-y-2.5 pt-4 border-t border-slate-100">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">2. ¿Hacia dónde se dirige ahora?</label>
+                    <button type="button" onClick={() => { setPrtReturnOpt('origin'); setPrtReturnDest(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${prtReturnOpt === 'origin' ? 'border-red-500 bg-red-50 shadow-sm' : 'border-slate-100 bg-slate-50 hover:border-red-200'}`}>
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${prtReturnOpt === 'origin' ? 'border-red-500' : 'border-slate-300'}`}>
+                            {prtReturnOpt === 'origin' && <div className="w-2 h-2 bg-red-500 rounded-full"></div>}
+                        </div>
+                        <div className="min-w-0">
+                            <p className={`font-extrabold text-sm ${prtReturnOpt === 'origin' ? 'text-red-800' : 'text-slate-700'}`}>Retornar al Origen</p>
+                            <p className="text-[10px] font-bold text-slate-500 truncate">Volver a {prtPromptJob.origin}</p>
+                        </div>
+                    </button>
+
+                    <button type="button" onClick={() => setPrtReturnOpt('other')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-start gap-3 ${prtReturnOpt === 'other' ? 'border-red-500 bg-red-50 shadow-sm' : 'border-slate-100 bg-slate-50 hover:border-red-200'}`}>
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${prtReturnOpt === 'other' ? 'border-red-500' : 'border-slate-300'}`}>
+                            {prtReturnOpt === 'other' && <div className="w-2 h-2 bg-red-500 rounded-full"></div>}
+                        </div>
+                        <div className="w-full min-w-0">
+                            <p className={`font-extrabold text-sm ${prtReturnOpt === 'other' ? 'text-red-800' : 'text-slate-700'}`}>Ir a Otro Destino</p>
+                            {prtReturnOpt === 'other' ? (
+                                <div className="mt-2 w-full animate-in fade-in slide-in-from-top-1">
+                                    <input type="text" list="directory-destinations-prt-rej" autoFocus required placeholder="Escribe el destino..." value={prtReturnDest} onChange={e=>setPrtReturnDest(e.target.value)} className="w-full bg-white border border-red-300 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-red-500 font-bold" onClick={(e)=>e.stopPropagation()} />
+                                    <datalist id="directory-destinations-prt-rej">
+                                       {directoryMemory.map((dir, idx) => (
+                                          <option key={`dir-prt-rej-${idx}`} value={dir.name || dir.address} />
+                                       ))}
+                                       {allClientsList && allClientsList.map((client, idx) => (
+                                          <option key={`cli-prt-rej-${idx}`} value={client} />
+                                       ))}
+                                    </datalist>
+                                </div>
+                            ) : (
+                                <p className="text-[10px] font-bold text-slate-500 truncate">Elige un nuevo lugar</p>
+                            )}
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" disabled={processingId === `${prtPromptJob.id}-prt_done`} className="w-full shrink-0 py-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-sm shadow-md transition-colors mt-2 flex justify-center items-center gap-2 disabled:opacity-50">
+                Confirmar Rechazo y Continuar
+            </button>
           </form>
         </div>
       )}
