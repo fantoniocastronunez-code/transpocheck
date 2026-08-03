@@ -1007,13 +1007,13 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                     </div>
                     
                     {!selectedHistoryJob.checklist.noReception && (
-                      <div className="bg-white p-2 rounded-xl border-2 border-slate-200 shrink-0 flex flex-col items-center justify-center min-w-[140px] min-h-[80px] w-full sm:w-auto shadow-inner">
+                      <div className="p-2 rounded-xl border-2 border-slate-200 shrink-0 flex flex-col items-center justify-center min-w-[140px] min-h-[80px] w-full sm:w-auto shadow-inner" style={{ backgroundColor: '#ffffff' }}>
                         {(selectedHistoryJob.checklist.signatureData || selectedHistoryJob.signatureData) ? (
                           <img src={selectedHistoryJob.checklist.signatureData || selectedHistoryJob.signatureData} alt="Firma" className="h-16 sm:h-20 object-contain drop-shadow-sm" />
                         ) : (
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Firma no registrada</span>
+                          <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#94a3b8' }}>Firma no registrada</span>
                         )}
-                        <p className="text-[8px] font-black text-slate-300 uppercase mt-1 tracking-widest">Firma Digital</p>
+                        <p className="text-[8px] font-black uppercase mt-1 tracking-widest" style={{ color: '#cbd5e1' }}>Firma Digital</p>
                       </div>
                     )}
                   </div>
