@@ -904,7 +904,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         let hRev = drawKV("Rev. Tecnica", getDocStatus('revTecnica'), 65, currentY, 45);
         currentY += Math.max(hPerm, hRev) + 6;
         let hGas = drawKV("Gases", getDocStatus('gases'), 15, currentY, 45);
-        currentY += hGas + 8;
+        let hKm = drawKV("Kilometraje", `${job.checklist?.mileage || 'No reg.'}`, 65, currentY, 45);
+        currentY += Math.max(hGas, hKm) + 8;
 
         docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("OBSERVACIONES:", 15, currentY); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor); const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin observaciones registradas.'}`), leftColWidth); docPDF.text(obsSplit, 15, currentY + 4); currentY += (obsSplit.length * 4) + 8;
         
@@ -984,7 +985,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     if (preloadedOtherPhotos.length > 0) {
       const labels = job.tripType === 'simple' 
          ? { det1: 'Evidencia 1', det2: 'Evidencia 2', det3: 'Evidencia 3', det4: 'Evidencia 4', det5: 'Evidencia 5', det6: 'Evidencia 6', det7: 'Evidencia 7', det8: 'Evidencia 8', det9: 'Evidencia 9', det10: 'Evidencia 10' }
-         : { left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', interior_front: 'Int. Adelante', interior_back: 'Int. Atras', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4', det5: 'Detalle 5', det6: 'Detalle 6', det7: 'Detalle 7', det8: 'Detalle 8' };
+         : { left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', interior_front: 'Int. Adelante', interior_back: 'Int. Atras', odometer: 'Odómetro', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4', det5: 'Detalle 5', det6: 'Detalle 6', det7: 'Detalle 7', det8: 'Detalle 8' };
       
       let photoY = 46; let currentCol = 1; let addedPage = false; 
       const detailPins = job.checklist?.detailPins || [];
