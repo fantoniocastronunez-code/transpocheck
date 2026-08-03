@@ -2543,19 +2543,28 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
       )}
       
-            {prtPromptJob && (
+                  {prtPromptJob && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <form onSubmit={(e) => {
               e.preventDefault();
               if (prtReturnOpt === 'other' && !prtReturnDest.trim()) return showAlert("Debes ingresar el nuevo destino para continuar.");
               
+              let finalReturnOpt = prtReturnOpt;
+              let finalReturnDest = prtReturnDest;
+
+              // Magia: Si eligen ayuda, lo catalogamos como 'otro destino' forzado para que el sistema no se rompa
+              if (prtReturnOpt === 'prt_help') {
+                  finalReturnOpt = 'other';
+                  finalReturnDest = 'PRT (Reintento con Ayuda)';
+              }
+
               const reasonText = e.target.reason.value;
               const mergedChecklist = {
                   ...(prtPromptJob.checklist || {}),
                   rtStatus: 'rechazado',
                   rtRejectReason: reasonText,
-                  rtReturnOption: prtReturnOpt,
-                  rtReturnDestination: prtReturnOpt === 'other' ? prtReturnDest : ''
+                  rtReturnOption: finalReturnOpt,
+                  rtReturnDestination: finalReturnOpt === 'other' ? finalReturnDest : ''
               };
               
               updatePhase(prtPromptJob, 'prt_done', {
@@ -2579,6 +2588,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
                 <div className="space-y-2.5 pt-4 border-t border-slate-100">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">2. ¿Hacia dónde se dirige ahora?</label>
+                    
                     <button type="button" onClick={() => { setPrtReturnOpt('origin'); setPrtReturnDest(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${prtReturnOpt === 'origin' ? 'border-red-500 bg-red-50 shadow-sm' : 'border-slate-100 bg-slate-50 hover:border-red-200'}`}>
                         <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${prtReturnOpt === 'origin' ? 'border-red-500' : 'border-slate-300'}`}>
                             {prtReturnOpt === 'origin' && <div className="w-2 h-2 bg-red-500 rounded-full"></div>}
@@ -2586,6 +2596,16 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                         <div className="min-w-0">
                             <p className={`font-extrabold text-sm ${prtReturnOpt === 'origin' ? 'text-red-800' : 'text-slate-700'}`}>Retornar al Origen</p>
                             <p className="text-[10px] font-bold text-slate-500 truncate">Volver a {prtPromptJob.origin}</p>
+                        </div>
+                    </button>
+
+                    <button type="button" onClick={() => { setPrtReturnOpt('prt_help'); setPrtReturnDest(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${prtReturnOpt === 'prt_help' ? 'border-amber-500 bg-amber-50 shadow-sm' : 'border-slate-100 bg-slate-50 hover:border-amber-200'}`}>
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${prtReturnOpt === 'prt_help' ? 'border-amber-500' : 'border-slate-300'}`}>
+                            {prtReturnOpt === 'prt_help' && <div className="w-2 h-2 bg-amber-500 rounded-full"></div>}
+                        </div>
+                        <div className="min-w-0">
+                            <p className={`font-extrabold text-sm ${prtReturnOpt === 'prt_help' ? 'text-amber-800' : 'text-slate-700'}`}>Reintentar con Ayuda</p>
+                            <p className="text-[10px] font-bold text-slate-500 truncate">Se queda gestionando ayuda</p>
                         </div>
                     </button>
 
