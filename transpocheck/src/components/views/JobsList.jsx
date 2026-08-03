@@ -3329,15 +3329,28 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               {selectedHistoryJob.checklist && (
                 <div>
                   <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 pb-1">4. Recepción</h4>
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col sm:flex-row gap-4 justify-between items-center">
-                    <div className="flex-1 text-center sm:text-left">
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col sm:flex-row gap-4 justify-between items-center">
+                    <div className="flex-1 text-center sm:text-left w-full">
                       <p className="text-[9px] font-bold text-slate-500 uppercase">Recibido por</p>
-                      <p className="text-sm font-black text-slate-800">{selectedHistoryJob.checklist.noReception ? 'Sin Recepción Formal' : (selectedHistoryJob.checklist.receiverName || 'No registrado')}</p>
-                      {selectedHistoryJob.checklist.receiverRut && <p className="text-xs font-bold text-slate-500">RUT: {selectedHistoryJob.checklist.receiverRut}</p>}
+                      <p className="text-sm font-black text-slate-800">{selectedHistoryJob.checklist.noReception ? 'Sin Recepción Formal' : (selectedHistoryJob.checklist.receiverName || selectedHistoryJob.receiverName || 'No registrado')}</p>
+                      {(selectedHistoryJob.checklist.receiverRut || selectedHistoryJob.receiverRut) && <p className="text-xs font-bold text-slate-500">RUT: {selectedHistoryJob.checklist.receiverRut || selectedHistoryJob.receiverRut}</p>}
+                      
+                      {(selectedHistoryJob.checklist.clientComments || selectedHistoryJob.clientComments) && (
+                         <div className="mt-2 bg-white p-2 rounded-lg border border-slate-100 shadow-sm">
+                           <p className="text-[9px] font-bold text-slate-400 uppercase">Comentarios</p>
+                           <p className="text-xs font-bold text-slate-700 italic">"{(selectedHistoryJob.checklist.clientComments || selectedHistoryJob.clientComments)}"</p>
+                         </div>
+                      )}
                     </div>
-                    {selectedHistoryJob.checklist.signatureData && (
-                      <div className="bg-white p-2 rounded-lg border border-slate-200 shrink-0">
-                        <img src={selectedHistoryJob.checklist.signatureData} alt="Firma" className="h-12 object-contain" />
+                    
+                    {!selectedHistoryJob.checklist.noReception && (
+                      <div className="bg-white p-2 rounded-xl border-2 border-slate-200 shrink-0 flex flex-col items-center justify-center min-w-[140px] min-h-[80px] w-full sm:w-auto shadow-inner">
+                        {(selectedHistoryJob.checklist.signatureData || selectedHistoryJob.signatureData) ? (
+                          <img src={selectedHistoryJob.checklist.signatureData || selectedHistoryJob.signatureData} alt="Firma" className="h-16 sm:h-20 object-contain drop-shadow-sm" />
+                        ) : (
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Firma no registrada</span>
+                        )}
+                        <p className="text-[8px] font-black text-slate-300 uppercase mt-1 tracking-widest">Firma Digital</p>
                       </div>
                     )}
                   </div>
