@@ -747,11 +747,14 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
        if (rtStat === 'aprobado' || rtStat === 'aprobado_ayuda') {
            const manualDest = j.destination?.includes('->') 
                            ? j.destination.split('->')[j.destination.split('->').length - 1].trim() 
-                           : (j.destination && !j.destination.toLowerCase().includes('prt') ? j.destination : null);
+                           : null;
            
-           const ret = j.checklist?.rtReturnOption === 'other' && j.checklist?.rtReturnDestination
-              ? j.checklist.rtReturnDestination 
-              : (j.checklist?.rtReturnOption === 'origin' ? j.origin : (manualDest || j.origin));
+           // MAGIA: El destino manual (editado por Admin) gana siempre sobre el Checklist
+           const ret = manualDest 
+              ? manualDest 
+              : (j.checklist?.rtReturnOption === 'other' && j.checklist?.rtReturnDestination
+                 ? j.checklist.rtReturnDestination 
+                 : (j.checklist?.rtReturnOption === 'origin' ? j.origin : (j.destination && !j.destination.toLowerCase().includes('prt') ? j.destination : j.origin)));
               
            return `${j.origin || '-'} ➔ PRT ➔ ${ret || '-'}`;
        }
@@ -1211,24 +1214,24 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     
     const ident = getJobIdentifier(j);
 
-      const getRtFinalDestination = (job) => {
-    // Si ya cerró el acta, tomamos su decisión final
+  const getRtFinalDestination = (job) => {
+    // 1. PRIORIDAD ABSOLUTA: Si el administrador editó la ruta con flechas, esta gana por sobre el checklist.
+    if (job.destination && job.destination.includes('->')) {
+      const parts = job.destination.split('->');
+      return parts[parts.length - 1].trim();
+    }
+
+    // 2. Si no hay ruta editada manual, tomamos la decisión del checklist
     if (job.checklist?.rtReturnOption === 'other' && job.checklist?.rtReturnDestination) {
       return job.checklist.rtReturnDestination;
     }
     if (job.checklist?.rtReturnOption === 'origin') {
       return job.origin;
     }
-    // Si no ha cerrado, extraemos el destino final programado desde el string maestro
-    if (job.destination) {
-      const parts = job.destination.split('->');
-      if (parts.length > 1) {
-        return parts[parts.length - 1].trim();
-      }
-      // Si no tiene flecha, pero es distinto a PRT, devolvemos eso
-      if (!job.destination.toLowerCase().includes('planta prt') && !job.destination.toLowerCase().includes('prt')) {
-        return job.destination.trim();
-      }
+    
+    // 3. Fallback final si no hay checklist cerrado ni flechas
+    if (job.destination && !job.destination.toLowerCase().includes('prt')) {
+      return job.destination.trim();
     }
     return job.origin || 'Por definir';
   };
@@ -1565,7 +1568,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step4Done ? (j.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200'}`}>{step4Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step4Done ? (j.prt_result === 'rechazado' ? 'text-red-600' : 'text-green-600') : 'text-slate-400'}`}>Resultado Revisión</p>{step4Done && <p className={`text-xs font-bold ${j.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-600'}`}>{j.prt_result === 'rechazado' ? `Rechazado` : 'Aprobado'}</p>}</div>
               {/* NUEVO: Mostrar a dónde se dirige después de aprobar */}
               {step4Done && (j.prt_result === 'aprobado' || j.prt_result === 'aprobado_ayuda') && (
-                <div className="relative pt-2"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center bg-blue-500`}><Navigation className="w-2.5 h-2.5 text-white"/></div><p className="font-extrabold text-sm leading-tight text-slate-800">En camino a:</p><p className="text-xs font-bold text-blue-600 whitespace-normal break-words pr-2">{j.checklist?.rtReturnOption === 'other' && j.checklist?.rtReturnDestination ? j.checklist.rtReturnDestination : (j.checklist?.rtReturnOption === 'origin' ? j.origin : (j.destination?.includes('->') ? j.destination.split('->')[j.destination.split('->').length - 1].trim() : (j.destination && !j.destination.toLowerCase().includes('prt') ? j.destination : j.origin)))}</p></div>
+                <div className="relative pt-2"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center bg-blue-500`}><Navigation className="w-2.5 h-2.5 text-white"/></div><p className="font-extrabold text-sm leading-tight text-slate-800">En camino a:</p><p className="text-xs font-bold text-blue-600 whitespace-normal break-words pr-2">
+                    {j.destination?.includes('->') 
+                       ? j.destination.split('->')[j.destination.split('->').length - 1].trim() 
+                       : (j.checklist?.rtReturnOption === 'other' && j.checklist?.rtReturnDestination ? j.checklist.rtReturnDestination : (j.checklist?.rtReturnOption === 'origin' ? j.origin : (j.destination && !j.destination.toLowerCase().includes('prt') ? j.destination : j.origin)))}
+                </p></div>
               )}
             </>
           )}
@@ -1775,13 +1782,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                       <div className="bg-white p-2 rounded-lg border border-blue-100 shadow-sm flex items-start gap-2">
                          <div className="mt-1"><div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_4px_rgba(59,130,246,0.6)]"></div></div>
                          <span className="text-[10px] font-black text-blue-700 leading-tight break-words whitespace-normal">
-                            {j.checklist?.rtReturnOption === 'other' && j.checklist?.rtReturnDestination 
-                               ? j.checklist.rtReturnDestination 
-                               : j.checklist?.rtReturnOption === 'origin' 
-                                 ? j.origin 
-                                 : j.destination?.includes('->') 
-                                   ? j.destination.split('->')[j.destination.split('->').length - 1].trim() 
-                                   : (j.destination && !j.destination.toLowerCase().includes('prt') ? j.destination : (j.origin || 'Por definir'))}
+                            {j.destination?.includes('->') 
+                               ? j.destination.split('->')[j.destination.split('->').length - 1].trim()
+                               : (j.checklist?.rtReturnOption === 'other' && j.checklist?.rtReturnDestination 
+                                  ? j.checklist.rtReturnDestination 
+                                  : j.checklist?.rtReturnOption === 'origin' 
+                                    ? j.origin 
+                                    : (j.destination && !j.destination.toLowerCase().includes('prt') ? j.destination : (j.origin || 'Por definir')))}
                          </span>
                       </div>
                    </>
