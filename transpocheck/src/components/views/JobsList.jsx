@@ -24,6 +24,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [relayPromptJob, setRelayPromptJob] = useState(null); 
   const [forceCloseJob, setForceCloseJob] = useState(null); 
   const [editPriceJob, setEditPriceJob] = useState(null); // <-- NUEVO: Estado para editar cobro
+  const [editDateJob, setEditDateJob] = useState(null); // <-- NUEVO: Estado para editar fecha de término
   
   const [dupPromptJob, setDupPromptJob] = useState(null);
   const [dupMode, setDupMode] = useState('clone');
@@ -1806,7 +1807,14 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         
         <div className="flex justify-between items-end border-t border-slate-50 pt-2 mb-2">
           <p className={`text-[10px] font-black uppercase ${isFailed ? 'text-red-500' : 'text-green-600'}`}>{isFailed ? 'RECHAZADO' : 'ENTREGADO'}</p>
-          <p className="text-slate-400 font-bold text-[9px]">{getDStr(j)}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-slate-400 font-bold text-[9px]">{new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL')}</p>
+            {isAdminView && auditMode && (
+              <button onClick={(e) => { e.stopPropagation(); setEditDateJob(j); }} className="text-blue-500 hover:bg-blue-50 p-1 rounded transition-colors" title="Corregir Fecha">
+                <Edit2 className="w-3 h-3"/>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* NUEVO: CRONÓMETRO Y KILOMETRAJE EN LA TARJETA FINALIZADA */}
@@ -2330,7 +2338,14 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                                           </div>
                                       </div>
                                       <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
-                                          <span className="text-[9px] font-bold text-slate-400 mr-2">{new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL')}</span>
+                                          <span className="text-[9px] font-bold text-slate-400 flex items-center gap-1 mr-1">
+                                             {new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL')}
+                                             {isAdminView && auditMode && (
+                                                <button onClick={(e) => { e.stopPropagation(); setEditDateJob(j); }} className="text-blue-500 hover:bg-blue-50 p-1 rounded transition-colors" title="Corregir Fecha">
+                                                  <Edit2 className="w-3 h-3"/>
+                                                </button>
+                                             )}
+                                          </span>
                                           {isAdminView && <button onClick={()=>onEditJob(j)} className="p-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-md transition-colors" title="Editar Traslado"><Edit2 className="w-3.5 h-3.5"/></button>}
                                           {isAdminView && <button onClick={()=>handleDuplicateJob(j)} className="p-1.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-md transition-colors" title="Repetir Vehículo"><Repeat className="w-3.5 h-3.5"/></button>}
                                           <button onClick={()=>cpyWapp(j)} className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md transition-colors" title="Copiar Resumen"><Copy className="w-3.5 h-3.5"/></button>
@@ -2922,6 +2937,61 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                  </button>
               </div>
            </div>
+        </div>
+      )}
+
+      {/* NUEVO MODAL: EDITAR FECHA DEL TRASLADO */}
+      {editDateJob && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+            <form onSubmit={async (e) => {
+                e.preventDefault();
+                const dateVal = e.target.newDate.value;
+                if (!dateVal) return showAlert("Selecciona una fecha válida");
+                
+                // Creamos un timestamp a las 12:00 del día seleccionado para evitar problemas de zona horaria
+                const [y, m, d] = dateVal.split('-');
+                const newDateObj = new Date(y, m - 1, d, 12, 0, 0);
+                const newTimestamp = newDateObj.getTime();
+
+                setProcessingId(`${editDateJob.id}-date`);
+                try {
+                    await updateDoc(doc(db, 'transport_jobs', editDateJob.id), { 
+                        completedAt: newTimestamp,
+                        scheduledDate: dateVal // Mantenemos coherencia
+                    });
+                    showAlert("✅ Fecha actualizada correctamente.");
+                    setEditDateJob(null);
+                } catch (err) {
+                    console.error(err);
+                    showAlert("❌ Error al actualizar la fecha.");
+                } finally {
+                    setProcessingId(null);
+                }
+            }} className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-5 shadow-2xl border-t-8 border-blue-500 animate-in zoom-in-95">
+                <div className="flex justify-between items-center">
+                    <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                        <Clock className="w-6 h-6 text-blue-600"/> Corregir Fecha
+                    </h3>
+                    <button type="button" onClick={() => setEditDateJob(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors">
+                        <X className="w-5 h-5 text-slate-600"/>
+                    </button>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Trabajo a editar</p>
+                    <p className="text-sm font-bold text-slate-700 truncate">
+                        {editDateJob.tripType === 'simple' ? editDateJob.description : `${editDateJob.brand} ${editDateJob.model}`}
+                    </p>
+                    <p className="text-xs font-bold text-slate-500">{getJobIdentifier(editDateJob)}</p>
+                </div>
+                <div>
+                    <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest ml-1">Fecha Real de Término</label>
+                    <input name="newDate" type="date" defaultValue={new Date(editDateJob.completedAt || editDateJob.createdAt).toISOString().split('T')[0]} required className="w-full border-2 border-blue-200 bg-blue-50 p-3.5 rounded-xl font-black text-lg text-blue-900 outline-none focus:border-blue-500 mt-1 shadow-sm" />
+                </div>
+                <button type="submit" disabled={processingId === `${editDateJob.id}-date`} className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-sm shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                    {processingId === `${editDateJob.id}-date` ? <Clock className="w-5 h-5 animate-spin"/> : <Save className="w-5 h-5"/>}
+                    {processingId === `${editDateJob.id}-date` ? 'Guardando...' : 'Actualizar Fecha'}
+                </button>
+            </form>
         </div>
       )}
 

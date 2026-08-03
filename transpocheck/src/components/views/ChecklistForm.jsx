@@ -43,8 +43,8 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
   }
 
   const defaultData = {
-    client: job.client||'', manualClient: '', brand: job.brand||'', model: job.model||'', plateOrVin: job.plate||job.vin||'', origin: job.origin||'', destination: job.destination||'', vehicleType: job.vehicleType||'auto', fuelLevel: 50, 
-    photos: job.checklist?.photos || { front:false, left:false, right:false, back:false, tire:false, dashboard:false, ...Array.from({length: 30}).reduce((acc, _, i) => { acc[`det${i+1}`] = false; return acc; }, {}) }, 
+    client: job.client||'', manualClient: '', brand: job.brand||'', model: job.model||'', plateOrVin: job.plate||job.vin||'', origin: job.origin||'', destination: job.destination||'', vehicleType: job.vehicleType||'auto', fuelLevel: 50, mileage: job.checklist?.mileage || '',
+    photos: job.checklist?.photos || { front:false, left:false, right:false, back:false, tire:false, dashboard:false, mileage:false, ...Array.from({length: 30}).reduce((acc, _, i) => { acc[`det${i+1}`] = false; return acc; }, {}) }, 
     docs: job.checklist?.docs || initialDocs, 
     docsExpiry: job.checklist?.docsExpiry || initialDocsExpiry, 
     internalReminders: job.checklist?.internalReminders || initialReminders, 
@@ -599,6 +599,12 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     if (job.tripType === 'revision' && !formData.prtArrivalTime && formData.rtStatus === 'pendiente') return showAlert("⚠️ Debes presionar 'Llegué a la PRT' e iniciar el tiempo en planta antes de finalizar.");
     if (job.tripType === 'revision' && formData.rtStatus === 'pendiente') return showAlert("⚠️ Debes indicar el resultado de la Revisión Técnica (Aprobado o Rechazado) antes de finalizar el acta.");
     
+    const isGrandleasing = formData.client && formData.client.toLowerCase().includes('grandleasing');
+    if (isGrandleasing) {
+      if (!formData.mileage) return showAlert("⚠️ Cliente Grandleasing exige ingresar el kilometraje actual del vehículo.");
+      if (!formData.photos?.mileage) return showAlert("⚠️ Cliente Grandleasing exige adjuntar fotografía del odómetro (kilometraje).");
+    }
+
     // Validación de Fotografías Obligatorias
     if (job.tripType === 'simple' && (job.isPintura || job.isGrabado)) {
        const reqPhotos = (job.qtyPintura || 0) + (job.qtyGrabado || 0);
@@ -907,6 +913,18 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                          )}
                       </div>
 
+                      {formData.client && formData.client.toLowerCase().includes('grandleasing') && (
+                        <div className="bg-amber-50 border-2 border-amber-200 p-4 rounded-2xl shadow-sm mt-4 animate-in fade-in">
+                           <h3 className="text-xs font-black text-amber-800 uppercase tracking-widest mb-3 flex items-center gap-2"><AlertCircle className="w-4 h-4"/> Requisito Grandleasing</h3>
+                           <div className="space-y-3">
+                              <input type="number" value={formData.mileage || ''} onChange={e=>setF('mileage', e.target.value)} placeholder="Kilometraje actual..." className="w-full border-2 border-amber-200 bg-white p-3 rounded-xl font-bold text-amber-900 outline-none focus:border-amber-400"/>
+                              <button type="button" onClick={() => handlePhotoClick('mileage', 'Odómetro')} className={`w-full h-12 rounded-xl border-2 flex items-center justify-center gap-2 font-bold text-xs uppercase tracking-wide transition-all ${formData.photos?.mileage ? 'bg-amber-500 border-amber-600 text-white shadow-md' : 'bg-white border-amber-300 text-amber-700 hover:bg-amber-100'}`}>
+                                 {formData.photos?.mileage ? <><CheckCircle className="w-4 h-4"/> Odómetro Guardado</> : <><Camera className="w-4 h-4"/> Foto del Odómetro</>}
+                              </button>
+                           </div>
+                        </div>
+                      )}
+
                       <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 mt-6 text-slate-800 uppercase tracking-wider">Notas del Operario</h3>
                       <textarea className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-purple-500 min-h-[100px]" placeholder="Ej: Las plantillas de vinilo no dejaron residuos. Trabajo ejecutado sin novedades..." value={formData.observations || ''} onChange={(e) => setF('observations', e.target.value)} />
                     </div>
@@ -973,6 +991,18 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
               </div>
               <input value={formData.plateOrVin} onChange={e=>setF('plateOrVin',e.target.value)} placeholder="Patente o VIN" className="w-full border-2 border-slate-300 bg-slate-100 p-3 rounded-xl font-black uppercase text-slate-800 shadow-inner mt-2"/>
               
+              {formData.client && formData.client.toLowerCase().includes('grandleasing') && (
+                <div className="bg-amber-50 border-2 border-amber-200 p-4 rounded-2xl shadow-sm mt-4 animate-in fade-in">
+                   <h3 className="text-xs font-black text-amber-800 uppercase tracking-widest mb-3 flex items-center gap-2"><AlertCircle className="w-4 h-4"/> Requisito Grandleasing</h3>
+                   <div className="space-y-3">
+                      <input type="number" value={formData.mileage || ''} onChange={e=>setF('mileage', e.target.value)} placeholder="Kilometraje actual..." className="w-full border-2 border-amber-200 bg-white p-3 rounded-xl font-bold text-amber-900 outline-none focus:border-amber-400"/>
+                      <button type="button" onClick={() => handlePhotoClick('mileage', 'Odómetro')} className={`w-full h-12 rounded-xl border-2 flex items-center justify-center gap-2 font-bold text-xs uppercase tracking-wide transition-all ${formData.photos?.mileage ? 'bg-amber-500 border-amber-600 text-white shadow-md' : 'bg-white border-amber-300 text-amber-700 hover:bg-amber-100'}`}>
+                         {formData.photos?.mileage ? <><CheckCircle className="w-4 h-4"/> Odómetro Guardado</> : <><Camera className="w-4 h-4"/> Foto del Odómetro</>}
+                      </button>
+                   </div>
+                </div>
+              )}
+
               {/* ALERTA DÉJÀ VU PERICIAL */}
               {dejaVuData && (
                 <div className="bg-purple-50 border-2 border-purple-200 p-4 rounded-2xl shadow-sm animate-in zoom-in-95 flex items-start gap-3 mt-4 relative overflow-hidden">

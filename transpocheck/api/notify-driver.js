@@ -5,6 +5,13 @@ export default async function handler(req, res) {
 
   const { emails, isEdit, isService, jobDetails } = req.body;
 
+  // 🛑 MAGIA: SILENCIADOR DE EDICIONES
+  // Si la acción es una modificación del traslado, detenemos el envío aquí mismo
+  // Retornamos un 200 (Éxito) para que la interfaz de Vercel no marque error, pero el correo no se envía.
+  if (isEdit) {
+    return res.status(200).json({ success: true, message: 'Edición silenciosa. Correo omitido.' });
+  }
+
   if (!emails || emails.length === 0) {
     return res.status(400).json({ error: 'No se enviaron correos de destino.' });
   }
