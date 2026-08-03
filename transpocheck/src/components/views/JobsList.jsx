@@ -201,36 +201,43 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
      } catch (e) { console.error("Error al notificar al cliente:", e); }
   };
 
-  // === MOTOR INTELIGENTE DE KILOMETRAJE (Con Ida y Vuelta para RT) ===
+    // === MOTOR INTELIGENTE DE KILOMETRAJE (Con Ida y Vuelta para RT) ===
   const calculateJobDistance = async (job) => {
     if (!window.google || !window.google.maps) return 'No calculado';
     try {
       const service = new window.google.maps.DistanceMatrixService();
-      let orig = job.originAddress ? `${job.originAddress}, ${job.originCommune || 'Santiago'}` : job.origin;
-      let dest = job.destAddress ? `${job.destAddress}, ${job.destCommune || 'Santiago'}` : (job.destination || job.destName);
+      
+      // 1. Buscador Universal: Convierte Nombres a Direcciones buscando en Clientes y Directorio
+      const resolveAddress = async (nameToFind, addrFallback, comFallback) => {
+          if (addrFallback) return `${addrFallback}, ${comFallback || 'Santiago'}`;
+          if (!nameToFind) return null;
+          
+          let resolved = nameToFind;
+          try {
+              // Buscar primero en la base de Clientes
+              const clientSnap = await getDocs(query(collection(db, 'clients'), where('name', '==', nameToFind)));
+              if (!clientSnap.empty && clientSnap.docs[0].data().address) {
+                  return `${clientSnap.docs[0].data().address}, ${clientSnap.docs[0].data().commune || 'Santiago'}`;
+              }
+              // Si no está en clientes, buscar en el Directorio
+              const dirSnap = await getDocs(query(collection(db, 'directory'), where('name', '==', nameToFind)));
+              if (!dirSnap.empty && dirSnap.docs[0].data().address) {
+                  return `${dirSnap.docs[0].data().address}, ${dirSnap.docs[0].data().commune || 'Santiago'}`;
+              }
+          } catch(e) {}
+          return resolved;
+      };
 
-      if (!job.originAddress && job.origin) {
-        try {
-          const clientSnap = await getDocs(query(collection(db, 'clients'), where('name', '==', job.origin)));
-          if (!clientSnap.empty && clientSnap.docs[0].data().address) {
-            orig = `${clientSnap.docs[0].data().address}, ${clientSnap.docs[0].data().commune || 'Santiago'}`;
-          }
-        } catch (e) {}
-      }
+      let orig = await resolveAddress(job.origin, job.originAddress, job.originCommune);
+      let dest = await resolveAddress(job.destination || job.destName, job.destAddress, job.destCommune);
 
+      // Tratamiento especial si el destino es una Planta de Revisión (PRT)
       if (job.tripType === 'revision') {
         try {
           const prtSnap = await getDocs(query(collection(db, 'prts'), where('name', '==', job.destination || job.destName)));
           if (!prtSnap.empty && prtSnap.docs[0].data().address) {
              const pData = prtSnap.docs[0].data();
              dest = `${pData.address}, ${pData.comuna || 'Santiago'}`;
-          }
-        } catch (e) {}
-      } else if (!job.destAddress && (job.destination || job.destName)) {
-        try {
-          const clientSnap = await getDocs(query(collection(db, 'clients'), where('name', '==', job.destination || job.destName)));
-          if (!clientSnap.empty && clientSnap.docs[0].data().address) {
-            dest = `${clientSnap.docs[0].data().address}, ${clientSnap.docs[0].data().commune || 'Santiago'}`;
           }
         } catch (e) {}
       }
@@ -241,19 +248,24 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       if (!orig || !dest) return 'No calculado';
 
       let returnDest = null;
+      let isSameAsOrigin = false;
+
+      // 2. Lógica Inteligente para el Retorno
       if (job.tripType === 'revision') {
-          if (job.checklist?.rtReturnOption === 'other' && job.checklist?.rtReturnDestination) {
-              returnDest = job.checklist.rtReturnDestination;
-              // Si escribió el nombre de un cliente en vez de una dirección, buscamos en DB
-              try {
-                  const retClientSnap = await getDocs(query(collection(db, 'clients'), where('name', '==', returnDest)));
-                  if (!retClientSnap.empty && retClientSnap.docs[0].data().address) {
-                      returnDest = `${retClientSnap.docs[0].data().address}, ${retClientSnap.docs[0].data().commune || 'Santiago'}`;
-                  }
-              } catch (e) {}
-              if (returnDest && !returnDest.toLowerCase().includes('chile')) returnDest += ', Chile';
+          const typedDest = job.checklist?.rtReturnDestination || '';
+          
+          // Magia: Identifica si es el mismo lugar que el origen ignorando mayúsculas/minúsculas
+          isSameAsOrigin = job.checklist?.rtReturnOption === 'origin' || 
+                           (typedDest && job.origin && typedDest.toLowerCase().trim() === job.origin.toLowerCase().trim());
+
+          if (isSameAsOrigin) {
+              returnDest = orig;
+          } else if (job.checklist?.rtReturnOption === 'other' && typedDest) {
+              let resolvedRet = await resolveAddress(typedDest, null, null);
+              if (resolvedRet && !resolvedRet.toLowerCase().includes('chile')) resolvedRet += ', Chile';
+              returnDest = resolvedRet;
           } else {
-              returnDest = orig; // orig ya fue convertido a dirección real arriba y trae ", Chile"
+              returnDest = orig;
           }
       }
 
@@ -264,22 +276,21 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         });
       });
 
-      // Cálculo del tramo 1 (Ida) con salvavidas de errores
+      // Cálculo del tramo 1 (Ida) con atrapa-errores
       let totalMeters = await Promise.race([getMeters(orig, dest), new Promise((_, r) => setTimeout(() => r('Timeout'), 4000))]).catch(() => 'Error');
       
-      if (returnDest && typeof totalMeters === 'number') {
-         // Anti-Bloqueo: Pausa breve para evitar que Google Maps rechace la segunda consulta rápida
-         await new Promise(r => setTimeout(r, 600)); 
-         
-         let returnMeters = await Promise.race([getMeters(dest, returnDest), new Promise((_, r) => setTimeout(() => r('Timeout'), 4500))]).catch(() => 'Error');
-         
-         if (typeof returnMeters === 'number') {
-             totalMeters += returnMeters; // Suma la vuelta exitosamente
+      if (typeof totalMeters === 'number' && returnDest) {
+         if (isSameAsOrigin) {
+             // SALVAVIDAS MATEMÁTICO: Si sabemos que vuelve al mismo punto, 
+             // evitamos a Google Maps y multiplicamos la ida x2 automáticamente.
+             totalMeters *= 2;
          } else {
-             // SALVAVIDAS MATEMÁTICO: Si Google Maps da timeout en la vuelta, 
-             // y el retorno es el mismo lugar que el origen, multiplicamos la ida x 2.
-             if (orig === returnDest) {
-                 totalMeters *= 2;
+             // Si el destino de retorno es diferente, calculamos el segundo tramo con micro-retraso
+             await new Promise(r => setTimeout(r, 600)); 
+             let returnMeters = await Promise.race([getMeters(dest, returnDest), new Promise((_, r) => setTimeout(() => r('Timeout'), 4500))]).catch(() => 'Error');
+             
+             if (typeof returnMeters === 'number') {
+                 totalMeters += returnMeters;
              }
          }
       }
