@@ -205,11 +205,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const calculateJobDistance = async (job) => {
     if (!window.google || !window.google.maps) return 'No calculado';
     try {
-      const service = new window.google.maps.DistanceMatrixService();
+      // MIGRACIÓN: Ahora usamos DirectionsService que no está deprecado y es más preciso
+      const directionsService = new window.google.maps.DirectionsService();
       
       // 1. Buscador Universal: Convierte Nombres a Direcciones buscando en Clientes y Directorio
       const resolveAddress = async (nameToFind, addrFallback, comFallback) => {
-          if (addrFallback) return `${addrFallback}, ${comFallback || 'Santiago'}, Chile`; // <- Forzamos explícitamente Chile
+          if (addrFallback) return `${addrFallback}, ${comFallback || 'Santiago'}, Chile`;
           if (!nameToFind) return null;
           
           let resolved = nameToFind;
@@ -254,7 +255,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       if (job.tripType === 'revision') {
           const typedDest = job.checklist?.rtReturnDestination || '';
           
-          // Magia: Identifica si es el mismo lugar que el origen ignorando mayúsculas/minúsculas
           isSameAsOrigin = job.checklist?.rtReturnOption === 'origin' || 
                            (typedDest && job.origin && typedDest.toLowerCase().trim() === job.origin.toLowerCase().trim());
 
@@ -270,18 +270,24 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       }
 
       const getMeters = (from, to) => new Promise((resolve, reject) => {
-        // Agregamos 'region: CL' para que el motor jamás se salga de Chile buscando parecidos en otros países
-        service.getDistanceMatrix({ origins: [from], destinations: [to], travelMode: 'DRIVING', region: 'CL' }, (res, status) => {
-          if (status === 'OK' && res.rows && res.rows[0].elements[0].status === 'OK') {
-              resolve(res.rows[0].elements[0].distance.value);
+        // DirectionsService usa request object en lugar de la API Matrix antigua
+        const request = {
+            origin: from,
+            destination: to,
+            travelMode: 'DRIVING',
+            region: 'CL'
+        };
+        
+        directionsService.route(request, (result, status) => {
+          if (status === 'OK' && result.routes && result.routes.length > 0) {
+              // Extraemos la distancia en metros de la pata (leg) principal de la ruta
+              resolve(result.routes[0].legs[0].distance.value);
           } else {
-              // Pasamos un objeto Error para que no bloquee silenciosamente el message channel
-              reject(new Error('Ruta no encontrada o inválida'));
+              reject(new Error('Ruta no encontrada'));
           }
         });
       });
 
-      // Cálculo del tramo 1 (Ida) con atrapa-errores mejorado para silenciar fallos de Promesa
       let totalMeters = await Promise.race([
           getMeters(orig, dest), 
           new Promise((_, r) => setTimeout(() => r(new Error('Timeout')), 4000))
@@ -289,11 +295,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       
       if (typeof totalMeters === 'number' && returnDest) {
          if (isSameAsOrigin) {
-             // SALVAVIDAS MATEMÁTICO: Si sabemos que vuelve al mismo punto, 
-             // evitamos a Google Maps y multiplicamos la ida x2 automáticamente.
              totalMeters *= 2;
          } else {
-             // Si el destino de retorno es diferente, calculamos el segundo tramo con micro-retraso
              await new Promise(r => setTimeout(r, 600)); 
              let returnMeters = await Promise.race([
                 getMeters(dest, returnDest), 
