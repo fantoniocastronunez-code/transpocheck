@@ -25,6 +25,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [forceCloseJob, setForceCloseJob] = useState(null); 
   const [editPriceJob, setEditPriceJob] = useState(null); // <-- NUEVO: Estado para editar cobro
   const [editDateJob, setEditDateJob] = useState(null); // <-- NUEVO: Estado para editar fecha de término
+  const [editKmJob, setEditKmJob] = useState(null); // <-- NUEVO: Estado para editar kilometraje manual
   
   const [dupPromptJob, setDupPromptJob] = useState(null);
   const [dupMode, setDupMode] = useState('clone');
@@ -1893,19 +1894,28 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     <div className="bg-emerald-100 p-1.5 rounded-lg shrink-0"><MapPin className="w-3.5 h-3.5 text-emerald-600"/></div>
                     <div className="flex flex-col min-w-0">
                         <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">Distancia</span>
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-xs font-extrabold text-slate-700 leading-tight truncate">
                                 {j.drivenDistance || 'No calculado'}
                             </span>
                             {isAdminView && auditMode && (
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); handleSingleRecalculate(j); }}
-                                    disabled={processingId === `${j.id}-recalc-km`}
-                                    className="p-1 bg-white border border-slate-200 text-blue-600 rounded hover:bg-blue-50 transition-colors shadow-sm disabled:opacity-50 shrink-0 ml-1"
-                                    title="Forzar Recálculo de Ruta"
-                                >
-                                    {processingId === `${j.id}-recalc-km` ? <Clock className="w-3 h-3 animate-spin"/> : <MapIcon className="w-3 h-3"/>}
-                                </button>
+                                <div className="flex gap-1">
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); setEditKmJob(j); }}
+                                        className="p-1 bg-white border border-emerald-200 text-emerald-600 rounded hover:bg-emerald-50 transition-colors shadow-sm shrink-0"
+                                        title="Editar KM Manualmente"
+                                    >
+                                        <Edit2 className="w-3 h-3"/>
+                                    </button>
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); handleSingleRecalculate(j); }}
+                                        disabled={processingId === `${j.id}-recalc-km`}
+                                        className="p-1 bg-white border border-slate-200 text-blue-600 rounded hover:bg-blue-50 transition-colors shadow-sm disabled:opacity-50 shrink-0"
+                                        title="Forzar Recálculo de Ruta (Maps)"
+                                    >
+                                        {processingId === `${j.id}-recalc-km` ? <Clock className="w-3 h-3 animate-spin"/> : <MapIcon className="w-3 h-3"/>}
+                                    </button>
+                                </div>
                             )}
                         </div>
                         
@@ -3175,6 +3185,64 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                 <button type="submit" disabled={processingId === `${editPriceJob.id}-price`} className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-sm shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
                     {processingId === `${editPriceJob.id}-price` ? <Clock className="w-5 h-5 animate-spin"/> : <Save className="w-5 h-5"/>}
                     {processingId === `${editPriceJob.id}-price` ? 'Guardando...' : 'Guardar Nuevo Valor'}
+                </button>
+            </form>
+        </div>
+      )}
+
+      {/* NUEVO MODAL: EDITAR KILOMETRAJE DEL TRASLADO */}
+      {editKmJob && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+            <form onSubmit={async (e) => {
+                e.preventDefault();
+                let rawValue = e.target.kmValue.value.trim();
+                if (!rawValue) return showAlert("Ingresa un valor válido.");
+                
+                // Reemplazamos la coma por punto para formatear a número y luego reconstruimos el string
+                rawValue = rawValue.replace(',', '.');
+                const numValue = parseFloat(rawValue);
+                
+                if (isNaN(numValue)) return showAlert("El valor debe ser numérico.");
+                
+                const finalKmStr = numValue.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' km';
+
+                setProcessingId(`${editKmJob.id}-km`);
+                try {
+                    await updateDoc(doc(db, 'transport_jobs', editKmJob.id), { drivenDistance: finalKmStr });
+                    showAlert("✅ Kilometraje actualizado manualmente.");
+                    setEditKmJob(null);
+                } catch (err) {
+                    console.error(err);
+                    showAlert("❌ Error al actualizar el kilometraje.");
+                } finally {
+                    setProcessingId(null);
+                }
+            }} className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-5 shadow-2xl border-t-8 border-emerald-500 animate-in zoom-in-95">
+                <div className="flex justify-between items-center">
+                    <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                        <MapIcon className="w-6 h-6 text-emerald-600"/> Editar Distancia
+                    </h3>
+                    <button type="button" onClick={() => setEditKmJob(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors">
+                        <X className="w-5 h-5 text-slate-600"/>
+                    </button>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Trabajo a editar</p>
+                    <p className="text-sm font-bold text-slate-700 truncate">
+                        {editKmJob.tripType === 'simple' ? editKmJob.description : `${editKmJob.brand} ${editKmJob.model}`}
+                    </p>
+                    <p className="text-xs font-bold text-slate-500">{getJobIdentifier(editKmJob)}</p>
+                </div>
+                <div>
+                    <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest ml-1">Distancia Total (KM)</label>
+                    <div className="relative mt-1">
+                        <input name="kmValue" type="text" inputMode="decimal" defaultValue={editKmJob.drivenDistance ? editKmJob.drivenDistance.replace(/[^\d.,]/g, '') : ''} required autoFocus className="w-full border-2 border-emerald-200 bg-emerald-50 p-3.5 pr-12 rounded-xl font-black text-xl text-emerald-900 outline-none focus:border-emerald-500 shadow-sm" />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-black text-emerald-600/50">km</span>
+                    </div>
+                </div>
+                <button type="submit" disabled={processingId === `${editKmJob.id}-km`} className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-sm shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                    {processingId === `${editKmJob.id}-km` ? <Clock className="w-5 h-5 animate-spin"/> : <Save className="w-5 h-5"/>}
+                    {processingId === `${editKmJob.id}-km` ? 'Guardando...' : 'Guardar Kilometraje'}
                 </button>
             </form>
         </div>
