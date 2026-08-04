@@ -209,7 +209,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       
       // 1. Buscador Universal: Convierte Nombres a Direcciones buscando en Clientes y Directorio
       const resolveAddress = async (nameToFind, addrFallback, comFallback) => {
-          if (addrFallback) return `${addrFallback}, ${comFallback || 'Santiago'}`;
+          if (addrFallback) return `${addrFallback}, ${comFallback || 'Santiago'}, Chile`; // <- Forzamos explícitamente Chile
           if (!nameToFind) return null;
           
           let resolved = nameToFind;
@@ -217,12 +217,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               // Buscar primero en la base de Clientes
               const clientSnap = await getDocs(query(collection(db, 'clients'), where('name', '==', nameToFind)));
               if (!clientSnap.empty && clientSnap.docs[0].data().address) {
-                  return `${clientSnap.docs[0].data().address}, ${clientSnap.docs[0].data().commune || 'Santiago'}`;
+                  return `${clientSnap.docs[0].data().address}, ${clientSnap.docs[0].data().commune || 'Santiago'}, Chile`;
               }
               // Si no está en clientes, buscar en el Directorio
               const dirSnap = await getDocs(query(collection(db, 'directory'), where('name', '==', nameToFind)));
               if (!dirSnap.empty && dirSnap.docs[0].data().address) {
-                  return `${dirSnap.docs[0].data().address}, ${dirSnap.docs[0].data().commune || 'Santiago'}`;
+                  return `${dirSnap.docs[0].data().address}, ${dirSnap.docs[0].data().commune || 'Santiago'}, Chile`;
               }
           } catch(e) {}
           return resolved;
@@ -237,7 +237,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           const prtSnap = await getDocs(query(collection(db, 'prts'), where('name', '==', job.destination || job.destName)));
           if (!prtSnap.empty && prtSnap.docs[0].data().address) {
              const pData = prtSnap.docs[0].data();
-             dest = `${pData.address}, ${pData.comuna || 'Santiago'}`;
+             dest = `${pData.address}, ${pData.comuna || 'Santiago'}, Chile`;
           }
         } catch (e) {}
       }
@@ -270,14 +270,22 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       }
 
       const getMeters = (from, to) => new Promise((resolve, reject) => {
-        service.getDistanceMatrix({ origins: [from], destinations: [to], travelMode: 'DRIVING' }, (res, status) => {
-          if (status === 'OK' && res.rows && res.rows[0].elements[0].status === 'OK') resolve(res.rows[0].elements[0].distance.value);
-          else reject(status);
+        // Agregamos 'region: CL' para que el motor jamás se salga de Chile buscando parecidos en otros países
+        service.getDistanceMatrix({ origins: [from], destinations: [to], travelMode: 'DRIVING', region: 'CL' }, (res, status) => {
+          if (status === 'OK' && res.rows && res.rows[0].elements[0].status === 'OK') {
+              resolve(res.rows[0].elements[0].distance.value);
+          } else {
+              // Pasamos un objeto Error para que no bloquee silenciosamente el message channel
+              reject(new Error('Ruta no encontrada o inválida'));
+          }
         });
       });
 
-      // Cálculo del tramo 1 (Ida) con atrapa-errores
-      let totalMeters = await Promise.race([getMeters(orig, dest), new Promise((_, r) => setTimeout(() => r('Timeout'), 4000))]).catch(() => 'Error');
+      // Cálculo del tramo 1 (Ida) con atrapa-errores mejorado para silenciar fallos de Promesa
+      let totalMeters = await Promise.race([
+          getMeters(orig, dest), 
+          new Promise((_, r) => setTimeout(() => r(new Error('Timeout')), 4000))
+      ]).catch(() => 'Error');
       
       if (typeof totalMeters === 'number' && returnDest) {
          if (isSameAsOrigin) {
@@ -287,7 +295,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
          } else {
              // Si el destino de retorno es diferente, calculamos el segundo tramo con micro-retraso
              await new Promise(r => setTimeout(r, 600)); 
-             let returnMeters = await Promise.race([getMeters(dest, returnDest), new Promise((_, r) => setTimeout(() => r('Timeout'), 4500))]).catch(() => 'Error');
+             let returnMeters = await Promise.race([
+                getMeters(dest, returnDest), 
+                new Promise((_, r) => setTimeout(() => r(new Error('Timeout')), 4500))
+             ]).catch(() => 'Error');
              
              if (typeof returnMeters === 'number') {
                  totalMeters += returnMeters;
