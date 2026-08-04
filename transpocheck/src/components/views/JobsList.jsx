@@ -734,7 +734,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     if (!window.google || !window.google.maps) return showAlert("La API de Google Maps no está disponible en este momento.");
 
     const jobsToUpdate = jobs.filter(j => 
-      j.status === 'completed' && 
+      (j.status === 'completed' || j.status === 'failed') && 
       j.origin && (j.destination || j.destName || j.tripType === 'revision')
     );
 
@@ -1870,7 +1870,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
 
         {/* NUEVO: CRONÓMETRO Y KILOMETRAJE EN LA TARJETA FINALIZADA */}
-        {j.status === 'completed' && (
+        {(j.status === 'completed' || j.status === 'failed') && (
             <div className="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-100 mb-3 shadow-inner">
                 <div className="flex items-center gap-2 flex-1">
                     <div className="bg-blue-100 p-1.5 rounded-lg"><Clock className="w-3.5 h-3.5 text-blue-600"/></div>
@@ -2112,7 +2112,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     monthStats.driverKms[drvName] = (monthStats.driverKms[drvName] || 0) + km;
                 }
 
-                if (j.status === 'completed' && j.acceptedByEmail) {
+                if ((j.status === 'completed' || j.status === 'failed') && j.acceptedByEmail) {
                     const drvName = (Array.isArray(drivers) ? drivers.find(d => d.email === j.acceptedByEmail)?.name : null) || j.acceptedByEmail || 'Desconocido';
                     let vType = (j.checklist?.vehicleType || 'auto').toLowerCase();
                     if (j.tripType === 'simple') vType = 'servicio';
@@ -2231,7 +2231,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const currMonth = new Date().getMonth();
   const currYear = new Date().getFullYear();
   const myMonthlyKm = jobs.filter(j => {
-      if (j.status !== 'completed' || j.acceptedByEmail !== currentUserEmail) return false;
+      if (!(j.status === 'completed' || j.status === 'failed') || j.acceptedByEmail !== currentUserEmail) return false;
       const d = new Date(j.completedAt || j.createdAt);
       return d.getMonth() === currMonth && d.getFullYear() === currYear;
   }).reduce((acc, job) => acc + parseDist(job.drivenDistance), 0);
@@ -2471,7 +2471,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                                   )}
 
                                   {/* NUEVO PANEL AUDITORIA CATEGORIA VEHICULO */}
-                                  {isAdminView && auditMode && j.status === 'completed' && j.tripType !== 'simple' && (
+                                  {isAdminView && auditMode && (j.status === 'completed' || j.status === 'failed') && j.tripType !== 'simple' && (
                                       <div className="bg-slate-100/50 border border-slate-200 rounded-lg p-2 mt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-inner ml-4">
                                           <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Corregir Categoría (Estadísticas):</span>
                                           <select
