@@ -800,7 +800,6 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                      const val = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
                      setQuoteData(prev => {
                        let updated = { ...prev, plateOrVin: val };
-                       // Búsqueda inteligente en la base de datos de vehículos
                        if (val.length >= 4 && vehicles) {
                          const found = vehicles.find(v => 
                            (v.plate && v.plate.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() === val) || 
