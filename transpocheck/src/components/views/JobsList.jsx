@@ -2557,6 +2557,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                                           <div className="flex items-center gap-2">
                                               <span className="text-xs font-extrabold text-slate-700">{j.drivenDistance || 'No calculado'}</span>
                                               <button
+                                                  onClick={(e) => { e.stopPropagation(); setEditKmJob(j); }}
+                                                  className="bg-white border border-emerald-200 text-emerald-700 text-[10px] font-bold py-1 px-2 rounded-lg outline-none cursor-pointer hover:bg-emerald-100 shadow-sm transition-colors flex items-center gap-1"
+                                                  title="Editar KM Manualmente"
+                                              >
+                                                  <Edit2 className="w-3 h-3"/> Modificar
+                                              </button>
+                                              <button
                                                   onClick={(e) => { e.stopPropagation(); handleSingleRecalculate(j); }}
                                                   disabled={processingId === `${j.id}-recalc-km`}
                                                   className="bg-white border border-blue-200 text-blue-700 text-[10px] font-bold py-1 px-2 rounded-lg outline-none cursor-pointer hover:bg-blue-100 shadow-sm transition-colors flex items-center gap-1 disabled:opacity-50"
