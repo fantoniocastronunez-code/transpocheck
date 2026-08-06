@@ -329,10 +329,10 @@ function LogisticApp() {
       
       @font-face {
         font-family: 'FE-Font';
-        src: url('https://cdn.jsdelivr.net/gh/peter-w-illig/FE-Font/raw/master/FE-Font.woff2') format('woff2'),
-             url('https://cdn.jsdelivr.net/gh/peter-w-illig/FE-Font/raw/master/FE-Font.woff') format('woff');
+        src: url('https://fonts.cdnfonts.com/s/17531/FESchrift.woff') format('woff');
         font-weight: normal;
         font-style: normal;
+      }
       }
       
       body { 
