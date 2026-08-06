@@ -211,10 +211,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       
       // 1. Buscador Universal: Convierte Nombres a Direcciones buscando en Clientes y Directorio
       const resolveAddress = async (nameToFind, addrFallback, comFallback) => {
-          if (addrFallback) return `${addrFallback}, ${comFallback || 'Santiago'}, Chile`;
           if (!nameToFind) return null;
           
-          let resolved = nameToFind;
           try {
               // Buscar primero en la base de Clientes
               const clientSnap = await getDocs(query(collection(db, 'clients'), where('name', '==', nameToFind)));
@@ -223,16 +221,19 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                   if (cData.plusCode) return cData.plusCode; // <-- PRIORIDAD PLUS CODE
                   if (cData.address) return `${cData.address}, ${cData.commune || 'Santiago'}, Chile`;
               }
-              // Si no está en clientes, buscar en el Directorio
-              const dirSnap = await getDocs(query(collection(db, 'directory'), where('name', '==', nameToFind)));
+              // Si no está en clientes, buscar en el Directorio (CORREGIDO: usa placeName)
+              const dirSnap = await getDocs(query(collection(db, 'directory'), where('placeName', '==', nameToFind)));
               if (!dirSnap.empty) {
                   const dData = dirSnap.docs[0].data();
                   if (dData.plusCode) return dData.plusCode; // <-- PRIORIDAD PLUS CODE
                   if (dData.address) return `${dData.address}, ${dData.commune || 'Santiago'}, Chile`;
               }
-          } catch(e) {}
-          return resolved;
-      };
+          } catch(e) { console.error("Error en resolveAddress:", e); }
+
+          // RESPALDO: Si no hay match en la Base de Datos, intentar usar las direcciones escritas en el formulario
+          if (addrFallback) return `${addrFallback}, ${comFallback || 'Santiago'}, Chile`;
+          
+          // Si todo falla, enviar el nombre tal cual a Google Maps a ver si
 
       let orig = await resolveAddress(job.origin, job.originAddress, job.originCommune);
       let dest = await resolveAddress(job.destination || job.destName, job.destAddress, job.destCommune);
