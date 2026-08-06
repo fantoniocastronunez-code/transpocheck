@@ -816,9 +816,12 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                      });
                    }} 
                    placeholder="Ej: ABCD12"
-                   autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters"
+                   autoComplete="off" 
+                   autoCorrect="off" 
+                   spellCheck="false" 
+                   autoCapitalize="characters"
                    className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-black uppercase text-slate-800 outline-none focus:border-purple-500"
-                 />
+                />
               </div>
 
               <div className="space-y-1">
