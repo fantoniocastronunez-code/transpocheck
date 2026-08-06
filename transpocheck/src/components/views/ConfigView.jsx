@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, updateDoc, doc, deleteDoc, getDocs, query, where } from 'firebase/firestore';
-import { Camera, Eye, EyeOff, User, Edit2, Trash2, Truck, Clock, X, Plus, BookOpen, Phone, CheckCircle, MapPin, AlertCircle, Activity, Video, Wallet } from 'lucide-react';
+import { Camera, Eye, EyeOff, User, Edit2, Trash2, Truck, Clock, X, Plus, BookOpen, Phone, CheckCircle, MapPin, AlertCircle, Activity, Video, Wallet, Search } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import { LICENCIAS, resizeImage } from '../../utils/helpers';
 
@@ -8,6 +8,19 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
   const [configSubTab, setConfigSubTab] = useState('clients');
   const [editingDir, setEditingDir] = useState(null); 
   const [directoryList, setDirectoryList] = useState([]); 
+
+  const [dirSearchTerm, setDirSearchTerm] = useState(''); // NUEVO: Buscador de Directorio
+  
+  // NUEVO: Filtrado inteligente en tiempo real para el Directorio
+  const filteredDirectoryList = directoryList.filter(d => {
+    if (!dirSearchTerm) return true;
+    const term = dirSearchTerm.toLowerCase();
+    return (d.placeName || '').toLowerCase().includes(term) ||
+           (d.address || '').toLowerCase().includes(term) ||
+           (d.plusCode || '').toLowerCase().includes(term) ||
+           (d.commune || '').toLowerCase().includes(term) ||
+           (d.contactName || '').toLowerCase().includes(term);
+  });
   
   // NUEVO: Estado para la Lista de Equipamiento Modificable
   const [equipmentList, setEquipmentList] = useState([
@@ -883,10 +896,25 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
             </button>
           </form>
 
-          <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 max-h-[85vh] overflow-y-auto">
-            <h3 className="font-extrabold text-slate-800 mb-4">Destinos Guardados</h3>
-            <div className="space-y-2">
-              {directoryList.length === 0 ? <p className="text-sm font-bold text-slate-400 text-center py-4">Directorio vacío</p> : directoryList.map(d=>(
+          <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 max-h-[85vh] flex flex-col">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 shrink-0 border-b border-slate-100 pb-4">
+              <h3 className="font-extrabold text-slate-800">Destinos Guardados</h3>
+              <div className="relative w-full sm:w-72 shrink-0">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="w-4 h-4 text-slate-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Buscar lugar, Plus Code, nombre..."
+                  value={dirSearchTerm}
+                  onChange={(e) => setDirSearchTerm(e.target.value)}
+                  autoComplete="off" autoCorrect="off" spellCheck="false"
+                  className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+            </div>
+            <div className="space-y-2 overflow-y-auto pr-1 flex-1">
+              {directoryList.length === 0 ? <p className="text-sm font-bold text-slate-400 text-center py-4">Directorio vacío</p> : filteredDirectoryList.length === 0 ? <p className="text-sm font-bold text-slate-400 text-center py-4">No se encontraron destinos</p> : filteredDirectoryList.map(d=>(
                 <div key={d.id} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-xl hover:border-blue-200 transition-all">
                   <div className="flex-1 min-w-0 pr-2">
                     <p className="text-sm font-extrabold text-slate-800 truncate">{d.placeName}</p>
