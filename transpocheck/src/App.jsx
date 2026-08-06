@@ -329,7 +329,8 @@ function LogisticApp() {
       
       @font-face {
         font-family: 'FE-Font';
-        src: url('https://fonts.cdnfonts.com/s/17531/FESchrift.woff') format('woff');
+        src: url('https://cdn.jsdelivr.net/gh/TVLuke/kennzeichen_buch/EuroPlate.ttf') format('truetype'),
+             url('https://cdn.jsdelivr.net/gh/niklaswa/license-plate-generator/public/fonts/EuroPlate.ttf') format('truetype');
         font-weight: normal;
         font-style: normal;
       }
