@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, enableMultiTabIndexedDbPersistence, collection, addDoc, onSnapshot, updateDoc, doc, getDocs, query, where, orderBy, limit, deleteField } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, addDoc, onSnapshot, updateDoc, doc, getDocs, query, where, orderBy, limit, deleteField } from 'firebase/firestore';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
 
@@ -17,17 +17,15 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+});
 export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
 
 let messaging = null;
 isSupported().then((supported) => {
   if (supported) messaging = getMessaging(app);
-});
-
-enableMultiTabIndexedDbPersistence(db).catch((err) => {
-  console.warn("Modo offline limitado (Multi-tab):", err.code);
 });
 
 // Función Utilitaria de Storage
