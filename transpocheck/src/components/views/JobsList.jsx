@@ -206,25 +206,23 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const calculateJobDistance = async (job) => {
     if (!window.google || !window.google.maps) return 'No calculado';
     try {
-      // MIGRACIÓN: Ahora usamos DirectionsService que no está deprecado y es más preciso
       const directionsService = new window.google.maps.DirectionsService();
       
-      // 1. Buscador Universal: Convierte Nombres a Direcciones buscando en Clientes y Directorio
+      // 1. Buscador Universal y Blindado (Insensible a mayúsculas/minúsculas)
       const resolveAddress = async (nameToFind, addrFallback, comFallback) => {
           if (!nameToFind) return null;
           
           const searchName = nameToFind.trim().toLowerCase();
 
           try {
-              // 1. Buscar en la base de Clientes
-              // Intento A: Match exacto (rápido)
+              // Buscar en Clientes (Intento rápido exacto)
               const clientSnap = await getDocs(query(collection(db, 'clients'), where('name', '==', nameToFind)));
               if (!clientSnap.empty) {
                   const cData = clientSnap.docs[0].data();
-                  if (cData.plusCode) return cData.plusCode; // <-- PRIORIDAD PLUS CODE
+                  if (cData.plusCode) return cData.plusCode;
                   if (cData.address) return `${cData.address}, ${cData.commune || 'Santiago'}, Chile`;
               } else {
-                  // Intento B: Match insensible a mayúsculas (exhaustivo)
+                  // Intento exhaustivo insensible a mayúsculas
                   const allClientsSnap = await getDocs(collection(db, 'clients'));
                   const foundClient = allClientsSnap.docs.map(d => d.data()).find(c => c.name?.trim().toLowerCase() === searchName);
                   if (foundClient) {
@@ -233,7 +231,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                   }
               }
 
-              // 2. Buscar en el Directorio local ya cargado en memoria (Súper Rápido y Cero Lecturas a DB)
+              // Buscar en el Directorio local ya cargado en RAM (Ultra rápido y sin costo en DB)
               const foundDir = directoryMemory.find(d => 
                   (d.placeName && d.placeName.trim().toLowerCase() === searchName) || 
                   (d.name && d.name.trim().toLowerCase() === searchName)
@@ -244,29 +242,43 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               }
           } catch(e) { console.error("Error en resolveAddress:", e); }
 
-          // RESPALDO: Si no hay match en la Base de Datos, intentar usar las direcciones escritas en el formulario
+          // RESPALDO: Si no hay match, usa las direcciones del formulario o devuelve el texto
           if (addrFallback) return `${addrFallback}, ${comFallback || 'Santiago'}, Chile`;
-          
-          // Si todo falla, enviar el nombre tal cual a Google Maps a ver si hay suerte
           return nameToFind;
       };
 
       let orig = await resolveAddress(job.origin, job.originAddress, job.originCommune);
       
-      // LIMPIEZA: Extraer correctamente la PRT y el Destino Final si vienen mezclados con flechas "->"
+      // LIMPIEZA: Extraer correctamente la PRT y el Destino Final manejando 1, 2 o 3 tramos con flechas "->"
       let rawDest = job.destination || job.destName || '';
       let prtName = rawDest;
       let finalDestAfterPrt = null;
 
       if (job.tripType === 'revision' && rawDest.includes('->')) {
-          const parts = rawDest.split('->');
-          prtName = parts[0].trim(); // Ej: "PRT Quilicura"
-          finalDestAfterPrt = parts[parts.length - 1].trim(); // Ej: "GRANDLEASING LAS TORRES"
+          const parts = rawDest.split('->').map(p => p.trim()).filter(Boolean);
+          // Buscar qué fragmento es la PRT
+          const prtIndex = parts.findIndex(p => p.toLowerCase().includes('prt') || p.toLowerCase().includes('planta') || p.toLowerCase().includes('revision'));
+          
+          if (prtIndex !== -1) {
+              prtName = parts[prtIndex];
+              if (prtIndex + 1 < parts.length) {
+                  finalDestAfterPrt = parts[parts.length - 1]; // Toma el último destino real
+              }
+          } else {
+              // Si nadie dice PRT, asumimos por estructura
+              if (parts.length >= 3) {
+                  prtName = parts[1];
+                  finalDestAfterPrt = parts[2];
+              } else if (parts.length === 2) {
+                  prtName = parts[0];
+                  finalDestAfterPrt = parts[1];
+              }
+          }
       }
 
       let dest = await resolveAddress(prtName, job.destAddress, job.destCommune);
 
-      // Tratamiento especial si el destino es una Planta de Revisión (PRT)
+      // Tratamiento especial a la Base de Datos de PRTs
       if (job.tripType === 'revision') {
         try {
           const prtSnap = await getDocs(query(collection(db, 'prts'), where('name', '==', prtName)));
@@ -275,9 +287,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
              if (pData.plusCode) dest = pData.plusCode;
              else if (pData.address) dest = `${pData.address}, ${pData.comuna || 'Santiago'}, Chile`;
           } else {
-             // Match insensible a mayúsculas para las PRTs también
+             // Búsqueda exhaustiva insensible a mayúsculas
              const allPrtsSnap = await getDocs(collection(db, 'prts'));
-             const foundPrt = allPrtsSnap.docs.map(d=>d.data()).find(p => p.name?.trim().toLowerCase() === prtName.trim().toLowerCase());
+             const foundPrt = allPrtsSnap.docs.map(d=>d.data()).find(p => p.name?.trim().toLowerCase() === prtName.toLowerCase().trim());
              if (foundPrt) {
                  if (foundPrt.plusCode) dest = foundPrt.plusCode;
                  else if (foundPrt.address) dest = `${foundPrt.address}, ${foundPrt.comuna || 'Santiago'}, Chile`;
@@ -286,7 +298,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         } catch (e) {}
       }
 
-      // PRECAUCIÓN PLUS CODES: No concatenar ", Chile" si es un Plus Code (tiene el símbolo '+')
+      // PRECAUCIÓN: No arruinar los Plus Codes agregándoles ", Chile" (Los Plus Codes usan un signo '+')
       if (orig && !orig.toLowerCase().includes('chile') && !orig.includes('+')) orig += ', Chile';
       if (dest && !dest.toLowerCase().includes('chile') && !dest.includes('+')) dest += ', Chile';
 
@@ -297,42 +309,44 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       // 2. Lógica Inteligente para el Retorno (Tramo 2: PRT -> Destino Final)
       if (job.tripType === 'revision') {
           const typedDest = job.checklist?.rtReturnDestination || '';
+          const cleanFinalDest = finalDestAfterPrt ? finalDestAfterPrt.toLowerCase().trim() : '';
+          const cleanOrigin = job.origin ? job.origin.toLowerCase().trim() : '';
           
-          const isSameAsOrigin = job.checklist?.rtReturnOption === 'origin' || 
-                                 (typedDest && job.origin && typedDest.toLowerCase().trim() === job.origin.toLowerCase().trim());
+          // Verificar si el destino final es literalmente el mismo que el origen original
+          const isExplicitOrigin = job.checklist?.rtReturnOption === 'origin' || 
+                                   (typedDest && cleanOrigin && typedDest.toLowerCase().trim() === cleanOrigin) ||
+                                   (cleanFinalDest && cleanOrigin && cleanFinalDest === cleanOrigin);
 
-          if (isSameAsOrigin) {
-              returnDest = orig;
+          if (isExplicitOrigin) {
+              // 🔥 EL SECRETO: Si vuelve al origen, usamos EXACTAMENTE la variable `orig` (que ya contiene el Plus Code válido)
+              returnDest = orig; 
           } else if (job.checklist?.rtReturnOption === 'other' && typedDest) {
               let resolvedRet = await resolveAddress(typedDest, null, null);
               if (resolvedRet && !resolvedRet.toLowerCase().includes('chile') && !resolvedRet.includes('+')) resolvedRet += ', Chile';
               returnDest = resolvedRet;
-          } else {
-              // Fallback: Si no hay checklist cerrado, tomar el destino extraído de las flechas
-              let fallbackDest = finalDestAfterPrt || job.origin;
-              let resolvedRet = await resolveAddress(fallbackDest, null, null);
+          } else if (cleanFinalDest && cleanFinalDest !== prtName.toLowerCase().trim() && !cleanFinalDest.includes('prt')) {
+              // Hay un destino en las flechas y NO es la PRT de nuevo
+              let resolvedRet = await resolveAddress(finalDestAfterPrt, null, null);
               if (resolvedRet && !resolvedRet.toLowerCase().includes('chile') && !resolvedRet.includes('+')) resolvedRet += ', Chile';
               returnDest = resolvedRet;
+          } else {
+              // Fallback ultra-seguro: Ante cualquier texto extraño o ambiguo, fuerza el regreso al Origen
+              returnDest = orig;
           }
       }
 
       const getMeters = (from, to) => new Promise((resolve, reject) => {
-        // DirectionsService usa request object en lugar de la API Matrix antigua
         const request = {
             origin: from,
             destination: to,
             travelMode: 'DRIVING',
             region: 'CL'
         };
-
-        // CHIVATO PARA AUDITAR QUÉ ESTÁ LEYENDO GOOGLE MAPS
         console.log("📍 GOOGLE MAPS CALCULANDO RUTA:");
         console.log("   🔴 DESDE:", from);
         console.log("   🟢 HASTA:", to);
-        
         directionsService.route(request, (result, status) => {
           if (status === 'OK' && result.routes && result.routes.length > 0) {
-              // Extraemos la distancia en metros de la pata (leg) principal de la ruta
               resolve(result.routes[0].legs[0].distance.value);
           } else {
               reject(new Error('Ruta no encontrada'));
@@ -340,23 +354,22 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         });
       });
 
-      // 1er Tramo (km1): Origen -> PRT (o Destino final si es un viaje simple)
+      // Tramo 1 (km1): Origen -> PRT
       let totalMeters = await Promise.race([
           getMeters(orig, dest), 
           new Promise((_, r) => setTimeout(() => r(new Error('Timeout')), 4000))
       ]).catch(() => 'Error');
       
-      // 2do Tramo (km2): PRT -> Destino Final
+      // Tramo 2 (km2): PRT -> Destino Final
       if (typeof totalMeters === 'number' && job.tripType === 'revision' && returnDest) {
-          await new Promise(r => setTimeout(r, 600)); // Delay de seguridad para la API
-          
+          await new Promise(r => setTimeout(r, 600)); // Delay para no saturar la API
           let returnMeters = await Promise.race([
              getMeters(dest, returnDest), 
              new Promise((_, r) => setTimeout(() => r(new Error('Timeout')), 4500))
           ]).catch(() => 'Error');
           
           if (typeof returnMeters === 'number') {
-              totalMeters += returnMeters; // Distancia Total = km1 + km2
+              totalMeters += returnMeters; 
           }
       }
 
