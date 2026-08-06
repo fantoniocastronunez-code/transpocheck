@@ -2818,21 +2818,36 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     <button key={d.id} onClick={async () => {
                        showConfirm(`¿Guardar el traslado de la patente ${forceCloseJob.plate || forceCloseJob.vin} a nombre de ${d.name}?`, async () => {
                           try {
-                             const mockChecklist = {
-                                client: forceCloseJob.client || '', brand: forceCloseJob.brand || '', model: forceCloseJob.model || '', 
-                                plateOrVin: forceCloseJob.plate || forceCloseJob.vin || '', origin: forceCloseJob.origin || '', 
-                                destination: forceCloseJob.destination || '', fuelLevel: 50, photos: {}, docs: {}, 
-                                observations: 'Sin observaciones registradas.', 
-                                receiverName: 'ENTREGA SIN RECEPCIÓN', receiverRut: 'N/A', noReception: true, signatureData: null, 
+                             // NUEVO: Rescatar el borrador o checklist existente para no perder fotos ni info
+                             const existingData = forceCloseJob.draft?.formData || forceCloseJob.checklist || {};
+                             
+                             const mergedChecklist = {
+                                ...existingData, // <-- Mantiene fotos, firmas previas, equipamiento, etc.
+                                client: forceCloseJob.client || '', 
+                                brand: forceCloseJob.brand || '', 
+                                model: forceCloseJob.model || '', 
+                                plateOrVin: forceCloseJob.plate || forceCloseJob.vin || forceCloseJob.associatedPlate || '', 
+                                origin: forceCloseJob.origin || '', 
+                                destination: forceCloseJob.destination || '', 
+                                fuelLevel: existingData.fuelLevel || 50, 
+                                photos: existingData.photos || {}, 
+                                docs: existingData.docs || {}, 
+                                observations: existingData.observations || 'Cierre forzado por administrador.', 
+                                receiverName: existingData.receiverName || 'ENTREGA FORZADA (SIN RECEPCIÓN)', 
+                                receiverRut: existingData.receiverRut || 'N/A', 
+                                noReception: existingData.noReception !== undefined ? existingData.noReception : true, 
+                                signatureData: existingData.signatureData || null, 
                                 assignedDriverName: d.name
                              };
+
                              await updateDoc(doc(db, 'transport_jobs', forceCloseJob.id), {
                                 status: 'completed',
                                 completedAt: Date.now(),
                                 acceptedByEmail: d.email,
                                 assignedDrivers: [{id: d.id, name: d.name, email: d.email}],
                                 assignedEmails: [d.email],
-                                checklist: mockChecklist,
+                                checklist: mergedChecklist,
+                                draft: deleteField(), // <-- Limpia el borrador al cerrar
                                 phase: forceCloseJob.tripType === 'revision' ? 'prt_done' : 'arrived_destination',
                                 prt_result: forceCloseJob.tripType === 'revision' ? (forceCloseJob.prt_result || 'aprobado') : null
                              });

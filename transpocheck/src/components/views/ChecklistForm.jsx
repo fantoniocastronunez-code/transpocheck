@@ -43,7 +43,9 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
   }
 
   const defaultData = {
-    client: job.client||'', manualClient: '', brand: job.brand||'', model: job.model||'', plateOrVin: job.plate||job.vin||'', origin: job.origin||'', destination: job.destination||'', vehicleType: job.vehicleType||'auto', fuelLevel: 50, mileage: job.checklist?.mileage || '',
+    client: job.client||'', manualClient: '', brand: job.brand||'', model: job.model||'', plateOrVin: job.plate||job.vin||'', origin: job.origin||'', destination: job.destination||'', 
+    vehicleType: job.checklist?.vehicleType || job.vehicleType || matchedVehicle?.vehicleType || matchedVehicle?.type || 'auto', 
+    fuelLevel: 50, mileage: job.checklist?.mileage || '',
     photos: job.checklist?.photos || { front:false, left:false, right:false, back:false, tire:false, dashboard:false, mileage:false, ...Array.from({length: 30}).reduce((acc, _, i) => { acc[`det${i+1}`] = false; return acc; }, {}) }, 
     docs: job.checklist?.docs || initialDocs, 
     docsExpiry: job.checklist?.docsExpiry || initialDocsExpiry, 
@@ -308,6 +310,9 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
           if (data.prt_reason) {
              draftData.rtRejectReason = data.prt_reason;
           }
+
+          // MAGIA CATEGORÍAS: Destruimos el "Auto/SUV" del borrador si el vehículo real es un camión o furgón
+          draftData.vehicleType = data.checklist?.vehicleType || data.vehicleType || matchedVehicle?.vehicleType || matchedVehicle?.type || draftData.vehicleType || 'auto';
 
           // RESCATE DE FOTOS: Si el borrador tenía las fotos en false pero el checklist principal ya las subió
           if (data.checklist?.photos) {
