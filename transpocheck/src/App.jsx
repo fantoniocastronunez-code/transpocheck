@@ -180,7 +180,7 @@ function LogisticApp() {
     }
   }, [isRealAdmin, isQuoter, activeRole, simulatedDriverEmail]);
 
-  // --- MOTOR DE ACTUALIZACIÓN AUTOMÁTICA (3:00 AM) ---
+  // --- MOTOR DE ACTUALIZACIÓN AUTOMÁTICA Y DESPERTADOR (ANTI-LAG XIAOMI) ---
   useEffect(() => {
     const checkAndForceUpdate = () => {
       const now = new Date();
@@ -215,9 +215,17 @@ function LogisticApp() {
     checkAndForceUpdate(); // Revisa apenas el usuario abre la app
     const interval = setInterval(checkAndForceUpdate, 10 * 60 * 1000); // Revisa cada 10 min si la pantalla quedó prendida
     
-    // Revisa instantáneamente si el conductor desbloquea el celular
+    // Revisa instantáneamente si el conductor desbloquea el celular o vuelve a la app
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') checkAndForceUpdate();
+      if (document.visibilityState === 'visible') {
+        checkAndForceUpdate();
+        // MAGIA: Patada al WebSocket de Firebase para forzar reconexión inmediata en Android/MIUI
+        if (db) {
+          import('firebase/firestore').then(({ enableNetwork, disableNetwork }) => {
+            disableNetwork(db).then(() => enableNetwork(db)).catch(() => {});
+          });
+        }
+      }
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
@@ -225,7 +233,7 @@ function LogisticApp() {
       clearInterval(interval);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []);
+  }, [db]);
   // --------------------------------------------------
 
   useEffect(() => {
