@@ -931,7 +931,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                       )}
 
                       <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 mt-6 text-slate-800 uppercase tracking-wider">Notas del Operario</h3>
-                      <textarea className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-purple-500 min-h-[100px]" placeholder="Ej: Las plantillas de vinilo no dejaron residuos. Trabajo ejecutado sin novedades..." value={formData.observations || ''} onChange={(e) => setF('observations', e.target.value)} />
+                      <textarea className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-purple-500 min-h-[100px]" placeholder="Ej: Las plantillas de vinilo no dejaron residuos. Trabajo ejecutado sin novedades..." autoComplete="off" autoCorrect="off" spellCheck="false" value={formData.observations || ''} onChange={(e) => setF('observations', e.target.value)} />
                     </div>
                   )}
 
@@ -984,17 +984,17 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                       {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
                       <option value="OTRO">Otro (Ingreso Manual)</option>
                    </select>
-                   {formData.client === 'OTRO' && <input value={formData.manualClient} onChange={e=>setF('manualClient',e.target.value)} placeholder="Escribe el nombre del cliente" className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 mt-2"/>}
+                   {formData.client === 'OTRO' && <input value={formData.manualClient} onChange={e=>setF('manualClient',e.target.value)} placeholder="Escribe el nombre del cliente" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 mt-2"/>}
                 </div>
               ) : (
-                <input value={formData.client} onChange={e=>setF('client',e.target.value)} placeholder="Cliente" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 bg-slate-50" readOnly/>
+                <input value={formData.client} onChange={e=>setF('client',e.target.value)} placeholder="Cliente" autoComplete="off" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 bg-slate-50" readOnly/>
               )}
               
               <div className="grid grid-cols-2 gap-4">
-                <input value={formData.brand} onChange={e=>setF('brand',e.target.value)} placeholder="Marca" className="w-full border-2 border-slate-200 bg-white p-3 rounded-xl font-bold text-slate-800"/>
-                <input value={formData.model} onChange={e=>setF('model',e.target.value)} placeholder="Modelo" className="w-full border-2 border-slate-200 bg-white p-3 rounded-xl font-bold text-slate-800"/>
+                <input value={formData.brand} onChange={e=>setF('brand',e.target.value)} placeholder="Marca" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 bg-white p-3 rounded-xl font-bold text-slate-800"/>
+                <input value={formData.model} onChange={e=>setF('model',e.target.value)} placeholder="Modelo" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 bg-white p-3 rounded-xl font-bold text-slate-800"/>
               </div>
-              <input value={formData.plateOrVin} onChange={e=>setF('plateOrVin',e.target.value)} placeholder="Patente o VIN" className="w-full border-2 border-slate-300 bg-slate-100 p-3 rounded-xl font-black uppercase text-slate-800 shadow-inner mt-2"/>
+              <input value={formData.plateOrVin} onChange={e=>setF('plateOrVin',e.target.value)} placeholder="Patente o VIN" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-300 bg-slate-100 p-3 rounded-xl font-black uppercase text-slate-800 shadow-inner mt-2"/>
               
               {formData.client && formData.client.toLowerCase().includes('grandleasing') && (
                 <div className="bg-amber-50 border-2 border-amber-200 p-4 rounded-2xl shadow-sm mt-4 animate-in fade-in">
@@ -1074,7 +1074,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                   )}
 
                   {formData.rtStatus === 'rechazado' && (
-                    <input value={formData.rtRejectReason} onChange={e=>setF('rtRejectReason', e.target.value)} placeholder="¿Cuál fue la razón del rechazo?" required={formData.rtStatus === 'rechazado'} className="w-full border-2 border-red-300 p-3 rounded-xl outline-none focus:border-red-500 font-bold text-red-900 bg-white mt-2 animate-in fade-in" />
+                    <input value={formData.rtRejectReason} onChange={e=>setF('rtRejectReason', e.target.value)} placeholder="¿Cuál fue la razón del rechazo?" required={formData.rtStatus === 'rechazado'} autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-red-300 p-3 rounded-xl outline-none focus:border-red-500 font-bold text-red-900 bg-white mt-2 animate-in fade-in" />
                   )}
                   {(formData.rtStatus === 'aprobado' || formData.rtStatus === 'aprobado_ayuda') && (
                     <div className="mt-2 p-3 border border-green-200 bg-white rounded-xl space-y-2 animate-in fade-in">
@@ -1090,7 +1090,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                         </label>
                       </div>
                       {formData.rtReturnOption === 'other' && (
-                        <input value={formData.rtReturnDestination} onChange={e=>setF('rtReturnDestination', e.target.value)} placeholder="Especifique el destino final..." required={formData.rtReturnOption === 'other'} className="w-full border-2 border-green-300 p-2.5 rounded-xl outline-none focus:border-green-500 font-bold text-green-900 bg-white" />
+                        <input value={formData.rtReturnDestination} onChange={e=>setF('rtReturnDestination', e.target.value)} placeholder="Especifique el destino final..." required={formData.rtReturnOption === 'other'} autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-green-300 p-2.5 rounded-xl outline-none focus:border-green-500 font-bold text-green-900 bg-white" />
                       )}
                     </div>
                   )}
@@ -1295,7 +1295,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
             <div className="space-y-6 animate-in fade-in duration-200">
               <div className="space-y-4">
                 <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Observaciones Generales</h3>
-                <textarea className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 min-h-[90px]" placeholder="Escribe aquí si hay algún daño, rayón o comentario del estado visual del vehículo..." value={formData.observations || ''} onChange={(e) => setF('observations', e.target.value)} />
+                <textarea className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 min-h-[90px]" placeholder="Escribe aquí si hay algún daño, rayón o comentario del estado visual del vehículo..." autoComplete="off" autoCorrect="off" spellCheck="false" value={formData.observations || ''} onChange={(e) => setF('observations', e.target.value)} />
               </div>
 
               {/* NUEVO: VERIFICACIÓN DE EQUIPAMIENTO */}
@@ -1320,7 +1320,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                     </div>
                     <div className="space-y-1.5 pt-2">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-1"><FileText className="w-3 h-3"/> Herramientas u otros detalles</label>
-                      <input type="text" placeholder="Ej: Destornillador, chaleco extra..." value={formData.equipmentDetails || ''} onChange={e => setF('equipmentDetails', e.target.value)} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-xs outline-none focus:border-blue-500 shadow-inner bg-white" />
+                      <input type="text" placeholder="Ej: Destornillador, chaleco extra..." value={formData.equipmentDetails || ''} onChange={e => setF('equipmentDetails', e.target.value)} autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-xs outline-none focus:border-blue-500 shadow-inner bg-white" />
                     </div>
                   </div>
                 )}
@@ -1851,8 +1851,8 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
                    <div className="flex items-center gap-2 my-2"><div className="h-px bg-slate-200 flex-1"></div><span className="text-[10px] font-bold text-slate-400 uppercase">{clientPins.length > 0 ? 'O firmar manualmente' : 'Llenar manualmente'}</span><div className="h-px bg-slate-200 flex-1"></div></div>
                    
-                   <input required={!formData.noReception} value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
-                   <input value={formData.receiverRut} onChange={(e)=>{ let val = e.target.value.replace(/[^0-9kK]/g, '').toUpperCase(); if (val.length > 1) { const dv = val.slice(-1); const body = val.slice(0, -1); val = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '-' + dv; } setF('receiverRut', val); }} placeholder="RUT Receptor (Opcional)" maxLength="12" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
+                   <input required={!formData.noReception} value={formData.receiverName} onChange={e=>setF('receiverName',e.target.value)} placeholder="Nombre del receptor" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
+                   <input value={formData.receiverRut} onChange={(e)=>{ let val = e.target.value.replace(/[^0-9kK]/g, '').toUpperCase(); if (val.length > 1) { const dv = val.slice(-1); const body = val.slice(0, -1); val = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '-' + dv; } setF('receiverRut', val); }} placeholder="RUT Receptor (Opcional)" maxLength="12" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm"/>
                    
                    {formData.clientComments && (
                      <div className="bg-slate-100 p-2.5 rounded-xl border">

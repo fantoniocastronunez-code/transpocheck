@@ -375,15 +375,15 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                   <div className="grid sm:grid-cols-2 gap-4">
                      <div>
                         <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Nombre</label>
-                        <input name="nombre" defaultValue={editingProfile !== 'NEW' ? editingProfile.nombre : ''} placeholder="Ej. Catalina" required className="w-full bg-slate-50 border-2 border-slate-200 p-3.5 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-colors shadow-sm"/>
+                        <input name="nombre" defaultValue={editingProfile !== 'NEW' ? editingProfile.nombre : ''} placeholder="Ej. Catalina" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full bg-slate-50 border-2 border-slate-200 p-3.5 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-colors shadow-sm"/>
                      </div>
                      <div>
                         <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Apellido</label>
-                        <input name="apellido" defaultValue={editingProfile !== 'NEW' ? editingProfile.apellido : ''} placeholder="Ej. Pérez" required className="w-full bg-slate-50 border-2 border-slate-200 p-3.5 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-colors shadow-sm"/>
+                        <input name="apellido" defaultValue={editingProfile !== 'NEW' ? editingProfile.apellido : ''} placeholder="Ej. Pérez" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full bg-slate-50 border-2 border-slate-200 p-3.5 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-colors shadow-sm"/>
                      </div>
                      <div className="sm:col-span-2">
                         <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Correo Electrónico (Acceso)</label>
-                        <input id="correoInput" name="correo" type="email" defaultValue={editingProfile !== 'NEW' ? editingProfile.email : ''} placeholder="catalina@empresa.com" required className="w-full bg-slate-50 border-2 border-slate-200 p-3.5 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-colors shadow-sm"/>
+                        <input id="correoInput" name="correo" type="email" defaultValue={editingProfile !== 'NEW' ? editingProfile.email : ''} placeholder="catalina@empresa.com" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="none" className="w-full bg-slate-50 border-2 border-slate-200 p-3.5 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-colors shadow-sm"/>
                      </div>
                   </div>
                </div>
@@ -402,7 +402,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                      <div className="p-5 bg-blue-50 border-2 border-blue-100 rounded-2xl space-y-4 animate-in fade-in slide-in-from-top-2">
                         <div>
                            <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1.5 block ml-1">Nombre de la Nueva Empresa</label>
-                           <input name="nuevaEmpresa" placeholder="Ej. Automotora Kovacs" required className="w-full border-2 border-blue-200 bg-white p-3.5 rounded-xl text-sm font-black text-blue-900 outline-none focus:border-blue-500 shadow-sm" />
+                           <input name="nuevaEmpresa" placeholder="Ej. Automotora Kovacs" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full border-2 border-blue-200 bg-white p-3.5 rounded-xl text-sm font-black text-blue-900 outline-none focus:border-blue-500 shadow-sm" />
                         </div>
                         
                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white p-3 rounded-xl border border-blue-100">
@@ -531,15 +531,15 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
               {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
               <option value="OTRO">Otro (Se debe escribir manualmente)</option>
             </select>
-            <input name="manualClient" placeholder="Si es OTRO, escribe el cliente aquí" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
-            <input name="brand" defaultValue={editingVehicle?.brand} placeholder="Marca (Ej. Chevrolet)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
-            <input name="model" defaultValue={editingVehicle?.model} placeholder="Modelo (Ej. NPR 816)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold" onChange={(e) => {
+            <input name="manualClient" placeholder="Si es OTRO, escribe el cliente aquí" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+            <input name="brand" defaultValue={editingVehicle?.brand} placeholder="Marca (Ej. Chevrolet)" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+            <input name="model" defaultValue={editingVehicle?.model} placeholder="Modelo (Ej. NPR 816)" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold" onChange={(e) => {
               const b = e.target.form.brand.value.trim().toLowerCase();
               const m = e.target.value.trim().toLowerCase();
               const match = vehicles.find(v => v.brand?.toLowerCase() === b && v.model?.toLowerCase() === m && v.vehicleType);
               if (match && e.target.form.vehicleType) e.target.form.vehicleType.value = match.vehicleType;
             }}/>
-            <input name="plate" defaultValue={editingVehicle?.plate} placeholder="Patente" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm uppercase outline-none focus:border-blue-500 font-bold text-slate-800"/>
+            <input name="plate" defaultValue={editingVehicle?.plate} placeholder="Patente" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm uppercase outline-none focus:border-blue-500 font-bold text-slate-800"/>
             <select name="vehicleType" defaultValue={editingVehicle?.vehicleType || 'auto'} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700 bg-white">
                <option value="auto">🚙 Auto / SUV</option>
                <option value="camioneta">🛻 Camioneta</option>
@@ -670,8 +670,8 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                     {currentUserEmail === 'fcastro@logisticats.cl' && <option value="super_admin">Super Administrador</option>}
                  </select>
               </div>
-              <input name="driverName" defaultValue={editingDriver?.name} placeholder="Nombre completo" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
-              <input name="driverEmail" defaultValue={editingDriver?.email} placeholder="Correo Gmail de acceso" required type="email" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+              <input name="driverName" defaultValue={editingDriver?.name} placeholder="Nombre completo" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+              <input name="driverEmail" defaultValue={editingDriver?.email} placeholder="Correo Gmail de acceso" required type="email" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="none" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
             </div>
             
             <div className="pt-2 border-t border-slate-100">
@@ -848,27 +848,27 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
             
             <div className="space-y-1">
                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Lugar / Destino exacto <span className="text-red-500">*</span></label>
-               <input name="placeName" defaultValue={editingDir?.placeName} placeholder="Ej: Samex Quilicura (Obligatorio)" required className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
+               <input name="placeName" defaultValue={editingDir?.placeName} placeholder="Ej: Samex Quilicura (Obligatorio)" required autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
             </div>
             
             <div className="space-y-1">
                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre del Encargado (Opcional)</label>
-               <input name="contactName" defaultValue={editingDir?.contactName} placeholder="Ej: Luis Ahumada" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
+               <input name="contactName" defaultValue={editingDir?.contactName} placeholder="Ej: Luis Ahumada" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
             </div>
             
             <div className="space-y-1">
                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Teléfono (Opcional)</label>
-               <input name="contactPhone" defaultValue={editingDir?.contactPhone} placeholder="Ej: +56912345678" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
+               <input name="contactPhone" defaultValue={editingDir?.contactPhone} placeholder="Ej: +56912345678" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Dirección Exacta (Opcional)</label>
-                  <input name="address" defaultValue={editingDir?.address} placeholder="Ej: Av. Vespucio 1501" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
+                  <input name="address" defaultValue={editingDir?.address} placeholder="Ej: Av. Vespucio 1501" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
                </div>
                <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Comuna / Ciudad (Opcional)</label>
-                  <input name="commune" defaultValue={editingDir?.commune} placeholder="Ej: Quilicura" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
+                  <input name="commune" defaultValue={editingDir?.commune} placeholder="Ej: Quilicura" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
                </div>
             </div>
 
@@ -924,7 +924,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
               showAlert("✅ Ítem agregado a la lista de equipamiento.");
             } catch (err) { showAlert("❌ Error al guardar."); }
           }} className="flex gap-2 mb-6">
-            <input type="text" value={newEquipmentItem} onChange={(e) => setNewEquipmentItem(e.target.value)} placeholder="Ej: Gata, Chaleco, Botiquín..." className="flex-1 border-2 border-slate-200 p-3 rounded-xl text-sm font-bold outline-none focus:border-amber-500" />
+            <input type="text" value={newEquipmentItem} onChange={(e) => setNewEquipmentItem(e.target.value)} placeholder="Ej: Gata, Chaleco, Botiquín..." autoComplete="off" autoCorrect="off" spellCheck="false" className="flex-1 border-2 border-slate-200 p-3 rounded-xl text-sm font-bold outline-none focus:border-amber-500" />
             <button type="submit" className="bg-amber-500 hover:bg-amber-600 text-white px-5 py-3 rounded-xl font-black shadow-sm transition-colors flex items-center gap-2">
               <Plus className="w-5 h-5"/> Agregar
             </button>

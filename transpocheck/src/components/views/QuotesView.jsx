@@ -742,13 +742,13 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
 
               <div className="space-y-1">
                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Origen</label>
-                 <input type="text" name="origin" list="quotes-directory-list" value={quoteData.origin} onChange={handleInputChange} placeholder="Desde dónde..." className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500"/>
+                 <input type="text" name="origin" list="quotes-directory-list" value={quoteData.origin} onChange={handleInputChange} placeholder="Desde dónde..." autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500"/>
               </div>
 
               <div className="space-y-1">
                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Destino</label>
                  <div className="flex gap-2">
-                   <input type="text" name="destination" list="quotes-directory-list" value={quoteData.destination} onChange={handleInputChange} placeholder="Hasta dónde..." className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500"/>
+                   <input type="text" name="destination" list="quotes-directory-list" value={quoteData.destination} onChange={handleInputChange} placeholder="Hasta dónde..." autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500"/>
                    <button type="button" onClick={calculateRouteDistance} disabled={isCalculatingRoute} className="bg-purple-600 hover:bg-purple-700 text-white px-4 rounded-xl text-xs font-black shadow-sm shrink-0 transition-colors disabled:opacity-50" title="Calcular distancia de ruta real por carretera">
                      {isCalculatingRoute ? '...' : 'Calcular KM'}
                    </button>
@@ -781,12 +781,12 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
 
               <div className="space-y-1">
                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Marca</label>
-                 <input type="text" name="brand" list="quotes-brands-list" value={quoteData.brand} onChange={handleInputChange} placeholder="Ej: TOYOTA" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500 uppercase"/>
+                 <input type="text" name="brand" list="quotes-brands-list" value={quoteData.brand} onChange={handleInputChange} placeholder="Ej: TOYOTA" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500 uppercase"/>
               </div>
 
               <div className="space-y-1">
                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Modelo</label>
-                 <input type="text" name="model" list="quotes-models-list" value={quoteData.model} onChange={handleInputChange} placeholder="Ej: HILUX" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500 uppercase"/>
+                 <input type="text" name="model" list="quotes-models-list" value={quoteData.model} onChange={handleInputChange} placeholder="Ej: HILUX" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500 uppercase"/>
               </div>
 
               <div className="space-y-1">
@@ -816,8 +816,16 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                        return updated;
                      });
                    }} 
-                   placeholder="Ej: ABCD12" 
+                   placeholder="Ej: ABCD12"
+                   autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters"
                    className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-black uppercase text-slate-800 outline-none focus:border-purple-500"
+                 />
+              </div>
+
+              <div className="space-y-1">
+                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Descripción corta</label>
+                 <input type="text" name="description" value={quoteData.description} onChange={handleInputChange} placeholder="Detalles adicionales..." autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500"/>
+              </div>none focus:border-purple-500"
                  />
               </div>
 
@@ -1072,15 +1080,15 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
             <div className="space-y-3">
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase">Nombre / Empresa</label>
-                <input type="text" required value={newClientData.name} onChange={e => setNewClientData({...newClientData, name: e.target.value})} placeholder="Ej: Comercial SPA" className="w-full border-2 border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500"/>
+                <input type="text" required value={newClientData.name} onChange={e => setNewClientData({...newClientData, name: e.target.value})} placeholder="Ej: Comercial SPA" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full border-2 border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500"/>
               </div>
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase">Apellidos / Contacto</label>
-                <input type="text" value={newClientData.lastName} onChange={e => setNewClientData({...newClientData, lastName: e.target.value})} placeholder="Ej: Juan Pérez" className="w-full border-2 border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500"/>
+                <input type="text" value={newClientData.lastName} onChange={e => setNewClientData({...newClientData, lastName: e.target.value})} placeholder="Ej: Juan Pérez" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full border-2 border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500"/>
               </div>
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase">Correo de Contacto</label>
-                <input type="email" required value={newClientData.email} onChange={e => setNewClientData({...newClientData, email: e.target.value})} placeholder="contacto@empresa.cl" className="w-full border-2 border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500"/>
+                <input type="email" required value={newClientData.email} onChange={e => setNewClientData({...newClientData, email: e.target.value})} placeholder="contacto@empresa.cl" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="none" className="w-full border-2 border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500"/>
               </div>
             </div>
             <button type="submit" className="w-full mt-5 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 text-xs transition-colors">Guardar Cliente</button>
@@ -1134,7 +1142,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase">Nombre del Peaje</label>
-                  <input type="text" required value={newTollData.name} onChange={e => setNewTollData({...newTollData, name: e.target.value})} placeholder="Ej: Peaje Lampa" className="w-full border-2 border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500"/>
+                  <input type="text" required value={newTollData.name} onChange={e => setNewTollData({...newTollData, name: e.target.value})} placeholder="Ej: Peaje Lampa" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500"/>
                 </div>
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase">Ruta / Dirección</label>
@@ -1152,6 +1160,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                       onChange={e => setNewTollData({...newTollData, customRoute: e.target.value})} 
                       placeholder="Escribe la ruta aquí..." 
                       required
+                      autoComplete="off" autoCorrect="off" spellCheck="false"
                       className="w-full mt-2 border-2 border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500 animate-in fade-in"
                     />
                   )}

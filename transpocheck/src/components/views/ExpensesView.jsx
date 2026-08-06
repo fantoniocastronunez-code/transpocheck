@@ -22,6 +22,19 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
   const [adminTxType, setAdminTxType] = useState('assignment'); 
   const [selectedJobId, setSelectedJobId] = useState(''); // <-- NUEVO ESTADO PARA LA TARJETA DE TRABAJO 
 
+  // NUEVO: Pestañas rápidas y Peajes para Gastos
+  const [expenseCategory, setExpenseCategory] = useState('combustible'); // 'combustible', 'peaje', 'otro'
+  const [tollsList, setTollsList] = useState([]);
+  
+  useEffect(() => {
+    if (!db) return;
+    import('firebase/firestore').then(({ collection, getDocs }) => {
+      getDocs(collection(db, 'tolls')).then(snap => {
+        setTollsList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      }).catch(() => {});
+    });
+  }, [db]);
+
   const activeOrPendingJobs = jobs?.filter(j => j.status === 'pending' || j.status === 'accepted') || [];
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -323,8 +336,17 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
         <form onSubmit={handleUpdateSubmit} className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6">
           <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-extrabold text-slate-800">Editar Registro</h3><button type="button" onClick={onClose} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button></div>
           <div className="space-y-4">
-            <div><label className="text-xs font-bold text-slate-500 uppercase">Detalle</label><input name="detail" defaultValue={expense.detail} required className="w-full border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" /></div>
-            <div><label className="text-xs font-bold text-slate-500 uppercase">Monto ($)</label><input name="amount" type="number" defaultValue={expense.amount} required className="w-full border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" /></div>
+            <div>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Detalle</label>
+              <input name="detail" defaultValue={expense.detail} required autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-sm text-slate-700 shadow-sm mt-1" />
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Monto Editado</label>
+              <div className="relative mt-1">
+                <input name="amount" type="number" defaultValue={expense.amount} required autoComplete="off" className="w-full border-2 border-slate-200 p-3 pl-10 rounded-xl outline-none focus:border-blue-500 font-black text-lg text-slate-800 shadow-sm" />
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-lg text-slate-400">$</span>
+              </div>
+            </div>
           </div>
           <div className="flex gap-4 mt-6"><button type="button" onClick={onClose} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-600">Cancelar</button><button type="submit" className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold">Guardar</button></div>
         </form>
@@ -401,10 +423,13 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
                     </div>
                     
                     {adminTxType === 'expense' && (
-                       <input name="detail" type="text" required placeholder="Detalle del gasto (ej. Peaje, Bencina)" className="w-full border-2 border-white bg-white p-3 rounded-xl text-sm font-bold outline-none focus:border-blue-400 shadow-sm"/>
+                       <input name="detail" type="text" required placeholder="Detalle del gasto (ej. Peaje, Bencina)" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-red-200 bg-red-50 p-3 rounded-xl text-sm font-bold text-red-900 outline-none focus:border-red-400 shadow-sm placeholder:text-red-300"/>
                     )}
                     
-                    <input name="amount" type="number" required placeholder={adminTxType === 'assignment' ? "Monto a asignar $" : "Monto del gasto $"} className="w-full border-2 border-white bg-white p-3 rounded-xl text-sm font-bold outline-none focus:border-blue-400 shadow-sm"/>
+                    <div className="relative">
+                      <input name="amount" type="number" required placeholder={adminTxType === 'assignment' ? "Monto a entregar" : "Monto del gasto"} autoComplete="off" className={`w-full border-2 p-3 pl-10 rounded-xl text-lg font-black outline-none shadow-sm ${adminTxType === 'assignment' ? 'border-green-200 bg-green-50 text-green-900 focus:border-green-500 placeholder:text-green-300' : 'border-red-200 bg-red-50 text-red-900 focus:border-red-500 placeholder:text-red-300'}`}/>
+                      <span className={`absolute left-4 top-1/2 -translate-y-1/2 font-black text-lg ${adminTxType === 'assignment' ? 'text-green-500' : 'text-red-500'}`}>$</span>
+                    </div>
                     
                     <input type="hidden" name="jobId" value={selectedJobId} />
                     <div className="mt-3 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
@@ -538,12 +563,54 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
         <p className="text-4xl font-extrabold tracking-tight">{formatMoney(myBalance)}</p>
       </div>
 
-      <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
+      <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 animate-in fade-in">
         <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2 mb-4"><Receipt className="w-5 h-5 text-red-500"/> Registrar Gasto</h3>
-        <form onSubmit={e=>addExp(e,'expense',Number(e.target.amount.value), e.target.detail.value, myDriver.id, myDriver.name, myDriver.email)} className="space-y-4">
-          <input type="text" name="detail" placeholder="¿En qué gastaste? (Ej. Peaje)" required className="w-full border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-sm text-slate-700" />
-          <input type="number" name="amount" placeholder="Monto ($)" required className="w-full border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-sm text-slate-700" />
-          <button type="submit" disabled={myBalance <= 0 || hasPendingReturn || isSubmitting} className={`w-full py-3 rounded-xl font-extrabold text-sm transition-all ${myBalance > 0 && !hasPendingReturn && !isSubmitting ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>{isSubmitting ? 'Procesando...' : 'Guardar Gasto'}</button>
+        
+        <div className="flex gap-2 mb-4 bg-slate-100 p-1.5 rounded-2xl overflow-x-auto scrollbar-none">
+          <button type="button" onClick={() => setExpenseCategory('combustible')} className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all whitespace-nowrap ${expenseCategory === 'combustible' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>⛽ Combustible</button>
+          <button type="button" onClick={() => setExpenseCategory('peaje')} className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all whitespace-nowrap ${expenseCategory === 'peaje' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>🎫 Peaje</button>
+          <button type="button" onClick={() => setExpenseCategory('otro')} className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all whitespace-nowrap ${expenseCategory === 'otro' ? 'bg-white text-purple-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>📋 Otro</button>
+        </div>
+
+        <form onSubmit={e=> {
+          const rawDetail = e.target.detail ? e.target.detail.value : '';
+          const detailValue = expenseCategory === 'combustible' ? `Carga de Combustible (${rawDetail || 'General'})` : (expenseCategory === 'peaje' ? `Peaje: ${e.target.tollSelect ? e.target.tollSelect.value : 'Manual'} ${rawDetail ? `(${rawDetail})` : ''}` : rawDetail);
+          addExp(e,'expense',Number(e.target.amount.value), detailValue, myDriver.id, myDriver.name, myDriver.email);
+        }} className="space-y-4">
+          
+          {expenseCategory === 'peaje' && tollsList.length > 0 && (
+            <div className="space-y-1 animate-in slide-in-from-top-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Seleccionar Peaje</label>
+              <select name="tollSelect" className="w-full border-2 border-blue-200 bg-blue-50 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-sm text-blue-900 shadow-sm" onChange={(e) => {
+                const toll = tollsList.find(t => t.name === e.target.value);
+                if (toll) {
+                  // Sugiere el valor más alto o un promedio si es auto, como base
+                  const suggestedPrice = toll.prices?.['Auto / SUV'] || toll.prices?.['Camioneta'] || '';
+                  if (suggestedPrice && document.getElementById('driverAmountInput')) {
+                    document.getElementById('driverAmountInput').value = suggestedPrice;
+                  }
+                }
+              }}>
+                <option value="">Ingresar Peaje Manualmente...</option>
+                {tollsList.map(t => <option key={t.id} value={t.name}>{t.name} ({t.route})</option>)}
+              </select>
+            </div>
+          )}
+
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{expenseCategory === 'combustible' ? 'Notas (Opcional)' : 'Detalle del Gasto'}</label>
+            <input type="text" name="detail" placeholder={expenseCategory === 'combustible' ? 'Ej: Estación Copec' : '¿En qué gastaste?'} required={expenseCategory === 'otro'} autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-red-400 font-bold text-sm text-slate-700 shadow-sm" />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Monto Exacto</label>
+            <div className="relative">
+              <input id="driverAmountInput" type="number" name="amount" placeholder="Ej: 5000" required autoComplete="off" className="w-full border-2 border-red-200 bg-red-50 p-3 pl-10 rounded-xl outline-none focus:border-red-500 font-black text-lg text-red-900 shadow-sm" />
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-red-500 font-black text-lg">$</span>
+            </div>
+          </div>
+
+          <button type="submit" disabled={myBalance <= 0 || hasPendingReturn || isSubmitting} className={`w-full py-4 rounded-xl font-extrabold text-sm transition-all mt-2 ${myBalance > 0 && !hasPendingReturn && !isSubmitting ? 'bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>{isSubmitting ? 'Procesando...' : 'Descontar Gasto de mi Saldo'}</button>
         </form>
       </div>
       

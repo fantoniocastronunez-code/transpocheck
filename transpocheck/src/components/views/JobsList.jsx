@@ -2252,7 +2252,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       <div className="flex flex-col sm:flex-row gap-3 mb-6 relative z-10">
         <div className="relative flex-1">
            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Search className="w-5 h-5 text-slate-400" /></div>
-           <input type="text" placeholder="Buscar patente, marca, cliente, origen o destino..." className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 transition-colors" value={localSearchTerm} onChange={(e) => setLocalSearchTerm(e.target.value)} />
+           <input type="text" placeholder="Buscar patente, marca, cliente, origen o destino..." autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="none" className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 transition-colors" value={localSearchTerm} onChange={(e) => setLocalSearchTerm(e.target.value)} />
         </div>
         <div className="flex gap-2 shrink-0 overflow-x-auto pb-1 sm:pb-0 scrollbar-none items-center">
            {isAdminView && (
@@ -2592,7 +2592,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[100] p-4">
           <form onSubmit={(e) => { e.preventDefault(); handleFailJob(jobToFail, e.target.reason.value); }} className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-4">
             <h3 className="text-lg font-extrabold">¿Motivo del fallo?</h3>
-            <textarea name="reason" required className="w-full border-2 p-3 rounded-xl font-bold text-sm" rows="3"></textarea>
+            <textarea name="reason" required autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 p-3 rounded-xl font-bold text-sm" rows="3"></textarea>
             <div className="flex gap-3"><button type="button" onClick={()=>setJobToFail(null)} className="flex-1 py-2 bg-slate-100 rounded-xl">Volver</button><button type="submit" className="flex-[2] py-2 bg-red-600 text-white rounded-xl">Confirmar</button></div>
           </form>
         </div>
@@ -2638,7 +2638,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             <div className="overflow-y-auto space-y-5 pr-1 pb-2">
                 <div className="space-y-2.5">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">1. Motivo del Rechazo</label>
-                    <textarea name="reason" required placeholder="Escribe por qué rechazaron el vehículo..." className="w-full border-2 p-3 rounded-xl font-bold text-sm outline-none focus:border-red-500" rows="2"></textarea>
+                    <textarea name="reason" required placeholder="Escribe por qué rechazaron el vehículo..." autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 p-3 rounded-xl font-bold text-sm outline-none focus:border-red-500" rows="2"></textarea>
                 </div>
 
                 <div className="space-y-2.5 pt-4 border-t border-slate-100">
@@ -2672,7 +2672,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                             <p className={`font-extrabold text-sm ${prtReturnOpt === 'other' ? 'text-red-800' : 'text-slate-700'}`}>Ir a Otro Destino</p>
                             {prtReturnOpt === 'other' ? (
                                 <div className="mt-2 w-full animate-in fade-in slide-in-from-top-1">
-                                    <input type="text" list="directory-destinations-prt-rej" autoFocus required placeholder="Escribe el destino..." value={prtReturnDest} onChange={e=>setPrtReturnDest(e.target.value.toUpperCase())} className="w-full bg-white border border-red-300 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-red-500 font-bold" onClick={(e)=>e.stopPropagation()} />
+                                    <input type="text" list="directory-destinations-prt-rej" autoFocus required placeholder="Escribe el destino..." value={prtReturnDest} onChange={e=>setPrtReturnDest(e.target.value.toUpperCase())} autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full bg-white border border-red-300 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-red-500 font-bold" onClick={(e)=>e.stopPropagation()} />
 
                                     <datalist id="directory-destinations-prt-rej">
                                        {directoryMemory.map((dir, idx) => (
@@ -2751,7 +2751,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                             <p className={`font-extrabold text-sm ${prtReturnOpt === 'other' ? 'text-green-800' : 'text-slate-700'}`}>Ir a Otro Destino</p>
                             {prtReturnOpt === 'other' ? (
                                 <div className="mt-2 w-full animate-in fade-in slide-in-from-top-1">
-                                    <input type="text" list="directory-destinations-prt" autoFocus required placeholder="Escribe el destino..." value={prtReturnDest} onChange={e=>setPrtReturnDest(e.target.value.toUpperCase())} className="w-full bg-white border border-green-300 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-green-500 font-bold" onClick={(e)=>e.stopPropagation()} />
+                                    <input type="text" list="directory-destinations-prt" autoFocus required placeholder="Escribe el destino..." value={prtReturnDest} onChange={e=>setPrtReturnDest(e.target.value.toUpperCase())} autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full bg-white border border-green-300 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-green-500 font-bold" onClick={(e)=>e.stopPropagation()} />
 
 
                                     <datalist id="directory-destinations-prt">
@@ -3047,7 +3047,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                           <p className={`font-extrabold text-sm ${dupMode === 'continue' ? 'text-purple-800' : 'text-slate-700'}`}>Continuar a Otro Destino</p>
                           {dupMode === 'continue' ? (
                              <div className="mt-2 animate-in fade-in slide-in-from-top-1 w-full">
-                                <input type="text" list="directory-destinations" autoFocus placeholder="Escribe el nuevo destino..." value={dupDestination} onChange={e=>setDupDestination(e.target.value.toUpperCase())} className="w-full bg-white border border-purple-200 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-400 font-bold" />
+                                <input type="text" list="directory-destinations" autoFocus placeholder="Escribe el nuevo destino..." value={dupDestination} onChange={e=>setDupDestination(e.target.value.toUpperCase())} autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full bg-white border border-purple-200 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-400 font-bold" />
                                 <datalist id="directory-destinations">
                                    {directoryMemory.map((dir, idx) => (
                                       <option key={`dir-${idx}`} value={dir.name || dir.address} />
@@ -3258,7 +3258,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                 <div>
                     <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest ml-1">Distancia Total (KM)</label>
                     <div className="relative mt-1">
-                        <input name="kmValue" type="text" inputMode="decimal" defaultValue={editKmJob.drivenDistance ? editKmJob.drivenDistance.replace(/[^\d.,]/g, '') : ''} required autoFocus className="w-full border-2 border-emerald-200 bg-emerald-50 p-3.5 pr-12 rounded-xl font-black text-xl text-emerald-900 outline-none focus:border-emerald-500 shadow-sm" />
+                        <input name="kmValue" type="text" inputMode="decimal" defaultValue={editKmJob.drivenDistance ? editKmJob.drivenDistance.replace(/[^\d.,]/g, '') : ''} required autoFocus autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-emerald-200 bg-emerald-50 p-3.5 pr-12 rounded-xl font-black text-xl text-emerald-900 outline-none focus:border-emerald-500 shadow-sm" />
                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-black text-emerald-600/50">km</span>
                     </div>
                 </div>
@@ -3295,8 +3295,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                        )}
                     </div>
                  </div>
-                 <input type="text" placeholder="Nombre del Receptor" value={bulkReceiverName} onChange={e=>setBulkReceiverName(e.target.value)} className="w-full border-2 p-3 rounded-xl font-bold outline-none focus:border-emerald-500"/>
-                 <input type="text" placeholder="RUT Receptor" maxLength="12" value={bulkReceiverRut} onChange={(e)=>{ let val = e.target.value.replace(/[^0-9kK]/g, '').toUpperCase(); if (val.length > 1) { const dv = val.slice(-1); const body = val.slice(0, -1); val = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '-' + dv; } setBulkReceiverRut(val); }} className="w-full border-2 p-3 rounded-xl font-bold outline-none focus:border-emerald-500"/>
+                 <input type="text" placeholder="Nombre del Receptor" value={bulkReceiverName} onChange={e=>setBulkReceiverName(e.target.value)} autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 p-3 rounded-xl font-bold outline-none focus:border-emerald-500"/>
+                 <input type="text" placeholder="RUT Receptor" maxLength="12" value={bulkReceiverRut} onChange={(e)=>{ let val = e.target.value.replace(/[^0-9kK]/g, '').toUpperCase(); if (val.length > 1) { const dv = val.slice(-1); const body = val.slice(0, -1); val = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '-' + dv; } setBulkReceiverRut(val); }} autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 p-3 rounded-xl font-bold outline-none focus:border-emerald-500"/>
                  <div className="border-2 rounded-xl overflow-hidden">
                     <SignaturePad onSave={d=>setBulkSignature(d)} onClear={()=>setBulkSignature(null)}/>
                  </div>
@@ -3336,14 +3336,14 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
                  <div className="space-y-1">
                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Texto Actual a Reemplazar</label>
-                   <input type="text" value={replaceSearchTerm} onChange={e => setReplaceSearchTerm(e.target.value)} placeholder="Ej: kovac bilbao" className="w-full bg-slate-50 border-2 border-slate-200 p-3 rounded-xl text-sm font-bold outline-none focus:border-purple-400" />
+                   <input type="text" value={replaceSearchTerm} onChange={e => setReplaceSearchTerm(e.target.value)} placeholder="Ej: kovac bilbao" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full bg-slate-50 border-2 border-slate-200 p-3 rounded-xl text-sm font-bold outline-none focus:border-purple-400" />
                  </div>
 
                  <div className="flex justify-center -my-1 relative z-10"><div className="bg-white p-1 rounded-full border border-slate-200 shadow-sm"><ChevronDown className="w-4 h-4 text-purple-500"/></div></div>
 
                  <div className="space-y-1">
                    <label className="text-[10px] font-black text-purple-600 uppercase tracking-widest ml-1">Nuevo Texto Oficial</label>
-                   <input type="text" value={replaceNewTerm} onChange={e => setReplaceNewTerm(e.target.value)} placeholder="Ej: Automotora Kovacs Bilbao" className="w-full bg-purple-50/50 border-2 border-purple-200 p-3 rounded-xl text-sm font-black text-purple-900 outline-none focus:border-purple-500" />
+                   <input type="text" value={replaceNewTerm} onChange={e => setReplaceNewTerm(e.target.value)} placeholder="Ej: Automotora Kovacs Bilbao" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full bg-purple-50/50 border-2 border-purple-200 p-3 rounded-xl text-sm font-black text-purple-900 outline-none focus:border-purple-500" />
                  </div>
               </div>
 

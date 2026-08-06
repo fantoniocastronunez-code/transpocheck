@@ -727,8 +727,8 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                  {vehicleFoundStatus === 'found' && !isSearchingVehicle && <span className="text-xs font-black text-green-700 bg-green-200 px-2 py-1 rounded-md flex items-center gap-1"><CheckCircle className="w-3 h-3"/> ¡Vehículo encontrado en historial!</span>}
                </div>
                <div className="grid grid-cols-2 gap-4">
-                 <input value={plate} onChange={e=>handleVehicleSearch(e.target.value.replace(/[^a-zA-Z0-9]/g, ''), 'plate')} maxLength="6" type="text" placeholder="Patente (Ej. ABCD12)" className={`w-full border-2 p-3 text-sm rounded-xl uppercase outline-none font-black bg-white shadow-sm transition-colors ${isSearchingVehicle ? 'border-blue-400 ring-2 ring-blue-100' : vehicleFoundStatus === 'found' ? 'border-green-400 text-green-800' : 'border-slate-300 focus:border-blue-500 text-slate-800'}`} />
-                 <input value={vin} onChange={e=>handleVehicleSearch(e.target.value.replace(/[^a-zA-Z0-9]/g, ''), 'vin')} maxLength="17" type="text" placeholder="VIN / Chasis" className={`w-full border-2 p-3 text-sm rounded-xl uppercase outline-none font-black bg-white shadow-sm transition-colors ${isSearchingVehicle ? 'border-blue-400 ring-2 ring-blue-100' : vehicleFoundStatus === 'found' ? 'border-green-400 text-green-800' : 'border-slate-300 focus:border-blue-500 text-slate-800'}`} />
+                 <input value={plate} onChange={e=>handleVehicleSearch(e.target.value.replace(/[^a-zA-Z0-9]/g, ''), 'plate')} maxLength="6" type="text" placeholder="Patente (Ej. ABCD12)" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className={`w-full border-2 p-3 text-sm rounded-xl uppercase outline-none font-black bg-white shadow-sm transition-colors ${isSearchingVehicle ? 'border-blue-400 ring-2 ring-blue-100' : vehicleFoundStatus === 'found' ? 'border-green-400 text-green-800' : 'border-slate-300 focus:border-blue-500 text-slate-800'}`} />
+                 <input value={vin} onChange={e=>handleVehicleSearch(e.target.value.replace(/[^a-zA-Z0-9]/g, ''), 'vin')} maxLength="17" type="text" placeholder="VIN / Chasis" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className={`w-full border-2 p-3 text-sm rounded-xl uppercase outline-none font-black bg-white shadow-sm transition-colors ${isSearchingVehicle ? 'border-blue-400 ring-2 ring-blue-100' : vehicleFoundStatus === 'found' ? 'border-green-400 text-green-800' : 'border-slate-300 focus:border-blue-500 text-slate-800'}`} />
                  {/* NUEVO: Listas de autocompletado inteligente (Aprende de tu propia flota) */}
                  <datalist id="brands-list">
                    {[...new Set(vehicles.map(v => v.brand?.toUpperCase().trim()).filter(Boolean))].sort().map((b, i) => (
@@ -741,8 +741,8 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                    ))}
                  </datalist>
 
-                 <input value={brand} onChange={e=>setBrand(e.target.value.toUpperCase())} list="brands-list" type="text" placeholder="Marca (Ej. CHEVROLET)" className={`w-full border-2 p-3 text-sm rounded-xl outline-none font-semibold bg-white transition-colors uppercase ${vehicleFoundStatus === 'found' ? 'border-green-300 text-green-800' : 'border-slate-200 focus:border-blue-500 text-slate-800'}`} />
-                 <input value={model} onChange={e=>setModel(e.target.value.toUpperCase())} list="models-list" type="text" placeholder="Modelo (Ej. SPARK)" className={`w-full border-2 p-3 text-sm rounded-xl outline-none font-semibold bg-white transition-colors uppercase ${vehicleFoundStatus === 'found' ? 'border-green-300 text-green-800' : 'border-slate-200 focus:border-blue-500 text-slate-800'}`} />
+                 <input value={brand} onChange={e=>setBrand(e.target.value.toUpperCase())} list="brands-list" type="text" placeholder="Marca (Ej. CHEVROLET)" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className={`w-full border-2 p-3 text-sm rounded-xl outline-none font-semibold bg-white transition-colors uppercase ${vehicleFoundStatus === 'found' ? 'border-green-300 text-green-800' : 'border-slate-200 focus:border-blue-500 text-slate-800'}`} />
+                 <input value={model} onChange={e=>setModel(e.target.value.toUpperCase())} list="models-list" type="text" placeholder="Modelo (Ej. SPARK)" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className={`w-full border-2 p-3 text-sm rounded-xl outline-none font-semibold bg-white transition-colors uppercase ${vehicleFoundStatus === 'found' ? 'border-green-300 text-green-800' : 'border-slate-200 focus:border-blue-500 text-slate-800'}`} />
 
                  <select value={vehicleType} onChange={e=>setVehicleType(e.target.value)} className={`w-full border-2 p-3 text-sm rounded-xl col-span-2 outline-none font-bold bg-white transition-colors ${vehicleFoundStatus === 'found' ? 'border-green-300 text-green-800' : 'border-slate-200 focus:border-blue-500 text-slate-700'}`}>
                    <option value="auto">🚙 Auto / SUV</option>
@@ -800,13 +800,13 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                     clients={allClientsList} 
                     placeholder="Seleccione Cliente (Opcional)" 
                   />
-                  {selectedClient === 'OTRO' && <input type="text" value={manualClient} onChange={(e) => setManualClient(e.target.value)} placeholder="Escribe el nombre del cliente" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white mt-2 animate-in fade-in slide-in-from-top-2" />}
+                  {selectedClient === 'OTRO' && <input type="text" value={manualClient} onChange={(e) => setManualClient(e.target.value)} placeholder="Escribe el nombre del cliente" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white mt-2 animate-in fade-in slide-in-from-top-2" />}
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <div className="space-y-1">
                    <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider ml-1">Lugar de Retiro (Origen)</label>
-                   <input name="origin" list="directory-destinations" defaultValue={jobToEdit?.origin || ''} required type="text" placeholder="Desde (Origen)" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+                   <input name="origin" list="directory-destinations" defaultValue={jobToEdit?.origin || ''} required type="text" placeholder="Desde (Origen)" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
                 </div>
                 
                 {tripType === 'revision' ? (
@@ -820,13 +820,13 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                      </div>
                      <div className="space-y-1 relative z-10">
                         <label className="text-xs font-extrabold text-blue-600 uppercase tracking-wider ml-1">Destino Final (Post-PRT)</label>
-                        <input name="destFinal" list="directory-destinations" defaultValue={jobToEdit?.destination?.split('->')[1]?.trim() || ''} type="text" placeholder="Ej: Av. San José (Opcional)" className="w-full border-2 border-blue-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+                        <input name="destFinal" list="directory-destinations" defaultValue={jobToEdit?.destination?.split('->')[1]?.trim() || ''} type="text" placeholder="Ej: Av. San José (Opcional)" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-blue-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
                      </div>
                   </div>
                 ) : (
                   <div className="space-y-1">
                      <label className="text-xs font-extrabold text-slate-500 uppercase tracking-wider ml-1">Destino Final</label>
-                     <input name="destination" list="directory-destinations" defaultValue={jobToEdit?.destination || ''} required type="text" placeholder="Hasta (Destino)" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+                     <input name="destination" list="directory-destinations" defaultValue={jobToEdit?.destination || ''} required type="text" placeholder="Hasta (Destino)" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
                   </div>
                 )}
               </div>
@@ -837,7 +837,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                    {waypoints.map((wp, idx) => (
                       <div key={idx} className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
                          <div className="bg-slate-200 w-9 h-9 rounded-full flex items-center justify-center shrink-0 shadow-inner"><span className="text-xs font-black text-slate-500">{idx + 1}</span></div>
-                         <input type="text" value={wp} onChange={(e) => handleWaypointChange(idx, e.target.value)} placeholder={`Parada intermedia ${idx + 1} (Ej: Pesaje, Notaría, Carga...)`} className="w-full border-2 border-slate-200 p-2.5 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
+                         <input type="text" value={wp} onChange={(e) => handleWaypointChange(idx, e.target.value)} placeholder={`Parada intermedia ${idx + 1} (Ej: Pesaje, Notaría, Carga...)`} autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-2.5 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white" />
                          <button type="button" onClick={() => handleRemoveWaypoint(idx)} className="p-2.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors border border-red-100"><X className="w-4 h-4"/></button>
                       </div>
                    ))}
@@ -949,18 +949,18 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                   clients={allClientsList} 
                   placeholder="Seleccione Cliente" 
                 />
-                {selectedClient === 'OTRO' && <input type="text" value={manualClient} onChange={(e) => setManualClient(e.target.value)} placeholder="Escribe el nombre del cliente" className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white mt-2 animate-in fade-in shadow-sm" />}
+                {selectedClient === 'OTRO' && <input type="text" value={manualClient} onChange={(e) => setManualClient(e.target.value)} placeholder="Escribe el nombre del cliente" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white mt-2 animate-in fade-in shadow-sm" />}
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider ml-1">Lugar de Trabajo</label>
-                <input name="origin" list="directory-destinations" defaultValue={jobToEdit?.origin || ''} required type="text" placeholder="¿Dónde se realizará?" className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white shadow-sm" />
+                <input name="origin" list="directory-destinations" defaultValue={jobToEdit?.origin || ''} required type="text" placeholder="¿Dónde se realizará?" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white shadow-sm" />
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider ml-1">Hasta / Destino (Opcional)</label>
-                <input name="destination" list="directory-destinations" defaultValue={jobToEdit?.destination || ''} type="text" placeholder="Si requiere moverse a otro lugar" className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white shadow-sm" />
+                <input name="destination" list="directory-destinations" defaultValue={jobToEdit?.destination || ''} type="text" placeholder="Si requiere moverse a otro lugar" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white shadow-sm" />
               </div>
             </div>
           </div>
