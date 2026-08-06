@@ -283,6 +283,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             travelMode: 'DRIVING',
             region: 'CL'
         };
+
+        // CHIVATO PARA AUDITAR QUÉ ESTÁ LEYENDO GOOGLE MAPS
+        console.log("📍 GOOGLE MAPS CALCULANDO RUTA:");
+        console.log("   🔴 DESDE:", from);
+        console.log("   🟢 HASTA:", to);
         
         directionsService.route(request, (result, status) => {
           if (status === 'OK' && result.routes && result.routes.length > 0) {
