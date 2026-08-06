@@ -258,14 +258,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       if (!orig || !dest) return 'No calculado';
 
       let returnDest = null;
-      let isSameAsOrigin = false;
 
-      // 2. Lógica Inteligente para el Retorno
+      // 2. Lógica Inteligente para el Retorno (Tramo 2: PRT -> Destino Final)
       if (job.tripType === 'revision') {
           const typedDest = job.checklist?.rtReturnDestination || '';
           
-          isSameAsOrigin = job.checklist?.rtReturnOption === 'origin' || 
-                           (typedDest && job.origin && typedDest.toLowerCase().trim() === job.origin.toLowerCase().trim());
+          const isSameAsOrigin = job.checklist?.rtReturnOption === 'origin' || 
+                                 (typedDest && job.origin && typedDest.toLowerCase().trim() === job.origin.toLowerCase().trim());
 
           if (isSameAsOrigin) {
               returnDest = orig;
@@ -274,7 +273,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               if (resolvedRet && !resolvedRet.toLowerCase().includes('chile')) resolvedRet += ', Chile';
               returnDest = resolvedRet;
           } else {
-              returnDest = orig;
+              // Fallback: Si no hay info clara, asumimos que vuelve al origen o al destino original asignado
+              const fallbackDest = job.destination && !job.destination.toLowerCase().includes('prt') ? job.destination : job.origin;
+              let resolvedRet = await resolveAddress(fallbackDest, null, null);
+              if (resolvedRet && !resolvedRet.toLowerCase().includes('chile')) resolvedRet += ', Chile';
+              returnDest = resolvedRet;
           }
       }
 
@@ -302,25 +305,24 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         });
       });
 
+      // 1er Tramo (km1): Origen -> PRT (o Destino final si es un viaje simple)
       let totalMeters = await Promise.race([
           getMeters(orig, dest), 
           new Promise((_, r) => setTimeout(() => r(new Error('Timeout')), 4000))
       ]).catch(() => 'Error');
       
-      if (typeof totalMeters === 'number' && returnDest) {
-         if (isSameAsOrigin) {
-             totalMeters *= 2;
-         } else {
-             await new Promise(r => setTimeout(r, 600)); 
-             let returnMeters = await Promise.race([
-                getMeters(dest, returnDest), 
-                new Promise((_, r) => setTimeout(() => r(new Error('Timeout')), 4500))
-             ]).catch(() => 'Error');
-             
-             if (typeof returnMeters === 'number') {
-                 totalMeters += returnMeters;
-             }
-         }
+      // 2do Tramo (km2): PRT -> Destino Final
+      if (typeof totalMeters === 'number' && job.tripType === 'revision' && returnDest) {
+          await new Promise(r => setTimeout(r, 600)); // Delay de seguridad para la API
+          
+          let returnMeters = await Promise.race([
+             getMeters(dest, returnDest), 
+             new Promise((_, r) => setTimeout(() => r(new Error('Timeout')), 4500))
+          ]).catch(() => 'Error');
+          
+          if (typeof returnMeters === 'number') {
+              totalMeters += returnMeters; // Distancia Total = km1 + km2
+          }
       }
 
       if (typeof totalMeters === 'number') {
