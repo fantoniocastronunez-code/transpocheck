@@ -213,20 +213,34 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       const resolveAddress = async (nameToFind, addrFallback, comFallback) => {
           if (!nameToFind) return null;
           
+          const searchName = nameToFind.trim().toLowerCase();
+
           try {
-              // Buscar primero en la base de Clientes
+              // 1. Buscar en la base de Clientes
+              // Intento A: Match exacto (rápido)
               const clientSnap = await getDocs(query(collection(db, 'clients'), where('name', '==', nameToFind)));
               if (!clientSnap.empty) {
                   const cData = clientSnap.docs[0].data();
                   if (cData.plusCode) return cData.plusCode; // <-- PRIORIDAD PLUS CODE
                   if (cData.address) return `${cData.address}, ${cData.commune || 'Santiago'}, Chile`;
+              } else {
+                  // Intento B: Match insensible a mayúsculas (exhaustivo)
+                  const allClientsSnap = await getDocs(collection(db, 'clients'));
+                  const foundClient = allClientsSnap.docs.map(d => d.data()).find(c => c.name?.trim().toLowerCase() === searchName);
+                  if (foundClient) {
+                      if (foundClient.plusCode) return foundClient.plusCode;
+                      if (foundClient.address) return `${foundClient.address}, ${foundClient.commune || 'Santiago'}, Chile`;
+                  }
               }
-              // Si no está en clientes, buscar en el Directorio (CORREGIDO: usa placeName)
-              const dirSnap = await getDocs(query(collection(db, 'directory'), where('placeName', '==', nameToFind)));
-              if (!dirSnap.empty) {
-                  const dData = dirSnap.docs[0].data();
-                  if (dData.plusCode) return dData.plusCode; // <-- PRIORIDAD PLUS CODE
-                  if (dData.address) return `${dData.address}, ${dData.commune || 'Santiago'}, Chile`;
+
+              // 2. Buscar en el Directorio local ya cargado en memoria (Súper Rápido y Cero Lecturas a DB)
+              const foundDir = directoryMemory.find(d => 
+                  (d.placeName && d.placeName.trim().toLowerCase() === searchName) || 
+                  (d.name && d.name.trim().toLowerCase() === searchName)
+              );
+              if (foundDir) {
+                  if (foundDir.plusCode) return foundDir.plusCode;
+                  if (foundDir.address) return `${foundDir.address}, ${foundDir.commune || 'Santiago'}, Chile`;
               }
           } catch(e) { console.error("Error en resolveAddress:", e); }
 
@@ -260,12 +274,21 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
              const pData = prtSnap.docs[0].data();
              if (pData.plusCode) dest = pData.plusCode;
              else if (pData.address) dest = `${pData.address}, ${pData.comuna || 'Santiago'}, Chile`;
+          } else {
+             // Match insensible a mayúsculas para las PRTs también
+             const allPrtsSnap = await getDocs(collection(db, 'prts'));
+             const foundPrt = allPrtsSnap.docs.map(d=>d.data()).find(p => p.name?.trim().toLowerCase() === prtName.trim().toLowerCase());
+             if (foundPrt) {
+                 if (foundPrt.plusCode) dest = foundPrt.plusCode;
+                 else if (foundPrt.address) dest = `${foundPrt.address}, ${foundPrt.comuna || 'Santiago'}, Chile`;
+             }
           }
         } catch (e) {}
       }
 
-      if (orig && !orig.toLowerCase().includes('chile')) orig += ', Chile';
-      if (dest && !dest.toLowerCase().includes('chile')) dest += ', Chile';
+      // PRECAUCIÓN PLUS CODES: No concatenar ", Chile" si es un Plus Code (tiene el símbolo '+')
+      if (orig && !orig.toLowerCase().includes('chile') && !orig.includes('+')) orig += ', Chile';
+      if (dest && !dest.toLowerCase().includes('chile') && !dest.includes('+')) dest += ', Chile';
 
       if (!orig || !dest) return 'No calculado';
 
@@ -282,13 +305,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               returnDest = orig;
           } else if (job.checklist?.rtReturnOption === 'other' && typedDest) {
               let resolvedRet = await resolveAddress(typedDest, null, null);
-              if (resolvedRet && !resolvedRet.toLowerCase().includes('chile')) resolvedRet += ', Chile';
+              if (resolvedRet && !resolvedRet.toLowerCase().includes('chile') && !resolvedRet.includes('+')) resolvedRet += ', Chile';
               returnDest = resolvedRet;
           } else {
               // Fallback: Si no hay checklist cerrado, tomar el destino extraído de las flechas
               let fallbackDest = finalDestAfterPrt || job.origin;
               let resolvedRet = await resolveAddress(fallbackDest, null, null);
-              if (resolvedRet && !resolvedRet.toLowerCase().includes('chile')) resolvedRet += ', Chile';
+              if (resolvedRet && !resolvedRet.toLowerCase().includes('chile') && !resolvedRet.includes('+')) resolvedRet += ', Chile';
               returnDest = resolvedRet;
           }
       }
