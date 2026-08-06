@@ -238,12 +238,24 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       };
 
       let orig = await resolveAddress(job.origin, job.originAddress, job.originCommune);
-      let dest = await resolveAddress(job.destination || job.destName, job.destAddress, job.destCommune);
+      
+      // LIMPIEZA: Extraer correctamente la PRT y el Destino Final si vienen mezclados con flechas "->"
+      let rawDest = job.destination || job.destName || '';
+      let prtName = rawDest;
+      let finalDestAfterPrt = null;
+
+      if (job.tripType === 'revision' && rawDest.includes('->')) {
+          const parts = rawDest.split('->');
+          prtName = parts[0].trim(); // Ej: "PRT Quilicura"
+          finalDestAfterPrt = parts[parts.length - 1].trim(); // Ej: "GRANDLEASING LAS TORRES"
+      }
+
+      let dest = await resolveAddress(prtName, job.destAddress, job.destCommune);
 
       // Tratamiento especial si el destino es una Planta de Revisión (PRT)
       if (job.tripType === 'revision') {
         try {
-          const prtSnap = await getDocs(query(collection(db, 'prts'), where('name', '==', job.destination || job.destName)));
+          const prtSnap = await getDocs(query(collection(db, 'prts'), where('name', '==', prtName)));
           if (!prtSnap.empty) {
              const pData = prtSnap.docs[0].data();
              if (pData.plusCode) dest = pData.plusCode;
@@ -273,8 +285,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               if (resolvedRet && !resolvedRet.toLowerCase().includes('chile')) resolvedRet += ', Chile';
               returnDest = resolvedRet;
           } else {
-              // Fallback: Si no hay info clara, asumimos que vuelve al origen o al destino original asignado
-              const fallbackDest = job.destination && !job.destination.toLowerCase().includes('prt') ? job.destination : job.origin;
+              // Fallback: Si no hay checklist cerrado, tomar el destino extraído de las flechas
+              let fallbackDest = finalDestAfterPrt || job.origin;
               let resolvedRet = await resolveAddress(fallbackDest, null, null);
               if (resolvedRet && !resolvedRet.toLowerCase().includes('chile')) resolvedRet += ', Chile';
               returnDest = resolvedRet;
