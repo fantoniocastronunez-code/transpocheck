@@ -233,7 +233,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           // RESPALDO: Si no hay match en la Base de Datos, intentar usar las direcciones escritas en el formulario
           if (addrFallback) return `${addrFallback}, ${comFallback || 'Santiago'}, Chile`;
           
-          // Si todo falla, enviar el nombre tal cual a Google Maps a ver si
+          // Si todo falla, enviar el nombre tal cual a Google Maps a ver si hay suerte
+          return nameToFind;
+      };
 
       let orig = await resolveAddress(job.origin, job.originAddress, job.originCommune);
       let dest = await resolveAddress(job.destination || job.destName, job.destAddress, job.destCommune);
