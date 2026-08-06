@@ -823,7 +823,8 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                 contactName: fd.get('contactName')?.trim() || '', 
                 contactPhone: phone,
                 address: fd.get('address')?.trim() || '',
-                commune: fd.get('commune')?.trim() || ''
+                commune: fd.get('commune')?.trim() || '',
+                plusCode: fd.get('plusCode')?.trim() || '' // <-- NUEVO: Guardar Plus Code
              }; 
 
              try { 
@@ -872,6 +873,11 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                </div>
             </div>
 
+            <div className="space-y-1">
+               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1"><MapPin className="w-3 h-3 text-blue-500"/> Plus Code de Google Maps (Prioridad GPS)</label>
+               <input name="plusCode" defaultValue={editingDir?.plusCode} placeholder="Ej: 8MP3+VX Santiago" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold bg-blue-50/50"/>
+            </div>
+
             <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-black text-sm transition-colors shadow-md shadow-blue-200 mt-2">
                {editingDir ? 'Guardar Cambios' : 'Agregar al Directorio'}
             </button>
@@ -884,7 +890,8 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                 <div key={d.id} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-xl hover:border-blue-200 transition-all">
                   <div className="flex-1 min-w-0 pr-2">
                     <p className="text-sm font-extrabold text-slate-800 truncate">{d.placeName}</p>
-                    {(d.address || d.commune) && <p className="text-[11px] font-bold text-slate-500 mt-0.5 truncate flex items-center gap-1"><MapPin className="w-3 h-3 text-blue-500"/> {d.address}{d.address && d.commune ? ', ' : ''}{d.commune}</p>}
+                    {d.plusCode && <p className="text-[11px] font-black text-blue-600 mt-0.5 truncate flex items-center gap-1"><MapPin className="w-3 h-3"/> {d.plusCode} (Plus Code)</p>}
+                    {(d.address || d.commune) && <p className="text-[11px] font-bold text-slate-500 mt-0.5 truncate flex items-center gap-1"><MapPin className="w-3 h-3 text-slate-400"/> {d.address}{d.address && d.commune ? ', ' : ''}{d.commune}</p>}
                     {(d.contactName || d.contactPhone) && <p className="text-[11px] font-bold text-slate-500 mt-0.5 truncate flex items-center gap-1"><User className="w-3 h-3 text-emerald-600"/> {d.contactName || 'Sin nombre'} {d.contactPhone && `• ${d.contactPhone}`}</p>}
                   </div>
                   <div className="flex flex-col gap-1.5 shrink-0 ml-2">

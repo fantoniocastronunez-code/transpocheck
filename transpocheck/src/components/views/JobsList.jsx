@@ -218,13 +218,17 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           try {
               // Buscar primero en la base de Clientes
               const clientSnap = await getDocs(query(collection(db, 'clients'), where('name', '==', nameToFind)));
-              if (!clientSnap.empty && clientSnap.docs[0].data().address) {
-                  return `${clientSnap.docs[0].data().address}, ${clientSnap.docs[0].data().commune || 'Santiago'}, Chile`;
+              if (!clientSnap.empty) {
+                  const cData = clientSnap.docs[0].data();
+                  if (cData.plusCode) return cData.plusCode; // <-- PRIORIDAD PLUS CODE
+                  if (cData.address) return `${cData.address}, ${cData.commune || 'Santiago'}, Chile`;
               }
               // Si no está en clientes, buscar en el Directorio
               const dirSnap = await getDocs(query(collection(db, 'directory'), where('name', '==', nameToFind)));
-              if (!dirSnap.empty && dirSnap.docs[0].data().address) {
-                  return `${dirSnap.docs[0].data().address}, ${dirSnap.docs[0].data().commune || 'Santiago'}, Chile`;
+              if (!dirSnap.empty) {
+                  const dData = dirSnap.docs[0].data();
+                  if (dData.plusCode) return dData.plusCode; // <-- PRIORIDAD PLUS CODE
+                  if (dData.address) return `${dData.address}, ${dData.commune || 'Santiago'}, Chile`;
               }
           } catch(e) {}
           return resolved;
@@ -237,9 +241,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       if (job.tripType === 'revision') {
         try {
           const prtSnap = await getDocs(query(collection(db, 'prts'), where('name', '==', job.destination || job.destName)));
-          if (!prtSnap.empty && prtSnap.docs[0].data().address) {
+          if (!prtSnap.empty) {
              const pData = prtSnap.docs[0].data();
-             dest = `${pData.address}, ${pData.comuna || 'Santiago'}, Chile`;
+             if (pData.plusCode) dest = pData.plusCode;
+             else if (pData.address) dest = `${pData.address}, ${pData.comuna || 'Santiago'}, Chile`;
           }
         } catch (e) {}
       }
