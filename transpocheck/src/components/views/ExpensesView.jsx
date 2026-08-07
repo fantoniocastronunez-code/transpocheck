@@ -574,26 +574,61 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
 
         <form onSubmit={e=> {
           const rawDetail = e.target.detail ? e.target.detail.value : '';
-          const detailValue = expenseCategory === 'combustible' ? `Carga de Combustible (${rawDetail || 'General'})` : (expenseCategory === 'peaje' ? `Peaje: ${e.target.tollSelect ? e.target.tollSelect.value : 'Manual'} ${rawDetail ? `(${rawDetail})` : ''}` : rawDetail);
+          let detailValue = rawDetail;
+          if (expenseCategory === 'combustible') {
+             detailValue = `Carga de Combustible (${rawDetail || 'General'})`;
+          } else if (expenseCategory === 'peaje') {
+             const vType = document.getElementById('vehicleTypeSelect')?.value || 'Auto / SUV';
+             const tollName = e.target.tollSelect ? e.target.tollSelect.value : 'Manual';
+             detailValue = `Peaje: ${tollName} [${vType}] ${rawDetail ? `(${rawDetail})` : ''}`;
+          }
           addExp(e,'expense',Number(e.target.amount.value), detailValue, myDriver.id, myDriver.name, myDriver.email);
         }} className="space-y-4">
           
           {expenseCategory === 'peaje' && tollsList.length > 0 && (
-            <div className="space-y-1 animate-in slide-in-from-top-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Seleccionar Peaje</label>
-              <select name="tollSelect" className="w-full border-2 border-blue-200 bg-blue-50 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-sm text-blue-900 shadow-sm" onChange={(e) => {
-                const toll = tollsList.find(t => t.name === e.target.value);
-                if (toll) {
-                  // Sugiere el valor más alto o un promedio si es auto, como base
-                  const suggestedPrice = toll.prices?.['Auto / SUV'] || toll.prices?.['Camioneta'] || '';
-                  if (suggestedPrice && document.getElementById('driverAmountInput')) {
-                    document.getElementById('driverAmountInput').value = suggestedPrice;
-                  }
-                }
-              }}>
-                <option value="">Ingresar Peaje Manualmente...</option>
-                {tollsList.map(t => <option key={t.id} value={t.name}>{t.name} ({t.route})</option>)}
-              </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in slide-in-from-top-2">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Vehículo</label>
+                <select 
+                  id="vehicleTypeSelect"
+                  className="w-full border-2 border-slate-200 bg-slate-50 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-sm text-slate-700 shadow-sm cursor-pointer"
+                  onChange={(e) => {
+                    const tollName = document.getElementById('tollSelectNode')?.value;
+                    if (tollName) {
+                      const toll = tollsList.find(t => t.name === tollName);
+                      if (toll && toll.prices && toll.prices[e.target.value]) {
+                        const input = document.getElementById('driverAmountInput');
+                        if (input) input.value = toll.prices[e.target.value];
+                      }
+                    }
+                  }}
+                >
+                  <option value="Auto / SUV">Auto / SUV</option>
+                  <option value="Camioneta">Camioneta</option>
+                  <option value="Furgón">Furgón</option>
+                  <option value="Camión">Camión</option>
+                </select>
+              </div>
+              
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-blue-500 uppercase tracking-widest ml-1">Seleccionar Peaje</label>
+                <select 
+                  id="tollSelectNode"
+                  name="tollSelect" 
+                  className="w-full border-2 border-blue-200 bg-blue-50 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-sm text-blue-900 shadow-sm cursor-pointer" 
+                  onChange={(e) => {
+                    const vType = document.getElementById('vehicleTypeSelect')?.value || 'Auto / SUV';
+                    const toll = tollsList.find(t => t.name === e.target.value);
+                    if (toll && toll.prices && toll.prices[vType]) {
+                      const input = document.getElementById('driverAmountInput');
+                      if (input) input.value = toll.prices[vType];
+                    }
+                  }}
+                >
+                  <option value="">Ingresar Manualmente...</option>
+                  {tollsList.map(t => <option key={t.id} value={t.name}>{t.name} ({t.route})</option>)}
+                </select>
+              </div>
             </div>
           )}
 
