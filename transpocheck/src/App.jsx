@@ -18,20 +18,40 @@ import VehicleShapeIcon from './components/ui/VehicleShapeIcon';
 import SwipeButton from './components/ui/SwipeButton';
 import WaitTimerBadge from './components/ui/WaitTimerBadge';
 import { DEFAULT_CLIENTES, LICENCIAS, formatMoney, formatDateDisplay, resizeImage } from './utils/helpers';
-// IMPORTACIONES "PEREZOSAS" (LAZY LOADING) - Solo se descargan cuando se necesitan
-const LeaderboardView = React.lazy(() => import('./components/views/LeaderboardView'));
-const RelayAcceptView = React.lazy(() => import('./components/views/RelayAcceptView'));
-const DriverOnboarding = React.lazy(() => import('./components/views/DriverOnboarding'));
-const ClientSignView = React.lazy(() => import('./components/views/ClientSignView'));
-const ExpensesView = React.lazy(() => import('./components/views/ExpensesView'));
-const ConfigView = React.lazy(() => import('./components/views/ConfigView'));
-const TrackingView = React.lazy(() => import('./components/views/TrackingView'));
-const NewJobForm = React.lazy(() => import('./components/views/NewJobForm'));
-const JobsList = React.lazy(() => import('./components/views/JobsList'));
-const ChecklistForm = React.lazy(() => import('./components/views/ChecklistForm'));
-const VehicleHistoryView = React.lazy(() => import('./components/views/VehicleHistoryView'));
-const StatsView = React.lazy(() => import('./components/views/StatsView'));
-const QuotesView = React.lazy(() => import('./components/views/QuotesView')); // <-- NUEVO MÓDULO DE COTIZACIONES
+
+// MAGIA ANTI-CHUNK ERROR: Función que intercepta los fallos de carga en Vercel y recarga la página limpiamente
+const lazyWithRetry = (componentImport) =>
+  React.lazy(async () => {
+    const pageHasAlreadyBeenForceRefreshed = JSON.parse(
+      window.localStorage.getItem('page-has-been-force-refreshed') || 'false'
+    );
+    try {
+      const component = await componentImport();
+      window.localStorage.setItem('page-has-been-force-refreshed', 'false');
+      return component;
+    } catch (error) {
+      if (!pageHasAlreadyBeenForceRefreshed) {
+        window.localStorage.setItem('page-has-been-force-refreshed', 'true');
+        window.location.reload();
+      }
+      throw error;
+    }
+  });
+
+// IMPORTACIONES "PEREZOSAS" (LAZY LOADING) - Blindadas contra fallos de despliegue en Vercel
+const LeaderboardView = lazyWithRetry(() => import('./components/views/LeaderboardView'));
+const RelayAcceptView = lazyWithRetry(() => import('./components/views/RelayAcceptView'));
+const DriverOnboarding = lazyWithRetry(() => import('./components/views/DriverOnboarding'));
+const ClientSignView = lazyWithRetry(() => import('./components/views/ClientSignView'));
+const ExpensesView = lazyWithRetry(() => import('./components/views/ExpensesView'));
+const ConfigView = lazyWithRetry(() => import('./components/views/ConfigView'));
+const TrackingView = lazyWithRetry(() => import('./components/views/TrackingView'));
+const NewJobForm = lazyWithRetry(() => import('./components/views/NewJobForm'));
+const JobsList = lazyWithRetry(() => import('./components/views/JobsList'));
+const ChecklistForm = lazyWithRetry(() => import('./components/views/ChecklistForm'));
+const VehicleHistoryView = lazyWithRetry(() => import('./components/views/VehicleHistoryView'));
+const StatsView = lazyWithRetry(() => import('./components/views/StatsView'));
+const QuotesView = lazyWithRetry(() => import('./components/views/QuotesView')); // <-- NUEVO MÓDULO DE COTIZACIONES
 
 // EL NUEVO MOTOR (Hook)
 import { auth, db, googleProvider, uploadImageToStorage, useFirebase } from './hooks/useFirebase';
