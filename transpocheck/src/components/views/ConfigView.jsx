@@ -142,7 +142,6 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
       const fullName = `${nombre} ${apellido}`.trim();
       const email = fd.get('correo').trim().toLowerCase();
       const companySelection = fd.get('empresa');
-      const pin = (editingProfile && editingProfile !== 'NEW' && editingProfile.pin) ? editingProfile.pin : '0000'; 
       
       try {
           if (companySelection === 'NEW') {
@@ -151,7 +150,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                 name: newCompanyName,
                 email: email,
                 contactName: fullName,
-                contactPin: pin,
+                contactPin: '0000',
                 notifications: clientNotifs,
                 enableNotifications: Object.values(clientNotifs).some(v=>v),
                 logo: clientLogo,
@@ -177,13 +176,13 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                 } else {
                    emails.push(email);
                    names.push(fullName);
-                   pins.push(pin);
+                   pins.push('0000');
                 }
              } else {
                 if (emails.includes(email)) return showAlert("Este correo ya existe en esta empresa.");
                 emails.push(email);
                 names.push(fullName);
-                pins.push(pin);
+                pins.push('0000');
              }
              
              await updateDoc(doc(db, 'clients', company.id), {
@@ -343,9 +342,6 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                         
                         <div className="pt-3 border-t border-slate-200 flex justify-between items-center pl-2">
                            <span className="text-[11px] font-bold text-slate-600 truncate flex items-center gap-1.5"><div className="w-5 h-5 bg-slate-200 rounded flex items-center justify-center shrink-0"><User className="w-3 h-3 text-slate-500"/></div> <span className="truncate">{profile.email}</span></span>
-                           <span className={`text-[9px] shrink-0 font-black px-2 py-1 rounded-md uppercase tracking-wider ${profile.pin !== '0000' && profile.pin !== '' ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-amber-100 text-amber-700 border border-amber-200'}`}>
-                              {profile.pin !== '0000' && profile.pin !== '' ? 'Firma PIN Lista' : 'Sin Firma'}
-                           </span>
                         </div>
                      </div>
                   ))}
@@ -515,18 +511,6 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                            <input type="number" value={clientPrices.soloGasesB || ''} onChange={(e) => setClientPrices({...clientPrices, soloGasesB: e.target.value})} placeholder="12000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
                         </div>
                      </div>
-                  </div>
-               </div>
-
-               <div className="space-y-4 pt-5 border-t border-slate-100">
-                  <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5"><CheckCircle className="w-4 h-4"/> 5. Seguridad y PIN</h4>
-                  <div className="bg-emerald-50 border border-emerald-100 p-5 rounded-2xl shadow-sm">
-                     <p className="text-xs font-bold text-slate-600 mb-3">La firma y PIN deben ser creados por el cliente desde su propio acceso al portal.</p>
-                     <p className="text-[10px] font-black text-emerald-700 bg-white p-3 rounded-xl border border-emerald-200 shadow-sm flex items-center gap-2">
-                        {editingProfile !== 'NEW' && editingProfile?.pin && editingProfile.pin !== '0000' 
-                           ? <><CheckCircle className="w-4 h-4"/> El cliente ya configuró su firma digital y PIN de 4 dígitos ({editingProfile.pin}).</> 
-                           : <><AlertCircle className="w-4 h-4 text-amber-500"/> El cliente aún no configura su firma digital (PIN actual: 0000).</>}
-                     </p>
                   </div>
                </div>
 
