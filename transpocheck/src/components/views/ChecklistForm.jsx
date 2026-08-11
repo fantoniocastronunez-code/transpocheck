@@ -310,6 +310,10 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
           if (data.prt_reason) {
              draftData.rtRejectReason = data.prt_reason;
           }
+          if (data.checklist?.rtReturnOption) {
+             draftData.rtReturnOption = data.checklist.rtReturnOption;
+             draftData.rtReturnDestination = data.checklist.rtReturnDestination || '';
+          }
 
           // MAGIA CATEGORÍAS: Destruimos el "Auto/SUV" del borrador si el vehículo real es un camión o furgón
           draftData.vehicleType = data.checklist?.vehicleType || data.vehicleType || matchedVehicle?.vehicleType || matchedVehicle?.type || draftData.vehicleType || 'auto';
@@ -373,22 +377,30 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     const timer = setTimeout(() => {
       const draftData = JSON.parse(JSON.stringify(formData));
       
-      // Mantenemos la limpieza de fotos en Base64 para evitar exceder el límite de 1MB de Firestore,
-      // ya que las fotos pesan muchísimo.
+      // Mantenemos la limpieza de fotos en Base64 para evitar exceder el límite de 1MB de Firestore.
       for (const key in draftData.photos) {
          if (draftData.photos[key] && !draftData.photos[key].startsWith('http')) {
              draftData.photos[key] = false; 
          }
       }
-      
-      // SOLUCIÓN: Eliminamos la regla que borraba la firma. 
-      // La firma es un trazo ligero y SEGURO de guardar temporalmente en la base de datos.
-      // Ahora, si el conductor sale a escanear un documento, la firma lo estará esperando intacta al volver.
 
-      updateDoc(doc(db, 'transport_jobs', job.id), { draft: { step, formData: draftData } }).catch(() => {});
+      const updates = { draft: { step, formData: draftData } };
+
+      // MAGIA: Sincronizar el resultado PRT hacia JobsList en tiempo real mientras el conductor usa el formulario
+      if (job.tripType === 'revision') {
+         updates.prt_result = draftData.rtStatus;
+         updates.prt_reason = draftData.rtRejectReason || '';
+         
+         // Si marcaron el resultado, asegura que la fase de la tarjeta cambie y no se quede pegada
+         if (draftData.rtStatus !== 'pendiente' && job.phase === 'arrived_prt') {
+             updates.phase = 'prt_done';
+         }
+      }
+
+      updateDoc(doc(db, 'transport_jobs', job.id), updates).catch(() => {});
     }, 2000); 
     return () => clearTimeout(timer);
-  }, [step, formData, job.id, isQuick, db]);
+  }, [step, formData, job.id, isQuick, db, job.tripType, job.phase]);
 
 
   const [processingAction, setProcessingAction] = useState(null);
@@ -735,6 +747,11 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
           tripType: job.tripType || 'traslado',
           draft: null // 🧹 Limpiamos el borrador para evitar el "robo" de fotos por la función de auto-guardado
         };
+
+        if (job.tripType === 'revision') {
+            fd.prt_result = cleanD.rtStatus;
+            fd.prt_reason = cleanD.rtRejectReason || '';
+        }
         
         if (totalToDeduct > 0) {
           const currentDriver = drivers?.find(drv => drv.email === currentUserEmail);
