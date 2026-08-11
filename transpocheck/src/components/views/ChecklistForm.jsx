@@ -3,7 +3,7 @@ import { updateDoc, doc, setDoc, addDoc, collection, query, where, getDocs, onSn
 import { 
   FileText, MapPin, CheckCircle, CloudOff, AlertCircle, Eye, 
   Trash2, Camera, Search, X, Fuel, Clock, Wallet, Receipt, 
-  Share2, QrCode, Save 
+  Share2, QrCode, Save, Zap
 } from 'lucide-react';
 import SignaturePad from '../ui/SignaturePad';
 import { resizeImage, formatMoney } from '../../utils/helpers';
