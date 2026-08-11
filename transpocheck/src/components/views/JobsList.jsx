@@ -10,7 +10,7 @@ import LicensePlateBadge from '../ui/LicensePlateBadge';
 import WaitTimerBadge from '../ui/WaitTimerBadge';
 import SwipeButton from '../ui/SwipeButton';
 import SignaturePad from '../ui/SignaturePad';
-import { formatDateDisplay } from '../../utils/helpers';
+import { formatDateDisplay, analyzeJobStatus, generateStandardFileName, generateWhatsAppText, getRouteStr } from '../../utils/helpers';
 
 export default function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, onNewJob, db, currentUserEmail, showAlert, showConfirm, allClientsList, onLoadMore, vehicles }) {
   const [menuOpenId, setMenuOpenId] = useState(null);
@@ -847,79 +847,20 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       setProcessingId(null);
     }
   };
-  const getRouteStr = (j) => {
-    if (j.tripType === 'revision') {
-       const rtStat = j.checklist?.rtStatus || j.prt_result;
-       const manualDest = j.destination?.includes('->') 
-                       ? j.destination.split('->')[j.destination.split('->').length - 1].trim() 
-                       : null;
-       
-       const ret = manualDest 
-          ? manualDest 
-          : (j.checklist?.rtReturnOption === 'other' && j.checklist?.rtReturnDestination
-             ? j.checklist.rtReturnDestination 
-             : (j.checklist?.rtReturnOption === 'origin' ? j.origin : (j.destination && !j.destination.toLowerCase().includes('prt') ? j.destination : j.origin)));
-
-       if (rtStat === 'aprobado' || rtStat === 'aprobado_ayuda') {
-           return `${j.origin || '-'} ➔ PRT ➔ ${ret || '-'}`;
-       }
-       if (rtStat === 'rechazado') {
-           return `${j.origin || '-'} ➔ PRT (Rechazada) ➔ ${ret || '-'}`;
-       }
-       return `${j.origin || '-'} ➔ Planta de Revisión (PRT)`;
-    }
-    let route = j.origin || '';
-    if (j.waypoints && j.waypoints.length > 0) route += ` ➔ ${j.waypoints.join(' ➔ ')}`;
-    if (j.destination) route += ` ➔ ${j.destination}`;
-    return route;
-  };
-
-const buildPDFDoc = async (job) => {
+  const buildPDFDoc = async (job) => {
     const { buildPDFDoc: masterPDFBuilder } = await import('../../utils/pdfGenerator');
     return await masterPDFBuilder(job, drivers);
   };
 
-  const getDStr = j => j.scheduledDate?formatDateDisplay(j.scheduledDate):formatDateDisplay(new Date().toISOString().split('T')[0]);  
-  const getExtraWappTxt = (j) => {
-    let t = '';
-    if (j.checklist?.hasWaitTime) t += `\nTIEMPO DE ESPERA: ${j.checklist.waitTime || 'Sí'}`;
-    if (j.checklist?.hasFuelCharge) {
-       const fuelCost = Number(j.checklist.fuelChargeAmount);
-       t += `\nCARGA DE COMBUSTIBLE: ${fuelCost ? new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(fuelCost) : 'Sí'}`;
-    }
-    
-    if (j.tripType === 'revision') {
-      const prtTotal = Number(j.checklist?.prtCostRevision || 0) + Number(j.checklist?.prtCostInspeccion || 0) + Number(j.checklist?.prtCostFrenos || 0);
-      if (prtTotal > 0) {
-        t += `\nVALOR PRT: ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(prtTotal)}`;
-      }
-    }
-    
-    return t;
-  };
+  const getDStr = j => j.scheduledDate ? formatDateDisplay(j.scheduledDate) : formatDateDisplay(new Date().toISOString().split('T')[0]);  
 
   const handleCopyWhatsApp = (job) => { 
-    // NUEVO: Sumar contador silenciosamente al copiar
     updateDoc(doc(db, 'transport_jobs', job.id), { sharedCount: (job.sharedCount || 0) + 1 }).catch(e => console.log(e));
     
     const dateStr = getDStr(job);
     const dateShort = dateStr.substring(0, 5); 
     const jobPlate = getJobIdentifier(job);
-    
-    let text = job.tripType === 'simple' 
-      ? `${dateShort}\n${job.client || 'Sin Cliente'}\n📌 TAREA: ${job.description || 'Servicio en Terreno'}\n🚗 VEHÍCULO: ${jobPlate}\n📍 LUGAR: ${getRouteStr(job)}${getExtraWappTxt(job)}`
-      : `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${jobPlate}\n${getRouteStr(job)}${getExtraWappTxt(job)}`; 
-    
-    if (job.status === 'failed') {
-      text = `❌ TRASLADO FALLIDO\nMotivo: ${job.failedReason || 'No especificada'}\n\n${text}`;
-    } else if (job.tripType === 'revision') {
-      // Personalizamos el encabezado de WhatsApp según el tipo de aprobación
-      if (job.checklist?.rtStatus === 'aprobado') {
-         text = `✅ APROBADO (LEGAL)\n\n${text}`;
-      } else if (job.checklist?.rtStatus === 'aprobado_ayuda') {
-         text = `🤝 APROBADO (CON AYUDA)\n\n${text}`;
-      }
-    }
+    const text = generateWhatsAppText(job, dateShort, jobPlate);
 
     const textArea = document.createElement("textarea");
     textArea.value = text;
@@ -936,7 +877,12 @@ const buildPDFDoc = async (job) => {
   const generatePDF = async (job) => {
     if (processingId) return;
     setProcessingId(`${job.id}-pdf`);
-    try { const docPDF = await buildPDFDoc(job); const cleanPlate = getJobIdentifier(job); const fileName = `Check.${getDStr(job).replace(/\//g, '-')}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`; docPDF.save(fileName); } catch(e) { console.error(e); showAlert("Hubo un error al generar PDF."); }
+    try { 
+      const docPDF = await buildPDFDoc(job); 
+      const cleanPlate = getJobIdentifier(job); 
+      const fileName = generateStandardFileName(job, getDStr(job), cleanPlate); 
+      docPDF.save(fileName); 
+    } catch(e) { console.error(e); showAlert("Hubo un error al generar PDF."); }
     finally { setProcessingId(null); }
   };
 
@@ -944,30 +890,17 @@ const buildPDFDoc = async (job) => {
     if (processingId) return;
     setProcessingId(`${job.id}-wapp`);
     
-    // MAGIA: Sumamos +1 en segundo plano sin detener el proceso ni esperar respuesta
     updateDoc(doc(db, 'transport_jobs', job.id), {
        sharedCount: (job.sharedCount || 0) + 1
     }).catch(e => console.log("Error contador:", e));
 
     try {
-      const dateStrForFile = getDStr(job).replace(/\//g, '-');
-      const dateShort = getDStr(job).substring(0, 5);
+      const dateStrForFile = getDStr(job);
+      const dateShort = dateStrForFile.substring(0, 5);
       const cleanPlate = getJobIdentifier(job);
-      const fileName = `Check.${dateStrForFile}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`;
       
-      let textToShare = job.tripType === 'simple' 
-        ? `${dateShort}\n${job.client || 'Sin Cliente'}\n📌 TAREA: ${job.description || 'Servicio en Terreno'}\n🚗 VEHÍCULO: ${cleanPlate}\n📍 LUGAR: ${getRouteStr(job)}${getExtraWappTxt(job)}`
-        : `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${cleanPlate}\n${getRouteStr(job)}${getExtraWappTxt(job)}`;
-      
-      if (job.status === 'failed') {
-        textToShare = `❌ TRASLADO FALLIDO\nMotivo: ${job.failedReason || 'No especificada'}\n\n${textToShare}`;
-      } else if (job.tripType === 'revision') {
-        if (job.checklist?.rtStatus === 'aprobado') {
-           textToShare = `✅ APROBADO (LEGAL)\n\n${textToShare}`;
-        } else if (job.checklist?.rtStatus === 'aprobado_ayuda') {
-           textToShare = `🤝 APROBADO (CON AYUDA)\n\n${textToShare}`;
-        }
-      }
+      const fileName = generateStandardFileName(job, dateStrForFile, cleanPlate);
+      const textToShare = generateWhatsAppText(job, dateShort, cleanPlate);
 
       // Copiamos el texto al portapapeles de inmediato, por si cualquier cosa falla después
       const textArea = document.createElement("textarea");
@@ -1011,14 +944,7 @@ const buildPDFDoc = async (job) => {
   };
 
   const renderActiveJobCard = (j) => {
-    const isRequested = j.status === 'requested';
-    const isPending = j.status === 'pending';
-    const isAccepted = j.status === 'accepted' || j.status === 'pending_guide';
-    const isPendingGuide = j.status === 'pending_guide';
-    const phase = j.phase || 'claimed'; 
-    const step2Done = isAccepted && ['picked_up', 'arrived_destination', 'arrived_prt', 'prt_done'].includes(phase);
-    const step3Done = isAccepted && ['arrived_destination', 'arrived_prt', 'prt_done'].includes(phase);
-    const step4Done = isAccepted && ['prt_done', 'arrived_destination'].includes(phase);
+    const { isRequested, isPending, isAccepted, isPendingGuide, step2Done, step3Done, step4Done } = analyzeJobStatus(j);
     
     const ident = getJobIdentifier(j);
 
@@ -1823,7 +1749,7 @@ const buildPDFDoc = async (job) => {
           for (const job of jobsToExport) {
             const docPDF = await buildPDFDoc(job);
             const cleanPlate = getJobIdentifier(job);
-            const fileName = `Check.${getDStr(job).replace(/\//g, '-')}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`;
+            const fileName = generateStandardFileName(job, getDStr(job), cleanPlate);
             zip.file(fileName, docPDF.output('blob'));
           }
           
@@ -1938,7 +1864,7 @@ const buildPDFDoc = async (job) => {
         for (const job of historyJobs.filter(j => j.checklist)) {
            const docPDF = await buildPDFDoc(job);
            const cleanPlate = getJobIdentifier(job);
-           const fileName = `Check.${getDStr(job).replace(/\//g, '-')}.${(job.client || 'SinCliente').replace(/[^\w\s-]/g, '')}.${cleanPlate}.pdf`;
+           const fileName = generateStandardFileName(job, getDStr(job), cleanPlate);
            zip.file(fileName, docPDF.output('blob'));
         }
         const content = await zip.generateAsync({ type: 'blob' });
