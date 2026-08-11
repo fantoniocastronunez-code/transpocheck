@@ -50,7 +50,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     docs: job.checklist?.docs || initialDocs, 
     docsExpiry: job.checklist?.docsExpiry || initialDocsExpiry, 
     internalReminders: job.checklist?.internalReminders || initialReminders, 
-    observations: '', receiverName: '', receiverRut: '', noReception: false, signatureData: null, location: null,
+    observations: '', transitNotes: job.checklist?.transitNotes || '', receiverName: '', receiverRut: '', noReception: false, signatureData: null, location: null,
     hasEquipment: job.checklist?.hasEquipment || false,
     equipment: job.checklist?.equipment || {},
     equipmentDetails: job.checklist?.equipmentDetails || '',
@@ -1313,6 +1313,13 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
               <div className="space-y-4">
                 <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Observaciones Generales</h3>
                 <textarea className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 min-h-[90px]" placeholder="Escribe aquí si hay algún daño, rayón o comentario del estado visual del vehículo..." autoComplete="off" autoCorrect="off" spellCheck="false" value={formData.observations || ''} onChange={(e) => setF('observations', e.target.value)} />
+              </div>
+
+              {/* NUEVO: NOTAS DURANTE EL TRASLADO */}
+              <div className="space-y-4 bg-orange-50 p-4 rounded-3xl border border-orange-200 shadow-sm">
+                <h3 className="text-sm font-extrabold pb-2 text-orange-800 uppercase tracking-wider flex items-center gap-2"><AlertCircle className="w-5 h-5"/> Notas durante el traslado</h3>
+                <p className="text-[10px] font-bold text-orange-600 leading-tight">Usa este espacio para reportar eventos como: ruidos extraños, pinchazos, piquetes en parabrisas, u otras novedades ocurridas netamente en la ruta.</p>
+                <textarea className="w-full border-2 border-orange-200 p-3 rounded-xl text-sm font-bold text-orange-800 outline-none focus:border-orange-500 min-h-[90px] bg-white placeholder-orange-300" placeholder="Ej: Piquete en parabrisas en carretera, neumático con baja presión..." autoComplete="off" autoCorrect="off" spellCheck="false" value={formData.transitNotes || ''} onChange={(e) => setF('transitNotes', e.target.value)} />
               </div>
 
               {/* NUEVO: VERIFICACIÓN DE EQUIPAMIENTO */}
