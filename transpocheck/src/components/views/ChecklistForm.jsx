@@ -47,6 +47,8 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     vehicleType: job.checklist?.vehicleType || job.vehicleType || matchedVehicle?.vehicleType || matchedVehicle?.type || 'auto', 
     fuelLevel: 50, mileage: job.checklist?.mileage || '',
     photos: job.checklist?.photos || { front:false, left:false, right:false, back:false, tire:false, dashboard:false, mileage:false, ...Array.from({length: 30}).reduce((acc, _, i) => { acc[`det${i+1}`] = false; return acc; }, {}) }, 
+    detailPins: job.checklist?.detailPins || [],
+    pendingPin: null,
     docs: job.checklist?.docs || initialDocs, 
     docsExpiry: job.checklist?.docsExpiry || initialDocsExpiry, 
     internalReminders: job.checklist?.internalReminders || initialReminders, 
@@ -526,10 +528,16 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     // 🔥 MAGIA: Aumentamos a Full HD (1920px) y Calidad 85% para un PDF ultra nítido
     const dataUrl = await resizeImage(f, 1920, 0.85); 
     
-    // PASO 1: Mostrar preview inmediato con Base64
-    setFormData(prev => ({
-      ...prev, photos: { ...prev.photos, [id]: dataUrl }
-    }));
+    // PASO 1: Mostrar preview inmediato con Base64 y guardar el Pin
+    setFormData(prev => {
+      const newData = { ...prev, photos: { ...prev.photos, [id]: dataUrl } };
+      // MAGIA: Si había un Pin de daño esperando esta foto, lo fijamos en el croquis
+      if (prev.pendingPin && prev.pendingPin.id === id) {
+         newData.detailPins = [...(prev.detailPins || []), prev.pendingPin];
+         newData.pendingPin = null;
+      }
+      return newData;
+    });
 
     // PASO 2: Subir a Storage en segundo plano (solo si no es trabajo rápido)
     if (job.id !== 'NEW_QUICK_JOB' && uploadImageToStorage) {
@@ -2037,6 +2045,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     </div>
   );
 }
+
 
 
 
