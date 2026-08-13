@@ -83,11 +83,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [arrivalKeyHandedTo, setArrivalKeyHandedTo] = useState('');
   const [cameraConfig, setCameraConfig] = useState({ isOpen: false, title: '', target: null });
 
-  const submitArrival = async () => {
-    const isGL = arrivalPromptJob.client?.toLowerCase().includes('grandleasing');
-    if (isGL && (!arrivalMileage || !arrivalPhoto)) {
-        return showAlert("⚠️ Grandleasing exige registrar el kilometraje y la foto del odómetro obligatoriamente.");
-    }
+  const submitArrival = async (isSkip = false) => {
+    if (typeof isSkip !== 'boolean') isSkip = false;
     setProcessingId('general-arrival');
     try {
       const currentDraft = arrivalPromptJob.draft?.formData || {};
@@ -95,12 +92,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       
       const updatedDraft = {
         ...currentDraft,
-        mileage: arrivalMileage || '',
-        keyLocation: arrivalKeyLocation || '',
-        keyHandedTo: (arrivalKeyLocation === 'mano' ? arrivalKeyHandedTo : '')
+        mileage: isSkip ? '' : (arrivalMileage || ''),
+        keyLocation: isSkip ? '' : (arrivalKeyLocation || ''),
+        keyHandedTo: isSkip ? '' : ((arrivalKeyLocation === 'mano' ? arrivalKeyHandedTo : ''))
       };
 
-      if (arrivalPhoto) {
+      if (!isSkip && arrivalPhoto) {
          updatedDraft.photos = { ...currentPhotos, mileage: arrivalPhoto };
       }
 
@@ -3631,35 +3628,21 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       {/* NUEVO MODAL: REQUISITO LLEGADA (GENERAL / GRANDLEASING) */}
       {arrivalPromptJob && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4 overflow-y-auto">
-          <div className={`bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl flex flex-col animate-in zoom-in-95 border-t-8 my-auto ${arrivalPromptJob.client?.toLowerCase().includes('grandleasing') ? 'border-amber-500' : 'border-purple-500'}`}>
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl flex flex-col animate-in zoom-in-95 border-t-8 my-auto border-purple-500">
              <div className="flex justify-between items-center mb-4">
                <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-2">
-                 {arrivalPromptJob.client?.toLowerCase().includes('grandleasing') ? <AlertCircle className="w-5 h-5 text-amber-500"/> : <Key className="w-5 h-5 text-purple-500"/>} 
-                 Registro de Llegada
+                 <Key className="w-5 h-5 text-purple-500"/> Registro de Llegada
                </h3>
                <button onClick={()=>setArrivalPromptJob(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4"/></button>
              </div>
              
-             {arrivalPromptJob.client?.toLowerCase().includes('grandleasing') ? (
-                <p className="text-sm font-bold text-slate-500 mb-4 pb-4 border-b border-slate-100">El cliente <strong>Grandleasing</strong> exige registrar el kilometraje y la foto del odómetro obligatoriamente.</p>
-             ) : (
-                <p className="text-xs font-bold text-slate-500 mb-4 pb-4 border-b border-slate-100">Por favor, registra el kilometraje final y la ubicación de las llaves del vehículo (opcional).</p>
-             )}
+             <p className="text-xs font-bold text-slate-500 mb-4 pb-4 border-b border-slate-100">Por favor, registra el kilometraje final y la ubicación de las llaves del vehículo (opcional).</p>
              
              <div className="space-y-4 mb-6">
                <div>
-                  <label className={`text-[10px] font-black uppercase tracking-widest ml-1 ${arrivalPromptJob.client?.toLowerCase().includes('grandleasing') ? 'text-amber-600' : 'text-slate-400'}`}>Kilometraje de Término</label>
-                  <input type="number" value={arrivalMileage} onChange={e=>setArrivalMileage(e.target.value)} placeholder="Ej: 45250" className={`w-full border-2 bg-slate-50 p-3 rounded-xl font-bold text-slate-700 outline-none mt-1 shadow-sm ${arrivalPromptJob.client?.toLowerCase().includes('grandleasing') ? 'border-amber-200 focus:border-amber-400' : 'border-slate-200 focus:border-purple-400'}`}/>
+                  <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-slate-400">Kilometraje de Término</label>
+                  <input type="number" value={arrivalMileage} onChange={e=>setArrivalMileage(e.target.value)} placeholder="Ej: 45250" className="w-full border-2 bg-slate-50 p-3 rounded-xl font-bold text-slate-700 outline-none mt-1 shadow-sm border-slate-200 focus:border-purple-400"/>
                </div>
-               
-               {arrivalPromptJob.client?.toLowerCase().includes('grandleasing') && (
-                 <div>
-                    <label className="text-[10px] font-black text-amber-600 uppercase tracking-widest ml-1 mb-1 block">Foto del Odómetro</label>
-                    <button type="button" onClick={() => setCameraConfig({ isOpen: true, title: 'Odómetro', target: 'arrivalPhoto' })} className={`w-full h-16 rounded-xl border-2 flex items-center justify-center gap-2 font-bold text-xs uppercase tracking-wide transition-all shadow-sm ${arrivalPhoto ? 'bg-amber-500 border-amber-600 text-white' : 'bg-white border-amber-300 text-amber-700 hover:bg-amber-100'}`}>
-                        {arrivalPhoto ? <><CheckCircle className="w-5 h-5"/> Foto Capturada</> : <><Camera className="w-5 h-5"/> Tomar Fotografía</>}
-                    </button>
-                 </div>
-               )}
                
                <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">¿Dónde dejaste las llaves?</label>
@@ -3680,9 +3663,14 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                </div>
              </div>
 
-             <button onClick={submitArrival} disabled={processingId === 'general-arrival'} className={`w-full py-4 text-white rounded-xl font-black text-sm shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2 ${arrivalPromptJob.client?.toLowerCase().includes('grandleasing') ? 'bg-amber-500 hover:bg-amber-600' : 'bg-purple-600 hover:bg-purple-700'}`}>
-               {processingId === 'general-arrival' ? <Clock className="w-5 h-5 animate-spin"/> : <CheckCircle className="w-5 h-5"/>} Confirmar Llegada
-             </button>
+             <div className="flex gap-2">
+               <button onClick={() => submitArrival(true)} disabled={processingId === 'general-arrival'} className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-xl font-extrabold text-sm transition-colors disabled:opacity-50">
+                 Omitir
+               </button>
+               <button onClick={() => submitArrival(false)} disabled={processingId === 'general-arrival'} className="flex-[2] py-3.5 text-white bg-purple-600 hover:bg-purple-700 rounded-xl font-black text-sm shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                 {processingId === 'general-arrival' ? <Clock className="w-5 h-5 animate-spin"/> : <CheckCircle className="w-5 h-5"/>} Guardar Datos
+               </button>
+             </div>
           </div>
         </div>
       )}
