@@ -7,6 +7,83 @@ import {
 import { formatMoney, resizeImage } from '../../utils/helpers';
 import InAppCamera from '../ui/InAppCamera';
 
+const TransactionIcon = ({ type }) => {
+  if (type === 'assignment') return <ArrowUpCircle className="w-5 h-5 text-green-500 shrink-0"/>;
+  if (type === 'pending_return') return <Clock className="w-5 h-5 text-amber-500 shrink-0"/>;
+  if (type === 'expense') return <ArrowDownCircle className="w-5 h-5 text-red-500 shrink-0"/>;
+  return <CheckCircle className="w-5 h-5 text-blue-500 shrink-0"/>;
+};
+
+const EditExpenseModal = ({ expense, onClose, isAdminView, drivers, db, showAlert }) => {
+  const handleUpdateSubmit = async (e) => {
+    e.preventDefault();
+    if (!isAdminView && expense.type === 'assignment') { showAlert("No puedes modificar una asignación."); return onClose(); }
+    const newAmount = Number(e.target.amount.value);
+    const newDetail = e.target.detail.value;
+
+    try {
+      let newlyDeducted = newAmount;
+      const driverSnapshot = drivers.find(d => d.id === expense.driverId);
+      let currentDriverBalance = driverSnapshot ? (driverSnapshot.balance || 0) : 0;
+      
+      if (driverSnapshot) {
+        if (expense.type === 'assignment') {
+           const amountDiff = newAmount - expense.amount;
+           currentDriverBalance += amountDiff;
+        } else if (expense.type === 'expense' || expense.type === 'return') {
+           let oldDeducted = expense.deductedAmount !== undefined ? expense.deductedAmount : expense.amount;
+           
+           currentDriverBalance += oldDeducted;
+           currentDriverBalance -= newAmount;
+           newlyDeducted = newAmount;
+        }
+        await updateDoc(doc(db, 'drivers', expense.driverId), { balance: currentDriverBalance });
+      }
+      await updateDoc(doc(db, 'expenses', expense.id), { amount: newAmount, detail: newDetail, deductedAmount: newlyDeducted });
+      
+      if (driverSnapshot && driverSnapshot.notifications && driverSnapshot.notifications.modificacion) {
+         fetch('/api/notify-finance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+               email: driverSnapshot.email,
+               driverName: driverSnapshot.name,
+               type: 'modificacion',
+               oldAmount: expense.amount,
+               newAmount: newAmount,
+               detail: newDetail,
+               newBalance: currentDriverBalance
+            })
+         }).catch(err => console.warn("Aviso de modificación falló:", err));
+      }
+
+      showAlert("Registro actualizado."); onClose();
+    } catch (error) { console.error(error); showAlert("Error actualizando."); }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+      <form onSubmit={handleUpdateSubmit} className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6">
+        <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-extrabold text-slate-800">Editar Registro</h3><button type="button" onClick={onClose} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button></div>
+        <div className="space-y-4">
+          <div>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Detalle</label>
+            <input name="detail" defaultValue={expense.detail} required autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-sm text-slate-700 shadow-sm mt-1" />
+          </div>
+          <div>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Monto Editado</label>
+            <div className="relative mt-1">
+              <input name="amount" type="number" defaultValue={expense.amount} required autoComplete="off" className="w-full border-2 border-slate-200 p-3 pl-10 rounded-xl outline-none focus:border-blue-500 font-black text-lg text-slate-800 shadow-sm" />
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-lg text-slate-400">$</span>
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-4 mt-6"><button type="button" onClick={onClose} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-600">Cancelar</button><button type="submit" className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold">Guardar</button></div>
+      </form>
+    </div>
+  );
+};
+
 export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses: rawExpenses, db, currentUserEmail, showAlert, showConfirm }) {
   // SEGURO DE VIDA: Si Firebase demora un milisegundo en enviar los datos, usamos listas vacías temporalmente para que la app no se estrelle.
   const drivers = rawDrivers || [];
@@ -277,85 +354,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
      });
   };
 
-  const TransactionIcon = ({ type }) => {
-    if (type === 'assignment') return <ArrowUpCircle className="w-5 h-5 text-green-500 shrink-0"/>;
-    if (type === 'pending_return') return <Clock className="w-5 h-5 text-amber-500 shrink-0"/>;
-    if (type === 'expense') return <ArrowDownCircle className="w-5 h-5 text-red-500 shrink-0"/>;
-    return <CheckCircle className="w-5 h-5 text-blue-500 shrink-0"/>;
-  };
-
-  const EditExpenseModal = ({ expense, onClose }) => {
-    const handleUpdateSubmit = async (e) => {
-      e.preventDefault();
-      if (!isAdminView && expense.type === 'assignment') { showAlert("No puedes modificar una asignación."); return onClose(); }
-      const newAmount = Number(e.target.amount.value);
-      const newDetail = e.target.detail.value;
-
-      try {
-        let newlyDeducted = newAmount;
-        const driverSnapshot = drivers.find(d => d.id === expense.driverId);
-        let currentDriverBalance = driverSnapshot ? (driverSnapshot.balance || 0) : 0;
-        
-        if (driverSnapshot) {
-          if (expense.type === 'assignment') {
-             const amountDiff = newAmount - expense.amount;
-             currentDriverBalance += amountDiff;
-          } else if (expense.type === 'expense' || expense.type === 'return') {
-             let oldDeducted = expense.deductedAmount !== undefined ? expense.deductedAmount : expense.amount;
-             
-             currentDriverBalance += oldDeducted;
-             currentDriverBalance -= newAmount;
-             newlyDeducted = newAmount;
-          }
-          await updateDoc(doc(db, 'drivers', expense.driverId), { balance: currentDriverBalance });
-        }
-        await updateDoc(doc(db, 'expenses', expense.id), { amount: newAmount, detail: newDetail, deductedAmount: newlyDeducted });
-        
-        // --- NUEVO: NOTIFICACIÓN POR CORREO AL CONDUCTOR (MODIFICACIÓN) ---
-        if (driverSnapshot && driverSnapshot.notifications && driverSnapshot.notifications.modificacion) {
-           fetch('/api/notify-finance', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                 email: driverSnapshot.email,
-                 driverName: driverSnapshot.name,
-                 type: 'modificacion',
-                 oldAmount: expense.amount,
-                 newAmount: newAmount,
-                 detail: newDetail,
-                 newBalance: currentDriverBalance
-              })
-           }).catch(err => console.warn("Aviso de modificación falló:", err));
-        }
-        // ------------------------------------------------------------------
-
-        showAlert("Registro actualizado."); onClose();
-      } catch (error) { console.error(error); showAlert("Error actualizando."); }
-    };
-
-    return (
-      <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-        <form onSubmit={handleUpdateSubmit} className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6">
-          <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-extrabold text-slate-800">Editar Registro</h3><button type="button" onClick={onClose} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button></div>
-          <div className="space-y-4">
-            <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Detalle</label>
-              <input name="detail" defaultValue={expense.detail} required autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-sm text-slate-700 shadow-sm mt-1" />
-            </div>
-            <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Monto Editado</label>
-              <div className="relative mt-1">
-                <input name="amount" type="number" defaultValue={expense.amount} required autoComplete="off" className="w-full border-2 border-slate-200 p-3 pl-10 rounded-xl outline-none focus:border-blue-500 font-black text-lg text-slate-800 shadow-sm" />
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-lg text-slate-400">$</span>
-              </div>
-            </div>
-          </div>
-          <div className="flex gap-4 mt-6"><button type="button" onClick={onClose} className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 rounded-xl font-bold text-slate-600">Cancelar</button><button type="submit" className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold">Guardar</button></div>
-        </form>
-      </div>
-    );
-  };
-
+  // Removed components to root scope
   const safeDateRender = (timestamp) => {
     try {
       const d = new Date(timestamp);
@@ -382,7 +381,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
   if (isAdminView) {
     return (
       <main className="max-w-3xl mx-auto p-4 pt-20 sm:pt-24 pb-24">
-        {editingExpense && <EditExpenseModal expense={editingExpense} onClose={() => setEditingExpense(null)} />}
+        {editingExpense && <EditExpenseModal expense={editingExpense} onClose={() => setEditingExpense(null)} isAdminView={isAdminView} drivers={drivers} db={db} showAlert={showAlert} />}
         {viewingReceipt && <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[150] p-4"><div className="bg-white rounded-3xl p-4 w-full max-w-md relative"><button onClick={() => setViewingReceipt(null)} className="absolute top-4 right-4 p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors"><X className="w-5 h-5 text-slate-700"/></button><h3 className="font-extrabold text-slate-800 mb-4 ml-2">Comprobante</h3><img src={viewingReceipt} alt="Comprobante" className="w-full h-auto max-h-[70vh] object-contain rounded-xl shadow-sm" /></div></div>}
 
        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
@@ -560,7 +559,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
         </div>
       )}
 
-      {editingExpense && <EditExpenseModal expense={editingExpense} onClose={() => setEditingExpense(null)} />}
+      {editingExpense && <EditExpenseModal expense={editingExpense} onClose={() => setEditingExpense(null)} isAdminView={isAdminView} drivers={drivers} db={db} showAlert={showAlert} />}
 
       <div className={`bg-gradient-to-br ${myBalance < 0 ? 'from-red-600 to-red-800' : 'from-blue-600 to-indigo-700'} p-6 rounded-3xl shadow-md text-center text-white relative overflow-hidden`}>
         <Wallet className="absolute -right-4 -bottom-4 w-32 h-32 opacity-10" />

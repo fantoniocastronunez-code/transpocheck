@@ -14,10 +14,13 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
   // --- MAGIA: RED DE SEGURIDAD ANTI-PANTALLA BLANCA ---
   // Si el conductor recarga la página en la ruta /checklist y la memoria de React se borra,
   // lo devolvemos al inicio silenciosamente en lugar de colapsar la app en blanco.
-  if (!rawJob || Object.keys(rawJob).length === 0) {
-     window.location.replace('/');
-     return null;
-  }
+  const isInvalidJob = !rawJob || Object.keys(rawJob).length === 0;
+
+  useEffect(() => {
+    if (isInvalidJob) {
+      window.location.replace('/');
+    }
+  }, [isInvalidJob]);
 
   // SEGURO DE VIDA: Si Firebase demora en enviar los datos, usamos valores por defecto para evitar la Pantalla Blanca
   const job = rawJob || {};
@@ -716,7 +719,9 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     ejecutarSegundoPlano();
   };
 
-      return (
+  if (isInvalidJob) return null;
+
+  return (
     <div className="bg-white rounded-3xl shadow-xl border pb-10 relative">
       {isDraftLoaded && (
          <div className="absolute -top-12 left-0 right-0 flex justify-center items-center">
