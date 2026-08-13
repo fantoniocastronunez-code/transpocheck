@@ -43,13 +43,15 @@ const LicensePlateBadge = ({ text, className = "" }) => {
 
   return (
     <div 
-      className={`inline-flex flex-col items-center justify-center relative shrink-0 select-none bg-white text-[#111] ${className}`}
+      className={`inline-flex flex-col items-center justify-center relative shrink-0 select-none ${className}`}
       style={{
         width: '150px',
         height: '52px',
         borderRadius: '6px',
         border: '1.5px solid #111',
-        boxShadow: 'inset 0 0 0 2px #fff, inset 0 0 0 3px #111',
+        backgroundColor: '#ffffff',
+        color: '#111',
+        boxShadow: 'inset 0 0 0 2px #ffffff, inset 0 0 0 3px #111',
       }}
     >
        {/* Tornillos simulados */}
