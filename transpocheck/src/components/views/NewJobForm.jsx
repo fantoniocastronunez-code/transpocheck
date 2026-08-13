@@ -4,6 +4,7 @@ import { X, User, CheckCircle, Plus, AlertCircle, FileText, Loader2 } from 'luci
 import CustomClientSelector from '../ui/CustomClientSelector';
 import Tesseract from 'tesseract.js';
 import * as pdfjsLib from 'pdfjs-dist';
+import InAppCamera from '../ui/InAppCamera';
 
 // ✨ Solución 100% Nativa VITE: Importamos el motor interno. Cero bloqueos de CORS.
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
@@ -223,9 +224,12 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   const handleWaypointChange = (index, val) => { const nw = [...waypoints]; nw[index] = val; setWaypoints(nw); };
   const handleRemoveWaypoint = (index) => { const nw = [...waypoints]; nw.splice(index, 1); setWaypoints(nw); };
 
+  const [cameraConfig, setCameraConfig] = useState({ isOpen: false });
+
   // --- NUEVO MOTOR OCR/PDF PARA GUÍAS DE DESPACHO ---
-  const handleOcrUpload = async (e) => {
-    const file = e.target.files[0];
+  const handleOcrUpload = async (fileOrEvent) => {
+    // SOPORTA TANTO EL EVENTO DEL INPUT NATIVO COMO EL ARCHIVO DIRECTO DE LA CÁMARA
+    const file = fileOrEvent.target ? fileOrEvent.target.files[0] : fileOrEvent;
     if (!file) return;
 
     setIsOcrProcessing(true);
@@ -712,13 +716,21 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                     </h3>
                  </div>
                  
-                 {/* BOTÓN MÁGICO DE ESCÁNER DE GUÍA DE DESPACHO */}
-                 <div className="relative w-full sm:w-auto shrink-0">
-                   <input type="file" accept="image/*,application/pdf" onChange={handleOcrUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" disabled={isOcrProcessing} />
-                   <button type="button" className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border-2 ${isOcrProcessing ? 'bg-indigo-100 border-indigo-200 text-indigo-600' : 'bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700 shadow-md'}`}>
-                     {isOcrProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
-                     {isOcrProcessing ? 'Leyendo guía...' : '📄 Subir Guía (Foto o PDF)'}
+                 {/* BOTÓN MÁGICO DE ESCÁNER DE GUÍA DE DESPACHO (AHORA ABRE CÁMARA NATIVA) */}
+                 <div className="w-full sm:w-auto shrink-0 flex gap-2">
+                   {/* Botón para abrir la InAppCamera */}
+                   <button type="button" onClick={() => setCameraConfig({ isOpen: true })} disabled={isOcrProcessing} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border-2 ${isOcrProcessing ? 'bg-indigo-100 border-indigo-200 text-indigo-600' : 'bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700 shadow-md'}`}>
+                     {isOcrProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                     {isOcrProcessing ? 'Leyendo...' : 'Escanear Guía'}
                    </button>
+                   
+                   {/* Botón secundario para subir PDF/Imagen de archivo */}
+                   <div className="relative flex-1 sm:flex-none">
+                     <input type="file" accept="image/*,application/pdf" onChange={handleOcrUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" disabled={isOcrProcessing} />
+                     <button type="button" disabled={isOcrProcessing} className="w-full h-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl font-bold text-sm bg-white border-2 border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-colors">
+                       <FileText className="w-4 h-4"/> Archivo
+                     </button>
+                   </div>
                  </div>
                </div>
 
@@ -1006,6 +1018,14 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
           <button type="submit" disabled={isSubmitting} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-extrabold text-sm sm:text-lg transition-colors shadow-lg shadow-blue-200 disabled:opacity-50">{isSubmitting ? 'Procesando...' : (jobToEdit ? 'Actualizar Trabajo' : 'Guardar y Asignar')}</button>
         </div>
       </form>
+
+      {/* --- CÁMARA INTERNA CENTRALIZADA --- */}
+      <InAppCamera 
+        isOpen={cameraConfig.isOpen} 
+        title="Escáner Inteligente"
+        onClose={() => setCameraConfig({ isOpen: false })}
+        onCapture={handleOcrUpload}
+      />
     </div>
   );
 }

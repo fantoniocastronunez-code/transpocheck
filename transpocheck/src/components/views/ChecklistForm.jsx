@@ -6,6 +6,7 @@ import {
   Share2, QrCode, Save, Zap
 } from 'lucide-react';
 import SignaturePad from '../ui/SignaturePad';
+import InAppCamera from '../ui/InAppCamera'; // <-- NUEVO COMPONENTE CENTRALIZADO
 import { resizeImage, formatMoney } from '../../utils/helpers';
 
 
@@ -105,45 +106,8 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
   }, [step]);
 
 
-  // --- MOTOR DE CÁMARA INTERNA MULTI-LENTE (WebRTC) ---
-  const [inAppCamera, setInAppCamera] = useState({ isOpen: false, onCapture: null, title: '', stream: null, devices: [], currentIndex: 0 });
-  const [landscapeAngle, setLandscapeAngle] = useState(0); // 0 = Vertical, 90 o -90 = Horizontal
-  const videoRef = React.useRef(null);
-
-  const startCamera = async (deviceId = null, isFirst = false, title = '', callback = null) => {
-    if (inAppCamera.stream && !isFirst) inAppCamera.stream.getTracks().forEach(t => t.stop());
-    
-    try {
-       const constraints = deviceId ? { video: { deviceId: { exact: deviceId } } } : { video: { facingMode: 'environment' } };
-       const stream = await navigator.mediaDevices.getUserMedia(constraints);
-       
-       let allVideoDevices = inAppCamera.devices;
-       let cIndex = inAppCamera.currentIndex;
-
-       if (isFirst) {
-          const devices = await navigator.mediaDevices.enumerateDevices();
-          let backCameras = devices.filter(d => d.kind === 'videoinput' && (d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('trasera') || d.label.toLowerCase().includes('environment') || d.label.toLowerCase().includes('0')));
-          if (backCameras.length === 0) backCameras = devices.filter(d => d.kind === 'videoinput');
-          
-          allVideoDevices = backCameras;
-          cIndex = 0; 
-       }
-
-       setInAppCamera(prev => ({ 
-         ...prev, isOpen: true, onCapture: isFirst ? callback : prev.onCapture, 
-         title: isFirst ? title : prev.title, stream, devices: allVideoDevices, 
-         currentIndex: isFirst ? cIndex : prev.currentIndex 
-       }));
-    } catch (error) {
-       console.warn("Error de hardware, usando respaldo:", error);
-       if (isFirst) {
-           const input = document.createElement('input');
-           input.type = 'file'; input.accept = 'image/*'; input.capture = 'environment';
-           input.onchange = (e) => { if (e.target.files[0]) callback(e.target.files[0]); };
-           input.click();
-       }
-    }
-  };
+// --- MOTOR DE CÁMARA INTERNA (CENTRALIZADO) ---
+  const [cameraConfig, setCameraConfig] = useState({ isOpen: false, title: '', onCapture: null });
 
   const openCamera = (title, callback) => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -153,77 +117,13 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
        input.click(); return;
     }
     
-    // Pide permiso al giroscopio en dispositivos Apple al hacer el click
     if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
        DeviceOrientationEvent.requestPermission().catch(() => {});
     }
     
-    startCamera(null, true, title, callback);
-  };
-
-  const setLens = (index) => {
-    if (index < 0 || index >= inAppCamera.devices.length || index === inAppCamera.currentIndex) return;
-    startCamera(inAppCamera.devices[index].deviceId, false);
-    setInAppCamera(prev => ({ ...prev, currentIndex: index }));
-  };
-
-  useEffect(() => {
-    if (inAppCamera.isOpen && inAppCamera.stream && videoRef.current) videoRef.current.srcObject = inAppCamera.stream;
-  }, [inAppCamera.isOpen, inAppCamera.stream]);
-
-  // NUEVO: Oído biónico para el giroscopio del celular
-  useEffect(() => {
-    const handleOrientation = (event) => {
-      if (event.gamma && event.gamma > 45) {
-        setLandscapeAngle(-90); // Teléfono inclinado hacia la derecha
-      } else if (event.gamma && event.gamma < -45) {
-        setLandscapeAngle(90);  // Teléfono inclinado hacia la izquierda
-      } else {
-        setLandscapeAngle(0);   // Teléfono Vertical
-      }
-    };
-
-    if (inAppCamera.isOpen) window.addEventListener('deviceorientation', handleOrientation);
-    else setLandscapeAngle(0);
-    
-    return () => window.removeEventListener('deviceorientation', handleOrientation);
-  }, [inAppCamera.isOpen]);
-
-  const closeCamera = () => {
-    if (inAppCamera.stream) inAppCamera.stream.getTracks().forEach(track => track.stop());
-    setInAppCamera({ isOpen: false, onCapture: null, title: '', stream: null, devices: [], currentIndex: 0 });
-  };
-
-  const takeInAppPhoto = () => {
-    if (!videoRef.current) return;
-    
-    const video = videoRef.current;
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    
-    // Magia anti-bloqueo de pantalla:
-    const needsRotation = (landscapeAngle !== 0) && (video.videoHeight > video.videoWidth);
-
-    if (needsRotation) {
-      canvas.width = video.videoHeight;
-      canvas.height = video.videoWidth;
-      ctx.translate(canvas.width / 2, canvas.height / 2);
-      ctx.rotate(-landscapeAngle * Math.PI / 180); 
-      ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2);
-    } else {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    }
-
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      inAppCamera.onCapture(new File([blob], "photo_capture.jpg", { type: "image/jpeg" }));
-      closeCamera();
-    }, 'image/jpeg', 0.95); // 🔥 Alta fidelidad en la captura inicial
+    setCameraConfig({ isOpen: true, title, onCapture: callback });
   };
   // ----------------------------------------
-
   // Estados para el Déjà Vu Pericial
   const [dejaVuData, setDejaVuData] = useState(null);
   const [showDejaVuModal, setShowDejaVuModal] = useState(false);
@@ -583,12 +483,6 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     if (job.tripType === 'revision' && !formData.prtArrivalTime && formData.rtStatus === 'pendiente') return showAlert("⚠️ Debes presionar 'Llegué a la PRT' e iniciar el tiempo en planta antes de finalizar.");
     if (job.tripType === 'revision' && formData.rtStatus === 'pendiente') return showAlert("⚠️ Debes indicar el resultado de la Revisión Técnica (Aprobado o Rechazado) antes de finalizar el acta.");
     
-    const isGrandleasing = formData.client && formData.client.toLowerCase().includes('grandleasing');
-    if (isGrandleasing) {
-      if (!formData.mileage) return showAlert("⚠️ Cliente Grandleasing exige ingresar el kilometraje actual del vehículo.");
-      if (!formData.photos?.mileage) return showAlert("⚠️ Cliente Grandleasing exige adjuntar fotografía del odómetro (kilometraje).");
-    }
-
     // Validación de Fotografías Obligatorias
     if (job.tripType === 'simple' && (job.isPintura || job.isGrabado)) {
        const reqPhotos = (job.qtyPintura || 0) + (job.qtyGrabado || 0);
@@ -902,18 +796,6 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                          )}
                       </div>
 
-                      {formData.client && formData.client.toLowerCase().includes('grandleasing') && (
-                        <div className="bg-amber-50 border-2 border-amber-200 p-4 rounded-2xl shadow-sm mt-4 animate-in fade-in">
-                           <h3 className="text-xs font-black text-amber-800 uppercase tracking-widest mb-3 flex items-center gap-2"><AlertCircle className="w-4 h-4"/> Requisito Grandleasing</h3>
-                           <div className="space-y-3">
-                              <input type="number" value={formData.mileage || ''} onChange={e=>setF('mileage', e.target.value)} placeholder="Kilometraje actual..." className="w-full border-2 border-amber-200 bg-white p-3 rounded-xl font-bold text-amber-900 outline-none focus:border-amber-400"/>
-                              <button type="button" onClick={() => handlePhotoClick('mileage', 'Odómetro')} className={`w-full h-12 rounded-xl border-2 flex items-center justify-center gap-2 font-bold text-xs uppercase tracking-wide transition-all ${formData.photos?.mileage ? 'bg-amber-500 border-amber-600 text-white shadow-md' : 'bg-white border-amber-300 text-amber-700 hover:bg-amber-100'}`}>
-                                 {formData.photos?.mileage ? <><CheckCircle className="w-4 h-4"/> Odómetro Guardado</> : <><Camera className="w-4 h-4"/> Foto del Odómetro</>}
-                              </button>
-                           </div>
-                        </div>
-                      )}
-
                       <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 mt-6 text-slate-800 uppercase tracking-wider">Notas del Operario</h3>
                       <textarea className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-purple-500 min-h-[100px]" placeholder="Ej: Las plantillas de vinilo no dejaron residuos. Trabajo ejecutado sin novedades..." autoComplete="off" autoCorrect="off" spellCheck="false" value={formData.observations || ''} onChange={(e) => setF('observations', e.target.value)} />
                     </div>
@@ -980,18 +862,6 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
               </div>
               <input value={formData.plateOrVin} onChange={e=>setF('plateOrVin',e.target.value)} placeholder="Patente o VIN" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-300 bg-slate-100 p-3 rounded-xl font-black uppercase text-slate-800 shadow-inner mt-2"/>
               
-              {formData.client && formData.client.toLowerCase().includes('grandleasing') && (
-                <div className="bg-amber-50 border-2 border-amber-200 p-4 rounded-2xl shadow-sm mt-4 animate-in fade-in">
-                   <h3 className="text-xs font-black text-amber-800 uppercase tracking-widest mb-3 flex items-center gap-2"><AlertCircle className="w-4 h-4"/> Requisito Grandleasing</h3>
-                   <div className="space-y-3">
-                      <input type="number" value={formData.mileage || ''} onChange={e=>setF('mileage', e.target.value)} placeholder="Kilometraje actual..." className="w-full border-2 border-amber-200 bg-white p-3 rounded-xl font-bold text-amber-900 outline-none focus:border-amber-400"/>
-                      <button type="button" onClick={() => handlePhotoClick('mileage', 'Odómetro')} className={`w-full h-12 rounded-xl border-2 flex items-center justify-center gap-2 font-bold text-xs uppercase tracking-wide transition-all ${formData.photos?.mileage ? 'bg-amber-500 border-amber-600 text-white shadow-md' : 'bg-white border-amber-300 text-amber-700 hover:bg-amber-100'}`}>
-                         {formData.photos?.mileage ? <><CheckCircle className="w-4 h-4"/> Odómetro Guardado</> : <><Camera className="w-4 h-4"/> Foto del Odómetro</>}
-                      </button>
-                   </div>
-                </div>
-              )}
-
               {/* ALERTA DÉJÀ VU PERICIAL */}
               {dejaVuData && (
                 <div className="bg-purple-50 border-2 border-purple-200 p-4 rounded-2xl shadow-sm animate-in zoom-in-95 flex items-start gap-3 mt-4 relative overflow-hidden">
@@ -1871,68 +1741,15 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
           </div>
         </div>
       )}
-      {/* --- CÁMARA INTERNA (WebRTC) --- */}
-      {inAppCamera.isOpen && (
-        <div className="fixed inset-0 bg-black z-[99999] flex flex-col animate-in fade-in duration-200">
-          <div className="bg-black text-white p-4 flex justify-between items-center z-10 shadow-md border-b border-slate-800">
-            <h3 className="font-black text-sm uppercase tracking-widest flex items-center gap-2 truncate max-w-[40%]"><Camera className="w-5 h-5 text-blue-400 shrink-0"/> {inAppCamera.title}</h3>
-            
-            <div className="flex items-center gap-3">
-              <button onClick={closeCamera} className="bg-white/10 p-2 rounded-full text-white hover:bg-white/20 transition-colors"><X className="w-5 h-5"/></button>
-            </div>
-          </div>
-          
-          <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
-             <video ref={videoRef} playsInline autoPlay className="w-full h-full object-cover" />
-             <div className="absolute inset-0 pointer-events-none border-[40px] border-black/40 flex items-center justify-center">
-               <div className={`w-full h-full border-2 border-dashed rounded-xl transition-all duration-500 ${landscapeAngle !== 0 ? 'border-green-400 bg-green-500/10 shadow-[0_0_50px_rgba(34,197,94,0.3)_inset]' : 'border-white/50'}`}></div>
-             </div>
-             
-             {/* FEEDBACK INTELIGENTE (ALERTA VERDE ROTATORIA) */}
-             {landscapeAngle !== 0 && (
-               <div 
-                 className="absolute top-1/2 left-1/2 bg-green-600/90 backdrop-blur-md text-white px-6 py-3 rounded-full font-black text-sm uppercase tracking-widest flex items-center gap-2 z-50 border border-green-400 shadow-[0_0_30px_rgba(34,197,94,0.6)] transition-all duration-300"
-                 style={{
-                   transform: `translate(-50%, -50%) rotate(${landscapeAngle}deg)`,
-                   transformOrigin: 'center center'
-                 }}
-               >
-                 <CheckCircle className="w-5 h-5"/> Apaisado Activo
-               </div>
-             )}
-             
-             {/* Botones de Lente estilo App Nativa (0.5x y 1x) */}
-             {inAppCamera.devices.length > 1 && (
-               <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex bg-black/60 backdrop-blur-md p-1 rounded-full border border-white/20 z-20 shadow-xl">
-                 <button 
-                   onClick={() => setLens(0)} 
-                   className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${inAppCamera.currentIndex === 0 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>
-                   0.5x
-                 </button>
-                 <button 
-                   onClick={() => setLens(1)} 
-                   className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${inAppCamera.currentIndex === 1 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>
-                   1x
-                 </button>
-               </div>
-             )}
-          </div>
-          
-          <div className="bg-slate-900 pb-8 pt-5 px-6 flex flex-col gap-4 z-10 rounded-t-3xl shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
-             <button onClick={takeInAppPhoto} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-black text-lg flex justify-center items-center gap-3 shadow-[0_0_20px_rgba(37,99,235,0.4)] active:scale-95 transition-all">
-                <div className="w-8 h-8 rounded-full border-4 border-white flex items-center justify-center"><div className="w-3 h-3 bg-white rounded-full"></div></div>
-                TOMAR FOTO AHORA
-             </button>
-             <label className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-3.5 rounded-xl font-bold text-sm flex justify-center items-center gap-2 cursor-pointer transition-colors border border-slate-700 active:scale-95">
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                   const f = e.target.files[0];
-                   if (f) { inAppCamera.onCapture(f); closeCamera(); }
-                }} />
-                🖼️ O elegir una de tu Galería
-             </label>
-          </div>
-        </div>
-      )}
+{/* --- CÁMARA INTERNA CENTRALIZADA --- */}
+      <InAppCamera 
+        isOpen={cameraConfig.isOpen} 
+        title={cameraConfig.title}
+        onClose={() => setCameraConfig(prev => ({ ...prev, isOpen: false }))}
+        onCapture={cameraConfig.onCapture}
+      />
+
+      {/* MODAL DEL DÉJÀ VU PERICIAL */}
 
 
       {/* MODAL DEL DÉJÀ VU PERICIAL */}

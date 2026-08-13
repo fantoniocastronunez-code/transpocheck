@@ -5,6 +5,7 @@ import {
   Clock, X, Edit2, Trash2, Camera, Receipt, ClipboardList 
 } from 'lucide-react';
 import { formatMoney, resizeImage } from '../../utils/helpers';
+import InAppCamera from '../ui/InAppCamera';
 
 export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses: rawExpenses, db, currentUserEmail, showAlert, showConfirm }) {
   // SEGURO DE VIDA: Si Firebase demora un milisegundo en enviar los datos, usamos listas vacías temporalmente para que la app no se estrelle.
@@ -106,6 +107,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
   };
 
   const [isSubmittingReturn, setIsSubmittingReturn] = useState(false);
+  const [cameraConfig, setCameraConfig] = useState({ isOpen: false, title: '' }); // <-- NUEVO ESTADO PARA LA CÁMARA
 
   const submitReturn = async () => {
     if (returnMethod === 'transferencia' && !returnReceipt) return showAlert("Sube la foto de la transferencia.");
@@ -538,14 +540,17 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
             </div>
 
             {returnMethod === 'transferencia' ? (
-              <label className={`block w-full border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-colors relative overflow-hidden ${returnReceipt ? 'border-green-400 bg-green-50' : 'border-slate-300 hover:bg-slate-50'}`}>
-                <input type="file" accept="image/*" className="hidden" onChange={async e=>{const f=e.target.files[0];if(!f)return;try{const dataUrl = await resizeImage(f, 500, 0.4); setReturnReceipt(dataUrl);}catch(e){showAlert("Error procesando foto");}}} />
+              <button 
+                type="button"
+                onClick={() => setCameraConfig({ isOpen: true, title: 'Comprobante de Transferencia' })}
+                className={`block w-full border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-colors relative overflow-hidden ${returnReceipt ? 'border-green-400 bg-green-50' : 'border-slate-300 hover:bg-slate-50'}`}
+              >
                 {returnReceipt ? (
                    <div className="relative z-10"><CheckCircle className="w-10 h-10 text-green-500 mx-auto mb-2 bg-white rounded-full"/><p className="text-sm font-extrabold text-green-700 mb-2">Comprobante Cargado</p><img src={returnReceipt} className="h-28 object-contain mx-auto rounded-lg shadow-sm border border-green-200" alt="preview"/><p className="text-xs font-bold text-slate-500 mt-3 underline">Cambiar foto</p></div>
                 ) : (
-                   <div className="py-4"><Camera className="w-10 h-10 text-slate-400 mx-auto mb-3"/><p className="text-sm font-extrabold text-slate-600">Sube aquí el comprobante</p></div>
+                   <div className="py-4"><Camera className="w-10 h-10 text-slate-400 mx-auto mb-3"/><p className="text-sm font-extrabold text-slate-600">Tomar foto o subir comprobante</p></div>
                 )}
-              </label>
+              </button>
             ) : (
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-center"><p className="text-sm font-bold text-slate-600">Se registrará que entregaste el dinero en mano.</p></div>
             )}
@@ -688,6 +693,21 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
           {expenses.filter(e => e.driverId === myDriver.id).length === 0 && <p className="text-slate-400 font-bold text-sm text-center py-4">No has registrado movimientos.</p>}
         </div>
       </div>
+
+      {/* --- CÁMARA INTERNA CENTRALIZADA --- */}
+      <InAppCamera 
+        isOpen={cameraConfig.isOpen} 
+        title={cameraConfig.title}
+        onClose={() => setCameraConfig({ isOpen: false, title: '' })}
+        onCapture={async (f) => {
+           try {
+             const dataUrl = await resizeImage(f, 500, 0.4); 
+             setReturnReceipt(dataUrl);
+           } catch(e) {
+             showAlert("Error procesando foto");
+           }
+        }}
+      />
     </main>
   );
 }
