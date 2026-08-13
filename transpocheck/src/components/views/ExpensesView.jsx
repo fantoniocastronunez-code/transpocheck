@@ -134,13 +134,15 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
         setIsSubmitting(false);
         return showAlert(`Saldo insuficiente. Tienes ${formatMoney(currentBalance)}. Solicita asignación de dinero al administrador para rendir este monto.`);
     }
-    if (!isAdminView && type === 'expense' && !receiptImage) {
+    const assocJobId = e.target.jobId?.value || '';
+    let detailString = detail || (type === 'assignment' ? 'Asignación de fondos' : 'Gasto registrado por Admin');
+
+    const isToll = detailString.toLowerCase().includes('peaje');
+
+    if (!isAdminView && type === 'expense' && !receiptImage && !isToll) {
         setIsSubmitting(false);
         return showAlert(`Debes adjuntar la foto de la boleta o comprobante del gasto.`);
     }
-    
-    const assocJobId = e.target.jobId?.value || '';
-    let detailString = detail || (type === 'assignment' ? 'Asignación de fondos' : 'Gasto registrado por Admin');
 
     if (assocJobId) {
       const jb = activeOrPendingJobs.find(x => x.id === assocJobId);
