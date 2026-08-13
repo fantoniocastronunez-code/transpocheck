@@ -81,6 +81,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [glPhoto, setGlPhoto] = useState(null);
   const [cameraConfig, setCameraConfig] = useState({ isOpen: false, title: '', target: null });
 
+  // --- NUEVO: ESTADOS PARA REQUISITO LLEGADA KOVACS ---
+  const [kovacsPromptJob, setKovacsPromptJob] = useState(null);
+  const [kovacsMileage, setKovacsMileage] = useState('');
+  const [kovacsKeyLocation, setKovacsKeyLocation] = useState('');
+  const [kovacsKeyHandedTo, setKovacsKeyHandedTo] = useState('');
+
   const submitGlArrival = async () => {
     if (!glMileage || !glPhoto) return showAlert("⚠️ Debes ingresar el kilometraje y la foto del odómetro.");
     setProcessingId('gl-arrival');
@@ -110,6 +116,38 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     } catch(e) {
       console.error(e);
       showAlert("❌ Error al guardar datos de Grandleasing.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const submitKovacsArrival = async () => {
+    setProcessingId('kovacs-arrival');
+    try {
+      const currentDraft = kovacsPromptJob.draft?.formData || {};
+      const updatedDraft = {
+        ...currentDraft,
+        mileage: kovacsMileage || '',
+        keyLocation: kovacsKeyLocation || '',
+        keyHandedTo: (kovacsKeyLocation === 'mano' ? kovacsKeyHandedTo : '')
+      };
+
+      await updateDoc(doc(db, 'transport_jobs', kovacsPromptJob.id), {
+        'draft.formData': updatedDraft
+      });
+
+      if (kovacsPromptJob.phase === 'prt_done') {
+          notifyClient(kovacsPromptJob, 'en_ruta_destino');
+      }
+      await updatePhase(kovacsPromptJob, 'arrived_destination');
+      
+      setKovacsPromptJob(null);
+      setKovacsMileage('');
+      setKovacsKeyLocation('');
+      setKovacsKeyHandedTo('');
+    } catch(e) {
+      console.error(e);
+      showAlert("❌ Error al guardar datos de Kovacs.");
     } finally {
       setProcessingId(null);
     }
@@ -1466,6 +1504,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                       {j.phase === 'picked_up' && j.tripType !== 'revision' && <SwipeButton key={`btn-dest-${j.id}`} onConfirm={()=>{
                           if (j.client?.toLowerCase().includes('grandleasing')) {
                               setGlPromptJob(j); setGlMileage(''); setGlPhoto(null); setMenuOpenId(null);
+                          } else if (j.client?.toLowerCase().includes('kovac')) {
+                              setKovacsPromptJob(j); setKovacsMileage(''); setKovacsKeyLocation(''); setKovacsKeyHandedTo(''); setMenuOpenId(null);
                           } else {
                               updatePhase(j, 'arrived_destination');
                           }
@@ -3405,7 +3445,17 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                       <p className="text-[9px] font-bold text-slate-500 uppercase">Odómetro Reportado</p>
                       <p className="text-sm font-black text-slate-800">{selectedHistoryJob.checklist?.mileage || 'No registrado'}</p>
                     </div>
-                    <div>
+                    {selectedHistoryJob.checklist?.keyLocation && (
+                    <div className="col-span-2">
+                      <p className="text-[9px] font-bold text-slate-500 uppercase">Ubicación de Llaves</p>
+                      <p className="text-sm font-black text-orange-600">
+                         {selectedHistoryJob.checklist.keyLocation === 'puestas' ? 'Puestas' : 
+                          selectedHistoryJob.checklist.keyLocation === 'puerta' ? 'En la puerta' :
+                          selectedHistoryJob.checklist.keyLocation === 'mano' ? `Entregadas por mano a: ${selectedHistoryJob.checklist.keyHandedTo || ''}` : selectedHistoryJob.checklist.keyLocation}
+                      </p>
+                    </div>
+                    )}
+                    <div className="col-span-2 mt-2">
                       <p className="text-[9px] font-bold text-slate-500 uppercase">Distancia GPS (Maps)</p>
                       <p className="text-sm font-black text-blue-600">{selectedHistoryJob.drivenDistance || 'No calculado'}</p>
                     </div>
@@ -3631,6 +3681,48 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
              <button onClick={submitGlArrival} disabled={processingId === 'gl-arrival' || !glMileage || !glPhoto} className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-black text-sm shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
                {processingId === 'gl-arrival' ? <Clock className="w-5 h-5 animate-spin"/> : <CheckCircle className="w-5 h-5"/>} Confirmar Llegada
+             </button>
+          </div>
+        </div>
+      )}
+
+      {/* NUEVO MODAL: REQUISITO LLEGADA KOVACS */}
+      {kovacsPromptJob && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl flex flex-col animate-in zoom-in-95 border-t-8 border-orange-500 my-auto">
+             <div className="flex justify-between items-center mb-4">
+               <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-2"><Key className="w-5 h-5 text-orange-500"/> Registro Kovacs</h3>
+               <button onClick={()=>setKovacsPromptJob(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4"/></button>
+             </div>
+             <p className="text-xs font-bold text-slate-500 mb-4 pb-4 border-b border-slate-100">Por favor, registra el kilometraje final y la ubicación de las llaves del vehículo (opcional).</p>
+             
+             <div className="space-y-4 mb-6">
+               <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Kilometraje de Término</label>
+                  <input type="number" value={kovacsMileage} onChange={e=>setKovacsMileage(e.target.value)} placeholder="Ej: 45250" className="w-full border-2 border-slate-200 bg-slate-50 p-3 rounded-xl font-bold text-slate-700 outline-none focus:border-orange-400 mt-1 shadow-sm"/>
+               </div>
+               
+               <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">¿Dónde dejaste las llaves?</label>
+                  <div className="grid grid-cols-1 gap-2">
+                     <button onClick={() => setKovacsKeyLocation('puestas')} className={`p-3 rounded-xl border-2 text-sm font-bold transition-colors text-left flex items-center justify-between ${kovacsKeyLocation === 'puestas' ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-slate-200 bg-white text-slate-600'}`}>
+                        Puestas {kovacsKeyLocation === 'puestas' && <CheckCircle className="w-4 h-4"/>}
+                     </button>
+                     <button onClick={() => setKovacsKeyLocation('puerta')} className={`p-3 rounded-xl border-2 text-sm font-bold transition-colors text-left flex items-center justify-between ${kovacsKeyLocation === 'puerta' ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-slate-200 bg-white text-slate-600'}`}>
+                        En la puerta {kovacsKeyLocation === 'puerta' && <CheckCircle className="w-4 h-4"/>}
+                     </button>
+                     <button onClick={() => setKovacsKeyLocation('mano')} className={`p-3 rounded-xl border-2 text-sm font-bold transition-colors text-left flex items-center justify-between ${kovacsKeyLocation === 'mano' ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-slate-200 bg-white text-slate-600'}`}>
+                        Entregadas por mano {kovacsKeyLocation === 'mano' && <CheckCircle className="w-4 h-4"/>}
+                     </button>
+                  </div>
+                  {kovacsKeyLocation === 'mano' && (
+                     <input type="text" value={kovacsKeyHandedTo} onChange={e=>setKovacsKeyHandedTo(e.target.value)} placeholder="Nombre de quien recibe" className="w-full border-2 border-orange-200 bg-orange-50 p-3 rounded-xl font-bold text-orange-900 outline-none focus:border-orange-400 mt-2 shadow-sm animate-in fade-in slide-in-from-top-2"/>
+                  )}
+               </div>
+             </div>
+
+             <button onClick={submitKovacsArrival} disabled={processingId === 'kovacs-arrival'} className="w-full py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black text-sm shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+               {processingId === 'kovacs-arrival' ? <Clock className="w-5 h-5 animate-spin"/> : <CheckCircle className="w-5 h-5"/>} Confirmar Llegada
              </button>
           </div>
         </div>

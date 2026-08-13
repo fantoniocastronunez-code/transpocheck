@@ -181,7 +181,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
       if (isFirstLoad) {
         if (data?.draft) {
           // MAGIA: Cargamos el borrador, pero forzamos que el resultado PRT real de la base de datos mande
-          const draftData = data.draft.formData;
+          const draftData = { ...defaultData, ...data.draft.formData };
           if (data.prt_result) {
              draftData.rtStatus = data.prt_result;
           }

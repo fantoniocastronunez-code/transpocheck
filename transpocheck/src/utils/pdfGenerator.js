@@ -161,6 +161,14 @@ export const buildPDFDoc = async (job, drivers = []) => {
         let hKm = drawKV("Kilometraje", `${job.checklist?.mileage || 'No reg.'}`, 65, currentY, 45);
         currentY += Math.max(hGas, hKm) + 8;
 
+        if (job.checklist?.keyLocation) {
+          const keyStr = job.checklist.keyLocation === 'puestas' ? 'Puestas' : 
+                         job.checklist.keyLocation === 'puerta' ? 'En la puerta' :
+                         job.checklist.keyLocation === 'mano' ? `A mano: ${job.checklist.keyHandedTo || ''}` : job.checklist.keyLocation;
+          let hKeys = drawKV("Ubicación de Llaves", cleanStr(keyStr), 15, currentY, 95);
+          currentY += hKeys + 8;
+        }
+
         docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("OBSERVACIONES:", 15, currentY); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor); const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin observaciones registradas.'}`), leftColWidth); docPDF.text(obsSplit, 15, currentY + 4); currentY += (obsSplit.length * 4) + 8;
         
         if (job.checklist?.transitNotes) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("NOTAS DURANTE EL TRASLADO:", 15, currentY); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38); const transitSplit = docPDF.splitTextToSize(cleanStr(job.checklist.transitNotes), leftColWidth); docPDF.text(transitSplit, 15, currentY + 4); currentY += (transitSplit.length * 4) + 8; }

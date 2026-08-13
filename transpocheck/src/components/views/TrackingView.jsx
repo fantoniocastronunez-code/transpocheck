@@ -745,7 +745,17 @@ const handleDownloadPDF = async (job) => {
                       <p className="text-[9px] font-bold text-slate-500 uppercase">Odómetro Reportado</p>
                       <p className="text-sm font-black text-slate-800">{selectedHistoryJob.checklist?.mileage || 'No registrado'}</p>
                     </div>
-                    <div>
+                    {selectedHistoryJob.checklist?.keyLocation && (
+                    <div className="col-span-2">
+                      <p className="text-[9px] font-bold text-slate-500 uppercase">Ubicación de Llaves</p>
+                      <p className="text-sm font-black text-orange-600">
+                         {selectedHistoryJob.checklist.keyLocation === 'puestas' ? 'Puestas' : 
+                          selectedHistoryJob.checklist.keyLocation === 'puerta' ? 'En la puerta' :
+                          selectedHistoryJob.checklist.keyLocation === 'mano' ? `Entregadas por mano a: ${selectedHistoryJob.checklist.keyHandedTo || ''}` : selectedHistoryJob.checklist.keyLocation}
+                      </p>
+                    </div>
+                    )}
+                    <div className="col-span-2 mt-2">
                       <p className="text-[9px] font-bold text-slate-500 uppercase">Distancia GPS (Maps)</p>
                       <p className="text-sm font-black text-blue-600">{selectedHistoryJob.drivenDistance || 'No calculado'}</p>
                     </div>
