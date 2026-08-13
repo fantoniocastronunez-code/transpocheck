@@ -75,79 +75,52 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [fullScreenPhoto, setFullScreenPhoto] = useState(null); // <-- NUEVO: Estado para foto en pantalla completa
   const [selectedHistoryJob, setSelectedHistoryJob] = useState(null); // <-- NUEVO: Estado para Ficha Técnica interactiva
 
-  // --- NUEVO: ESTADOS PARA REQUISITO LLEGADA GRANDLEASING ---
-  const [glPromptJob, setGlPromptJob] = useState(null);
-  const [glMileage, setGlMileage] = useState('');
-  const [glPhoto, setGlPhoto] = useState(null);
+  // --- ESTADOS PARA REQUISITO LLEGADA (TODOS LOS CLIENTES) ---
+  const [arrivalPromptJob, setArrivalPromptJob] = useState(null);
+  const [arrivalMileage, setArrivalMileage] = useState('');
+  const [arrivalPhoto, setArrivalPhoto] = useState(null);
+  const [arrivalKeyLocation, setArrivalKeyLocation] = useState('');
+  const [arrivalKeyHandedTo, setArrivalKeyHandedTo] = useState('');
   const [cameraConfig, setCameraConfig] = useState({ isOpen: false, title: '', target: null });
 
-  // --- NUEVO: ESTADOS PARA REQUISITO LLEGADA KOVACS ---
-  const [kovacsPromptJob, setKovacsPromptJob] = useState(null);
-  const [kovacsMileage, setKovacsMileage] = useState('');
-  const [kovacsKeyLocation, setKovacsKeyLocation] = useState('');
-  const [kovacsKeyHandedTo, setKovacsKeyHandedTo] = useState('');
-
-  const submitGlArrival = async () => {
-    if (!glMileage || !glPhoto) return showAlert("⚠️ Debes ingresar el kilometraje y la foto del odómetro.");
-    setProcessingId('gl-arrival');
-    try {
-      // Rescatamos el borrador previo si existe, si no, creamos uno nuevo.
-      const currentDraft = glPromptJob.draft?.formData || {};
-      const currentPhotos = currentDraft.photos || {};
-      const updatedDraft = {
-        ...currentDraft,
-        mileage: glMileage,
-        photos: { ...currentPhotos, mileage: glPhoto }
-      };
-
-      // Inyectamos la foto y el kilometraje directo al borrador del acta
-      await updateDoc(doc(db, 'transport_jobs', glPromptJob.id), {
-        'draft.formData': updatedDraft
-      });
-
-      if (glPromptJob.phase === 'prt_done') {
-          notifyClient(glPromptJob, 'en_ruta_destino');
-      }
-      await updatePhase(glPromptJob, 'arrived_destination');
-      
-      setGlPromptJob(null);
-      setGlMileage('');
-      setGlPhoto(null);
-    } catch(e) {
-      console.error(e);
-      showAlert("❌ Error al guardar datos de Grandleasing.");
-    } finally {
-      setProcessingId(null);
+  const submitArrival = async () => {
+    const isGL = arrivalPromptJob.client?.toLowerCase().includes('grandleasing');
+    if (isGL && (!arrivalMileage || !arrivalPhoto)) {
+        return showAlert("⚠️ Grandleasing exige registrar el kilometraje y la foto del odómetro obligatoriamente.");
     }
-  };
-
-  const submitKovacsArrival = async () => {
-    setProcessingId('kovacs-arrival');
+    setProcessingId('general-arrival');
     try {
-      const currentDraft = kovacsPromptJob.draft?.formData || {};
+      const currentDraft = arrivalPromptJob.draft?.formData || {};
+      const currentPhotos = currentDraft.photos || {};
+      
       const updatedDraft = {
         ...currentDraft,
-        mileage: kovacsMileage || '',
-        keyLocation: kovacsKeyLocation || '',
-        keyHandedTo: (kovacsKeyLocation === 'mano' ? kovacsKeyHandedTo : '')
+        mileage: arrivalMileage || '',
+        keyLocation: arrivalKeyLocation || '',
+        keyHandedTo: (arrivalKeyLocation === 'mano' ? arrivalKeyHandedTo : '')
       };
 
-      await updateDoc(doc(db, 'transport_jobs', kovacsPromptJob.id), {
+      if (arrivalPhoto) {
+         updatedDraft.photos = { ...currentPhotos, mileage: arrivalPhoto };
+      }
+
+      await updateDoc(doc(db, 'transport_jobs', arrivalPromptJob.id), {
         'draft.formData': updatedDraft
       });
 
-      if (kovacsPromptJob.phase === 'prt_done') {
-          notifyClient(kovacsPromptJob, 'en_ruta_destino');
+      if (arrivalPromptJob.phase === 'prt_done') {
+          notifyClient(arrivalPromptJob, 'en_ruta_destino');
       }
-      await updatePhase(kovacsPromptJob, 'arrived_destination');
+      await updatePhase(arrivalPromptJob, 'arrived_destination');
       
-      setKovacsPromptJob(null);
-      setKovacsMileage('');
-      setKovacsKeyLocation('');
-      setKovacsKeyHandedTo('');
+      setArrivalPromptJob(null);
+      setArrivalMileage('');
+      setArrivalPhoto(null);
+      setArrivalKeyLocation('');
+      setArrivalKeyHandedTo('');
     } catch(e) {
       console.error(e);
-      showAlert("❌ Error al guardar datos de Kovacs.");
+      showAlert("❌ Error al guardar datos de llegada.");
     } finally {
       setProcessingId(null);
     }
@@ -1502,13 +1475,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                       }} text={j.tripType === 'simple' ? "Desliza: Iniciar Trabajo" : "Desliza: Vehículo en mi poder"} icon={j.tripType === 'simple' ? <Clock className="w-4 h-4"/> : <Car className="w-4 h-4"/>} colorClass="bg-indigo-600" isProcessing={processingId === `${j.id}-picked_up`} />}
                       
                       {j.phase === 'picked_up' && j.tripType !== 'revision' && <SwipeButton key={`btn-dest-${j.id}`} onConfirm={()=>{
-                          if (j.client?.toLowerCase().includes('grandleasing')) {
-                              setGlPromptJob(j); setGlMileage(''); setGlPhoto(null); setMenuOpenId(null);
-                          } else if (j.client?.toLowerCase().includes('kovac')) {
-                              setKovacsPromptJob(j); setKovacsMileage(''); setKovacsKeyLocation(''); setKovacsKeyHandedTo(''); setMenuOpenId(null);
-                          } else {
-                              updatePhase(j, 'arrived_destination');
-                          }
+                          setArrivalPromptJob(j); 
+                          setArrivalMileage(''); 
+                          setArrivalPhoto(null); 
+                          setArrivalKeyLocation(''); 
+                          setArrivalKeyHandedTo(''); 
+                          setMenuOpenId(null);
                       }} text={j.tripType === 'simple' ? "Desliza: Finalizar Trabajo" : "Desliza: Llegué a Destino"} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />}
                       
                       {j.phase === 'picked_up' && j.tripType === 'revision' && <SwipeButton key={`btn-prt-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_prt')} text="Desliza: Llegué a PRT" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_prt`} />}
@@ -1524,12 +1496,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
                       {j.phase === 'prt_done' && (
                         <SwipeButton key={`btn-dest-prt-${j.id}`} onConfirm={()=>{
-                            if (j.client?.toLowerCase().includes('grandleasing')) {
-                                setGlPromptJob(j); setGlMileage(''); setGlPhoto(null); setMenuOpenId(null);
-                            } else {
-                                notifyClient(j, 'en_ruta_destino');
-                                updatePhase(j, 'arrived_destination');
-                            }
+                            setArrivalPromptJob(j); 
+                            setArrivalMileage(''); 
+                            setArrivalPhoto(null); 
+                            setArrivalKeyLocation(''); 
+                            setArrivalKeyHandedTo(''); 
+                            setMenuOpenId(null);
                         }} text={`Desliza: Llegué a ${j.checklist?.rtReturnOption === 'other' ? (j.checklist?.rtReturnDestination?.substring(0,10) + '...') : 'Origen'}`} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />
                       )}
 
@@ -3614,11 +3586,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                        }} text={tj.tripType === 'simple' ? "Desliza: Iniciar Trabajo" : "Desliza: Vehículo en mi poder"} icon={tj.tripType === 'simple' ? <Clock className="w-4 h-4"/> : <Car className="w-4 h-4"/>} colorClass="bg-indigo-600" isProcessing={processingId === `${tj.id}-picked_up`} />}
 
                        {tj.phase === 'picked_up' && tj.tripType !== 'revision' && <SwipeButton key={`btn-dest-${tj.id}`} onConfirm={()=>{
-                           if (tj.client?.toLowerCase().includes('grandleasing')) {
-                               setGlPromptJob(tj); setGlMileage(''); setGlPhoto(null); setTrackingJobId(null);
-                           } else {
-                               updatePhase(tj, 'arrived_destination');
-                           }
+                           setArrivalPromptJob(tj); 
+                           setArrivalMileage(''); 
+                           setArrivalPhoto(null); 
+                           setArrivalKeyLocation(''); 
+                           setArrivalKeyHandedTo(''); 
+                           setTrackingJobId(null);
                        }} text={tj.tripType === 'simple' ? "Desliza: Finalizar Trabajo" : "Desliza: Llegué a Destino"} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${tj.id}-arrived_destination`} />}
 
                        {tj.phase === 'picked_up' && tj.tripType === 'revision' && <SwipeButton key={`btn-prt-${tj.id}`} onConfirm={()=>updatePhase(tj, 'arrived_prt')} text="Desliza: Llegué a PRT" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${tj.id}-arrived_prt`} />}
@@ -3636,12 +3609,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
                        {tj.phase === 'prt_done' && (
                          <SwipeButton key={`btn-dest-prt-${tj.id}`} onConfirm={()=>{
-                             if (tj.client?.toLowerCase().includes('grandleasing')) {
-                                 setGlPromptJob(tj); setGlMileage(''); setGlPhoto(null); setTrackingJobId(null);
-                             } else {
-                                 notifyClient(tj, 'en_ruta_destino');
-                                 updatePhase(tj, 'arrived_destination');
-                             }
+                             setArrivalPromptJob(tj); 
+                             setArrivalMileage(''); 
+                             setArrivalPhoto(null); 
+                             setArrivalKeyLocation(''); 
+                             setArrivalKeyHandedTo(''); 
+                             setTrackingJobId(null);
                          }} text={`Desliza: Llegué a ${tj.checklist?.rtReturnOption === 'other' ? (tj.checklist?.rtReturnDestination?.substring(0,10) + '...') : 'Origen'}`} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${tj.id}-arrived_destination`} />
                        )}
 
@@ -3655,74 +3628,60 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
          );
       })()}
 
-      {/* NUEVO MODAL: REQUISITO GRANDLEASING AL LLEGAR A DESTINO */}
-      {glPromptJob && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl flex flex-col animate-in zoom-in-95 border-t-8 border-amber-500">
+      {/* NUEVO MODAL: REQUISITO LLEGADA (GENERAL / GRANDLEASING) */}
+      {arrivalPromptJob && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4 overflow-y-auto">
+          <div className={`bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl flex flex-col animate-in zoom-in-95 border-t-8 my-auto ${arrivalPromptJob.client?.toLowerCase().includes('grandleasing') ? 'border-amber-500' : 'border-purple-500'}`}>
              <div className="flex justify-between items-center mb-4">
-               <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-2"><AlertCircle className="w-5 h-5 text-amber-500"/> Reporte de Llegada</h3>
-               <button onClick={()=>setGlPromptJob(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4"/></button>
+               <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-2">
+                 {arrivalPromptJob.client?.toLowerCase().includes('grandleasing') ? <AlertCircle className="w-5 h-5 text-amber-500"/> : <Key className="w-5 h-5 text-purple-500"/>} 
+                 Registro de Llegada
+               </h3>
+               <button onClick={()=>setArrivalPromptJob(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4"/></button>
              </div>
-             <p className="text-sm font-bold text-slate-500 mb-4 pb-4 border-b border-slate-100">El cliente <strong>Grandleasing</strong> exige registrar el kilometraje final antes de marcar la llegada a destino.</p>
+             
+             {arrivalPromptJob.client?.toLowerCase().includes('grandleasing') ? (
+                <p className="text-sm font-bold text-slate-500 mb-4 pb-4 border-b border-slate-100">El cliente <strong>Grandleasing</strong> exige registrar el kilometraje y la foto del odómetro obligatoriamente.</p>
+             ) : (
+                <p className="text-xs font-bold text-slate-500 mb-4 pb-4 border-b border-slate-100">Por favor, registra el kilometraje final y la ubicación de las llaves del vehículo (opcional).</p>
+             )}
              
              <div className="space-y-4 mb-6">
                <div>
-                  <label className="text-[10px] font-black text-amber-600 uppercase tracking-widest ml-1">Kilometraje de Término</label>
-                  <input type="number" value={glMileage} onChange={e=>setGlMileage(e.target.value)} placeholder="Ej: 45250" className="w-full border-2 border-amber-200 bg-amber-50 p-3 rounded-xl font-bold text-amber-900 outline-none focus:border-amber-400 mt-1 shadow-sm"/>
+                  <label className={`text-[10px] font-black uppercase tracking-widest ml-1 ${arrivalPromptJob.client?.toLowerCase().includes('grandleasing') ? 'text-amber-600' : 'text-slate-400'}`}>Kilometraje de Término</label>
+                  <input type="number" value={arrivalMileage} onChange={e=>setArrivalMileage(e.target.value)} placeholder="Ej: 45250" className={`w-full border-2 bg-slate-50 p-3 rounded-xl font-bold text-slate-700 outline-none mt-1 shadow-sm ${arrivalPromptJob.client?.toLowerCase().includes('grandleasing') ? 'border-amber-200 focus:border-amber-400' : 'border-slate-200 focus:border-purple-400'}`}/>
                </div>
                
-               <div>
-                  <label className="text-[10px] font-black text-amber-600 uppercase tracking-widest ml-1 mb-1 block">Foto del Odómetro</label>
-                  <button type="button" onClick={() => setCameraConfig({ isOpen: true, title: 'Odómetro', target: 'glPhoto' })} className={`w-full h-16 rounded-xl border-2 flex items-center justify-center gap-2 font-bold text-xs uppercase tracking-wide transition-all shadow-sm ${glPhoto ? 'bg-amber-500 border-amber-600 text-white' : 'bg-white border-amber-300 text-amber-700 hover:bg-amber-100'}`}>
-                      {glPhoto ? <><CheckCircle className="w-5 h-5"/> Foto Capturada</> : <><Camera className="w-5 h-5"/> Tomar Fotografía</>}
-                  </button>
-               </div>
-             </div>
-
-             <button onClick={submitGlArrival} disabled={processingId === 'gl-arrival' || !glMileage || !glPhoto} className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-black text-sm shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-               {processingId === 'gl-arrival' ? <Clock className="w-5 h-5 animate-spin"/> : <CheckCircle className="w-5 h-5"/>} Confirmar Llegada
-             </button>
-          </div>
-        </div>
-      )}
-
-      {/* NUEVO MODAL: REQUISITO LLEGADA KOVACS */}
-      {kovacsPromptJob && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl flex flex-col animate-in zoom-in-95 border-t-8 border-orange-500 my-auto">
-             <div className="flex justify-between items-center mb-4">
-               <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-2"><Key className="w-5 h-5 text-orange-500"/> Registro Kovacs</h3>
-               <button onClick={()=>setKovacsPromptJob(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4"/></button>
-             </div>
-             <p className="text-xs font-bold text-slate-500 mb-4 pb-4 border-b border-slate-100">Por favor, registra el kilometraje final y la ubicación de las llaves del vehículo (opcional).</p>
-             
-             <div className="space-y-4 mb-6">
-               <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Kilometraje de Término</label>
-                  <input type="number" value={kovacsMileage} onChange={e=>setKovacsMileage(e.target.value)} placeholder="Ej: 45250" className="w-full border-2 border-slate-200 bg-slate-50 p-3 rounded-xl font-bold text-slate-700 outline-none focus:border-orange-400 mt-1 shadow-sm"/>
-               </div>
+               {arrivalPromptJob.client?.toLowerCase().includes('grandleasing') && (
+                 <div>
+                    <label className="text-[10px] font-black text-amber-600 uppercase tracking-widest ml-1 mb-1 block">Foto del Odómetro</label>
+                    <button type="button" onClick={() => setCameraConfig({ isOpen: true, title: 'Odómetro', target: 'arrivalPhoto' })} className={`w-full h-16 rounded-xl border-2 flex items-center justify-center gap-2 font-bold text-xs uppercase tracking-wide transition-all shadow-sm ${arrivalPhoto ? 'bg-amber-500 border-amber-600 text-white' : 'bg-white border-amber-300 text-amber-700 hover:bg-amber-100'}`}>
+                        {arrivalPhoto ? <><CheckCircle className="w-5 h-5"/> Foto Capturada</> : <><Camera className="w-5 h-5"/> Tomar Fotografía</>}
+                    </button>
+                 </div>
+               )}
                
                <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">¿Dónde dejaste las llaves?</label>
                   <div className="grid grid-cols-1 gap-2">
-                     <button onClick={() => setKovacsKeyLocation('puestas')} className={`p-3 rounded-xl border-2 text-sm font-bold transition-colors text-left flex items-center justify-between ${kovacsKeyLocation === 'puestas' ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-slate-200 bg-white text-slate-600'}`}>
-                        Puestas {kovacsKeyLocation === 'puestas' && <CheckCircle className="w-4 h-4"/>}
+                     <button onClick={() => setArrivalKeyLocation('puestas')} className={`p-3 rounded-xl border-2 text-sm font-bold transition-colors text-left flex items-center justify-between ${arrivalKeyLocation === 'puestas' ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-slate-200 bg-white text-slate-600'}`}>
+                        Puestas {arrivalKeyLocation === 'puestas' && <CheckCircle className="w-4 h-4"/>}
                      </button>
-                     <button onClick={() => setKovacsKeyLocation('puerta')} className={`p-3 rounded-xl border-2 text-sm font-bold transition-colors text-left flex items-center justify-between ${kovacsKeyLocation === 'puerta' ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-slate-200 bg-white text-slate-600'}`}>
-                        En la puerta {kovacsKeyLocation === 'puerta' && <CheckCircle className="w-4 h-4"/>}
+                     <button onClick={() => setArrivalKeyLocation('puerta')} className={`p-3 rounded-xl border-2 text-sm font-bold transition-colors text-left flex items-center justify-between ${arrivalKeyLocation === 'puerta' ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-slate-200 bg-white text-slate-600'}`}>
+                        En la puerta {arrivalKeyLocation === 'puerta' && <CheckCircle className="w-4 h-4"/>}
                      </button>
-                     <button onClick={() => setKovacsKeyLocation('mano')} className={`p-3 rounded-xl border-2 text-sm font-bold transition-colors text-left flex items-center justify-between ${kovacsKeyLocation === 'mano' ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-slate-200 bg-white text-slate-600'}`}>
-                        Entregadas por mano {kovacsKeyLocation === 'mano' && <CheckCircle className="w-4 h-4"/>}
+                     <button onClick={() => setArrivalKeyLocation('mano')} className={`p-3 rounded-xl border-2 text-sm font-bold transition-colors text-left flex items-center justify-between ${arrivalKeyLocation === 'mano' ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-slate-200 bg-white text-slate-600'}`}>
+                        Entregadas por mano {arrivalKeyLocation === 'mano' && <CheckCircle className="w-4 h-4"/>}
                      </button>
                   </div>
-                  {kovacsKeyLocation === 'mano' && (
-                     <input type="text" value={kovacsKeyHandedTo} onChange={e=>setKovacsKeyHandedTo(e.target.value)} placeholder="Nombre de quien recibe" className="w-full border-2 border-orange-200 bg-orange-50 p-3 rounded-xl font-bold text-orange-900 outline-none focus:border-orange-400 mt-2 shadow-sm animate-in fade-in slide-in-from-top-2"/>
+                  {arrivalKeyLocation === 'mano' && (
+                     <input type="text" value={arrivalKeyHandedTo} onChange={e=>setArrivalKeyHandedTo(e.target.value)} placeholder="Nombre de quien recibe" className="w-full border-2 border-purple-200 bg-purple-50 p-3 rounded-xl font-bold text-purple-900 outline-none focus:border-purple-400 mt-2 shadow-sm animate-in fade-in slide-in-from-top-2"/>
                   )}
                </div>
              </div>
 
-             <button onClick={submitKovacsArrival} disabled={processingId === 'kovacs-arrival'} className="w-full py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black text-sm shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-               {processingId === 'kovacs-arrival' ? <Clock className="w-5 h-5 animate-spin"/> : <CheckCircle className="w-5 h-5"/>} Confirmar Llegada
+             <button onClick={submitArrival} disabled={processingId === 'general-arrival'} className={`w-full py-4 text-white rounded-xl font-black text-sm shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2 ${arrivalPromptJob.client?.toLowerCase().includes('grandleasing') ? 'bg-amber-500 hover:bg-amber-600' : 'bg-purple-600 hover:bg-purple-700'}`}>
+               {processingId === 'general-arrival' ? <Clock className="w-5 h-5 animate-spin"/> : <CheckCircle className="w-5 h-5"/>} Confirmar Llegada
              </button>
           </div>
         </div>
@@ -3734,10 +3693,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         title={cameraConfig.title}
         onClose={() => setCameraConfig({ isOpen: false, title: '', target: null })}
         onCapture={async (file) => {
-           if (cameraConfig.target === 'glPhoto') {
+           if (cameraConfig.target === 'arrivalPhoto') {
               try {
                  const compressed = await resizeImage(file, 1200, 0.6);
-                 setGlPhoto(compressed);
+                 setArrivalPhoto(compressed);
               } catch(e) { showAlert("Error procesando foto."); }
            }
         }}
