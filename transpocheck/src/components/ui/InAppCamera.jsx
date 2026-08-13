@@ -159,6 +159,20 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
                className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${currentIndex === 1 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>
                1x
              </button>
+             {devices.length > 2 && (
+             <button 
+               onClick={() => setLens(2)} 
+               className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${currentIndex === 2 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>
+               2x
+             </button>
+             )}
+             {devices.length > 3 && (
+             <button 
+               onClick={() => setLens(3)} 
+               className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${currentIndex === 3 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>
+               3x
+             </button>
+             )}
            </div>
          )}
       </div>
