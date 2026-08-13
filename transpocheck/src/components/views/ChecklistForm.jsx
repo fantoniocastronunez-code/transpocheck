@@ -366,14 +366,20 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
       const textToShare = `¡Hola! Por favor firma el acta de recepción y revisa las fotografías del vehículo aquí:\n${url}`;
 
 
-      const textArea = document.createElement("textarea");
-      textArea.value = textToShare;
-      textArea.style.position = "fixed";
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      try { document.execCommand('copy'); } catch (err) {}
-      document.body.removeChild(textArea);
+      try {
+        await navigator.clipboard.writeText(textToShare);
+      } catch (clipErr) {
+        // Fallback para navegadores que no soportan Clipboard API
+        const textArea = document.createElement("textarea");
+        textArea.value = textToShare;
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try { document.execCommand('copy'); } catch (err) {}
+        document.body.removeChild(textArea);
+      }
 
 
       await setDoc(doc(db, 'transport_jobs', job.id), { checklist: syncedData }, { merge: true });
@@ -757,7 +763,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                             if (cur >= req) p += 33;
                             if (formData.signatureData || formData.noReception) p += 34;
                          } else {
-                            if (formData.brand ? 25 : 0) p += 25;
+                            if (formData.brand && formData.model && formData.plateOrVin) p += 25;
                             if (formData.fuelLevel !== undefined) p += 25;
                             if (Object.values(formData.photos || {}).filter(v => v).length >= 2) p += 25;
                             if (formData.signatureData || formData.noReception) p += 25;
@@ -1086,14 +1092,13 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                                    await uploadString(fileRef, base64, 'data_url', metadata);
                                    const url = await getDownloadURL(fileRef);
 
-                                   const { updateDoc, doc } = await import('firebase/firestore');
+                                   const { updateDoc, doc, query, collection, where, getDocs } = await import('firebase/firestore');
                                    const newChecklist = { ...(job.checklist || {}), scandocPdf: url };
                                    await updateDoc(doc(db, 'transport_jobs', job.id), { checklist: newChecklist });
 
                                    setF('scandocPdf', url);
 
                                    // Buscamos al cliente directo en la colección segura para sacar el correo real
-                                   const { query, collection, where, getDocs } = await import('firebase/firestore');
                                    const qClient = query(collection(db, 'clients'), where('name', '==', job.client || ''));
                                    const snapClient = await getDocs(qClient);
                                    
@@ -1548,7 +1553,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                         type="range" 
                         min="0" max="100" step="5" 
                         value={formData.fuelLevel} 
-                        onChange={(e) => setF('fuelLevel', e.target.value)} 
+                        onChange={(e) => setF('fuelLevel', Number(e.target.value))} 
                         className="absolute z-20 w-full h-full opacity-0 cursor-pointer inset-0 m-0" 
                       />
                       
