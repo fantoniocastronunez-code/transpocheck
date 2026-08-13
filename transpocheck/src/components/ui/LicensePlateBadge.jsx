@@ -1,9 +1,13 @@
 import React from 'react';
+import VinPlateBadge from './VinPlateBadge';
 
 const LicensePlateBadge = ({ text, className = "" }) => {
   const cleanText = (text || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
 
   if (cleanText.length !== 6) {
+    if (cleanText.length >= 10) {
+      return <VinPlateBadge vin={cleanText} className={className} />;
+    }
     return (
       <span className={`bg-slate-800 text-white px-2 py-1 rounded-md text-xs font-black tracking-widest shrink-0 ${className}`}>
         {text || 'S/N'}

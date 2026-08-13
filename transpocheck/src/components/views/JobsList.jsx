@@ -7,6 +7,7 @@ import {
   Trash2, Car, Repeat, PenTool, Truck, Plus, FileText, AlertCircle, DollarSign, Map as MapIcon, RefreshCw, Save, Camera, Key
 } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
+import VinPlateBadge from '../ui/VinPlateBadge';
 import WaitTimerBadge from '../ui/WaitTimerBadge';
 import SwipeButton from '../ui/SwipeButton';
 import SignaturePad from '../ui/SignaturePad';
@@ -1077,7 +1078,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                    <>
                      <LicensePlateBadge text={ident} />
                      {j.vin && ident !== j.vin && (
-                       <span className="text-[9px] font-black bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded-md uppercase tracking-widest shadow-sm mr-1">VIN: {j.vin}</span>
+                       <div className="mr-1 mt-1"><VinPlateBadge vin={j.vin} /></div>
                      )}
                    </>
                 )}
@@ -1617,7 +1618,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               </div>
               
               {j.vin && ident !== j.vin && (
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-2">VIN: {j.vin}</span>
+                <div className="mt-2"><VinPlateBadge vin={j.vin} /></div>
               )}
             </div>
           )}
