@@ -6,6 +6,7 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
   const [devices, setDevices] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [landscapeAngle, setLandscapeAngle] = useState(0);
+  const [digitalZoom, setDigitalZoom] = useState(1);
   const videoRef = useRef(null);
 
   const startCamera = async (deviceId = null, isFirst = false) => {
@@ -25,16 +26,9 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
        }
        setStream(newStream);
     } catch (error) {
-       console.warn("Error de hardware, usando respaldo:", error);
-       // Si falla, abrimos el input nativo del celular como respaldo
+       console.warn("Error de hardware:", error);
        if (isFirst) {
-           const input = document.createElement('input');
-           input.type = 'file'; input.accept = 'image/*'; input.capture = 'environment';
-           input.onchange = (e) => { 
-               if (e.target.files[0]) onCapture(e.target.files[0]); 
-               onClose(); 
-           };
-           input.click();
+           alert("No se pudo iniciar la cámara. Verifica que los permisos estén habilitados.");
            onClose();
        }
     }
@@ -99,16 +93,21 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
     
     const needsRotation = (landscapeAngle !== 0) && (video.videoHeight > video.videoWidth);
 
+    const sx = (video.videoWidth - (video.videoWidth / digitalZoom)) / 2;
+    const sy = (video.videoHeight - (video.videoHeight / digitalZoom)) / 2;
+    const sWidth = video.videoWidth / digitalZoom;
+    const sHeight = video.videoHeight / digitalZoom;
+
     if (needsRotation) {
-      canvas.width = video.videoHeight;
-      canvas.height = video.videoWidth;
+      canvas.width = sHeight;
+      canvas.height = sWidth;
       ctx.translate(canvas.width / 2, canvas.height / 2);
       ctx.rotate(-landscapeAngle * Math.PI / 180); 
-      ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2);
+      ctx.drawImage(video, sx, sy, sWidth, sHeight, -sWidth / 2, -sHeight / 2, sWidth, sHeight);
     } else {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.width = sWidth;
+      canvas.height = sHeight;
+      ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
     }
 
     canvas.toBlob((blob) => {
@@ -130,7 +129,7 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
       </div>
       
       <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
-         <video ref={videoRef} playsInline autoPlay className="w-full h-full object-cover" />
+         <video ref={videoRef} playsInline autoPlay className="w-full h-full object-cover transition-transform duration-300" style={{ transform: `scale(${digitalZoom})` }} />
          <div className="absolute inset-0 pointer-events-none border-[40px] border-black/40 flex items-center justify-center">
            <div className={`w-full h-full border-2 border-dashed rounded-xl transition-all duration-500 ${landscapeAngle !== 0 ? 'border-green-400 bg-green-500/10 shadow-[0_0_50px_rgba(34,197,94,0.3)_inset]' : 'border-white/50'}`}></div>
          </div>
@@ -147,34 +146,15 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
            </div>
          )}
          
-         {devices.length > 1 && (
-           <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex bg-black/60 backdrop-blur-md p-1 rounded-full border border-white/20 z-20 shadow-xl">
-             <button 
-               onClick={() => setLens(0)} 
-               className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${currentIndex === 0 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>
-               0.5x
+         <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex bg-black/60 backdrop-blur-md p-1 rounded-full border border-white/20 z-20 shadow-xl">
+           {devices.length > 1 && (
+             <button onClick={() => setLens((currentIndex + 1) % devices.length)} className="px-3 h-10 rounded-full text-xs font-black text-slate-300 hover:text-white border-r border-white/20 mr-1">
+               LENTE {currentIndex + 1}
              </button>
-             <button 
-               onClick={() => setLens(1)} 
-               className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${currentIndex === 1 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>
-               1x
-             </button>
-             {devices.length > 2 && (
-             <button 
-               onClick={() => setLens(2)} 
-               className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${currentIndex === 2 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>
-               2x
-             </button>
-             )}
-             {devices.length > 3 && (
-             <button 
-               onClick={() => setLens(3)} 
-               className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${currentIndex === 3 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>
-               3x
-             </button>
-             )}
-           </div>
-         )}
+           )}
+           <button onClick={() => setDigitalZoom(1)} className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${digitalZoom === 1 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>1x</button>
+           <button onClick={() => setDigitalZoom(2)} className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${digitalZoom === 2 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>2x</button>
+         </div>
       </div>
       
       <div className="bg-slate-900 pb-8 pt-5 px-6 flex flex-col gap-4 z-10 rounded-t-3xl shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
