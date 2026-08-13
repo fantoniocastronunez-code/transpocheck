@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { updateDoc, doc, addDoc, collection, getDocs, query, where } from 'firebase/firestore';
-import { X, User, CheckCircle, Plus, AlertCircle, FileText, Loader2 } from 'lucide-react';
+import { X, User, CheckCircle, Plus, AlertCircle, FileText, Loader2, Camera } from 'lucide-react';
 import CustomClientSelector from '../ui/CustomClientSelector';
 import Tesseract from 'tesseract.js';
 import * as pdfjsLib from 'pdfjs-dist';
