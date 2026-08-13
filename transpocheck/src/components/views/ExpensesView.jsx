@@ -99,6 +99,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
   const [editingExpense, setEditingExpense] = useState(null);
   const [adminTxType, setAdminTxType] = useState('assignment'); 
   const [selectedJobId, setSelectedJobId] = useState(''); // <-- NUEVO ESTADO PARA LA TARJETA DE TRABAJO 
+  const [expenseReceipt, setExpenseReceipt] = useState(null); // <-- NUEVO ESTADO PARA LA BOLETA DE GASTO
 
   // NUEVO: Pestañas rápidas y Peajes para Gastos
   const [expenseCategory, setExpenseCategory] = useState('combustible'); // 'combustible', 'peaje', 'otro'
@@ -123,7 +124,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
      return () => clearTimeout(timer);
   }, []);
 
-  const addExp = async (e, type, amount, detail, driverId, dName, dEmail) => {
+  const addExp = async (e, type, amount, detail, driverId, dName, dEmail, receiptImage = null) => {
     e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
@@ -132,6 +133,10 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
     if (!isAdminView && type === 'expense' && amount > currentBalance) {
         setIsSubmitting(false);
         return showAlert(`Saldo insuficiente. Tienes ${formatMoney(currentBalance)}. Solicita asignación de dinero al administrador para rendir este monto.`);
+    }
+    if (!isAdminView && type === 'expense' && !receiptImage) {
+        setIsSubmitting(false);
+        return showAlert(`Debes adjuntar la foto de la boleta o comprobante del gasto.`);
     }
     
     const assocJobId = e.target.jobId?.value || '';
@@ -154,7 +159,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
     try {
       // 8. INTERFAZ OPTIMISTA: Quitamos los 'await' para que Firebase lo resuelva en segundo plano
       updateDoc(doc(db, 'drivers', driverId), { balance: newBalance });
-      addDoc(collection(db, 'expenses'), { driverId, driverEmail: dEmail, driverName: dName, type, amount, detail: detailString, jobId: assocJobId, deductedAmount, createdAt: Date.now() });
+      addDoc(collection(db, 'expenses'), { driverId, driverEmail: dEmail, driverName: dName, type, amount, detail: detailString, jobId: assocJobId, deductedAmount, receiptImage, createdAt: Date.now() });
       
       // --- NUEVO: NOTIFICACIÓN POR CORREO AL CONDUCTOR ---
       const targetDriver = drivers.find(d => d.id === driverId);
@@ -178,13 +183,14 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
       // ---------------------------------------------------
 
       e.target.reset(); 
+      if (!isAdminView) setExpenseReceipt(null);
       showAlert(type === 'assignment' ? "Fondo asignado correctamente." : "Gasto registrado exitosamente.");
     } catch (err) { console.error(err); }
     finally { setTimeout(() => setIsSubmitting(false), 300); }
   };
 
   const [isSubmittingReturn, setIsSubmittingReturn] = useState(false);
-  const [cameraConfig, setCameraConfig] = useState({ isOpen: false, title: '' }); // <-- NUEVO ESTADO PARA LA CÁMARA
+  const [cameraConfig, setCameraConfig] = useState({ isOpen: false, title: '', target: '' }); // <-- NUEVO ESTADO PARA LA CÁMARA
 
   const submitReturn = async () => {
     if (returnMethod === 'transferencia' && !returnReceipt) return showAlert("Sube la foto de la transferencia.");
@@ -541,7 +547,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
             {returnMethod === 'transferencia' ? (
               <button 
                 type="button"
-                onClick={() => setCameraConfig({ isOpen: true, title: 'Comprobante de Transferencia' })}
+                onClick={() => setCameraConfig({ isOpen: true, title: 'Comprobante de Transferencia', target: 'return' })}
                 className={`block w-full border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-colors relative overflow-hidden ${returnReceipt ? 'border-green-400 bg-green-50' : 'border-slate-300 hover:bg-slate-50'}`}
               >
                 {returnReceipt ? (
@@ -586,7 +592,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
              const tollName = e.target.tollSelect ? e.target.tollSelect.value : 'Manual';
              detailValue = `Peaje: ${tollName} [${vType}] ${rawDetail ? `(${rawDetail})` : ''}`;
           }
-          addExp(e,'expense',Number(e.target.amount.value), detailValue, myDriver.id, myDriver.name, myDriver.email);
+          addExp(e,'expense',Number(e.target.amount.value), detailValue, myDriver.id, myDriver.name, myDriver.email, expenseReceipt);
         }} className="space-y-4">
           
           {expenseCategory === 'peaje' && tollsList.length > 0 && (
@@ -649,6 +655,27 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
             </div>
           </div>
 
+          <button 
+            type="button"
+            onClick={() => setCameraConfig({ isOpen: true, title: 'Foto de Boleta / Comprobante', target: 'expense' })}
+            className={`block w-full border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-colors relative overflow-hidden mt-4 ${expenseReceipt ? 'border-green-400 bg-green-50' : 'border-slate-300 hover:bg-slate-50'}`}
+          >
+            {expenseReceipt ? (
+               <div className="flex items-center gap-3 pl-2">
+                 <img src={expenseReceipt} className="h-12 w-12 object-cover rounded-lg shadow-sm border border-green-200" alt="preview"/>
+                 <div className="text-left">
+                   <p className="text-sm font-extrabold text-green-700">Comprobante Adjunto</p>
+                   <p className="text-xs font-bold text-slate-500 underline">Tocar para cambiar</p>
+                 </div>
+               </div>
+            ) : (
+               <div className="flex flex-col items-center justify-center gap-2 py-1">
+                 <Camera className="w-6 h-6 text-slate-400"/>
+                 <p className="text-sm font-extrabold text-slate-600">Adjuntar Boleta o Comprobante</p>
+               </div>
+            )}
+          </button>
+
           <button type="submit" disabled={myBalance <= 0 || hasPendingReturn || isSubmitting} className={`w-full py-4 rounded-xl font-extrabold text-sm transition-all mt-2 ${myBalance > 0 && !hasPendingReturn && !isSubmitting ? 'bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>{isSubmitting ? 'Procesando...' : 'Descontar Gasto de mi Saldo'}</button>
         </form>
       </div>
@@ -697,11 +724,12 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
       <InAppCamera 
         isOpen={cameraConfig.isOpen} 
         title={cameraConfig.title}
-        onClose={() => setCameraConfig({ isOpen: false, title: '' })}
+        onClose={() => setCameraConfig({ isOpen: false, title: '', target: '' })}
         onCapture={async (f) => {
            try {
              const dataUrl = await resizeImage(f, 500, 0.4); 
-             setReturnReceipt(dataUrl);
+             if (cameraConfig.target === 'return') setReturnReceipt(dataUrl);
+             else if (cameraConfig.target === 'expense') setExpenseReceipt(dataUrl);
            } catch(e) {
              showAlert("Error procesando foto");
            }
