@@ -64,6 +64,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [replaceSearchTerm, setReplaceSearchTerm] = useState('');
   const [replaceNewTerm, setReplaceNewTerm] = useState('');
 
+  const [showKovacsModal, setShowKovacsModal] = useState(false);
+  const [kovacsStartDate, setKovacsStartDate] = useState('');
+  const [kovacsEndDate, setKovacsEndDate] = useState('');
+
   const [guideUploadJob, setGuideUploadJob] = useState(null);
   const [guideLink, setGuideLink] = useState('');
   const [guideFileBase64, setGuideFileBase64] = useState(null);
@@ -1930,9 +1934,24 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
   // NUEVO: Descarga Facturación Kovacs (Actas sin foto + Guías de Despacho)
   const handleKovacsZIP = async () => {
-    const kovacsJobs = historyJobs.filter(j => j.checklist && (j.client || '').toLowerCase().includes('kovac'));
-    if (kovacsJobs.length === 0) return showAlert("No hay traslados de Kovacs finalizados en el filtro actual.");
+    if (!kovacsStartDate || !kovacsEndDate) return showAlert("⚠️ Debes seleccionar una fecha de inicio y fin.");
+    
+    const startObj = new Date(kovacsStartDate + "T00:00:00");
+    const endObj = new Date(kovacsEndDate + "T23:59:59");
+    const startTime = startObj.getTime();
+    const endTime = endObj.getTime();
 
+    const kovacsJobs = jobs.filter(j => {
+       if (j.status !== 'completed' || !j.checklist || !(j.client || '').toLowerCase().includes('kovac')) return false;
+       let jobTime = j.completedAt;
+       if (!jobTime && j.createdAt) jobTime = typeof j.createdAt.toMillis === 'function' ? j.createdAt.toMillis() : j.createdAt;
+       if (typeof jobTime !== 'number') return false;
+       return jobTime >= startTime && jobTime <= endTime;
+    });
+
+    if (kovacsJobs.length === 0) return showAlert("No hay traslados de Kovacs finalizados en el rango seleccionado.");
+    
+    setShowKovacsModal(false);
     showAlert(`⏳ Facturación Kovacs: Procesando ${kovacsJobs.length} traslados...`);
     try {
         const JSZip = await new Promise((resolve) => {
@@ -2111,7 +2130,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                    <button type="button" onClick={handleDownloadAllZIP} className="group bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 transition-colors">
                      <FileDown className="w-5 h-5"/> ZIP
                    </button>
-                   <button type="button" onClick={handleKovacsZIP} className="group bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 shadow-md transition-colors">
+                   <button type="button" onClick={() => setShowKovacsModal(true)} className="group bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 shadow-md transition-colors">
                      <FileText className="w-5 h-5"/> Facturación Kovacs
                    </button>
                  </>
@@ -3631,6 +3650,37 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
            }
         }}
       />
+
+      {/* --- MODAL KOVACS DATE PICKER --- */}
+      {showKovacsModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl relative border-4 border-orange-100">
+             <button onClick={() => setShowKovacsModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 bg-slate-100 p-2 rounded-full transition-colors"><X className="w-5 h-5"/></button>
+             
+             <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center mb-4">
+               <FileText className="w-6 h-6 text-orange-600"/>
+             </div>
+             
+             <h2 className="text-xl font-black text-slate-800 mb-1">Facturación Kovacs</h2>
+             <p className="text-xs font-bold text-slate-500 mb-6">Selecciona el rango de fechas de los traslados que deseas exportar en ZIP.</p>
+
+             <div className="space-y-4 mb-6">
+                <div>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-1 block">Desde (Fecha de Término)</label>
+                  <input type="date" value={kovacsStartDate} onChange={e=>setKovacsStartDate(e.target.value)} className="w-full border-2 border-slate-200 bg-slate-50 p-3 rounded-xl font-bold text-slate-700 outline-none focus:border-orange-400 focus:ring-4 ring-orange-400/20 transition-all"/>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-1 block">Hasta (Fecha de Término)</label>
+                  <input type="date" value={kovacsEndDate} onChange={e=>setKovacsEndDate(e.target.value)} className="w-full border-2 border-slate-200 bg-slate-50 p-3 rounded-xl font-bold text-slate-700 outline-none focus:border-orange-400 focus:ring-4 ring-orange-400/20 transition-all"/>
+                </div>
+             </div>
+
+             <button onClick={handleKovacsZIP} className="w-full py-4 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-black text-sm shadow-md transition-colors flex items-center justify-center gap-2">
+                <FileDown className="w-5 h-5"/> Generar y Descargar ZIP
+             </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );

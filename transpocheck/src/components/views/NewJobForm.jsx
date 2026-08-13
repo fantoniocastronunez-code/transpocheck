@@ -314,7 +314,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
       showAlert(`❌ Hubo un error procesando el archivo: ${err.message || 'Intente nuevamente'}`);
     } finally {
       setIsOcrProcessing(false);
-      e.target.value = null; // Limpiar el input
+      if (fileOrEvent && fileOrEvent.target) fileOrEvent.target.value = null; // Limpiar el input
     }
   };
 
