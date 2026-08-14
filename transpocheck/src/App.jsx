@@ -51,7 +51,7 @@ const JobsList = lazyWithRetry(() => import('./components/views/JobsList'));
 const ChecklistForm = lazyWithRetry(() => import('./components/views/ChecklistForm'));
 const VehicleHistoryView = lazyWithRetry(() => import('./components/views/VehicleHistoryView'));
 const StatsView = lazyWithRetry(() => import('./components/views/StatsView'));
-const QuotesView = lazyWithRetry(() => import('./components/views/QuotesView')); // <-- NUEVO MÓDULO DE COTIZACIONES
+// QuotesView ha sido removido.
 
 // EL NUEVO MOTOR (Hook)
 import { auth, db, googleProvider, uploadImageToStorage, useFirebase } from './hooks/useFirebase';
@@ -890,7 +890,14 @@ function LogisticApp() {
 
             {mainTab === 'ranking' && <LeaderboardView jobs={jobs} drivers={drivers} isAdminView={activeRole === 'admin'} db={db} />}
             {mainTab === 'expenses' && <ExpensesView role={activeRole} drivers={drivers} jobs={jobs} expenses={expenses} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />}
-            {mainTab === 'quotes' && <QuotesView db={db} customClients={customClients} vehicles={vehicles} directoryList={directoryList} showAlert={showAlert} showConfirm={showConfirm} drivers={drivers} currentUserEmail={currentUserEmail} />}
+            {mainTab === 'quotes' && (
+               <main className="max-w-2xl mx-auto p-4 pt-20 sm:pt-24 pb-32 animate-in fade-in duration-300">
+                  <div className="bg-purple-600 text-white p-8 rounded-3xl shadow-lg text-center">
+                     <h2 className="text-3xl font-black mb-2">Próximamente</h2>
+                     <p className="text-purple-200 font-bold">Esta sección será reemplazada por una nueva e increíble funcionalidad.</p>
+                  </div>
+               </main>
+            )}
             
             {mainTab === 'inbox' && (
                <main className="max-w-2xl mx-auto p-4 pt-20 sm:pt-24 pb-32 animate-in fade-in duration-300">
@@ -1037,14 +1044,14 @@ function LogisticApp() {
               {activeRole === 'quoter' ? (
                 <button onClick={() => setMainTab('quotes')} className="flex flex-col items-center text-purple-600 dark:text-purple-400 transition-colors flex-1">
                    <div className="bg-purple-100 dark:bg-purple-900/40 p-2 rounded-xl mb-1"><Receipt className="w-5 h-5"/></div>
-                   <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Panel Comercial</span>
+                   <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Nuevo Módulo</span>
                 </button>
               ) : (
                 <>
                   {activeRole === 'admin' ? (
                     <button onClick={() => setMainTab('quotes')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='quotes' ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:text-purple-400 dark:hover:text-purple-400'}`}>
                        <div className={`${mainTab==='quotes' ? 'bg-purple-100 dark:bg-purple-900/40' : 'bg-slate-100 dark:bg-slate-800'} p-2 rounded-xl mb-1`}><Receipt className="w-5 h-5"/></div>
-                       <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Cotizar</span>
+                       <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Nuevo Módulo</span>
                     </button>
                   ) : (
                     <button onClick={() => setShowRequestJob('traslado')} className="flex flex-col items-center text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-400 transition-colors flex-1">
