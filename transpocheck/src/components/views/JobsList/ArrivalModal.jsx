@@ -1,17 +1,20 @@
 import React from 'react';
-import { X, Key, CheckCircle, Clock } from 'lucide-react';
+import { X, Key, CheckCircle, Clock, Camera, Trash2 } from 'lucide-react';
 
 export default function ArrivalModal({
   arrivalPromptJob,
   setArrivalPromptJob,
   arrivalMileage,
   setArrivalMileage,
+  arrivalPhoto,
+  setArrivalPhoto,
   arrivalKeyLocation,
   setArrivalKeyLocation,
   arrivalKeyHandedTo,
   setArrivalKeyHandedTo,
   processingId,
-  submitArrival
+  submitArrival,
+  openCamera
 }) {
   if (!arrivalPromptJob) return null;
 
@@ -30,7 +33,28 @@ export default function ArrivalModal({
           <div className="space-y-4 mb-6">
             <div>
               <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-slate-400">Kilometraje de Término</label>
-              <input type="number" value={arrivalMileage} onChange={e=>setArrivalMileage(e.target.value)} placeholder="Ej: 45250" className="w-full border-2 bg-slate-50 p-3 rounded-xl font-bold text-slate-700 outline-none mt-1 shadow-sm border-slate-200 focus:border-purple-400"/>
+              <div className="flex items-center gap-2 mt-1">
+                <input type="number" value={arrivalMileage} onChange={e=>setArrivalMileage(e.target.value)} placeholder="Ej: 45250" className="flex-1 border-2 bg-slate-50 p-3 rounded-xl font-bold text-slate-700 outline-none shadow-sm border-slate-200 focus:border-purple-400"/>
+                <button 
+                  type="button" 
+                  onClick={() => openCamera('Foto del Odómetro', 'arrivalPhoto')}
+                  className={`h-[48px] px-4 rounded-xl font-black flex items-center justify-center gap-2 transition-all shrink-0 ${arrivalPhoto ? 'bg-green-100 text-green-700 border-2 border-green-400 shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200 border-2 border-slate-200'}`}
+                >
+                  {arrivalPhoto ? <><CheckCircle className="w-5 h-5" /> Foto</> : <><Camera className="w-5 h-5" /> Foto</>}
+                </button>
+              </div>
+              {arrivalPhoto && (
+                <div className="mt-2 relative animate-in fade-in slide-in-from-top-2">
+                  <img src={arrivalPhoto} alt="Odómetro" className="w-full h-28 object-cover rounded-xl border-2 border-green-300 shadow-sm" />
+                  <button 
+                    type="button" 
+                    onClick={() => setArrivalPhoto(null)}
+                    className="absolute top-1.5 right-1.5 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full shadow-md transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
             </div>
             
             <div>

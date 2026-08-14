@@ -2506,12 +2506,15 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         setArrivalPromptJob={setArrivalPromptJob}
         arrivalMileage={arrivalMileage}
         setArrivalMileage={setArrivalMileage}
+        arrivalPhoto={arrivalPhoto}
+        setArrivalPhoto={setArrivalPhoto}
         arrivalKeyLocation={arrivalKeyLocation}
         setArrivalKeyLocation={setArrivalKeyLocation}
         arrivalKeyHandedTo={arrivalKeyHandedTo}
         setArrivalKeyHandedTo={setArrivalKeyHandedTo}
         processingId={processingId}
         submitArrival={submitArrival}
+        openCamera={(title, target) => setCameraConfig({ isOpen: true, title, target })}
       />
 
       {/* --- CÁMARA INTERNA NATIVA --- */}
