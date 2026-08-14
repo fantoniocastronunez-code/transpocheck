@@ -38,8 +38,6 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
           setDevices(backCameras);
           
           let activeIdx = 0;
-          let isApple = /iPhone|iPad|iPod|Mac/i.test(navigator.userAgent);
-
           if (newStream.getVideoTracks().length > 0) {
              const trackLabel = newStream.getVideoTracks()[0].label;
              const foundIdx = backCameras.findIndex(d => d.label === trackLabel);
@@ -47,8 +45,8 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
           }
           setCurrentIndex(activeIdx);
           
-          // 🔥 EL FIX: iOS arranca en lente 0 (que suele ser 0.5x). Android arranca en 0 (que es 1x).
-          if (isApple && activeIdx === 0 && backCameras.length > 1) {
+          // Si el celular arranca en la cámara 0 y hay más de una, asumimos que es la 0.5x para mantener la coherencia
+          if (activeIdx === 0 && backCameras.length > 1) {
              setActiveZoomLabel(0.5); 
           } else {
              setActiveZoomLabel(1); 
@@ -126,26 +124,24 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
     const findByKeyword = (keywords) => devices.find(d => keywords.some(k => d.label.toLowerCase().includes(k)));
     let targetDevice = null;
     let fallbackDigitalZoom = 1;
-    let isApple = /iPhone|iPad|iPod|Mac/i.test(navigator.userAgent);
 
     if (level === 0.5) {
        targetDevice = findByKeyword(['ultra', 'gran angular', '0.5', '0,5']);
-       // En Android, si no hay etiqueta, la ultra a veces es la [1]. En iOS es la [0].
-       if (!targetDevice) targetDevice = isApple ? devices[0] : (devices.length > 1 ? devices[1] : devices[0]);
+       if (!targetDevice) targetDevice = devices[0];
        fallbackDigitalZoom = 1;
     } else if (level === 2) {
        targetDevice = findByKeyword(['tele', 'telephoto', 'zoom', '2x', 'teleobjetivo']);
        if (!targetDevice) {
-           targetDevice = devices[0]; // Volvemos a la principal
-           fallbackDigitalZoom = 2; // Usamos zoom digital x2
+           targetDevice = devices.length > 1 ? devices[1] : devices[0];
+           fallbackDigitalZoom = 2; 
        } else {
            fallbackDigitalZoom = 1;
        }
-    } else { // level === 1
+    } else {
        targetDevice = findByKeyword(['main', 'principal', 'estandar', 'standard']);
        if (!targetDevice) {
-           // Si no hay etiquetas claras: En iOS la principal suele ser la [1], en Android suele ser la [0].
-           targetDevice = devices.find(d => !d.label.toLowerCase().includes('ultra') && !d.label.toLowerCase().includes('tele') && !d.label.toLowerCase().includes('angular')) || (isApple && devices.length > 1 ? devices[1] : devices[0]);
+           // Filtro universal: si no hay etiquetas claras, la cámara principal suele ser la 1 (si hay múltiples lentes)
+           targetDevice = devices.find(d => !d.label.toLowerCase().includes('ultra') && !d.label.toLowerCase().includes('tele') && !d.label.toLowerCase().includes('angular')) || (devices.length > 1 ? devices[1] : devices[0]);
        }
        fallbackDigitalZoom = 1;
     }
