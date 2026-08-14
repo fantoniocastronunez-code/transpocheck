@@ -749,7 +749,7 @@ function LogisticApp() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">LogisticAPP v.3.2.0</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">LogisticAPP v.3.2.1</p>
                 </div>
               </div>
             )}
@@ -838,14 +838,14 @@ function LogisticApp() {
               <main className="max-w-5xl mx-auto p-4 pt-20 sm:pt-24">
                 {activeRole === 'admin' ? (
                   <>
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-6 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
-                    <button onClick={() => {setAdminTab('dashboard'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='dashboard'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><ClipboardList className="w-4 h-4 sm:w-5 sm:h-5"/> Monitor</button>
-                    <button onClick={() => {setAdminTab('newJob'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='newJob'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Plus className="w-4 h-4 sm:w-5 sm:h-5"/> Crear</button>
-                    <button onClick={() => setAdminTab('stats')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='stats'?'bg-amber-100 text-amber-700 shadow-sm':'text-slate-500 hover:bg-slate-50'}`}><Activity className="w-4 h-4 sm:w-5 sm:h-5"/> Estadísticas</button>
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-6 bg-white dark:bg-slate-900/50 p-2 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
+                    <button onClick={() => {setAdminTab('dashboard'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='dashboard'?'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}><ClipboardList className="w-4 h-4 sm:w-5 sm:h-5"/> Monitor</button>
+                    <button onClick={() => {setAdminTab('newJob'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='newJob'?'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}><Plus className="w-4 h-4 sm:w-5 sm:h-5"/> Crear</button>
+                    <button onClick={() => setAdminTab('stats')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='stats'?'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 shadow-sm':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}><Activity className="w-4 h-4 sm:w-5 sm:h-5"/> Estadísticas</button>
                     {isSuperAdmin && (
-                      <button onClick={() => setAdminTab('config')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='config'?'bg-blue-100 text-blue-700':'text-slate-500 hover:bg-slate-50'}`}><Truck className="w-4 h-4 sm:w-5 sm:h-5"/> Config</button>
+                      <button onClick={() => setAdminTab('config')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='config'?'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}><Truck className="w-4 h-4 sm:w-5 sm:h-5"/> Config</button>
                     )}
-                    <button onClick={() => setAdminTab('history')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='history'?'bg-slate-800 text-white shadow-md':'text-slate-500 hover:bg-slate-50'}`}><ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5"/> Peritaje</button>
+                    <button onClick={() => setAdminTab('history')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='history'?'bg-slate-800 dark:bg-slate-700 text-white shadow-md':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}><ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5"/> Peritaje</button>
                   </div>
                     
                     {adminTab === 'dashboard' && (
@@ -1033,7 +1033,7 @@ function LogisticApp() {
                </main>
             )}
 
-            <nav className="fixed bottom-0 w-full bg-white border-t border-slate-200 flex justify-around items-center pt-2 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+            <nav className="fixed bottom-0 w-full bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex justify-around items-center pt-2 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
               {activeRole === 'quoter' ? (
                 <button onClick={() => setMainTab('quotes')} className="flex flex-col items-center text-purple-600 transition-colors flex-1">
                    <div className="bg-purple-100 p-2 rounded-xl mb-1"><Receipt className="w-5 h-5"/></div>
@@ -1042,26 +1042,26 @@ function LogisticApp() {
               ) : (
                 <>
                   {activeRole === 'admin' ? (
-                    <button onClick={() => setMainTab('quotes')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='quotes' ? 'text-purple-600' : 'text-slate-400 hover:text-purple-600'}`}>
-                       <div className={`${mainTab==='quotes' ? 'bg-purple-100' : 'bg-slate-100'} p-2 rounded-xl mb-1`}><Receipt className="w-5 h-5"/></div>
+                    <button onClick={() => setMainTab('quotes')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='quotes' ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400 dark:text-slate-500 hover:text-purple-600 dark:hover:text-purple-400'}`}>
+                       <div className={`${mainTab==='quotes' ? 'bg-purple-100 dark:bg-purple-900/40' : 'bg-slate-100 dark:bg-slate-800'} p-2 rounded-xl mb-1`}><Receipt className="w-5 h-5"/></div>
                        <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Cotizar</span>
                     </button>
                   ) : (
-                    <button onClick={() => setShowRequestJob('traslado')} className="flex flex-col items-center text-slate-400 hover:text-blue-600 transition-colors flex-1">
-                       <div className="bg-slate-100 p-2 rounded-xl mb-1"><Plus className="w-5 h-5"/></div>
+                    <button onClick={() => setShowRequestJob('traslado')} className="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-1">
+                       <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded-xl mb-1"><Plus className="w-5 h-5"/></div>
                        <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Solicitar</span>
                     </button>
                   )}
-                  <button onClick={() => setMainTab('jobs')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='jobs' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}>
-                     <div className={`${mainTab==='jobs' ? 'bg-blue-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><ClipboardList className="w-5 h-5"/></div>
+                  <button onClick={() => setMainTab('jobs')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='jobs' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400'}`}>
+                     <div className={`${mainTab==='jobs' ? 'bg-blue-100 dark:bg-blue-900/40' : 'bg-transparent'} p-2 rounded-xl mb-1`}><ClipboardList className="w-5 h-5"/></div>
                      <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Trabajos</span>
                   </button>
-                  <button onClick={() => setMainTab('ranking')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='ranking' ? 'text-yellow-600' : 'text-slate-400 hover:text-yellow-600'}`}>
-                     <div className={`${mainTab==='ranking' ? 'bg-yellow-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Trophy className="w-5 h-5"/></div>
+                  <button onClick={() => setMainTab('ranking')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='ranking' ? 'text-yellow-600 dark:text-yellow-500' : 'text-slate-400 dark:text-slate-500 hover:text-yellow-600 dark:hover:text-yellow-500'}`}>
+                     <div className={`${mainTab==='ranking' ? 'bg-yellow-100 dark:bg-yellow-900/40' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Trophy className="w-5 h-5"/></div>
                      <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Ranking</span>
                   </button>
-                  <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='expenses' ? 'text-blue-600' : 'text-slate-400 hover:text-blue-600'}`}>
-                     <div className={`${mainTab==='expenses' ? 'bg-blue-100' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Wallet className="w-5 h-5"/></div>
+                  <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='expenses' ? 'text-emerald-600 dark:text-emerald-500' : 'text-slate-400 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-500'}`}>
+                     <div className={`${mainTab==='expenses' ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Wallet className="w-5 h-5"/></div>
                      <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Gastos</span>
                   </button>
                 </>

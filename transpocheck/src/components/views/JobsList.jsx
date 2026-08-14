@@ -1360,15 +1360,15 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       <div className="flex flex-col sm:flex-row gap-3 mb-6 relative z-10">
         <div className="relative flex-1">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Search className="w-5 h-5 text-slate-400" /></div>
-          <input type="text" placeholder="Buscar patente, marca, cliente, origen o destino..." autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="none" className="w-full pl-11 pr-4 py-3.5 bg-white border-2 border-slate-200 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 transition-colors" value={localSearchTerm} onChange={(e) => setLocalSearchTerm(e.target.value)} />
+          <input type="text" placeholder="Buscar patente, marca, cliente, origen o destino..." autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="none" className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-blue-500 transition-colors" value={localSearchTerm} onChange={(e) => setLocalSearchTerm(e.target.value)} />
         </div>
         <div className="flex gap-2 shrink-0 overflow-x-auto pb-1 sm:pb-0 scrollbar-none items-center">
           {isAdminView && (
-            <label className="flex items-center gap-2 cursor-pointer bg-white px-4 py-3.5 rounded-2xl border-2 border-slate-200 shadow-sm hover:bg-slate-50 transition-colors shrink-0">
-              <span className={`text-xs font-black uppercase tracking-widest ${auditMode ? 'text-purple-600' : 'text-slate-400'}`}>Modo Auditoría</span>
+            <label className="flex items-center gap-2 cursor-pointer bg-white dark:bg-slate-900 px-4 py-3.5 rounded-2xl border-2 border-slate-200 dark:border-slate-800 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shrink-0">
+              <span className={`text-xs font-black uppercase tracking-widest ${auditMode ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400 dark:text-slate-500'}`}>Modo Auditoría</span>
               <div className="relative flex items-center">
                 <input type="checkbox" className="sr-only" checked={auditMode} onChange={() => setAuditMode(!auditMode)} />
-                <div className={`block w-8 h-4 rounded-full transition-colors ${auditMode ? 'bg-purple-500' : 'bg-slate-300'}`}></div>
+                <div className={`block w-8 h-4 rounded-full transition-colors ${auditMode ? 'bg-purple-500' : 'bg-slate-300 dark:bg-slate-700'}`}></div>
                 <div className={`absolute left-0.5 top-0.5 bg-white w-3 h-3 rounded-full transition-transform ${auditMode ? 'transform translate-x-4' : ''}`}></div>
               </div>
             </label>
