@@ -876,7 +876,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
             </div>
 
             <div className="space-y-1">
-               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1"><MapPin className="w-3 h-3 text-blue-500"/> Plus Code de Google Maps (Prioridad GPS)</label>
+               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex flex-wrap items-center gap-1"><MapPin className="w-3 h-3 text-blue-500 shrink-0"/> Plus Code de Google Maps (Prioridad GPS)</label>
                <input name="plusCode" defaultValue={editingDir?.plusCode} placeholder="Ej: 8MP3+VX Santiago" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold bg-blue-50 dark:bg-blue-900/30"/>
             </div>
 
@@ -1086,17 +1086,17 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
               setNewEquipmentItem('');
               showAlert("✅ Ítem agregado a la lista de equipamiento.");
             } catch (err) { showAlert("❌ Error al guardar."); }
-          }} className="flex gap-2 mb-6">
-            <input type="text" value={newEquipmentItem} onChange={(e) => setNewEquipmentItem(e.target.value)} placeholder="Ej: Gata, Chaleco, Botiquín..." autoComplete="off" autoCorrect="off" spellCheck="false" className="flex-1 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold outline-none focus:border-amber-500" />
-            <button type="submit" className="bg-amber-500 hover:bg-amber-600 text-white px-5 py-3 rounded-xl font-black shadow-sm transition-colors flex items-center gap-2">
+          }} className="flex flex-col sm:flex-row gap-2 mb-6">
+            <input type="text" value={newEquipmentItem} onChange={(e) => setNewEquipmentItem(e.target.value)} placeholder="Ej: Gata, Chaleco, Botiquín..." autoComplete="off" autoCorrect="off" spellCheck="false" className="flex-1 min-w-0 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold outline-none focus:border-amber-500" />
+            <button type="submit" className="bg-amber-500 hover:bg-amber-600 text-white px-5 py-3 rounded-xl font-black shadow-sm transition-colors flex items-center justify-center gap-2 shrink-0">
               <Plus className="w-5 h-5"/> Agregar
             </button>
           </form>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-1">
             {equipmentList.map((item, idx) => (
-              <div key={idx} className="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-3 rounded-xl shadow-sm">
-                <span className="text-sm font-extrabold text-slate-700 dark:text-slate-300">{item}</span>
+              <div key={idx} className="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-3 rounded-xl shadow-sm gap-2">
+                <span className="flex-1 min-w-0 text-sm font-extrabold text-slate-700 dark:text-slate-300 break-words">{item}</span>
                 <button type="button" onClick={() => showConfirm(`¿Eliminar "${item}" de la lista?`, async () => {
                   const newList = equipmentList.filter(i => i !== item);
                   try {
