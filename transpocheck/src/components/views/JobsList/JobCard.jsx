@@ -5,27 +5,7 @@ export default function JobCard({ j, ...props }) {
     
     const ident = getJobIdentifier(j);
 
-  const getRtFinalDestination = (job) => {
-    // 1. PRIORIDAD ABSOLUTA: Si el administrador editó la ruta con flechas, esta gana por sobre el checklist.
-    if (job.destination && job.destination.includes('->')) {
-      const parts = job.destination.split('->');
-      return parts[parts.length - 1].trim();
-    }
 
-    // 2. Si no hay ruta editada manual, tomamos la decisión del checklist
-    if (job.checklist?.rtReturnOption === 'other' && job.checklist?.rtReturnDestination) {
-      return job.checklist.rtReturnDestination;
-    }
-    if (job.checklist?.rtReturnOption === 'origin') {
-      return job.origin;
-    }
-    
-    // 3. Fallback final si no hay checklist cerrado ni flechas
-    if (job.destination && !job.destination.toLowerCase().includes('prt')) {
-      return job.destination.trim();
-    }
-    return job.origin || 'Por definir';
-  };
 
     // NUEVO: Motor de Alertas de Documentos por Vencer (30 días) o Vencidos
     let expiringDocs = [];
