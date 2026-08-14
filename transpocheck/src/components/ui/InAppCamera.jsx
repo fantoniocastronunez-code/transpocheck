@@ -25,7 +25,14 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
        
        if (isFirst) {
           const devs = await navigator.mediaDevices.enumerateDevices();
-          let backCameras = devs.filter(d => d.kind === 'videoinput' && (d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('trasera') || d.label.toLowerCase().includes('environment') || d.label.toLowerCase().includes('0')));
+          // iOS en español usa "posterior", Android usa "trasera" o "back". ¡Debemos atraparlos todos!
+          let backCameras = devs.filter(d => d.kind === 'videoinput' && (
+             d.label.toLowerCase().includes('back') || 
+             d.label.toLowerCase().includes('trasera') || 
+             d.label.toLowerCase().includes('posterior') || 
+             d.label.toLowerCase().includes('environment') || 
+             d.label.toLowerCase().includes('0')
+          ));
           if (backCameras.length === 0) backCameras = devs.filter(d => d.kind === 'videoinput');
           
           setDevices(backCameras);
@@ -114,27 +121,21 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
 
     if (level === 0.5) {
        targetDevice = findByKeyword(['ultra', 'gran angular', '0.5', '0,5']);
-       if (!targetDevice) {
-           targetDevice = devices[0];
-       }
+       if (!targetDevice) targetDevice = devices[0];
        fallbackDigitalZoom = 1;
     } else if (level === 2) {
-       targetDevice = findByKeyword(['tele', 'telephoto', 'zoom', '2x']);
+       targetDevice = findByKeyword(['tele', 'telephoto', 'zoom', '2x', 'teleobjetivo']);
        if (!targetDevice) {
-           if (devices.length > 2) {
-               targetDevice = devices[2];
-               fallbackDigitalZoom = 1;
-           } else {
-               targetDevice = devices.length > 1 ? devices[1] : devices[0];
-               fallbackDigitalZoom = 2;
-           }
+           targetDevice = devices.length > 1 ? devices[1] : devices[0];
+           fallbackDigitalZoom = 2; // Si no hay lente teleobjetivo físico, usamos zoom digital x2
        } else {
            fallbackDigitalZoom = 1;
        }
     } else {
        targetDevice = findByKeyword(['main', 'principal', 'estandar', 'standard']);
        if (!targetDevice) {
-           targetDevice = devices.length > 1 ? devices[1] : devices[0];
+           // Filtro ultra-robusto: La lente principal suele ser la que NO tiene etiquetas de ultra o teleobjetivo
+           targetDevice = devices.find(d => !d.label.toLowerCase().includes('ultra') && !d.label.toLowerCase().includes('tele') && !d.label.toLowerCase().includes('angular')) || devices[0];
        }
        fallbackDigitalZoom = 1;
     }
