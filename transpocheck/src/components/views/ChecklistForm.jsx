@@ -1763,6 +1763,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
       <InAppCamera
         isOpen={cameraConfig.isOpen}
         title={cameraConfig.title}
+        enableAnnotation={true}
         onClose={() => setCameraConfig(prev => ({ ...prev, isOpen: false }))}
         onCapture={cameraConfig.onCapture}
       />

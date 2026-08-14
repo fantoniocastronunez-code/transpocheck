@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, X, CheckCircle } from 'lucide-react';
+import { Camera, X, CheckCircle, RefreshCw, Edit3 } from 'lucide-react';
 
-export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
+export default function InAppCamera({ isOpen, onClose, onCapture, title, enableAnnotation = false }) {
   const [stream, setStream] = useState(null);
   const [devices, setDevices] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -9,6 +9,12 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
   const [digitalZoom, setDigitalZoom] = useState(1);
   const [activeZoomLabel, setActiveZoomLabel] = useState(1);
   const videoRef = useRef(null);
+
+  // States for Photo Annotation
+  const [previewImage, setPreviewImage] = useState(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [hasDrawing, setHasDrawing] = useState(false);
+  const canvasRef = useRef(null);
 
   const startCamera = async (deviceId = null, isFirst = false) => {
     if (stream && !isFirst) stream.getTracks().forEach(t => t.stop());
@@ -46,6 +52,9 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
   // Encender o apagar la cámara al abrir/cerrar el modal
   useEffect(() => {
     if (isOpen) {
+        setPreviewImage(null);
+        setHasDrawing(false);
+        setIsDrawing(false);
         startCamera(null, true);
     } else {
         if (stream) stream.getTracks().forEach(t => t.stop());
@@ -54,6 +63,9 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
         setCurrentIndex(0);
         setLandscapeAngle(0);
         setActiveZoomLabel(1);
+        setPreviewImage(null);
+        setHasDrawing(false);
+        setIsDrawing(false);
     }
     return () => {
         if (stream) stream.getTracks().forEach(t => t.stop());
@@ -161,6 +173,12 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
       ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
     }
 
+    if (enableAnnotation) {
+      setPreviewImage(canvas.toDataURL('image/jpeg', 0.95));
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      return;
+    }
+
     canvas.toBlob((blob) => {
       if (!blob) return;
       onCapture(new File([blob], "photo_capture.jpg", { type: "image/jpeg" }));
@@ -168,7 +186,154 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
     }, 'image/jpeg', 0.95);
   };
 
+  // --- ANNOTATION LOGIC ---
+  useEffect(() => {
+    if (previewImage && canvasRef.current) {
+       const canvas = canvasRef.current;
+       const ctx = canvas.getContext('2d');
+       const img = new Image();
+       img.onload = () => {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0, img.width, img.height);
+          setHasDrawing(false);
+       };
+       img.src = previewImage;
+    }
+  }, [previewImage]);
+
+  const handlePointerDown = (e) => {
+    if (!canvasRef.current) return;
+    setIsDrawing(true);
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = (clientX - rect.left) * scaleX;
+    const y = (clientY - rect.top) * scaleY;
+    
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+
+  const handlePointerMove = (e) => {
+    if (!isDrawing || !canvasRef.current) return;
+    if (e.touches && e.touches.length > 0) e.preventDefault(); // Evitar scroll
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = (clientX - rect.left) * scaleX;
+    const y = (clientY - rect.top) * scaleY;
+    
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = '#ef4444'; // Red-500
+    ctx.lineWidth = Math.max(4, canvas.width / 120); 
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+    setHasDrawing(true);
+  };
+
+  const handlePointerUp = () => {
+    if (isDrawing) {
+       setIsDrawing(false);
+       if (canvasRef.current) canvasRef.current.getContext('2d').closePath();
+    }
+  };
+  
+  const clearAnnotation = () => {
+    if (previewImage && canvasRef.current) {
+       const canvas = canvasRef.current;
+       const ctx = canvas.getContext('2d');
+       const img = new Image();
+       img.onload = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, img.width, img.height);
+          setHasDrawing(false);
+       };
+       img.src = previewImage;
+    }
+  };
+  
+  const confirmAnnotation = () => {
+     if (!canvasRef.current) return;
+     canvasRef.current.toBlob((blob) => {
+        if (!blob) return;
+        onCapture(new File([blob], "photo_capture_annotated.jpg", { type: "image/jpeg" }));
+        setPreviewImage(null);
+        onClose();
+     }, 'image/jpeg', 0.95);
+  };
+  
+  const retryPhoto = () => {
+     setPreviewImage(null);
+     setHasDrawing(false);
+     startCamera(null, false);
+  };
+  // -------------------------
+
   if (!isOpen) return null;
+
+  if (previewImage) {
+    return (
+      <div className="fixed inset-0 bg-black z-[99999] flex flex-col animate-in fade-in duration-200">
+        <div className="bg-black text-white p-4 flex justify-between items-center z-10 shadow-md border-b border-slate-800">
+          <h3 className="font-black text-sm uppercase tracking-widest flex items-center gap-2 truncate max-w-[50%]"><Edit3 className="w-5 h-5 text-red-400 shrink-0"/> Marcar Daños</h3>
+          <button onClick={onClose} className="bg-white/10 p-2 rounded-full text-white hover:bg-white/20 transition-colors"><X className="w-5 h-5"/></button>
+        </div>
+        
+        <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden touch-none">
+           {/* Hint text at top */}
+           <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md px-4 py-2 rounded-full text-white text-xs font-bold pointer-events-none z-20 border border-white/10">
+              Dibuja con tu dedo para marcar zonas
+           </div>
+
+           <canvas 
+             ref={canvasRef}
+             className="max-w-full max-h-full object-contain cursor-crosshair"
+             onMouseDown={handlePointerDown}
+             onMouseMove={handlePointerMove}
+             onMouseUp={handlePointerUp}
+             onMouseLeave={handlePointerUp}
+             onTouchStart={handlePointerDown}
+             onTouchMove={handlePointerMove}
+             onTouchEnd={handlePointerUp}
+             onTouchCancel={handlePointerUp}
+           />
+        </div>
+        
+        <div className="bg-slate-900 pb-8 pt-4 px-4 flex flex-col gap-3 z-10 rounded-t-3xl shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+           <div className="flex gap-3">
+             <button onClick={retryPhoto} className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3.5 rounded-2xl font-black text-sm flex justify-center items-center gap-2 border border-slate-700 active:scale-95 transition-all">
+                <RefreshCw className="w-4 h-4"/> Reintentar
+             </button>
+             {hasDrawing && (
+               <button onClick={clearAnnotation} className="flex-1 bg-red-900/40 hover:bg-red-900/60 text-red-300 py-3.5 rounded-2xl font-black text-sm flex justify-center items-center gap-2 border border-red-900/50 active:scale-95 transition-all">
+                  <X className="w-4 h-4"/> Borrar Trazo
+               </button>
+             )}
+           </div>
+           
+           <button onClick={confirmAnnotation} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-black text-lg flex justify-center items-center gap-3 shadow-[0_0_20px_rgba(37,99,235,0.4)] active:scale-95 transition-all mt-1">
+              <CheckCircle className="w-6 h-6"/> Confirmar y Guardar
+           </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black z-[99999] flex flex-col animate-in fade-in duration-200">
@@ -212,7 +377,18 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
          <label className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-3.5 rounded-xl font-bold text-sm flex justify-center items-center gap-2 cursor-pointer transition-colors border border-slate-700 active:scale-95">
             <input type="file" accept="image/*" className="hidden" onChange={(e) => {
                const f = e.target.files[0];
-               if (f) { onCapture(f); onClose(); }
+               if (f) { 
+                  if (enableAnnotation) {
+                     const reader = new FileReader();
+                     reader.onload = (ev) => {
+                        setPreviewImage(ev.target.result);
+                        if (stream) stream.getTracks().forEach(t => t.stop());
+                     };
+                     reader.readAsDataURL(f);
+                  } else {
+                     onCapture(f); onClose(); 
+                  }
+               }
             }} />
             🖼️ O elegir una de tu Galería
          </label>
