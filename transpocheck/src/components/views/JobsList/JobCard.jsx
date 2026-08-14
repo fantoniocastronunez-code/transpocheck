@@ -32,7 +32,7 @@ export default function JobCard({ j, ...props }) {
     return (
       // --- OPTIMIZACIÓN: Quitamos el overflow-hidden del padre para que el menú no se corte ---
       // Además, si la tarjeta tiene el menú abierto, elevamos su z-index
-      <div key={j.id} className={`bg-white rounded-[2rem] border p-4 sm:p-5 flex flex-col shadow-sm relative hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-default group ${j.isUrgent ? 'border-red-400 ring-2 ring-red-100' : (j.fleetGroup ? 'border-indigo-200' : 'border-slate-100')} ${menuOpenId === j.id ? 'z-50' : 'z-10'}`}>
+      <div key={j.id} className={`bg-white dark:bg-slate-900 rounded-[2rem] border p-4 sm:p-5 flex flex-col shadow-sm relative hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)] hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-default group ${j.isUrgent ? 'border-red-400 ring-2 ring-red-100 dark:ring-red-900/30' : (j.fleetGroup ? 'border-indigo-200 dark:border-indigo-900/50' : 'border-slate-100 dark:border-slate-800')} ${menuOpenId === j.id ? 'z-50' : 'z-10'}`}>
         
         {/* --- OPTIMIZACIÓN: Los fondos decorativos ahora viven en un contenedor con overflow-hidden para no salirse de los bordes redondeados --- */}
         <div className="absolute inset-0 rounded-[2rem] overflow-hidden pointer-events-none">
@@ -42,7 +42,7 @@ export default function JobCard({ j, ...props }) {
             <div className={`absolute top-0 left-0 bottom-0 w-1.5 transition-all ${isRequested ? 'bg-gradient-to-b from-pink-400 to-pink-600' : (isPending ? 'bg-gradient-to-b from-amber-300 to-amber-500' : 'bg-gradient-to-b from-blue-400 to-blue-600 shadow-[0_0_8px_rgba(59,130,246,0.5)]')}`}></div>
         </div>
         
-        <div className="flex justify-between items-start mb-5 border-b border-slate-100/80 pb-4 pl-2 relative z-20">
+        <div className="flex justify-between items-start mb-5 border-b border-slate-100/80 dark:border-slate-800/80 pb-4 pl-2 relative z-20">
           <div className="flex flex-col gap-3 w-full">
             <div className="flex justify-between items-start w-full gap-2">
               <div className="shrink-0 relative z-10 flex flex-col items-end gap-1">
@@ -74,7 +74,7 @@ export default function JobCard({ j, ...props }) {
                 <button onClick={()=>setMenuOpenId(menuOpenId===j.id?null:j.id)} className="p-2 text-slate-400 hover:bg-slate-50 rounded-xl transition-colors"><MoreVertical className="w-5 h-5"/></button>
                 {/* --- OPTIMIZACIÓN: z-[999] para aplastar cualquier capa inferior --- */}
                 {menuOpenId===j.id && (
-                  <div className="absolute right-0 top-10 bg-white border shadow-[0_10px_40px_rgba(0,0,0,0.2)] rounded-xl w-56 z-[999] overflow-hidden text-xs">
+                  <div className="absolute right-0 top-10 bg-white dark:bg-slate-800 border dark:border-slate-700 shadow-[0_10px_40px_rgba(0,0,0,0.2)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)] rounded-xl w-56 z-[999] overflow-hidden text-xs dark:text-slate-200">
                     <button onClick={() => {
                       const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
                       const textToShare = `📍 Sigue en tiempo real todos los traslados de ${j.client || 'tu empresa'} aquí:\n${url}`;
@@ -91,7 +91,7 @@ export default function JobCard({ j, ...props }) {
                         const textToShare = `📍 Hola! El vehículo ${ident} va en camino a ${j.destination || 'su destino'}. Puedes seguir el traslado en tiempo real aquí:\n${url}`;
                         window.open(`https://wa.me/?text=${encodeURIComponent(textToShare)}`, '_blank');
                         setMenuOpenId(null);
-                      }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-green-50 text-green-600 border-t border-slate-50"><Share2 className="w-4 h-4"/> Notificar Receptor</button>
+                      }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-green-50 text-green-600 border-t border-slate-50 dark:border-slate-700/50"><Share2 className="w-4 h-4"/> Notificar Receptor</button>
                     )}
                     <button onClick={() => {
                       const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
@@ -109,23 +109,23 @@ export default function JobCard({ j, ...props }) {
                         const textToShare = `📍 Hola! El vehículo ${ident} va en camino a ${j.destination || 'su destino'}. Puedes seguir el traslado en tiempo real aquí:\n${url}`;
                         window.open(`https://wa.me/?text=${encodeURIComponent(textToShare)}`, '_blank');
                         setMenuOpenId(null);
-                      }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-green-50 text-green-600 border-t border-slate-50"><Share2 className="w-4 h-4"/> Notificar Receptor</button>
+                      }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-green-50 text-green-600 border-t border-slate-50 dark:border-slate-700/50"><Share2 className="w-4 h-4"/> Notificar Receptor</button>
                     )}
 
                     {/* NUEVO BOTÓN: DESHACER PASO */}
                     {isAccepted && j.phase && j.phase !== 'claimed' && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
-                      <button onClick={() => handleUndoPhase(j)} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-orange-50 text-orange-600 border-t border-slate-50">
+                      <button onClick={() => handleUndoPhase(j)} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-orange-50 text-orange-600 border-t border-slate-50 dark:border-slate-700/50">
                         <RefreshCw className="w-4 h-4"/> Deshacer último paso
                       </button>
                     )}
 
                     {/* El botón de traspaso solo es visible para el dueño del trabajo o un admin */}
                     {isAccepted && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
-                      <button onClick={() => { setRelayPromptJob(j); setMenuOpenId(null); }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-purple-50 text-purple-600 border-t border-slate-50"><Users className="w-4 h-4"/> Traspaso a Compañero</button>
+                      <button onClick={() => { setRelayPromptJob(j); setMenuOpenId(null); }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-purple-50 text-purple-600 border-t border-slate-50 dark:border-slate-700/50"><Users className="w-4 h-4"/> Traspaso a Compañero</button>
                     )}
                     
                     {isAdminView && (
-                      <button onClick={() => { setForceCloseJob(j); setMenuOpenId(null); }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-emerald-50 text-emerald-600 border-t border-slate-50">
+                      <button onClick={() => { setForceCloseJob(j); setMenuOpenId(null); }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-emerald-50 text-emerald-600 border-t border-slate-50 dark:border-slate-700/50">
                         <CheckCircle className="w-4 h-4"/> Forzar Cierre
                       </button>
                     )}
@@ -135,19 +135,19 @@ export default function JobCard({ j, ...props }) {
                           showConfirm("¿Quitar este vehículo del grupo de flota?", async () => {
                              try { await updateDoc(doc(db, 'transport_jobs', j.id), { fleetGroup: deleteField() }); setMenuOpenId(null); showAlert("Vehículo removido de la flota."); } catch (e) { showAlert("Error al desagrupar."); }
                           });
-                       }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-indigo-50 text-indigo-600 border-t border-slate-50">
+                       }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-indigo-50 text-indigo-600 border-t border-slate-50 dark:border-slate-700/50">
                           <Truck className="w-4 h-4"/> Quitar de Flota
                        </button>
                     )}
                     
                     {isAccepted && (!j.phase || j.phase === 'claimed' || j.phase === 'arrived_pickup') && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
-                      <button onClick={() => { showConfirm("¿Deseas cancelar la aceptación?", async () => { try { await updateDoc(doc(db, 'transport_jobs', j.id), { status: 'pending', acceptedByEmail: deleteField(), phase: deleteField(), liveLocation: deleteField(), arrivedPickupAt: deleteField(), waitTimeMinutes: deleteField() }); setMenuOpenId(null); showAlert("✅ Traslado liberado."); } catch (err) { showAlert("Error al liberar."); } }); }} className="w-full text-left p-3 font-bold flex gap-2 text-amber-600 hover:bg-amber-50 border-t border-slate-50">
+                      <button onClick={() => { showConfirm("¿Deseas cancelar la aceptación?", async () => { try { await updateDoc(doc(db, 'transport_jobs', j.id), { status: 'pending', acceptedByEmail: deleteField(), phase: deleteField(), liveLocation: deleteField(), arrivedPickupAt: deleteField(), waitTimeMinutes: deleteField() }); setMenuOpenId(null); showAlert("✅ Traslado liberado."); } catch (err) { showAlert("Error al liberar."); } }); }} className="w-full text-left p-3 font-bold flex gap-2 text-amber-600 hover:bg-amber-50 border-t border-slate-50 dark:border-slate-700/50">
                         <X className="w-4 h-4"/> Cancelar Aceptación (Soltar)
                       </button>
                     )}
 
                     {(isAdminView || j.acceptedByEmail === currentUserEmail) && (
-                      <button onClick={()=>{setJobToFail(j);setMenuOpenId(null);}} className="w-full text-left p-3 font-bold flex gap-2 text-red-600 hover:bg-red-50 border-t border-slate-50"><XCircle className="w-4 h-4"/> Cancelar / Falló</button>
+                      <button onClick={()=>{setJobToFail(j);setMenuOpenId(null);}} className="w-full text-left p-3 font-bold flex gap-2 text-red-600 hover:bg-red-50 border-t border-slate-50 dark:border-slate-700/50"><XCircle className="w-4 h-4"/> Cancelar / Falló</button>
                     )}
                   </div>
                 )}
@@ -185,12 +185,12 @@ export default function JobCard({ j, ...props }) {
 
           <div className="mb-4 mt-3 relative z-10 flex flex-col gap-1.5">
             {/* ORIGEN */}
-            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 z-10">
-              <span className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 z-10">
+              <span className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-0.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500"></div>
                 {j.tripType === 'simple' ? 'Lugar' : 'Desde'}
               </span>
-              <p className="text-sm font-extrabold text-slate-800 leading-snug break-words">{j.origin || 'Por definir'}</p>
+              <p className="text-sm font-extrabold text-slate-800 dark:text-slate-200 leading-snug break-words">{j.origin || 'Por definir'}</p>
             </div>
 
             {(j.destination || j.tripType !== 'simple') && (
@@ -206,14 +206,14 @@ export default function JobCard({ j, ...props }) {
                        <p className="text-[10px] font-black text-amber-700">{j.waypoints.length} paradas</p>
                      </div>
                   ) : (
-                    <div className="bg-white p-1 rounded-full border border-slate-200 text-slate-300 shadow-sm">
+                    <div className="bg-white dark:bg-slate-800 p-1 rounded-full border border-slate-200 dark:border-slate-700 text-slate-300 dark:text-slate-500 shadow-sm">
                       <Navigation className="w-3 h-3 rotate-180" />
                     </div>
                   )}
                 </div>
 
                 {/* DESTINO */}
-                <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-[0_2px_10px_rgba(0,0,0,0.04)] z-10">
+                <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_10px_rgba(0,0,0,0.04)] dark:shadow-none z-10">
                   <span className="flex items-center gap-1.5 text-[9px] font-black text-blue-500 uppercase tracking-widest mb-1">
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
                     Hasta
@@ -226,7 +226,7 @@ export default function JobCard({ j, ...props }) {
             )}
             
             {j.waypoints && j.waypoints.length > 0 && (
-              <div className="mt-1 pt-2 border-t border-slate-100">
+              <div className="mt-1 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1.5 flex items-center gap-1"><MapPin className="w-3 h-3"/> Ruta intermedia:</p>
                 <div className="flex flex-col gap-1">
                   {j.waypoints.map((wp, i) => (
@@ -241,13 +241,13 @@ export default function JobCard({ j, ...props }) {
               
               {/* BLOQUE ORIGEN */}
               {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone || j.originAddress || j.originCommune) && (
-                <div className="pt-3 border-t border-slate-200/60 flex flex-col gap-2">
+                <div className="pt-3 border-t border-slate-200/60 dark:border-slate-800/60 flex flex-col gap-2">
                    {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone) && (
-                   <div className="flex items-center justify-between gap-2 bg-white p-2 rounded-xl border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                   <div className="flex items-center justify-between gap-2 bg-white dark:bg-slate-800/40 p-2 rounded-xl border border-slate-100 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
                      <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                        <div className="bg-emerald-50 p-2 rounded-lg shrink-0 border border-emerald-100"><Users className="w-4 h-4 text-emerald-600"/></div>
+                        <div className="bg-emerald-50 dark:bg-emerald-900/30 p-2 rounded-lg shrink-0 border border-emerald-100 dark:border-emerald-800/50"><Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400"/></div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 truncate">Encargado Origen</p>
+                          <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-0.5 truncate">Encargado Origen</p>
                           <p className="text-xs font-bold text-slate-700 truncate">{j.originContactName || j.contactName || 'No especificado'}</p>
                         </div>
                      </div>
@@ -261,8 +261,8 @@ export default function JobCard({ j, ...props }) {
                    )}
                    
                    {(j.originAddress || j.originCommune) && (
-                      <div className="flex justify-between items-center bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm mt-1">
-                        <p className="text-[10px] font-bold text-slate-600 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-slate-400"/>{j.originAddress}{j.originAddress && j.originCommune ? ', ' : ''}{j.originCommune}</p>
+                      <div className="flex justify-between items-center bg-white dark:bg-slate-900/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm mt-1">
+                        <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-slate-400 dark:text-slate-500"/>{j.originAddress}{j.originAddress && j.originCommune ? ', ' : ''}{j.originCommune}</p>
                         {isAccepted && (
                           <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.originAddress || ''} ${j.originCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition-colors border border-blue-200"><Navigation className="w-3 h-3"/> Waze</a>
                         )}
@@ -275,12 +275,12 @@ export default function JobCard({ j, ...props }) {
               {(j.destContactName || j.destContactPhone || j.destAddress || j.destCommune) && (
                 <div className="pt-2 border-t border-slate-200/60 flex flex-col gap-2">
                    {(j.destContactName || j.destContactPhone) && (
-                   <div className="flex items-center justify-between gap-2 bg-white p-2 rounded-xl border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                   <div className="flex items-center justify-between gap-2 bg-white dark:bg-slate-800/40 p-2 rounded-xl border border-slate-100 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
                      <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                        <div className="bg-blue-50 p-2 rounded-lg shrink-0 border border-blue-100"><Users className="w-4 h-4 text-blue-600"/></div>
+                        <div className="bg-blue-50 dark:bg-blue-900/30 p-2 rounded-lg shrink-0 border border-blue-100 dark:border-blue-800/50"><Users className="w-4 h-4 text-blue-600 dark:text-blue-400"/></div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 truncate">Encargado Destino</p>
-                          <p className="text-xs font-bold text-slate-700 truncate">{j.destContactName || 'No especificado'}</p>
+                          <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-0.5 truncate">Encargado Destino</p>
+                          <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{j.destContactName || 'No especificado'}</p>
                         </div>
                      </div>
                      {j.destContactPhone && (
@@ -293,8 +293,8 @@ export default function JobCard({ j, ...props }) {
                    )}
 
                    {(j.destAddress || j.destCommune) && (
-                      <div className="flex justify-between items-center bg-blue-50/50 p-2.5 rounded-xl border border-blue-200 shadow-sm animate-in fade-in slide-in-from-top-1 mt-1">
-                        <p className="text-[10px] font-bold text-blue-800 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-blue-500"/>{j.destAddress}{j.destAddress && j.destCommune ? ', ' : ''}{j.destCommune}</p>
+                      <div className="flex justify-between items-center bg-blue-50/50 dark:bg-blue-900/10 p-2.5 rounded-xl border border-blue-200 dark:border-blue-800/50 shadow-sm animate-in fade-in slide-in-from-top-1 mt-1">
+                        <p className="text-[10px] font-bold text-blue-800 dark:text-blue-300 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-blue-500 dark:text-blue-400"/>{j.destAddress}{j.destAddress && j.destCommune ? ', ' : ''}{j.destCommune}</p>
                         {isAccepted && (
                           <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.destAddress || ''} ${j.destCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 shadow-md transition-colors"><Navigation className="w-3 h-3"/> Waze</a>
                         )}
@@ -334,10 +334,10 @@ export default function JobCard({ j, ...props }) {
              return <div className="mb-3 bg-blue-50 border border-blue-200 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-blue-700 uppercase tracking-widest">📅 HOY{timeStr}</span></div>;
           })()}
 
-        <div className="relative pl-7 space-y-5 before:absolute before:top-2 before:bottom-2 before:left-[10px] before:w-0.5 before:bg-slate-100 mb-5">
-          <div className="relative"><div className="absolute -left-7 bg-blue-500 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center"><CheckCircle className="w-2.5 h-2.5 text-white"/></div><p className="font-extrabold text-slate-800 text-sm leading-tight break-words">{isAccepted ? (j.assignedDrivers?.find(d => d.email === j.acceptedByEmail)?.name || "Conductor") : "Buscando conductor"}</p><p className="text-xs font-bold text-slate-500 break-words whitespace-normal">{isAccepted ? (j.tripType === 'simple' ? `Asignado a ${j.origin}` : `Retira en ${j.origin}`) : `Para ${j.origin}`}</p></div>
-          <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step2Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step2Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step2Done ? 'text-slate-800' : 'text-slate-400'}`}>{j.tripType === 'simple' ? 'Realizando Trabajo' : 'Vehículo en Tránsito'}</p></div>
-          <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step3Done ? 'bg-blue-500' : 'bg-slate-200'}`}>{step3Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step3Done ? 'text-slate-800' : 'text-slate-400'}`}>{j.tripType === 'simple' ? 'Trabajo Terminado' : (j.tripType === 'revision' ? 'En PRT' : 'Llegada a Destino')}</p><p className={`text-xs font-bold whitespace-normal break-words pr-2 ${step3Done ? 'text-blue-600' : 'text-slate-400'}`}>{j.tripType === 'simple' ? (j.destination || '') : (j.tripType === 'revision' ? 'Planta' : j.destination)}</p></div>
+        <div className="relative pl-7 space-y-5 before:absolute before:top-2 before:bottom-2 before:left-[10px] before:w-0.5 before:bg-slate-100 dark:before:bg-slate-800 mb-5">
+          <div className="relative"><div className="absolute -left-7 bg-blue-500 w-5 h-5 rounded-full border-4 border-white dark:border-slate-900 shadow-sm flex items-center justify-center"><CheckCircle className="w-2.5 h-2.5 text-white"/></div><p className="font-extrabold text-slate-800 dark:text-slate-200 text-sm leading-tight break-words">{isAccepted ? (j.assignedDrivers?.find(d => d.email === j.acceptedByEmail)?.name || "Conductor") : "Buscando conductor"}</p><p className="text-xs font-bold text-slate-500 break-words whitespace-normal">{isAccepted ? (j.tripType === 'simple' ? `Asignado a ${j.origin}` : `Retira en ${j.origin}`) : `Para ${j.origin}`}</p></div>
+          <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white dark:border-slate-900 shadow-sm flex items-center justify-center transition-colors ${step2Done ? 'bg-blue-500' : 'bg-slate-200 dark:bg-slate-700'}`}>{step2Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step2Done ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500'}`}>{j.tripType === 'simple' ? 'Realizando Trabajo' : 'Vehículo en Tránsito'}</p></div>
+          <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white dark:border-slate-900 shadow-sm flex items-center justify-center transition-colors ${step3Done ? 'bg-blue-500' : 'bg-slate-200 dark:bg-slate-700'}`}>{step3Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step3Done ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500'}`}>{j.tripType === 'simple' ? 'Trabajo Terminado' : (j.tripType === 'revision' ? 'En PRT' : 'Llegada a Destino')}</p><p className={`text-xs font-bold whitespace-normal break-words pr-2 ${step3Done ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}>{j.tripType === 'simple' ? (j.destination || '') : (j.tripType === 'revision' ? 'Planta' : j.destination)}</p></div>
           
           {j.tripType === 'revision' && (
             <>

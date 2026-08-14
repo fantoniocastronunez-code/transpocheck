@@ -369,31 +369,7 @@ function LogisticApp() {
       
       .font-alfa { font-family: 'Alfa Slab One', serif; font-weight: 400; }
       
-      /* REGLAS MAESTRAS MODO OSCURO OLED (True Black) */
-      .dark body { background-color: #000000 !important; color: #f8fafc !important; }
-      .dark header.fixed-nav-bar { background-color: #000000 !important; border-bottom: 1px solid #171717 !important; }
-      .dark .bg-white:not(canvas) { background-color: #000000 !important; border-color: #171717 !important; }
-      .dark canvas { background-color: #ffffff !important; border-radius: 0.5rem; color: #000 !important; }
-      .dark .bg-slate-50 { background-color: #000000 !important; border-color: #171717 !important; }
-      .dark .bg-slate-100 { background-color: #0a0a0a !important; }
-      .dark .bg-slate-200 { background-color: #171717 !important; }
-      
-      .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
-      .dark .text-slate-700 { color: #e2e8f0 !important; }
-      .dark .text-slate-600 { color: #cbd5e1 !important; }
-      .dark .text-slate-500, .dark .text-slate-400 { color: #94a3b8 !important; }
-      .dark .border-slate-100, .dark .border-slate-200, .dark .border-slate-300 { border-color: #171717 !important; }
-      
-      /* Botones de alto contraste OLED */
-      .dark .bg-blue-50 { background-color: rgba(37, 99, 235, 0.15) !important; border-color: rgba(37, 99, 235, 0.3) !important; }
-      .dark .text-blue-800 { color: #93c5fd !important; }
-      .dark .text-blue-600 { color: #60a5fa !important; }
 
-      /* CORRECCIÓN: FORZAR FONDO OSCURO EN LAS LISTAS DESPLEGABLES */
-      .dark select, .dark option {
-        background-color: #0f172a !important;
-        color: #e2e8f0 !important;
-      }
 
       /* CLASE CUSTOM PARA CONGELAR LA BARRA DE NAVEGACIÓN SIN REBOTE */
       .fixed-nav-bar {
@@ -592,9 +568,9 @@ function LogisticApp() {
   // EXCEPCIÓN: Conductores con rol part_time o asignados temporalmente entran directo a trabajar.
   if (activeRole === 'driver' && !isPartTimeAssigned && myDriver?.role !== 'part_time' && (needsOnboarding || !myDriver)) {
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10 transition-colors duration-300 dark:bg-slate-950">
+      <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-200">
         {globalStyles}
-        <header className="fixed-nav-bar bg-blue-600 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20">
+        <header className="fixed-nav-bar bg-blue-600 dark:bg-black dark:border-b dark:border-slate-800 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors">
            <div className="flex items-center gap-3">
              <div className="bg-white/20 p-1.5 rounded-xl"><img src="/logo.png" className="w-8 h-8 object-contain"/></div>
              <h1 className="font-alfa text-xl text-white">Verificación Obligatoria</h1>
@@ -613,14 +589,14 @@ function LogisticApp() {
            {myDriver ? (
              <DriverOnboarding driver={myDriver} db={db} uploadImageToStorage={uploadImageToStorage} />
            ) : (
-             <div className="bg-white p-8 rounded-3xl border text-center space-y-5 shadow-lg border-slate-100">
+             <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border text-center space-y-5 shadow-lg border-slate-100 dark:border-slate-800">
                <div className="relative w-20 h-20 mx-auto">
-                 <div className="absolute inset-0 border-4 border-blue-100 rounded-full"></div>
+                 <div className="absolute inset-0 border-4 border-blue-100 dark:border-blue-900/50 rounded-full"></div>
                  <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
                  <User className="absolute inset-0 m-auto w-8 h-8 text-blue-600" />
                </div>
-               <p className="font-black text-slate-800 text-xl">Creando credenciales...</p>
-               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider leading-relaxed">Estableciendo conexión segura con la central logística</p>
+               <p className="font-black text-slate-800 dark:text-slate-100 text-xl">Creando credenciales...</p>
+               <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider leading-relaxed">Estableciendo conexión segura con la central logística</p>
              </div>
            )}
         </main>
@@ -630,9 +606,9 @@ function LogisticApp() {
   // -----------------------------------------------------------------
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-32 transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-32 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-200">
       {globalStyles}
-      <header className="fixed-nav-bar bg-blue-600 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300">
+      <header className="fixed-nav-bar bg-blue-600 dark:bg-black dark:border-b dark:border-slate-800 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300">
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
       {/* Logo de la app más pequeño en móvil */}
       <div className="bg-white/20 p-1 sm:p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">
@@ -773,7 +749,7 @@ function LogisticApp() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase">LogisticAPP v.3.0.7</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">LogisticAPP v.3.1.0</p>
                 </div>
               </div>
             )}
@@ -798,21 +774,21 @@ function LogisticApp() {
                 </span>
               </button>
               {roleMenuOpen && (
-                <div className="absolute right-0 top-12 mt-1 w-72 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 text-slate-800">
-                  <div className="p-2 border-b border-slate-100 bg-slate-50"><p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider text-center">Panel de Control General</p></div>
+                <div className="absolute right-0 top-12 mt-1 w-72 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 text-slate-800 dark:text-slate-200">
+                  <div className="p-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50"><p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider text-center">Panel de Control General</p></div>
                   
                   
-                  <button onClick={() => { setActiveRole('admin'); setMainTab('jobs'); setSimulatedDriverEmail(''); setRoleMenuOpen(false); }} className={`w-full text-left px-4 py-3 text-sm font-bold hover:bg-slate-50 flex items-center gap-2 transition-colors ${activeRole==='admin'?'text-blue-600 bg-blue-50':'text-slate-600'}`}>
+                  <button onClick={() => { setActiveRole('admin'); setMainTab('jobs'); setSimulatedDriverEmail(''); setRoleMenuOpen(false); }} className={`w-full text-left px-4 py-3 text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors ${activeRole==='admin'?'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30':'text-slate-600 dark:text-slate-300'}`}>
                      <Users className="w-4 h-4"/> Volver a Administrador
                   </button>
 
                   {/* NUEVA SECCIÓN: ASISTIR/SIMULAR CONDUCTOR (DISEÑO MEJORADO Y RÁPIDO) */}
-                  <div className="p-3 border-t border-slate-100 bg-slate-50/50">
-                     <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5 mb-2"><Car className="w-3.5 h-3.5 text-blue-600"/> Entrar como Conductor</p>
+                  <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+                     <p className="text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 mb-2"><Car className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400"/> Entrar como Conductor</p>
                      
                      {/* BOTÓN RÁPIDO DE FAVORITO */}
                      {favDriverEmail && drivers.find(d => d.email === favDriverEmail) && (
-                       <button onClick={() => { setSimulatedDriverEmail(favDriverEmail); setActiveRole('driver'); setMainTab('jobs'); setRoleMenuOpen(false); }} className="w-full bg-gradient-to-r from-amber-100 to-yellow-50 border border-amber-200 hover:from-amber-200 text-amber-800 p-2.5 rounded-xl text-xs font-black flex justify-between items-center transition-colors shadow-sm mb-3">
+                       <button onClick={() => { setSimulatedDriverEmail(favDriverEmail); setActiveRole('driver'); setMainTab('jobs'); setRoleMenuOpen(false); }} className="w-full bg-gradient-to-r from-amber-100 to-yellow-50 dark:from-amber-900/40 dark:to-yellow-900/20 border border-amber-200 dark:border-amber-700 hover:from-amber-200 dark:hover:from-amber-900/60 text-amber-800 dark:text-amber-400 p-2.5 rounded-xl text-xs font-black flex justify-between items-center transition-colors shadow-sm mb-3">
                          <div className="flex items-center gap-2"><Star className="w-4 h-4 fill-amber-500 text-amber-500"/> Entrar como {drivers.find(d => d.email === favDriverEmail).name.split(' ')[0]}</div>
                          <ChevronRight className="w-4 h-4 text-amber-500"/>
                        </button>
@@ -839,13 +815,13 @@ function LogisticApp() {
                   </div>
 
                   {/* SECCIÓN EXISTENTE: SIMULAR CLIENTE */}
-                  <div className="p-3 border-t border-slate-100 bg-slate-50 space-y-2">
-                     <p className="text-xs font-bold text-slate-600 flex items-center gap-1.5"><Eye className="w-3.5 h-3.5 text-slate-800"/> Ver Portal de Cliente</p>
-                     <select value={simulatedClient} onChange={(e) => setSimulatedClient(e.target.value)} className="w-full border-2 border-slate-200 p-2.5 rounded-xl text-xs font-bold outline-none focus:border-slate-800 bg-white">
+                  <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 space-y-2">
+                     <p className="text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5"><Eye className="w-3.5 h-3.5 text-slate-800 dark:text-slate-400"/> Ver Portal de Cliente</p>
+                     <select value={simulatedClient} onChange={(e) => setSimulatedClient(e.target.value)} className="w-full border-2 border-slate-200 dark:border-slate-700 p-2.5 rounded-xl text-xs font-bold outline-none focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900 dark:text-slate-200">
                         <option value="">Seleccionar Cliente...</option>
                         {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
                      </select>
-                     <button onClick={() => { if(simulatedClient) { setActiveRole('client'); setRoleMenuOpen(false); } else { showAlert("Selecciona un cliente de la lista primero"); } }} className="w-full bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2.5 rounded-xl transition-colors shadow-sm">Entrar a la vista Cliente</button>
+                     <button onClick={() => { if(simulatedClient) { setActiveRole('client'); setRoleMenuOpen(false); } else { showAlert("Selecciona un cliente de la lista primero"); } }} className="w-full bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white text-xs font-bold py-2.5 rounded-xl transition-colors shadow-sm">Entrar a la vista Cliente</button>
                   </div>
                 </div>
               )}

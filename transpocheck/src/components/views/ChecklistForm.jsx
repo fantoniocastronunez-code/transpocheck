@@ -786,7 +786,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
             ? [{ id: 1, label: '📋 Detalles' }, { id: 2, label: '📸 Evidencia' }, { id: 3, label: '✍️ Cierre' }]
             : [{ id: 1, label: '📋 Datos' }, { id: 2, label: '📄 Docs' }, { id: 3, label: '💬 Notas' }, { id: 4, label: '📸 Fotos' }, { id: 5, label: '⛽ Comb. & Espera' }, { id: 6, label: '✍️ Entrega' }]
           ).map(t => (
-            <button key={t.id} type="button" onClick={() => setStep(t.id)} className={`px-3 py-2 rounded-xl text-xs font-black tracking-wide whitespace-nowrap transition-all shrink-0 ${step === t.id ? (job.tripType === 'simple' ? 'bg-purple-600 text-white shadow-md shadow-purple-100' : 'bg-blue-600 text-white shadow-md shadow-blue-100') : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+            <button key={t.id} type="button" onClick={() => setStep(t.id)} className={`px-3 py-2 rounded-xl text-xs font-black tracking-wide whitespace-nowrap transition-all shrink-0 ${step === t.id ? (job.tripType === 'simple' ? 'bg-purple-600 dark:bg-purple-500 text-white shadow-md shadow-purple-100 dark:shadow-none' : 'bg-blue-600 dark:bg-blue-500 text-white shadow-md shadow-blue-100 dark:shadow-none') : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
               {t.label}
             </button>
           ))}
@@ -797,27 +797,27 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
           {/* VISTA: TRABAJO SIMPLE (FAST TRACK) */}
           {job.tripType === 'simple' && step === 1 && (
             <div className="space-y-4 animate-in fade-in duration-200">
-              <div className="bg-purple-50 border-2 border-purple-100 p-4 rounded-2xl shadow-sm mb-4">
-                <p className="text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1">Descripción de la Tarea</p>
-                <p className="text-sm font-bold text-purple-900 leading-snug">{job.description || 'Sin descripción detallada'}</p>
-                {job.client && <p className="text-xs font-bold text-purple-700 mt-2 border-t border-purple-200 pt-2">Cliente / Autoriza: {job.client}</p>}
+              <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-100 dark:border-purple-800/50 p-4 rounded-2xl shadow-sm mb-4">
+                <p className="text-[10px] font-black text-purple-500 dark:text-purple-400 uppercase tracking-widest mb-1">Descripción de la Tarea</p>
+                <p className="text-sm font-bold text-purple-900 dark:text-purple-100 leading-snug">{job.description || 'Sin descripción detallada'}</p>
+                {job.client && <p className="text-xs font-bold text-purple-700 dark:text-purple-300 mt-2 border-t border-purple-200 dark:border-purple-800/50 pt-2">Cliente / Autoriza: {job.client}</p>}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-slate-50 border-2 border-slate-100 p-3 rounded-xl">
-                  <p className="text-[9px] font-extrabold text-slate-400 uppercase">Lugar</p>
-                  <p className="text-xs font-bold text-slate-700 truncate">{job.origin || 'N/A'}</p>
+                <div className="bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 p-3 rounded-xl">
+                  <p className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase">Lugar</p>
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{job.origin || 'N/A'}</p>
                 </div>
                 {job.destination && (
-                  <div className="bg-slate-50 border-2 border-slate-100 p-3 rounded-xl">
-                    <p className="text-[9px] font-extrabold text-slate-400 uppercase">Hasta</p>
-                    <p className="text-xs font-bold text-slate-700 truncate">{job.destination}</p>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-100 dark:border-slate-700 p-3 rounded-xl">
+                    <p className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase">Hasta</p>
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{job.destination}</p>
                   </div>
                 )}
               </div>
 
-              <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 mt-6 text-slate-800 uppercase tracking-wider">Notas del Operario</h3>
-              <textarea className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-purple-500 min-h-[100px]" placeholder="Ej: Las plantillas de vinilo no dejaron residuos. Trabajo ejecutado sin novedades..." autoComplete="off" autoCorrect="off" spellCheck="false" value={formData.observations || ''} onChange={(e) => setF('observations', e.target.value)} />
+              <h3 className="text-sm font-extrabold border-b border-slate-100 dark:border-slate-800 pb-2 mt-6 text-slate-800 dark:text-slate-200 uppercase tracking-wider">Notas del Operario</h3>
+              <textarea className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 dark:focus:border-purple-400 min-h-[100px]" placeholder="Ej: Las plantillas de vinilo no dejaron residuos. Trabajo ejecutado sin novedades..." autoComplete="off" autoCorrect="off" spellCheck="false" value={formData.observations || ''} onChange={(e) => setF('observations', e.target.value)} />
             </div>
           )}
 
