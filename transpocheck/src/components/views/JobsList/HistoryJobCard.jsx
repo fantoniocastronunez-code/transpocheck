@@ -26,17 +26,17 @@ export default function HistoryJobCard({ j, ...props }) {
                  );
              })()}
              {j.tripType === 'simple' ? (
-                <p className="text-sm font-black text-purple-800 leading-tight break-words mt-1 pr-2">{j.description || 'Servicio en Terreno'}</p>
+                <p className="text-sm font-black text-purple-800 dark:text-purple-300 leading-tight break-words mt-1 pr-2">{j.description || 'Servicio en Terreno'}</p>
              ) : (
                 <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-tight break-words mt-1 pr-2">{j.brand} {j.model}</p>
              )}
           </div>
           <div className="flex flex-col items-end shrink-0 gap-1">
              {j.checklist?.transitNotes && (
-                <span className="bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider shadow-sm mb-0.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> NOTA EN RUTA</span>
+                <span className="bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800/50 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider shadow-sm mb-0.5 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> NOTA EN RUTA</span>
              )}
              {j.tripType === 'simple' && (
-                <span className="bg-purple-100 text-purple-800 border border-purple-200 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider shadow-sm mb-0.5">SERVICIO</span>
+                <span className="bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800/50 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider shadow-sm mb-0.5">SERVICIO</span>
              )}
           </div>
         </div>
@@ -51,7 +51,7 @@ export default function HistoryJobCard({ j, ...props }) {
             
             <div className="flex justify-center -my-1.5 z-10 relative">
                {j.waypoints && j.waypoints.length > 0 ? (
-                 <div className="bg-amber-100 text-amber-700 text-[8px] font-black px-2 py-0.5 rounded-md border border-amber-200">{j.waypoints.length} int.</div>
+                 <div className="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 text-[8px] font-black px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800/50">{j.waypoints.length} int.</div>
                ) : (
                  <div className="bg-slate-100 dark:bg-slate-800 p-0.5 rounded-full border border-slate-200 dark:border-slate-700"><Navigation className="w-3 h-3 text-slate-400 rotate-180"/></div>
                )}
@@ -59,9 +59,9 @@ export default function HistoryJobCard({ j, ...props }) {
 
             {j.tripType === 'revision' ? (
                 <>
-                   <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-amber-100 shadow-sm flex items-start gap-2">
+                   <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-amber-100 dark:border-amber-800/50 shadow-sm flex items-start gap-2">
                       <div className="mt-1"><div className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_4px_rgba(245,158,11,0.6)]"></div></div>
-                      <span className="text-[10px] font-black text-amber-700 leading-tight break-words whitespace-normal">
+                      <span className="text-[10px] font-black text-amber-700 dark:text-amber-400 leading-tight break-words whitespace-normal">
                          {j.destination?.includes('->') ? (j.destination.split('->').length > 2 ? j.destination.split('->')[1].trim() : j.destination.split('->')[0].trim()) : 'PRT'}
                       </span>
                    </div>
@@ -70,9 +70,9 @@ export default function HistoryJobCard({ j, ...props }) {
                       <div className="flex justify-center -my-1.5 z-10 relative">
                          <div className="bg-slate-100 dark:bg-slate-800 p-0.5 rounded-full border border-slate-200 dark:border-slate-700"><Navigation className="w-3 h-3 text-slate-400 rotate-180"/></div>
                       </div>
-                      <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-blue-100 shadow-sm flex items-start gap-2">
+                      <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-blue-100 dark:border-blue-800/50 shadow-sm flex items-start gap-2">
                          <div className="mt-1"><div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_4px_rgba(59,130,246,0.6)]"></div></div>
-                         <span className="text-[10px] font-black text-blue-700 leading-tight break-words whitespace-normal">
+                         <span className="text-[10px] font-black text-blue-700 dark:text-blue-400 leading-tight break-words whitespace-normal">
                             {j.destination?.includes('->') 
                                ? j.destination.split('->')[j.destination.split('->').length - 1].trim()
                                : (j.checklist?.rtReturnOption === 'other' && j.checklist?.rtReturnDestination 
@@ -85,9 +85,9 @@ export default function HistoryJobCard({ j, ...props }) {
                    </>
                 </>
             ) : (
-                <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-blue-100 shadow-sm flex items-start gap-2">
+                <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-blue-100 dark:border-blue-800/50 shadow-sm flex items-start gap-2">
                    <div className="mt-1"><div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_4px_rgba(59,130,246,0.6)]"></div></div>
-                   <span className="text-[10px] font-black text-blue-700 leading-tight break-words whitespace-normal">{j.destination || '-'}</span>
+                   <span className="text-[10px] font-black text-blue-700 dark:text-blue-400 leading-tight break-words whitespace-normal">{j.destination || '-'}</span>
                 </div>
             )}
           </div>
@@ -108,16 +108,16 @@ export default function HistoryJobCard({ j, ...props }) {
         </div>
 
         <div className="mb-3">
-           <p className="text-blue-600 font-extrabold text-[10px] uppercase tracking-wide truncate">Conductor: <span className="text-slate-700 dark:text-slate-300">{driverName}</span></p>
-           {isFailed && <p className="text-red-600 text-[10px] mt-0.5 font-bold line-clamp-1">Razón: {j.failedReason}</p>}
+           <p className="text-blue-600 dark:text-blue-400 font-extrabold text-[10px] uppercase tracking-wide truncate">Conductor: <span className="text-slate-700 dark:text-slate-300">{driverName}</span></p>
+           {isFailed && <p className="text-red-600 dark:text-red-400 text-[10px] mt-0.5 font-bold line-clamp-1">Razón: {j.failedReason}</p>}
         </div>
         
         <div className="flex justify-between items-end border-t border-slate-50 pt-2 mb-2">
-          <p className={`text-[10px] font-black uppercase ${isFailed ? 'text-red-500' : 'text-green-600'}`}>{isFailed ? 'RECHAZADO' : 'ENTREGADO'}</p>
+          <p className={`text-[10px] font-black uppercase ${isFailed ? 'text-red-500' : 'text-green-600 dark:text-green-400'}`}>{isFailed ? 'RECHAZADO' : 'ENTREGADO'}</p>
           <div className="flex items-center gap-1.5">
             <p className="text-slate-400 font-bold text-[9px]">{new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL')}</p>
             {isAdminView && auditMode && (
-              <button onClick={(e) => { e.stopPropagation(); setEditDateJob(j); }} className="text-blue-500 hover:bg-blue-50 p-1 rounded transition-colors" title="Corregir Fecha">
+              <button onClick={(e) => { e.stopPropagation(); setEditDateJob(j); }} className="text-blue-500 hover:bg-blue-50 dark:bg-blue-900/30 p-1 rounded transition-colors" title="Corregir Fecha">
                 <Edit2 className="w-3 h-3"/>
               </button>
             )}
@@ -128,7 +128,7 @@ export default function HistoryJobCard({ j, ...props }) {
         {(j.status === 'completed' || j.status === 'failed') && (
             <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 mb-3 shadow-inner">
                 <div className="flex items-center gap-2 flex-1">
-                    <div className="bg-blue-100 p-1.5 rounded-lg"><Clock className="w-3.5 h-3.5 text-blue-600"/></div>
+                    <div className="bg-blue-100 dark:bg-blue-900/40 p-1.5 rounded-lg"><Clock className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400"/></div>
                     <div className="flex flex-col">
                         <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">Tiempo en Ruta</span>
                         <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300 leading-tight">
@@ -144,9 +144,9 @@ export default function HistoryJobCard({ j, ...props }) {
                         </span>
                     </div>
                 </div>
-                <div className="w-px h-8 bg-slate-200 shrink-0 mx-2"></div>
+                <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 shrink-0 mx-2"></div>
                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <div className="bg-emerald-100 p-1.5 rounded-lg shrink-0"><MapPin className="w-3.5 h-3.5 text-emerald-600"/></div>
+                    <div className="bg-emerald-100 dark:bg-emerald-900/40 p-1.5 rounded-lg shrink-0"><MapPin className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"/></div>
                     <div className="flex flex-col min-w-0">
                         <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">Distancia</span>
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -157,7 +157,7 @@ export default function HistoryJobCard({ j, ...props }) {
                                 <div className="flex gap-1">
                                     <button 
                                         onClick={(e) => { e.stopPropagation(); setEditKmJob(j); }}
-                                        className="p-1 bg-white dark:bg-slate-900 border border-emerald-200 text-emerald-600 rounded hover:bg-emerald-50 transition-colors shadow-sm shrink-0"
+                                        className="p-1 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400 rounded hover:bg-emerald-50 dark:bg-emerald-900/30 transition-colors shadow-sm shrink-0"
                                         title="Editar KM Manualmente"
                                     >
                                         <Edit2 className="w-3 h-3"/>
@@ -165,7 +165,7 @@ export default function HistoryJobCard({ j, ...props }) {
                                     <button 
                                         onClick={(e) => { e.stopPropagation(); handleSingleRecalculate(j); }}
                                         disabled={processingId === `${j.id}-recalc-km`}
-                                        className="p-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-blue-600 rounded hover:bg-blue-50 transition-colors shadow-sm disabled:opacity-50 shrink-0"
+                                        className="p-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-50 dark:bg-blue-900/30 transition-colors shadow-sm disabled:opacity-50 shrink-0"
                                         title="Forzar Recálculo de Ruta (Maps)"
                                     >
                                         {processingId === `${j.id}-recalc-km` ? <Clock className="w-3 h-3 animate-spin"/> : <MapIcon className="w-3 h-3"/>}
@@ -181,7 +181,7 @@ export default function HistoryJobCard({ j, ...props }) {
 
         {/* AVISO VISUAL DE ACTA YA COMPARTIDA/RENDIDA */}
         {j.sharedCount > 0 && (
-           <div className="mb-2.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-black px-2 py-1.5 rounded-lg text-center flex items-center justify-center gap-1.5 shadow-sm animate-in zoom-in duration-300">
+           <div className="mb-2.5 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-400 text-[10px] font-black px-2 py-1.5 rounded-lg text-center flex items-center justify-center gap-1.5 shadow-sm animate-in zoom-in duration-300">
               <CheckCircle className="w-3.5 h-3.5" /> Ya rendido ({j.sharedCount} {j.sharedCount === 1 ? 'vez' : 'veces'})
            </div>
         )}
@@ -201,7 +201,7 @@ export default function HistoryJobCard({ j, ...props }) {
                                 } catch(err) { showAlert("Error al actualizar"); }
                             });
                         }}
-                        className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${j.prt_result === 'aprobado' || j.checklist?.rtStatus === 'aprobado' ? 'bg-green-500 text-white shadow-sm ring-2 ring-green-200' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-green-50 hover:text-green-600 hover:border-green-200'}`}>
+                        className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${j.prt_result === 'aprobado' || j.checklist?.rtStatus === 'aprobado' ? 'bg-green-500 text-white shadow-sm ring-2 ring-green-200' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-green-50 dark:bg-green-900/30 hover:text-green-600 dark:text-green-400 hover:border-green-200 dark:border-green-800/50'}`}>
                         Legal
                     </button>
                     <button 
@@ -214,7 +214,7 @@ export default function HistoryJobCard({ j, ...props }) {
                                 } catch(err) { showAlert("Error al actualizar"); }
                             });
                         }}
-                        className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${j.prt_result === 'aprobado_ayuda' || j.checklist?.rtStatus === 'aprobado_ayuda' ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-200' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200'}`}>
+                        className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${j.prt_result === 'aprobado_ayuda' || j.checklist?.rtStatus === 'aprobado_ayuda' ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-200' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-amber-50 dark:bg-amber-900/30 hover:text-amber-600 dark:text-amber-400 hover:border-amber-200 dark:border-amber-800/50'}`}>
                         Ayuda
                     </button>
                     <button 
@@ -227,7 +227,7 @@ export default function HistoryJobCard({ j, ...props }) {
                                 } catch(err) { showAlert("Error al actualizar"); }
                             });
                         }}
-                        className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${j.prt_result === 'rechazado' || j.checklist?.rtStatus === 'rechazado' ? 'bg-red-500 text-white shadow-sm ring-2 ring-red-200' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-red-50 hover:text-red-600 hover:border-red-200'}`}>
+                        className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${j.prt_result === 'rechazado' || j.checklist?.rtStatus === 'rechazado' ? 'bg-red-500 text-white shadow-sm ring-2 ring-red-200' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:bg-red-900/30 hover:text-red-600 dark:text-red-400 hover:border-red-200 dark:border-red-800/50'}`}>
                         Rechazo
                     </button>
                 </div>
@@ -235,12 +235,12 @@ export default function HistoryJobCard({ j, ...props }) {
         )}
 
          <div className="flex gap-1.5 mt-auto">
-          {isAdminView && <button onClick={(e)=>{e.stopPropagation(); onEditJob(j);}} className="flex-1 py-1.5 flex justify-center bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg transition-colors" title="Editar Traslado"><Edit2 className="w-3.5 h-3.5"/></button>}
-          {isAdminView && <button onClick={(e)=>{e.stopPropagation(); handleDuplicateJob(j);}} className="flex-1 py-1.5 flex justify-center bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg transition-colors" title="Repetir Vehículo"><Repeat className="w-3.5 h-3.5"/></button>}
+          {isAdminView && <button onClick={(e)=>{e.stopPropagation(); onEditJob(j);}} className="flex-1 py-1.5 flex justify-center bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:bg-amber-900/40 rounded-lg transition-colors" title="Editar Traslado"><Edit2 className="w-3.5 h-3.5"/></button>}
+          {isAdminView && <button onClick={(e)=>{e.stopPropagation(); handleDuplicateJob(j);}} className="flex-1 py-1.5 flex justify-center bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:bg-purple-900/40 rounded-lg transition-colors" title="Repetir Vehículo"><Repeat className="w-3.5 h-3.5"/></button>}
           
 
           {j.checklist && (j.checklist.scandocPdf || j.checklist.scandocPdfInbox || j.checklist.scannerLink) && (
-            <a href={j.checklist.scandocPdf || j.checklist.scandocPdfInbox || j.checklist.scannerLink} onClick={(e)=>e.stopPropagation()} target="_blank" rel="noreferrer" className="flex-1 py-1.5 flex justify-center items-center bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-lg transition-colors relative" title="Ver Documentación PRT">
+            <a href={j.checklist.scandocPdf || j.checklist.scandocPdfInbox || j.checklist.scannerLink} onClick={(e)=>e.stopPropagation()} target="_blank" rel="noreferrer" className="flex-1 py-1.5 flex justify-center items-center bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-lg transition-colors relative" title="Ver Documentación PRT">
                <span className="absolute -top-1.5 -right-1.5 bg-indigo-600 text-white text-[7px] font-black px-1 py-0.5 rounded shadow-sm">PRT</span>
                <FileText className="w-3.5 h-3.5"/>
             </a>
@@ -250,7 +250,7 @@ export default function HistoryJobCard({ j, ...props }) {
              const historyDocHref = j.guideLink || j.guideUrl || j.docLink || j.docUrl || j.rtLink || j.rtDoc || (j.rtData && j.rtData.link) || j.pdfUrl || j.fileUrl || j.checklist?.guiaDespachoPdf || j.checklist?.guiaDespachoLink;
              if (historyDocHref) {
                 return (
-                  <a href={historyDocHref} onClick={(e)=>e.stopPropagation()} target="_blank" rel="noreferrer" className="flex-1 py-1.5 flex justify-center items-center bg-cyan-50 hover:bg-cyan-100 text-cyan-600 rounded-lg transition-colors relative" title="Ver Guía/Doc Adjunto">
+                  <a href={historyDocHref} onClick={(e)=>e.stopPropagation()} target="_blank" rel="noreferrer" className="flex-1 py-1.5 flex justify-center items-center bg-cyan-50 dark:bg-cyan-900/30 hover:bg-cyan-100 dark:bg-cyan-900/40 text-cyan-600 dark:text-cyan-400 rounded-lg transition-colors relative" title="Ver Guía/Doc Adjunto">
                      <span className="absolute -top-1.5 -right-1.5 bg-cyan-600 text-white text-[7px] font-black px-1 py-0.5 rounded shadow-sm">DOC</span>
                      <FileText className="w-3.5 h-3.5"/>
                   </a>
@@ -259,11 +259,11 @@ export default function HistoryJobCard({ j, ...props }) {
              return null;
           })()}
 
-          <button onClick={(e) => {e.stopPropagation(); generatePDF(j);}} disabled={processingId === `${j.id}-pdf`} className="flex-1 py-1.5 flex justify-center bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 rounded-lg transition-colors disabled:opacity-50" title="Descargar PDF">{processingId === `${j.id}-pdf` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : <FileDown className="w-3.5 h-3.5"/>}</button>
-          <button onClick={(e) => {e.stopPropagation(); handleShareWhatsAppPDF(j);}} disabled={processingId === `${j.id}-wapp`} className="flex-1 py-1.5 flex justify-center items-center bg-green-50 text-green-600 hover:bg-green-100 rounded-lg transition-colors disabled:opacity-50" title="Compartir PDF por WhatsApp">
+          <button onClick={(e) => {e.stopPropagation(); generatePDF(j);}} disabled={processingId === `${j.id}-pdf`} className="flex-1 py-1.5 flex justify-center bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:bg-slate-700 rounded-lg transition-colors disabled:opacity-50" title="Descargar PDF">{processingId === `${j.id}-pdf` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : <FileDown className="w-3.5 h-3.5"/>}</button>
+          <button onClick={(e) => {e.stopPropagation(); handleShareWhatsAppPDF(j);}} disabled={processingId === `${j.id}-wapp`} className="flex-1 py-1.5 flex justify-center items-center bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 hover:bg-green-100 dark:bg-green-900/40 rounded-lg transition-colors disabled:opacity-50" title="Compartir PDF por WhatsApp">
             {processingId === `${j.id}-wapp` ? <Clock className="w-3.5 h-3.5 animate-spin"/> : <Share2 className="w-3.5 h-3.5"/>}
           </button>
-          {isAdminView && <button onClick={(e)=>{e.stopPropagation(); handleDeleteJob(j.id);}} className="flex-1 py-1.5 flex justify-center bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Eliminar Traslado"><Trash2 className="w-3.5 h-3.5"/></button>}
+          {isAdminView && <button onClick={(e)=>{e.stopPropagation(); handleDeleteJob(j.id);}} className="flex-1 py-1.5 flex justify-center bg-red-50 dark:bg-red-900/30 text-red-500 hover:bg-red-100 dark:bg-red-900/40 rounded-lg transition-colors" title="Eliminar Traslado"><Trash2 className="w-3.5 h-3.5"/></button>}
         </div>
       </div>
     );

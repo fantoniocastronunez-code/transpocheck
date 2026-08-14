@@ -34,20 +34,20 @@ export default function TrackingModal({
         <div className="absolute top-0 left-0 right-0 h-2 bg-blue-600"></div>
         <div className="flex justify-between items-start mb-4 mt-2">
           <div>
-            <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 flex items-center gap-2"><Navigation className="w-5 h-5 text-blue-600"/> Panel de Viaje</h3>
+            <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 flex items-center gap-2"><Navigation className="w-5 h-5 text-blue-600 dark:text-blue-400"/> Panel de Viaje</h3>
             <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">{isSimple ? tj.description : `${tj.brand} ${tj.model}`} • {ident}</p>
           </div>
-          <button onClick={() => setTrackingJobId(null)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 transition-colors"><X className="w-5 h-5 text-slate-600 dark:text-slate-400"/></button>
+          <button onClick={() => setTrackingJobId(null)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"><X className="w-5 h-5 text-slate-600 dark:text-slate-400"/></button>
         </div>
 
         <div className="overflow-y-auto space-y-4 pr-1 pb-4 scrollbar-none">
           {/* ESTADOS DEL VIAJE */}
           <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 relative overflow-hidden">
-            <div className="absolute left-[27px] top-8 bottom-8 w-1 bg-slate-200 rounded-full"></div>
+            <div className="absolute left-[27px] top-8 bottom-8 w-1 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
             {/* Origen */}
             <div className="flex gap-4 items-start relative z-10 mb-6">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border-2 ${tj.phase && tj.phase !== 'claimed' ? 'bg-blue-600 border-blue-600' : 'bg-white dark:bg-slate-900 border-slate-300'}`}>
-                {tj.phase && tj.phase !== 'claimed' ? <CheckCircle className="w-3 h-3 text-white"/> : <div className="w-2 h-2 bg-slate-300 rounded-full"></div>}
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border-2 ${tj.phase && tj.phase !== 'claimed' ? 'bg-blue-600 border-blue-600' : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600'}`}>
+                {tj.phase && tj.phase !== 'claimed' ? <CheckCircle className="w-3 h-3 text-white"/> : <div className="w-2 h-2 bg-slate-300 dark:bg-slate-600 rounded-full"></div>}
               </div>
               <div>
                 <p className="text-[10px] font-black uppercase text-slate-400">Origen</p>
@@ -56,19 +56,19 @@ export default function TrackingModal({
             </div>
             {/* Destino */}
             <div className="flex gap-4 items-start relative z-10">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border-2 ${tj.phase === 'arrived_destination' ? 'bg-green-500 border-green-500' : 'bg-white dark:bg-slate-900 border-slate-300'}`}>
-                {tj.phase === 'arrived_destination' ? <CheckCircle className="w-3 h-3 text-white"/> : <div className="w-2 h-2 bg-slate-300 rounded-full"></div>}
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border-2 ${tj.phase === 'arrived_destination' ? 'bg-green-500 border-green-500' : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600'}`}>
+                {tj.phase === 'arrived_destination' ? <CheckCircle className="w-3 h-3 text-white"/> : <div className="w-2 h-2 bg-slate-300 dark:bg-slate-600 rounded-full"></div>}
               </div>
               <div>
                 <p className="text-[10px] font-black uppercase text-slate-400">Destino</p>
-                <p className="text-sm font-bold text-blue-700">{tj.tripType === 'revision' ? (tj.destination?.includes('->') ? tj.destination.split('->')[tj.destination.split('->').length - 1].trim() : 'PRT') : (tj.destination || 'Por definir')}</p>
+                <p className="text-sm font-bold text-blue-700 dark:text-blue-400">{tj.tripType === 'revision' ? (tj.destination?.includes('->') ? tj.destination.split('->')[tj.destination.split('->').length - 1].trim() : 'PRT') : (tj.destination || 'Por definir')}</p>
               </div>
             </div>
           </div>
 
           {/* BOTONES DE ACCIÓN RÁPIDA */}
           <div className="space-y-3 pt-2">
-            <p className="text-[10px] font-black uppercase text-blue-600 tracking-widest text-center mb-2 animate-bounce">Desliza para actualizar estado</p>
+            <p className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-widest text-center mb-2 animate-bounce">Desliza para actualizar estado</p>
 
             {(!tj.phase || tj.phase === 'claimed') && <SwipeButton key={`btn-pickup-${tj.id}`} onConfirm={()=>updatePhase(tj, 'arrived_pickup', { arrivedPickupAt: Date.now() })} text={tj.tripType === 'simple' ? "Desliza: Llegué al lugar" : "Desliza: Llegué a retirar"} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-amber-500" isProcessing={processingId === `${tj.id}-arrived_pickup`} />}
 
@@ -110,7 +110,7 @@ export default function TrackingModal({
               }} text={`Desliza: Llegué a ${tj.checklist?.rtReturnOption === 'other' ? (tj.checklist?.rtReturnDestination?.substring(0,10) + '...') : 'Origen'}`} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${tj.id}-arrived_destination`} />
             )}
 
-            <button onClick={()=>{ setTrackingJobId(null); onStartChecklist(tj); }} className={`w-full font-black py-4 rounded-xl text-sm shadow-sm transition-colors ${(tj.phase === 'arrived_destination') ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'}`}>
+            <button onClick={()=>{ setTrackingJobId(null); onStartChecklist(tj); }} className={`w-full font-black py-4 rounded-xl text-sm shadow-sm transition-colors ${(tj.phase === 'arrived_destination') ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'}`}>
               📸 {(tj.phase === 'arrived_destination') ? (tj.tripType === 'simple' ? 'Cerrar Acta de Servicio' : 'Cerrar Checklist') : (tj.tripType === 'simple' ? 'Pre-llenar Acta' : 'Pre-llenar Checklist')}
             </button>
           </div>

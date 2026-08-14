@@ -608,12 +608,12 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
 
         {/* BOTÓN DE URGENCIA */}
         <div className="flex justify-end -mt-2">
-          <label className={`flex items-center gap-2 cursor-pointer px-4 py-2.5 rounded-xl border-2 transition-all shadow-sm ${isUrgent ? 'bg-red-50 border-red-500 text-red-700' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900/50'}`}>
-            <AlertCircle className={`w-5 h-5 ${isUrgent ? 'animate-pulse text-red-600' : 'text-slate-400'}`} />
+          <label className={`flex items-center gap-2 cursor-pointer px-4 py-2.5 rounded-xl border-2 transition-all shadow-sm ${isUrgent ? 'bg-red-50 dark:bg-red-900/30 border-red-500 text-red-700 dark:text-red-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900/50'}`}>
+            <AlertCircle className={`w-5 h-5 ${isUrgent ? 'animate-pulse text-red-600 dark:text-red-400' : 'text-slate-400'}`} />
             <span className="font-extrabold text-sm uppercase tracking-wider">{isUrgent ? '🚨 Trabajo Urgente' : 'Marcar como Urgente'}</span>
             <div className="relative flex items-center ml-2">
               <input type="checkbox" className="sr-only" checked={isUrgent} onChange={(e) => setIsUrgent(e.target.checked)} />
-              <div className={`block w-10 h-6 rounded-full transition-colors ${isUrgent ? 'bg-red-500' : 'bg-slate-300'}`}></div>
+              <div className={`block w-10 h-6 rounded-full transition-colors ${isUrgent ? 'bg-red-500' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
               <div className={`absolute left-1 top-1 bg-white dark:bg-slate-900 w-4 h-4 rounded-full transition-transform ${isUrgent ? 'transform translate-x-4' : ''}`}></div>
             </div>
           </label>
@@ -621,8 +621,8 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
         
         {/* NUEVO TABS DE MODO DE OPERACIÓN */}
         <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl mb-2 shadow-inner">
-          <button type="button" onClick={() => setOperationMode('traslado')} className={`flex-1 py-3 text-xs sm:text-sm font-black rounded-xl transition-all duration-200 ${operationMode === 'traslado' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}>🚚 Traslado de Vehículo</button>
-          <button type="button" onClick={() => setOperationMode('servicio')} className={`flex-1 py-3 text-xs sm:text-sm font-black rounded-xl transition-all duration-200 ${operationMode === 'servicio' ? 'bg-white dark:bg-slate-900 text-purple-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}>🛠️ Servicio en Terreno</button>
+          <button type="button" onClick={() => setOperationMode('traslado')} className={`flex-1 py-3 text-xs sm:text-sm font-black rounded-xl transition-all duration-200 ${operationMode === 'traslado' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}>🚚 Traslado de Vehículo</button>
+          <button type="button" onClick={() => setOperationMode('servicio')} className={`flex-1 py-3 text-xs sm:text-sm font-black rounded-xl transition-all duration-200 ${operationMode === 'servicio' ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}>🛠️ Servicio en Terreno</button>
         </div>
 
         {operationMode === 'traslado' ? (
@@ -631,20 +631,20 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
               <h3 className="text-base font-bold text-slate-700 dark:text-slate-300">1. Tipo de Servicio</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {/* Traslado Local */}
-                <button type="button" onClick={()=>setTripType('traslado')} className={`relative flex items-center gap-3 p-3.5 border-2 rounded-2xl transition-all duration-300 w-full group overflow-hidden ${tripType === 'traslado' ? 'border-blue-500 bg-blue-50 shadow-[0_0_15px_rgba(59,130,246,0.15)]' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-blue-300 hover:bg-slate-50 dark:bg-slate-900/50'}`}>
-                   <div className={`p-2 rounded-xl transition-colors shrink-0 ${tripType === 'traslado' ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-600'}`}>
+                <button type="button" onClick={()=>setTripType('traslado')} className={`relative flex items-center gap-3 p-3.5 border-2 rounded-2xl transition-all duration-300 w-full group overflow-hidden ${tripType === 'traslado' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-[0_0_15px_rgba(59,130,246,0.15)]' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-blue-300 dark:border-blue-700/50 hover:bg-slate-50 dark:bg-slate-900/50'}`}>
+                   <div className={`p-2 rounded-xl transition-colors shrink-0 ${tripType === 'traslado' ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-blue-100 dark:bg-blue-900/40 group-hover:text-blue-600 dark:text-blue-400'}`}>
                       📍
                    </div>
-                   <span className={`font-black text-sm flex-1 text-left ${tripType === 'traslado' ? 'text-blue-800' : 'text-slate-700 dark:text-slate-300'}`}>Traslado Local</span>
+                   <span className={`font-black text-sm flex-1 text-left ${tripType === 'traslado' ? 'text-blue-800 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`}>Traslado Local</span>
                    {tripType === 'traslado' && <CheckCircle className="w-5 h-5 text-blue-500 animate-in zoom-in shrink-0"/>}
                 </button>
 
                 {/* A Regiones */}
-                <button type="button" onClick={()=>setTripType('viaje')} className={`relative flex items-center gap-3 p-3.5 border-2 rounded-2xl transition-all duration-300 w-full group overflow-hidden ${tripType === 'viaje' ? 'border-indigo-500 bg-indigo-50 shadow-[0_0_15px_rgba(99,102,241,0.15)]' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-indigo-300 hover:bg-slate-50 dark:bg-slate-900/50'}`}>
-                   <div className={`p-2 rounded-xl transition-colors shrink-0 ${tripType === 'viaje' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-indigo-100 group-hover:text-indigo-600'}`}>
+                <button type="button" onClick={()=>setTripType('viaje')} className={`relative flex items-center gap-3 p-3.5 border-2 rounded-2xl transition-all duration-300 w-full group overflow-hidden ${tripType === 'viaje' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 shadow-[0_0_15px_rgba(99,102,241,0.15)]' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-indigo-300 dark:border-indigo-700/50 hover:bg-slate-50 dark:bg-slate-900/50'}`}>
+                   <div className={`p-2 rounded-xl transition-colors shrink-0 ${tripType === 'viaje' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-indigo-100 dark:bg-indigo-900/40 group-hover:text-indigo-600 dark:text-indigo-400'}`}>
                       🛣️
                    </div>
-                   <span className={`font-black text-sm flex-1 text-left ${tripType === 'viaje' ? 'text-indigo-800' : 'text-slate-700 dark:text-slate-300'}`}>A Regiones</span>
+                   <span className={`font-black text-sm flex-1 text-left ${tripType === 'viaje' ? 'text-indigo-800 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-300'}`}>A Regiones</span>
                    {tripType === 'viaje' && <CheckCircle className="w-5 h-5 text-indigo-500 animate-in zoom-in shrink-0"/>}
                 </button>
 
@@ -660,33 +660,33 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                          if (select) select.value = prtList[0].name;
                       }, 100);
                    }
-                }} className={`relative flex items-center gap-3 p-3.5 border-2 rounded-2xl transition-all duration-300 w-full group overflow-hidden ${tripType === 'revision' ? 'border-emerald-500 bg-emerald-50 shadow-[0_0_15px_rgba(16,185,129,0.15)]' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-emerald-300 hover:bg-slate-50 dark:bg-slate-900/50'}`}>
-                   <div className={`p-2 rounded-xl transition-colors shrink-0 ${tripType === 'revision' ? 'bg-emerald-600 text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-emerald-100 group-hover:text-emerald-600'}`}>
+                }} className={`relative flex items-center gap-3 p-3.5 border-2 rounded-2xl transition-all duration-300 w-full group overflow-hidden ${tripType === 'revision' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 shadow-[0_0_15px_rgba(16,185,129,0.15)]' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-emerald-300 dark:border-emerald-700/50 hover:bg-slate-50 dark:bg-slate-900/50'}`}>
+                   <div className={`p-2 rounded-xl transition-colors shrink-0 ${tripType === 'revision' ? 'bg-emerald-600 text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-emerald-100 dark:bg-emerald-900/40 group-hover:text-emerald-600 dark:text-emerald-400'}`}>
                       📋
                    </div>
-                   <span className={`font-black text-sm flex-1 text-left ${tripType === 'revision' ? 'text-emerald-800' : 'text-slate-700 dark:text-slate-300'}`}>Revisión Técnica</span>
+                   <span className={`font-black text-sm flex-1 text-left ${tripType === 'revision' ? 'text-emerald-800 dark:text-emerald-300' : 'text-slate-700 dark:text-slate-300'}`}>Revisión Técnica</span>
                    {tripType === 'revision' && <CheckCircle className="w-5 h-5 text-emerald-500 animate-in zoom-in shrink-0"/>}
                 </button>
               </div>
               {tripType === 'revision' && (
-                <div className="p-4 bg-white dark:bg-slate-900 border-2 border-blue-100 rounded-xl space-y-4 mt-4 animate-in fade-in">
-                   <h4 className="text-xs font-extrabold text-blue-600 uppercase">Detalle Revisión Técnica</h4>
+                <div className="p-4 bg-white dark:bg-slate-900 border-2 border-blue-100 dark:border-blue-800/50 rounded-xl space-y-4 mt-4 animate-in fade-in">
+                   <h4 className="text-xs font-extrabold text-blue-600 dark:text-blue-400 uppercase">Detalle Revisión Técnica</h4>
                    <div className="grid grid-cols-2 gap-3">
                      <select value={revType} onChange={e=>setRevType(e.target.value)} className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700 dark:text-slate-300">
                        <option value="A">Clase A</option>
                        <option value="B">Clase B</option>
                      </select>
-                     <select value={revModalidad} onChange={e=>setRevModalidad(e.target.value)} className={`w-full border-2 p-3 text-sm rounded-xl outline-none font-bold shadow-sm ${revModalidad === 'ayuda' ? 'border-amber-400 bg-amber-50 text-amber-800' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:border-blue-500'}`}>
+                     <select value={revModalidad} onChange={e=>setRevModalidad(e.target.value)} className={`w-full border-2 p-3 text-sm rounded-xl outline-none font-bold shadow-sm ${revModalidad === 'ayuda' ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 focus:border-blue-500'}`}>
                        <option value="legal">Legal (Normal)</option>
                        <option value="ayuda">Con Ayuda</option>
                      </select>
                    </div>
                    {revType === 'A' && (
                      <div className="grid grid-cols-2 gap-3 text-sm font-bold text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                       <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_gases} onChange={e=>setRevA_gases(e.target.checked)} className="w-4 h-4 text-blue-600 rounded"/> Gases</label>
-                       <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_revision} onChange={e=>setRevA_revision(e.target.checked)} className="w-4 h-4 text-blue-600 rounded"/> Revisión</label>
-                       <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_inspeccion} onChange={e=>setRevA_inspeccion(e.target.checked)} className="w-4 h-4 text-blue-600 rounded"/> Insp. Visual</label>
-                       <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_frenos} onChange={e=>setRevA_frenos(e.target.checked)} className="w-4 h-4 text-blue-600 rounded"/> Cert. Frenos</label>
+                       <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_gases} onChange={e=>setRevA_gases(e.target.checked)} className="w-4 h-4 text-blue-600 dark:text-blue-400 rounded"/> Gases</label>
+                       <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_revision} onChange={e=>setRevA_revision(e.target.checked)} className="w-4 h-4 text-blue-600 dark:text-blue-400 rounded"/> Revisión</label>
+                       <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_inspeccion} onChange={e=>setRevA_inspeccion(e.target.checked)} className="w-4 h-4 text-blue-600 dark:text-blue-400 rounded"/> Insp. Visual</label>
+                       <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_frenos} onChange={e=>setRevA_frenos(e.target.checked)} className="w-4 h-4 text-blue-600 dark:text-blue-400 rounded"/> Cert. Frenos</label>
                      </div>
                    )}
                    {revType === 'B' && (
@@ -699,7 +699,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
               )}
             </div>
 
-            <div className={`p-4 sm:p-6 rounded-2xl space-y-4 animate-in fade-in slide-in-from-bottom-2 transition-colors duration-300 ${vehicleFoundStatus === 'found' ? 'bg-green-50 border border-green-200' : 'bg-slate-50 dark:bg-slate-900/50 border border-transparent'}`}>
+            <div className={`p-4 sm:p-6 rounded-2xl space-y-4 animate-in fade-in slide-in-from-bottom-2 transition-colors duration-300 ${vehicleFoundStatus === 'found' ? 'bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800/50' : 'bg-slate-50 dark:bg-slate-900/50 border border-transparent'}`}>
                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                  
                  <div className="flex items-center gap-3">
@@ -707,7 +707,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                        <img 
                           src={vehiclePhoto} 
                           alt="Perfil Vehículo" 
-                          className="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-md animate-in zoom-in shrink-0"
+                          className="w-12 h-12 rounded-xl object-cover border-2 border-white dark:border-slate-800 shadow-md animate-in zoom-in shrink-0"
                        />
                     )}
                     <h3 className="text-base font-bold text-slate-700 dark:text-slate-300 flex flex-col sm:block">
@@ -719,7 +719,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                  {/* BOTÓN MÁGICO DE ESCÁNER DE GUÍA DE DESPACHO (AHORA ABRE CÁMARA NATIVA) */}
                  <div className="w-full sm:w-auto shrink-0 flex gap-2">
                    {/* Botón para abrir la InAppCamera */}
-                   <button type="button" onClick={() => setCameraConfig({ isOpen: true })} disabled={isOcrProcessing} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border-2 ${isOcrProcessing ? 'bg-indigo-100 border-indigo-200 text-indigo-600' : 'bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700 shadow-md'}`}>
+                   <button type="button" onClick={() => setCameraConfig({ isOpen: true })} disabled={isOcrProcessing} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all border-2 ${isOcrProcessing ? 'bg-indigo-100 dark:bg-indigo-900/40 border-indigo-200 dark:border-indigo-800/50 text-indigo-600 dark:text-indigo-400' : 'bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700 shadow-md'}`}>
                      {isOcrProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
                      {isOcrProcessing ? 'Leyendo...' : 'Escanear Guía'}
                    </button>
@@ -727,7 +727,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                    {/* Botón secundario para subir PDF/Imagen de archivo */}
                    <div className="relative flex-1 sm:flex-none">
                      <input type="file" accept="image/*,application/pdf" onChange={handleOcrUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" disabled={isOcrProcessing} />
-                     <button type="button" disabled={isOcrProcessing} className="w-full h-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl font-bold text-sm bg-white dark:bg-slate-900 border-2 border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-colors">
+                     <button type="button" disabled={isOcrProcessing} className="w-full h-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl font-bold text-sm bg-white dark:bg-slate-900 border-2 border-indigo-200 dark:border-indigo-800/50 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:bg-indigo-900/30 transition-colors">
                        <FileText className="w-4 h-4"/> Archivo
                      </button>
                    </div>
@@ -735,12 +735,12 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                </div>
 
                <div className="flex items-center -mt-2 min-h-[24px]">
-                 {isSearchingVehicle && <span className="text-xs font-black text-blue-600 bg-blue-100 px-2 py-1 rounded-md animate-pulse">Buscando en base de datos...</span>}
-                 {vehicleFoundStatus === 'found' && !isSearchingVehicle && <span className="text-xs font-black text-green-700 bg-green-200 px-2 py-1 rounded-md flex items-center gap-1"><CheckCircle className="w-3 h-3"/> ¡Vehículo encontrado en historial!</span>}
+                 {isSearchingVehicle && <span className="text-xs font-black text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40 px-2 py-1 rounded-md animate-pulse">Buscando en base de datos...</span>}
+                 {vehicleFoundStatus === 'found' && !isSearchingVehicle && <span className="text-xs font-black text-green-700 dark:text-green-400 bg-green-200 px-2 py-1 rounded-md flex items-center gap-1"><CheckCircle className="w-3 h-3"/> ¡Vehículo encontrado en historial!</span>}
                </div>
                <div className="grid grid-cols-2 gap-4">
-                 <input value={plate} onChange={e=>handleVehicleSearch(e.target.value.replace(/[^a-zA-Z0-9]/g, ''), 'plate')} maxLength="6" type="text" placeholder="Patente (Ej. ABCD12)" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className={`w-full border-2 p-3 text-sm rounded-xl uppercase outline-none font-black bg-white dark:bg-slate-900 shadow-sm transition-colors ${isSearchingVehicle ? 'border-blue-400 ring-2 ring-blue-100' : vehicleFoundStatus === 'found' ? 'border-green-400 text-green-800' : 'border-slate-300 focus:border-blue-500 text-slate-800 dark:text-slate-200'}`} />
-                 <input value={vin} onChange={e=>handleVehicleSearch(e.target.value.replace(/[^a-zA-Z0-9]/g, ''), 'vin')} maxLength="17" type="text" placeholder="VIN / Chasis" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className={`w-full border-2 p-3 text-sm rounded-xl uppercase outline-none font-black bg-white dark:bg-slate-900 shadow-sm transition-colors ${isSearchingVehicle ? 'border-blue-400 ring-2 ring-blue-100' : vehicleFoundStatus === 'found' ? 'border-green-400 text-green-800' : 'border-slate-300 focus:border-blue-500 text-slate-800 dark:text-slate-200'}`} />
+                 <input value={plate} onChange={e=>handleVehicleSearch(e.target.value.replace(/[^a-zA-Z0-9]/g, ''), 'plate')} maxLength="6" type="text" placeholder="Patente (Ej. ABCD12)" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className={`w-full border-2 p-3 text-sm rounded-xl uppercase outline-none font-black bg-white dark:bg-slate-900 shadow-sm transition-colors ${isSearchingVehicle ? 'border-blue-400 ring-2 ring-blue-100' : vehicleFoundStatus === 'found' ? 'border-green-400 text-green-800 dark:text-green-300' : 'border-slate-300 dark:border-slate-600 focus:border-blue-500 text-slate-800 dark:text-slate-200'}`} />
+                 <input value={vin} onChange={e=>handleVehicleSearch(e.target.value.replace(/[^a-zA-Z0-9]/g, ''), 'vin')} maxLength="17" type="text" placeholder="VIN / Chasis" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className={`w-full border-2 p-3 text-sm rounded-xl uppercase outline-none font-black bg-white dark:bg-slate-900 shadow-sm transition-colors ${isSearchingVehicle ? 'border-blue-400 ring-2 ring-blue-100' : vehicleFoundStatus === 'found' ? 'border-green-400 text-green-800 dark:text-green-300' : 'border-slate-300 dark:border-slate-600 focus:border-blue-500 text-slate-800 dark:text-slate-200'}`} />
                  {/* NUEVO: Listas de autocompletado inteligente (Aprende de tu propia flota) */}
                  <datalist id="brands-list">
                    {[...new Set(vehicles.map(v => v.brand?.toUpperCase().trim()).filter(Boolean))].sort().map((b, i) => (
@@ -753,10 +753,10 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                    ))}
                  </datalist>
 
-                 <input value={brand} onChange={e=>setBrand(e.target.value.toUpperCase())} list="brands-list" type="text" placeholder="Marca (Ej. CHEVROLET)" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className={`w-full border-2 p-3 text-sm rounded-xl outline-none font-semibold bg-white dark:bg-slate-900 transition-colors uppercase ${vehicleFoundStatus === 'found' ? 'border-green-300 text-green-800' : 'border-slate-200 dark:border-slate-700 focus:border-blue-500 text-slate-800 dark:text-slate-200'}`} />
-                 <input value={model} onChange={e=>setModel(e.target.value.toUpperCase())} list="models-list" type="text" placeholder="Modelo (Ej. SPARK)" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className={`w-full border-2 p-3 text-sm rounded-xl outline-none font-semibold bg-white dark:bg-slate-900 transition-colors uppercase ${vehicleFoundStatus === 'found' ? 'border-green-300 text-green-800' : 'border-slate-200 dark:border-slate-700 focus:border-blue-500 text-slate-800 dark:text-slate-200'}`} />
+                 <input value={brand} onChange={e=>setBrand(e.target.value.toUpperCase())} list="brands-list" type="text" placeholder="Marca (Ej. CHEVROLET)" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className={`w-full border-2 p-3 text-sm rounded-xl outline-none font-semibold bg-white dark:bg-slate-900 transition-colors uppercase ${vehicleFoundStatus === 'found' ? 'border-green-300 dark:border-green-700/50 text-green-800 dark:text-green-300' : 'border-slate-200 dark:border-slate-700 focus:border-blue-500 text-slate-800 dark:text-slate-200'}`} />
+                 <input value={model} onChange={e=>setModel(e.target.value.toUpperCase())} list="models-list" type="text" placeholder="Modelo (Ej. SPARK)" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className={`w-full border-2 p-3 text-sm rounded-xl outline-none font-semibold bg-white dark:bg-slate-900 transition-colors uppercase ${vehicleFoundStatus === 'found' ? 'border-green-300 dark:border-green-700/50 text-green-800 dark:text-green-300' : 'border-slate-200 dark:border-slate-700 focus:border-blue-500 text-slate-800 dark:text-slate-200'}`} />
 
-                 <select value={vehicleType} onChange={e=>setVehicleType(e.target.value)} className={`w-full border-2 p-3 text-sm rounded-xl col-span-2 outline-none font-bold bg-white dark:bg-slate-900 transition-colors ${vehicleFoundStatus === 'found' ? 'border-green-300 text-green-800' : 'border-slate-200 dark:border-slate-700 focus:border-blue-500 text-slate-700 dark:text-slate-300'}`}>
+                 <select value={vehicleType} onChange={e=>setVehicleType(e.target.value)} className={`w-full border-2 p-3 text-sm rounded-xl col-span-2 outline-none font-bold bg-white dark:bg-slate-900 transition-colors ${vehicleFoundStatus === 'found' ? 'border-green-300 dark:border-green-700/50 text-green-800 dark:text-green-300' : 'border-slate-200 dark:border-slate-700 focus:border-blue-500 text-slate-700 dark:text-slate-300'}`}>
                    <option value="auto">🚙 Auto / SUV</option>
                    <option value="camioneta">🛻 Camioneta</option>
                    <option value="furgon_pequeno">🚐 Furgón Pequeño</option>
@@ -775,19 +775,19 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                  <div className="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700">
                     {multiVehicles.length > 0 && (
                       <div className="mb-3 space-y-2">
-                         <p className="text-xs font-extrabold text-blue-600 uppercase">Vehículos en Lista Masiva ({multiVehicles.length}):</p>
+                         <p className="text-xs font-extrabold text-blue-600 dark:text-blue-400 uppercase">Vehículos en Lista Masiva ({multiVehicles.length}):</p>
                          {multiVehicles.map((v, idx) => (
-                           <div key={idx} className="flex justify-between items-center bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-blue-100 shadow-sm animate-in zoom-in">
+                           <div key={idx} className="flex justify-between items-center bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-blue-100 dark:border-blue-800/50 shadow-sm animate-in zoom-in">
                               <div>
                                  <p className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase">{v.plate || v.vin || 'S/N'}</p>
                                  <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">{v.brand} {v.model}</p>
                               </div>
-                              <button type="button" onClick={() => handleRemoveMultiVehicle(idx)} className="text-red-400 hover:text-red-600 bg-red-50 p-2 rounded-lg transition-colors"><X className="w-4 h-4"/></button>
+                              <button type="button" onClick={() => handleRemoveMultiVehicle(idx)} className="text-red-400 hover:text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 p-2 rounded-lg transition-colors"><X className="w-4 h-4"/></button>
                            </div>
                          ))}
                       </div>
                     )}
-                    <button type="button" onClick={handleAddMultiVehicle} className="w-full sm:w-auto text-xs font-extrabold text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 py-2.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <button type="button" onClick={handleAddMultiVehicle} className="w-full sm:w-auto text-xs font-extrabold text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 hover:bg-blue-50 dark:bg-blue-900/30 hover:text-blue-600 dark:text-blue-400 hover:border-blue-200 dark:border-blue-800/50 py-2.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-700 shadow-sm">
                        <Plus className="w-4 h-4"/> Añadir a Lista Masiva (Permite agregar otro)
                     </button>
                  </div>
@@ -824,15 +824,15 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                 {tripType === 'revision' ? (
                   <div className="space-y-3 md:row-span-2">
                      <div className="space-y-1">
-                        <label className="text-xs font-extrabold text-emerald-600 uppercase tracking-wider ml-1">Planta de Revisión</label>
-                        <select name="prtSelect" defaultValue={jobToEdit?.destination?.split('->')[0]?.trim() || (prtList.length > 0 ? prtList[0].name : '')} required className="w-full border-2 border-emerald-200 bg-emerald-50 p-3 text-sm rounded-xl outline-none focus:border-emerald-500 font-bold text-emerald-800 shadow-sm cursor-pointer">
+                        <label className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider ml-1">Planta de Revisión</label>
+                        <select name="prtSelect" defaultValue={jobToEdit?.destination?.split('->')[0]?.trim() || (prtList.length > 0 ? prtList[0].name : '')} required className="w-full border-2 border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-900/30 p-3 text-sm rounded-xl outline-none focus:border-emerald-500 font-bold text-emerald-800 dark:text-emerald-300 shadow-sm cursor-pointer">
                           <option value="">Selecciona la Planta...</option>
                           {prtList.map((p, idx) => <option key={idx} value={p.name}>{p.name}</option>)}
                         </select>
                      </div>
                      <div className="space-y-1 relative z-10">
-                        <label className="text-xs font-extrabold text-blue-600 uppercase tracking-wider ml-1">Destino Final (Post-PRT)</label>
-                        <input name="destFinal" list="directory-destinations" defaultValue={jobToEdit?.destination?.split('->')[1]?.trim() || ''} type="text" placeholder="Ej: Av. San José (Opcional)" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-blue-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white dark:bg-slate-900" />
+                        <label className="text-xs font-extrabold text-blue-600 dark:text-blue-400 uppercase tracking-wider ml-1">Destino Final (Post-PRT)</label>
+                        <input name="destFinal" list="directory-destinations" defaultValue={jobToEdit?.destination?.split('->')[1]?.trim() || ''} type="text" placeholder="Ej: Av. San José (Opcional)" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-blue-200 dark:border-blue-800/50 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white dark:bg-slate-900" />
                      </div>
                   </div>
                 ) : (
@@ -848,12 +848,12 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                 <div className="pt-2 space-y-2 mt-2">
                    {waypoints.map((wp, idx) => (
                       <div key={idx} className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
-                         <div className="bg-slate-200 w-9 h-9 rounded-full flex items-center justify-center shrink-0 shadow-inner"><span className="text-xs font-black text-slate-500 dark:text-slate-400">{idx + 1}</span></div>
+                         <div className="bg-slate-200 dark:bg-slate-700 w-9 h-9 rounded-full flex items-center justify-center shrink-0 shadow-inner"><span className="text-xs font-black text-slate-500 dark:text-slate-400">{idx + 1}</span></div>
                          <input type="text" value={wp} onChange={(e) => handleWaypointChange(idx, e.target.value)} placeholder={`Parada intermedia ${idx + 1} (Ej: Pesaje, Notaría, Carga...)`} autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 p-2.5 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white dark:bg-slate-900" />
-                         <button type="button" onClick={() => handleRemoveWaypoint(idx)} className="p-2.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors border border-red-100"><X className="w-4 h-4"/></button>
+                         <button type="button" onClick={() => handleRemoveWaypoint(idx)} className="p-2.5 bg-red-50 dark:bg-red-900/30 text-red-500 rounded-xl hover:bg-red-100 dark:bg-red-900/40 transition-colors border border-red-100 dark:border-red-800/50"><X className="w-4 h-4"/></button>
                       </div>
                    ))}
-                   <button type="button" onClick={handleAddWaypoint} className="text-xs font-extrabold text-blue-600 bg-blue-50 hover:bg-blue-100 py-2.5 px-4 rounded-xl transition-colors flex items-center gap-1.5 w-full sm:w-fit border border-blue-200 shadow-sm">
+                   <button type="button" onClick={handleAddWaypoint} className="text-xs font-extrabold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:bg-blue-900/40 py-2.5 px-4 rounded-xl transition-colors flex items-center gap-1.5 w-full sm:w-fit border border-blue-200 dark:border-blue-800/50 shadow-sm">
                       <Plus className="w-4 h-4"/> + Añadir Parada Intermedia
                    </button>
                 </div>
@@ -862,48 +862,48 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
           </>
         ) : (
           /* VISTA SERVICIO SIMPLE */
-          <div className="bg-purple-50/50 p-4 sm:p-6 rounded-2xl space-y-5 border border-purple-100 animate-in fade-in slide-in-from-bottom-2">
-            <h3 className="text-base font-black text-purple-800">Detalles del Servicio</h3>
+          <div className="bg-purple-50 dark:bg-purple-900/30 p-4 sm:p-6 rounded-2xl space-y-5 border border-purple-100 dark:border-purple-800/50 animate-in fade-in slide-in-from-bottom-2">
+            <h3 className="text-base font-black text-purple-800 dark:text-purple-300">Detalles del Servicio</h3>
             
             <div className="space-y-1">
-              <label className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider ml-1">Descripción del Trabajo</label>
+              <label className="text-[10px] font-extrabold text-purple-600 dark:text-purple-400 uppercase tracking-wider ml-1">Descripción del Trabajo</label>
               <textarea 
                  value={description} 
                  onChange={e=>setDescription(e.target.value)} 
                  required={!(isPintura || isGrabado)} 
                  rows="3" 
                  placeholder={(isPintura || isGrabado) ? "Opcional. El sistema redactará el detalle de la pintura/grabado automáticamente." : "Ej: Retiro de documentos en notaría..."} 
-                 className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 resize-none shadow-sm" 
+                 className="w-full border-2 border-purple-200 dark:border-purple-800/50 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 resize-none shadow-sm" 
               />
             </div>
             
             {/* NUEVO: Opciones Especiales (Pintura / Grabado) */}
-            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-purple-100 shadow-sm space-y-4">
+            <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-purple-100 dark:border-purple-800/50 shadow-sm space-y-4">
                <div className="flex flex-col sm:flex-row gap-4">
                   <div className="flex-1 flex flex-col gap-1.5">
-                      <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-purple-50 rounded-lg transition-colors">
-                         <input type="checkbox" checked={isPintura} onChange={(e) => setIsPintura(e.target.checked)} className="w-5 h-5 text-purple-600 rounded border-purple-300 focus:ring-purple-500" />
+                      <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-purple-50 dark:bg-purple-900/30 rounded-lg transition-colors">
+                         <input type="checkbox" checked={isPintura} onChange={(e) => setIsPintura(e.target.checked)} className="w-5 h-5 text-purple-600 dark:text-purple-400 rounded border-purple-300 dark:border-purple-700/50 focus:ring-purple-500" />
                          <span className="text-sm font-extrabold text-slate-700 dark:text-slate-300">🎨 Pintura de Patentes</span>
                       </label>
                       {isPintura && (
                          <div className="pl-9 pr-2 animate-in slide-in-from-top-1">
-                             <div className="flex items-center gap-2 bg-purple-50 p-2 rounded-xl border-2 border-purple-100">
-                                <span className="text-xs font-bold text-purple-800 flex-1">Cantidad:</span>
-                                <input type="number" min="1" max="10" value={qtyPintura} onChange={(e) => setQtyPintura(e.target.value)} className="w-16 text-center border-none p-1 text-sm rounded-lg outline-none font-black text-purple-900 bg-white dark:bg-slate-900 shadow-sm" />
+                             <div className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/30 p-2 rounded-xl border-2 border-purple-100 dark:border-purple-800/50">
+                                <span className="text-xs font-bold text-purple-800 dark:text-purple-300 flex-1">Cantidad:</span>
+                                <input type="number" min="1" max="10" value={qtyPintura} onChange={(e) => setQtyPintura(e.target.value)} className="w-16 text-center border-none p-1 text-sm rounded-lg outline-none font-black text-purple-900 dark:text-purple-300 bg-white dark:bg-slate-900 shadow-sm" />
                              </div>
                          </div>
                       )}
                   </div>
                   <div className="flex-1 flex flex-col gap-1.5">
-                      <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-purple-50 rounded-lg transition-colors">
-                         <input type="checkbox" checked={isGrabado} onChange={(e) => setIsGrabado(e.target.checked)} className="w-5 h-5 text-purple-600 rounded border-purple-300 focus:ring-purple-500" />
+                      <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-purple-50 dark:bg-purple-900/30 rounded-lg transition-colors">
+                         <input type="checkbox" checked={isGrabado} onChange={(e) => setIsGrabado(e.target.checked)} className="w-5 h-5 text-purple-600 dark:text-purple-400 rounded border-purple-300 dark:border-purple-700/50 focus:ring-purple-500" />
                          <span className="text-sm font-extrabold text-slate-700 dark:text-slate-300">🪟 Grabado de Vidrios</span>
                       </label>
                       {isGrabado && (
                          <div className="pl-9 pr-2 animate-in slide-in-from-top-1">
-                             <div className="flex items-center gap-2 bg-purple-50 p-2 rounded-xl border-2 border-purple-100">
-                                <span className="text-xs font-bold text-purple-800 flex-1">Cantidad:</span>
-                                <input type="number" min="1" max="20" value={qtyGrabado} onChange={(e) => setQtyGrabado(e.target.value)} className="w-16 text-center border-none p-1 text-sm rounded-lg outline-none font-black text-purple-900 bg-white dark:bg-slate-900 shadow-sm" />
+                             <div className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/30 p-2 rounded-xl border-2 border-purple-100 dark:border-purple-800/50">
+                                <span className="text-xs font-bold text-purple-800 dark:text-purple-300 flex-1">Cantidad:</span>
+                                <input type="number" min="1" max="20" value={qtyGrabado} onChange={(e) => setQtyGrabado(e.target.value)} className="w-16 text-center border-none p-1 text-sm rounded-lg outline-none font-black text-purple-900 dark:text-purple-300 bg-white dark:bg-slate-900 shadow-sm" />
                              </div>
                          </div>
                       )}
@@ -912,7 +912,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                
                {(isPintura || isGrabado) && (
                   <div className="animate-in fade-in slide-in-from-top-2 pt-2 border-t border-purple-50">
-                     <label className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider ml-1 mb-1 block">Asociar a un Vehículo en Curso (Opcional)</label>
+                     <label className="text-[10px] font-extrabold text-purple-600 dark:text-purple-400 uppercase tracking-wider ml-1 mb-1 block">Asociar a un Vehículo en Curso (Opcional)</label>
                      <select 
                         value={associatedJobId} 
                         onChange={(e) => {
@@ -932,7 +932,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                               }
                            }
                         }} 
-                        className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 shadow-sm"
+                        className="w-full border-2 border-purple-200 dark:border-purple-800/50 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 shadow-sm"
                      >
                         <option value="">-- Seleccionar vehículo activo --</option>
                         {activeJobsList.filter(j => j.tripType !== 'simple').map(j => (
@@ -947,32 +947,32 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
-                 <label className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider ml-1">Fecha y Hora de Ejecución</label>
+                 <label className="text-[10px] font-extrabold text-purple-600 dark:text-purple-400 uppercase tracking-wider ml-1">Fecha y Hora de Ejecución</label>
                  <div className="flex gap-2">
-                   <input name="scheduledDate" type="date" defaultValue={jobToEdit?.scheduledDate || todayStr} required className="w-3/5 border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 shadow-sm" />
-                   <input name="scheduledTime" type="time" defaultValue={jobToEdit?.scheduledTime || ''} className="w-2/5 border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 shadow-sm" />
+                   <input name="scheduledDate" type="date" defaultValue={jobToEdit?.scheduledDate || todayStr} required className="w-3/5 border-2 border-purple-200 dark:border-purple-800/50 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 shadow-sm" />
+                   <input name="scheduledTime" type="time" defaultValue={jobToEdit?.scheduledTime || ''} className="w-2/5 border-2 border-purple-200 dark:border-purple-800/50 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 shadow-sm" />
                  </div>
               </div>
               <div className="space-y-1 relative z-[999]">
-                <label className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider ml-1">Cliente Asociado (Opcional)</label>
+                <label className="text-[10px] font-extrabold text-purple-600 dark:text-purple-400 uppercase tracking-wider ml-1">Cliente Asociado (Opcional)</label>
                 <CustomClientSelector 
                   value={selectedClient} 
                   onChange={(val) => setSelectedClient(val)} 
                   clients={allClientsList} 
                   placeholder="Seleccione Cliente" 
                 />
-                {selectedClient === 'OTRO' && <input type="text" value={manualClient} onChange={(e) => setManualClient(e.target.value)} placeholder="Escribe el nombre del cliente" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white dark:bg-slate-900 mt-2 animate-in fade-in shadow-sm" />}
+                {selectedClient === 'OTRO' && <input type="text" value={manualClient} onChange={(e) => setManualClient(e.target.value)} placeholder="Escribe el nombre del cliente" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-purple-200 dark:border-purple-800/50 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white dark:bg-slate-900 mt-2 animate-in fade-in shadow-sm" />}
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider ml-1">Lugar de Trabajo</label>
-                <input name="origin" list="directory-destinations" defaultValue={jobToEdit?.origin || ''} required type="text" placeholder="¿Dónde se realizará?" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white dark:bg-slate-900 shadow-sm" />
+                <label className="text-[10px] font-extrabold text-purple-600 dark:text-purple-400 uppercase tracking-wider ml-1">Lugar de Trabajo</label>
+                <input name="origin" list="directory-destinations" defaultValue={jobToEdit?.origin || ''} required type="text" placeholder="¿Dónde se realizará?" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-purple-200 dark:border-purple-800/50 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white dark:bg-slate-900 shadow-sm" />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-extrabold text-purple-600 uppercase tracking-wider ml-1">Hasta / Destino (Opcional)</label>
-                <input name="destination" list="directory-destinations" defaultValue={jobToEdit?.destination || ''} type="text" placeholder="Si requiere moverse a otro lugar" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-purple-200 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white dark:bg-slate-900 shadow-sm" />
+                <label className="text-[10px] font-extrabold text-purple-600 dark:text-purple-400 uppercase tracking-wider ml-1">Hasta / Destino (Opcional)</label>
+                <input name="destination" list="directory-destinations" defaultValue={jobToEdit?.destination || ''} type="text" placeholder="Si requiere moverse a otro lugar" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-purple-200 dark:border-purple-800/50 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white dark:bg-slate-900 shadow-sm" />
               </div>
             </div>
           </div>
@@ -988,33 +988,33 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                 <label key={d.id} className="relative flex cursor-pointer group">
                   <input type="checkbox" name="assignedDriverId" value={d.id} checked={isSelected} onChange={() => setSelectedDriversUI(prev => prev.includes(d.id) ? prev.filter(id => id !== d.id) : [...prev, d.id])} className="sr-only" />
                   
-                  <div className={`w-full flex items-center p-3 bg-white dark:bg-slate-900 border-2 rounded-2xl transition-all ${isSelected ? 'border-blue-600 bg-blue-50' : 'border-slate-200 dark:border-slate-700 group-hover:border-blue-300'}`}>
+                  <div className={`w-full flex items-center p-3 bg-white dark:bg-slate-900 border-2 rounded-2xl transition-all ${isSelected ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'border-slate-200 dark:border-slate-700 group-hover:border-blue-300 dark:border-blue-700/50'}`}>
                     <div className={`p-2.5 rounded-xl transition-colors shrink-0 ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
                       <User className="w-5 h-5" />
                     </div>
                     <div className="ml-3 flex-1 overflow-hidden">
-                      <span className={`block text-sm font-extrabold truncate ${isSelected ? 'text-blue-700' : 'text-slate-800 dark:text-slate-200'}`}>{d.name}</span>
+                      <span className={`block text-sm font-extrabold truncate ${isSelected ? 'text-blue-700 dark:text-blue-400' : 'text-slate-800 dark:text-slate-200'}`}>{d.name}</span>
                       <span className={`block text-[10px] font-bold truncate mt-0.5 ${isSelected ? 'text-blue-500' : 'text-slate-400'}`}>{d.email}</span>
                     </div>
-                    <CheckCircle className={`w-6 h-6 transition-transform duration-200 shrink-0 ml-2 ${isSelected ? 'scale-100 text-blue-600' : 'scale-0 text-slate-300'}`} />
+                    <CheckCircle className={`w-6 h-6 transition-transform duration-200 shrink-0 ml-2 ${isSelected ? 'scale-100 text-blue-600 dark:text-blue-400' : 'scale-0 text-slate-300'}`} />
                   </div>
                 </label>
               )})}
            </div>
 
-           <div className="bg-blue-50/50 border border-blue-100 p-4 rounded-xl mt-4">
-              <label className="text-xs font-extrabold text-blue-800 uppercase tracking-wider mb-1 block">Conductor Externo (Spot / Única Vez)</label>
+           <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800/50 p-4 rounded-xl mt-4">
+              <label className="text-xs font-extrabold text-blue-800 dark:text-blue-300 uppercase tracking-wider mb-1 block">Conductor Externo (Spot / Única Vez)</label>
               <input 
                  type="email" 
                  value={spotDriverEmail} 
                  onChange={(e) => setSpotDriverEmail(e.target.value)} 
                  placeholder="correo@ejemplo.com (Opcional si seleccionaste uno arriba)" 
-                 className="w-full border-2 border-blue-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 shadow-sm placeholder:text-slate-400"
+                 className="w-full border-2 border-blue-200 dark:border-blue-800/50 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 shadow-sm placeholder:text-slate-400"
               />
            </div>
         </div>
         <div className="flex gap-3 pt-2">
-          {jobToEdit && <button type="button" onClick={onCancelEdit} className="w-1/3 bg-slate-200 hover:bg-slate-300 text-slate-700 dark:text-slate-300 px-8 py-3 rounded-2xl font-extrabold text-sm sm:text-lg transition-colors">Cancelar</button>}
+          {jobToEdit && <button type="button" onClick={onCancelEdit} className="w-1/3 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:bg-slate-600 text-slate-700 dark:text-slate-300 px-8 py-3 rounded-2xl font-extrabold text-sm sm:text-lg transition-colors">Cancelar</button>}
           <button type="submit" disabled={isSubmitting} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-extrabold text-sm sm:text-lg transition-colors shadow-lg shadow-blue-200 disabled:opacity-50">{isSubmitting ? 'Procesando...' : (jobToEdit ? 'Actualizar Trabajo' : 'Guardar y Asignar')}</button>
         </div>
       </form>

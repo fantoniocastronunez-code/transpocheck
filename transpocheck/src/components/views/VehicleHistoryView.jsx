@@ -162,17 +162,17 @@ export default function VehicleHistoryView({ db, showAlert }) {
                               <>
                                 <span className="text-slate-300 font-black mx-1">➔</span>
                                 {job.waypoints && job.waypoints.length > 0 && (
-                                   <span className="text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 text-xs">+{job.waypoints.length} paradas</span>
+                                   <span className="text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800/50 text-xs">+{job.waypoints.length} paradas</span>
                                 )}
                                 {job.waypoints && job.waypoints.length > 0 && <span className="text-slate-300 font-black mx-1">➔</span>}
-                                <span className="text-blue-600">{job.tripType === 'revision' ? 'PRT' : job.destination}</span>
+                                <span className="text-blue-600 dark:text-blue-400">{job.tripType === 'revision' ? 'PRT' : job.destination}</span>
                               </>
                            )}
                         </div>
                       </div>
                       <div className="text-left sm:text-right bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm shrink-0">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Responsable del Traslado</p>
-                        <p className="text-sm font-bold text-blue-700 flex items-center sm:justify-end gap-1.5"><User className="w-4 h-4"/> {driverName}</p>
+                        <p className="text-sm font-bold text-blue-700 dark:text-blue-400 flex items-center sm:justify-end gap-1.5"><User className="w-4 h-4"/> {driverName}</p>
                       </div>
                     </div>
 
@@ -182,7 +182,7 @@ export default function VehicleHistoryView({ db, showAlert }) {
                       {/* Observaciones (Lo más importante para siniestros) */}
                       <div>
                         <h5 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest flex items-center gap-1.5 mb-2"><FileText className="w-4 h-4 text-amber-500"/> Observaciones del Conductor</h5>
-                        <div className="bg-amber-50 border border-amber-200 p-3.5 rounded-xl text-sm font-bold text-amber-900 italic">
+                        <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800/50 p-3.5 rounded-xl text-sm font-bold text-amber-900 dark:text-amber-300 italic">
                           "{job.checklist?.observations || 'Sin observaciones registradas al momento del retiro.'}"
                         </div>
                       </div>
@@ -191,7 +191,7 @@ export default function VehicleHistoryView({ db, showAlert }) {
                       {job.checklist?.clientComments && (
                         <div>
                           <h5 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest flex items-center gap-1.5 mb-2"><FileText className="w-4 h-4 text-blue-500"/> Comentarios del Receptor</h5>
-                          <div className="bg-blue-50 border border-blue-200 p-3.5 rounded-xl text-sm font-bold text-blue-900 italic">
+                          <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800/50 p-3.5 rounded-xl text-sm font-bold text-blue-900 dark:text-blue-300 italic">
                             "{job.checklist.clientComments}"
                           </div>
                         </div>

@@ -46,19 +46,19 @@ export default function DriverOnboarding({ driver, db, showAlert }) {
     <button 
       type="button"
       onClick={() => setCameraConfig({ isOpen: true, title: label, field })}
-      className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer shadow-sm active:scale-[0.98] ${docs[field] ? 'bg-green-50 border-green-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-blue-400'}`}
+      className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer shadow-sm active:scale-[0.98] ${docs[field] ? 'bg-green-50 dark:bg-green-900/30 border-green-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-blue-400'}`}
     >
       <div className="flex items-center gap-3">
-         <div className={`p-2.5 rounded-full shadow-inner ${docs[field] ? 'bg-green-500 text-white' : 'bg-blue-100 text-blue-600'}`}>
+         <div className={`p-2.5 rounded-full shadow-inner ${docs[field] ? 'bg-green-500 text-white' : 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400'}`}>
             {docs[field] ? <CheckCircle className="w-5 h-5 animate-in zoom-in"/> : <Camera className="w-5 h-5"/>}
          </div>
-         <span className={`font-bold text-sm text-left ${docs[field] ? 'text-green-700' : 'text-slate-700 dark:text-slate-300'}`}>{label}</span>
+         <span className={`font-bold text-sm text-left ${docs[field] ? 'text-green-700 dark:text-green-400' : 'text-slate-700 dark:text-slate-300'}`}>{label}</span>
       </div>
       
       {docs[field] ? (
-         <img src={docs[field]} alt="OK" className="w-10 h-10 object-cover rounded-lg border border-green-200 shadow-sm animate-in fade-in" />
+         <img src={docs[field]} alt="OK" className="w-10 h-10 object-cover rounded-lg border border-green-200 dark:border-green-800/50 shadow-sm animate-in fade-in" />
       ) : (
-         <span className="text-[10px] font-black uppercase text-blue-500 tracking-widest bg-blue-50 px-2 py-1 rounded-md flex items-center gap-1"><Camera className="w-3 h-3"/> Tomar</span>
+         <span className="text-[10px] font-black uppercase text-blue-500 tracking-widest bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded-md flex items-center gap-1"><Camera className="w-3 h-3"/> Tomar</span>
       )}
     </button>
   );

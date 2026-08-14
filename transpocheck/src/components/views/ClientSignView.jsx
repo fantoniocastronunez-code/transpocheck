@@ -259,9 +259,9 @@ export default function ClientSignView({ jobId, db }) {
             <>
               <Clock className="w-16 h-16 text-blue-500 mx-auto mb-4 animate-pulse"/>
               <h2 className="text-2xl font-black text-slate-800 dark:text-slate-200 mb-2">Firma Recibida</h2>
-              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mt-4 mb-4">
-                <p className="text-blue-700 font-bold text-sm flex items-center justify-center gap-2">
-                  <span className="w-4 h-4 border-2 border-blue-300 border-t-blue-700 rounded-full animate-spin"></span>
+              <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800/50 rounded-xl p-4 mt-4 mb-4">
+                <p className="text-blue-700 dark:text-blue-400 font-bold text-sm flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-blue-300 dark:border-blue-700/50 border-t-blue-700 rounded-full animate-spin"></span>
                   A LA ESPERA DE TERMINAR EL CHECKLIST
                 </p>
               </div>
@@ -285,7 +285,7 @@ export default function ClientSignView({ jobId, db }) {
       <main className="max-w-md mx-auto p-4 pt-6 space-y-6">
         <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 flex justify-between items-center">
           <div>
-             <p className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest mb-1">Vehículo a recibir</p>
+             <p className="text-[10px] font-extrabold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1">Vehículo a recibir</p>
              <h2 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-slate-200">{job.brand} {job.model}</h2>
           </div>
           <LicensePlateBadge text={job.plate || job.vin} />
@@ -334,7 +334,7 @@ export default function ClientSignView({ jobId, db }) {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
           <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-sm p-6 transform transition-all animate-in zoom-in-95 duration-150">
             <div className="flex items-center gap-3 mb-4">
-              <div className="bg-blue-100 p-2 rounded-full"><AlertCircle className="w-6 h-6 text-blue-600"/></div>
+              <div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-full"><AlertCircle className="w-6 h-6 text-blue-600 dark:text-blue-400"/></div>
               <h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-200">LOGISTICAPP / LOGÍSTICA TS</h3>
             </div>
             <p className="text-slate-600 dark:text-slate-400 font-bold mb-6 text-sm">{alertMessage}</p>

@@ -97,7 +97,7 @@ export default function RelayAcceptView({ jobId, db, currentUserEmail, drivers }
           </div>
           
           <p className="text-[10px] font-black text-slate-400 uppercase">Te lo entrega</p>
-          <p className="font-extrabold text-red-600 mb-2">{previousDriverName}</p>
+          <p className="font-extrabold text-red-600 dark:text-red-400 mb-2">{previousDriverName}</p>
 
           <p className="text-[10px] font-black text-slate-400 uppercase">Ruta restante</p>
           <p className="font-bold text-slate-700 dark:text-slate-300 text-xs">{job.origin} ➔ {job.destination}</p>
@@ -106,7 +106,7 @@ export default function RelayAcceptView({ jobId, db, currentUserEmail, drivers }
         <button onClick={handleAcceptRelay} disabled={!!statusMsg} className="w-full bg-purple-600 hover:bg-purple-700 text-white font-black py-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
           {statusMsg || 'Aceptar y Tomar Control'}
         </button>
-        <button onClick={() => navigate('/')} className="w-full mt-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-400 font-bold py-3 rounded-xl transition-colors">
+        <button onClick={() => navigate('/')} className="w-full mt-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 font-bold py-3 rounded-xl transition-colors">
           Cancelar
         </button>
       </div>

@@ -14,11 +14,11 @@ export default function KovacsModal({
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl relative border-4 border-orange-100">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl relative border-4 border-orange-100 dark:border-orange-800/50">
           <button onClick={() => setShowKovacsModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 p-2 rounded-full transition-colors"><X className="w-5 h-5"/></button>
           
-          <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center mb-4">
-            <FileText className="w-6 h-6 text-orange-600"/>
+          <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/40 rounded-2xl flex items-center justify-center mb-4">
+            <FileText className="w-6 h-6 text-orange-600 dark:text-orange-400"/>
           </div>
           
           <h2 className="text-xl font-black text-slate-800 dark:text-slate-200 mb-1">Facturación Kovacs</h2>

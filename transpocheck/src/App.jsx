@@ -527,7 +527,7 @@ function LogisticApp() {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center justify-center p-4">
         {globalStyles}
-        <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4 shadow-sm"></div>
+        <div className="w-16 h-16 border-4 border-blue-200 dark:border-blue-800/50 border-t-blue-600 rounded-full animate-spin mb-4 shadow-sm"></div>
         <p className="text-lg font-extrabold text-slate-700 dark:text-slate-300 tracking-tight">Sincronizando datos...</p>
         <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">LogisticAPP</p>
       </div>
@@ -593,7 +593,7 @@ function LogisticApp() {
                <div className="relative w-20 h-20 mx-auto">
                  <div className="absolute inset-0 border-4 border-blue-100 dark:border-blue-900/50 rounded-full"></div>
                  <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
-                 <User className="absolute inset-0 m-auto w-8 h-8 text-blue-600" />
+                 <User className="absolute inset-0 m-auto w-8 h-8 text-blue-600 dark:text-blue-400" />
                </div>
                <p className="font-black text-slate-800 dark:text-slate-100 text-xl">Creando credenciales...</p>
                <p className="text-xs font-bold text-slate-400 dark:text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-relaxed">Estableciendo conexión segura con la central logística</p>
@@ -634,7 +634,7 @@ function LogisticApp() {
                 setSettingsOpen(!settingsOpen);
                 setRoleMenuOpen(false); // <-- NUEVO: Cierra el ojo al abrir la tuerca
               }} 
-              className="p-2 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 rounded-xl transition-colors shadow-sm border border-white/10"
+              className="p-2 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 rounded-xl transition-colors shadow-sm border border-white dark:border-slate-800/10"
             >
               <Settings className="w-5 h-5 text-white" />
             </button>
@@ -666,16 +666,16 @@ function LogisticApp() {
                   {/* Estado de Red */}
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Señal de Red</span>
-                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-black tracking-widest uppercase shadow-sm border transition-all duration-300 ${isOnline ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-red-100 text-red-600 border-red-300 animate-pulse'}`}>
+                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-black tracking-widest uppercase shadow-sm border transition-all duration-300 ${isOnline ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700/50' : 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 border-red-300 dark:border-red-700/50 animate-pulse'}`}>
                       {isOnline ? <><Wifi className="w-4 h-4"/> EN LÍNEA</> : <><CloudOff className="w-4 h-4"/> SIN CONEXIÓN</>}
                     </div>
                   </div>
                   {/* Switch Modo Oscuro */}
                   <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-4">
                     <span className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                      {darkMode ? <Moon className="w-4 h-4 text-blue-600"/> : <Sun className="w-4 h-4 text-amber-500"/>} Modo Oscuro
+                      {darkMode ? <Moon className="w-4 h-4 text-blue-600 dark:text-blue-400"/> : <Sun className="w-4 h-4 text-amber-500"/>} Modo Oscuro
                     </span>
-                    <button onClick={() => setDarkMode(!darkMode)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shadow-inner ${darkMode ? 'bg-blue-600' : 'bg-slate-300'}`}>
+                    <button onClick={() => setDarkMode(!darkMode)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shadow-inner ${darkMode ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'}`}>
                       <span className={`inline-block h-4 w-4 transform rounded-full bg-white dark:bg-slate-900 shadow-sm transition-transform ${darkMode ? 'translate-x-6' : 'translate-x-1'}`} />
                     </button>
                   </div>
@@ -687,7 +687,7 @@ function LogisticApp() {
                     {!notificationsEnabled ? (
                       <button onClick={requestNotificationPermission} className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-white rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm transition-colors">Activar</button>
                     ) : (
-                      <span className="px-2.5 py-1 bg-green-100 text-green-700 rounded-lg text-[10px] font-black uppercase tracking-wider">Activas</span>
+                      <span className="px-2.5 py-1 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 rounded-lg text-[10px] font-black uppercase tracking-wider">Activas</span>
                     )}
                   </div>
 
@@ -714,7 +714,7 @@ function LogisticApp() {
           });
         }
         setTimeout(() => window.location.reload(true), 300);
-      }} className="w-full py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-xl text-xs font-black uppercase tracking-wider shadow-sm transition-colors active:bg-blue-300 flex justify-center items-center gap-2">
+      }} className="w-full py-2 bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 text-blue-700 dark:text-blue-400 rounded-xl text-xs font-black uppercase tracking-wider shadow-sm transition-colors active:bg-blue-300 flex justify-center items-center gap-2">
         ACTUALIZAR APP
       </button>
     </div>
@@ -732,7 +732,7 @@ function LogisticApp() {
                                showAlert("Error al enviar la orden."); 
                              }
                           });
-                      }} className="w-full py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-xl text-xs font-black uppercase tracking-wider shadow-sm transition-colors active:bg-purple-300 flex justify-center items-center gap-2">
+                      }} className="w-full py-2 bg-purple-100 dark:bg-purple-900/40 hover:bg-purple-200 text-purple-700 dark:text-purple-400 rounded-xl text-xs font-black uppercase tracking-wider shadow-sm transition-colors active:bg-purple-300 flex justify-center items-center gap-2">
                         ACTUALIZAR A TODOS
                       </button>
                     </div>
@@ -741,7 +741,7 @@ function LogisticApp() {
                   {/* --- BOTÓN CERRAR SESIÓN --- */}
                   <div className="border-t border-slate-100 dark:border-slate-800 pt-4 mt-2">
                      <p className="text-[10px] text-center font-bold text-slate-400 mb-2 truncate">Sesión: {currentUserEmail}</p>
-                     <button onClick={() => signOut(auth)} className="w-full py-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-colors border border-red-100 shadow-sm active:scale-95">
+                     <button onClick={() => signOut(auth)} className="w-full py-2.5 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-colors border border-red-100 dark:border-red-800/50 shadow-sm active:scale-95">
                         <LogOut className="w-4 h-4"/> Cerrar Sesión
                      </button>
                   </div>
@@ -749,7 +749,7 @@ function LogisticApp() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 dark:bg-slate-900/50 p-2.5 text-center border-t border-slate-100 dark:border-slate-800">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">LogisticAPP v.3.2.2</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">LogisticAPP v.3.2.3</p>
                 </div>
               </div>
             )}
@@ -762,7 +762,7 @@ function LogisticApp() {
                 setRoleMenuOpen(!roleMenuOpen);
                 setSettingsOpen(false); // <-- NUEVO: Cierra la tuerca al abrir el ojo
               }} 
-              className="flex items-center gap-2 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 px-3 py-2 rounded-xl transition-colors shadow-sm border border-white/10"
+              className="flex items-center gap-2 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 px-3 py-2 rounded-xl transition-colors shadow-sm border border-white dark:border-slate-800/10"
             >
               <Eye className="w-5 h-5 text-white"/>
                 <span className="hidden md:inline">
@@ -799,13 +799,13 @@ function LogisticApp() {
                        {drivers.filter(d => !d.isHidden).sort((a, b) => a.name.localeCompare(b.name)).map(d => {
                          const isCurrentActive = activeRole === 'driver' && simulatedDriverEmail === d.email;
                          return (
-                         <div key={d.id} className={`flex items-center justify-between p-1 transition-colors group ${isCurrentActive ? 'bg-purple-50 dark:bg-purple-900/30 border-l-4 border-purple-500' : 'hover:bg-blue-50 dark:hover:bg-blue-900/20'}`}>
+                         <div key={d.id} className={`flex items-center justify-between p-1 transition-colors group ${isCurrentActive ? 'bg-purple-50 dark:bg-purple-900/30 border-l-4 border-purple-500' : 'hover:bg-blue-50 dark:bg-blue-900/30 dark:hover:bg-blue-900/20'}`}>
                             {/* Al tocar el nombre, entras directo */}
-                            <button onClick={() => { setSimulatedDriverEmail(d.email); setActiveRole('driver'); setMainTab('jobs'); setRoleMenuOpen(false); }} className={`flex-1 text-left px-2 py-2 text-xs truncate transition-colors ${isCurrentActive ? 'text-purple-700 dark:text-purple-400 font-black' : 'text-slate-700 dark:text-slate-300 font-bold group-hover:text-blue-800 dark:group-hover:text-blue-300'}`}>
+                            <button onClick={() => { setSimulatedDriverEmail(d.email); setActiveRole('driver'); setMainTab('jobs'); setRoleMenuOpen(false); }} className={`flex-1 text-left px-2 py-2 text-xs truncate transition-colors ${isCurrentActive ? 'text-purple-700 dark:text-purple-400 font-black' : 'text-slate-700 dark:text-slate-300 font-bold group-hover:text-blue-800 dark:text-blue-300 dark:group-hover:text-blue-300'}`}>
                                {d.name} {isCurrentActive && <span className="text-[9px] bg-purple-200 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded ml-1 animate-pulse">ACTIVO</span>}
                             </button>
                             {/* Estrella para fijarlo como favorito arriba */}
-                            <button onClick={(e) => { e.stopPropagation(); setFavDriverEmail(d.email); localStorage.setItem('favDriverEmail', d.email); }} className="p-2 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors" title="Fijar como Favorito">
+                            <button onClick={(e) => { e.stopPropagation(); setFavDriverEmail(d.email); localStorage.setItem('favDriverEmail', d.email); }} className="p-2 rounded-lg hover:bg-amber-100 dark:bg-amber-900/40 dark:hover:bg-amber-900/30 transition-colors" title="Fijar como Favorito">
                                <Star className={`w-4 h-4 transition-colors ${favDriverEmail === d.email ? 'fill-amber-400 text-amber-400' : 'text-slate-300 dark:text-slate-600 dark:text-slate-400 group-hover:text-amber-400 hover:text-amber-500'}`} />
                             </button>
                          </div>
@@ -902,7 +902,7 @@ function LogisticApp() {
                      <FileDown className="w-24 h-24 absolute -bottom-4 -right-2 text-white opacity-10 transform -rotate-12"/>
                   </div>
 
-                  <label className="w-full bg-white dark:bg-slate-900 border-2 border-dashed border-indigo-300 hover:bg-indigo-50 text-indigo-600 p-6 rounded-3xl font-black text-sm flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm mb-6">
+                  <label className="w-full bg-white dark:bg-slate-900 border-2 border-dashed border-indigo-300 dark:border-indigo-700/50 hover:bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 p-6 rounded-3xl font-black text-sm flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm mb-6">
                      <input type="file" accept="application/pdf,image/*" className="hidden" onChange={async (e) => {
                          const f = e.target.files[0];
                          if (!f) return;
@@ -948,7 +948,7 @@ function LogisticApp() {
                              showAlert("❌ Error al leer el documento.");
                          }
                      }}/>
-                     <div className="bg-indigo-100 p-3 rounded-full mb-1"><Plus className="w-6 h-6 text-indigo-600"/></div>
+                     <div className="bg-indigo-100 dark:bg-indigo-900/40 p-3 rounded-full mb-1"><Plus className="w-6 h-6 text-indigo-600 dark:text-indigo-400"/></div>
                      SUBIR NUEVO ARCHIVO
                   </label>
 
@@ -963,7 +963,7 @@ function LogisticApp() {
                         inboxDocs.map(docItem => (
                            <div key={docItem.id} className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border-2 border-slate-100 dark:border-slate-800 flex flex-col gap-4 relative overflow-hidden">
                               <div className="flex items-center gap-3">
-                                 <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-100"><FileText className="w-6 h-6 text-indigo-600"/></div>
+                                 <div className="bg-indigo-50 dark:bg-indigo-900/30 p-3 rounded-xl border border-indigo-100 dark:border-indigo-800/50"><FileText className="w-6 h-6 text-indigo-600 dark:text-indigo-400"/></div>
                                  <div className="flex-1 min-w-0">
                                     <p className="text-sm font-black text-slate-800 dark:text-slate-200 truncate">{docItem.fileName}</p>
                                     <p className="text-[10px] font-bold text-slate-400 mt-0.5">{new Date(docItem.createdAt).toLocaleString()}</p>
@@ -971,7 +971,7 @@ function LogisticApp() {
                                  <button onClick={async () => {
                                      const { deleteDoc, doc } = await import('firebase/firestore');
                                      showConfirm("¿Eliminar este documento?", () => deleteDoc(doc(db, 'inbox', docItem.id)));
-                                 }} className="p-2.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors"><Trash2 className="w-4 h-4"/></button>
+                                 }} className="p-2.5 bg-red-50 dark:bg-red-900/30 text-red-500 rounded-xl hover:bg-red-100 dark:bg-red-900/40 transition-colors"><Trash2 className="w-4 h-4"/></button>
                               </div>
                               <div className="flex gap-2 bg-slate-50 dark:bg-slate-900/50 p-2 rounded-xl border border-slate-100 dark:border-slate-800">
 
@@ -1035,32 +1035,32 @@ function LogisticApp() {
 
             <nav className="fixed bottom-0 w-full bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex justify-around items-center pt-2 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
               {activeRole === 'quoter' ? (
-                <button onClick={() => setMainTab('quotes')} className="flex flex-col items-center text-purple-600 transition-colors flex-1">
-                   <div className="bg-purple-100 p-2 rounded-xl mb-1"><Receipt className="w-5 h-5"/></div>
+                <button onClick={() => setMainTab('quotes')} className="flex flex-col items-center text-purple-600 dark:text-purple-400 transition-colors flex-1">
+                   <div className="bg-purple-100 dark:bg-purple-900/40 p-2 rounded-xl mb-1"><Receipt className="w-5 h-5"/></div>
                    <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Panel Comercial</span>
                 </button>
               ) : (
                 <>
                   {activeRole === 'admin' ? (
-                    <button onClick={() => setMainTab('quotes')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='quotes' ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400'}`}>
+                    <button onClick={() => setMainTab('quotes')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='quotes' ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:text-purple-400 dark:hover:text-purple-400'}`}>
                        <div className={`${mainTab==='quotes' ? 'bg-purple-100 dark:bg-purple-900/40' : 'bg-slate-100 dark:bg-slate-800'} p-2 rounded-xl mb-1`}><Receipt className="w-5 h-5"/></div>
                        <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Cotizar</span>
                     </button>
                   ) : (
-                    <button onClick={() => setShowRequestJob('traslado')} className="flex flex-col items-center text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-1">
+                    <button onClick={() => setShowRequestJob('traslado')} className="flex flex-col items-center text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-400 transition-colors flex-1">
                        <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded-xl mb-1"><Plus className="w-5 h-5"/></div>
                        <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Solicitar</span>
                     </button>
                   )}
-                  <button onClick={() => setMainTab('jobs')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='jobs' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400'}`}>
+                  <button onClick={() => setMainTab('jobs')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='jobs' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-400'}`}>
                      <div className={`${mainTab==='jobs' ? 'bg-blue-100 dark:bg-blue-900/40' : 'bg-transparent'} p-2 rounded-xl mb-1`}><ClipboardList className="w-5 h-5"/></div>
                      <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Trabajos</span>
                   </button>
-                  <button onClick={() => setMainTab('ranking')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='ranking' ? 'text-yellow-600 dark:text-yellow-500' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-yellow-600 dark:hover:text-yellow-500'}`}>
+                  <button onClick={() => setMainTab('ranking')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='ranking' ? 'text-yellow-600 dark:text-yellow-500' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-yellow-600 dark:text-yellow-400 dark:hover:text-yellow-500'}`}>
                      <div className={`${mainTab==='ranking' ? 'bg-yellow-100 dark:bg-yellow-900/40' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Trophy className="w-5 h-5"/></div>
                      <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Ranking</span>
                   </button>
-                  <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='expenses' ? 'text-emerald-600 dark:text-emerald-500' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-500'}`}>
+                  <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='expenses' ? 'text-emerald-600 dark:text-emerald-500' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:text-emerald-400 dark:hover:text-emerald-500'}`}>
                      <div className={`${mainTab==='expenses' ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Wallet className="w-5 h-5"/></div>
                      <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Gastos</span>
                   </button>
@@ -1187,19 +1187,19 @@ function LogisticApp() {
                   showAlert("Error al crear la solicitud.");
               }
           }} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl relative animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
-              <button type="button" onClick={()=>setShowRequestJob(false)} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-700 dark:text-slate-300"/></button>
+              <button type="button" onClick={()=>setShowRequestJob(false)} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"><X className="w-4 h-4 text-slate-700 dark:text-slate-300"/></button>
               
               <div className="flex items-center gap-3 mb-4 border-b border-slate-100 dark:border-slate-800 pb-3">
-                <div className="bg-blue-100 p-2.5 rounded-full"><Plus className="w-6 h-6 text-blue-600"/></div>
+                <div className="bg-blue-100 dark:bg-blue-900/40 p-2.5 rounded-full"><Plus className="w-6 h-6 text-blue-600 dark:text-blue-400"/></div>
                 <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 leading-tight">Solicitar<br/>Trabajo</h3>
               </div>
 
               {/* SELECTOR DE TIPO DE TRABAJO (4 OPCIONES) */}
               <div className="grid grid-cols-2 sm:grid-cols-4 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl mb-5 gap-1 shadow-inner">
-                 <button type="button" onClick={() => setShowRequestJob('traslado')} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'traslado' || showRequestJob === true ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200'}`}><Car className="w-3.5 h-3.5"/> Local</button>
-                 <button type="button" onClick={() => setShowRequestJob('simple')} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'simple' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200'}`}><FileText className="w-3.5 h-3.5"/> Servicio</button>
-                 <button type="button" onClick={() => setShowRequestJob('viaje')} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'viaje' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200'}`}><MapPin className="w-3.5 h-3.5"/> Regiones</button>
-                 <button type="button" onClick={() => setShowRequestJob('revision')} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'revision' ? 'bg-amber-500 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200'}`}><CheckCircle className="w-3.5 h-3.5"/> PRT</button>
+                 <button type="button" onClick={() => setShowRequestJob('traslado')} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'traslado' || showRequestJob === true ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700'}`}><Car className="w-3.5 h-3.5"/> Local</button>
+                 <button type="button" onClick={() => setShowRequestJob('simple')} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'simple' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700'}`}><FileText className="w-3.5 h-3.5"/> Servicio</button>
+                 <button type="button" onClick={() => setShowRequestJob('viaje')} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'viaje' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700'}`}><MapPin className="w-3.5 h-3.5"/> Regiones</button>
+                 <button type="button" onClick={() => setShowRequestJob('revision')} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'revision' ? 'bg-amber-500 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700'}`}><CheckCircle className="w-3.5 h-3.5"/> PRT</button>
               </div>
               
               <div className="space-y-4">
@@ -1215,7 +1215,7 @@ function LogisticApp() {
                     <>
                        <div className="space-y-1">
                           <label className="text-[10px] font-black text-purple-400 uppercase tracking-widest ml-1">Descripción del Servicio</label>
-                          <input name="description" required placeholder="Ej: Instalación de GPS, Batería..." className="w-full border-2 border-purple-200 bg-purple-50 rounded-xl p-3 text-sm font-bold text-purple-900 outline-none focus:border-purple-500"/>
+                          <input name="description" required placeholder="Ej: Instalación de GPS, Batería..." className="w-full border-2 border-purple-200 dark:border-purple-800/50 bg-purple-50 dark:bg-purple-900/30 rounded-xl p-3 text-sm font-bold text-purple-900 dark:text-purple-300 outline-none focus:border-purple-500"/>
                        </div>
                        <div className="space-y-1">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Patente / VIN (Opcional)</label>
@@ -1293,7 +1293,7 @@ function LogisticApp() {
                  <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Hasta (Destino)</label>
                     {showRequestJob === 'revision' ? (
-                      <select name="destination" required className="w-full border-2 border-emerald-200 bg-emerald-50 rounded-xl p-3 text-sm font-bold text-emerald-800 outline-none focus:border-emerald-500 cursor-pointer">
+                      <select name="destination" required className="w-full border-2 border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl p-3 text-sm font-bold text-emerald-800 dark:text-emerald-300 outline-none focus:border-emerald-500 cursor-pointer">
                         <option value="">Selecciona la Planta PRT...</option>
                         {prtList.map((p, i) => <option key={i} value={p.name}>{p.name}</option>)}
                       </select>
@@ -1302,9 +1302,9 @@ function LogisticApp() {
                     )}
                  </div>
                  
-                 <label className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-xl mt-3 cursor-pointer">
+                 <label className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800/50 rounded-xl mt-3 cursor-pointer">
                     <input type="checkbox" name="autoAssign" defaultChecked className="w-5 h-5 accent-blue-600 rounded cursor-pointer"/>
-                    <span className="text-xs font-bold text-blue-800">Asignarme este traslado a mí automáticamente</span>
+                    <span className="text-xs font-bold text-blue-800 dark:text-blue-300">Asignarme este traslado a mí automáticamente</span>
                  </label>
               </div>
               <button type="submit" className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg shadow-blue-200 transition-colors text-sm">Crear Solicitud</button>
@@ -1315,7 +1315,7 @@ function LogisticApp() {
       {dialogConfig && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
           <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-sm p-6 transform transition-all animate-in zoom-in-95 duration-150">
-            <div className="flex items-center gap-3 mb-4"><div className="bg-blue-100 p-2 rounded-full">{dialogConfig.type === 'confirm' ? <AlertCircle className="w-6 h-6 text-blue-600"/> : <Bell className="w-6 h-6 text-blue-600"/>}</div><h3 className="text-xl font-extrabold">LogisticAPP</h3></div>
+            <div className="flex items-center gap-3 mb-4"><div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-full">{dialogConfig.type === 'confirm' ? <AlertCircle className="w-6 h-6 text-blue-600 dark:text-blue-400"/> : <Bell className="w-6 h-6 text-blue-600 dark:text-blue-400"/>}</div><h3 className="text-xl font-extrabold">LogisticAPP</h3></div>
             <p className="text-slate-600 dark:text-slate-400 font-bold mb-6 text-sm">{dialogConfig.message}</p>
             <div className="flex gap-3">
               {dialogConfig.type === 'confirm' && <button onClick={closeDialog} className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold text-sm">Cancelar</button>}
@@ -1338,22 +1338,22 @@ function LogisticApp() {
                 showAlert("✅ Anuncio enviado exitosamente a toda la flota.");
               } catch(err) { console.error(err); showAlert("Error enviando anuncio."); }
           }} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl relative animate-in zoom-in-95">
-              <button type="button" onClick={()=>setShowBroadcastAdmin(false)} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-700 dark:text-slate-300"/></button>
+              <button type="button" onClick={()=>setShowBroadcastAdmin(false)} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"><X className="w-4 h-4 text-slate-700 dark:text-slate-300"/></button>
               <div className="flex items-center gap-3 mb-2">
-                <div className="bg-purple-100 p-2.5 rounded-full"><Megaphone className="w-6 h-6 text-purple-600"/></div>
+                <div className="bg-purple-100 dark:bg-purple-900/40 p-2.5 rounded-full"><Megaphone className="w-6 h-6 text-purple-600 dark:text-purple-400"/></div>
                 <h3 className="text-xl font-black text-slate-800 dark:text-slate-200">Pop-up Global</h3>
               </div>
               <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-5 leading-relaxed">Envía una alerta urgente que aparecerá obligatoriamente en medio de la pantalla de todos los conductores al abrir la app.</p>
 
               {broadcast?.active && (
-                <div className="mb-5 bg-purple-50 p-4 rounded-2xl border border-purple-200 relative overflow-hidden">
+                <div className="mb-5 bg-purple-50 dark:bg-purple-900/30 p-4 rounded-2xl border border-purple-200 dark:border-purple-800/50 relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-1.5 h-full bg-purple-500"></div>
-                    <p className="text-[10px] font-black text-purple-600 uppercase mb-1.5 tracking-widest">Anuncio Activo Actual:</p>
+                    <p className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase mb-1.5 tracking-widest">Anuncio Activo Actual:</p>
                     <p className="text-sm font-bold text-slate-700 dark:text-slate-300 italic leading-snug">"{broadcast.message}"</p>
                     <button type="button" onClick={async () => {
                       await setDoc(doc(db, 'system_config', 'broadcast'), { active: false }, { merge: true });
                       showAlert("Anuncio apagado. Ya no le saldrá a nadie.");
-                    }} className="mt-3 text-[10px] font-black uppercase text-red-500 hover:text-red-600 bg-red-100 px-3 py-1.5 rounded-lg transition-colors border border-red-200">Apagar Anuncio</button>
+                    }} className="mt-3 text-[10px] font-black uppercase text-red-500 hover:text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/40 px-3 py-1.5 rounded-lg transition-colors border border-red-200 dark:border-red-800/50">Apagar Anuncio</button>
                 </div>
               )}
 
@@ -1373,7 +1373,7 @@ function LogisticApp() {
               <div className="bg-purple-600 p-6 text-center relative overflow-hidden">
                 <div className="absolute -top-10 -right-10 opacity-10"><Megaphone className="w-40 h-40 text-white"/></div>
                 <div className="w-16 h-16 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl relative z-10">
-                    <Megaphone className="w-8 h-8 text-purple-600 animate-pulse"/>
+                    <Megaphone className="w-8 h-8 text-purple-600 dark:text-purple-400 animate-pulse"/>
                 </div>
                 <h3 className="text-2xl font-black text-white relative z-10 tracking-wide">¡Aviso Importante!</h3>
               </div>

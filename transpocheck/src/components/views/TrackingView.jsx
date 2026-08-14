@@ -125,11 +125,11 @@ const handleDownloadPDF = async (job) => {
 
   const branding = React.useMemo(() => {
     const name = (clientName || '').toUpperCase();
-    if (name.includes('KOVACS')) return { primary: 'bg-red-600', text: 'text-red-600', fill: 'bg-red-500', light: 'bg-red-50' };
-    if (name.includes('SALFA')) return { primary: 'bg-emerald-600', text: 'text-emerald-600', fill: 'bg-emerald-500', light: 'bg-emerald-50' };
+    if (name.includes('KOVACS')) return { primary: 'bg-red-600', text: 'text-red-600 dark:text-red-400', fill: 'bg-red-500', light: 'bg-red-50 dark:bg-red-900/30' };
+    if (name.includes('SALFA')) return { primary: 'bg-emerald-600', text: 'text-emerald-600 dark:text-emerald-400', fill: 'bg-emerald-500', light: 'bg-emerald-50 dark:bg-emerald-900/30' };
     if (name.includes('GRANDLEASING')) return { primary: 'bg-slate-900', text: 'text-slate-800 dark:text-slate-200', fill: 'bg-slate-800', light: 'bg-slate-100 dark:bg-slate-800' };
     if (name.includes('ENEX')) return { primary: 'bg-sky-600', text: 'text-sky-600', fill: 'bg-sky-500', light: 'bg-sky-50' };
-    return { primary: 'bg-blue-600', text: 'text-blue-600', fill: 'bg-blue-500', light: 'bg-blue-50' };
+    return { primary: 'bg-blue-600', text: 'text-blue-600 dark:text-blue-400', fill: 'bg-blue-500', light: 'bg-blue-50 dark:bg-blue-900/30' };
   }, [clientName]);
 
   // NUEVO: Diccionario histórico (Puesto en un lugar seguro, antes de los retornos)
@@ -150,15 +150,15 @@ const handleDownloadPDF = async (job) => {
   if (loading) return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900/50 p-4 pt-24 space-y-6 max-w-5xl mx-auto">
       <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 max-w-2xl mx-auto h-32 flex flex-col items-center justify-center animate-pulse shadow-sm">
-         <div className="w-14 h-14 bg-slate-200 rounded-2xl mb-3"></div>
-         <div className="h-4 bg-slate-200 rounded w-1/3 mb-2"></div>
-         <div className="h-6 bg-slate-200 rounded w-1/2"></div>
+         <div className="w-14 h-14 bg-slate-200 dark:bg-slate-700 rounded-2xl mb-3"></div>
+         <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3 mb-2"></div>
+         <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {[1, 2, 3, 4].map(i => (
           <div key={i} className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 h-48 animate-pulse shadow-sm flex flex-col justify-between">
-            <div className="flex justify-between items-start"><div className="h-5 bg-slate-200 rounded w-1/2"></div><div className="h-6 w-20 bg-slate-200 rounded-lg"></div></div>
-            <div className="space-y-3"><div className="h-3 bg-slate-200 rounded w-3/4"></div><div className="h-3 bg-slate-200 rounded w-1/2"></div></div>
+            <div className="flex justify-between items-start"><div className="h-5 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div><div className="h-6 w-20 bg-slate-200 dark:bg-slate-700 rounded-lg"></div></div>
+            <div className="space-y-3"><div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div><div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div></div>
           </div>
         ))}
       </div>
@@ -203,7 +203,7 @@ const handleDownloadPDF = async (job) => {
 
         <div className="flex items-center gap-2 sm:gap-4 shrink-0">
           {setDarkMode && (
-            <button onClick={() => setDarkMode(!darkMode)} className="p-2 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 rounded-xl transition-colors shadow-sm border border-white/10">
+            <button onClick={() => setDarkMode(!darkMode)} className="p-2 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 rounded-xl transition-colors shadow-sm border border-white dark:border-slate-800/10">
               {darkMode ? <Sun className="w-5 h-5 text-yellow-300"/> : <Moon className="w-5 h-5 text-white"/>}
             </button>
           )}
@@ -254,15 +254,15 @@ const handleDownloadPDF = async (job) => {
 
            {/* NUEVO: BANNER DE VISTA FILTRADA */}
            {trackId && (
-             <div className="bg-blue-50 border-2 border-blue-200 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm animate-in fade-in max-w-2xl mx-auto">
+             <div className="bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-800/50 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm animate-in fade-in max-w-2xl mx-auto">
                 <div>
-                  <p className="text-xs font-black text-blue-800 uppercase tracking-widest text-left">Vista Filtrada</p>
-                  <p className="text-sm font-bold text-blue-600 text-left">Mostrando solo el vehículo de la notificación.</p>
+                  <p className="text-xs font-black text-blue-800 dark:text-blue-300 uppercase tracking-widest text-left">Vista Filtrada</p>
+                  <p className="text-sm font-bold text-blue-600 dark:text-blue-400 text-left">Mostrando solo el vehículo de la notificación.</p>
                 </div>
                 <button onClick={() => {
                    setTrackId(null);
                    window.history.replaceState({}, '', `${window.location.pathname}?client=${encodeURIComponent(clientName)}`);
-                }} className="w-full sm:w-auto bg-white dark:bg-slate-900 border border-blue-200 text-blue-700 hover:bg-blue-100 px-4 py-2.5 rounded-xl text-xs font-extrabold shadow-sm transition-colors whitespace-nowrap">
+                }} className="w-full sm:w-auto bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800/50 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:bg-blue-900/40 px-4 py-2.5 rounded-xl text-xs font-extrabold shadow-sm transition-colors whitespace-nowrap">
                    Ver toda mi flota
                 </button>
              </div>
@@ -287,14 +287,14 @@ const handleDownloadPDF = async (job) => {
              <button onClick={() => {
                 setBatchFormData({ name: '', rut: '', comments: '', signature: null, selectedIds: pendingSignatureJobs.map(j => j.id) });
                 setBatchSignOpen(true);
-             }} className="w-full sm:w-auto bg-white dark:bg-slate-900 text-blue-700 hover:bg-blue-50 px-6 py-3 rounded-xl font-black shadow-md transition-colors whitespace-nowrap">
+             }} className="w-full sm:w-auto bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-900/30 px-6 py-3 rounded-xl font-black shadow-md transition-colors whitespace-nowrap">
                Firmar Lote Completo
              </button>
           </div>
         )}
 
         <div>
-          <h3 className="font-extrabold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2"><Navigation className="w-5 h-5 text-blue-600"/> Vehículos en Tránsito ({activeJobs.length})</h3>
+          <h3 className="font-extrabold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2"><Navigation className="w-5 h-5 text-blue-600 dark:text-blue-400"/> Vehículos en Tránsito ({activeJobs.length})</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {activeJobs.length === 0 ? (
                <p className="text-sm font-bold text-slate-400 bg-white dark:bg-slate-900 p-4 rounded-2xl border text-center col-span-full">No se encontraron traslados activos.</p>
@@ -337,7 +337,7 @@ const handleDownloadPDF = async (job) => {
                     <h2 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5 flex-wrap">
                       {job.tripType === 'simple' ? 'Servicio en Terreno' : 'En Traslado'}
                       {(job.checklist?.transitNotes || job.draft?.formData?.transitNotes) && (
-                        <span className="bg-orange-100 text-orange-700 border border-orange-200 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1 animate-pulse">
+                        <span className="bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800/50 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1 animate-pulse">
                           <AlertCircle className="w-2.5 h-2.5"/> NOTA EN RUTA
                         </span>
                       )}
@@ -366,12 +366,12 @@ const handleDownloadPDF = async (job) => {
                       {/* ICONO CENTRAL O 1ra PARADA PRT */}
                       <div className="flex justify-center -my-2.5 z-20">
                         {job.tripType === 'revision' ? (
-                           <div className="bg-amber-100 px-3 py-0.5 rounded-lg border border-amber-200 shadow-sm text-center">
-                             <p className="text-[10px] font-black text-amber-800 uppercase">1ra Parada: PRT</p>
+                           <div className="bg-amber-100 dark:bg-amber-900/40 px-3 py-0.5 rounded-lg border border-amber-200 dark:border-amber-800/50 shadow-sm text-center">
+                             <p className="text-[10px] font-black text-amber-800 dark:text-amber-300 uppercase">1ra Parada: PRT</p>
                            </div>
                         ) : job.waypoints && job.waypoints.length > 0 ? (
-                           <div className="bg-amber-100 px-3 py-0.5 rounded-lg border border-amber-200 shadow-sm text-center">
-                             <p className="text-[10px] font-black text-amber-700">{job.waypoints.length} paradas</p>
+                           <div className="bg-amber-100 dark:bg-amber-900/40 px-3 py-0.5 rounded-lg border border-amber-200 dark:border-amber-800/50 shadow-sm text-center">
+                             <p className="text-[10px] font-black text-amber-700 dark:text-amber-400">{job.waypoints.length} paradas</p>
                            </div>
                         ) : (
                           <div className="bg-white dark:bg-slate-900 p-1 rounded-full border border-slate-200 dark:border-slate-700 text-slate-300 shadow-sm">
@@ -386,7 +386,7 @@ const handleDownloadPDF = async (job) => {
                           <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
                           Hasta
                         </span>
-                        <p className="text-sm font-extrabold text-blue-700 leading-snug break-words">
+                        <p className="text-sm font-extrabold text-blue-700 dark:text-blue-400 leading-snug break-words">
                           {job.tripType === 'revision' ? getRtFinalDestination(job) : (job.destination || 'Por definir')}
                         </p>
                       </div>
@@ -395,7 +395,7 @@ const handleDownloadPDF = async (job) => {
                   
                   {job.waypoints && job.waypoints.length > 0 && (
                     <div className="mt-1 pt-2 border-t border-slate-100 dark:border-slate-800">
-                      <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1.5 flex items-center gap-1"><MapPin className="w-3 h-3"/> Ruta intermedia:</p>
+                      <p className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><MapPin className="w-3 h-3"/> Ruta intermedia:</p>
                       <div className="flex flex-col gap-1">
                         {job.waypoints.map((wp, i) => (
                            <span key={i} className="text-[11px] font-bold text-slate-600 dark:text-slate-400 leading-snug break-words"><span className="font-black mr-1 text-slate-400">{i + 1}.</span> {wp}</span>
@@ -410,18 +410,18 @@ const handleDownloadPDF = async (job) => {
                   <div className="absolute top-2 left-[11px] w-0.5 bg-blue-500 rounded-full transition-all duration-1000 ease-out" 
                        style={{ height: step4Done ? '100%' : step3Done ? '66%' : step2Done ? '33%' : isAccepted ? '10%' : '0%' }}></div>
 
-                  <div className="relative"><div className="absolute -left-8 bg-blue-500 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 transition-transform duration-300 hover:scale-110"><CheckCircle className="w-3 h-3 text-white"/></div><p className="font-extrabold text-slate-800 dark:text-slate-200 text-sm">{isAccepted ? (job.assignedDrivers?.find(d => d.email === job.acceptedByEmail)?.name || "Conductor en camino") : "Buscando conductor..."}</p><p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-0.5">{isAccepted ? `Responsable del retiro en ${job.origin}` : `Esperando asignación para ${job.origin}`}</p></div>
+                  <div className="relative"><div className="absolute -left-8 bg-blue-500 w-6 h-6 rounded-full border-4 border-white dark:border-slate-800 shadow-sm flex items-center justify-center z-10 transition-transform duration-300 hover:scale-110"><CheckCircle className="w-3 h-3 text-white"/></div><p className="font-extrabold text-slate-800 dark:text-slate-200 text-sm">{isAccepted ? (job.assignedDrivers?.find(d => d.email === job.acceptedByEmail)?.name || "Conductor en camino") : "Buscando conductor..."}</p><p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-0.5">{isAccepted ? `Responsable del retiro en ${job.origin}` : `Esperando asignación para ${job.origin}`}</p></div>
                   
-                  <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 transition-all duration-500 ${step2Done ? 'bg-blue-500 scale-110' : (phase === 'arrived_pickup' ? 'bg-amber-400 scale-110' : 'bg-slate-200')}`}>{step2Done && <CheckCircle className="w-3 h-3 text-white animate-in zoom-in"/>}</div><p className={`font-extrabold text-sm transition-colors duration-500 ${step2Done ? 'text-slate-800 dark:text-slate-200' : (phase === 'arrived_pickup' ? 'text-amber-600' : 'text-slate-400')}`}>{phase === 'arrived_pickup' ? 'Esperando entrega en origen...' : 'Vehículo en Tránsito'}</p><p className={`text-xs font-bold mt-0.5 transition-colors duration-500 ${step2Done ? 'text-blue-600' : (phase === 'arrived_pickup' ? 'text-amber-500' : 'text-slate-400')}`}>{step2Done ? 'El conductor tiene el vehículo en su poder' : (phase === 'arrived_pickup' ? 'El conductor ya está en el punto de retiro' : 'Esperando llegada del conductor')}</p></div>
+                  <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white dark:border-slate-800 shadow-sm flex items-center justify-center z-10 transition-all duration-500 ${step2Done ? 'bg-blue-500 scale-110' : (phase === 'arrived_pickup' ? 'bg-amber-400 scale-110' : 'bg-slate-200 dark:bg-slate-700')}`}>{step2Done && <CheckCircle className="w-3 h-3 text-white animate-in zoom-in"/>}</div><p className={`font-extrabold text-sm transition-colors duration-500 ${step2Done ? 'text-slate-800 dark:text-slate-200' : (phase === 'arrived_pickup' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400')}`}>{phase === 'arrived_pickup' ? 'Esperando entrega en origen...' : 'Vehículo en Tránsito'}</p><p className={`text-xs font-bold mt-0.5 transition-colors duration-500 ${step2Done ? 'text-blue-600 dark:text-blue-400' : (phase === 'arrived_pickup' ? 'text-amber-500' : 'text-slate-400')}`}>{step2Done ? 'El conductor tiene el vehículo en su poder' : (phase === 'arrived_pickup' ? 'El conductor ya está en el punto de retiro' : 'Esperando llegada del conductor')}</p></div>
                   
-                  <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 transition-all duration-500 ${step3Done ? 'bg-blue-500 scale-110' : 'bg-slate-200'}`}>{step3Done && <CheckCircle className="w-3 h-3 text-white animate-in zoom-in"/>}</div><p className={`font-extrabold text-sm transition-colors duration-500 ${step3Done ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400'}`}>{job.tripType === 'revision' ? 'En Planta de Revisión' : 'Llegada a Destino'}</p><p className={`text-xs font-bold mt-0.5 transition-colors duration-500 ${step3Done ? 'text-blue-600' : 'text-slate-400'}`}>{step3Done ? (job.tripType === 'revision' ? 'Realizando inspección técnica' : 'En proceso de entrega y checklist') : `Hacia ${job.tripType === 'revision' ? 'PRT' : job.destination}`}</p></div>
+                  <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white dark:border-slate-800 shadow-sm flex items-center justify-center z-10 transition-all duration-500 ${step3Done ? 'bg-blue-500 scale-110' : 'bg-slate-200 dark:bg-slate-700'}`}>{step3Done && <CheckCircle className="w-3 h-3 text-white animate-in zoom-in"/>}</div><p className={`font-extrabold text-sm transition-colors duration-500 ${step3Done ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400'}`}>{job.tripType === 'revision' ? 'En Planta de Revisión' : 'Llegada a Destino'}</p><p className={`text-xs font-bold mt-0.5 transition-colors duration-500 ${step3Done ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'}`}>{step3Done ? (job.tripType === 'revision' ? 'Realizando inspección técnica' : 'En proceso de entrega y checklist') : `Hacia ${job.tripType === 'revision' ? 'PRT' : job.destination}`}</p></div>
                   
                   {job.tripType === 'revision' && (
-                  <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 transition-all duration-500 ${step4Done ? (job.prt_result === 'rechazado' ? 'bg-red-500 scale-110' : 'bg-green-500 scale-110') : 'bg-slate-200'}`}>{step4Done && <CheckCircle className="w-3 h-3 text-white animate-in zoom-in"/>}</div><p className={`font-extrabold text-sm transition-colors duration-500 ${step4Done ? (job.prt_result === 'rechazado' ? 'text-red-600' : 'text-green-600') : 'text-slate-400'}`}>Resultado de Revisión</p>{step4Done ? (<p className={`text-xs font-bold mt-0.5 ${job.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-600'}`}>{job.prt_result === 'rechazado' ? `Rechazado: ${job.prt_reason}` : 'Aprobado Exitosamente'}</p>) : (<p className="text-xs font-bold text-slate-400 mt-0.5">Esperando documento de la planta</p>)}</div>
+                  <div className="relative"><div className={`absolute -left-8 w-6 h-6 rounded-full border-4 border-white dark:border-slate-800 shadow-sm flex items-center justify-center z-10 transition-all duration-500 ${step4Done ? (job.prt_result === 'rechazado' ? 'bg-red-500 scale-110' : 'bg-green-500 scale-110') : 'bg-slate-200 dark:bg-slate-700'}`}>{step4Done && <CheckCircle className="w-3 h-3 text-white animate-in zoom-in"/>}</div><p className={`font-extrabold text-sm transition-colors duration-500 ${step4Done ? (job.prt_result === 'rechazado' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400') : 'text-slate-400'}`}>Resultado de Revisión</p>{step4Done ? (<p className={`text-xs font-bold mt-0.5 ${job.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-600 dark:text-green-400'}`}>{job.prt_result === 'rechazado' ? `Rechazado: ${job.prt_reason}` : 'Aprobado Exitosamente'}</p>) : (<p className="text-xs font-bold text-slate-400 mt-0.5">Esperando documento de la planta</p>)}</div>
                   )}
 
                   {job.tripType === 'revision' && step4Done && (job.prt_result === 'aprobado' || job.prt_result === 'aprobado_ayuda') && (
-                  <div className="relative pt-2"><div className="absolute -left-8 w-6 h-6 rounded-full border-4 border-white shadow-sm flex items-center justify-center z-10 bg-blue-500 scale-110"><Navigation className="w-3 h-3 text-white"/></div><p className="font-extrabold text-sm text-slate-800 dark:text-slate-200">Camino a destino</p><p className="text-xs font-bold text-blue-600 mt-0.5">{job.checklist?.rtReturnOption === 'other' ? job.checklist?.rtReturnDestination : job.origin}</p></div>
+                  <div className="relative pt-2"><div className="absolute -left-8 w-6 h-6 rounded-full border-4 border-white dark:border-slate-800 shadow-sm flex items-center justify-center z-10 bg-blue-500 scale-110"><Navigation className="w-3 h-3 text-white"/></div><p className="font-extrabold text-sm text-slate-800 dark:text-slate-200">Camino a destino</p><p className="text-xs font-bold text-blue-600 dark:text-blue-400 mt-0.5">{job.checklist?.rtReturnOption === 'other' ? job.checklist?.rtReturnDestination : job.origin}</p></div>
                   )}
                 </div>
 
@@ -430,7 +430,7 @@ const handleDownloadPDF = async (job) => {
                 {job.liveLocation && job.phase === 'picked_up' && (
                   <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-5 animate-in fade-in duration-500">
                     <div className="flex items-center justify-between mb-3">
-                      <p className="text-xs font-black text-blue-600 uppercase flex items-center gap-1.5"><Navigation className="w-4 h-4 animate-bounce"/> GPS en vivo</p>
+                      <p className="text-xs font-black text-blue-600 dark:text-blue-400 uppercase flex items-center gap-1.5"><Navigation className="w-4 h-4 animate-bounce"/> GPS en vivo</p>
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1"><span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Conectado</p>
                     </div>
                     <div className="w-full h-48 bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-slate-700 shadow-inner relative pointer-events-none">
@@ -450,7 +450,7 @@ const handleDownloadPDF = async (job) => {
         </div>
 
         <div>
-          <h3 className="font-extrabold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2"><CheckCircle className="w-5 h-5 text-green-600"/> Últimos Finalizados</h3>
+          <h3 className="font-extrabold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2"><CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400"/> Últimos Finalizados</h3>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {historyJobs.length === 0 ? (
@@ -480,7 +480,7 @@ const handleDownloadPDF = async (job) => {
                      <div className="flex-1 min-w-0 pr-2">
                         <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-tight truncate">{job.brand} {job.model}</p>
                         {job.checklist?.transitNotes && (
-                          <span className="bg-orange-100 text-orange-700 border border-orange-200 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1 mt-1 w-max">
+                          <span className="bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800/50 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1 mt-1 w-max">
                             <AlertCircle className="w-2.5 h-2.5"/> NOTA EN RUTA
                           </span>
                         )}
@@ -498,7 +498,7 @@ const handleDownloadPDF = async (job) => {
                        {job.origin || '-'}
                     </span>
                     <span className="text-slate-300 font-black shrink-0">➔</span>
-                    <span className="truncate text-blue-600 max-w-[45%] text-right" title={job.destination}>
+                    <span className="truncate text-blue-600 dark:text-blue-400 max-w-[45%] text-right" title={job.destination}>
                        {job.tripType === 'revision' ? 'PRT' : (job.destination || '-')}
                     </span>
                   </div>
@@ -506,19 +506,19 @@ const handleDownloadPDF = async (job) => {
                 
                 <div className="flex justify-between items-end mt-auto pt-2 border-t border-slate-50">
                   <div>
-                    <p className={`text-[11px] font-black uppercase ${isFailed ? 'text-red-500' : 'text-green-600'}`}>
+                    <p className={`text-[11px] font-black uppercase ${isFailed ? 'text-red-500' : 'text-green-600 dark:text-green-400'}`}>
                       {isFailed ? 'RECHAZADO' : 'ENTREGADO'}
                     </p>
                     <p className="text-slate-400 text-[9px] font-bold mt-0.5">{new Date(job.completedAt || job.createdAt).toLocaleDateString('es-CL')}</p>
                   </div>
                   <div className="flex gap-2 items-center">
                     {job.checklist && (job.checklist.scandocPdf || job.checklist.scandocPdfInbox || job.checklist.scannerLink) && (
-                      <a href={job.checklist.scandocPdf || job.checklist.scandocPdfInbox || job.checklist.scannerLink} onClick={(e) => e.stopPropagation()} target="_blank" rel="noreferrer" className="flex items-center justify-center p-2.5 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors border border-indigo-100 relative" title="Ver Documentación PRT">
+                      <a href={job.checklist.scandocPdf || job.checklist.scandocPdfInbox || job.checklist.scannerLink} onClick={(e) => e.stopPropagation()} target="_blank" rel="noreferrer" className="flex items-center justify-center p-2.5 text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:bg-indigo-900/40 rounded-xl transition-colors border border-indigo-100 dark:border-indigo-800/50 relative" title="Ver Documentación PRT">
                         <span className="absolute -top-1.5 -right-1.5 bg-indigo-600 text-white text-[7px] font-black px-1 py-0.5 rounded shadow-sm">PRT</span>
                         <FileText className="w-4 h-4"/>
                       </a>
                     )}
-                    <button onClick={(e) => { e.stopPropagation(); handleDownloadPDF(job); }} disabled={downloadingId === job.id} className="flex items-center justify-center p-2.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors border border-blue-100 disabled:opacity-50" title="Descargar PDF">
+                    <button onClick={(e) => { e.stopPropagation(); handleDownloadPDF(job); }} disabled={downloadingId === job.id} className="flex items-center justify-center p-2.5 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:bg-blue-900/40 rounded-xl transition-colors border border-blue-100 dark:border-blue-800/50 disabled:opacity-50" title="Descargar PDF">
                       {downloadingId === job.id ? <Clock className="w-4 h-4 animate-spin"/> : <FileDown className="w-4 h-4"/>}
                     </button>
                   </div>
@@ -532,7 +532,7 @@ const handleDownloadPDF = async (job) => {
             <div className="mt-8 text-center pb-8 animate-in fade-in duration-300">
               <button 
                 onClick={() => setHistoryLimit(prev => prev + 30)}
-                className="bg-white dark:bg-slate-900 border-2 border-blue-100 hover:border-blue-300 text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-2xl font-black shadow-sm transition-all flex items-center justify-center gap-2 mx-auto"
+                className="bg-white dark:bg-slate-900 border-2 border-blue-100 dark:border-blue-800/50 hover:border-blue-300 dark:border-blue-700/50 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-900/30 px-8 py-3 rounded-2xl font-black shadow-sm transition-all flex items-center justify-center gap-2 mx-auto"
               >
                 cargar traslados anteriores <FileDown className="w-5 h-5"/>
               </button>
@@ -553,7 +553,7 @@ const handleDownloadPDF = async (job) => {
                 <h2 className="text-xl font-black text-slate-800 dark:text-slate-200 tracking-tight">Firma de Recepción</h2>
                 <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1">Selecciona los vehículos a recepcionar</p>
               </div>
-              <button onClick={() => setBatchSignOpen(false)} className="bg-white dark:bg-slate-900 hover:bg-slate-200 p-2.5 rounded-full transition-colors shadow-sm border border-slate-200 dark:border-slate-700"><X className="w-5 h-5 text-slate-700 dark:text-slate-300"/></button>
+              <button onClick={() => setBatchSignOpen(false)} className="bg-white dark:bg-slate-900 hover:bg-slate-200 dark:bg-slate-700 p-2.5 rounded-full transition-colors shadow-sm border border-slate-200 dark:border-slate-700"><X className="w-5 h-5 text-slate-700 dark:text-slate-300"/></button>
             </div>
 
             {/* CUERPO CON SCROLL INTERNO */}
@@ -562,14 +562,14 @@ const handleDownloadPDF = async (job) => {
               {/* LISTA DE VEHÍCULOS (Más compacta) */}
               <div className="space-y-2.5 border-b border-slate-100 dark:border-slate-800 pb-5">
                  {pendingSignatureJobs.map(j => (
-                   <label key={j.id} className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${batchFormData.selectedIds.includes(j.id) ? 'border-blue-500 bg-blue-50/50 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300'}`}>
+                   <label key={j.id} className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${batchFormData.selectedIds.includes(j.id) ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:border-slate-600'}`}>
                       <input type="checkbox" checked={batchFormData.selectedIds.includes(j.id)} onChange={(e) => {
                          const ids = e.target.checked ? [...batchFormData.selectedIds, j.id] : batchFormData.selectedIds.filter(id => id !== j.id);
                          setBatchFormData({...batchFormData, selectedIds: ids});
                       }} className="w-5 h-5 accent-blue-600 rounded cursor-pointer shrink-0"/>
                       <div className="flex-1">
                          <p className="font-extrabold text-sm text-slate-800 dark:text-slate-200 leading-tight truncate">{j.brand} {j.model}</p>
-                         <p className="font-bold text-[11px] text-blue-600 uppercase mt-0.5 tracking-wider">{j.plate || j.vin}</p>
+                         <p className="font-bold text-[11px] text-blue-600 dark:text-blue-400 uppercase mt-0.5 tracking-wider">{j.plate || j.vin}</p>
                       </div>
                    </label>
                  ))}
@@ -620,7 +620,7 @@ const handleDownloadPDF = async (job) => {
                  
                  <div className="pt-3">
                     <div className="flex justify-between items-center mb-2">
-                      <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest ml-1 block">Firma Digital</label>
+                      <label className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest ml-1 block">Firma Digital</label>
                       <span className="text-[9px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">Aplica para todos</span>
                     </div>
                     <div className="rounded-2xl overflow-hidden shadow-inner border border-slate-200 dark:border-slate-700">
@@ -687,7 +687,7 @@ const handleDownloadPDF = async (job) => {
           <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95">
             <div className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-4 sm:p-5 flex justify-between items-start shrink-0 relative">
               <div className="flex gap-3 items-center">
-                <div className="bg-blue-100 p-2.5 rounded-xl"><FileText className="w-6 h-6 text-blue-600"/></div>
+                <div className="bg-blue-100 dark:bg-blue-900/40 p-2.5 rounded-xl"><FileText className="w-6 h-6 text-blue-600 dark:text-blue-400"/></div>
                 <div>
                   <h3 className="text-lg font-black text-slate-800 dark:text-slate-200 leading-tight">Ficha Técnica</h3>
                   <p className="text-xs font-bold text-slate-500 dark:text-slate-400">
@@ -748,7 +748,7 @@ const handleDownloadPDF = async (job) => {
                     {selectedHistoryJob.checklist?.keyLocation && (
                     <div className="col-span-2">
                       <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Ubicación de Llaves</p>
-                      <p className="text-sm font-black text-orange-600">
+                      <p className="text-sm font-black text-orange-600 dark:text-orange-400">
                          {selectedHistoryJob.checklist.keyLocation === 'puestas' ? 'Puestas' : 
                           selectedHistoryJob.checklist.keyLocation === 'puerta' ? 'En la puerta' :
                           selectedHistoryJob.checklist.keyLocation === 'mano' ? `Entregadas por mano a: ${selectedHistoryJob.checklist.keyHandedTo || ''}` : selectedHistoryJob.checklist.keyLocation}
@@ -757,7 +757,7 @@ const handleDownloadPDF = async (job) => {
                     )}
                     <div className="col-span-2 mt-2">
                       <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Distancia GPS (Maps)</p>
-                      <p className="text-sm font-black text-blue-600">{selectedHistoryJob.drivenDistance || 'No calculado'}</p>
+                      <p className="text-sm font-black text-blue-600 dark:text-blue-400">{selectedHistoryJob.drivenDistance || 'No calculado'}</p>
                     </div>
                   </div>
                 </div>
@@ -773,8 +773,8 @@ const handleDownloadPDF = async (job) => {
                     const [y,m,d] = dateStr.split('-');
                     const expDate = new Date(y, m-1, d);
                     const today = new Date(); today.setHours(0,0,0,0);
-                    if (expDate < today) return <span className="text-red-600 font-bold text-xs">{d}/{m}/{y} (Vencido)</span>;
-                    return <span className="text-green-700 font-bold text-xs">{d}/{m}/{y}</span>;
+                    if (expDate < today) return <span className="text-red-600 dark:text-red-400 font-bold text-xs">{d}/{m}/{y} (Vencido)</span>;
+                    return <span className="text-green-700 dark:text-green-400 font-bold text-xs">{d}/{m}/{y}</span>;
                  };
 
                  return (
@@ -792,9 +792,9 @@ const handleDownloadPDF = async (job) => {
 
               {/* NOTAS DE TRASLADO EN FICHA */}
               {selectedHistoryJob.checklist?.transitNotes && (
-                <div className="bg-orange-50 border-2 border-orange-200 p-4 rounded-xl shadow-sm mb-4">
-                  <h4 className="text-[10px] font-black uppercase text-orange-600 tracking-widest mb-1 flex items-center gap-1.5"><AlertCircle className="w-4 h-4"/> Notas durante el traslado</h4>
-                  <p className="text-xs font-bold text-orange-800 italic">"{selectedHistoryJob.checklist.transitNotes}"</p>
+                <div className="bg-orange-50 dark:bg-orange-900/30 border-2 border-orange-200 dark:border-orange-800/50 p-4 rounded-xl shadow-sm mb-4">
+                  <h4 className="text-[10px] font-black uppercase text-orange-600 dark:text-orange-400 tracking-widest mb-1 flex items-center gap-1.5"><AlertCircle className="w-4 h-4"/> Notas durante el traslado</h4>
+                  <p className="text-xs font-bold text-orange-800 dark:text-orange-300 italic">"{selectedHistoryJob.checklist.transitNotes}"</p>
                 </div>
               )}
 

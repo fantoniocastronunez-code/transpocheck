@@ -64,7 +64,7 @@ const EditExpenseModal = ({ expense, onClose, isAdminView, drivers, db, showAler
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
       <form onSubmit={handleUpdateSubmit} className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md p-6">
-        <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-200">Editar Registro</h3><button type="button" onClick={onClose} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button></div>
+        <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-200">Editar Registro</h3><button type="button" onClick={onClose} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700"><X className="w-5 h-5"/></button></div>
         <div className="space-y-4">
           <div>
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Detalle</label>
@@ -78,7 +78,7 @@ const EditExpenseModal = ({ expense, onClose, isAdminView, drivers, db, showAler
             </div>
           </div>
         </div>
-        <div className="flex gap-4 mt-6"><button type="button" onClick={onClose} className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl font-bold text-slate-600 dark:text-slate-400">Cancelar</button><button type="submit" className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold">Guardar</button></div>
+        <div className="flex gap-4 mt-6"><button type="button" onClick={onClose} className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 rounded-xl font-bold text-slate-600 dark:text-slate-400">Cancelar</button><button type="submit" className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold">Guardar</button></div>
       </form>
     </div>
   );
@@ -375,8 +375,8 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
   if (!isAppReady) {
     return (
       <main className={`${isAdminView ? 'max-w-3xl' : 'max-w-md'} mx-auto p-4 pt-20 sm:pt-24 space-y-6 pb-24`}>
-        <div className="h-8 w-48 bg-slate-200/60 animate-pulse rounded-lg mb-6"></div>
-        <div className="h-32 bg-slate-200/50 animate-pulse rounded-3xl w-full mb-6"></div>
+        <div className="h-8 w-48 bg-slate-200 dark:bg-slate-700/60 animate-pulse rounded-lg mb-6"></div>
+        <div className="h-32 bg-slate-200 dark:bg-slate-700/50 animate-pulse rounded-3xl w-full mb-6"></div>
         <div className="space-y-4">
            <div className="h-24 bg-slate-100 dark:bg-slate-800/80 animate-pulse rounded-2xl w-full"></div>
            <div className="h-24 bg-slate-100 dark:bg-slate-800/80 animate-pulse rounded-2xl w-full"></div>
@@ -390,10 +390,10 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
     return (
       <main className="max-w-3xl mx-auto p-4 pt-20 sm:pt-24 pb-24">
         {editingExpense && <EditExpenseModal expense={editingExpense} onClose={() => setEditingExpense(null)} isAdminView={isAdminView} drivers={drivers} db={db} showAlert={showAlert} />}
-        {viewingReceipt && <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[150] p-4"><div className="bg-white dark:bg-slate-900 rounded-3xl p-4 w-full max-w-md relative"><button onClick={() => setViewingReceipt(null)} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-full transition-colors"><X className="w-5 h-5 text-slate-700 dark:text-slate-300"/></button><h3 className="font-extrabold text-slate-800 dark:text-slate-200 mb-4 ml-2">Comprobante</h3><img src={viewingReceipt} alt="Comprobante" className="w-full h-auto max-h-[70vh] object-contain rounded-xl shadow-sm" /></div></div>}
+        {viewingReceipt && <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[150] p-4"><div className="bg-white dark:bg-slate-900 rounded-3xl p-4 w-full max-w-md relative"><button onClick={() => setViewingReceipt(null)} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 rounded-full transition-colors"><X className="w-5 h-5 text-slate-700 dark:text-slate-300"/></button><h3 className="font-extrabold text-slate-800 dark:text-slate-200 mb-4 ml-2">Comprobante</h3><img src={viewingReceipt} alt="Comprobante" className="w-full h-auto max-h-[70vh] object-contain rounded-xl shadow-sm" /></div></div>}
 
        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-         <h2 className="text-2xl font-extrabold flex items-center gap-2"><Wallet className="text-blue-600"/> Control Viáticos</h2>
+         <h2 className="text-2xl font-extrabold flex items-center gap-2"><Wallet className="text-blue-600 dark:text-blue-400"/> Control Viáticos</h2>
          <button 
             type="button" 
             onClick={exportAndClearExpenses} 
@@ -407,7 +407,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
         <div className="space-y-4 mb-8">
           <h3 className="text-sm font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-2 mb-4">Directorio de Conductores</h3>
           {drivers.map(d => (
-            <div key={d.id} className={`bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-3xl border transition-all ${selectedDriverId === d.id ? 'border-blue-500 shadow-md ring-4 ring-blue-50' : 'border-slate-200 dark:border-slate-700 shadow-sm hover:border-blue-300'}`}>
+            <div key={d.id} className={`bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-3xl border transition-all ${selectedDriverId === d.id ? 'border-blue-500 shadow-md ring-4 ring-blue-50' : 'border-slate-200 dark:border-slate-700 shadow-sm hover:border-blue-300 dark:border-blue-700/50'}`}>
               
               <div className="flex justify-between items-center cursor-pointer" onClick={() => {setSelectedDriverId(d.id === selectedDriverId ? null : d.id); setAdminTxType('assignment'); setSelectedJobId('');}}>
                 <div>
@@ -416,7 +416,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
                 </div>
                 <div className="text-right">
                   <p className="text-[10px] uppercase font-bold text-slate-400">Saldo</p>
-                  <p className={`font-black text-xl ${d.balance < 0 ? 'text-red-600' : 'text-green-600'}`}>{formatMoney(d.balance||0)}</p>
+                  <p className={`font-black text-xl ${d.balance < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>{formatMoney(d.balance||0)}</p>
                 </div>
               </div>
               
@@ -424,7 +424,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
                 <div className="mt-5 border-t border-slate-100 dark:border-slate-800 pt-5 animate-in slide-in-from-top-2 duration-300">
                   
                   <form onSubmit={(e) => addExp(e, adminTxType, Number(e.target.amount.value), adminTxType === 'expense' ? e.target.detail?.value : '', d.id, d.name, d.email)} className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3 mb-6 relative">
-                    <div className="absolute -top-3 left-4 bg-white dark:bg-slate-900 px-2 text-[10px] font-black uppercase text-blue-600 tracking-widest border border-slate-200 dark:border-slate-700 rounded-full">Nuevo Registro</div>
+                    <div className="absolute -top-3 left-4 bg-white dark:bg-slate-900 px-2 text-[10px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-widest border border-slate-200 dark:border-slate-700 rounded-full">Nuevo Registro</div>
                     
                     <div className="flex gap-2 mb-2 pt-1">
                        <button type="button" onClick={() => setAdminTxType('assignment')} className={`flex-1 py-2 rounded-xl text-xs font-bold transition-colors ${adminTxType === 'assignment' ? 'bg-green-600 text-white shadow-sm' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>+ Entregar Fondo</button>
@@ -432,11 +432,11 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
                     </div>
                     
                     {adminTxType === 'expense' && (
-                       <input name="detail" type="text" required placeholder="Detalle del gasto (ej. Peaje, Bencina)" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-red-200 bg-red-50 p-3 rounded-xl text-sm font-bold text-red-900 outline-none focus:border-red-400 shadow-sm placeholder:text-red-300"/>
+                       <input name="detail" type="text" required placeholder="Detalle del gasto (ej. Peaje, Bencina)" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-900/30 p-3 rounded-xl text-sm font-bold text-red-900 dark:text-red-300 outline-none focus:border-red-400 shadow-sm placeholder:text-red-300"/>
                     )}
                     
                     <div className="relative">
-                      <input name="amount" type="number" required placeholder={adminTxType === 'assignment' ? "Monto a entregar" : "Monto del gasto"} autoComplete="off" className={`w-full border-2 p-3 pl-10 rounded-xl text-lg font-black outline-none shadow-sm ${adminTxType === 'assignment' ? 'border-green-200 bg-green-50 text-green-900 focus:border-green-500 placeholder:text-green-300' : 'border-red-200 bg-red-50 text-red-900 focus:border-red-500 placeholder:text-red-300'}`}/>
+                      <input name="amount" type="number" required placeholder={adminTxType === 'assignment' ? "Monto a entregar" : "Monto del gasto"} autoComplete="off" className={`w-full border-2 p-3 pl-10 rounded-xl text-lg font-black outline-none shadow-sm ${adminTxType === 'assignment' ? 'border-green-200 dark:border-green-800/50 bg-green-50 dark:bg-green-900/30 text-green-900 dark:text-green-300 focus:border-green-500 placeholder:text-green-300' : 'border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-900/30 text-red-900 dark:text-red-300 focus:border-red-500 placeholder:text-red-300'}`}/>
                       <span className={`absolute left-4 top-1/2 -translate-y-1/2 font-black text-lg ${adminTxType === 'assignment' ? 'text-green-500' : 'text-red-500'}`}>$</span>
                     </div>
                     
@@ -449,32 +449,32 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
                           <p className="text-xs text-slate-400 font-bold text-center py-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg">No hay traslados activos.</p>
                        ) : (
                           <div className="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1">
-                             <label className={`relative flex items-center p-3 rounded-2xl border-2 cursor-pointer transition-all ${selectedJobId === '' ? 'border-blue-500 bg-blue-50' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-blue-200'}`}>
+                             <label className={`relative flex items-center p-3 rounded-2xl border-2 cursor-pointer transition-all ${selectedJobId === '' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-blue-200 dark:border-blue-800/50'}`}>
                                 <input type="radio" name="jobSelection" className="hidden" checked={selectedJobId === ''} onChange={() => setSelectedJobId('')} />
                                 <div className="flex-1">
-                                   <span className={`block text-xs font-black ${selectedJobId === '' ? 'text-blue-700' : 'text-slate-500 dark:text-slate-400'}`}>Ninguno (Gasto general)</span>
+                                   <span className={`block text-xs font-black ${selectedJobId === '' ? 'text-blue-700 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'}`}>Ninguno (Gasto general)</span>
                                 </div>
-                                <CheckCircle className={`w-5 h-5 transition-transform duration-200 shrink-0 ${selectedJobId === '' ? 'scale-100 text-blue-600' : 'scale-0 text-slate-300'}`} />
+                                <CheckCircle className={`w-5 h-5 transition-transform duration-200 shrink-0 ${selectedJobId === '' ? 'scale-100 text-blue-600 dark:text-blue-400' : 'scale-0 text-slate-300'}`} />
                              </label>
 
                              {activeOrPendingJobs.map(j => (
-                                <label key={j.id} className={`relative flex items-center p-3 rounded-2xl border-2 cursor-pointer transition-all shadow-sm ${selectedJobId === j.id ? 'border-blue-500 bg-blue-50' : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-blue-200'}`}>
+                                <label key={j.id} className={`relative flex items-center p-3 rounded-2xl border-2 cursor-pointer transition-all shadow-sm ${selectedJobId === j.id ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-blue-200 dark:border-blue-800/50'}`}>
                                    <input type="radio" name="jobSelection" className="hidden" checked={selectedJobId === j.id} onChange={() => setSelectedJobId(j.id)} />
                                    <div className="flex-1 min-w-0">
-                                      <span className={`block text-sm font-black truncate ${selectedJobId === j.id ? 'text-blue-800' : 'text-slate-700 dark:text-slate-300'}`}>
+                                      <span className={`block text-sm font-black truncate ${selectedJobId === j.id ? 'text-blue-800 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`}>
                                          {j.brand} {j.model}
-                                         <span className={`ml-2 text-[9px] px-1.5 py-0.5 rounded-md ${selectedJobId === j.id ? 'bg-blue-200 text-blue-800' : 'bg-slate-200 text-slate-600 dark:text-slate-400'}`}>
+                                         <span className={`ml-2 text-[9px] px-1.5 py-0.5 rounded-md ${selectedJobId === j.id ? 'bg-blue-200 text-blue-800 dark:text-blue-300' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}>
                                             {j.plate || j.vin || 'S/N'}
                                          </span>
                                       </span>
-                                      <span className={`block text-[10px] font-bold truncate mt-1 ${selectedJobId === j.id ? 'text-blue-600' : 'text-slate-500 dark:text-slate-400'}`}>
+                                      <span className={`block text-[10px] font-bold truncate mt-1 ${selectedJobId === j.id ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'}`}>
                                          🏢 Cliente: {j.client}
                                       </span>
-                                      <span className={`block text-[10px] font-bold truncate mt-0.5 ${selectedJobId === j.id ? 'text-blue-600' : 'text-slate-500 dark:text-slate-400'}`}>
+                                      <span className={`block text-[10px] font-bold truncate mt-0.5 ${selectedJobId === j.id ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'}`}>
                                          📍 {j.origin || 'Origen'} ➔ 🏁 {j.destination || 'Destino'}
                                       </span>
                                    </div>
-                                   <CheckCircle className={`w-5 h-5 transition-transform duration-200 shrink-0 ml-2 ${selectedJobId === j.id ? 'scale-100 text-blue-600' : 'scale-0 text-slate-300'}`} />
+                                   <CheckCircle className={`w-5 h-5 transition-transform duration-200 shrink-0 ml-2 ${selectedJobId === j.id ? 'scale-100 text-blue-600 dark:text-blue-400' : 'scale-0 text-slate-300'}`} />
                                 </label>
                              ))}
                           </div>
@@ -502,15 +502,15 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
                         <div className="flex-1 min-w-0">
                           <p className="text-slate-800 dark:text-slate-200 break-words">{exp.detail}</p>
                           <p className="text-[10px] text-slate-400 truncate">{safeDateRender(exp.createdAt)}</p>
-                          {exp.receiptImage && <button type="button" onClick={(e) => { e.stopPropagation(); setViewingReceipt(exp.receiptImage); }} className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-100/50 px-2 py-1 rounded-md transition-colors w-fit"><Camera className="w-3.5 h-3.5"/> Ver comprobante</button>}
+                          {exp.receiptImage && <button type="button" onClick={(e) => { e.stopPropagation(); setViewingReceipt(exp.receiptImage); }} className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40/50 px-2 py-1 rounded-md transition-colors w-fit"><Camera className="w-3.5 h-3.5"/> Ver comprobante</button>}
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0 ml-1">
-                          <span className={`font-extrabold text-sm ${exp.type === 'expense' ? 'text-red-500' : 'text-green-600'}`}>{exp.type === 'expense' ? '-' : '+'}{formatMoney(exp.amount)}</span>
+                          <span className={`font-extrabold text-sm ${exp.type === 'expense' ? 'text-red-500' : 'text-green-600 dark:text-green-400'}`}>{exp.type === 'expense' ? '-' : '+'}{formatMoney(exp.amount)}</span>
                           {exp.type === 'pending_return' && <button type="button" onClick={(e) => { e.stopPropagation(); approveReturn(exp); }} className="ml-1 text-xs font-bold bg-green-600 text-white hover:bg-green-700 px-3 py-1.5 rounded-lg transition-colors">Aprobar</button>}
                           {exp.type !== 'pending_return' && (
-                            <div className="flex gap-1 border-l border-slate-300 pl-2 ml-1">
-                              <button type="button" onClick={(e) => { e.stopPropagation(); setEditingExpense(exp); }} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors" title="Editar"><Edit2 className="w-3.5 h-3.5"/></button>
-                              <button type="button" onClick={(e) => { e.stopPropagation(); delExp(exp); }} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors" title="Eliminar"><Trash2 className="w-3.5 h-3.5"/></button>
+                            <div className="flex gap-1 border-l border-slate-300 dark:border-slate-600 pl-2 ml-1">
+                              <button type="button" onClick={(e) => { e.stopPropagation(); setEditingExpense(exp); }} className="p-1.5 text-blue-500 hover:bg-blue-100 dark:bg-blue-900/40 rounded-lg transition-colors" title="Editar"><Edit2 className="w-3.5 h-3.5"/></button>
+                              <button type="button" onClick={(e) => { e.stopPropagation(); delExp(exp); }} className="p-1.5 text-red-500 hover:bg-red-100 dark:bg-red-900/40 rounded-lg transition-colors" title="Eliminar"><Trash2 className="w-3.5 h-3.5"/></button>
                             </div>
                           )}
                         </div>
@@ -533,13 +533,13 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
 
   return (
     <main className="max-w-md mx-auto p-4 pt-20 sm:pt-24 space-y-6 pb-24">
-      {viewingReceipt && <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[150] p-4"><div className="bg-white dark:bg-slate-900 rounded-3xl p-4 w-full max-w-md relative"><button onClick={() => setViewingReceipt(null)} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-full transition-colors"><X className="w-5 h-5 text-slate-700 dark:text-slate-300"/></button><h3 className="font-extrabold text-slate-800 dark:text-slate-200 mb-4 ml-2">Comprobante</h3><img src={viewingReceipt} alt="Comprobante" className="w-full h-auto max-h-[70vh] object-contain rounded-xl shadow-sm" /></div></div>}
+      {viewingReceipt && <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[150] p-4"><div className="bg-white dark:bg-slate-900 rounded-3xl p-4 w-full max-w-md relative"><button onClick={() => setViewingReceipt(null)} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 rounded-full transition-colors"><X className="w-5 h-5 text-slate-700 dark:text-slate-300"/></button><h3 className="font-extrabold text-slate-800 dark:text-slate-200 mb-4 ml-2">Comprobante</h3><img src={viewingReceipt} alt="Comprobante" className="w-full h-auto max-h-[70vh] object-contain rounded-xl shadow-sm" /></div></div>}
 
       {isReturnOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md p-6">
-            <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-200">Rendir Vuelto</h3><button onClick={() => { setIsReturnOpen(false); setReturnReceipt(null); }} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200"><X className="w-5 h-5"/></button></div>
-            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-4 border-b border-slate-100 dark:border-slate-800 pb-4">Monto total a transferir/rendir: <span className="text-blue-600 text-xl font-extrabold block mt-1">{formatMoney(myBalance)}</span></p>
+            <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-200">Rendir Vuelto</h3><button onClick={() => { setIsReturnOpen(false); setReturnReceipt(null); }} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700"><X className="w-5 h-5"/></button></div>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-4 border-b border-slate-100 dark:border-slate-800 pb-4">Monto total a transferir/rendir: <span className="text-blue-600 dark:text-blue-400 text-xl font-extrabold block mt-1">{formatMoney(myBalance)}</span></p>
             
             <div className="flex gap-2 mb-4">
                <button onClick={()=>setReturnMethod('transferencia')} className={`flex-1 py-2 rounded-xl text-sm font-bold transition-colors ${returnMethod==='transferencia'?'bg-blue-600 text-white':'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}>Transferencia</button>
@@ -550,10 +550,10 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
               <button 
                 type="button"
                 onClick={() => setCameraConfig({ isOpen: true, title: 'Comprobante de Transferencia', target: 'return' })}
-                className={`block w-full border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-colors relative overflow-hidden ${returnReceipt ? 'border-green-400 bg-green-50' : 'border-slate-300 hover:bg-slate-50 dark:bg-slate-900/50'}`}
+                className={`block w-full border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-colors relative overflow-hidden ${returnReceipt ? 'border-green-400 bg-green-50 dark:bg-green-900/30' : 'border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:bg-slate-900/50'}`}
               >
                 {returnReceipt ? (
-                   <div className="relative z-10"><CheckCircle className="w-10 h-10 text-green-500 mx-auto mb-2 bg-white dark:bg-slate-900 rounded-full"/><p className="text-sm font-extrabold text-green-700 mb-2">Comprobante Cargado</p><img src={returnReceipt} className="h-28 object-contain mx-auto rounded-lg shadow-sm border border-green-200" alt="preview"/><p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-3 underline">Cambiar foto</p></div>
+                   <div className="relative z-10"><CheckCircle className="w-10 h-10 text-green-500 mx-auto mb-2 bg-white dark:bg-slate-900 rounded-full"/><p className="text-sm font-extrabold text-green-700 dark:text-green-400 mb-2">Comprobante Cargado</p><img src={returnReceipt} className="h-28 object-contain mx-auto rounded-lg shadow-sm border border-green-200 dark:border-green-800/50" alt="preview"/><p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-3 underline">Cambiar foto</p></div>
                 ) : (
                    <div className="py-4"><Camera className="w-10 h-10 text-slate-400 mx-auto mb-3"/><p className="text-sm font-extrabold text-slate-600 dark:text-slate-400">Tomar foto o subir comprobante</p></div>
                 )}
@@ -562,7 +562,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
               <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 text-center"><p className="text-sm font-bold text-slate-600 dark:text-slate-400">Se registrará que entregaste el dinero en mano.</p></div>
             )}
 
-            <div className="flex gap-4 mt-6"><button onClick={() => { setIsReturnOpen(false); setReturnReceipt(null); }} className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl font-bold text-slate-600 dark:text-slate-400">Cancelar</button><button onClick={submitReturn} disabled={isSubmittingReturn} className="flex-[2] py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-extrabold transition-all shadow-lg shadow-green-200 disabled:opacity-50">{isSubmittingReturn ? 'Enviando...' : 'Confirmar'}</button></div>
+            <div className="flex gap-4 mt-6"><button onClick={() => { setIsReturnOpen(false); setReturnReceipt(null); }} className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 rounded-xl font-bold text-slate-600 dark:text-slate-400">Cancelar</button><button onClick={submitReturn} disabled={isSubmittingReturn} className="flex-[2] py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-extrabold transition-all shadow-lg shadow-green-200 disabled:opacity-50">{isSubmittingReturn ? 'Enviando...' : 'Confirmar'}</button></div>
           </div>
         </div>
       )}
@@ -579,9 +579,9 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
         <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-2 mb-4"><Receipt className="w-5 h-5 text-red-500"/> Registrar Gasto</h3>
         
         <div className="flex gap-2 mb-4 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl overflow-x-auto scrollbar-none">
-          <button type="button" onClick={() => setExpenseCategory('combustible')} className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all whitespace-nowrap ${expenseCategory === 'combustible' ? 'bg-white dark:bg-slate-900 text-red-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}>⛽ Combustible</button>
-          <button type="button" onClick={() => setExpenseCategory('peaje')} className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all whitespace-nowrap ${expenseCategory === 'peaje' ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}>🎫 Peaje</button>
-          <button type="button" onClick={() => setExpenseCategory('otro')} className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all whitespace-nowrap ${expenseCategory === 'otro' ? 'bg-white dark:bg-slate-900 text-purple-600 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}>📋 Otro</button>
+          <button type="button" onClick={() => setExpenseCategory('combustible')} className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all whitespace-nowrap ${expenseCategory === 'combustible' ? 'bg-white dark:bg-slate-900 text-red-600 dark:text-red-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}>⛽ Combustible</button>
+          <button type="button" onClick={() => setExpenseCategory('peaje')} className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all whitespace-nowrap ${expenseCategory === 'peaje' ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}>🎫 Peaje</button>
+          <button type="button" onClick={() => setExpenseCategory('otro')} className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all whitespace-nowrap ${expenseCategory === 'otro' ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300'}`}>📋 Otro</button>
         </div>
 
         <form onSubmit={e=> {
@@ -633,7 +633,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
                 <select 
                   id="tollSelectNode"
                   name="tollSelect" 
-                  className="w-full border-2 border-blue-200 bg-blue-50 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-sm text-blue-900 shadow-sm cursor-pointer" 
+                  className="w-full border-2 border-blue-200 dark:border-blue-800/50 bg-blue-50 dark:bg-blue-900/30 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-sm text-blue-900 dark:text-blue-300 shadow-sm cursor-pointer" 
                   onChange={(e) => {
                     const vType = document.getElementById('vehicleTypeSelect')?.value || 'Auto / SUV';
                     const toll = tollsList.find(t => t.name === e.target.value);
@@ -658,7 +658,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
           <div className="space-y-1">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Monto Exacto</label>
             <div className="relative">
-              <input id="driverAmountInput" type="number" name="amount" placeholder="Ej: 5000" required autoComplete="off" className="w-full border-2 border-red-200 bg-red-50 p-3 pl-10 rounded-xl outline-none focus:border-red-500 font-black text-lg text-red-900 shadow-sm" />
+              <input id="driverAmountInput" type="number" name="amount" placeholder="Ej: 5000" required autoComplete="off" className="w-full border-2 border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-900/30 p-3 pl-10 rounded-xl outline-none focus:border-red-500 font-black text-lg text-red-900 dark:text-red-300 shadow-sm" />
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-red-500 font-black text-lg">$</span>
             </div>
           </div>
@@ -666,13 +666,13 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
           <button 
             type="button"
             onClick={() => setCameraConfig({ isOpen: true, title: 'Foto de Boleta / Comprobante', target: 'expense' })}
-            className={`block w-full border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-colors relative overflow-hidden mt-4 ${expenseReceipt ? 'border-green-400 bg-green-50' : 'border-slate-300 hover:bg-slate-50 dark:bg-slate-900/50'}`}
+            className={`block w-full border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-colors relative overflow-hidden mt-4 ${expenseReceipt ? 'border-green-400 bg-green-50 dark:bg-green-900/30' : 'border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:bg-slate-900/50'}`}
           >
             {expenseReceipt ? (
                <div className="flex items-center gap-3 pl-2">
-                 <img src={expenseReceipt} className="h-12 w-12 object-cover rounded-lg shadow-sm border border-green-200" alt="preview"/>
+                 <img src={expenseReceipt} className="h-12 w-12 object-cover rounded-lg shadow-sm border border-green-200 dark:border-green-800/50" alt="preview"/>
                  <div className="text-left">
-                   <p className="text-sm font-extrabold text-green-700">Comprobante Adjunto</p>
+                   <p className="text-sm font-extrabold text-green-700 dark:text-green-400">Comprobante Adjunto</p>
                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 underline">Tocar para cambiar</p>
                  </div>
                </div>
@@ -684,19 +684,19 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
             )}
           </button>
 
-          <button type="submit" disabled={myBalance <= 0 || hasPendingReturn || isSubmitting} className={`w-full py-4 rounded-xl font-extrabold text-sm transition-all mt-2 ${myBalance > 0 && !hasPendingReturn && !isSubmitting ? 'bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}>{isSubmitting ? 'Procesando...' : 'Descontar Gasto de mi Saldo'}</button>
+          <button type="submit" disabled={myBalance <= 0 || hasPendingReturn || isSubmitting} className={`w-full py-4 rounded-xl font-extrabold text-sm transition-all mt-2 ${myBalance > 0 && !hasPendingReturn && !isSubmitting ? 'bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-200' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'}`}>{isSubmitting ? 'Procesando...' : 'Descontar Gasto de mi Saldo'}</button>
         </form>
       </div>
       
       {hasPendingReturn ? (
-        <div className="bg-amber-50 border-2 border-amber-200 p-4 rounded-3xl text-center">
+        <div className="bg-amber-50 dark:bg-amber-900/30 border-2 border-amber-200 dark:border-amber-800/50 p-4 rounded-3xl text-center">
             <Clock className="w-6 h-6 text-amber-500 mx-auto mb-2"/>
-            <p className="font-extrabold text-sm text-amber-700">Rendición en Revisión</p>
-            <p className="text-xs font-bold text-amber-600 mt-1">El administrador debe aprobar tu comprobante para actualizar el saldo a $0.</p>
+            <p className="font-extrabold text-sm text-amber-700 dark:text-amber-400">Rendición en Revisión</p>
+            <p className="text-xs font-bold text-amber-600 dark:text-amber-400 mt-1">El administrador debe aprobar tu comprobante para actualizar el saldo a $0.</p>
         </div>
       ) : (
         myBalance > 0 && (
-          <button onClick={() => setIsReturnOpen(true)} className="w-full bg-green-50 hover:bg-green-100 text-green-700 border-2 border-green-200 py-4 rounded-3xl font-extrabold text-sm flex justify-center items-center gap-2 transition-all">
+          <button onClick={() => setIsReturnOpen(true)} className="w-full bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 border-2 border-green-200 dark:border-green-800/50 py-4 rounded-3xl font-extrabold text-sm flex justify-center items-center gap-2 transition-all">
             <CheckCircle className="w-5 h-5"/> Rendir Vuelto ($0)
           </button>
         )
@@ -711,14 +711,14 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-extrabold text-slate-800 dark:text-slate-200 break-words">{exp.detail}</p>
                 <p className="text-[10px] font-bold text-slate-400">{safeDateRender(exp.createdAt)}</p>
-                {exp.receiptImage && <button onClick={() => setViewingReceipt(exp.receiptImage)} className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-100/50 px-2 py-1 rounded-md transition-colors w-fit"><Camera className="w-3.5 h-3.5"/> Ver foto</button>}
+                {exp.receiptImage && <button onClick={() => setViewingReceipt(exp.receiptImage)} className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40/50 px-2 py-1 rounded-md transition-colors w-fit"><Camera className="w-3.5 h-3.5"/> Ver foto</button>}
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <span className={`font-extrabold ${exp.type === 'expense' ? 'text-red-500' : 'text-green-600'}`}>{exp.type === 'expense' ? '-' : '+'}{formatMoney(exp.amount)}</span>
+                <span className={`font-extrabold ${exp.type === 'expense' ? 'text-red-500' : 'text-green-600 dark:text-green-400'}`}>{exp.type === 'expense' ? '-' : '+'}{formatMoney(exp.amount)}</span>
                 {exp.type !== 'assignment' && exp.type !== 'pending_return' ? (
                   <div className="flex gap-1 border-l border-slate-200 dark:border-slate-700 pl-2 ml-1">
-                    <button onClick={() => setEditingExpense(exp)} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors"><Edit2 className="w-3.5 h-3.5"/></button>
-                    <button onClick={() => delExp(exp)} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5"/></button>
+                    <button onClick={() => setEditingExpense(exp)} className="p-1.5 text-blue-500 hover:bg-blue-100 dark:bg-blue-900/40 rounded-lg transition-colors"><Edit2 className="w-3.5 h-3.5"/></button>
+                    <button onClick={() => delExp(exp)} className="p-1.5 text-red-500 hover:bg-red-100 dark:bg-red-900/40 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5"/></button>
                   </div>
                 ) : <div className="pl-2 ml-1"><span className="text-[10px] font-bold text-slate-400 uppercase">{exp.type === 'assignment' ? 'Fondo' : 'Espera'}</span></div>}
               </div>

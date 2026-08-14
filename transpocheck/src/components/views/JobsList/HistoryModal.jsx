@@ -17,7 +17,7 @@ export default function HistoryModal({
       <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95">
         <div className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-4 sm:p-5 flex justify-between items-start shrink-0 relative">
           <div className="flex gap-3 items-center">
-            <div className="bg-blue-100 p-2.5 rounded-xl"><FileText className="w-6 h-6 text-blue-600"/></div>
+            <div className="bg-blue-100 dark:bg-blue-900/40 p-2.5 rounded-xl"><FileText className="w-6 h-6 text-blue-600 dark:text-blue-400"/></div>
             <div>
               <h3 className="text-lg font-black text-slate-800 dark:text-slate-200 leading-tight">Ficha Técnica</h3>
               <p className="text-xs font-bold text-slate-500 dark:text-slate-400">
@@ -73,7 +73,7 @@ export default function HistoryModal({
                 {selectedHistoryJob.checklist?.keyLocation && (
                 <div className="col-span-2">
                   <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Ubicación de Llaves</p>
-                  <p className="text-sm font-black text-orange-600">
+                  <p className="text-sm font-black text-orange-600 dark:text-orange-400">
                      {selectedHistoryJob.checklist.keyLocation === 'puestas' ? 'Puestas' : 
                       selectedHistoryJob.checklist.keyLocation === 'puerta' ? 'En la puerta' :
                       selectedHistoryJob.checklist.keyLocation === 'mano' ? `Entregadas por mano a: ${selectedHistoryJob.checklist.keyHandedTo || ''}` : selectedHistoryJob.checklist.keyLocation}
@@ -82,7 +82,7 @@ export default function HistoryModal({
                 )}
                 <div className="col-span-2 mt-2">
                   <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Distancia GPS (Maps)</p>
-                  <p className="text-sm font-black text-blue-600">{selectedHistoryJob.drivenDistance || 'No calculado'}</p>
+                  <p className="text-sm font-black text-blue-600 dark:text-blue-400">{selectedHistoryJob.drivenDistance || 'No calculado'}</p>
                 </div>
               </div>
             </div>
@@ -103,8 +103,8 @@ export default function HistoryModal({
                 const [y,m,d] = dateStr.split('-');
                 const expDate = new Date(y, m-1, d);
                 const today = new Date(); today.setHours(0,0,0,0);
-                if (expDate < today) return <span className="text-red-600 font-bold text-xs">{d}/{m}/{y} (Vencido)</span>;
-                return <span className="text-green-700 font-bold text-xs">{d}/{m}/{y}</span>;
+                if (expDate < today) return <span className="text-red-600 dark:text-red-400 font-bold text-xs">{d}/{m}/{y} (Vencido)</span>;
+                return <span className="text-green-700 dark:text-green-400 font-bold text-xs">{d}/{m}/{y}</span>;
              };
 
              return (
@@ -122,9 +122,9 @@ export default function HistoryModal({
 
           {/* NOTAS DE TRASLADO EN FICHA */}
           {selectedHistoryJob.checklist?.transitNotes && (
-            <div className="bg-orange-50 border-2 border-orange-200 p-4 rounded-xl shadow-sm mb-4">
-              <h4 className="text-[10px] font-black uppercase text-orange-600 tracking-widest mb-1 flex items-center gap-1.5"><AlertCircle className="w-4 h-4"/> Notas durante el traslado</h4>
-              <p className="text-xs font-bold text-orange-800 italic">"{selectedHistoryJob.checklist.transitNotes}"</p>
+            <div className="bg-orange-50 dark:bg-orange-900/30 border-2 border-orange-200 dark:border-orange-800/50 p-4 rounded-xl shadow-sm mb-4">
+              <h4 className="text-[10px] font-black uppercase text-orange-600 dark:text-orange-400 tracking-widest mb-1 flex items-center gap-1.5"><AlertCircle className="w-4 h-4"/> Notas durante el traslado</h4>
+              <p className="text-xs font-bold text-orange-800 dark:text-orange-300 italic">"{selectedHistoryJob.checklist.transitNotes}"</p>
             </div>
           )}
 

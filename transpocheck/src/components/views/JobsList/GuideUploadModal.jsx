@@ -28,18 +28,18 @@ export default function GuideUploadModal({
                   Finaliza el traslado adjuntando la guía firmada.
                </p>
              </div>
-             <button onClick={()=>setGuideUploadJob(null)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 transition-colors"><X className="w-5 h-5"/></button>
+             <button onClick={()=>setGuideUploadJob(null)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"><X className="w-5 h-5"/></button>
           </div>
 
           <div className="space-y-4 mb-6">
              <div className="space-y-1">
-                <label className="text-[10px] font-black text-orange-700 uppercase tracking-widest ml-1">Enlace del Documento</label>
-                <input type="url" placeholder="Ej: https://acrobat.adobe.com/..." value={guideLink} onChange={(e) => setGuideLink(e.target.value)} className="w-full border-2 border-orange-200 bg-white dark:bg-slate-900 p-3 rounded-xl font-bold text-slate-700 dark:text-slate-300 text-sm outline-none focus:border-orange-500 transition-colors" />
+                <label className="text-[10px] font-black text-orange-700 dark:text-orange-400 uppercase tracking-widest ml-1">Enlace del Documento</label>
+                <input type="url" placeholder="Ej: https://acrobat.adobe.com/..." value={guideLink} onChange={(e) => setGuideLink(e.target.value)} className="w-full border-2 border-orange-200 dark:border-orange-800/50 bg-white dark:bg-slate-900 p-3 rounded-xl font-bold text-slate-700 dark:text-slate-300 text-sm outline-none focus:border-orange-500 transition-colors" />
              </div>
 
              <div className="flex items-center gap-2 my-2 opacity-60"><div className="h-px bg-orange-300 flex-1"></div><span className="text-[10px] font-black uppercase text-orange-500">O Subir Archivo PDF/Foto</span><div className="h-px bg-orange-300 flex-1"></div></div>
 
-             <label className="w-full bg-white dark:bg-slate-900 border-2 border-dashed border-orange-300 hover:bg-orange-50 text-orange-600 p-4 rounded-2xl font-black text-xs flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm">
+             <label className="w-full bg-white dark:bg-slate-900 border-2 border-dashed border-orange-300 dark:border-orange-700/50 hover:bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 p-4 rounded-2xl font-black text-xs flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm">
                 <input type="file" accept="application/pdf,image/*" className="hidden" onChange={(e) => {
                    const f = e.target.files[0];
                    if(!f) return;

@@ -725,9 +725,9 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl border pb-10 relative">
       {isDraftLoaded && (
         <div className="absolute -top-12 left-0 right-0 flex justify-center items-center">
-          <div className="bg-amber-100 text-amber-800 text-xs px-3 py-1.5 rounded-full font-bold flex items-center gap-2 shadow-sm border border-amber-200">
+          <div className="bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 text-xs px-3 py-1.5 rounded-full font-bold flex items-center gap-2 shadow-sm border border-amber-200 dark:border-amber-800/50">
             <Save className="w-3.5 h-3.5" /> Borrador recuperado
-            <button onClick={clearDraft} className="ml-2 text-amber-600 underline">Limpiar</button>
+            <button onClick={clearDraft} className="ml-2 text-amber-600 dark:text-amber-400 underline">Limpiar</button>
           </div>
         </div>
       )}
@@ -738,7 +738,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
       <div className="sticky top-[64px] sm:top-[80px] z-15 bg-white dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 px-5 py-3 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)]">
         <div className="flex justify-between items-center mb-1.5">
           <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Progreso del Acta</span>
-          <span className="text-xs font-black text-blue-600">
+          <span className="text-xs font-black text-blue-600 dark:text-blue-400">
             {(() => {
               let p = 0;
               if (job.tripType === 'simple') {
@@ -786,7 +786,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
             ? [{ id: 1, label: '📋 Detalles' }, { id: 2, label: '📸 Evidencia' }, { id: 3, label: '✍️ Cierre' }]
             : [{ id: 1, label: '📋 Datos' }, { id: 2, label: '📄 Docs' }, { id: 3, label: '💬 Notas' }, { id: 4, label: '📸 Fotos' }, { id: 5, label: '⛽ Comb. & Espera' }, { id: 6, label: '✍️ Entrega' }]
           ).map(t => (
-            <button key={t.id} type="button" onClick={() => setStep(t.id)} className={`px-3 py-2 rounded-xl text-xs font-black tracking-wide whitespace-nowrap transition-all shrink-0 ${step === t.id ? (job.tripType === 'simple' ? 'bg-purple-600 dark:bg-purple-500 text-white shadow-md shadow-purple-100 dark:shadow-none' : 'bg-blue-600 dark:bg-blue-500 text-white shadow-md shadow-blue-100 dark:shadow-none') : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
+            <button key={t.id} type="button" onClick={() => setStep(t.id)} className={`px-3 py-2 rounded-xl text-xs font-black tracking-wide whitespace-nowrap transition-all shrink-0 ${step === t.id ? (job.tripType === 'simple' ? 'bg-purple-600 dark:bg-purple-500 text-white shadow-md shadow-purple-100 dark:shadow-none' : 'bg-blue-600 dark:bg-blue-500 text-white shadow-md shadow-blue-100 dark:shadow-none') : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-700'}`}>
               {t.label}
             </button>
           ))}
@@ -831,9 +831,9 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                 <h3 className="text-sm font-extrabold border-b border-slate-100 dark:border-slate-800 pb-2 text-slate-800 dark:text-slate-200 uppercase tracking-wider">Evidencia Fotográfica</h3>
 
                 {isSpecialJob ? (
-                  <div className="bg-purple-50 border-2 border-purple-200 p-4 rounded-2xl mb-4 shadow-sm">
-                    <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-1">Requisito Obligatorio</p>
-                    <p className="text-sm font-bold text-purple-900 leading-tight">Se requieren <span className="font-black bg-purple-200 px-1.5 py-0.5 rounded">{reqPhotos} fotografías</span> individuales (Una por cada patente o vidrio trabajado).</p>
+                  <div className="bg-purple-50 dark:bg-purple-900/30 border-2 border-purple-200 dark:border-purple-800/50 p-4 rounded-2xl mb-4 shadow-sm">
+                    <p className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest mb-1">Requisito Obligatorio</p>
+                    <p className="text-sm font-bold text-purple-900 dark:text-purple-300 leading-tight">Se requieren <span className="font-black bg-purple-200 px-1.5 py-0.5 rounded">{reqPhotos} fotografías</span> individuales (Una por cada patente o vidrio trabajado).</p>
                   </div>
                 ) : (
                   <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-4">Añade al menos 1 fotografía que respalde el trabajo terminado.</p>
@@ -851,8 +851,8 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                     }
 
                     return (
-                      <button type="button" key={photoId} onClick={() => handlePhotoClick(photoId, label)} className={`w-full h-32 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white dark:bg-slate-900 shadow-sm transition-all ${formData.photos[photoId] ? 'border-purple-400 ring-2 ring-purple-100' : 'border-dashed border-purple-300 hover:bg-purple-50'}`}>
-                        {formData.photos[photoId] ? <><img src={formData.photos[photoId]} className="absolute inset-0 w-full h-full object-cover opacity-60" /><CheckCircle className="w-6 h-6 text-purple-600 relative z-10 bg-white dark:bg-slate-900 rounded-full" /><span className="text-[10px] font-black text-purple-900 relative z-10 bg-white dark:bg-slate-900/80 px-2 rounded-md">{label}</span></> : <><Camera className="w-6 h-6 text-purple-400" /><span className="text-[10px] font-black text-purple-600 uppercase tracking-wide text-center leading-tight">{label}</span></>}
+                      <button type="button" key={photoId} onClick={() => handlePhotoClick(photoId, label)} className={`w-full h-32 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white dark:bg-slate-900 shadow-sm transition-all ${formData.photos[photoId] ? 'border-purple-400 ring-2 ring-purple-100' : 'border-dashed border-purple-300 dark:border-purple-700/50 hover:bg-purple-50 dark:bg-purple-900/30'}`}>
+                        {formData.photos[photoId] ? <><img src={formData.photos[photoId]} className="absolute inset-0 w-full h-full object-cover opacity-60" /><CheckCircle className="w-6 h-6 text-purple-600 dark:text-purple-400 relative z-10 bg-white dark:bg-slate-900 rounded-full" /><span className="text-[10px] font-black text-purple-900 dark:text-purple-300 relative z-10 bg-white dark:bg-slate-900/80 px-2 rounded-md">{label}</span></> : <><Camera className="w-6 h-6 text-purple-400" /><span className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-wide text-center leading-tight">{label}</span></>}
                       </button>
                     );
                   })}
@@ -880,18 +880,18 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                 <input value={formData.brand} onChange={e => setF('brand', e.target.value)} placeholder="Marca" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 rounded-xl font-bold text-slate-800 dark:text-slate-200" />
                 <input value={formData.model} onChange={e => setF('model', e.target.value)} placeholder="Modelo" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 rounded-xl font-bold text-slate-800 dark:text-slate-200" />
               </div>
-              <input value={formData.plateOrVin} onChange={e => setF('plateOrVin', e.target.value)} placeholder="Patente o VIN" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-300 bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-black uppercase text-slate-800 dark:text-slate-200 shadow-inner mt-2" />
+              <input value={formData.plateOrVin} onChange={e => setF('plateOrVin', e.target.value)} placeholder="Patente o VIN" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-black uppercase text-slate-800 dark:text-slate-200 shadow-inner mt-2" />
 
               {/* ALERTA DÉJÀ VU PERICIAL */}
               {dejaVuData && (
-                <div className="bg-purple-50 border-2 border-purple-200 p-4 rounded-2xl shadow-sm animate-in zoom-in-95 flex items-start gap-3 mt-4 relative overflow-hidden">
+                <div className="bg-purple-50 dark:bg-purple-900/30 border-2 border-purple-200 dark:border-purple-800/50 p-4 rounded-2xl shadow-sm animate-in zoom-in-95 flex items-start gap-3 mt-4 relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-1.5 h-full bg-purple-500"></div>
-                  <div className="bg-purple-200 p-2 rounded-full text-purple-700 animate-pulse shrink-0">
+                  <div className="bg-purple-200 p-2 rounded-full text-purple-700 dark:text-purple-400 animate-pulse shrink-0">
                     <Search className="w-5 h-5" />
                   </div>
                   <div className="flex-1">
-                    <h4 className="text-xs font-black text-purple-800 uppercase tracking-widest mb-1">Déjà Vu Pericial</h4>
-                    <p className="text-[11px] font-bold text-purple-600 leading-tight mb-3">
+                    <h4 className="text-xs font-black text-purple-800 dark:text-purple-300 uppercase tracking-widest mb-1">Déjà Vu Pericial</h4>
+                    <p className="text-[11px] font-bold text-purple-600 dark:text-purple-400 leading-tight mb-3">
                       Hay registros de daños previos en este vehículo (Traslado del {new Date(dejaVuData.completedAt).toLocaleDateString()}).
                     </p>
                     <button type="button" onClick={() => setShowDejaVuModal(true)} className="bg-purple-600 hover:bg-purple-700 text-white text-[10px] px-3 py-2 rounded-xl font-black uppercase transition-colors shadow-sm w-full">
@@ -904,7 +904,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
               {job.tripType === 'revision' && (
                 <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-3 mt-4">
-                  <h3 className="text-sm font-extrabold text-blue-600 uppercase tracking-wider flex items-center gap-2"><Clock className="w-5 h-5" /> Tiempo en Planta</h3>
+                  <h3 className="text-sm font-extrabold text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-2"><Clock className="w-5 h-5" /> Tiempo en Planta</h3>
 
                   {(!formData.prtArrivalTime && formData.rtStatus === 'pendiente') && (
                     <button type="button" onClick={() => setF('prtArrivalTime', Date.now())} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all active:scale-95">
@@ -913,14 +913,14 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                   )}
 
                   {formData.prtArrivalTime && (
-                    <div className="bg-blue-50 border-2 border-blue-200 p-3.5 rounded-xl flex justify-between items-center shadow-sm">
+                    <div className="bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-800/50 p-3.5 rounded-xl flex justify-between items-center shadow-sm">
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-full ${formData.rtStatus === 'pendiente' ? 'bg-blue-200 text-blue-700 animate-spin' : 'bg-green-200 text-green-700'}`}>
+                        <div className={`p-2 rounded-full ${formData.rtStatus === 'pendiente' ? 'bg-blue-200 text-blue-700 dark:text-blue-400 animate-spin' : 'bg-green-200 text-green-700 dark:text-green-400'}`}>
                           {formData.rtStatus === 'pendiente' ? <Clock className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
                         </div>
                         <div>
-                          <p className="text-[10px] font-black text-blue-800 uppercase tracking-widest">Cronómetro Trámite</p>
-                          <p className="text-sm font-bold text-blue-600">
+                          <p className="text-[10px] font-black text-blue-800 dark:text-blue-300 uppercase tracking-widest">Cronómetro Trámite</p>
+                          <p className="text-sm font-bold text-blue-600 dark:text-blue-400">
                             {formData.rtStatus === 'pendiente'
                               ? `${Math.floor((nowTick - formData.prtArrivalTime) / 60000)} minutos corriendo...`
                               : `${Math.floor(((formData.prtFinishTime || Date.now()) - formData.prtArrivalTime) / 60000)} min en total (Finalizado)`}
@@ -938,7 +938,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                         if (e.target.value !== 'pendiente' && !formData.prtFinishTime && formData.prtArrivalTime) {
                           setF('prtFinishTime', Date.now()); // Detiene el cronómetro para siempre
                         }
-                      }} className={`w-full border-2 p-3.5 rounded-xl outline-none font-extrabold text-sm ${formData.rtStatus === 'pendiente' ? 'border-blue-300 bg-white dark:bg-slate-900 text-blue-700' : formData.rtStatus === 'aprobado' ? 'border-green-200 bg-green-50 text-green-700' : formData.rtStatus === 'aprobado_ayuda' ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
+                      }} className={`w-full border-2 p-3.5 rounded-xl outline-none font-extrabold text-sm ${formData.rtStatus === 'pendiente' ? 'border-blue-300 dark:border-blue-700/50 bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-400' : formData.rtStatus === 'aprobado' ? 'border-green-200 dark:border-green-800/50 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400' : formData.rtStatus === 'aprobado_ayuda' ? 'border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>
                         <option value="pendiente" disabled>⏳ TRÁMITE EN CURSO...</option>
                         <option value="aprobado">✅ APROBADO</option>
                         <option value="aprobado_ayuda">🤝 APROBADO CON AYUDA</option>
@@ -948,23 +948,23 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                   )}
 
                   {formData.rtStatus === 'rechazado' && (
-                    <input value={formData.rtRejectReason} onChange={e => setF('rtRejectReason', e.target.value)} placeholder="¿Cuál fue la razón del rechazo?" required={formData.rtStatus === 'rechazado'} autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-red-300 p-3 rounded-xl outline-none focus:border-red-500 font-bold text-red-900 bg-white dark:bg-slate-900 mt-2 animate-in fade-in" />
+                    <input value={formData.rtRejectReason} onChange={e => setF('rtRejectReason', e.target.value)} placeholder="¿Cuál fue la razón del rechazo?" required={formData.rtStatus === 'rechazado'} autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-red-300 dark:border-red-700/50 p-3 rounded-xl outline-none focus:border-red-500 font-bold text-red-900 dark:text-red-300 bg-white dark:bg-slate-900 mt-2 animate-in fade-in" />
                   )}
                   {(formData.rtStatus === 'aprobado' || formData.rtStatus === 'aprobado_ayuda') && (
-                    <div className="mt-2 p-3 border border-green-200 bg-white dark:bg-slate-900 rounded-xl space-y-2 animate-in fade-in">
-                      <p className="text-xs font-bold text-green-800">¿Hacia dónde se dirige el vehículo tras aprobar?</p>
+                    <div className="mt-2 p-3 border border-green-200 dark:border-green-800/50 bg-white dark:bg-slate-900 rounded-xl space-y-2 animate-in fade-in">
+                      <p className="text-xs font-bold text-green-800 dark:text-green-300">¿Hacia dónde se dirige el vehículo tras aprobar?</p>
                       <div className="flex gap-4">
-                        <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-green-700">
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-green-700 dark:text-green-400">
                           <input type="radio" name="rtReturnOption" value="origin" checked={formData.rtReturnOption === 'origin'} onChange={e => setF('rtReturnOption', e.target.value)} className="w-4 h-4 accent-green-600" />
                           Volver al Origen
                         </label>
-                        <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-green-700">
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-green-700 dark:text-green-400">
                           <input type="radio" name="rtReturnOption" value="other" checked={formData.rtReturnOption === 'other'} onChange={e => setF('rtReturnOption', e.target.value)} className="w-4 h-4 accent-green-600" />
                           Otro Destino
                         </label>
                       </div>
                       {formData.rtReturnOption === 'other' && (
-                        <input value={formData.rtReturnDestination} onChange={e => setF('rtReturnDestination', e.target.value)} placeholder="Especifique el destino final..." required={formData.rtReturnOption === 'other'} autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-green-300 p-2.5 rounded-xl outline-none focus:border-green-500 font-bold text-green-900 bg-white dark:bg-slate-900" />
+                        <input value={formData.rtReturnDestination} onChange={e => setF('rtReturnDestination', e.target.value)} placeholder="Especifique el destino final..." required={formData.rtReturnOption === 'other'} autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-green-300 dark:border-green-700/50 p-2.5 rounded-xl outline-none focus:border-green-500 font-bold text-green-900 dark:text-green-300 bg-white dark:bg-slate-900" />
                       )}
                     </div>
                   )}
@@ -987,16 +987,16 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                       <button
                         type="button"
                         onClick={() => setF('docs', { ...formData.docs, [doc.id]: !isChecked })}
-                        className={`flex flex-col items-center justify-center gap-1.5 h-24 rounded-2xl border-2 active:scale-95 transition-all duration-200 select-none shadow-sm ${!isChecked ? 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 hover:border-slate-300' : isExp ? 'border-red-500 bg-red-500 text-white shadow-red-200' : 'border-green-500 bg-green-500 text-white shadow-green-200'}`}
+                        className={`flex flex-col items-center justify-center gap-1.5 h-24 rounded-2xl border-2 active:scale-95 transition-all duration-200 select-none shadow-sm ${!isChecked ? 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-400 hover:bg-slate-100 dark:bg-slate-800 hover:border-slate-300 dark:border-slate-600' : isExp ? 'border-red-500 bg-red-500 text-white shadow-red-200' : 'border-green-500 bg-green-500 text-white shadow-green-200'}`}
                       >
                         {isChecked ? (isExp ? <AlertCircle className="w-6 h-6 animate-in zoom-in" /> : <CheckCircle className="w-6 h-6 animate-in zoom-in" />) : doc.icon}
                         <span className="font-black text-xs uppercase tracking-wider">{doc.label}</span>
                       </button>
                       {isChecked && (
                         <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                          <div className={`${isExp ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'} border p-2 rounded-xl flex flex-col gap-1 shadow-inner transition-colors`}>
-                            <p className={`text-[9px] font-extrabold uppercase tracking-widest text-center ${isExp ? 'text-red-700' : 'text-green-700'}`}>Vencimiento {isExp && '(VENCIDO)'}</p>
-                            <input type="date" value={formData.docsExpiry?.[doc.id] || ''} onChange={(e) => setF('docsExpiry', { ...(formData.docsExpiry || {}), [doc.id]: e.target.value })} className={`w-full bg-white dark:bg-slate-900 border p-1.5 rounded-lg text-xs font-black text-slate-700 dark:text-slate-300 outline-none text-center transition-colors ${isExp ? 'border-red-300 focus:border-red-500' : 'border-green-200 focus:border-green-500'}`} />
+                          <div className={`${isExp ? 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800/50' : 'bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800/50'} border p-2 rounded-xl flex flex-col gap-1 shadow-inner transition-colors`}>
+                            <p className={`text-[9px] font-extrabold uppercase tracking-widest text-center ${isExp ? 'text-red-700 dark:text-red-400' : 'text-green-700 dark:text-green-400'}`}>Vencimiento {isExp && '(VENCIDO)'}</p>
+                            <input type="date" value={formData.docsExpiry?.[doc.id] || ''} onChange={(e) => setF('docsExpiry', { ...(formData.docsExpiry || {}), [doc.id]: e.target.value })} className={`w-full bg-white dark:bg-slate-900 border p-1.5 rounded-lg text-xs font-black text-slate-700 dark:text-slate-300 outline-none text-center transition-colors ${isExp ? 'border-red-300 dark:border-red-700/50 focus:border-red-500' : 'border-green-200 dark:border-green-800/50 focus:border-green-500'}`} />
                           </div>
                         </div>
                       )}
@@ -1013,9 +1013,9 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                 <div className="space-y-4">
 
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest ml-1">Enlace / Link del Documento</label>
+                    <label className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest ml-1">Enlace / Link del Documento</label>
                     <div className="flex gap-2">
-                      <input type="url" placeholder="Ej: https://acrobat.adobe.com/..." value={formData.scannerLink || ''} onChange={(e) => setF('scannerLink', e.target.value)} className="w-full border-2 border-indigo-100 bg-indigo-50/30 p-3 rounded-xl font-bold text-slate-700 dark:text-slate-300 text-sm outline-none focus:border-indigo-500 transition-colors" />
+                      <input type="url" placeholder="Ej: https://acrobat.adobe.com/..." value={formData.scannerLink || ''} onChange={(e) => setF('scannerLink', e.target.value)} className="w-full border-2 border-indigo-100 dark:border-indigo-800/50 bg-indigo-50 dark:bg-indigo-900/30 p-3 rounded-xl font-bold text-slate-700 dark:text-slate-300 text-sm outline-none focus:border-indigo-500 transition-colors" />
                       <button type="button" onClick={async () => {
                         if (!formData.scannerLink) return showAlert("⚠️ Pega un link primero.");
                         if (job.id === 'NEW_QUICK_JOB') return showAlert("⚠️ Debes 'Finalizar y Guardar' el acta abajo para poder notificar este link.");
@@ -1065,9 +1065,9 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 opacity-60"><div className="h-px bg-slate-300 flex-1"></div><span className="text-[10px] font-black uppercase text-slate-400">O Subir Archivo Físico</span><div className="h-px bg-slate-300 flex-1"></div></div>
+                  <div className="flex items-center gap-3 opacity-60"><div className="h-px bg-slate-300 dark:bg-slate-600 flex-1"></div><span className="text-[10px] font-black uppercase text-slate-400">O Subir Archivo Físico</span><div className="h-px bg-slate-300 dark:bg-slate-600 flex-1"></div></div>
 
-                  <label className="w-full bg-white dark:bg-slate-900 border-2 border-dashed border-indigo-300 hover:bg-indigo-50 text-indigo-600 p-4 rounded-2xl font-black text-xs flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm">
+                  <label className="w-full bg-white dark:bg-slate-900 border-2 border-dashed border-indigo-300 dark:border-indigo-700/50 hover:bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 p-4 rounded-2xl font-black text-xs flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm">
                     <input type="file" accept="application/pdf,image/*" className="hidden" onChange={(e) => {
                       const f = e.target.files[0];
                       if (!f) return;
@@ -1152,10 +1152,10 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                 </div>
 
                 {job.checklist?.scandocPdfInbox && (
-                  <div className="mt-4 bg-emerald-50 border border-emerald-200 p-3 rounded-xl flex items-center justify-between shadow-sm">
+                  <div className="mt-4 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800/50 p-3 rounded-xl flex items-center justify-between shadow-sm">
                     <div className="flex items-center gap-2">
                       <CheckCircle className="w-5 h-5 text-emerald-500" />
-                      <p className="text-[11px] font-black text-emerald-800 uppercase tracking-tight">Doc. Asignado (Bandeja)</p>
+                      <p className="text-[11px] font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-tight">Doc. Asignado (Bandeja)</p>
                     </div>
                     <a href={job.checklist.scandocPdfInbox} target="_blank" rel="noreferrer" className="text-[10px] bg-emerald-600 text-white px-2.5 py-1.5 rounded-lg font-bold shadow-sm hover:bg-emerald-500">VER PDF</a>
                   </div>
@@ -1173,10 +1173,10 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
               </div>
 
               {/* NUEVO: NOTAS DURANTE EL TRASLADO */}
-              <div className="space-y-4 bg-orange-50 p-4 rounded-3xl border border-orange-200 shadow-sm">
-                <h3 className="text-sm font-extrabold pb-2 text-orange-800 uppercase tracking-wider flex items-center gap-2"><AlertCircle className="w-5 h-5" /> Notas durante el traslado</h3>
-                <p className="text-[10px] font-bold text-orange-600 leading-tight">Usa este espacio para reportar eventos como: ruidos extraños, pinchazos, piquetes en parabrisas, u otras novedades ocurridas netamente en la ruta.</p>
-                <textarea className="w-full border-2 border-orange-200 p-3 rounded-xl text-sm font-bold text-orange-800 outline-none focus:border-orange-500 min-h-[90px] bg-white dark:bg-slate-900 placeholder-orange-300" placeholder="Ej: Piquete en parabrisas en carretera, neumático con baja presión..." autoComplete="off" autoCorrect="off" spellCheck="false" value={formData.transitNotes || ''} onChange={(e) => setF('transitNotes', e.target.value)} />
+              <div className="space-y-4 bg-orange-50 dark:bg-orange-900/30 p-4 rounded-3xl border border-orange-200 dark:border-orange-800/50 shadow-sm">
+                <h3 className="text-sm font-extrabold pb-2 text-orange-800 dark:text-orange-300 uppercase tracking-wider flex items-center gap-2"><AlertCircle className="w-5 h-5" /> Notas durante el traslado</h3>
+                <p className="text-[10px] font-bold text-orange-600 dark:text-orange-400 leading-tight">Usa este espacio para reportar eventos como: ruidos extraños, pinchazos, piquetes en parabrisas, u otras novedades ocurridas netamente en la ruta.</p>
+                <textarea className="w-full border-2 border-orange-200 dark:border-orange-800/50 p-3 rounded-xl text-sm font-bold text-orange-800 dark:text-orange-300 outline-none focus:border-orange-500 min-h-[90px] bg-white dark:bg-slate-900 placeholder-orange-300" placeholder="Ej: Piquete en parabrisas en carretera, neumático con baja presión..." autoComplete="off" autoCorrect="off" spellCheck="false" value={formData.transitNotes || ''} onChange={(e) => setF('transitNotes', e.target.value)} />
               </div>
 
               {/* NUEVO: VERIFICACIÓN DE EQUIPAMIENTO */}
@@ -1192,7 +1192,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                       {equipmentList.map(item => {
                         const isChecked = formData.equipment?.[item] || false;
                         return (
-                          <label key={item} className={`flex items-start gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer select-none ${isChecked ? 'border-blue-500 bg-blue-100 text-blue-900 shadow-sm' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-blue-300'}`}>
+                          <label key={item} className={`flex items-start gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer select-none ${isChecked ? 'border-blue-500 bg-blue-100 dark:bg-blue-900/40 text-blue-900 dark:text-blue-300 shadow-sm' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-blue-300 dark:border-blue-700/50'}`}>
                             <input type="checkbox" checked={isChecked} onChange={e => setF('equipment', { ...formData.equipment, [item]: e.target.checked })} className="w-4 h-4 accent-blue-600 rounded shrink-0 mt-0.5" />
                             <span className="text-[11px] font-extrabold leading-tight">{item}</span>
                           </label>
@@ -1237,8 +1237,8 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                       <span className="text-blue-500 text-xs">Toca un cuadrante del auto para acercar y marcar.</span>
                     </p>
                   ) : (
-                    <div className="w-full flex items-center justify-between bg-blue-50 p-2 rounded-xl border border-blue-200 animate-in fade-in">
-                      <p className="text-[11px] font-black text-blue-700 uppercase animate-pulse flex items-center gap-1"><Search className="w-4 h-4" /> Toca el daño exacto</p>
+                    <div className="w-full flex items-center justify-between bg-blue-50 dark:bg-blue-900/30 p-2 rounded-xl border border-blue-200 dark:border-blue-800/50 animate-in fade-in">
+                      <p className="text-[11px] font-black text-blue-700 dark:text-blue-400 uppercase animate-pulse flex items-center gap-1"><Search className="w-4 h-4" /> Toca el daño exacto</p>
                       <button type="button" onClick={() => setF('zoomZone', null)} className="bg-white dark:bg-slate-900 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 shadow-sm border border-slate-200 dark:border-slate-700 flex items-center gap-1 hover:bg-slate-100 dark:bg-slate-800 transition-colors"><X className="w-3 h-3" /> Volver</button>
                     </div>
                   )}
@@ -1307,7 +1307,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
 
                         {/* Chasis principal */}
-                        <div className="w-[88%] h-full bg-slate-300 rounded-t-[45px] rounded-b-[35px] border-4 border-slate-400 relative flex flex-col p-1 shadow-inner z-10 overflow-hidden">
+                        <div className="w-[88%] h-full bg-slate-300 dark:bg-slate-600 rounded-t-[45px] rounded-b-[35px] border-4 border-slate-400 relative flex flex-col p-1 shadow-inner z-10 overflow-hidden">
 
                           {/* Líneas aerodinámicas del Capó */}
                           <div className="absolute top-[-2%] left-[15%] w-[70%] h-[20%] border-x-2 border-slate-400/40 rounded-t-[30px] pointer-events-none"></div>
@@ -1316,18 +1316,18 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                           {/* Habitáculo */}
                           <div className="flex flex-col h-full justify-between pt-[18%] pb-[12%] z-10">
                             {/* Parabrisas Delantero curvo */}
-                            <div className="w-[85%] h-[16%] bg-slate-800/40 mx-auto rounded-t-[25px] rounded-b-[4px] shadow-sm border-t-2 border-white/20"></div>
+                            <div className="w-[85%] h-[16%] bg-slate-800/40 mx-auto rounded-t-[25px] rounded-b-[4px] shadow-sm border-t-2 border-white dark:border-slate-800/20"></div>
 
 
                             {/* Techo y Ventanas Laterales (vidrios oscuros a los lados) */}
-                            <div className="flex-1 w-[80%] mx-auto bg-slate-200 border-x-4 border-slate-800/40 relative flex flex-col my-1 shadow-sm rounded-sm">
+                            <div className="flex-1 w-[80%] mx-auto bg-slate-200 dark:bg-slate-700 border-x-4 border-slate-800/40 relative flex flex-col my-1 shadow-sm rounded-sm">
                               {/* Línea divisoria de puertas (Pilar B) */}
                               <div className="w-full h-1/2 border-b-2 border-slate-400/30"></div>
                             </div>
 
 
                             {/* Parabrisas Trasero curvo */}
-                            <div className="w-[80%] h-[11%] bg-slate-800/40 mx-auto rounded-b-[20px] rounded-t-[4px] shadow-sm border-b-2 border-white/20"></div>
+                            <div className="w-[80%] h-[11%] bg-slate-800/40 mx-auto rounded-b-[20px] rounded-t-[4px] shadow-sm border-b-2 border-white dark:border-slate-800/20"></div>
                           </div>
 
 
@@ -1338,10 +1338,10 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                     )}
                     {formData.vehicleType === 'furgon_pequeno' && (
                       <div className="w-full h-full relative flex flex-col items-center z-10">
-                        <div className="w-[80%] h-[18%] bg-slate-300 rounded-t-[35px] border-x-4 border-t-4 border-slate-400 shadow-inner z-0"></div>
-                        <div className="w-[100%] h-[82%] bg-slate-200 rounded-t-[15px] rounded-b-[20px] border-4 border-slate-400 shadow-inner flex flex-col p-1.5 z-10 -mt-2">
+                        <div className="w-[80%] h-[18%] bg-slate-300 dark:bg-slate-600 rounded-t-[35px] border-x-4 border-t-4 border-slate-400 shadow-inner z-0"></div>
+                        <div className="w-[100%] h-[82%] bg-slate-200 dark:bg-slate-700 rounded-t-[15px] rounded-b-[20px] border-4 border-slate-400 shadow-inner flex flex-col p-1.5 z-10 -mt-2">
                           <div className="w-[90%] h-[20%] bg-slate-800/40 mx-auto rounded-t-[15px] rounded-b-sm mb-1.5 shadow-sm"></div>
-                          <div className="flex-1 w-[95%] mx-auto bg-slate-300 border-2 border-slate-400/30 rounded-md relative flex justify-center overflow-hidden">
+                          <div className="flex-1 w-[95%] mx-auto bg-slate-300 dark:bg-slate-600 border-2 border-slate-400/30 rounded-md relative flex justify-center overflow-hidden">
                             {/* Eliminamos la línea vertical molesta de acá */}
                             <div className="absolute top-1/4 w-full border-t-2 border-slate-400/20"></div>
                             <div className="absolute top-2/4 w-full border-t-2 border-slate-400/20"></div>
@@ -1351,9 +1351,9 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                       </div>
                     )}
                     {formData.vehicleType === 'furgon_grande' && (
-                      <div className="w-full h-full bg-slate-200 rounded-t-[35px] rounded-b-[10px] border-4 border-slate-400 relative flex flex-col justify-start p-2 shadow-inner z-10">
+                      <div className="w-full h-full bg-slate-200 dark:bg-slate-700 rounded-t-[35px] rounded-b-[10px] border-4 border-slate-400 relative flex flex-col justify-start p-2 shadow-inner z-10">
                         <div className="w-[85%] h-[15%] bg-slate-800/40 mx-auto rounded-t-[20px] rounded-b-sm mt-1"></div>
-                        <div className="flex-1 w-[90%] mx-auto bg-slate-300 border-2 border-slate-400/30 rounded-sm mt-3 mb-1 flex items-center justify-center relative overflow-hidden shadow-sm">
+                        <div className="flex-1 w-[90%] mx-auto bg-slate-300 dark:bg-slate-600 border-2 border-slate-400/30 rounded-sm mt-3 mb-1 flex items-center justify-center relative overflow-hidden shadow-sm">
                           {/* Eliminamos la línea vertical molesta de acá */}
                           <div className="absolute top-1/4 w-full border-t border-slate-400/20"></div>
                           <div className="absolute top-2/4 w-full border-t border-slate-400/20"></div>
@@ -1363,37 +1363,37 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                     )}
                     {formData.vehicleType === 'camioneta' && (
                       <div className="w-full h-full relative flex flex-col">
-                        <div className="w-full h-[55%] bg-slate-300 rounded-t-[35px] rounded-b-md border-4 border-slate-400 p-2 flex flex-col justify-between shadow-inner relative overflow-hidden">
+                        <div className="w-full h-[55%] bg-slate-300 dark:bg-slate-600 rounded-t-[35px] rounded-b-md border-4 border-slate-400 p-2 flex flex-col justify-between shadow-inner relative overflow-hidden">
                           <div className="w-5/6 h-8 bg-slate-800/30 mx-auto rounded-t-xl rounded-b-sm mt-1 z-10"></div>
                           <div className="flex-1 w-full mx-auto relative flex flex-col justify-center my-1">
                             <div className="w-full border-t-2 border-slate-400/40"></div>
                           </div>
                           <div className="w-5/6 h-4 bg-slate-800/30 mx-auto rounded-b-xl rounded-t-sm mb-0.5 z-10"></div>
                         </div>
-                        <div className="w-[90%] h-[43%] mx-auto bg-slate-200 border-x-4 border-b-4 border-slate-400 rounded-b-xl mt-1 relative shadow-inner">
-                          <div className="absolute inset-1.5 border-2 border-slate-300/80 rounded-sm"></div>
-                          <div className="absolute inset-y-2 left-1/3 border-l-2 border-slate-300/50"></div>
-                          <div className="absolute inset-y-2 right-1/3 border-r-2 border-slate-300/50"></div>
+                        <div className="w-[90%] h-[43%] mx-auto bg-slate-200 dark:bg-slate-700 border-x-4 border-b-4 border-slate-400 rounded-b-xl mt-1 relative shadow-inner">
+                          <div className="absolute inset-1.5 border-2 border-slate-300 dark:border-slate-600/80 rounded-sm"></div>
+                          <div className="absolute inset-y-2 left-1/3 border-l-2 border-slate-300 dark:border-slate-600/50"></div>
+                          <div className="absolute inset-y-2 right-1/3 border-r-2 border-slate-300 dark:border-slate-600/50"></div>
                         </div>
                       </div>
                     )}
                     {formData.vehicleType === 'camion' && (
                       <div className="w-full h-full relative flex flex-col">
-                        <div className="w-[105%] -ml-[2.5%] h-[20%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-300 p-1 flex flex-col justify-end shadow-inner z-10 relative">
+                        <div className="w-[105%] -ml-[2.5%] h-[20%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-300 dark:border-blue-700/50 p-1 flex flex-col justify-end shadow-inner z-10 relative">
                           <div className="w-full h-1/2 bg-slate-800/40 rounded-t-md rounded-b-sm mb-1"></div>
                         </div>
-                        <div className="w-full h-[78%] mx-auto bg-slate-200 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
+                        <div className="w-full h-[78%] mx-auto bg-slate-200 dark:bg-slate-700 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
                           <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
                         </div>
                       </div>
                     )}
                     {formData.vehicleType === 'camion_doble' && (
                       <div className="w-full h-full relative flex flex-col">
-                        <div className="w-[105%] -ml-[2.5%] h-[32%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-300 p-1 flex flex-col justify-end gap-1 shadow-inner z-10 relative">
+                        <div className="w-[105%] -ml-[2.5%] h-[32%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-300 dark:border-blue-700/50 p-1 flex flex-col justify-end gap-1 shadow-inner z-10 relative">
                           <div className="w-full h-[40%] bg-slate-800/40 rounded-t-md"></div>
                           <div className="w-full h-[35%] bg-slate-800/40 rounded-sm mb-0.5"></div>
                         </div>
-                        <div className="w-full h-[66%] mx-auto bg-slate-200 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
+                        <div className="w-full h-[66%] mx-auto bg-slate-200 dark:bg-slate-700 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
                           <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
                         </div>
                       </div>
@@ -1415,7 +1415,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                             <div className="w-[105%] h-[20%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-400 p-1 flex flex-col justify-end shadow-inner z-10 relative">
                               <div className="w-full h-1/2 bg-slate-800/50 rounded-t-md rounded-b-sm mb-1"></div>
                             </div>
-                            <div className="w-full h-[78%] mx-auto bg-slate-200 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
+                            <div className="w-full h-[78%] mx-auto bg-slate-200 dark:bg-slate-700 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
                               <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
                             </div>
                           </>
@@ -1423,8 +1423,8 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
                         {formData.vehicleType === 'carro_arrastre' && (
                           <div className="w-full h-full relative overflow-hidden flex justify-center items-center">
-                            <div className="w-[90%] h-[80%] bg-slate-300 rounded-md border-4 border-slate-400 relative overflow-hidden shadow-inner flex justify-center items-center z-10 mt-6">
-                              <div className="w-[90%] h-[90%] border-2 border-slate-300/50 rounded-sm"></div>
+                            <div className="w-[90%] h-[80%] bg-slate-300 dark:bg-slate-600 rounded-md border-4 border-slate-400 relative overflow-hidden shadow-inner flex justify-center items-center z-10 mt-6">
+                              <div className="w-[90%] h-[90%] border-2 border-slate-300 dark:border-slate-600/50 rounded-sm"></div>
                             </div>
 
 
@@ -1469,7 +1469,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                             <div className="w-[105%] h-[20%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-400 p-1 flex flex-col justify-end shadow-inner z-10 relative">
                               <div className="w-full h-1/2 bg-slate-800/50 rounded-t-md rounded-b-sm mb-1"></div>
                             </div>
-                            <div className="w-full h-[78%] mx-auto bg-slate-200 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
+                            <div className="w-full h-[78%] mx-auto bg-slate-200 dark:bg-slate-700 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
                               <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
                             </div>
                           </>
@@ -1479,7 +1479,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
 
                     {(formData.detailPins || []).map(pin => (
-                      <div key={pin.id} onClick={() => handlePhotoClick(pin.id, 'Detalle del Daño')} className="absolute w-8 h-8 -ml-4 -mt-4 bg-red-500 rounded-full border-2 border-white shadow-xl flex items-center justify-center z-50 animate-in zoom-in cursor-pointer" style={{ left: `${pin.x}%`, top: `${pin.y}%` }}>
+                      <div key={pin.id} onClick={() => handlePhotoClick(pin.id, 'Detalle del Daño')} className="absolute w-8 h-8 -ml-4 -mt-4 bg-red-500 rounded-full border-2 border-white dark:border-slate-800 shadow-xl flex items-center justify-center z-50 animate-in zoom-in cursor-pointer" style={{ left: `${pin.x}%`, top: `${pin.y}%` }}>
                         <img src={formData.photos[pin.id]} className="w-full h-full object-cover rounded-full opacity-90" alt="Detalle" />
                         <button type="button" onClick={(e) => { e.stopPropagation(); setF('photos', { ...formData.photos, [pin.id]: false }); setF('detailPins', formData.detailPins.filter(p => p.id !== pin.id)); }} className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] hover:bg-red-700 shadow-md"><X className="w-3 h-3" /></button>
                       </div>
@@ -1487,22 +1487,22 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                   </div>
 
 
-                  <button type="button" onClick={() => handlePhotoClick('front', 'FRENTE')} className={`absolute top-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white dark:bg-slate-900 transition-all ${formData.photos.front ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
+                  <button type="button" onClick={() => handlePhotoClick('front', 'FRENTE')} className={`absolute top-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white dark:bg-slate-900 transition-all ${formData.photos.front ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-blue-50 dark:bg-blue-900/30'}`}>
                     {formData.photos.front ? <><img src={formData.photos.front} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50" /><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white dark:bg-slate-900 rounded-full" /></> : <><Camera className="w-5 h-5 text-blue-500 mb-1" /><span className="text-[9px] font-black text-slate-500 dark:text-slate-400 tracking-wide">FRENTE</span></>}
                   </button>
 
 
-                  <button type="button" onClick={() => handlePhotoClick('back', 'ATRÁS')} className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white dark:bg-slate-900 transition-all ${formData.photos.back ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
+                  <button type="button" onClick={() => handlePhotoClick('back', 'ATRÁS')} className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white dark:bg-slate-900 transition-all ${formData.photos.back ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-blue-50 dark:bg-blue-900/30'}`}>
                     {formData.photos.back ? <><img src={formData.photos.back} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50" /><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white dark:bg-slate-900 rounded-full" /></> : <><Camera className="w-5 h-5 text-blue-500 mb-1" /><span className="text-[9px] font-black text-slate-500 dark:text-slate-400 tracking-wide">ATRÁS</span></>}
                   </button>
 
 
-                  <button type="button" onClick={() => handlePhotoClick('left', 'LATERAL PILOTO')} className={`absolute top-1/2 left-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white dark:bg-slate-900 transition-all ${formData.photos.left ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
+                  <button type="button" onClick={() => handlePhotoClick('left', 'LATERAL PILOTO')} className={`absolute top-1/2 left-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white dark:bg-slate-900 transition-all ${formData.photos.left ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-blue-50 dark:bg-blue-900/30'}`}>
                     {formData.photos.left ? <><img src={formData.photos.left} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50" /><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white dark:bg-slate-900 rounded-full" /></> : <><Camera className="w-5 h-5 text-blue-500 mb-0.5" /><span className="text-[8px] font-black text-slate-500 dark:text-slate-400 text-center leading-tight">LATERAL<br />PILOTO</span></>}
                   </button>
 
 
-                  <button type="button" onClick={() => handlePhotoClick('right', 'LATERAL COPILOTO')} className={`absolute top-1/2 right-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white dark:bg-slate-900 transition-all ${formData.photos.right ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
+                  <button type="button" onClick={() => handlePhotoClick('right', 'LATERAL COPILOTO')} className={`absolute top-1/2 right-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white dark:bg-slate-900 transition-all ${formData.photos.right ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-blue-50 dark:bg-blue-900/30'}`}>
                     {formData.photos.right ? <><img src={formData.photos.right} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50" /><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white dark:bg-slate-900 rounded-full" /></> : <><Camera className="w-5 h-5 text-blue-500 mb-0.5" /><span className="text-[8px] font-black text-slate-500 dark:text-slate-400 text-center leading-tight">LATERAL<br />COPILOTO</span></>}
                   </button>
                 </div>
@@ -1510,8 +1510,8 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
                 <div className="grid grid-cols-2 gap-3 mt-6 border-t-2 border-slate-100 dark:border-slate-800 pt-4">
                   {[{ id: 'dashboard', l: 'Tablero' }, { id: 'tire', l: 'Repuesto' }, { id: 'interior_front', l: 'Int. Adelante' }, { id: 'interior_back', l: 'Int. Atrás' }].map(p => (
-                    <button type="button" key={p.id} onClick={() => handlePhotoClick(p.id, p.l)} className={`w-full h-12 rounded-xl border-2 flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white dark:bg-slate-900 shadow-sm transition-all ${formData.photos[p.id] ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-slate-50 dark:bg-slate-900/50'}`}>
-                      {formData.photos[p.id] ? <><img src={formData.photos[p.id]} className="absolute inset-0 w-full h-full object-cover opacity-30" /><CheckCircle className="w-5 h-5 text-green-500 relative z-10 bg-white dark:bg-slate-900 rounded-full" /><span className="text-[10px] font-black text-green-800 relative z-10">{p.l}</span></> : <><Camera className="w-4 h-4 text-slate-400" /><span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase">{p.l}</span></>}
+                    <button type="button" key={p.id} onClick={() => handlePhotoClick(p.id, p.l)} className={`w-full h-12 rounded-xl border-2 flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white dark:bg-slate-900 shadow-sm transition-all ${formData.photos[p.id] ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:bg-slate-900/50'}`}>
+                      {formData.photos[p.id] ? <><img src={formData.photos[p.id]} className="absolute inset-0 w-full h-full object-cover opacity-30" /><CheckCircle className="w-5 h-5 text-green-500 relative z-10 bg-white dark:bg-slate-900 rounded-full" /><span className="text-[10px] font-black text-green-800 dark:text-green-300 relative z-10">{p.l}</span></> : <><Camera className="w-4 h-4 text-slate-400" /><span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase">{p.l}</span></>}
                     </button>
                   ))}
                 </div>
@@ -1527,18 +1527,18 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
               <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border-2 border-slate-100 dark:border-slate-800 shadow-sm relative">
                 <div className="flex justify-between items-center mb-6">
                   <div className="flex items-center gap-3">
-                    <div className={`p-2.5 rounded-xl transition-colors ${formData.fuelLevel < 30 ? 'bg-red-50' : 'bg-slate-50 dark:bg-slate-900/50'}`}>
+                    <div className={`p-2.5 rounded-xl transition-colors ${formData.fuelLevel < 30 ? 'bg-red-50 dark:bg-red-900/30' : 'bg-slate-50 dark:bg-slate-900/50'}`}>
                       <Fuel className={`w-6 h-6 ${formData.fuelLevel < 30 ? 'text-red-500 animate-pulse' : 'text-slate-500 dark:text-slate-400'}`} />
                     </div>
                     <div>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Estanque</p>
-                      <p className={`text-2xl font-black leading-none transition-colors ${formData.fuelLevel < 30 ? 'text-red-600' : formData.fuelLevel <= 50 ? 'text-amber-500' : 'text-green-600'}`}>
+                      <p className={`text-2xl font-black leading-none transition-colors ${formData.fuelLevel < 30 ? 'text-red-600 dark:text-red-400' : formData.fuelLevel <= 50 ? 'text-amber-500' : 'text-green-600 dark:text-green-400'}`}>
                         {formData.fuelLevel}%
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-lg transition-colors ${formData.fuelLevel == 0 ? 'bg-red-100 text-red-700' : formData.fuelLevel <= 25 ? 'bg-red-50 text-red-600' : formData.fuelLevel <= 50 ? 'bg-amber-50 text-amber-600' : formData.fuelLevel <= 75 ? 'bg-green-50 text-green-600' : 'bg-green-100 text-green-700'}`}>
+                    <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-lg transition-colors ${formData.fuelLevel == 0 ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400' : formData.fuelLevel <= 25 ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400' : formData.fuelLevel <= 50 ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400' : formData.fuelLevel <= 75 ? 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400' : 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400'}`}>
                       {formData.fuelLevel == 0 ? 'Vacío' : formData.fuelLevel <= 25 ? 'Reserva' : formData.fuelLevel <= 50 ? 'Medio' : formData.fuelLevel <= 75 ? '3/4' : 'Lleno'}
                     </span>
                   </div>
@@ -1589,40 +1589,40 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
               <h3 className="text-sm font-extrabold border-b border-slate-100 dark:border-slate-800 pb-2 mt-6 text-slate-800 dark:text-slate-200 uppercase tracking-wider">Viáticos y Esperas</h3>
 
-              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
+              <div className="bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-800/50 rounded-xl p-4 flex items-center justify-between shadow-sm">
                 <div className="flex items-center gap-3">
-                  <div className="bg-blue-100 p-2 rounded-lg text-blue-600"><Wallet className="w-5 h-5" /></div>
+                  <div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-lg text-blue-600 dark:text-blue-400"><Wallet className="w-5 h-5" /></div>
                   <div>
-                    <p className="text-xs font-bold text-blue-600 uppercase leading-none">Fondo Asignado</p>
+                    <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase leading-none">Fondo Asignado</p>
                     <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-1">Patente: {job.plate || job.vin || 'N/A'}</p>
                   </div>
                 </div>
-                <p className="text-xl font-extrabold text-blue-700">
+                <p className="text-xl font-extrabold text-blue-700 dark:text-blue-400">
                   {formatMoney((expenses || []).filter(g => g.jobId === job.id && g.type === 'assignment').reduce((acc, curr) => acc + Number(curr.amount || 0), 0))}
                 </p>
               </div>
 
 
               {job.tripType === 'revision' && (job.rtData?.revision || job.rtData?.inspeccion || job.rtData?.frenos) && (
-                <div className="bg-indigo-50 border-2 border-indigo-200 rounded-xl p-4 shadow-sm space-y-3">
-                  <h3 className="text-xs font-extrabold text-indigo-800 uppercase tracking-wider flex items-center gap-1.5"><Receipt className="w-4 h-4" /> Valores pagados en Planta (PRT)</h3>
+                <div className="bg-indigo-50 dark:bg-indigo-900/30 border-2 border-indigo-200 dark:border-indigo-800/50 rounded-xl p-4 shadow-sm space-y-3">
+                  <h3 className="text-xs font-extrabold text-indigo-800 dark:text-indigo-300 uppercase tracking-wider flex items-center gap-1.5"><Receipt className="w-4 h-4" /> Valores pagados en Planta (PRT)</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {job.rtData?.revision && (
                       <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-black text-indigo-600 uppercase">Revisión Técnica ($)</label>
-                        <input type="number" placeholder="Ej: 20000" className="w-full border-2 border-indigo-100 p-2 rounded-xl font-bold text-sm bg-white dark:bg-slate-900" value={formData.prtCostRevision || ''} onChange={e => setF('prtCostRevision', e.target.value)} />
+                        <label className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase">Revisión Técnica ($)</label>
+                        <input type="number" placeholder="Ej: 20000" className="w-full border-2 border-indigo-100 dark:border-indigo-800/50 p-2 rounded-xl font-bold text-sm bg-white dark:bg-slate-900" value={formData.prtCostRevision || ''} onChange={e => setF('prtCostRevision', e.target.value)} />
                       </div>
                     )}
                     {job.rtData?.inspeccion && (
                       <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-black text-indigo-600 uppercase">Inspección Visual ($)</label>
-                        <input type="number" placeholder="Ej: 5000" className="w-full border-2 border-indigo-100 p-2 rounded-xl font-bold text-sm bg-white dark:bg-slate-900" value={formData.prtCostInspeccion || ''} onChange={e => setF('prtCostInspeccion', e.target.value)} />
+                        <label className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase">Inspección Visual ($)</label>
+                        <input type="number" placeholder="Ej: 5000" className="w-full border-2 border-indigo-100 dark:border-indigo-800/50 p-2 rounded-xl font-bold text-sm bg-white dark:bg-slate-900" value={formData.prtCostInspeccion || ''} onChange={e => setF('prtCostInspeccion', e.target.value)} />
                       </div>
                     )}
                     {job.rtData?.frenos && (
                       <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-black text-indigo-600 uppercase">Certificado Frenos ($)</label>
-                        <input type="number" placeholder="Ej: 8000" className="w-full border-2 border-indigo-100 p-2 rounded-xl font-bold text-sm bg-white dark:bg-slate-900" value={formData.prtCostFrenos || ''} onChange={e => setF('prtCostFrenos', e.target.value)} />
+                        <label className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase">Certificado Frenos ($)</label>
+                        <input type="number" placeholder="Ej: 8000" className="w-full border-2 border-indigo-100 dark:border-indigo-800/50 p-2 rounded-xl font-bold text-sm bg-white dark:bg-slate-900" value={formData.prtCostFrenos || ''} onChange={e => setF('prtCostFrenos', e.target.value)} />
                       </div>
                     )}
                   </div>
@@ -1631,7 +1631,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
 
               <div className="grid grid-cols-2 gap-3 pt-2">
-                <div className={`flex flex-col items-center justify-center gap-1.5 h-24 rounded-2xl border-2 select-none shadow-sm ${(job.tripType === 'revision' && formData.prtArrivalTime) || job.waitTimeMinutes >= 1 ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-400'}`}>
+                <div className={`flex flex-col items-center justify-center gap-1.5 h-24 rounded-2xl border-2 select-none shadow-sm ${(job.tripType === 'revision' && formData.prtArrivalTime) || job.waitTimeMinutes >= 1 ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-400'}`}>
                   <Clock className="w-5 h-5" />
                   {job.tripType === 'revision' && formData.prtArrivalTime ? (
                     <span className="font-black text-xs uppercase tracking-wider text-center leading-tight">
@@ -1652,7 +1652,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
               {formData.hasFuelCharge && (
                 <div className="animate-in fade-in slide-in-from-top-2 border rounded-xl p-3 bg-slate-50 dark:bg-slate-900/50 shadow-inner max-w-sm mx-auto">
-                  <p className="text-[10px] font-black text-blue-700 uppercase tracking-wider text-center mb-1">Monto Rendición Gasolinera ($)</p>
+                  <p className="text-[10px] font-black text-blue-700 dark:text-blue-400 uppercase tracking-wider text-center mb-1">Monto Rendición Gasolinera ($)</p>
                   <input type="number" placeholder="Ej: 15000" value={formData.fuelChargeAmount || ''} onChange={(e) => setF('fuelChargeAmount', e.target.value)} className="w-full bg-white dark:bg-slate-900 border p-2 rounded-xl text-center text-sm font-bold outline-none" />
                 </div>
               )}
@@ -1670,9 +1670,9 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
               </label>
 
               {!formData.noReception && (
-                <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4">
-                  <h3 className="font-extrabold text-blue-800 mb-1 flex items-center gap-2"><Zap className="w-5 h-5" /> Firma Remota o QR</h3>
-                  <p className="text-[11px] font-bold text-blue-600 mb-3">Envía el link al cliente o muéstrale el QR para que firme desde su celular.</p>
+                <div className="bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-800/50 rounded-2xl p-4">
+                  <h3 className="font-extrabold text-blue-800 dark:text-blue-300 mb-1 flex items-center gap-2"><Zap className="w-5 h-5" /> Firma Remota o QR</h3>
+                  <p className="text-[11px] font-bold text-blue-600 dark:text-blue-400 mb-3">Envía el link al cliente o muéstrale el QR para que firme desde su celular.</p>
                   <div className="flex gap-2">
                     <button type="button" onClick={handleRemoteSignRequest} disabled={processingAction === 'wapp'} className="flex-[2] py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-sm flex justify-center items-center gap-1.5 text-xs transition-colors">
                       {processingAction === 'wapp' ? <Clock className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />} {processingAction === 'wapp' ? 'Cargando...' : 'Compartir Link'}
@@ -1688,7 +1688,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
               {!formData.noReception && (
                 <div className="space-y-3">
 
-                  <div className="flex items-center gap-2 my-2"><div className="h-px bg-slate-200 flex-1"></div><span className="text-[10px] font-bold text-slate-400 uppercase">Firma en pantalla</span><div className="h-px bg-slate-200 flex-1"></div></div>
+                  <div className="flex items-center gap-2 my-2"><div className="h-px bg-slate-200 dark:bg-slate-700 flex-1"></div><span className="text-[10px] font-bold text-slate-400 uppercase">Firma en pantalla</span><div className="h-px bg-slate-200 dark:bg-slate-700 flex-1"></div></div>
 
                   <input required={!formData.noReception} value={formData.receiverName} onChange={e => setF('receiverName', e.target.value)} placeholder="Nombre del receptor" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 dark:text-slate-300 text-sm" />
                   <input value={formData.receiverRut} onChange={(e) => { let val = e.target.value.replace(/[^0-9kK]/g, '').toUpperCase(); if (val.length > 1) { const dv = val.slice(-1); const body = val.slice(0, -1); val = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '-' + dv; } setF('receiverRut', val); }} placeholder="RUT Receptor (Opcional)" maxLength="12" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 dark:text-slate-300 text-sm" />
@@ -1713,7 +1713,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
           <div className="flex gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 mt-6">
             {step > 1 && (
-              <button type="button" onClick={() => setStep(step - 1)} className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-400 font-bold px-4 py-3 rounded-xl text-sm w-1/3 active:scale-[0.97] transition-all duration-200">
+              <button type="button" onClick={() => setStep(step - 1)} className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 font-bold px-4 py-3 rounded-xl text-sm w-1/3 active:scale-[0.97] transition-all duration-200">
                 Atrás
               </button>
             )}
@@ -1788,9 +1788,9 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
 
               {dejaVuData.checklist.observations && (
-                <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl">
-                  <p className="text-[10px] font-black text-amber-700 uppercase mb-1">Observaciones Anteriores:</p>
-                  <p className="text-xs font-bold text-amber-900 italic">"{dejaVuData.checklist.observations}"</p>
+                <div className="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800/50 p-3 rounded-xl">
+                  <p className="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase mb-1">Observaciones Anteriores:</p>
+                  <p className="text-xs font-bold text-amber-900 dark:text-amber-300 italic">"{dejaVuData.checklist.observations}"</p>
                 </div>
               )}
 
@@ -1812,7 +1812,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                   </div>
                 </div>
               )}
-              <button type="button" onClick={() => setShowDejaVuModal(false)} className="w-full py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-black rounded-xl transition-colors text-xs uppercase tracking-widest mt-2">
+              <button type="button" onClick={() => setShowDejaVuModal(false)} className="w-full py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-black rounded-xl transition-colors text-xs uppercase tracking-widest mt-2">
                 Entendido, Volver al Checklist
               </button>
             </div>
@@ -1825,7 +1825,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
       {qrOpen && (
         <div className="fixed inset-0 bg-slate-900/90 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setQrOpen(false)}>
           <div className="w-full max-w-sm rounded-3xl p-6 flex flex-col items-center text-center shadow-2xl animate-in zoom-in-95" style={{ backgroundColor: '#ffffff' }} onClick={e => e.stopPropagation()}>
-            <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mb-4 shadow-sm border border-indigo-200">
+            <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mb-4 shadow-sm border border-indigo-200 dark:border-indigo-800/50">
               <QrCode className="w-8 h-8" />
             </div>
             <h3 className="text-lg font-black mb-1" style={{ color: '#1e293b' }}>Firma Remota</h3>
@@ -1840,7 +1840,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
               />
             </div>
 
-            <button type="button" onClick={() => setQrOpen(false)} className="w-full py-3.5 hover:bg-slate-200 font-black rounded-xl transition-colors text-xs uppercase tracking-widest shadow-sm border border-slate-200 dark:border-slate-700" style={{ backgroundColor: '#f1f5f9', color: '#334155' }}>
+            <button type="button" onClick={() => setQrOpen(false)} className="w-full py-3.5 hover:bg-slate-200 dark:bg-slate-700 font-black rounded-xl transition-colors text-xs uppercase tracking-widest shadow-sm border border-slate-200 dark:border-slate-700" style={{ backgroundColor: '#f1f5f9', color: '#334155' }}>
               Cerrar QR
             </button>
           </div>

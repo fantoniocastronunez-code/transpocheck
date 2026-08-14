@@ -52,7 +52,7 @@ export default function JobCard({ j, ...props }) {
                    </span>
                 )}
                 {j.tripType === 'simple' && (
-                   <span className="bg-purple-100 text-purple-800 border border-purple-200 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm max-w-[150px] text-center leading-tight mb-1">SERVICIO</span>
+                   <span className="bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800/50 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm max-w-[150px] text-center leading-tight mb-1">SERVICIO</span>
                 )}
                 {ident !== 'S/N' && (
                    <>
@@ -63,14 +63,14 @@ export default function JobCard({ j, ...props }) {
                    </>
                 )}
                 {(j.checklist?.transitNotes || j.draft?.formData?.transitNotes) && (
-                   <span className="bg-orange-100 text-orange-700 border border-orange-200 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm max-w-[150px] text-center leading-tight mb-1 flex items-center gap-1 animate-pulse">
+                   <span className="bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800/50 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm max-w-[150px] text-center leading-tight mb-1 flex items-center gap-1 animate-pulse">
                      <AlertCircle className="w-3 h-3"/> NOTA EN RUTA
                    </span>
                 )}
               </div>
               
               <div className="flex items-center gap-1 relative shrink-0 z-50">
-                {isAdminView && <button onClick={()=>onEditJob(j)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition-colors"><Edit2 className="w-5 h-5"/></button>}
+                {isAdminView && <button onClick={()=>onEditJob(j)} className="p-2 text-blue-500 hover:bg-blue-50 dark:bg-blue-900/30 rounded-xl transition-colors"><Edit2 className="w-5 h-5"/></button>}
                 <button onClick={()=>setMenuOpenId(menuOpenId===j.id?null:j.id)} className="p-2 text-slate-400 hover:bg-slate-50 dark:bg-slate-900/50 rounded-xl transition-colors"><MoreVertical className="w-5 h-5"/></button>
                 {/* --- OPTIMIZACIÓN: z-[999] para aplastar cualquier capa inferior --- */}
                 {menuOpenId===j.id && (
@@ -83,7 +83,7 @@ export default function JobCard({ j, ...props }) {
                       textArea.focus(); textArea.select();
                       try { document.execCommand('copy'); showAlert("✅ Portal de Cliente copiado. ¡Pégalo en WhatsApp!"); } catch(e) {}
                       document.body.removeChild(textArea); setMenuOpenId(null);
-                    }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-blue-50 text-blue-600"><Navigation className="w-4 h-4"/> Portal Cliente</button>
+                    }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"><Navigation className="w-4 h-4"/> Portal Cliente</button>
                     
                     {isAccepted && (
                       <button onClick={() => {
@@ -91,7 +91,7 @@ export default function JobCard({ j, ...props }) {
                         const textToShare = `📍 Hola! El vehículo ${ident} va en camino a ${j.destination || 'su destino'}. Puedes seguir el traslado en tiempo real aquí:\n${url}`;
                         window.open(`https://wa.me/?text=${encodeURIComponent(textToShare)}`, '_blank');
                         setMenuOpenId(null);
-                      }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-green-50 text-green-600 border-t border-slate-50 dark:border-slate-700/50"><Share2 className="w-4 h-4"/> Notificar Receptor</button>
+                      }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-t border-slate-50 dark:border-slate-700/50"><Share2 className="w-4 h-4"/> Notificar Receptor</button>
                     )}
                     <button onClick={() => {
                       const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
@@ -101,7 +101,7 @@ export default function JobCard({ j, ...props }) {
                       textArea.focus(); textArea.select();
                       try { document.execCommand('copy'); showAlert("✅ Portal de Cliente copiado. ¡Pégalo en WhatsApp!"); } catch(e) {}
                       document.body.removeChild(textArea); setMenuOpenId(null);
-                    }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-blue-50 text-blue-600"><Navigation className="w-4 h-4"/> Portal Cliente</button>
+                    }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"><Navigation className="w-4 h-4"/> Portal Cliente</button>
                     
                     {isAccepted && (
                       <button onClick={() => {
@@ -109,23 +109,23 @@ export default function JobCard({ j, ...props }) {
                         const textToShare = `📍 Hola! El vehículo ${ident} va en camino a ${j.destination || 'su destino'}. Puedes seguir el traslado en tiempo real aquí:\n${url}`;
                         window.open(`https://wa.me/?text=${encodeURIComponent(textToShare)}`, '_blank');
                         setMenuOpenId(null);
-                      }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-green-50 text-green-600 border-t border-slate-50 dark:border-slate-700/50"><Share2 className="w-4 h-4"/> Notificar Receptor</button>
+                      }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-t border-slate-50 dark:border-slate-700/50"><Share2 className="w-4 h-4"/> Notificar Receptor</button>
                     )}
 
                     {/* NUEVO BOTÓN: DESHACER PASO */}
                     {isAccepted && j.phase && j.phase !== 'claimed' && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
-                      <button onClick={() => handleUndoPhase(j)} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-orange-50 text-orange-600 border-t border-slate-50 dark:border-slate-700/50">
+                      <button onClick={() => handleUndoPhase(j)} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-t border-slate-50 dark:border-slate-700/50">
                         <RefreshCw className="w-4 h-4"/> Deshacer último paso
                       </button>
                     )}
 
                     {/* El botón de traspaso solo es visible para el dueño del trabajo o un admin */}
                     {isAccepted && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
-                      <button onClick={() => { setRelayPromptJob(j); setMenuOpenId(null); }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-purple-50 text-purple-600 border-t border-slate-50 dark:border-slate-700/50"><Users className="w-4 h-4"/> Traspaso a Compañero</button>
+                      <button onClick={() => { setRelayPromptJob(j); setMenuOpenId(null); }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-t border-slate-50 dark:border-slate-700/50"><Users className="w-4 h-4"/> Traspaso a Compañero</button>
                     )}
                     
                     {isAdminView && (
-                      <button onClick={() => { setForceCloseJob(j); setMenuOpenId(null); }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-emerald-50 text-emerald-600 border-t border-slate-50 dark:border-slate-700/50">
+                      <button onClick={() => { setForceCloseJob(j); setMenuOpenId(null); }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-t border-slate-50 dark:border-slate-700/50">
                         <CheckCircle className="w-4 h-4"/> Forzar Cierre
                       </button>
                     )}
@@ -135,19 +135,19 @@ export default function JobCard({ j, ...props }) {
                           showConfirm("¿Quitar este vehículo del grupo de flota?", async () => {
                              try { await updateDoc(doc(db, 'transport_jobs', j.id), { fleetGroup: deleteField() }); setMenuOpenId(null); showAlert("Vehículo removido de la flota."); } catch (e) { showAlert("Error al desagrupar."); }
                           });
-                       }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-indigo-50 text-indigo-600 border-t border-slate-50 dark:border-slate-700/50">
+                       }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border-t border-slate-50 dark:border-slate-700/50">
                           <Truck className="w-4 h-4"/> Quitar de Flota
                        </button>
                     )}
                     
                     {isAccepted && (!j.phase || j.phase === 'claimed' || j.phase === 'arrived_pickup') && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
-                      <button onClick={() => { showConfirm("¿Deseas cancelar la aceptación?", async () => { try { await updateDoc(doc(db, 'transport_jobs', j.id), { status: 'pending', acceptedByEmail: deleteField(), phase: deleteField(), liveLocation: deleteField(), arrivedPickupAt: deleteField(), waitTimeMinutes: deleteField() }); setMenuOpenId(null); showAlert("✅ Traslado liberado."); } catch (err) { showAlert("Error al liberar."); } }); }} className="w-full text-left p-3 font-bold flex gap-2 text-amber-600 hover:bg-amber-50 border-t border-slate-50 dark:border-slate-700/50">
+                      <button onClick={() => { showConfirm("¿Deseas cancelar la aceptación?", async () => { try { await updateDoc(doc(db, 'transport_jobs', j.id), { status: 'pending', acceptedByEmail: deleteField(), phase: deleteField(), liveLocation: deleteField(), arrivedPickupAt: deleteField(), waitTimeMinutes: deleteField() }); setMenuOpenId(null); showAlert("✅ Traslado liberado."); } catch (err) { showAlert("Error al liberar."); } }); }} className="w-full text-left p-3 font-bold flex gap-2 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:bg-amber-900/30 border-t border-slate-50 dark:border-slate-700/50">
                         <X className="w-4 h-4"/> Cancelar Aceptación (Soltar)
                       </button>
                     )}
 
                     {(isAdminView || j.acceptedByEmail === currentUserEmail) && (
-                      <button onClick={()=>{setJobToFail(j);setMenuOpenId(null);}} className="w-full text-left p-3 font-bold flex gap-2 text-red-600 hover:bg-red-50 border-t border-slate-50 dark:border-slate-700/50"><XCircle className="w-4 h-4"/> Cancelar / Falló</button>
+                      <button onClick={()=>{setJobToFail(j);setMenuOpenId(null);}} className="w-full text-left p-3 font-bold flex gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-900/30 border-t border-slate-50 dark:border-slate-700/50"><XCircle className="w-4 h-4"/> Cancelar / Falló</button>
                     )}
                   </div>
                 )}
@@ -170,13 +170,13 @@ export default function JobCard({ j, ...props }) {
                 })()}
                 <div>
                     {j.tripType === 'simple' ? (
-                       <p className="text-lg font-black text-purple-800 leading-tight mt-1 break-words pr-2">{j.description || 'Servicio en Terreno'}</p>
+                       <p className="text-lg font-black text-purple-800 dark:text-purple-300 leading-tight mt-1 break-words pr-2">{j.description || 'Servicio en Terreno'}</p>
                     ) : (
                        <p className="text-xl font-black text-slate-800 dark:text-slate-200 leading-tight mt-1 break-words pr-2">{j.brand} {j.model}</p>
                     )}
                     <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-0.5 uppercase tracking-wide flex items-center flex-wrap gap-2">
                        {j.client}
-                       {j.fleetGroup && <span className="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded text-[9px] font-black border border-indigo-200">EN FLOTA (CONVOY)</span>}
+                       {j.fleetGroup && <span className="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 px-1.5 py-0.5 rounded text-[9px] font-black border border-indigo-200 dark:border-indigo-800/50">EN FLOTA (CONVOY)</span>}
                     </p>
                 </div>
               </div>
@@ -198,12 +198,12 @@ export default function JobCard({ j, ...props }) {
                 {/* ICONO CENTRAL O 1ra PARADA PRT */}
                 <div className="flex justify-center -my-2.5 z-20">
                   {j.tripType === 'revision' ? (
-                     <div className="bg-amber-100 px-3 py-0.5 rounded-lg border border-amber-200 shadow-sm text-center">
-                       <p className="text-[10px] font-black text-amber-800 uppercase">1ra Parada: PRT</p>
+                     <div className="bg-amber-100 dark:bg-amber-900/40 px-3 py-0.5 rounded-lg border border-amber-200 dark:border-amber-800/50 shadow-sm text-center">
+                       <p className="text-[10px] font-black text-amber-800 dark:text-amber-300 uppercase">1ra Parada: PRT</p>
                      </div>
                   ) : j.waypoints && j.waypoints.length > 0 ? (
-                     <div className="bg-amber-100 px-3 py-0.5 rounded-lg border border-amber-200 shadow-sm text-center">
-                       <p className="text-[10px] font-black text-amber-700">{j.waypoints.length} paradas</p>
+                     <div className="bg-amber-100 dark:bg-amber-900/40 px-3 py-0.5 rounded-lg border border-amber-200 dark:border-amber-800/50 shadow-sm text-center">
+                       <p className="text-[10px] font-black text-amber-700 dark:text-amber-400">{j.waypoints.length} paradas</p>
                      </div>
                   ) : (
                     <div className="bg-white dark:bg-slate-800 p-1 rounded-full border border-slate-200 dark:border-slate-700 text-slate-300 dark:text-slate-500 dark:text-slate-400 shadow-sm">
@@ -218,7 +218,7 @@ export default function JobCard({ j, ...props }) {
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
                     Hasta
                   </span>
-                  <p className="text-sm font-extrabold text-blue-700 leading-snug break-words whitespace-normal">
+                  <p className="text-sm font-extrabold text-blue-700 dark:text-blue-400 leading-snug break-words whitespace-normal">
                     {j.tripType === 'revision' ? getRtFinalDestination(j) : (j.destination || 'Por definir')}
                   </p>
                 </div>
@@ -227,7 +227,7 @@ export default function JobCard({ j, ...props }) {
             
             {j.waypoints && j.waypoints.length > 0 && (
               <div className="mt-1 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1.5 flex items-center gap-1"><MapPin className="w-3 h-3"/> Ruta intermedia:</p>
+                <p className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><MapPin className="w-3 h-3"/> Ruta intermedia:</p>
                 <div className="flex flex-col gap-1">
                   {j.waypoints.map((wp, i) => (
                      <span key={i} className="text-[11px] font-bold text-slate-600 dark:text-slate-400 leading-snug break-words"><span className="font-black mr-1 text-slate-400">{i + 1}.</span> {wp}</span>
@@ -264,7 +264,7 @@ export default function JobCard({ j, ...props }) {
                       <div className="flex justify-between items-center bg-white dark:bg-slate-900/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm mt-1">
                         <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-slate-400 dark:text-slate-500 dark:text-slate-400"/>{j.originAddress}{j.originAddress && j.originCommune ? ', ' : ''}{j.originCommune}</p>
                         {isAccepted && (
-                          <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.originAddress || ''} ${j.originCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition-colors border border-blue-200"><Navigation className="w-3 h-3"/> Waze</a>
+                          <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.originAddress || ''} ${j.originCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition-colors border border-blue-200 dark:border-blue-800/50"><Navigation className="w-3 h-3"/> Waze</a>
                         )}
                       </div>
                    )}
@@ -293,7 +293,7 @@ export default function JobCard({ j, ...props }) {
                    )}
 
                    {(j.destAddress || j.destCommune) && (
-                      <div className="flex justify-between items-center bg-blue-50/50 dark:bg-blue-900/10 p-2.5 rounded-xl border border-blue-200 dark:border-blue-800/50 shadow-sm animate-in fade-in slide-in-from-top-1 mt-1">
+                      <div className="flex justify-between items-center bg-blue-50 dark:bg-blue-900/30 dark:bg-blue-900/10 p-2.5 rounded-xl border border-blue-200 dark:border-blue-800/50 shadow-sm animate-in fade-in slide-in-from-top-1 mt-1">
                         <p className="text-[10px] font-bold text-blue-800 dark:text-blue-300 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-blue-500 dark:text-blue-400"/>{j.destAddress}{j.destAddress && j.destCommune ? ', ' : ''}{j.destCommune}</p>
                         {isAccepted && (
                           <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.destAddress || ''} ${j.destCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 shadow-md transition-colors"><Navigation className="w-3 h-3"/> Waze</a>
@@ -305,8 +305,8 @@ export default function JobCard({ j, ...props }) {
             </div>
           </div>
 
-          {j.tripType === 'revision' && <div className="mb-3 bg-amber-50 border border-amber-200 p-2 rounded-xl text-center shadow-sm"><span className="text-[10px] font-black text-amber-700 uppercase">REVISIÓN TÉCNICA (TIPO {j.rtData?.type})</span></div>}
-          {j.tripType === 'viaje' && <div className="mb-3 bg-indigo-50 border border-indigo-100 rounded-xl p-2 mb-3 text-center shadow-sm"><span className="text-[10px] font-black text-indigo-700 uppercase">A Regiones</span></div>}
+          {j.tripType === 'revision' && <div className="mb-3 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800/50 p-2 rounded-xl text-center shadow-sm"><span className="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase">REVISIÓN TÉCNICA (TIPO {j.rtData?.type})</span></div>}
+          {j.tripType === 'viaje' && <div className="mb-3 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800/50 rounded-xl p-2 mb-3 text-center shadow-sm"><span className="text-[10px] font-black text-indigo-700 dark:text-indigo-400 uppercase">A Regiones</span></div>}
           
           {(() => {
              if (!j.scheduledDate) return null;
@@ -321,17 +321,17 @@ export default function JobCard({ j, ...props }) {
 
              if (diffDays === 0) {
                  if (!j.scheduledTime) return null;
-                 return <div className="mb-3 bg-blue-50 border border-blue-200 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-blue-700 uppercase tracking-widest">📅 HOY{timeStr}</span></div>;
+                 return <div className="mb-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800/50 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-blue-700 dark:text-blue-400 uppercase tracking-widest">📅 HOY{timeStr}</span></div>;
              }
-             if (diffDays === 1) return <div className="mb-3 bg-cyan-50 border border-cyan-200 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-cyan-700 uppercase tracking-widest">📅 Mañana{timeStr}</span></div>;
+             if (diffDays === 1) return <div className="mb-3 bg-cyan-50 dark:bg-cyan-900/30 border border-cyan-200 dark:border-cyan-800/50 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-cyan-700 dark:text-cyan-400 uppercase tracking-widest">📅 Mañana{timeStr}</span></div>;
              if (diffDays > 1) return <div className="mb-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">📅 Para el {d}/{m}/{y}{timeStr}</span></div>;
              
              // Si ya pasó la fecha planificada pero el viaje ESTÁ EN PROCESO, evitamos el rojo
-             if (isStarted) return <div className="mb-3 bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-emerald-700 uppercase tracking-widest">🚀 EN RUTA ({d}/{m}/{y})</span></div>;
+             if (isStarted) return <div className="mb-3 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800/50 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">🚀 EN RUTA ({d}/{m}/{y})</span></div>;
 
              // Si se pasó la fecha, no ha iniciado y sigue activo, se trata visualmente como HOY (Reprogramación automática)
              if (!j.scheduledTime) return null;
-             return <div className="mb-3 bg-blue-50 border border-blue-200 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-blue-700 uppercase tracking-widest">📅 HOY{timeStr}</span></div>;
+             return <div className="mb-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800/50 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-blue-700 dark:text-blue-400 uppercase tracking-widest">📅 HOY{timeStr}</span></div>;
           })()}
 
         <div className="relative pl-7 space-y-5 before:absolute before:top-2 before:bottom-2 before:left-[10px] before:w-0.5 before:bg-slate-100 dark:bg-slate-800 dark:before:bg-slate-800 mb-5">
@@ -341,10 +341,10 @@ export default function JobCard({ j, ...props }) {
           
           {j.tripType === 'revision' && (
             <>
-              <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step4Done ? (j.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200'}`}>{step4Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step4Done ? (j.prt_result === 'rechazado' ? 'text-red-600' : 'text-green-600') : 'text-slate-400'}`}>Resultado Revisión</p>{step4Done && <p className={`text-xs font-bold ${j.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-600'}`}>{j.prt_result === 'rechazado' ? `Rechazado` : 'Aprobado'}</p>}</div>
+              <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white dark:border-slate-800 shadow-sm flex items-center justify-center transition-colors ${step4Done ? (j.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200 dark:bg-slate-700'}`}>{step4Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step4Done ? (j.prt_result === 'rechazado' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400') : 'text-slate-400'}`}>Resultado Revisión</p>{step4Done && <p className={`text-xs font-bold ${j.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-600 dark:text-green-400'}`}>{j.prt_result === 'rechazado' ? `Rechazado` : 'Aprobado'}</p>}</div>
               {/* Mostrar a dónde se dirige después de PRT (sea aprobado o rechazado) */}
               {step4Done && (
-                <div className="relative pt-2"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center bg-blue-500`}><Navigation className="w-2.5 h-2.5 text-white"/></div><p className="font-extrabold text-sm leading-tight text-slate-800 dark:text-slate-200">En camino a:</p><p className="text-xs font-bold text-blue-600 whitespace-normal break-words pr-2">
+                <div className="relative pt-2"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white dark:border-slate-800 shadow-sm flex items-center justify-center bg-blue-500`}><Navigation className="w-2.5 h-2.5 text-white"/></div><p className="font-extrabold text-sm leading-tight text-slate-800 dark:text-slate-200">En camino a:</p><p className="text-xs font-bold text-blue-600 dark:text-blue-400 whitespace-normal break-words pr-2">
                     {getRtFinalDestination(j)}
                 </p></div>
               )}
@@ -366,7 +366,7 @@ export default function JobCard({ j, ...props }) {
                   showAlert("✅ Tiempo de espera cancelado.");
                 } catch(e) { showAlert("Error al cancelar."); }
               });
-            }} className="bg-red-50 hover:bg-red-100 text-red-600 p-2.5 rounded-xl border border-red-200 shadow-sm active:scale-95 transition-all flex items-center justify-center shrink-0" title="Cancelar Timer">
+            }} className="bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 p-2.5 rounded-xl border border-red-200 dark:border-red-800/50 shadow-sm active:scale-95 transition-all flex items-center justify-center shrink-0" title="Cancelar Timer">
               <XCircle className="w-5 h-5" />
             </button>
           </div>
@@ -375,13 +375,13 @@ export default function JobCard({ j, ...props }) {
  
         {/* NUEVO: PANEL DE ALERTA DE DOCUMENTOS VENCIDOS O POR VENCER */}
         {expiringDocs.length > 0 && (
-          <div className="mb-2 mt-3 bg-red-50 border-2 border-red-200 p-3 rounded-xl shadow-sm animate-in fade-in">
-             <p className="text-[10px] font-black text-red-600 uppercase tracking-widest flex items-center gap-1.5 mb-1.5">
+          <div className="mb-2 mt-3 bg-red-50 dark:bg-red-900/30 border-2 border-red-200 dark:border-red-800/50 p-3 rounded-xl shadow-sm animate-in fade-in">
+             <p className="text-[10px] font-black text-red-600 dark:text-red-400 uppercase tracking-widest flex items-center gap-1.5 mb-1.5">
                <AlertCircle className="w-4 h-4" /> Alerta de Documentos
              </p>
-             <ul className="text-xs font-bold text-red-800 space-y-1">
+             <ul className="text-xs font-bold text-red-800 dark:text-red-300 space-y-1">
                {expiringDocs.map((docAlert, idx) => (
-                 <li key={idx} className="bg-white dark:bg-slate-900/60 px-2 py-1 rounded-md border border-red-100">{docAlert}</li>
+                 <li key={idx} className="bg-white dark:bg-slate-900/60 px-2 py-1 rounded-md border border-red-100 dark:border-red-800/50">{docAlert}</li>
                ))}
              </ul>
           </div>
@@ -392,7 +392,7 @@ export default function JobCard({ j, ...props }) {
            if (activeDocHref) {
              return (
                <div className="mt-3">
-                 <a href={activeDocHref} target="_blank" rel="noreferrer" className="w-full bg-cyan-50 border border-cyan-200 text-cyan-700 hover:bg-cyan-100 font-bold py-2.5 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-2">
+                 <a href={activeDocHref} target="_blank" rel="noreferrer" className="w-full bg-cyan-50 dark:bg-cyan-900/30 border border-cyan-200 dark:border-cyan-800/50 text-cyan-700 dark:text-cyan-400 hover:bg-cyan-100 dark:bg-cyan-900/40 font-bold py-2.5 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-2">
                     <FileText className="w-4 h-4"/> Ver Doc. Adjunto (Guía / RT)
                  </a>
                </div>
@@ -409,12 +409,12 @@ export default function JobCard({ j, ...props }) {
                   <button onClick={() => handleApproveRequest(j)} disabled={processingId === `${j.id}-approve`} className="flex-1 bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-1 disabled:opacity-50">
                     {processingId === `${j.id}-approve` ? <Clock className="w-4 h-4 animate-spin"/> : <CheckCircle className="w-4 h-4"/>} Aprobar
                   </button>
-                  <button onClick={() => handleRejectRequest(j)} className="flex-1 bg-red-100 hover:bg-red-200 text-red-700 font-bold py-3 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-1">
+                  <button onClick={() => handleRejectRequest(j)} className="flex-1 bg-red-100 dark:bg-red-900/40 hover:bg-red-200 text-red-700 dark:text-red-400 font-bold py-3 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-1">
                     <XCircle className="w-4 h-4"/> Rechazar
                   </button>
                 </div>
               ) : (
-                <div className="bg-pink-50 border border-pink-200 text-pink-700 text-xs font-bold text-center py-3 rounded-xl flex items-center justify-center gap-2">
+                <div className="bg-pink-50 dark:bg-pink-900/30 border border-pink-200 dark:border-pink-800/50 text-pink-700 dark:text-pink-400 text-xs font-bold text-center py-3 rounded-xl flex items-center justify-center gap-2">
                   <Clock className="w-4 h-4" /> Pendiente de Aprobación
                 </div>
               )}
@@ -436,7 +436,7 @@ export default function JobCard({ j, ...props }) {
                   </button>
                   {isPendingGuide ? (
                     <div className="flex flex-col gap-2">
-                       <div className="bg-orange-50 border border-orange-200 text-orange-700 text-[11px] font-black text-center py-3 rounded-xl animate-pulse flex items-center justify-center gap-1.5 shadow-sm">
+                       <div className="bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800/50 text-orange-700 dark:text-orange-400 text-[11px] font-black text-center py-3 rounded-xl animate-pulse flex items-center justify-center gap-1.5 shadow-sm">
                          <Clock className="w-4 h-4"/> A ESPERA DE GUÍA DE DESPACHO
                        </div>
                        <button onClick={() => { setGuideUploadJob(j); setGuideLink(''); setGuideFileBase64(null); }} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-3.5 rounded-xl text-sm shadow-md transition-colors flex justify-center items-center gap-2">
@@ -483,7 +483,7 @@ export default function JobCard({ j, ...props }) {
                         }} text={`Desliza: Llegué a ${j.checklist?.rtReturnOption === 'other' ? (j.checklist?.rtReturnDestination?.substring(0,10) + '...') : 'Origen'}`} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />
                       )}
 
-                      <button onClick={()=>onStartChecklist(j)} className={`w-full font-bold py-2 rounded-xl text-xs shadow-sm transition-colors ${(j.phase === 'arrived_destination') ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'}`}>
+                      <button onClick={()=>onStartChecklist(j)} className={`w-full font-bold py-2 rounded-xl text-xs shadow-sm transition-colors ${(j.phase === 'arrived_destination') ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'}`}>
                         📸 {(j.phase === 'arrived_destination') ? (j.tripType === 'simple' ? 'Cerrar Acta de Servicio' : 'Cerrar Checklist') : (j.tripType === 'simple' ? 'Pre-llenar Acta' : 'Pre-llenar Checklist')}
                       </button>
                     </>

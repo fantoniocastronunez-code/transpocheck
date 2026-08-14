@@ -274,7 +274,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
   const DocUploader = ({ field, label }) => (
     <div className="flex flex-col gap-1">
         <span className="text-[9px] font-extrabold text-slate-500 dark:text-slate-400 uppercase">{label}</span>
-        <div className="relative h-20 w-full border-2 border-dashed border-slate-300 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-900/50 group hover:border-blue-400 transition-colors flex items-center justify-center">
+        <div className="relative h-20 w-full border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-900/50 group hover:border-blue-400 transition-colors flex items-center justify-center">
             <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer z-20" onChange={(e) => handleDocUpload(e, field, 800)} />
             {driverDocs[field] ? (
                 <>
@@ -282,7 +282,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
                         <span className="text-white text-xs font-bold flex flex-col items-center"><Camera className="w-4 h-4 mb-1"/> Cambiar</span>
                     </div>
-                    <button type="button" onClick={(e) => { e.preventDefault(); setFullScreenDoc(driverDocs[field]); }} className="absolute top-1 right-1 bg-white dark:bg-slate-900 p-1.5 rounded-lg shadow-md z-30 hover:bg-slate-100 dark:bg-slate-800"><Eye className="w-3.5 h-3.5 text-blue-600"/></button>
+                    <button type="button" onClick={(e) => { e.preventDefault(); setFullScreenDoc(driverDocs[field]); }} className="absolute top-1 right-1 bg-white dark:bg-slate-900 p-1.5 rounded-lg shadow-md z-30 hover:bg-slate-100 dark:bg-slate-800"><Eye className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400"/></button>
                 </>
             ) : (
                 <div className="text-center text-slate-400 group-hover:text-blue-500 flex flex-col items-center">
@@ -322,7 +322,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                
                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {clientProfiles.filter(p => !p.isEmptyCompany).map(profile => (
-                     <div key={profile.id} className="flex flex-col p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-2xl hover:border-blue-200 hover:shadow-md transition-all group relative overflow-hidden">
+                     <div key={profile.id} className="flex flex-col p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-2xl hover:border-blue-200 dark:border-blue-800/50 hover:shadow-md transition-all group relative overflow-hidden">
                         <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
                         <div className="flex justify-between items-start mb-4 pl-2">
                            <div className="flex items-center gap-3 w-full min-w-0 pr-2">
@@ -335,19 +335,19 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                               </div>
                            </div>
                            <div className="flex gap-1 shrink-0 bg-white dark:bg-slate-900 p-1 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
-                              <button onClick={() => { setEditingProfile(profile); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"><Edit2 className="w-4 h-4"/></button>
-                              <button onClick={() => showConfirm("¿Eliminar este perfil de acceso?", () => handleDeleteProfile(profile))} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
+                              <button onClick={() => { setEditingProfile(profile); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-1.5 text-blue-500 hover:bg-blue-50 dark:bg-blue-900/30 rounded-lg transition-colors"><Edit2 className="w-4 h-4"/></button>
+                              <button onClick={() => showConfirm("¿Eliminar este perfil de acceso?", () => handleDeleteProfile(profile))} className="p-1.5 text-red-500 hover:bg-red-50 dark:bg-red-900/30 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
                            </div>
                         </div>
                         
                         <div className="pt-3 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center pl-2">
-                           <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 truncate flex items-center gap-1.5"><div className="w-5 h-5 bg-slate-200 rounded flex items-center justify-center shrink-0"><User className="w-3 h-3 text-slate-500 dark:text-slate-400"/></div> <span className="truncate">{profile.email}</span></span>
+                           <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 truncate flex items-center gap-1.5"><div className="w-5 h-5 bg-slate-200 dark:bg-slate-700 rounded flex items-center justify-center shrink-0"><User className="w-3 h-3 text-slate-500 dark:text-slate-400"/></div> <span className="truncate">{profile.email}</span></span>
                         </div>
                      </div>
                   ))}
                   
                   {clientProfiles.filter(p => p.isEmptyCompany).map(profile => (
-                     <div key={profile.id} className="flex flex-col p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-2xl hover:border-slate-300 transition-all opacity-60">
+                     <div key={profile.id} className="flex flex-col p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-2xl hover:border-slate-300 dark:border-slate-600 transition-all opacity-60">
                         <div className="flex justify-between items-center">
                            <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-center overflow-hidden shrink-0">
@@ -358,7 +358,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Empresa sin perfiles activos</p>
                               </div>
                            </div>
-                           <button onClick={() => showConfirm("¿Eliminar empresa vacía?", async () => await deleteDoc(doc(db, 'clients', profile.companyId)))} className="p-2 bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800 text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
+                           <button onClick={() => showConfirm("¿Eliminar empresa vacía?", async () => await deleteDoc(doc(db, 'clients', profile.companyId)))} className="p-2 bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800 text-red-500 hover:bg-red-50 dark:bg-red-900/30 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
                         </div>
                      </div>
                   ))}
@@ -381,11 +381,11 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                      <h3 className="font-black text-2xl text-slate-800 dark:text-slate-200">{editingProfile === 'NEW' ? 'Crear Nuevo Perfil' : 'Editar Perfil'}</h3>
                      <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">Configuración individual de acceso y notificaciones</p>
                   </div>
-                  <button type="button" onClick={() => setEditingProfile(null)} className="p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-400 rounded-xl transition-colors font-bold shadow-sm"><X className="w-5 h-5"/></button>
+                  <button type="button" onClick={() => setEditingProfile(null)} className="p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-xl transition-colors font-bold shadow-sm"><X className="w-5 h-5"/></button>
                </div>
 
                <div className="space-y-4">
-                  <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5"><User className="w-4 h-4"/> 1. Datos Personales</h4>
+                  <h4 className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest flex items-center gap-1.5"><User className="w-4 h-4"/> 1. Datos Personales</h4>
                   <div className="grid sm:grid-cols-2 gap-4">
                      <div>
                         <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Nombre</label>
@@ -403,7 +403,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                </div>
 
                <div className="space-y-4 pt-5 border-t border-slate-100 dark:border-slate-800">
-                  <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5"><BookOpen className="w-4 h-4"/> 2. Empresa Asociada</h4>
+                  <h4 className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest flex items-center gap-1.5"><BookOpen className="w-4 h-4"/> 2. Empresa Asociada</h4>
                   <div>
                      <select name="empresa" value={selectedCompanyId} onChange={(e) => { setSelectedCompanyId(e.target.value); if (e.target.value === 'NEW') { setClientLogo(null); } else { const comp = customClients.find(c => c.id === e.target.value); if (comp) setClientLogo(comp.logo || null); } }} required className="w-full bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-200 dark:border-slate-700 p-4 rounded-xl text-sm font-black text-slate-800 dark:text-slate-200 outline-none focus:border-blue-500 focus:bg-white dark:bg-slate-900 transition-colors shadow-sm cursor-pointer">
                         <option value="" disabled>Selecciona a qué empresa pertenece...</option>
@@ -413,19 +413,19 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                   </div>
 
                   {selectedCompanyId === 'NEW' && (
-                     <div className="p-5 bg-blue-50 border-2 border-blue-100 rounded-2xl space-y-4 animate-in fade-in slide-in-from-top-2">
+                     <div className="p-5 bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-100 dark:border-blue-800/50 rounded-2xl space-y-4 animate-in fade-in slide-in-from-top-2">
                         <div>
-                           <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1.5 block ml-1">Nombre de la Nueva Empresa</label>
-                           <input name="nuevaEmpresa" placeholder="Ej. Automotora Kovacs" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full border-2 border-blue-200 bg-white dark:bg-slate-900 p-3.5 rounded-xl text-sm font-black text-blue-900 outline-none focus:border-blue-500 shadow-sm" />
+                           <label className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1.5 block ml-1">Nombre de la Nueva Empresa</label>
+                           <input name="nuevaEmpresa" placeholder="Ej. Automotora Kovacs" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full border-2 border-blue-200 dark:border-blue-800/50 bg-white dark:bg-slate-900 p-3.5 rounded-xl text-sm font-black text-blue-900 dark:text-blue-300 outline-none focus:border-blue-500 shadow-sm" />
                         </div>
                         
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-3 rounded-xl border border-blue-100">
-                           <label className="relative w-16 h-16 shrink-0 rounded-xl border-2 border-dashed border-blue-300 flex items-center justify-center cursor-pointer overflow-hidden bg-slate-50 dark:bg-slate-900/50 group hover:border-blue-500 transition-colors">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-3 rounded-xl border border-blue-100 dark:border-blue-800/50">
+                           <label className="relative w-16 h-16 shrink-0 rounded-xl border-2 border-dashed border-blue-300 dark:border-blue-700/50 flex items-center justify-center cursor-pointer overflow-hidden bg-slate-50 dark:bg-slate-900/50 group hover:border-blue-500 transition-colors">
                               <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const file = e.target.files[0]; if (!file) return; try { const dataUrl = await resizeImage(file, 400, 0.6); setClientLogo(dataUrl); } catch (err) { showAlert("Error procesando logo."); } }} />
-                              {clientLogo ? <img src={clientLogo} alt="Logo" className="w-full h-full object-contain p-1" /> : <div className="text-center text-blue-400 group-hover:text-blue-600"><Camera className="w-5 h-5" /></div>}
+                              {clientLogo ? <img src={clientLogo} alt="Logo" className="w-full h-full object-contain p-1" /> : <div className="text-center text-blue-400 group-hover:text-blue-600 dark:text-blue-400"><Camera className="w-5 h-5" /></div>}
                            </label>
                            <div className="flex flex-col">
-                              <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-0.5">Logo Corporativo (Opcional)</span>
+                              <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-0.5">Logo Corporativo (Opcional)</span>
                               <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 leading-tight">Aparecerá en el portal público.</span>
                               {clientLogo && <button type="button" onClick={() => setClientLogo(null)} className="text-[10px] font-bold text-red-500 hover:underline w-fit mt-1">Quitar Logo</button>}
                            </div>
@@ -435,7 +435,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                </div>
 
                <div className="space-y-4 pt-5 border-t border-slate-100 dark:border-slate-800">
-                  <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5"><Clock className="w-4 h-4"/> 3. Preferencias de Notificación</h4>
+                  <h4 className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest flex items-center gap-1.5"><Clock className="w-4 h-4"/> 3. Preferencias de Notificación</h4>
                   <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
                      <p className="text-xs font-bold text-slate-600 dark:text-slate-400 mb-4 leading-tight">Selecciona qué correos llegarán a este cliente.</p>
                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -453,8 +453,8 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                         ].map(notif => {
                            const isActive = clientNotifs[notif.id];
                            return (
-                             <button key={notif.id} type="button" onClick={() => setClientNotifs({...clientNotifs, [notif.id]: !isActive})} className={`py-4 px-2 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 border-2 flex flex-col items-center justify-center gap-2 select-none ${ isActive ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200 scale-100' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 scale-[0.98]' }`}>
-                                {isActive ? <CheckCircle className="w-5 h-5 animate-in zoom-in duration-200" /> : <div className="w-5 h-5 rounded-full border-2 border-slate-300 bg-slate-50 dark:bg-slate-900/50"></div>}
+                             <button key={notif.id} type="button" onClick={() => setClientNotifs({...clientNotifs, [notif.id]: !isActive})} className={`py-4 px-2 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 border-2 flex flex-col items-center justify-center gap-2 select-none ${ isActive ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200 scale-100' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-blue-300 dark:border-blue-700/50 hover:text-blue-500 hover:bg-blue-50 dark:bg-blue-900/30 scale-[0.98]' }`}>
+                                {isActive ? <CheckCircle className="w-5 h-5 animate-in zoom-in duration-200" /> : <div className="w-5 h-5 rounded-full border-2 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50"></div>}
                                 <span className="text-center leading-tight">{notif.label}</span>
                              </button>
                            );
@@ -464,8 +464,8 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                </div>
 
                <div className="space-y-4 pt-5 border-t border-slate-100 dark:border-slate-800">
-                  <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-1.5"><Wallet className="w-4 h-4"/> 4. Tarifas Predefinidas (Solo Admin)</h4>
-                  <div className="bg-indigo-50/50 border border-indigo-100 p-5 rounded-2xl shadow-sm">
+                  <h4 className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest flex items-center gap-1.5"><Wallet className="w-4 h-4"/> 4. Tarifas Predefinidas (Solo Admin)</h4>
+                  <div className="bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800/50 p-5 rounded-2xl shadow-sm">
                      <p className="text-xs font-bold text-slate-600 dark:text-slate-400 mb-4 leading-tight">Define los valores a cobrar para automatizar los ingresos en cada trabajo de esta empresa. Los viajes a Regiones se cobran manualmente.</p>
                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                         <div>
@@ -476,7 +476,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                            <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Otros Serv. ($)</label>
                            <input type="number" value={clientPrices.servicio || ''} onChange={(e) => setClientPrices({...clientPrices, servicio: e.target.value})} placeholder="10000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
                         </div>
-                        <div className="col-span-full border-b border-indigo-200/50 mt-2 mb-1"></div>
+                        <div className="col-span-full border-b border-indigo-200 dark:border-indigo-800/50/50 mt-2 mb-1"></div>
                         <div>
                            <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">RT Clase A ($)</label>
                            <input type="number" value={clientPrices.prt || ''} onChange={(e) => setClientPrices({...clientPrices, prt: e.target.value})} placeholder="25000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
@@ -493,7 +493,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                            <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Cert. Frenos ($)</label>
                            <input type="number" value={clientPrices.frenosA || ''} onChange={(e) => setClientPrices({...clientPrices, frenosA: e.target.value})} placeholder="15000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
                         </div>
-                        <div className="col-span-full border-b border-indigo-200/50 mt-2 mb-1"></div>
+                        <div className="col-span-full border-b border-indigo-200 dark:border-indigo-800/50/50 mt-2 mb-1"></div>
                         <div>
                            <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">RT Clase B ($)</label>
                            <input type="number" value={clientPrices.prtB || ''} onChange={(e) => setClientPrices({...clientPrices, prtB: e.target.value})} placeholder="20000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
@@ -527,7 +527,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
       {configSubTab === 'vehicles' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full min-w-0">
           <form key={editingVehicle ? editingVehicle.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const client = fd.get('client') === 'OTRO' ? fd.get('manualClient') : fd.get('client'); const vehicleType = fd.get('vehicleType'); try { if(editingVehicle){ await updateDoc(doc(db, 'vehicles', editingVehicle.id), { client, vehicleType, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase() }); setEditingVehicle(null); showAlert("Vehículo actualizado."); } else { await addDoc(collection(db, 'vehicles'), { client, vehicleType, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase(), createdAt: Date.now() }); showAlert("Vehículo guardado."); } e.target.reset(); } catch (error) { console.error("Error guardando vehículo:", error); showAlert("❌ Error al guardar el vehículo."); } }} className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-4 w-full min-w-0">
-            <h3 className="font-extrabold flex items-center gap-2"><Truck className="text-blue-600"/> {editingVehicle ? 'Editar Vehículo' : 'Nuevo Vehículo'}</h3>
+            <h3 className="font-extrabold flex items-center gap-2"><Truck className="text-blue-600 dark:text-blue-400"/> {editingVehicle ? 'Editar Vehículo' : 'Nuevo Vehículo'}</h3>
             <select name="client" defaultValue={editingVehicle?.client || ''} className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-semibold outline-none focus:border-blue-500 bg-white dark:bg-slate-900">
               <option value="">Cliente...</option>
               {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
@@ -555,7 +555,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                <option value="carro_arrastre">🛒 Carro Arrastre</option>
             </select>
             <div className="flex gap-2">
-              {editingVehicle && <button type="button" onClick={()=>setEditingVehicle(null)} className="bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-bold text-sm w-1/3 hover:bg-slate-200 transition-colors">Cancelar</button>}
+              {editingVehicle && <button type="button" onClick={()=>setEditingVehicle(null)} className="bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-bold text-sm w-1/3 hover:bg-slate-200 dark:bg-slate-700 transition-colors">Cancelar</button>}
               <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-lg transition-colors shadow-lg shadow-blue-200">Guardar Vehículo</button>
             </div>
           </form>
@@ -606,14 +606,14 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] font-black text-white/70 uppercase tracking-widest truncate">{v.client || 'Sin cliente'}</p>
                       <p className="text-base sm:text-lg font-black leading-tight mt-0.5 truncate">{v.brand} {v.model}</p>
-                      {v.vehicleType && <span className="inline-block mt-1.5 text-[9px] font-black bg-white dark:bg-slate-900/20 px-2 py-0.5 rounded-md uppercase backdrop-blur-md border border-white/10 truncate max-w-full">{v.vehicleType.replace('_', ' ')}</span>}
+                      {v.vehicleType && <span className="inline-block mt-1.5 text-[9px] font-black bg-white dark:bg-slate-900/20 px-2 py-0.5 rounded-md uppercase backdrop-blur-md border border-white dark:border-slate-800/10 truncate max-w-full">{v.vehicleType.replace('_', ' ')}</span>}
                     </div>
                     <div className="shrink-0 relative z-20">
                       <LicensePlateBadge text={v.plate} />
                     </div>
                   </div>
 
-                  <div className="flex gap-2 mt-4 relative z-20 justify-end border-t border-white/10 pt-3">
+                  <div className="flex gap-2 mt-4 relative z-20 justify-end border-t border-white dark:border-slate-800/10 pt-3">
                     <button onClick={() => {setEditingVehicle(v); window.scrollTo({ top: 0, behavior: 'smooth' });}} className="p-1.5 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 rounded-lg transition-colors backdrop-blur-sm shadow-sm"><Edit2 className="w-4 h-4 text-white"/></button>
                     <button onClick={()=>showConfirm("¿Eliminar vehículo?", async () => {try { await deleteDoc(doc(db, 'vehicles', v.id)); } catch (e) {}})} className="p-1.5 bg-red-500/80 hover:bg-red-500 rounded-lg transition-colors backdrop-blur-sm shadow-sm"><Trash2 className="w-4 h-4 text-white"/></button>
                   </div>
@@ -635,11 +635,11 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
             </div>
 
             <div className="flex justify-between items-start">
-              <h3 className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-2"><User className="text-blue-600"/> {editingDriver ? 'Perfil de Usuario' : 'Nuevo Usuario'}</h3>
+              <h3 className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-2"><User className="text-blue-600 dark:text-blue-400"/> {editingDriver ? 'Perfil de Usuario' : 'Nuevo Usuario'}</h3>
               {editingDriver?.createdAt && (
                 <div className="text-right">
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Registro en App</span>
-                  <span className="text-xs font-extrabold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md inline-block mt-0.5 border border-blue-100 shadow-sm">
+                  <span className="text-xs font-extrabold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-md inline-block mt-0.5 border border-blue-100 dark:border-blue-800/50 shadow-sm">
                     {new Date(editingDriver.createdAt).toLocaleDateString('es-CL')}
                   </span>
                 </div>
@@ -664,7 +664,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
             <div className="grid grid-cols-1 gap-3">
               <div className="space-y-1">
                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Rol en el Sistema</label>
-                 <select name="role" defaultValue={editingDriver?.role || 'driver'} className="w-full border-2 border-purple-200 bg-purple-50 p-3 rounded-xl text-sm font-black text-purple-900 outline-none focus:border-purple-500">
+                 <select name="role" defaultValue={editingDriver?.role || 'driver'} className="w-full border-2 border-purple-200 dark:border-purple-800/50 bg-purple-50 dark:bg-purple-900/30 p-3 rounded-xl text-sm font-black text-purple-900 dark:text-purple-300 outline-none focus:border-purple-500">
                     <option value="driver">Conductor Titular (Con documentos)</option>
                     <option value="part_time">Conductor Part-Time (Sin validación docs)</option>
                     <option value="quoter">Cotizador / Ventas</option>
@@ -703,10 +703,10 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
             </div>
 
             {/* PANEL DE NOTIFICACIONES COPIADO EXACTAMENTE */}
-            <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl shadow-sm space-y-3 mt-4">
-               <div className="border-b border-blue-200/50 pb-2">
-                  <p className="text-xs font-extrabold text-blue-900 flex items-center gap-1.5"><Eye className="w-4 h-4"/> Correos al Conductor</p>
-                  <p className="text-[10px] font-bold text-blue-600 mt-0.5 leading-tight">Selecciona exactamente qué copias recibirá este conductor.</p>
+            <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800/50 p-4 rounded-xl shadow-sm space-y-3 mt-4">
+               <div className="border-b border-blue-200 dark:border-blue-800/50/50 pb-2">
+                  <p className="text-xs font-extrabold text-blue-900 dark:text-blue-300 flex items-center gap-1.5"><Eye className="w-4 h-4"/> Correos al Conductor</p>
+                  <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 mt-0.5 leading-tight">Selecciona exactamente qué copias recibirá este conductor.</p>
                </div>
 
                <div className="grid grid-cols-2 gap-2 mt-2">
@@ -725,10 +725,10 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                          className={`py-3 px-1.5 rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all duration-200 border-2 flex flex-col items-center justify-center gap-1.5 select-none ${
                            isActive
                              ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200 scale-100'
-                             : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 scale-[0.98]'
+                             : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-blue-300 dark:border-blue-700/50 hover:text-blue-500 hover:bg-blue-50 dark:bg-blue-900/30 scale-[0.98]'
                          }`}
                        >
-                         {isActive ? <CheckCircle className="w-5 h-5 mb-0.5 animate-in zoom-in duration-200" /> : <div className="w-5 h-5 mb-0.5 rounded-full border-2 border-slate-300 bg-white dark:bg-slate-900"></div>}
+                         {isActive ? <CheckCircle className="w-5 h-5 mb-0.5 animate-in zoom-in duration-200" /> : <div className="w-5 h-5 mb-0.5 rounded-full border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900"></div>}
                          <span className="text-center leading-tight">{notif.label}</span>
                        </button>
                      );
@@ -737,7 +737,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
             </div>
 
             <div className="flex gap-3 pt-2 border-t border-slate-100 dark:border-slate-800 mt-4">
-              {editingDriver && <button type="button" onClick={() => { setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); }} className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-400 py-3 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>}
+              {editingDriver && <button type="button" onClick={() => { setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); }} className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 py-3 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>}
               <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-sm transition-colors shadow-lg shadow-blue-200">{editingDriver ? 'Guardar Cambios' : 'Guardar Usuario'}</button>
             </div>
           </form>
@@ -760,21 +760,21 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                     <div className="truncate">
                       <div className="flex items-center gap-2">
                          <p className={`text-sm font-extrabold truncate ${d.isHidden ? 'text-slate-500 dark:text-slate-400 line-through decoration-slate-400' : 'text-slate-800 dark:text-slate-200'}`}>{d.name}</p>
-                         {d.isHidden && <span className="bg-slate-200 text-slate-500 dark:text-slate-400 border border-slate-300 text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest shrink-0">Oculto</span>}
+                         {d.isHidden && <span className="bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-600 text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest shrink-0">Oculto</span>}
                       </div>
                       <p className="text-xs font-bold text-slate-400 truncate leading-tight">{d.email}</p>
                       <div className="flex flex-wrap items-center gap-1.5 mt-2">
                         <span className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider border ${
-                           d.role === 'super_admin' ? 'bg-red-50 text-red-600 border-red-200' :
-                           d.role === 'admin' ? 'bg-purple-50 text-purple-600 border-purple-200' :
-                           d.role === 'quoter' ? 'bg-amber-50 text-amber-600 border-amber-200' :
-                           d.role === 'part_time' ? 'bg-blue-50 text-blue-600 border-blue-200' :
-                           'bg-emerald-50 text-emerald-600 border-emerald-200'
+                           d.role === 'super_admin' ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/50' :
+                           d.role === 'admin' ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800/50' :
+                           d.role === 'quoter' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800/50' :
+                           d.role === 'part_time' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800/50' :
+                           'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50'
                         }`}>
                            {d.role === 'super_admin' ? 'Super Admin' : d.role === 'admin' ? 'Admin' : d.role === 'quoter' ? 'Cotizador' : d.role === 'part_time' ? 'Part-Time' : 'Conductor'}
                         </span>
                         {(!d.role || d.role === 'driver') && d.licenses && d.licenses.length > 0 && (
-                           <span className={`text-[9px] font-black px-2 py-0.5 rounded-md border ${d.isHidden ? 'bg-slate-200 text-slate-500 dark:text-slate-400 border-slate-300' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
+                           <span className={`text-[9px] font-black px-2 py-0.5 rounded-md border ${d.isHidden ? 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-600' : 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800/50'}`}>
                              Licencias: {d.licenses.join(', ')}
                            </span>
                         )}
@@ -786,15 +786,15 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                      <button onClick={async () => {
                          try { await updateDoc(doc(db, 'drivers', d.id), { isHidden: !d.isHidden }); }
                          catch (e) { showAlert("Error al cambiar estado."); }
-                     }} className={`p-2 rounded-lg transition-colors shadow-sm ${d.isHidden ? 'bg-green-100 text-green-600 hover:bg-green-200 border border-green-200' : 'bg-slate-200 text-slate-500 dark:text-slate-400 hover:bg-slate-300'}`} title={d.isHidden ? "Restaurar Conductor" : "Ocultar Conductor"}>
+                     }} className={`p-2 rounded-lg transition-colors shadow-sm ${d.isHidden ? 'bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 hover:bg-green-200 border border-green-200 dark:border-green-800/50' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-300 dark:bg-slate-600'}`} title={d.isHidden ? "Restaurar Conductor" : "Ocultar Conductor"}>
                          {d.isHidden ? <Eye className="w-4 h-4"/> : <EyeOff className="w-4 h-4"/>}
                      </button>
                      <button onClick={() => { 
                        setEditingDriver(d); 
                        setDriverDocs({ photo: d.photo || null, idFront: d.idFront || null, idBack: d.idBack || null, licenseFront: d.licenseFront || null, licenseBack: d.licenseBack || null }); 
                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                     }} className={`px-3 py-2 rounded-lg transition-colors shadow-sm text-xs font-bold flex items-center gap-1.5 ${d.isHidden ? 'bg-slate-200 text-slate-500 dark:text-slate-400 hover:bg-slate-300' : 'bg-blue-100 hover:bg-blue-200 text-blue-600'}`} title="Ver Perfil y Documentos"><User className="w-4 h-4"/> Perfil</button>
-                     <button onClick={() => showConfirm("¿Eliminar conductor?", async()=>await deleteDoc(doc(db,'drivers',d.id)))} className="p-2 bg-red-100 hover:bg-red-200 text-red-500 rounded-lg transition-colors shadow-sm"><Trash2 className="w-4 h-4"/></button>
+                     }} className={`px-3 py-2 rounded-lg transition-colors shadow-sm text-xs font-bold flex items-center gap-1.5 ${d.isHidden ? 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-300 dark:bg-slate-600' : 'bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 text-blue-600 dark:text-blue-400'}`} title="Ver Perfil y Documentos"><User className="w-4 h-4"/> Perfil</button>
+                     <button onClick={() => showConfirm("¿Eliminar conductor?", async()=>await deleteDoc(doc(db,'drivers',d.id)))} className="p-2 bg-red-100 dark:bg-red-900/40 hover:bg-red-200 text-red-500 rounded-lg transition-colors shadow-sm"><Trash2 className="w-4 h-4"/></button>
                   </div>
                 </div>
               ))}
@@ -844,7 +844,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
              } catch (err) { showAlert("Error al guardar."); } 
           }} className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-4">
             <div className="flex justify-between items-center">
-               <h3 className="font-extrabold flex items-center gap-2 text-slate-800 dark:text-slate-200"><BookOpen className="text-blue-600 w-5 h-5"/> {editingDir ? 'Editar Destino' : 'Nuevo Destino'}</h3>
+               <h3 className="font-extrabold flex items-center gap-2 text-slate-800 dark:text-slate-200"><BookOpen className="text-blue-600 dark:text-blue-400 w-5 h-5"/> {editingDir ? 'Editar Destino' : 'Nuevo Destino'}</h3>
                {editingDir && <button type="button" onClick={()=>setEditingDir(null)} className="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg uppercase">Cancelar</button>}
             </div>
             <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 leading-tight">Agrega los destinos frecuentes. Cuando crees un trabajo y escribas exactamente el mismo lugar, el sistema adjuntará toda esta información automáticamente.</p>
@@ -877,7 +877,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
 
             <div className="space-y-1">
                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1"><MapPin className="w-3 h-3 text-blue-500"/> Plus Code de Google Maps (Prioridad GPS)</label>
-               <input name="plusCode" defaultValue={editingDir?.plusCode} placeholder="Ej: 8MP3+VX Santiago" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold bg-blue-50/50"/>
+               <input name="plusCode" defaultValue={editingDir?.plusCode} placeholder="Ej: 8MP3+VX Santiago" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold bg-blue-50 dark:bg-blue-900/30"/>
             </div>
 
             <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-black text-sm transition-colors shadow-md shadow-blue-200 mt-2">
@@ -904,19 +904,19 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
             </div>
             <div className="space-y-2 overflow-y-auto pr-1 flex-1">
               {directoryList.length === 0 ? <p className="text-sm font-bold text-slate-400 text-center py-4">Directorio vacío</p> : filteredDirectoryList.length === 0 ? <p className="text-sm font-bold text-slate-400 text-center py-4">No se encontraron destinos</p> : filteredDirectoryList.map(d=>(
-                <div key={d.id} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-xl hover:border-blue-200 transition-all">
+                <div key={d.id} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-xl hover:border-blue-200 dark:border-blue-800/50 transition-all">
                   <div className="flex-1 min-w-0 pr-2">
                     <p className="text-sm font-extrabold text-slate-800 dark:text-slate-200 truncate">{d.placeName}</p>
-                    {d.plusCode && <p className="text-[11px] font-black text-blue-600 mt-0.5 truncate flex items-center gap-1"><MapPin className="w-3 h-3"/> {d.plusCode} (Plus Code)</p>}
+                    {d.plusCode && <p className="text-[11px] font-black text-blue-600 dark:text-blue-400 mt-0.5 truncate flex items-center gap-1"><MapPin className="w-3 h-3"/> {d.plusCode} (Plus Code)</p>}
                     {(d.address || d.commune) && <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 truncate flex items-center gap-1"><MapPin className="w-3 h-3 text-slate-400"/> {d.address}{d.address && d.commune ? ', ' : ''}{d.commune}</p>}
-                    {(d.contactName || d.contactPhone) && <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 truncate flex items-center gap-1"><User className="w-3 h-3 text-emerald-600"/> {d.contactName || 'Sin nombre'} {d.contactPhone && `• ${d.contactPhone}`}</p>}
+                    {(d.contactName || d.contactPhone) && <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 truncate flex items-center gap-1"><User className="w-3 h-3 text-emerald-600 dark:text-emerald-400"/> {d.contactName || 'Sin nombre'} {d.contactPhone && `• ${d.contactPhone}`}</p>}
                   </div>
                   <div className="flex flex-col gap-1.5 shrink-0 ml-2">
-                     <button onClick={() => {setEditingDir(d); window.scrollTo({ top: 0, behavior: 'smooth' });}} className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors shadow-sm" title="Editar"><Edit2 className="w-3.5 h-3.5"/></button>
+                     <button onClick={() => {setEditingDir(d); window.scrollTo({ top: 0, behavior: 'smooth' });}} className="p-1.5 bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 text-blue-600 dark:text-blue-400 rounded-lg transition-colors shadow-sm" title="Editar"><Edit2 className="w-3.5 h-3.5"/></button>
                      <button onClick={() => showConfirm("¿Eliminar destino del directorio?", async () => { 
                          await deleteDoc(doc(db,'directory',d.id));
                          setDirectoryList(directoryList.filter(item => item.id !== d.id));
-                     })} className="p-1.5 bg-red-100 hover:bg-red-200 text-red-500 rounded-lg transition-colors shadow-sm" title="Eliminar"><Trash2 className="w-3.5 h-3.5"/></button>
+                     })} className="p-1.5 bg-red-100 dark:bg-red-900/40 hover:bg-red-200 text-red-500 rounded-lg transition-colors shadow-sm" title="Eliminar"><Trash2 className="w-3.5 h-3.5"/></button>
                   </div>
                 </div>
               ))}
@@ -962,8 +962,8 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
              } catch (err) { showAlert("❌ Error al guardar peaje."); }
           }} className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-4">
              <div className="flex justify-between items-center">
-                <h3 className="font-extrabold flex items-center gap-2 text-slate-800 dark:text-slate-200"><Ticket className="text-emerald-600 w-5 h-5"/> {editingToll ? 'Editar Peaje' : 'Nuevo Peaje'}</h3>
-                {editingToll && <button type="button" onClick={()=>setEditingToll(null)} className="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg uppercase transition-colors hover:bg-slate-200">Cancelar</button>}
+                <h3 className="font-extrabold flex items-center gap-2 text-slate-800 dark:text-slate-200"><Ticket className="text-emerald-600 dark:text-emerald-400 w-5 h-5"/> {editingToll ? 'Editar Peaje' : 'Nuevo Peaje'}</h3>
+                {editingToll && <button type="button" onClick={()=>setEditingToll(null)} className="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg uppercase transition-colors hover:bg-slate-200 dark:bg-slate-700">Cancelar</button>}
              </div>
              <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 leading-tight">Configura el nombre, la ruta y el costo por tipo de vehículo para calcular rápidamente en las rendiciones.</p>
              
@@ -977,47 +977,47 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                 <input name="route" defaultValue={editingToll?.route} placeholder="Ej: Ruta 5 Norte" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-emerald-500 font-bold"/>
              </div>
 
-             <div className="grid grid-cols-2 gap-3 bg-emerald-50 p-3 rounded-2xl border border-emerald-100">
-                <div className="col-span-2 text-[10px] font-black text-emerald-600 uppercase tracking-widest border-b border-emerald-200/50 pb-1 mb-1">Valores por Categoría de Vehículo</div>
+             <div className="grid grid-cols-2 gap-3 bg-emerald-50 dark:bg-emerald-900/30 p-3 rounded-2xl border border-emerald-100 dark:border-emerald-800/50">
+                <div className="col-span-2 text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest border-b border-emerald-200 dark:border-emerald-800/50/50 pb-1 mb-1">Valores por Categoría de Vehículo</div>
                 <div className="space-y-1">
                    <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 ml-1">Auto / SUV ($)</label>
-                   <input name="priceAuto" type="number" defaultValue={editingToll?.prices?.['Auto / SUV']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
+                   <input name="priceAuto" type="number" defaultValue={editingToll?.prices?.['Auto / SUV']} placeholder="0" required className="w-full border border-emerald-200 dark:border-emerald-800/50 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
                 </div>
                 <div className="space-y-1">
                    <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 ml-1">Camioneta ($)</label>
-                   <input name="priceCamioneta" type="number" defaultValue={editingToll?.prices?.['Camioneta']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
+                   <input name="priceCamioneta" type="number" defaultValue={editingToll?.prices?.['Camioneta']} placeholder="0" required className="w-full border border-emerald-200 dark:border-emerald-800/50 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
                 </div>
                 <div className="space-y-1">
                    <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 ml-1">Furgón Pequeño ($)</label>
-                   <input name="priceFurgonPequeno" type="number" defaultValue={editingToll?.prices?.['Furgón Pequeño']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
+                   <input name="priceFurgonPequeno" type="number" defaultValue={editingToll?.prices?.['Furgón Pequeño']} placeholder="0" required className="w-full border border-emerald-200 dark:border-emerald-800/50 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
                 </div>
                 <div className="space-y-1">
                    <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 ml-1">Furgón Grande ($)</label>
-                   <input name="priceFurgonGrande" type="number" defaultValue={editingToll?.prices?.['Furgón Grande']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
+                   <input name="priceFurgonGrande" type="number" defaultValue={editingToll?.prices?.['Furgón Grande']} placeholder="0" required className="w-full border border-emerald-200 dark:border-emerald-800/50 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
                 </div>
                 <div className="space-y-1">
                    <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 ml-1">Camión Simple ($)</label>
-                   <input name="priceCamionSimple" type="number" defaultValue={editingToll?.prices?.['Camión Simple']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
+                   <input name="priceCamionSimple" type="number" defaultValue={editingToll?.prices?.['Camión Simple']} placeholder="0" required className="w-full border border-emerald-200 dark:border-emerald-800/50 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
                 </div>
                 <div className="space-y-1">
                    <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 ml-1">Camión Doble ($)</label>
-                   <input name="priceCamionDoble" type="number" defaultValue={editingToll?.prices?.['Camión Doble Cabina']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
+                   <input name="priceCamionDoble" type="number" defaultValue={editingToll?.prices?.['Camión Doble Cabina']} placeholder="0" required className="w-full border border-emerald-200 dark:border-emerald-800/50 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
                 </div>
                 <div className="space-y-1">
                    <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 ml-1">Camión (2 Ejes) ($)</label>
-                   <input name="priceCamion2Ejes" type="number" defaultValue={editingToll?.prices?.['Camión (2 Ejes traseros)']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
+                   <input name="priceCamion2Ejes" type="number" defaultValue={editingToll?.prices?.['Camión (2 Ejes traseros)']} placeholder="0" required className="w-full border border-emerald-200 dark:border-emerald-800/50 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
                 </div>
                 <div className="space-y-1">
                    <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 ml-1">Camión (3 Ejes) ($)</label>
-                   <input name="priceCamion3Ejes" type="number" defaultValue={editingToll?.prices?.['Camión (3 Ejes traseros)']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
+                   <input name="priceCamion3Ejes" type="number" defaultValue={editingToll?.prices?.['Camión (3 Ejes traseros)']} placeholder="0" required className="w-full border border-emerald-200 dark:border-emerald-800/50 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
                 </div>
                 <div className="space-y-1">
                    <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 ml-1">Camión (8x4) ($)</label>
-                   <input name="priceCamion8x4" type="number" defaultValue={editingToll?.prices?.['Camión Rigid (8x4)']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
+                   <input name="priceCamion8x4" type="number" defaultValue={editingToll?.prices?.['Camión Rigid (8x4)']} placeholder="0" required className="w-full border border-emerald-200 dark:border-emerald-800/50 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
                 </div>
                 <div className="space-y-1">
                    <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 ml-1">Carro Arrastre ($)</label>
-                   <input name="priceCarro" type="number" defaultValue={editingToll?.prices?.['Carro Arrastre']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
+                   <input name="priceCarro" type="number" defaultValue={editingToll?.prices?.['Carro Arrastre']} placeholder="0" required className="w-full border border-emerald-200 dark:border-emerald-800/50 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
                 </div>
              </div>
 
@@ -1033,7 +1033,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
              </div>
              <div className="space-y-2 overflow-y-auto pr-1 flex-1">
                {tollsList.length === 0 ? <p className="text-sm font-bold text-slate-400 text-center py-4">No hay peajes configurados.</p> : tollsList.map(t=>(
-                 <div key={t.id} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-xl hover:border-emerald-200 transition-all group">
+                 <div key={t.id} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-xl hover:border-emerald-200 dark:border-emerald-800/50 transition-all group">
                    <div className="flex-1 min-w-0 pr-2">
                      <p className="text-sm font-extrabold text-slate-800 dark:text-slate-200 truncate">{t.name}</p>
                      {t.route && <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 truncate">{t.route}</p>}
@@ -1051,11 +1051,11 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                      </div>
                    </div>
                    <div className="flex flex-col gap-1.5 shrink-0 ml-2">
-                      <button onClick={() => {setEditingToll(t); window.scrollTo({ top: 0, behavior: 'smooth' });}} className="p-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-600 rounded-lg transition-colors shadow-sm" title="Editar"><Edit2 className="w-3.5 h-3.5"/></button>
+                      <button onClick={() => {setEditingToll(t); window.scrollTo({ top: 0, behavior: 'smooth' });}} className="p-1.5 bg-emerald-100 dark:bg-emerald-900/40 hover:bg-emerald-200 text-emerald-600 dark:text-emerald-400 rounded-lg transition-colors shadow-sm" title="Editar"><Edit2 className="w-3.5 h-3.5"/></button>
                       <button onClick={() => showConfirm(`¿Eliminar peaje ${t.name}?`, async () => { 
                           await deleteDoc(doc(db,'tolls',t.id));
                           setTollsList(tollsList.filter(item => item.id !== t.id));
-                      })} className="p-1.5 bg-red-100 hover:bg-red-200 text-red-500 rounded-lg transition-colors shadow-sm" title="Eliminar"><Trash2 className="w-3.5 h-3.5"/></button>
+                      })} className="p-1.5 bg-red-100 dark:bg-red-900/40 hover:bg-red-200 text-red-500 rounded-lg transition-colors shadow-sm" title="Eliminar"><Trash2 className="w-3.5 h-3.5"/></button>
                    </div>
                  </div>
                ))}
@@ -1104,7 +1104,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                     await setDoc(doc(db, 'system_config', 'equipment'), { items: newList }, { merge: true });
                     setEquipmentList(newList);
                   } catch(err) { showAlert("❌ Error al eliminar."); }
-                })} className="p-2 bg-white dark:bg-slate-900 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 transition-colors">
+                })} className="p-2 bg-white dark:bg-slate-900 text-red-500 hover:bg-red-50 dark:bg-red-900/30 hover:text-red-600 dark:text-red-400 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 transition-colors">
                   <Trash2 className="w-4 h-4"/>
                 </button>
               </div>
