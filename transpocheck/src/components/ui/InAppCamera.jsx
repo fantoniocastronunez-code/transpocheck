@@ -92,23 +92,33 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
     let targetDevice = null;
     let fallbackDigitalZoom = 1;
 
+    const isGenericLabel = devices.every(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('trasera'));
+
     if (level === 0.5) {
-       // Buscar lente ultra gran angular
-       targetDevice = findByKeyword(['ultra', 'gran angular', 'wide', '0.5']) || devices[devices.length - 1]; 
-       fallbackDigitalZoom = 1; // Evitar achicar con CSS (sin bordes negros)
+       targetDevice = findByKeyword(['ultra', 'gran angular', 'wide', '0.5']);
+       if (!targetDevice) {
+           targetDevice = devices.length > 1 ? devices[0] : devices[0];
+       }
+       fallbackDigitalZoom = 1;
     } else if (level === 2) {
-       // Buscar lente telefoto
        targetDevice = findByKeyword(['tele', 'telephoto', 'zoom', '2x']);
        if (!targetDevice) {
-           // Si no hay telefoto físico, usar principal + zoom digital 2x
-           targetDevice = findByKeyword(['main', 'principal', 'back camera', 'cámara trasera', 'posterior']) || devices[0];
-           fallbackDigitalZoom = 2;
+           if (devices.length > 2) {
+               targetDevice = devices[2];
+               fallbackDigitalZoom = 1;
+           } else {
+               targetDevice = devices.length > 1 ? devices[1] : devices[0];
+               fallbackDigitalZoom = 2;
+           }
        } else {
            fallbackDigitalZoom = 1;
        }
     } else {
-       // 1x Lente principal
-       targetDevice = findByKeyword(['main', 'principal', 'back camera', 'cámara trasera', 'posterior']) || devices[0];
+       const mainKeywords = isGenericLabel ? ['main', 'principal'] : ['main', 'principal', 'back camera', 'cámara trasera', 'posterior'];
+       targetDevice = findByKeyword(mainKeywords);
+       if (!targetDevice) {
+           targetDevice = devices.length > 1 ? devices[1] : devices[0];
+       }
        fallbackDigitalZoom = 1;
     }
 
