@@ -907,9 +907,9 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                 <div key={d.id} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-xl hover:border-blue-200 dark:border-blue-800/50 transition-all">
                   <div className="flex-1 min-w-0 pr-2">
                     <p className="text-sm font-extrabold text-slate-800 dark:text-slate-200 truncate">{d.placeName}</p>
-                    {d.plusCode && <p className="text-[11px] font-black text-blue-600 dark:text-blue-400 mt-0.5 truncate flex items-center gap-1"><MapPin className="w-3 h-3"/> {d.plusCode} (Plus Code)</p>}
-                    {(d.address || d.commune) && <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 truncate flex items-center gap-1"><MapPin className="w-3 h-3 text-slate-400"/> {d.address}{d.address && d.commune ? ', ' : ''}{d.commune}</p>}
-                    {(d.contactName || d.contactPhone) && <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 truncate flex items-center gap-1"><User className="w-3 h-3 text-emerald-600 dark:text-emerald-400"/> {d.contactName || 'Sin nombre'} {d.contactPhone && `• ${d.contactPhone}`}</p>}
+                    {d.plusCode && <p className="text-[11px] font-black text-blue-600 dark:text-blue-400 mt-0.5 truncate"><MapPin className="w-3 h-3 inline-block align-text-bottom mr-1 shrink-0"/> {d.plusCode} (Plus Code)</p>}
+                    {(d.address || d.commune) && <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 truncate"><MapPin className="w-3 h-3 text-slate-400 inline-block align-text-bottom mr-1 shrink-0"/> {d.address}{d.address && d.commune ? ', ' : ''}{d.commune}</p>}
+                    {(d.contactName || d.contactPhone) && <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 truncate"><User className="w-3 h-3 text-emerald-600 dark:text-emerald-400 inline-block align-text-bottom mr-1 shrink-0"/> {d.contactName || 'Sin nombre'} {d.contactPhone && `• ${d.contactPhone}`}</p>}
                   </div>
                   <div className="flex flex-col gap-1.5 shrink-0 ml-2">
                      <button onClick={() => {setEditingDir(d); window.scrollTo({ top: 0, behavior: 'smooth' });}} className="p-1.5 bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 text-blue-600 dark:text-blue-400 rounded-lg transition-colors shadow-sm" title="Editar"><Edit2 className="w-3.5 h-3.5"/></button>
