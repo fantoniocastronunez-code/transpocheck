@@ -13,6 +13,8 @@ import SwipeButton from '../ui/SwipeButton';
 import SignaturePad from '../ui/SignaturePad';
 import InAppCamera from '../ui/InAppCamera';
 import KovacsModal from './JobsList/KovacsModal';
+import TrackingModal from './JobsList/TrackingModal';
+import ArrivalModal from './JobsList/ArrivalModal';
 import { formatDateDisplay, analyzeJobStatus, generateStandardFileName, generateWhatsAppText, getRouteStr, resizeImage } from '../../utils/helpers';
 
 export default function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, onNewJob, db, currentUserEmail, showAlert, showConfirm, allClientsList, onLoadMore, vehicles }) {
@@ -3529,153 +3531,39 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       )}
 
       {/* NUEVO MODAL: PANEL DE SEGUIMIENTO EN VIVO */}
-      {trackingJobId && (() => {
-         const tj = jobs.find(j => j.id === trackingJobId);
-         if (!tj) return null;
-         const isSimple = tj.tripType === 'simple';
-         const ident = getJobIdentifier(tj);
-
-         return (
-           <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[500] flex items-end justify-center p-0 sm:p-4 animate-in fade-in">
-              <div className="bg-white w-full sm:max-w-md rounded-t-[2rem] sm:rounded-[2rem] p-6 shadow-2xl animate-in slide-in-from-bottom-10 flex flex-col relative max-h-[95vh]">
-                 <div className="absolute top-0 left-0 right-0 h-2 bg-blue-600"></div>
-                 <div className="flex justify-between items-start mb-4 mt-2">
-                   <div>
-                      <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><Navigation className="w-5 h-5 text-blue-600"/> Panel de Viaje</h3>
-                      <p className="text-xs font-bold text-slate-500 mt-1">{isSimple ? tj.description : `${tj.brand} ${tj.model}`} • {ident}</p>
-                   </div>
-                   <button onClick={() => setTrackingJobId(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-5 h-5 text-slate-600"/></button>
-                 </div>
-
-                 <div className="overflow-y-auto space-y-4 pr-1 pb-4 scrollbar-none">
-                    {/* ESTADOS DEL VIAJE */}
-                    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 relative overflow-hidden">
-                       <div className="absolute left-[27px] top-8 bottom-8 w-1 bg-slate-200 rounded-full"></div>
-                       {/* Origen */}
-                       <div className="flex gap-4 items-start relative z-10 mb-6">
-                          <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border-2 ${tj.phase && tj.phase !== 'claimed' ? 'bg-blue-600 border-blue-600' : 'bg-white border-slate-300'}`}>
-                             {tj.phase && tj.phase !== 'claimed' ? <CheckCircle className="w-3 h-3 text-white"/> : <div className="w-2 h-2 bg-slate-300 rounded-full"></div>}
-                          </div>
-                          <div>
-                             <p className="text-[10px] font-black uppercase text-slate-400">Origen</p>
-                             <p className={`text-sm font-bold ${tj.phase && tj.phase !== 'claimed' ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{tj.origin}</p>
-                          </div>
-                       </div>
-                       {/* Destino */}
-                       <div className="flex gap-4 items-start relative z-10">
-                          <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border-2 ${tj.phase === 'arrived_destination' ? 'bg-green-500 border-green-500' : 'bg-white border-slate-300'}`}>
-                             {tj.phase === 'arrived_destination' ? <CheckCircle className="w-3 h-3 text-white"/> : <div className="w-2 h-2 bg-slate-300 rounded-full"></div>}
-                          </div>
-                          <div>
-                             <p className="text-[10px] font-black uppercase text-slate-400">Destino</p>
-                             <p className="text-sm font-bold text-blue-700">{tj.tripType === 'revision' ? (tj.destination?.includes('->') ? tj.destination.split('->')[tj.destination.split('->').length - 1].trim() : 'PRT') : (tj.destination || 'Por definir')}</p>
-                          </div>
-                       </div>
-                    </div>
-
-                    {/* BOTONES DE ACCIÓN RÁPIDA */}
-                    <div className="space-y-3 pt-2">
-                       <p className="text-[10px] font-black uppercase text-blue-600 tracking-widest text-center mb-2 animate-bounce">Desliza para actualizar estado</p>
-
-                       {(!tj.phase || tj.phase === 'claimed') && <SwipeButton key={`btn-pickup-${tj.id}`} onConfirm={()=>updatePhase(tj, 'arrived_pickup', { arrivedPickupAt: Date.now() })} text={tj.tripType === 'simple' ? "Desliza: Llegué al lugar" : "Desliza: Llegué a retirar"} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-amber-500" isProcessing={processingId === `${tj.id}-arrived_pickup`} />}
-
-                       {tj.phase === 'arrived_pickup' && <SwipeButton key={`btn-power-${tj.id}`} onConfirm={()=>{
-                          const waitMins = tj.arrivedPickupAt ? Math.floor((Date.now() - tj.arrivedPickupAt) / 60000) : 0;
-                          updatePhase(tj, 'picked_up', { pickedUpAt: Date.now(), waitTimeMinutes: waitMins });
-                       }} text={tj.tripType === 'simple' ? "Desliza: Iniciar Trabajo" : "Desliza: Vehículo en mi poder"} icon={tj.tripType === 'simple' ? <Clock className="w-4 h-4"/> : <Car className="w-4 h-4"/>} colorClass="bg-indigo-600" isProcessing={processingId === `${tj.id}-picked_up`} />}
-
-                       {tj.phase === 'picked_up' && tj.tripType !== 'revision' && <SwipeButton key={`btn-dest-${tj.id}`} onConfirm={()=>{
-                           setArrivalPromptJob(tj); 
-                           setArrivalMileage(''); 
-                           setArrivalPhoto(null); 
-                           setArrivalKeyLocation(''); 
-                           setArrivalKeyHandedTo(''); 
-                           setTrackingJobId(null);
-                       }} text={tj.tripType === 'simple' ? "Desliza: Finalizar Trabajo" : "Desliza: Llegué a Destino"} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${tj.id}-arrived_destination`} />}
-
-                       {tj.phase === 'picked_up' && tj.tripType === 'revision' && <SwipeButton key={`btn-prt-${tj.id}`} onConfirm={()=>updatePhase(tj, 'arrived_prt')} text="Desliza: Llegué a PRT" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${tj.id}-arrived_prt`} />}
-
-                       {tj.phase === 'arrived_prt' && (
-                         <div className="flex gap-2">
-                            <button onClick={() => { setPrtApproveType('aprobado'); setPrtReturnOpt('origin'); setPrtReturnDest(''); setPrtApprovePromptJob(tj); setTrackingJobId(null); }} disabled={processingId === `${tj.id}-prt_done`} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl text-sm shadow-sm transition-colors flex justify-center items-center gap-1 disabled:opacity-50">
-                               {processingId === `${tj.id}-prt_done` ? <Clock className="w-4 h-4 animate-spin"/> : '✅'} Aprobado
-                            </button>
-                            <button onClick={() => { setPrtReturnOpt('origin'); setPrtReturnDest(''); setPrtPromptJob(tj); setTrackingJobId(null); }} disabled={processingId === `${tj.id}-prt_done`} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-xl text-sm shadow-sm transition-colors disabled:opacity-50">
-                               ❌ Rechazado
-                            </button>
-                         </div>
-                       )}
-
-                       {tj.phase === 'prt_done' && (
-                         <SwipeButton key={`btn-dest-prt-${tj.id}`} onConfirm={()=>{
-                             setArrivalPromptJob(tj); 
-                             setArrivalMileage(''); 
-                             setArrivalPhoto(null); 
-                             setArrivalKeyLocation(''); 
-                             setArrivalKeyHandedTo(''); 
-                             setTrackingJobId(null);
-                         }} text={`Desliza: Llegué a ${tj.checklist?.rtReturnOption === 'other' ? (tj.checklist?.rtReturnDestination?.substring(0,10) + '...') : 'Origen'}`} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${tj.id}-arrived_destination`} />
-                       )}
-
-                       <button onClick={()=>{ setTrackingJobId(null); onStartChecklist(tj); }} className={`w-full font-black py-4 rounded-xl text-sm shadow-sm transition-colors ${(tj.phase === 'arrived_destination') ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'}`}>
-                         📸 {(tj.phase === 'arrived_destination') ? (tj.tripType === 'simple' ? 'Cerrar Acta de Servicio' : 'Cerrar Checklist') : (tj.tripType === 'simple' ? 'Pre-llenar Acta' : 'Pre-llenar Checklist')}
-                       </button>
-                    </div>
-                 </div>
-              </div>
-           </div>
-         );
-      })()}
+      <TrackingModal
+        jobs={jobs}
+        trackingJobId={trackingJobId}
+        setTrackingJobId={setTrackingJobId}
+        getJobIdentifier={getJobIdentifier}
+        updatePhase={updatePhase}
+        processingId={processingId}
+        setArrivalPromptJob={setArrivalPromptJob}
+        setArrivalMileage={setArrivalMileage}
+        setArrivalPhoto={setArrivalPhoto}
+        setArrivalKeyLocation={setArrivalKeyLocation}
+        setArrivalKeyHandedTo={setArrivalKeyHandedTo}
+        onStartChecklist={onStartChecklist}
+        setPrtApproveType={setPrtApproveType}
+        setPrtReturnOpt={setPrtReturnOpt}
+        setPrtReturnDest={setPrtReturnDest}
+        setPrtApprovePromptJob={setPrtApprovePromptJob}
+        setPrtPromptJob={setPrtPromptJob}
+      />
 
       {/* NUEVO MODAL: REQUISITO LLEGADA (GENERAL / GRANDLEASING) */}
-      {arrivalPromptJob && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl flex flex-col animate-in zoom-in-95 border-t-8 my-auto border-purple-500">
-             <div className="flex justify-between items-center mb-4">
-               <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-2">
-                 <Key className="w-5 h-5 text-purple-500"/> Registro de Llegada
-               </h3>
-               <button onClick={()=>setArrivalPromptJob(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4"/></button>
-             </div>
-             
-             <p className="text-xs font-bold text-slate-500 mb-4 pb-4 border-b border-slate-100">Por favor, registra el kilometraje final y la ubicación de las llaves del vehículo (opcional).</p>
-             
-             <div className="space-y-4 mb-6">
-               <div>
-                  <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-slate-400">Kilometraje de Término</label>
-                  <input type="number" value={arrivalMileage} onChange={e=>setArrivalMileage(e.target.value)} placeholder="Ej: 45250" className="w-full border-2 bg-slate-50 p-3 rounded-xl font-bold text-slate-700 outline-none mt-1 shadow-sm border-slate-200 focus:border-purple-400"/>
-               </div>
-               
-               <div>
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">¿Dónde dejaste las llaves?</label>
-                  <div className="grid grid-cols-1 gap-2">
-                     <button onClick={() => setArrivalKeyLocation('puestas')} className={`p-3 rounded-xl border-2 text-sm font-bold transition-colors text-left flex items-center justify-between ${arrivalKeyLocation === 'puestas' ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-slate-200 bg-white text-slate-600'}`}>
-                        Puestas {arrivalKeyLocation === 'puestas' && <CheckCircle className="w-4 h-4"/>}
-                     </button>
-                     <button onClick={() => setArrivalKeyLocation('puerta')} className={`p-3 rounded-xl border-2 text-sm font-bold transition-colors text-left flex items-center justify-between ${arrivalKeyLocation === 'puerta' ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-slate-200 bg-white text-slate-600'}`}>
-                        En la puerta {arrivalKeyLocation === 'puerta' && <CheckCircle className="w-4 h-4"/>}
-                     </button>
-                     <button onClick={() => setArrivalKeyLocation('mano')} className={`p-3 rounded-xl border-2 text-sm font-bold transition-colors text-left flex items-center justify-between ${arrivalKeyLocation === 'mano' ? 'border-purple-500 bg-purple-50 text-purple-700' : 'border-slate-200 bg-white text-slate-600'}`}>
-                        Entregadas por mano {arrivalKeyLocation === 'mano' && <CheckCircle className="w-4 h-4"/>}
-                     </button>
-                  </div>
-                  {arrivalKeyLocation === 'mano' && (
-                     <input type="text" value={arrivalKeyHandedTo} onChange={e=>setArrivalKeyHandedTo(e.target.value)} placeholder="Nombre de quien recibe" className="w-full border-2 border-purple-200 bg-purple-50 p-3 rounded-xl font-bold text-purple-900 outline-none focus:border-purple-400 mt-2 shadow-sm animate-in fade-in slide-in-from-top-2"/>
-                  )}
-               </div>
-             </div>
-
-             <div className="flex gap-2">
-               <button onClick={() => submitArrival(true)} disabled={processingId === 'general-arrival'} className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-xl font-extrabold text-sm transition-colors disabled:opacity-50">
-                 Omitir
-               </button>
-               <button onClick={() => submitArrival(false)} disabled={processingId === 'general-arrival'} className="flex-[2] py-3.5 text-white bg-purple-600 hover:bg-purple-700 rounded-xl font-black text-sm shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-                 {processingId === 'general-arrival' ? <Clock className="w-5 h-5 animate-spin"/> : <CheckCircle className="w-5 h-5"/>} Guardar Datos
-               </button>
-             </div>
-          </div>
-        </div>
-      )}
+      <ArrivalModal
+        arrivalPromptJob={arrivalPromptJob}
+        setArrivalPromptJob={setArrivalPromptJob}
+        arrivalMileage={arrivalMileage}
+        setArrivalMileage={setArrivalMileage}
+        arrivalKeyLocation={arrivalKeyLocation}
+        setArrivalKeyLocation={setArrivalKeyLocation}
+        arrivalKeyHandedTo={arrivalKeyHandedTo}
+        setArrivalKeyHandedTo={setArrivalKeyHandedTo}
+        processingId={processingId}
+        submitArrival={submitArrival}
+      />
 
       {/* --- CÁMARA INTERNA NATIVA --- */}
       <InAppCamera 
