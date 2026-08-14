@@ -23,7 +23,15 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
           if (backCameras.length === 0) backCameras = devs.filter(d => d.kind === 'videoinput');
           
           setDevices(backCameras);
-          setCurrentIndex(0);
+          
+          let activeIdx = 0;
+          if (newStream.getVideoTracks().length > 0) {
+             const trackLabel = newStream.getVideoTracks()[0].label;
+             const foundIdx = backCameras.findIndex(d => d.label === trackLabel);
+             if (foundIdx !== -1) activeIdx = foundIdx;
+          }
+          setCurrentIndex(activeIdx);
+          setActiveZoomLabel(activeIdx === 0 && backCameras.length > 1 ? 0.5 : 1);
        }
        setStream(newStream);
     } catch (error) {
@@ -92,13 +100,10 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
     let targetDevice = null;
     let fallbackDigitalZoom = 1;
 
-    const isGenericLabel = devices.every(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('trasera'));
-
     if (level === 0.5) {
-       targetDevice = findByKeyword(['ultra', 'gran angular', 'wide', '0.5']);
+       targetDevice = findByKeyword(['ultra', 'gran angular', '0.5', '0,5']);
        if (!targetDevice) {
-           // Si no se encuentra por nombre, suele ser el device 1 en móviles con 2+ cámaras
-           targetDevice = devices.length > 1 ? devices[1] : devices[0];
+           targetDevice = devices[0];
        }
        fallbackDigitalZoom = 1;
     } else if (level === 2) {
@@ -108,19 +113,16 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
                targetDevice = devices[2];
                fallbackDigitalZoom = 1;
            } else {
-               // Fallback: usar lente principal con zoom digital 2x
-               targetDevice = devices[0];
+               targetDevice = devices.length > 1 ? devices[1] : devices[0];
                fallbackDigitalZoom = 2;
            }
        } else {
            fallbackDigitalZoom = 1;
        }
     } else {
-       const mainKeywords = isGenericLabel ? ['main', 'principal'] : ['main', 'principal', 'back camera', 'cámara trasera', 'posterior'];
-       targetDevice = findByKeyword(mainKeywords);
+       targetDevice = findByKeyword(['main', 'principal', 'estandar', 'standard']);
        if (!targetDevice) {
-           // El lente principal suele ser el device 0
-           targetDevice = devices[0];
+           targetDevice = devices.length > 1 ? devices[1] : devices[0];
        }
        fallbackDigitalZoom = 1;
     }
