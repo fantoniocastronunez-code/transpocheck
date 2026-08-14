@@ -25,7 +25,14 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
        
        if (isFirst) {
           const devs = await navigator.mediaDevices.enumerateDevices();
-          let backCameras = devs.filter(d => d.kind === 'videoinput' && (d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('trasera') || d.label.toLowerCase().includes('environment') || d.label.toLowerCase().includes('0')));
+          // iOS en español usa "posterior", Android usa "trasera" o "back". ¡Debemos atraparlos todos!
+          let backCameras = devs.filter(d => d.kind === 'videoinput' && (
+             d.label.toLowerCase().includes('back') || 
+             d.label.toLowerCase().includes('trasera') || 
+             d.label.toLowerCase().includes('posterior') || 
+             d.label.toLowerCase().includes('environment') || 
+             d.label.toLowerCase().includes('0')
+          ));
           if (backCameras.length === 0) backCameras = devs.filter(d => d.kind === 'videoinput');
           
           setDevices(backCameras);
@@ -37,7 +44,13 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
              if (foundIdx !== -1) activeIdx = foundIdx;
           }
           setCurrentIndex(activeIdx);
-          setActiveZoomLabel(activeIdx === 0 && backCameras.length > 1 ? 0.5 : 1);
+          
+          // Si el celular arranca en la cámara 0 y hay más de una, asumimos que es la 0.5x para mantener la coherencia
+          if (activeIdx === 0 && backCameras.length > 1) {
+             setActiveZoomLabel(0.5); 
+          } else {
+             setActiveZoomLabel(1); 
+          }
        }
        setStream(newStream);
     } catch (error) {
@@ -114,27 +127,21 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
 
     if (level === 0.5) {
        targetDevice = findByKeyword(['ultra', 'gran angular', '0.5', '0,5']);
-       if (!targetDevice) {
-           targetDevice = devices[0];
-       }
+       if (!targetDevice) targetDevice = devices[0];
        fallbackDigitalZoom = 1;
     } else if (level === 2) {
-       targetDevice = findByKeyword(['tele', 'telephoto', 'zoom', '2x']);
+       targetDevice = findByKeyword(['tele', 'telephoto', 'zoom', '2x', 'teleobjetivo']);
        if (!targetDevice) {
-           if (devices.length > 2) {
-               targetDevice = devices[2];
-               fallbackDigitalZoom = 1;
-           } else {
-               targetDevice = devices.length > 1 ? devices[1] : devices[0];
-               fallbackDigitalZoom = 2;
-           }
+           targetDevice = devices.length > 1 ? devices[1] : devices[0];
+           fallbackDigitalZoom = 2; 
        } else {
            fallbackDigitalZoom = 1;
        }
     } else {
        targetDevice = findByKeyword(['main', 'principal', 'estandar', 'standard']);
        if (!targetDevice) {
-           targetDevice = devices.length > 1 ? devices[1] : devices[0];
+           // Filtro universal: si no hay etiquetas claras, la cámara principal suele ser la 1 (si hay múltiples lentes)
+           targetDevice = devices.find(d => !d.label.toLowerCase().includes('ultra') && !d.label.toLowerCase().includes('tele') && !d.label.toLowerCase().includes('angular')) || (devices.length > 1 ? devices[1] : devices[0]);
        }
        fallbackDigitalZoom = 1;
     }

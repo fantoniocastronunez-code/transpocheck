@@ -112,9 +112,9 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
 
   // --- MOTOR DE CÁMARA INTERNA (CENTRALIZADO) ---
-  const [cameraConfig, setCameraConfig] = useState({ isOpen: false, title: '', onCapture: null });
+  const [cameraConfig, setCameraConfig] = useState({ isOpen: false, title: '', onCapture: null, enableAnnotation: false });
 
-  const openCamera = (title, callback) => {
+  const openCamera = (title, callback, enableAnnotation = false) => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       alert("Tu navegador o dispositivo no soporta la cámara interna. Por favor, verifica los permisos o usa Chrome/Safari.");
       return;
@@ -124,7 +124,8 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
       DeviceOrientationEvent.requestPermission().catch(() => { });
     }
 
-    setCameraConfig({ isOpen: true, title, onCapture: callback });
+    // EL FIX: Ahora sí le pasamos el "enableAnnotation" al estado para que la cámara sepa que debe usar el croquis
+    setCameraConfig({ isOpen: true, title, onCapture: callback, enableAnnotation });
   };
   // ----------------------------------------
   // Estados para el Déjà Vu Pericial
@@ -1274,7 +1275,8 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
                       setF('pendingPin', { id: availableDet, x, y });
                       setF('zoomZone', null);
-                      openCamera('Detalle del Daño', f => handlePic(f, availableDet));
+                      // Activamos el lápiz (enableAnnotation = true) SÓLO para las fotos de daños
+                      openCamera('Detalle del Daño', f => handlePic(f, availableDet), true);
                     }}
                   >
                     {!formData.zoomZone && (
@@ -1763,10 +1765,11 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
       <InAppCamera
         isOpen={cameraConfig.isOpen}
         title={cameraConfig.title}
-        enableAnnotation={true}
+        enableAnnotation={cameraConfig.enableAnnotation}
         onClose={() => setCameraConfig(prev => ({ ...prev, isOpen: false }))}
         onCapture={cameraConfig.onCapture}
       />
+
 
       {/* MODAL DEL DÉJÀ VU PERICIAL */}
 
@@ -1859,7 +1862,8 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
               onClick={(e) => {
                 e.stopPropagation();
                 setFullScreenImage(null);
-                openCamera(fullScreenImage.label, f => handlePic(f, fullScreenImage.id));
+                // Si la foto que están retomando es un daño, reactivamos el lápiz
+                openCamera(fullScreenImage.label, f => handlePic(f, fullScreenImage.id), fullScreenImage.label === 'Detalle del Daño');
               }}
               className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-black text-sm uppercase tracking-widest shadow-[0_0_20px_rgba(37,99,235,0.4)] flex items-center gap-2 active:scale-95 transition-all"
             >
@@ -1873,6 +1877,8 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     </div>
   );
 }
+
+
 
 
 
