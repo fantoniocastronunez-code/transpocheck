@@ -97,7 +97,8 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
     if (level === 0.5) {
        targetDevice = findByKeyword(['ultra', 'gran angular', 'wide', '0.5']);
        if (!targetDevice) {
-           targetDevice = devices.length > 1 ? devices[0] : devices[0];
+           // Si no se encuentra por nombre, suele ser el device 1 en móviles con 2+ cámaras
+           targetDevice = devices.length > 1 ? devices[1] : devices[0];
        }
        fallbackDigitalZoom = 1;
     } else if (level === 2) {
@@ -107,7 +108,8 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
                targetDevice = devices[2];
                fallbackDigitalZoom = 1;
            } else {
-               targetDevice = devices.length > 1 ? devices[1] : devices[0];
+               // Fallback: usar lente principal con zoom digital 2x
+               targetDevice = devices[0];
                fallbackDigitalZoom = 2;
            }
        } else {
@@ -117,7 +119,8 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
        const mainKeywords = isGenericLabel ? ['main', 'principal'] : ['main', 'principal', 'back camera', 'cámara trasera', 'posterior'];
        targetDevice = findByKeyword(mainKeywords);
        if (!targetDevice) {
-           targetDevice = devices.length > 1 ? devices[1] : devices[0];
+           // El lente principal suele ser el device 0
+           targetDevice = devices[0];
        }
        fallbackDigitalZoom = 1;
     }
