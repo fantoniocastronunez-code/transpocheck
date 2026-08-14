@@ -851,7 +851,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
             
             <div className="space-y-1">
                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Lugar / Destino exacto <span className="text-red-500">*</span></label>
-               <input name="placeName" defaultValue={editingDir?.placeName} placeholder="Ej: Samex Quilicura (Obligatorio)" required autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
+               <input name="placeName" defaultValue={editingDir?.placeName} placeholder="Ej: Samex Quilicura (Obligatorio)" required autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full min-w-0 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
             </div>
             
             <div className="space-y-1">
@@ -861,23 +861,23 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
             
             <div className="space-y-1">
                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Teléfono (Opcional)</label>
-               <input name="contactPhone" defaultValue={editingDir?.contactPhone} placeholder="Ej: +56912345678" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
+               <input name="contactPhone" defaultValue={editingDir?.contactPhone} placeholder="Ej: +56912345678" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full min-w-0 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Dirección Exacta (Opcional)</label>
-                  <input name="address" defaultValue={editingDir?.address} placeholder="Ej: Av. Vespucio 1501" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
+                  <input name="address" defaultValue={editingDir?.address} placeholder="Ej: Av. Vespucio 1501" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full min-w-0 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
                </div>
                <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Comuna / Ciudad (Opcional)</label>
-                  <input name="commune" defaultValue={editingDir?.commune} placeholder="Ej: Quilicura" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
+                  <input name="commune" defaultValue={editingDir?.commune} placeholder="Ej: Quilicura" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full min-w-0 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
                </div>
             </div>
 
             <div className="space-y-1">
                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex flex-wrap items-center gap-1"><MapPin className="w-3 h-3 text-blue-500 shrink-0"/> Plus Code de Google Maps (Prioridad GPS)</label>
-               <input name="plusCode" defaultValue={editingDir?.plusCode} placeholder="Ej: 8MP3+VX Santiago" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold bg-blue-50 dark:bg-blue-900/30"/>
+               <input name="plusCode" defaultValue={editingDir?.plusCode} placeholder="Ej: 8MP3+VX Santiago" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full min-w-0 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold bg-blue-50 dark:bg-blue-900/30"/>
             </div>
 
             <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-black text-sm transition-colors shadow-md shadow-blue-200 mt-2">
@@ -888,7 +888,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
           <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 max-h-[85vh] flex flex-col">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 shrink-0 border-b border-slate-100 dark:border-slate-800 pb-4">
               <h3 className="font-extrabold text-slate-800 dark:text-slate-200">Destinos Guardados</h3>
-              <div className="relative w-full sm:w-72 shrink-0">
+              <div className="relative w-full sm:w-72 shrink-0 min-w-0">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Search className="w-4 h-4 text-slate-400" />
                 </div>
@@ -898,7 +898,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                   value={dirSearchTerm}
                   onChange={(e) => setDirSearchTerm(e.target.value)}
                   autoComplete="off" autoCorrect="off" spellCheck="false"
-                  className="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500 transition-colors"
+                  className="w-full min-w-0 pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
             </div>
