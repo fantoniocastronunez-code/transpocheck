@@ -749,7 +749,7 @@ function LogisticApp() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 dark:bg-slate-900/50 p-2.5 text-center border-t border-slate-100 dark:border-slate-800">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">LogisticAPP v.3.2.1</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">LogisticAPP v.3.2.2</p>
                 </div>
               </div>
             )}

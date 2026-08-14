@@ -296,7 +296,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
 
   return (
     <div className="space-y-6 relative w-full">
-      <div className="flex gap-2 pb-2 overflow-x-auto scrollbar-none w-full">
+      <div className="flex flex-wrap gap-2 pb-2 w-full">
          <button onClick={()=>setConfigSubTab('clients')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='clients'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Clientes</button>
          <button onClick={()=>setConfigSubTab('vehicles')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='vehicles'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Vehículos</button>
          <button onClick={()=>setConfigSubTab('drivers')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='drivers'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Usuarios</button>
