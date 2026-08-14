@@ -1,8 +1,18 @@
 import React from 'react';
-import { PenTool, Search } from 'lucide-react';
+import { MapPin, CheckCircle, CloudOff, Camera, Search, Clock, Share2, QrCode, Zap, Check } from 'lucide-react';
 import SignaturePad from '../../ui/SignaturePad';
 
-export default function Step6Signature({ job, formData, setF }) {
+export default function Step6Signature(props) {
+  const { job, formData, setF, handleImageUpload, removeImage, getRouteStr, drivers,
+    handleQuickSetLocation, step, setStep, showAlert, allClientsList,
+    addDamageMarker, removeDamageMarker, updateDamageMarker, selectedDamageIndex,
+    setSelectedDamageIndex, showHelpOverlay, setShowHelpOverlay, currentImageIndex,
+    setCurrentImageIndex, setShowDamageModal, showDamageModal, tempDamageData,
+    setTempDamageData, fileInputRef, processingId, currentUserEmail,
+    showDejaVuModal, setShowDejaVuModal, dejaVuData, handleAcceptDejaVu,
+    uploadProgress, cameraConfig, setCameraConfig, processingAction,
+    handleRemoteSignRequest, handleOpenQR, handlePhotoClick, isSubmitting, clearDraft, isDraftLoaded } = props;
+
   return (
     <>
                 {((job.tripType !== 'simple' && step === 6) || (job.tripType === 'simple' && step === 3)) && (

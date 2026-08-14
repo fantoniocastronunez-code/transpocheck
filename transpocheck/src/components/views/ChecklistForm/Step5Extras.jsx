@@ -1,8 +1,18 @@
 import React from 'react';
-import { Camera, Upload, XCircle, CheckCircle, Trash2 } from 'lucide-react';
+import { CheckCircle, Trash2, Camera, Fuel, Clock, Wallet, Receipt, Check } from 'lucide-react';
 import InAppCamera from '../../ui/InAppCamera';
 
-export default function Step5Extras({ job, formData, setF, handleImageUpload, removeImage }) {
+export default function Step5Extras(props) {
+  const { job, formData, setF, handleImageUpload, removeImage, getRouteStr, drivers,
+    handleQuickSetLocation, step, setStep, showAlert, allClientsList,
+    addDamageMarker, removeDamageMarker, updateDamageMarker, selectedDamageIndex,
+    setSelectedDamageIndex, showHelpOverlay, setShowHelpOverlay, currentImageIndex,
+    setCurrentImageIndex, setShowDamageModal, showDamageModal, tempDamageData,
+    setTempDamageData, fileInputRef, processingId, currentUserEmail,
+    showDejaVuModal, setShowDejaVuModal, dejaVuData, handleAcceptDejaVu,
+    uploadProgress, cameraConfig, setCameraConfig, processingAction,
+    handleRemoteSignRequest, handleOpenQR, handlePhotoClick, isSubmitting, clearDraft, isDraftLoaded } = props;
+
   return (
     <>
                 {job.tripType !== 'simple' && step === 5 && (

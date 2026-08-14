@@ -738,7 +738,9 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     setSelectedDamageIndex, showHelpOverlay, setShowHelpOverlay, currentImageIndex,
     setCurrentImageIndex, setShowDamageModal, showDamageModal, tempDamageData,
     setTempDamageData, fileInputRef, processingId, currentUserEmail,
-    showDejaVuModal, setShowDejaVuModal, dejaVuData, handleAcceptDejaVu
+    showDejaVuModal, setShowDejaVuModal, dejaVuData, handleAcceptDejaVu,
+    uploadProgress, cameraConfig, setCameraConfig, processingAction,
+    handleRemoteSignRequest, handleOpenQR, handlePhotoClick, isSubmitting, clearDraft, isDraftLoaded
   };
 
   return (

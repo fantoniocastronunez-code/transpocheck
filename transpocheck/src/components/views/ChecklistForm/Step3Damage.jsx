@@ -1,8 +1,18 @@
 import React from 'react';
-import { Camera, XCircle, FileText, CheckCircle, Upload, Trash2, Info } from 'lucide-react';
+import { FileText, AlertCircle, Camera } from 'lucide-react';
 import InAppCamera from '../../ui/InAppCamera';
 
-export default function Step3Damage({ job, formData, setF, handleImageUpload, removeImage, addDamageMarker, removeDamageMarker, updateDamageMarker, selectedDamageIndex, setSelectedDamageIndex, showHelpOverlay, setShowHelpOverlay, currentImageIndex, setCurrentImageIndex, setShowDamageModal, showDamageModal, tempDamageData, setTempDamageData }) {
+export default function Step3Damage(props) {
+  const { job, formData, setF, handleImageUpload, removeImage, getRouteStr, drivers,
+    handleQuickSetLocation, step, setStep, showAlert, allClientsList,
+    addDamageMarker, removeDamageMarker, updateDamageMarker, selectedDamageIndex,
+    setSelectedDamageIndex, showHelpOverlay, setShowHelpOverlay, currentImageIndex,
+    setCurrentImageIndex, setShowDamageModal, showDamageModal, tempDamageData,
+    setTempDamageData, fileInputRef, processingId, currentUserEmail,
+    showDejaVuModal, setShowDejaVuModal, dejaVuData, handleAcceptDejaVu,
+    uploadProgress, cameraConfig, setCameraConfig, processingAction,
+    handleRemoteSignRequest, handleOpenQR, handlePhotoClick, isSubmitting, clearDraft, isDraftLoaded } = props;
+
   return (
     <>
                 {job.tripType !== 'simple' && step === 3 && (

@@ -1,8 +1,18 @@
 import React from 'react';
-import { Camera, MapPin, Upload, XCircle, CheckCircle, Trash2, Edit2, Car } from 'lucide-react';
+import { CheckCircle, Camera, Search, X, Check } from 'lucide-react';
 import InAppCamera from '../../ui/InAppCamera';
 
-export default function Step4Destination({ job, formData, setF, handleImageUpload, removeImage, getRouteStr, handleQuickSetLocation, allClientsList, fileInputRef, processingId }) {
+export default function Step4Destination(props) {
+  const { job, formData, setF, handleImageUpload, removeImage, getRouteStr, drivers,
+    handleQuickSetLocation, step, setStep, showAlert, allClientsList,
+    addDamageMarker, removeDamageMarker, updateDamageMarker, selectedDamageIndex,
+    setSelectedDamageIndex, showHelpOverlay, setShowHelpOverlay, currentImageIndex,
+    setCurrentImageIndex, setShowDamageModal, showDamageModal, tempDamageData,
+    setTempDamageData, fileInputRef, processingId, currentUserEmail,
+    showDejaVuModal, setShowDejaVuModal, dejaVuData, handleAcceptDejaVu,
+    uploadProgress, cameraConfig, setCameraConfig, processingAction,
+    handleRemoteSignRequest, handleOpenQR, handlePhotoClick, isSubmitting, clearDraft, isDraftLoaded } = props;
+
   return (
     <>
                 {job.tripType !== 'simple' && step === 4 && (

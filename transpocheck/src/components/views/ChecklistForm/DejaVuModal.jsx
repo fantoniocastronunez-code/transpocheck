@@ -1,7 +1,17 @@
 import React from 'react';
 import { RefreshCw, CheckCircle, XCircle, Search } from 'lucide-react';
 
-export default function DejaVuModal({ showDejaVuModal, setShowDejaVuModal, dejaVuData, handleAcceptDejaVu, formData }) {
+export default function DejaVuModal(props) {
+  const { job, formData, setF, handleImageUpload, removeImage, getRouteStr, drivers,
+    handleQuickSetLocation, step, setStep, showAlert, allClientsList,
+    addDamageMarker, removeDamageMarker, updateDamageMarker, selectedDamageIndex,
+    setSelectedDamageIndex, showHelpOverlay, setShowHelpOverlay, currentImageIndex,
+    setCurrentImageIndex, setShowDamageModal, showDamageModal, tempDamageData,
+    setTempDamageData, fileInputRef, processingId, currentUserEmail,
+    showDejaVuModal, setShowDejaVuModal, dejaVuData, handleAcceptDejaVu,
+    uploadProgress, cameraConfig, setCameraConfig, processingAction,
+    handleRemoteSignRequest, handleOpenQR, handlePhotoClick, isSubmitting, clearDraft, isDraftLoaded } = props;
+
   if (!showDejaVuModal || !dejaVuData) return null;
   return (
     <>
