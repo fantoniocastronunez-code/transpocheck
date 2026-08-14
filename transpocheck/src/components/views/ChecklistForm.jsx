@@ -493,7 +493,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     e.preventDefault();
     if (isSubmitting) return;
     if (!formData.noReception && !formData.signatureData) return showAlert("La firma del receptor es mandatoria.");
-    
+
     // Validación Kilometraje de Entrega
     if (!formData.mileage) return showAlert("⚠️ Debes ingresar el kilometraje de entrega.");
     if (!formData.photos?.mileage) return showAlert("⚠️ Debes adjuntar la fotografía del odómetro (kilometraje).");
@@ -763,21 +763,21 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
         <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
           <div className={`h-full transition-all duration-500 ease-out ${job.tripType === 'simple' ? 'bg-purple-500' : 'bg-blue-500'}`} style={{
             width: `${(() => {
-                let p = 0;
-                if (job.tripType === 'simple') {
-                  const req = (job.isPintura || job.isGrabado) ? ((job.qtyPintura || 0) + (job.qtyGrabado || 0)) : 1;
-                  const cur = Object.values(formData.photos || {}).filter(v => v).length;
-                  if (formData.observations) p += 33;
-                  if (cur >= req) p += 33;
-                  if (formData.signatureData || formData.noReception) p += 34;
-                } else {
-                  if (formData.brand && formData.model && formData.plateOrVin) p += 25;
-                  if (formData.fuelLevel !== undefined) p += 25;
-                  if (Object.values(formData.photos || {}).filter(v => v).length >= 2) p += 25;
-                  if (formData.signatureData || formData.noReception) p += 25;
-                }
-                return Math.min(100, p);
-              })()
+              let p = 0;
+              if (job.tripType === 'simple') {
+                const req = (job.isPintura || job.isGrabado) ? ((job.qtyPintura || 0) + (job.qtyGrabado || 0)) : 1;
+                const cur = Object.values(formData.photos || {}).filter(v => v).length;
+                if (formData.observations) p += 33;
+                if (cur >= req) p += 33;
+                if (formData.signatureData || formData.noReception) p += 34;
+              } else {
+                if (formData.brand && formData.model && formData.plateOrVin) p += 25;
+                if (formData.fuelLevel !== undefined) p += 25;
+                if (Object.values(formData.photos || {}).filter(v => v).length >= 2) p += 25;
+                if (formData.signatureData || formData.noReception) p += 25;
+              }
+              return Math.min(100, p);
+            })()
               }%`
           }}></div>
         </div>
@@ -1250,12 +1250,12 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                 <div className="relative w-full max-w-[280px] h-[400px] mx-auto my-6">
                   <div
                     className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 cursor-crosshair transition-all duration-300 ease-out drop-shadow-lg ${!formData.zoomZone ? 'scale-100 z-10 hover:opacity-90' :
-                        formData.zoomZone === 'tl' ? 'scale-[1.8] origin-top-left z-50' :
-                          formData.zoomZone === 'tr' ? 'scale-[1.8] origin-top-right z-50' :
-                            formData.zoomZone === 'ml' ? 'scale-[1.8] origin-left z-50' :
-                              formData.zoomZone === 'mr' ? 'scale-[1.8] origin-right z-50' :
-                                formData.zoomZone === 'bl' ? 'scale-[1.8] origin-bottom-left z-50' :
-                                  'scale-[1.8] origin-bottom-right z-50'
+                      formData.zoomZone === 'tl' ? 'scale-[1.8] origin-top-left z-50' :
+                        formData.zoomZone === 'tr' ? 'scale-[1.8] origin-top-right z-50' :
+                          formData.zoomZone === 'ml' ? 'scale-[1.8] origin-left z-50' :
+                            formData.zoomZone === 'mr' ? 'scale-[1.8] origin-right z-50' :
+                              formData.zoomZone === 'bl' ? 'scale-[1.8] origin-bottom-left z-50' :
+                                'scale-[1.8] origin-bottom-right z-50'
                       }`}
                     style={{ height: formData.vehicleType?.includes('camion') || formData.vehicleType === 'furgon_grande' || formData.vehicleType === 'carro_arrastre' ? '260px' : '220px' }}
                     onClick={(e) => {
@@ -1575,10 +1575,10 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
                       <div
                         className={`h-full transition-all duration-300 ease-out flex items-center justify-end pr-2 relative ${formData.fuelLevel < 30
-                            ? 'bg-[repeating-linear-gradient(45deg,#ef4444,#ef4444_10px,#dc2626_10px,#dc2626_20px)]'
-                            : formData.fuelLevel <= 50
-                              ? 'bg-amber-400'
-                              : 'bg-green-500'
+                          ? 'bg-[repeating-linear-gradient(45deg,#ef4444,#ef4444_10px,#dc2626_10px,#dc2626_20px)]'
+                          : formData.fuelLevel <= 50
+                            ? 'bg-amber-400'
+                            : 'bg-green-500'
                           }`}
                         style={{ width: `${formData.fuelLevel}%` }}
                       >
@@ -1672,7 +1672,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                 <div className="flex items-center gap-3">
                   <input type="number" placeholder="Ej: 145000" value={formData.mileage || ''} onChange={e => setF('mileage', e.target.value)} className="flex-1 border-2 border-slate-300 p-3 rounded-xl font-bold text-slate-700 text-sm outline-none focus:border-blue-500" />
                   <button type="button" onClick={() => handlePhotoClick('mileage', 'Foto del Odómetro')} className={`h-[48px] px-4 rounded-xl font-black flex items-center justify-center gap-2 transition-all ${formData.photos?.mileage ? 'bg-green-100 text-green-700 border-2 border-green-400 shadow-sm' : 'bg-slate-200 text-slate-600 hover:bg-slate-300 border-2 border-transparent'}`}>
-                    {formData.photos?.mileage ? <><CheckCircle className="w-5 h-5"/> Lista</> : <><Camera className="w-5 h-5"/> Foto</>}
+                    {formData.photos?.mileage ? <><CheckCircle className="w-5 h-5" /> Lista</> : <><Camera className="w-5 h-5" /> Foto</>}
                   </button>
                 </div>
               </div>
