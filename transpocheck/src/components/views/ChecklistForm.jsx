@@ -105,18 +105,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
   useEffect(() => {
     if (formData.prtArrivalTime && formData.rtStatus === 'pendiente') {
       const interval = setInterval(() => setNowTick(Date.now()), 60000); // Actualiza el UI del reloj cada 1 minuto
-      
-  const formProps = {
-    job, formData, setF, handleImageUpload, removeImage, getRouteStr, drivers,
-    handleQuickSetLocation, step, setStep, showAlert, allClientsList,
-    addDamageMarker, removeDamageMarker, updateDamageMarker, selectedDamageIndex,
-    setSelectedDamageIndex, showHelpOverlay, setShowHelpOverlay, currentImageIndex,
-    setCurrentImageIndex, setShowDamageModal, showDamageModal, tempDamageData,
-    setTempDamageData, fileInputRef, processingId, currentUserEmail,
-    showDejaVuModal, setShowDejaVuModal, dejaVuData, handleAcceptDejaVu
-  };
-
-  return () => clearInterval(interval);
+      return () => clearInterval(interval);
     }
   }, [formData.prtArrivalTime, formData.rtStatus]);
 
@@ -741,6 +730,16 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
   };
 
   if (isInvalidJob) return null;
+
+  const formProps = {
+    job, formData, setF, handleImageUpload, removeImage, getRouteStr, drivers,
+    handleQuickSetLocation, step, setStep, showAlert, allClientsList,
+    addDamageMarker, removeDamageMarker, updateDamageMarker, selectedDamageIndex,
+    setSelectedDamageIndex, showHelpOverlay, setShowHelpOverlay, currentImageIndex,
+    setCurrentImageIndex, setShowDamageModal, showDamageModal, tempDamageData,
+    setTempDamageData, fileInputRef, processingId, currentUserEmail,
+    showDejaVuModal, setShowDejaVuModal, dejaVuData, handleAcceptDejaVu
+  };
 
   return (
     <div className="bg-white rounded-3xl shadow-xl border pb-10 relative">
