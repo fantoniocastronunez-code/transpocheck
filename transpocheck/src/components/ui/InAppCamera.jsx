@@ -152,6 +152,7 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
                LENTE {currentIndex + 1}
              </button>
            )}
+           <button onClick={() => setDigitalZoom(0.5)} className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${digitalZoom === 0.5 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>0.5x</button>
            <button onClick={() => setDigitalZoom(1)} className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${digitalZoom === 1 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>1x</button>
            <button onClick={() => setDigitalZoom(2)} className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${digitalZoom === 2 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>2x</button>
          </div>
