@@ -7,6 +7,7 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [landscapeAngle, setLandscapeAngle] = useState(0);
   const [digitalZoom, setDigitalZoom] = useState(1);
+  const [activeZoomLabel, setActiveZoomLabel] = useState(1);
   const videoRef = useRef(null);
 
   const startCamera = async (deviceId = null, isFirst = false) => {
@@ -44,6 +45,7 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
         setDevices([]);
         setCurrentIndex(0);
         setLandscapeAngle(0);
+        setActiveZoomLabel(1);
     }
     return () => {
         if (stream) stream.getTracks().forEach(t => t.stop());
@@ -78,10 +80,44 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
     return () => window.removeEventListener('deviceorientation', handleOrientation);
   }, [isOpen]);
 
-  const setLens = (index) => {
-    if (index < 0 || index >= devices.length || index === currentIndex) return;
-    startCamera(devices[index].deviceId, false);
-    setCurrentIndex(index);
+  const setZoomLevel = (level) => {
+    setActiveZoomLabel(level);
+    
+    if (devices.length === 0) {
+       setDigitalZoom(level >= 1 ? level : 1);
+       return;
+    }
+
+    const findByKeyword = (keywords) => devices.find(d => keywords.some(k => d.label.toLowerCase().includes(k)));
+    let targetDevice = null;
+    let fallbackDigitalZoom = 1;
+
+    if (level === 0.5) {
+       // Buscar lente ultra gran angular
+       targetDevice = findByKeyword(['ultra', 'gran angular', 'wide', '0.5']) || devices[devices.length - 1]; 
+       fallbackDigitalZoom = 1; // Evitar achicar con CSS (sin bordes negros)
+    } else if (level === 2) {
+       // Buscar lente telefoto
+       targetDevice = findByKeyword(['tele', 'telephoto', 'zoom', '2x']);
+       if (!targetDevice) {
+           // Si no hay telefoto físico, usar principal + zoom digital 2x
+           targetDevice = findByKeyword(['main', 'principal', 'back camera', 'cámara trasera', 'posterior']) || devices[0];
+           fallbackDigitalZoom = 2;
+       } else {
+           fallbackDigitalZoom = 1;
+       }
+    } else {
+       // 1x Lente principal
+       targetDevice = findByKeyword(['main', 'principal', 'back camera', 'cámara trasera', 'posterior']) || devices[0];
+       fallbackDigitalZoom = 1;
+    }
+
+    if (targetDevice && devices[currentIndex] && targetDevice.deviceId !== devices[currentIndex].deviceId) {
+       startCamera(targetDevice.deviceId, false);
+       const idx = devices.findIndex(d => d.deviceId === targetDevice.deviceId);
+       if (idx !== -1) setCurrentIndex(idx);
+    }
+    setDigitalZoom(fallbackDigitalZoom);
   };
 
   const takeInAppPhoto = () => {
@@ -147,14 +183,9 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title }) {
          )}
          
          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex bg-black/60 backdrop-blur-md p-1 rounded-full border border-white/20 z-20 shadow-xl">
-           {devices.length > 1 && (
-             <button onClick={() => setLens((currentIndex + 1) % devices.length)} className="px-3 h-10 rounded-full text-xs font-black text-slate-300 hover:text-white border-r border-white/20 mr-1">
-               LENTE {currentIndex + 1}
-             </button>
-           )}
-           <button onClick={() => setDigitalZoom(0.5)} className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${digitalZoom === 0.5 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>0.5x</button>
-           <button onClick={() => setDigitalZoom(1)} className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${digitalZoom === 1 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>1x</button>
-           <button onClick={() => setDigitalZoom(2)} className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${digitalZoom === 2 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>2x</button>
+           <button onClick={() => setZoomLevel(0.5)} className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${activeZoomLabel === 0.5 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>0.5x</button>
+           <button onClick={() => setZoomLevel(1)} className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${activeZoomLabel === 1 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>1x</button>
+           <button onClick={() => setZoomLevel(2)} className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${activeZoomLabel === 2 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>2x</button>
          </div>
       </div>
       
