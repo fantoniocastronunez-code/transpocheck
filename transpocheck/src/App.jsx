@@ -452,7 +452,7 @@ function LogisticApp() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 flex flex-col items-center justify-center p-4">
         {globalStyles}
-        <div className="bg-white p-8 sm:p-10 rounded-3xl shadow-xl w-full max-w-md text-center border border-blue-50">
+        <div className="bg-white dark:bg-slate-900 p-8 sm:p-10 rounded-3xl shadow-xl w-full max-w-md text-center border border-blue-50">
           <div className="bg-blue-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-200 transform rotate-3 hover:rotate-0 transition-transform"><Car className="w-10 h-10 text-white" /></div>
           <h1 className="text-4xl font-extrabold text-slate-900 mb-2 tracking-tight">LogisticAPP</h1>
           
@@ -503,7 +503,7 @@ function LogisticApp() {
                    type="email" 
                    placeholder="Ingresa tu correo autorizado..." 
                    required 
-                   className="w-full border-2 border-slate-200 p-4 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 text-center transition-colors shadow-inner" 
+                   className="w-full border-2 border-slate-200 dark:border-slate-700 p-4 rounded-2xl text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500 text-center transition-colors shadow-inner" 
                  />
                  <button type="submit" className="w-full bg-slate-800 hover:bg-slate-900 text-white font-black py-4 rounded-2xl shadow-lg transition-colors text-sm flex items-center justify-center gap-2 disabled:opacity-70">
                    <Search className="w-5 h-5" /> Ingresar a mi portal
@@ -512,9 +512,9 @@ function LogisticApp() {
           </div>
 
           {/* SECCIÓN 2: ACCESO EQUIPO INTERNO */}
-          <div className="pt-6 border-t border-slate-100">
+          <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Equipo Interno</p>
-             <button onClick={() => signInWithPopup(auth, googleProvider).catch(e => alert("Error de Acceso: " + e.message))} className="w-full bg-white border-2 border-slate-200 text-slate-700 font-bold py-3.5 px-4 rounded-2xl shadow-sm hover:bg-slate-50 flex items-center justify-center gap-3 transition-all text-sm">
+             <button onClick={() => signInWithPopup(auth, googleProvider).catch(e => alert("Error de Acceso: " + e.message))} className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold py-3.5 px-4 rounded-2xl shadow-sm hover:bg-slate-50 dark:bg-slate-900/50 flex items-center justify-center gap-3 transition-all text-sm">
                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" /> Ingresar con Google
              </button>
           </div>
@@ -525,10 +525,10 @@ function LogisticApp() {
   // NUEVO: Pantalla de carga global mientras Firebase descarga la base de datos
   if (!dataLoaded) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center justify-center p-4">
         {globalStyles}
         <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4 shadow-sm"></div>
-        <p className="text-lg font-extrabold text-slate-700 tracking-tight">Sincronizando datos...</p>
+        <p className="text-lg font-extrabold text-slate-700 dark:text-slate-300 tracking-tight">Sincronizando datos...</p>
         <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">LogisticAPP</p>
       </div>
     );
@@ -568,19 +568,19 @@ function LogisticApp() {
   // EXCEPCIÓN: Conductores con rol part_time o asignados temporalmente entran directo a trabajar.
   if (activeRole === 'driver' && !isPartTimeAssigned && myDriver?.role !== 'part_time' && (needsOnboarding || !myDriver)) {
     return (
-      <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-10 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-200">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 font-sans pb-10 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-200">
         {globalStyles}
         <header className="fixed-nav-bar bg-blue-600 dark:bg-black dark:border-b dark:border-slate-800 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors">
            <div className="flex items-center gap-3">
-             <div className="bg-white/20 p-1.5 rounded-xl"><img src="/logo.png" className="w-8 h-8 object-contain"/></div>
+             <div className="bg-white dark:bg-slate-900/20 p-1.5 rounded-xl"><img src="/logo.png" className="w-8 h-8 object-contain"/></div>
              <h1 className="font-alfa text-xl text-white">Verificación Obligatoria</h1>
            </div>
            {isRealAdmin ? (
-             <button onClick={() => { setActiveRole('admin'); setRoleMenuOpen(false); }} className="bg-white/10 hover:bg-white/20 p-2.5 rounded-xl text-white transition-colors flex items-center gap-2 text-xs font-bold">
+             <button onClick={() => { setActiveRole('admin'); setRoleMenuOpen(false); }} className="bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 p-2.5 rounded-xl text-white transition-colors flex items-center gap-2 text-xs font-bold">
                <LogOut className="w-4 h-4" /> Salir a Admin
              </button>
            ) : (
-             <button onClick={() => signOut(auth)} className="bg-white/10 hover:bg-white/20 p-2.5 rounded-xl text-white transition-colors flex items-center gap-2 text-xs font-bold">
+             <button onClick={() => signOut(auth)} className="bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 p-2.5 rounded-xl text-white transition-colors flex items-center gap-2 text-xs font-bold">
                <LogOut className="w-4 h-4" /> Salir
              </button>
            )}
@@ -596,7 +596,7 @@ function LogisticApp() {
                  <User className="absolute inset-0 m-auto w-8 h-8 text-blue-600" />
                </div>
                <p className="font-black text-slate-800 dark:text-slate-100 text-xl">Creando credenciales...</p>
-               <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider leading-relaxed">Estableciendo conexión segura con la central logística</p>
+               <p className="text-xs font-bold text-slate-400 dark:text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-relaxed">Estableciendo conexión segura con la central logística</p>
              </div>
            )}
         </main>
@@ -606,12 +606,12 @@ function LogisticApp() {
   // -----------------------------------------------------------------
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-32 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-200">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 font-sans pb-32 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-200">
       {globalStyles}
       <header className="fixed-nav-bar bg-blue-600 dark:bg-black dark:border-b dark:border-slate-800 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300">
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
       {/* Logo de la app más pequeño en móvil */}
-      <div className="bg-white/20 p-1 sm:p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">
+      <div className="bg-white dark:bg-slate-900/20 p-1 sm:p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">
         <img src="/logo.png" alt="Logo App" className="w-7 h-7 sm:w-12 sm:h-12 object-contain" />
       </div>
       
@@ -621,7 +621,7 @@ function LogisticApp() {
       </h1>
       
       {/* Logo Logística TS SpA ajustado al nuevo tamaño */}
-      <div className="bg-white/20 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0 ml-0.5 sm:ml-1 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900/20 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0 ml-0.5 sm:ml-1 overflow-hidden">
         <img src="/LogoLogistica.png" alt="Logística TS SpA" className="h-8 sm:h-15 object-contain" />
       </div>
     </div>
@@ -634,14 +634,14 @@ function LogisticApp() {
                 setSettingsOpen(!settingsOpen);
                 setRoleMenuOpen(false); // <-- NUEVO: Cierra el ojo al abrir la tuerca
               }} 
-              className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors shadow-sm border border-white/10"
+              className="p-2 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 rounded-xl transition-colors shadow-sm border border-white/10"
             >
               <Settings className="w-5 h-5 text-white" />
             </button>
             
             {settingsOpen && (
-              <div className="absolute right-0 top-12 mt-1 w-64 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2">
-                <div className="p-3 border-b border-slate-100 bg-slate-50">
+              <div className="absolute right-0 top-12 mt-1 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2">
+                <div className="p-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
                   <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider text-center">Ajustes de App</p>
                 </div>
                 
@@ -665,23 +665,23 @@ function LogisticApp() {
                 <div className="p-4 space-y-5">
                   {/* Estado de Red */}
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-slate-700">Señal de Red</span>
+                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Señal de Red</span>
                     <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-black tracking-widest uppercase shadow-sm border transition-all duration-300 ${isOnline ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-red-100 text-red-600 border-red-300 animate-pulse'}`}>
                       {isOnline ? <><Wifi className="w-4 h-4"/> EN LÍNEA</> : <><CloudOff className="w-4 h-4"/> SIN CONEXIÓN</>}
                     </div>
                   </div>
                   {/* Switch Modo Oscuro */}
-                  <div className="flex items-center justify-between border-t border-slate-100 pt-4">
-                    <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                  <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-4">
+                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                       {darkMode ? <Moon className="w-4 h-4 text-blue-600"/> : <Sun className="w-4 h-4 text-amber-500"/>} Modo Oscuro
                     </span>
                     <button onClick={() => setDarkMode(!darkMode)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shadow-inner ${darkMode ? 'bg-blue-600' : 'bg-slate-300'}`}>
-                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${darkMode ? 'translate-x-6' : 'translate-x-1'}`} />
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white dark:bg-slate-900 shadow-sm transition-transform ${darkMode ? 'translate-x-6' : 'translate-x-1'}`} />
                     </button>
                   </div>
                   {/* Permisos de Notificaciones */}
-                  <div className="flex items-center justify-between border-t border-slate-100 pt-4">
-                    <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                  <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-4">
+                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                       <Bell className={`w-4 h-4 ${notificationsEnabled ? 'text-green-500' : 'text-amber-500 animate-pulse'}`}/> Notificaciones
                     </span>
                     {!notificationsEnabled ? (
@@ -739,7 +739,7 @@ function LogisticApp() {
                   )}
                   
                   {/* --- BOTÓN CERRAR SESIÓN --- */}
-                  <div className="border-t border-slate-100 pt-4 mt-2">
+                  <div className="border-t border-slate-100 dark:border-slate-800 pt-4 mt-2">
                      <p className="text-[10px] text-center font-bold text-slate-400 mb-2 truncate">Sesión: {currentUserEmail}</p>
                      <button onClick={() => signOut(auth)} className="w-full py-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-colors border border-red-100 shadow-sm active:scale-95">
                         <LogOut className="w-4 h-4"/> Cerrar Sesión
@@ -748,7 +748,7 @@ function LogisticApp() {
 
                 </div>
                 {/* VERSIÓN DE LA APP */}
-                <div className="bg-slate-50 p-2.5 text-center border-t border-slate-100">
+                <div className="bg-slate-50 dark:bg-slate-900/50 p-2.5 text-center border-t border-slate-100 dark:border-slate-800">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">LogisticAPP v.3.2.1</p>
                 </div>
               </div>
@@ -762,7 +762,7 @@ function LogisticApp() {
                 setRoleMenuOpen(!roleMenuOpen);
                 setSettingsOpen(false); // <-- NUEVO: Cierra la tuerca al abrir el ojo
               }} 
-              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-3 py-2 rounded-xl transition-colors shadow-sm border border-white/10"
+              className="flex items-center gap-2 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 px-3 py-2 rounded-xl transition-colors shadow-sm border border-white/10"
             >
               <Eye className="w-5 h-5 text-white"/>
                 <span className="hidden md:inline">
@@ -778,12 +778,12 @@ function LogisticApp() {
                   <div className="p-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50"><p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider text-center">Panel de Control General</p></div>
                   
                   
-                  <button onClick={() => { setActiveRole('admin'); setMainTab('jobs'); setSimulatedDriverEmail(''); setRoleMenuOpen(false); }} className={`w-full text-left px-4 py-3 text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors ${activeRole==='admin'?'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30':'text-slate-600 dark:text-slate-300'}`}>
+                  <button onClick={() => { setActiveRole('admin'); setMainTab('jobs'); setSimulatedDriverEmail(''); setRoleMenuOpen(false); }} className={`w-full text-left px-4 py-3 text-sm font-bold hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors ${activeRole==='admin'?'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30':'text-slate-600 dark:text-slate-300'}`}>
                      <Users className="w-4 h-4"/> Volver a Administrador
                   </button>
 
                   {/* NUEVA SECCIÓN: ASISTIR/SIMULAR CONDUCTOR (DISEÑO MEJORADO Y RÁPIDO) */}
-                  <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+                  <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50/50 dark:bg-slate-800/30">
                      <p className="text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 mb-2"><Car className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400"/> Entrar como Conductor</p>
                      
                      {/* BOTÓN RÁPIDO DE FAVORITO */}
@@ -806,7 +806,7 @@ function LogisticApp() {
                             </button>
                             {/* Estrella para fijarlo como favorito arriba */}
                             <button onClick={(e) => { e.stopPropagation(); setFavDriverEmail(d.email); localStorage.setItem('favDriverEmail', d.email); }} className="p-2 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors" title="Fijar como Favorito">
-                               <Star className={`w-4 h-4 transition-colors ${favDriverEmail === d.email ? 'fill-amber-400 text-amber-400' : 'text-slate-300 dark:text-slate-600 group-hover:text-amber-400 hover:text-amber-500'}`} />
+                               <Star className={`w-4 h-4 transition-colors ${favDriverEmail === d.email ? 'fill-amber-400 text-amber-400' : 'text-slate-300 dark:text-slate-600 dark:text-slate-400 group-hover:text-amber-400 hover:text-amber-500'}`} />
                             </button>
                          </div>
                          );
@@ -839,19 +839,19 @@ function LogisticApp() {
                 {activeRole === 'admin' ? (
                   <>
                     <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-6 bg-white dark:bg-slate-900/50 p-2 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
-                    <button onClick={() => {setAdminTab('dashboard'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='dashboard'?'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}><ClipboardList className="w-4 h-4 sm:w-5 sm:h-5"/> Monitor</button>
-                    <button onClick={() => {setAdminTab('newJob'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='newJob'?'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}><Plus className="w-4 h-4 sm:w-5 sm:h-5"/> Crear</button>
-                    <button onClick={() => setAdminTab('stats')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='stats'?'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 shadow-sm':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}><Activity className="w-4 h-4 sm:w-5 sm:h-5"/> Estadísticas</button>
+                    <button onClick={() => {setAdminTab('dashboard'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='dashboard'?'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-800/50'}`}><ClipboardList className="w-4 h-4 sm:w-5 sm:h-5"/> Monitor</button>
+                    <button onClick={() => {setAdminTab('newJob'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='newJob'?'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-800/50'}`}><Plus className="w-4 h-4 sm:w-5 sm:h-5"/> Crear</button>
+                    <button onClick={() => setAdminTab('stats')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='stats'?'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 shadow-sm':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-800/50'}`}><Activity className="w-4 h-4 sm:w-5 sm:h-5"/> Estadísticas</button>
                     {isSuperAdmin && (
-                      <button onClick={() => setAdminTab('config')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='config'?'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}><Truck className="w-4 h-4 sm:w-5 sm:h-5"/> Config</button>
+                      <button onClick={() => setAdminTab('config')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='config'?'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-800/50'}`}><Truck className="w-4 h-4 sm:w-5 sm:h-5"/> Config</button>
                     )}
-                    <button onClick={() => setAdminTab('history')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='history'?'bg-slate-800 dark:bg-slate-700 text-white shadow-md':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}><ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5"/> Peritaje</button>
+                    <button onClick={() => setAdminTab('history')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='history'?'bg-slate-800 dark:bg-slate-700 text-white shadow-md':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-800/50'}`}><ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5"/> Peritaje</button>
                   </div>
                     
                     {adminTab === 'dashboard' && (
                       <div className="space-y-6">
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                          <h2 className="text-2xl font-extrabold text-slate-800">Monitor de Trabajos</h2>
+                          <h2 className="text-2xl font-extrabold text-slate-800 dark:text-slate-200">Monitor de Trabajos</h2>
                           <button onClick={exportToExcel} className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex justify-center items-center gap-2 shadow-lg shadow-green-200 transition-colors"><Download className="w-5 h-5"/> Exportar Excel</button>
                         </div>
                         <JobsList 
@@ -875,7 +875,7 @@ function LogisticApp() {
                   </>
                 ) : (
                   <div className="space-y-6">
-                    <h2 className="text-2xl font-extrabold text-slate-800">Mis Trabajos Asignados</h2>
+                    <h2 className="text-2xl font-extrabold text-slate-800 dark:text-slate-200">Mis Trabajos Asignados</h2>
                     <JobsList 
                        jobs={jobs} drivers={drivers} vehicles={vehicles} role="driver" 
                        onStartChecklist={(j) => {setSelectedJob(j); navigate('/checklist')}} 
@@ -902,7 +902,7 @@ function LogisticApp() {
                      <FileDown className="w-24 h-24 absolute -bottom-4 -right-2 text-white opacity-10 transform -rotate-12"/>
                   </div>
 
-                  <label className="w-full bg-white border-2 border-dashed border-indigo-300 hover:bg-indigo-50 text-indigo-600 p-6 rounded-3xl font-black text-sm flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm mb-6">
+                  <label className="w-full bg-white dark:bg-slate-900 border-2 border-dashed border-indigo-300 hover:bg-indigo-50 text-indigo-600 p-6 rounded-3xl font-black text-sm flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm mb-6">
                      <input type="file" accept="application/pdf,image/*" className="hidden" onChange={async (e) => {
                          const f = e.target.files[0];
                          if (!f) return;
@@ -955,17 +955,17 @@ function LogisticApp() {
                   <div className="space-y-4">
                      <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest px-2">Archivos Pendientes ({inboxDocs.length})</h3>
                      {inboxDocs.length === 0 ? (
-                        <div className="bg-white border border-slate-100 rounded-3xl p-8 text-center shadow-sm">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-8 text-center shadow-sm">
                            <FileText className="w-12 h-12 text-slate-200 mx-auto mb-3"/>
-                           <p className="text-sm font-bold text-slate-500">No tienes documentos sin asignar.</p>
+                           <p className="text-sm font-bold text-slate-500 dark:text-slate-400">No tienes documentos sin asignar.</p>
                         </div>
                      ) : (
                         inboxDocs.map(docItem => (
-                           <div key={docItem.id} className="bg-white p-4 rounded-2xl shadow-sm border-2 border-slate-100 flex flex-col gap-4 relative overflow-hidden">
+                           <div key={docItem.id} className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border-2 border-slate-100 dark:border-slate-800 flex flex-col gap-4 relative overflow-hidden">
                               <div className="flex items-center gap-3">
                                  <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-100"><FileText className="w-6 h-6 text-indigo-600"/></div>
                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-black text-slate-800 truncate">{docItem.fileName}</p>
+                                    <p className="text-sm font-black text-slate-800 dark:text-slate-200 truncate">{docItem.fileName}</p>
                                     <p className="text-[10px] font-bold text-slate-400 mt-0.5">{new Date(docItem.createdAt).toLocaleString()}</p>
                                  </div>
                                  <button onClick={async () => {
@@ -973,9 +973,9 @@ function LogisticApp() {
                                      showConfirm("¿Eliminar este documento?", () => deleteDoc(doc(db, 'inbox', docItem.id)));
                                  }} className="p-2.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-colors"><Trash2 className="w-4 h-4"/></button>
                               </div>
-                              <div className="flex gap-2 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                              <div className="flex gap-2 bg-slate-50 dark:bg-slate-900/50 p-2 rounded-xl border border-slate-100 dark:border-slate-800">
 
-                                 <a href={docItem.url} target="_blank" rel="noopener noreferrer" className="flex-1 bg-white border border-slate-200 text-slate-600 py-2.5 rounded-lg text-xs font-black flex items-center justify-center gap-1.5 shadow-sm hover:bg-slate-50">
+                                 <a href={docItem.url} target="_blank" rel="noopener noreferrer" className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 py-2.5 rounded-lg text-xs font-black flex items-center justify-center gap-1.5 shadow-sm hover:bg-slate-50 dark:bg-slate-900/50">
                                      <Eye className="w-4 h-4"/> VER
                                  </a>
                                  
@@ -1042,25 +1042,25 @@ function LogisticApp() {
               ) : (
                 <>
                   {activeRole === 'admin' ? (
-                    <button onClick={() => setMainTab('quotes')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='quotes' ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400 dark:text-slate-500 hover:text-purple-600 dark:hover:text-purple-400'}`}>
+                    <button onClick={() => setMainTab('quotes')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='quotes' ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400'}`}>
                        <div className={`${mainTab==='quotes' ? 'bg-purple-100 dark:bg-purple-900/40' : 'bg-slate-100 dark:bg-slate-800'} p-2 rounded-xl mb-1`}><Receipt className="w-5 h-5"/></div>
                        <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Cotizar</span>
                     </button>
                   ) : (
-                    <button onClick={() => setShowRequestJob('traslado')} className="flex flex-col items-center text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-1">
+                    <button onClick={() => setShowRequestJob('traslado')} className="flex flex-col items-center text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-1">
                        <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded-xl mb-1"><Plus className="w-5 h-5"/></div>
                        <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Solicitar</span>
                     </button>
                   )}
-                  <button onClick={() => setMainTab('jobs')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='jobs' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400'}`}>
+                  <button onClick={() => setMainTab('jobs')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='jobs' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400'}`}>
                      <div className={`${mainTab==='jobs' ? 'bg-blue-100 dark:bg-blue-900/40' : 'bg-transparent'} p-2 rounded-xl mb-1`}><ClipboardList className="w-5 h-5"/></div>
                      <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Trabajos</span>
                   </button>
-                  <button onClick={() => setMainTab('ranking')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='ranking' ? 'text-yellow-600 dark:text-yellow-500' : 'text-slate-400 dark:text-slate-500 hover:text-yellow-600 dark:hover:text-yellow-500'}`}>
+                  <button onClick={() => setMainTab('ranking')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='ranking' ? 'text-yellow-600 dark:text-yellow-500' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-yellow-600 dark:hover:text-yellow-500'}`}>
                      <div className={`${mainTab==='ranking' ? 'bg-yellow-100 dark:bg-yellow-900/40' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Trophy className="w-5 h-5"/></div>
                      <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Ranking</span>
                   </button>
-                  <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='expenses' ? 'text-emerald-600 dark:text-emerald-500' : 'text-slate-400 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-500'}`}>
+                  <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='expenses' ? 'text-emerald-600 dark:text-emerald-500' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-500'}`}>
                      <div className={`${mainTab==='expenses' ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Wallet className="w-5 h-5"/></div>
                      <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Gastos</span>
                   </button>
@@ -1186,26 +1186,26 @@ function LogisticApp() {
               } catch (err) {
                   showAlert("Error al crear la solicitud.");
               }
-          }} className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl relative animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
-              <button type="button" onClick={()=>setShowRequestJob(false)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-700"/></button>
+          }} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl relative animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+              <button type="button" onClick={()=>setShowRequestJob(false)} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-700 dark:text-slate-300"/></button>
               
-              <div className="flex items-center gap-3 mb-4 border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-3 mb-4 border-b border-slate-100 dark:border-slate-800 pb-3">
                 <div className="bg-blue-100 p-2.5 rounded-full"><Plus className="w-6 h-6 text-blue-600"/></div>
-                <h3 className="text-xl font-black text-slate-800 leading-tight">Solicitar<br/>Trabajo</h3>
+                <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 leading-tight">Solicitar<br/>Trabajo</h3>
               </div>
 
               {/* SELECTOR DE TIPO DE TRABAJO (4 OPCIONES) */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 bg-slate-100 p-1 rounded-xl mb-5 gap-1 shadow-inner">
-                 <button type="button" onClick={() => setShowRequestJob('traslado')} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'traslado' || showRequestJob === true ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-500 hover:bg-slate-200'}`}><Car className="w-3.5 h-3.5"/> Local</button>
-                 <button type="button" onClick={() => setShowRequestJob('simple')} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'simple' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-200'}`}><FileText className="w-3.5 h-3.5"/> Servicio</button>
-                 <button type="button" onClick={() => setShowRequestJob('viaje')} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'viaje' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-200'}`}><MapPin className="w-3.5 h-3.5"/> Regiones</button>
-                 <button type="button" onClick={() => setShowRequestJob('revision')} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'revision' ? 'bg-amber-500 text-white shadow-md' : 'text-slate-500 hover:bg-slate-200'}`}><CheckCircle className="w-3.5 h-3.5"/> PRT</button>
+              <div className="grid grid-cols-2 sm:grid-cols-4 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl mb-5 gap-1 shadow-inner">
+                 <button type="button" onClick={() => setShowRequestJob('traslado')} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'traslado' || showRequestJob === true ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200'}`}><Car className="w-3.5 h-3.5"/> Local</button>
+                 <button type="button" onClick={() => setShowRequestJob('simple')} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'simple' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200'}`}><FileText className="w-3.5 h-3.5"/> Servicio</button>
+                 <button type="button" onClick={() => setShowRequestJob('viaje')} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'viaje' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200'}`}><MapPin className="w-3.5 h-3.5"/> Regiones</button>
+                 <button type="button" onClick={() => setShowRequestJob('revision')} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'revision' ? 'bg-amber-500 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200'}`}><CheckCircle className="w-3.5 h-3.5"/> PRT</button>
               </div>
               
               <div className="space-y-4">
                  <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Empresa / Cliente</label>
-                    <select name="client" required className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500 bg-white">
+                    <select name="client" required className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500 bg-white dark:bg-slate-900">
                        <option value="">Selecciona un cliente...</option>
                        {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
@@ -1230,7 +1230,7 @@ function LogisticApp() {
                                       if (exists) e.target.form.client.value = found.client;
                                   }
                               }
-                          }} className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-black uppercase text-slate-800 outline-none focus:border-purple-500"/>
+                          }} className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-black uppercase text-slate-800 dark:text-slate-200 outline-none focus:border-purple-500"/>
                        </div>
                     </>
                  ) : (
@@ -1251,11 +1251,11 @@ function LogisticApp() {
 
                           <div className="space-y-1">
                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Marca</label>
-                             <input name="brand" list="request-brands-list" required placeholder="Ej: CHEVROLET" onChange={(e) => e.target.value = e.target.value.toUpperCase()} className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500 uppercase"/>
+                             <input name="brand" list="request-brands-list" required placeholder="Ej: CHEVROLET" onChange={(e) => e.target.value = e.target.value.toUpperCase()} className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500 uppercase"/>
                           </div>
                           <div className="space-y-1">
                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Modelo</label>
-                             <input name="model" list="request-models-list" required placeholder="Ej: SPARK" onChange={(e) => e.target.value = e.target.value.toUpperCase()} className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500 uppercase"/>
+                             <input name="model" list="request-models-list" required placeholder="Ej: SPARK" onChange={(e) => e.target.value = e.target.value.toUpperCase()} className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500 uppercase"/>
                           </div>
                        </div>
                        <div className="space-y-1">
@@ -1276,7 +1276,7 @@ function LogisticApp() {
                                       }
                                   }
                               }
-                          }} className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-black uppercase text-slate-800 outline-none focus:border-blue-500"/>
+                          }} className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-black uppercase text-slate-800 dark:text-slate-200 outline-none focus:border-blue-500"/>
                        </div>
                     </>
                  )}
@@ -1288,7 +1288,7 @@ function LogisticApp() {
 
                  <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Desde (Origen)</label>
-                    <input name="origin" list="directory-places" required placeholder="Toca para buscar o escribe..." className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"/>
+                    <input name="origin" list="directory-places" required placeholder="Toca para buscar o escribe..." className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500"/>
                  </div>
                  <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Hasta (Destino)</label>
@@ -1298,7 +1298,7 @@ function LogisticApp() {
                         {prtList.map((p, i) => <option key={i} value={p.name}>{p.name}</option>)}
                       </select>
                     ) : (
-                      <input name="destination" list="directory-places" required placeholder="Toca para buscar o escribe..." className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-blue-500"/>
+                      <input name="destination" list="directory-places" required placeholder="Toca para buscar o escribe..." className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500"/>
                     )}
                  </div>
                  
@@ -1314,11 +1314,11 @@ function LogisticApp() {
 
       {dialogConfig && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 transform transition-all animate-in zoom-in-95 duration-150">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-sm p-6 transform transition-all animate-in zoom-in-95 duration-150">
             <div className="flex items-center gap-3 mb-4"><div className="bg-blue-100 p-2 rounded-full">{dialogConfig.type === 'confirm' ? <AlertCircle className="w-6 h-6 text-blue-600"/> : <Bell className="w-6 h-6 text-blue-600"/>}</div><h3 className="text-xl font-extrabold">LogisticAPP</h3></div>
-            <p className="text-slate-600 font-bold mb-6 text-sm">{dialogConfig.message}</p>
+            <p className="text-slate-600 dark:text-slate-400 font-bold mb-6 text-sm">{dialogConfig.message}</p>
             <div className="flex gap-3">
-              {dialogConfig.type === 'confirm' && <button onClick={closeDialog} className="flex-1 py-2.5 bg-slate-100 rounded-xl font-bold text-sm">Cancelar</button>}
+              {dialogConfig.type === 'confirm' && <button onClick={closeDialog} className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold text-sm">Cancelar</button>}
               <button onClick={() => { if (dialogConfig.onConfirm) dialogConfig.onConfirm(); closeDialog(); }} className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm">Confirmar</button>
             </div>
           </div>
@@ -1337,19 +1337,19 @@ function LogisticApp() {
                 setShowBroadcastAdmin(false);
                 showAlert("✅ Anuncio enviado exitosamente a toda la flota.");
               } catch(err) { console.error(err); showAlert("Error enviando anuncio."); }
-          }} className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl relative animate-in zoom-in-95">
-              <button type="button" onClick={()=>setShowBroadcastAdmin(false)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-700"/></button>
+          }} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl relative animate-in zoom-in-95">
+              <button type="button" onClick={()=>setShowBroadcastAdmin(false)} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-700 dark:text-slate-300"/></button>
               <div className="flex items-center gap-3 mb-2">
                 <div className="bg-purple-100 p-2.5 rounded-full"><Megaphone className="w-6 h-6 text-purple-600"/></div>
-                <h3 className="text-xl font-black text-slate-800">Pop-up Global</h3>
+                <h3 className="text-xl font-black text-slate-800 dark:text-slate-200">Pop-up Global</h3>
               </div>
-              <p className="text-xs font-bold text-slate-500 mb-5 leading-relaxed">Envía una alerta urgente que aparecerá obligatoriamente en medio de la pantalla de todos los conductores al abrir la app.</p>
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-5 leading-relaxed">Envía una alerta urgente que aparecerá obligatoriamente en medio de la pantalla de todos los conductores al abrir la app.</p>
 
               {broadcast?.active && (
                 <div className="mb-5 bg-purple-50 p-4 rounded-2xl border border-purple-200 relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-1.5 h-full bg-purple-500"></div>
                     <p className="text-[10px] font-black text-purple-600 uppercase mb-1.5 tracking-widest">Anuncio Activo Actual:</p>
-                    <p className="text-sm font-bold text-slate-700 italic leading-snug">"{broadcast.message}"</p>
+                    <p className="text-sm font-bold text-slate-700 dark:text-slate-300 italic leading-snug">"{broadcast.message}"</p>
                     <button type="button" onClick={async () => {
                       await setDoc(doc(db, 'system_config', 'broadcast'), { active: false }, { merge: true });
                       showAlert("Anuncio apagado. Ya no le saldrá a nadie.");
@@ -1359,7 +1359,7 @@ function LogisticApp() {
 
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Escribir Nuevo Mensaje</label>
-                <textarea name="message" rows="4" required placeholder="Ej: Muchachos, recuerden tomar fotografías claras a los comprobantes de peaje..." className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500 resize-none"></textarea>
+                <textarea name="message" rows="4" required placeholder="Ej: Muchachos, recuerden tomar fotografías claras a los comprobantes de peaje..." className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 resize-none"></textarea>
               </div>
               <button type="submit" className="w-full mt-4 bg-purple-600 hover:bg-purple-700 text-white font-black py-3.5 rounded-xl shadow-lg shadow-purple-200 transition-colors text-sm">Emitir a toda la flota</button>
           </form>
@@ -1369,16 +1369,16 @@ function LogisticApp() {
       {/* --- POP-UP CONDUCTORES: MOSTRAR ANUNCIO --- */}
       {user && broadcast?.active && broadcast.timestamp.toString() !== localDismissed && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-300 border-4 border-purple-500 flex flex-col">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-300 border-4 border-purple-500 flex flex-col">
               <div className="bg-purple-600 p-6 text-center relative overflow-hidden">
                 <div className="absolute -top-10 -right-10 opacity-10"><Megaphone className="w-40 h-40 text-white"/></div>
-                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl relative z-10">
+                <div className="w-16 h-16 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl relative z-10">
                     <Megaphone className="w-8 h-8 text-purple-600 animate-pulse"/>
                 </div>
                 <h3 className="text-2xl font-black text-white relative z-10 tracking-wide">¡Aviso Importante!</h3>
               </div>
-              <div className="p-6 text-center flex-1 flex flex-col justify-center bg-slate-50">
-                <p className="text-base font-extrabold text-slate-700 mb-8 leading-relaxed whitespace-pre-wrap">{broadcast.message}</p>
+              <div className="p-6 text-center flex-1 flex flex-col justify-center bg-slate-50 dark:bg-slate-900/50">
+                <p className="text-base font-extrabold text-slate-700 dark:text-slate-300 mb-8 leading-relaxed whitespace-pre-wrap">{broadcast.message}</p>
                 <button onClick={() => {
                     localStorage.setItem('dismissedBroadcast', broadcast.timestamp.toString());
                     setLocalDismissed(broadcast.timestamp.toString());

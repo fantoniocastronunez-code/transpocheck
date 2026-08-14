@@ -273,8 +273,8 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
 
   const DocUploader = ({ field, label }) => (
     <div className="flex flex-col gap-1">
-        <span className="text-[9px] font-extrabold text-slate-500 uppercase">{label}</span>
-        <div className="relative h-20 w-full border-2 border-dashed border-slate-300 rounded-xl overflow-hidden bg-slate-50 group hover:border-blue-400 transition-colors flex items-center justify-center">
+        <span className="text-[9px] font-extrabold text-slate-500 dark:text-slate-400 uppercase">{label}</span>
+        <div className="relative h-20 w-full border-2 border-dashed border-slate-300 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-900/50 group hover:border-blue-400 transition-colors flex items-center justify-center">
             <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer z-20" onChange={(e) => handleDocUpload(e, field, 800)} />
             {driverDocs[field] ? (
                 <>
@@ -282,7 +282,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
                         <span className="text-white text-xs font-bold flex flex-col items-center"><Camera className="w-4 h-4 mb-1"/> Cambiar</span>
                     </div>
-                    <button type="button" onClick={(e) => { e.preventDefault(); setFullScreenDoc(driverDocs[field]); }} className="absolute top-1 right-1 bg-white p-1.5 rounded-lg shadow-md z-30 hover:bg-slate-100"><Eye className="w-3.5 h-3.5 text-blue-600"/></button>
+                    <button type="button" onClick={(e) => { e.preventDefault(); setFullScreenDoc(driverDocs[field]); }} className="absolute top-1 right-1 bg-white dark:bg-slate-900 p-1.5 rounded-lg shadow-md z-30 hover:bg-slate-100 dark:bg-slate-800"><Eye className="w-3.5 h-3.5 text-blue-600"/></button>
                 </>
             ) : (
                 <div className="text-center text-slate-400 group-hover:text-blue-500 flex flex-col items-center">
@@ -297,23 +297,23 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
   return (
     <div className="space-y-6 relative w-full">
       <div className="flex gap-2 pb-2 overflow-x-auto scrollbar-none w-full">
-         <button onClick={()=>setConfigSubTab('clients')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='clients'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Clientes</button>
-         <button onClick={()=>setConfigSubTab('vehicles')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='vehicles'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Vehículos</button>
-         <button onClick={()=>setConfigSubTab('drivers')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='drivers'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Usuarios</button>
-         <button onClick={()=>setConfigSubTab('directory')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='directory'?'bg-blue-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Directorio</button>
-         <button onClick={()=>setConfigSubTab('tolls')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='tolls'?'bg-emerald-600 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Peajes</button>
-         <button onClick={()=>setConfigSubTab('equipment')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='equipment'?'bg-amber-500 text-white':'bg-white text-slate-600 hover:bg-slate-100'}`}>Equipamiento</button>
+         <button onClick={()=>setConfigSubTab('clients')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='clients'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Clientes</button>
+         <button onClick={()=>setConfigSubTab('vehicles')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='vehicles'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Vehículos</button>
+         <button onClick={()=>setConfigSubTab('drivers')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='drivers'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Usuarios</button>
+         <button onClick={()=>setConfigSubTab('directory')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='directory'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Directorio</button>
+         <button onClick={()=>setConfigSubTab('tolls')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='tolls'?'bg-emerald-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Peajes</button>
+         <button onClick={()=>setConfigSubTab('equipment')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='equipment'?'bg-amber-500 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Equipamiento</button>
       </div>
 
       {configSubTab === 'clients' && (
         <div className="w-full min-w-0 flex flex-col gap-6">
           
           {!editingProfile ? (
-            <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 max-h-[85vh] overflow-y-auto">
-               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-slate-100 pb-5">
+            <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 max-h-[85vh] overflow-y-auto">
+               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-slate-100 dark:border-slate-800 pb-5">
                   <div>
-                     <h3 className="font-extrabold text-xl text-slate-800">Directorio de Clientes</h3>
-                     <p className="text-xs font-bold text-slate-500 mt-1">Administra los accesos individuales por usuario y empresa</p>
+                     <h3 className="font-extrabold text-xl text-slate-800 dark:text-slate-200">Directorio de Clientes</h3>
+                     <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">Administra los accesos individuales por usuario y empresa</p>
                   </div>
                   <button onClick={() => setEditingProfile('NEW')} className="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white px-5 py-3 rounded-xl text-sm font-black shadow-md shadow-blue-200 flex items-center gap-2 transition-all shrink-0">
                      <Plus className="w-4 h-4"/> Nuevo Perfil
@@ -322,66 +322,66 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                
                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {clientProfiles.filter(p => !p.isEmptyCompany).map(profile => (
-                     <div key={profile.id} className="flex flex-col p-4 sm:p-5 bg-slate-50 border border-slate-100 rounded-2xl hover:border-blue-200 hover:shadow-md transition-all group relative overflow-hidden">
+                     <div key={profile.id} className="flex flex-col p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-2xl hover:border-blue-200 hover:shadow-md transition-all group relative overflow-hidden">
                         <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
                         <div className="flex justify-between items-start mb-4 pl-2">
                            <div className="flex items-center gap-3 w-full min-w-0 pr-2">
-                              <div className="w-11 h-11 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center overflow-hidden shrink-0">
+                              <div className="w-11 h-11 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-center overflow-hidden shrink-0">
                                  {profile.companyLogo ? <img src={profile.companyLogo} className="w-full h-full object-contain p-1" /> : <User className="w-5 h-5 text-slate-300"/>}
                               </div>
                               <div className="min-w-0">
-                                 <p className="font-black text-slate-800 truncate text-sm">{profile.nombre} {profile.apellido}</p>
+                                 <p className="font-black text-slate-800 dark:text-slate-200 truncate text-sm">{profile.nombre} {profile.apellido}</p>
                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">{profile.companyName}</p>
                               </div>
                            </div>
-                           <div className="flex gap-1 shrink-0 bg-white p-1 rounded-xl shadow-sm border border-slate-100">
+                           <div className="flex gap-1 shrink-0 bg-white dark:bg-slate-900 p-1 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
                               <button onClick={() => { setEditingProfile(profile); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"><Edit2 className="w-4 h-4"/></button>
                               <button onClick={() => showConfirm("¿Eliminar este perfil de acceso?", () => handleDeleteProfile(profile))} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
                            </div>
                         </div>
                         
-                        <div className="pt-3 border-t border-slate-200 flex justify-between items-center pl-2">
-                           <span className="text-[11px] font-bold text-slate-600 truncate flex items-center gap-1.5"><div className="w-5 h-5 bg-slate-200 rounded flex items-center justify-center shrink-0"><User className="w-3 h-3 text-slate-500"/></div> <span className="truncate">{profile.email}</span></span>
+                        <div className="pt-3 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center pl-2">
+                           <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 truncate flex items-center gap-1.5"><div className="w-5 h-5 bg-slate-200 rounded flex items-center justify-center shrink-0"><User className="w-3 h-3 text-slate-500 dark:text-slate-400"/></div> <span className="truncate">{profile.email}</span></span>
                         </div>
                      </div>
                   ))}
                   
                   {clientProfiles.filter(p => p.isEmptyCompany).map(profile => (
-                     <div key={profile.id} className="flex flex-col p-4 sm:p-5 bg-slate-50 border border-slate-100 rounded-2xl hover:border-slate-300 transition-all opacity-60">
+                     <div key={profile.id} className="flex flex-col p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-2xl hover:border-slate-300 transition-all opacity-60">
                         <div className="flex justify-between items-center">
                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center overflow-hidden shrink-0">
+                              <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-center overflow-hidden shrink-0">
                                  {profile.companyLogo ? <img src={profile.companyLogo} className="w-full h-full object-contain p-1" /> : <span className="font-black text-slate-300">{profile.companyName.charAt(0)}</span>}
                               </div>
                               <div>
-                                 <p className="font-black text-slate-800 text-sm">{profile.companyName}</p>
+                                 <p className="font-black text-slate-800 dark:text-slate-200 text-sm">{profile.companyName}</p>
                                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Empresa sin perfiles activos</p>
                               </div>
                            </div>
-                           <button onClick={() => showConfirm("¿Eliminar empresa vacía?", async () => await deleteDoc(doc(db, 'clients', profile.companyId)))} className="p-2 bg-white shadow-sm border border-slate-100 text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
+                           <button onClick={() => showConfirm("¿Eliminar empresa vacía?", async () => await deleteDoc(doc(db, 'clients', profile.companyId)))} className="p-2 bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-800 text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
                         </div>
                      </div>
                   ))}
 
                   {clientProfiles.length === 0 && (
-                     <div className="col-span-full py-10 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
-                        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mx-auto mb-3"><User className="w-8 h-8 text-slate-300"/></div>
-                        <p className="text-sm font-black text-slate-600">Aún no hay perfiles en la base de datos.</p>
+                     <div className="col-span-full py-10 text-center border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-3xl bg-slate-50 dark:bg-slate-900/50">
+                        <div className="w-16 h-16 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center shadow-sm mx-auto mb-3"><User className="w-8 h-8 text-slate-300"/></div>
+                        <p className="text-sm font-black text-slate-600 dark:text-slate-400">Aún no hay perfiles en la base de datos.</p>
                         <p className="text-xs font-bold text-slate-400 mt-1">Crea el primer perfil para empezar a operar.</p>
                      </div>
                   )}
                </div>
             </div>
           ) : (
-            <form onSubmit={handleSaveProfile} className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-100 space-y-8 animate-in fade-in zoom-in-95 max-w-3xl mx-auto w-full relative">
+            <form onSubmit={handleSaveProfile} className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-8 animate-in fade-in zoom-in-95 max-w-3xl mx-auto w-full relative">
                <div className="absolute top-0 left-0 w-full h-2 bg-blue-600 rounded-t-3xl"></div>
                
-               <div className="flex justify-between items-center border-b border-slate-100 pb-5 pt-2">
+               <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-5 pt-2">
                   <div>
-                     <h3 className="font-black text-2xl text-slate-800">{editingProfile === 'NEW' ? 'Crear Nuevo Perfil' : 'Editar Perfil'}</h3>
-                     <p className="text-xs font-bold text-slate-500 mt-1">Configuración individual de acceso y notificaciones</p>
+                     <h3 className="font-black text-2xl text-slate-800 dark:text-slate-200">{editingProfile === 'NEW' ? 'Crear Nuevo Perfil' : 'Editar Perfil'}</h3>
+                     <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">Configuración individual de acceso y notificaciones</p>
                   </div>
-                  <button type="button" onClick={() => setEditingProfile(null)} className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-colors font-bold shadow-sm"><X className="w-5 h-5"/></button>
+                  <button type="button" onClick={() => setEditingProfile(null)} className="p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-400 rounded-xl transition-colors font-bold shadow-sm"><X className="w-5 h-5"/></button>
                </div>
 
                <div className="space-y-4">
@@ -389,23 +389,23 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                   <div className="grid sm:grid-cols-2 gap-4">
                      <div>
                         <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Nombre</label>
-                        <input name="nombre" defaultValue={editingProfile !== 'NEW' ? editingProfile.nombre : ''} placeholder="Ej. Catalina" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full bg-slate-50 border-2 border-slate-200 p-3.5 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-colors shadow-sm"/>
+                        <input name="nombre" defaultValue={editingProfile !== 'NEW' ? editingProfile.nombre : ''} placeholder="Ej. Catalina" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-200 dark:border-slate-700 p-3.5 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-blue-500 focus:bg-white dark:bg-slate-900 transition-colors shadow-sm"/>
                      </div>
                      <div>
                         <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Apellido</label>
-                        <input name="apellido" defaultValue={editingProfile !== 'NEW' ? editingProfile.apellido : ''} placeholder="Ej. Pérez" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full bg-slate-50 border-2 border-slate-200 p-3.5 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-colors shadow-sm"/>
+                        <input name="apellido" defaultValue={editingProfile !== 'NEW' ? editingProfile.apellido : ''} placeholder="Ej. Pérez" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-200 dark:border-slate-700 p-3.5 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-blue-500 focus:bg-white dark:bg-slate-900 transition-colors shadow-sm"/>
                      </div>
                      <div className="sm:col-span-2">
                         <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Correo Electrónico (Acceso)</label>
-                        <input id="correoInput" name="correo" type="email" defaultValue={editingProfile !== 'NEW' ? editingProfile.email : ''} placeholder="catalina@empresa.com" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="none" className="w-full bg-slate-50 border-2 border-slate-200 p-3.5 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-colors shadow-sm"/>
+                        <input id="correoInput" name="correo" type="email" defaultValue={editingProfile !== 'NEW' ? editingProfile.email : ''} placeholder="catalina@empresa.com" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="none" className="w-full bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-200 dark:border-slate-700 p-3.5 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-blue-500 focus:bg-white dark:bg-slate-900 transition-colors shadow-sm"/>
                      </div>
                   </div>
                </div>
 
-               <div className="space-y-4 pt-5 border-t border-slate-100">
+               <div className="space-y-4 pt-5 border-t border-slate-100 dark:border-slate-800">
                   <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5"><BookOpen className="w-4 h-4"/> 2. Empresa Asociada</h4>
                   <div>
-                     <select name="empresa" value={selectedCompanyId} onChange={(e) => { setSelectedCompanyId(e.target.value); if (e.target.value === 'NEW') { setClientLogo(null); } else { const comp = customClients.find(c => c.id === e.target.value); if (comp) setClientLogo(comp.logo || null); } }} required className="w-full bg-slate-50 border-2 border-slate-200 p-4 rounded-xl text-sm font-black text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-colors shadow-sm cursor-pointer">
+                     <select name="empresa" value={selectedCompanyId} onChange={(e) => { setSelectedCompanyId(e.target.value); if (e.target.value === 'NEW') { setClientLogo(null); } else { const comp = customClients.find(c => c.id === e.target.value); if (comp) setClientLogo(comp.logo || null); } }} required className="w-full bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-200 dark:border-slate-700 p-4 rounded-xl text-sm font-black text-slate-800 dark:text-slate-200 outline-none focus:border-blue-500 focus:bg-white dark:bg-slate-900 transition-colors shadow-sm cursor-pointer">
                         <option value="" disabled>Selecciona a qué empresa pertenece...</option>
                         {customClients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         <option value="NEW">✨ + Crear y asociar a Nueva Empresa</option>
@@ -416,17 +416,17 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                      <div className="p-5 bg-blue-50 border-2 border-blue-100 rounded-2xl space-y-4 animate-in fade-in slide-in-from-top-2">
                         <div>
                            <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1.5 block ml-1">Nombre de la Nueva Empresa</label>
-                           <input name="nuevaEmpresa" placeholder="Ej. Automotora Kovacs" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full border-2 border-blue-200 bg-white p-3.5 rounded-xl text-sm font-black text-blue-900 outline-none focus:border-blue-500 shadow-sm" />
+                           <input name="nuevaEmpresa" placeholder="Ej. Automotora Kovacs" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full border-2 border-blue-200 bg-white dark:bg-slate-900 p-3.5 rounded-xl text-sm font-black text-blue-900 outline-none focus:border-blue-500 shadow-sm" />
                         </div>
                         
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white p-3 rounded-xl border border-blue-100">
-                           <label className="relative w-16 h-16 shrink-0 rounded-xl border-2 border-dashed border-blue-300 flex items-center justify-center cursor-pointer overflow-hidden bg-slate-50 group hover:border-blue-500 transition-colors">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-3 rounded-xl border border-blue-100">
+                           <label className="relative w-16 h-16 shrink-0 rounded-xl border-2 border-dashed border-blue-300 flex items-center justify-center cursor-pointer overflow-hidden bg-slate-50 dark:bg-slate-900/50 group hover:border-blue-500 transition-colors">
                               <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const file = e.target.files[0]; if (!file) return; try { const dataUrl = await resizeImage(file, 400, 0.6); setClientLogo(dataUrl); } catch (err) { showAlert("Error procesando logo."); } }} />
                               {clientLogo ? <img src={clientLogo} alt="Logo" className="w-full h-full object-contain p-1" /> : <div className="text-center text-blue-400 group-hover:text-blue-600"><Camera className="w-5 h-5" /></div>}
                            </label>
                            <div className="flex flex-col">
                               <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-0.5">Logo Corporativo (Opcional)</span>
-                              <span className="text-[11px] font-bold text-slate-500 leading-tight">Aparecerá en el portal público.</span>
+                              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 leading-tight">Aparecerá en el portal público.</span>
                               {clientLogo && <button type="button" onClick={() => setClientLogo(null)} className="text-[10px] font-bold text-red-500 hover:underline w-fit mt-1">Quitar Logo</button>}
                            </div>
                         </div>
@@ -434,10 +434,10 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                   )}
                </div>
 
-               <div className="space-y-4 pt-5 border-t border-slate-100">
+               <div className="space-y-4 pt-5 border-t border-slate-100 dark:border-slate-800">
                   <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5"><Clock className="w-4 h-4"/> 3. Preferencias de Notificación</h4>
-                  <div className="bg-slate-50 border border-slate-100 p-5 rounded-2xl shadow-sm">
-                     <p className="text-xs font-bold text-slate-600 mb-4 leading-tight">Selecciona qué correos llegarán a este cliente.</p>
+                  <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
+                     <p className="text-xs font-bold text-slate-600 dark:text-slate-400 mb-4 leading-tight">Selecciona qué correos llegarán a este cliente.</p>
                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                         {[ 
                           { id: 'creado', label: 'Al Crear' }, 
@@ -453,8 +453,8 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                         ].map(notif => {
                            const isActive = clientNotifs[notif.id];
                            return (
-                             <button key={notif.id} type="button" onClick={() => setClientNotifs({...clientNotifs, [notif.id]: !isActive})} className={`py-4 px-2 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 border-2 flex flex-col items-center justify-center gap-2 select-none ${ isActive ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200 scale-100' : 'bg-white border-slate-200 text-slate-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 scale-[0.98]' }`}>
-                                {isActive ? <CheckCircle className="w-5 h-5 animate-in zoom-in duration-200" /> : <div className="w-5 h-5 rounded-full border-2 border-slate-300 bg-slate-50"></div>}
+                             <button key={notif.id} type="button" onClick={() => setClientNotifs({...clientNotifs, [notif.id]: !isActive})} className={`py-4 px-2 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 border-2 flex flex-col items-center justify-center gap-2 select-none ${ isActive ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200 scale-100' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 scale-[0.98]' }`}>
+                                {isActive ? <CheckCircle className="w-5 h-5 animate-in zoom-in duration-200" /> : <div className="w-5 h-5 rounded-full border-2 border-slate-300 bg-slate-50 dark:bg-slate-900/50"></div>}
                                 <span className="text-center leading-tight">{notif.label}</span>
                              </button>
                            );
@@ -463,52 +463,52 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                   </div>
                </div>
 
-               <div className="space-y-4 pt-5 border-t border-slate-100">
+               <div className="space-y-4 pt-5 border-t border-slate-100 dark:border-slate-800">
                   <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-1.5"><Wallet className="w-4 h-4"/> 4. Tarifas Predefinidas (Solo Admin)</h4>
                   <div className="bg-indigo-50/50 border border-indigo-100 p-5 rounded-2xl shadow-sm">
-                     <p className="text-xs font-bold text-slate-600 mb-4 leading-tight">Define los valores a cobrar para automatizar los ingresos en cada trabajo de esta empresa. Los viajes a Regiones se cobran manualmente.</p>
+                     <p className="text-xs font-bold text-slate-600 dark:text-slate-400 mb-4 leading-tight">Define los valores a cobrar para automatizar los ingresos en cada trabajo de esta empresa. Los viajes a Regiones se cobran manualmente.</p>
                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                         <div>
                            <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Local ($)</label>
-                           <input type="number" value={clientPrices.local || ''} onChange={(e) => setClientPrices({...clientPrices, local: e.target.value})} placeholder="15000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                           <input type="number" value={clientPrices.local || ''} onChange={(e) => setClientPrices({...clientPrices, local: e.target.value})} placeholder="15000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
                         </div>
                         <div>
                            <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Otros Serv. ($)</label>
-                           <input type="number" value={clientPrices.servicio || ''} onChange={(e) => setClientPrices({...clientPrices, servicio: e.target.value})} placeholder="10000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                           <input type="number" value={clientPrices.servicio || ''} onChange={(e) => setClientPrices({...clientPrices, servicio: e.target.value})} placeholder="10000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
                         </div>
                         <div className="col-span-full border-b border-indigo-200/50 mt-2 mb-1"></div>
                         <div>
                            <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">RT Clase A ($)</label>
-                           <input type="number" value={clientPrices.prt || ''} onChange={(e) => setClientPrices({...clientPrices, prt: e.target.value})} placeholder="25000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                           <input type="number" value={clientPrices.prt || ''} onChange={(e) => setClientPrices({...clientPrices, prt: e.target.value})} placeholder="25000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
                         </div>
                         <div>
                            <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Ayuda Clase A ($)</label>
-                           <input type="number" value={clientPrices.prtAyuda || ''} onChange={(e) => setClientPrices({...clientPrices, prtAyuda: e.target.value})} placeholder="35000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                           <input type="number" value={clientPrices.prtAyuda || ''} onChange={(e) => setClientPrices({...clientPrices, prtAyuda: e.target.value})} placeholder="35000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
                         </div>
                         <div>
                            <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Insp. Visual A ($)</label>
-                           <input type="number" value={clientPrices.inspVisualA || ''} onChange={(e) => setClientPrices({...clientPrices, inspVisualA: e.target.value})} placeholder="12000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                           <input type="number" value={clientPrices.inspVisualA || ''} onChange={(e) => setClientPrices({...clientPrices, inspVisualA: e.target.value})} placeholder="12000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
                         </div>
                         <div>
                            <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Cert. Frenos ($)</label>
-                           <input type="number" value={clientPrices.frenosA || ''} onChange={(e) => setClientPrices({...clientPrices, frenosA: e.target.value})} placeholder="15000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                           <input type="number" value={clientPrices.frenosA || ''} onChange={(e) => setClientPrices({...clientPrices, frenosA: e.target.value})} placeholder="15000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
                         </div>
                         <div className="col-span-full border-b border-indigo-200/50 mt-2 mb-1"></div>
                         <div>
                            <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">RT Clase B ($)</label>
-                           <input type="number" value={clientPrices.prtB || ''} onChange={(e) => setClientPrices({...clientPrices, prtB: e.target.value})} placeholder="20000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                           <input type="number" value={clientPrices.prtB || ''} onChange={(e) => setClientPrices({...clientPrices, prtB: e.target.value})} placeholder="20000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
                         </div>
                         <div>
                            <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Ayuda Clase B ($)</label>
-                           <input type="number" value={clientPrices.prtAyudaB || ''} onChange={(e) => setClientPrices({...clientPrices, prtAyudaB: e.target.value})} placeholder="25000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                           <input type="number" value={clientPrices.prtAyudaB || ''} onChange={(e) => setClientPrices({...clientPrices, prtAyudaB: e.target.value})} placeholder="25000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
                         </div>
                         <div>
                            <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Insp. Visual B ($)</label>
-                           <input type="number" value={clientPrices.inspVisualB || ''} onChange={(e) => setClientPrices({...clientPrices, inspVisualB: e.target.value})} placeholder="10000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                           <input type="number" value={clientPrices.inspVisualB || ''} onChange={(e) => setClientPrices({...clientPrices, inspVisualB: e.target.value})} placeholder="10000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
                         </div>
                         <div>
                            <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Solo Gases B ($)</label>
-                           <input type="number" value={clientPrices.soloGasesB || ''} onChange={(e) => setClientPrices({...clientPrices, soloGasesB: e.target.value})} placeholder="12000" className="w-full bg-white border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                           <input type="number" value={clientPrices.soloGasesB || ''} onChange={(e) => setClientPrices({...clientPrices, soloGasesB: e.target.value})} placeholder="12000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
                         </div>
                      </div>
                   </div>
@@ -526,23 +526,23 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
 
       {configSubTab === 'vehicles' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full min-w-0">
-          <form key={editingVehicle ? editingVehicle.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const client = fd.get('client') === 'OTRO' ? fd.get('manualClient') : fd.get('client'); const vehicleType = fd.get('vehicleType'); try { if(editingVehicle){ await updateDoc(doc(db, 'vehicles', editingVehicle.id), { client, vehicleType, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase() }); setEditingVehicle(null); showAlert("Vehículo actualizado."); } else { await addDoc(collection(db, 'vehicles'), { client, vehicleType, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase(), createdAt: Date.now() }); showAlert("Vehículo guardado."); } e.target.reset(); } catch (error) { console.error("Error guardando vehículo:", error); showAlert("❌ Error al guardar el vehículo."); } }} className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4 w-full min-w-0">
+          <form key={editingVehicle ? editingVehicle.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const client = fd.get('client') === 'OTRO' ? fd.get('manualClient') : fd.get('client'); const vehicleType = fd.get('vehicleType'); try { if(editingVehicle){ await updateDoc(doc(db, 'vehicles', editingVehicle.id), { client, vehicleType, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase() }); setEditingVehicle(null); showAlert("Vehículo actualizado."); } else { await addDoc(collection(db, 'vehicles'), { client, vehicleType, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase(), createdAt: Date.now() }); showAlert("Vehículo guardado."); } e.target.reset(); } catch (error) { console.error("Error guardando vehículo:", error); showAlert("❌ Error al guardar el vehículo."); } }} className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-4 w-full min-w-0">
             <h3 className="font-extrabold flex items-center gap-2"><Truck className="text-blue-600"/> {editingVehicle ? 'Editar Vehículo' : 'Nuevo Vehículo'}</h3>
-            <select name="client" defaultValue={editingVehicle?.client || ''} className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-semibold outline-none focus:border-blue-500 bg-white">
+            <select name="client" defaultValue={editingVehicle?.client || ''} className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-semibold outline-none focus:border-blue-500 bg-white dark:bg-slate-900">
               <option value="">Cliente...</option>
               {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
               <option value="OTRO">Otro (Se debe escribir manualmente)</option>
             </select>
-            <input name="manualClient" placeholder="Si es OTRO, escribe el cliente aquí" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
-            <input name="brand" defaultValue={editingVehicle?.brand} placeholder="Marca (Ej. Chevrolet)" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
-            <input name="model" defaultValue={editingVehicle?.model} placeholder="Modelo (Ej. NPR 816)" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold" onChange={(e) => {
+            <input name="manualClient" placeholder="Si es OTRO, escribe el cliente aquí" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+            <input name="brand" defaultValue={editingVehicle?.brand} placeholder="Marca (Ej. Chevrolet)" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+            <input name="model" defaultValue={editingVehicle?.model} placeholder="Modelo (Ej. NPR 816)" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold" onChange={(e) => {
               const b = e.target.form.brand.value.trim().toLowerCase();
               const m = e.target.value.trim().toLowerCase();
               const match = vehicles.find(v => v.brand?.toLowerCase() === b && v.model?.toLowerCase() === m && v.vehicleType);
               if (match && e.target.form.vehicleType) e.target.form.vehicleType.value = match.vehicleType;
             }}/>
-            <input name="plate" defaultValue={editingVehicle?.plate} placeholder="Patente" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm uppercase outline-none focus:border-blue-500 font-bold text-slate-800"/>
-            <select name="vehicleType" defaultValue={editingVehicle?.vehicleType || 'auto'} className="w-full border-2 border-slate-200 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700 bg-white">
+            <input name="plate" defaultValue={editingVehicle?.plate} placeholder="Patente" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm uppercase outline-none focus:border-blue-500 font-bold text-slate-800 dark:text-slate-200"/>
+            <select name="vehicleType" defaultValue={editingVehicle?.vehicleType || 'auto'} className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900">
                <option value="auto">🚙 Auto / SUV</option>
                <option value="camioneta">🛻 Camioneta</option>
                <option value="furgon_pequeno">🚐 Furgón Pequeño</option>
@@ -555,15 +555,15 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                <option value="carro_arrastre">🛒 Carro Arrastre</option>
             </select>
             <div className="flex gap-2">
-              {editingVehicle && <button type="button" onClick={()=>setEditingVehicle(null)} className="bg-slate-100 p-3 rounded-xl font-bold text-sm w-1/3 hover:bg-slate-200 transition-colors">Cancelar</button>}
+              {editingVehicle && <button type="button" onClick={()=>setEditingVehicle(null)} className="bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-bold text-sm w-1/3 hover:bg-slate-200 transition-colors">Cancelar</button>}
               <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-lg transition-colors shadow-lg shadow-blue-200">Guardar Vehículo</button>
             </div>
           </form>
 
-          <div className="bg-white p-4 sm:p-6 rounded-3xl shadow-sm border border-slate-100 w-full min-w-0 flex flex-col">
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 w-full min-w-0 flex flex-col">
             <div className="flex justify-between items-center mb-4 gap-2">
-              <h3 className="font-extrabold text-slate-800 whitespace-nowrap">Base Flota</h3>
-              <select onChange={(e) => setFleetFilter(e.target.value)} className="border-2 border-slate-200 p-2 rounded-xl text-xs font-bold text-slate-600 outline-none focus:border-blue-500 flex-1 max-w-[150px] sm:max-w-full truncate">
+              <h3 className="font-extrabold text-slate-800 dark:text-slate-200 whitespace-nowrap">Base Flota</h3>
+              <select onChange={(e) => setFleetFilter(e.target.value)} className="border-2 border-slate-200 dark:border-slate-700 p-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 outline-none focus:border-blue-500 flex-1 max-w-[150px] sm:max-w-full truncate">
                 <option value="">Todos los Clientes</option>
                 {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
                 <option value="OTRO">Otros</option>
@@ -606,7 +606,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] font-black text-white/70 uppercase tracking-widest truncate">{v.client || 'Sin cliente'}</p>
                       <p className="text-base sm:text-lg font-black leading-tight mt-0.5 truncate">{v.brand} {v.model}</p>
-                      {v.vehicleType && <span className="inline-block mt-1.5 text-[9px] font-black bg-white/20 px-2 py-0.5 rounded-md uppercase backdrop-blur-md border border-white/10 truncate max-w-full">{v.vehicleType.replace('_', ' ')}</span>}
+                      {v.vehicleType && <span className="inline-block mt-1.5 text-[9px] font-black bg-white dark:bg-slate-900/20 px-2 py-0.5 rounded-md uppercase backdrop-blur-md border border-white/10 truncate max-w-full">{v.vehicleType.replace('_', ' ')}</span>}
                     </div>
                     <div className="shrink-0 relative z-20">
                       <LicensePlateBadge text={v.plate} />
@@ -614,7 +614,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                   </div>
 
                   <div className="flex gap-2 mt-4 relative z-20 justify-end border-t border-white/10 pt-3">
-                    <button onClick={() => {setEditingVehicle(v); window.scrollTo({ top: 0, behavior: 'smooth' });}} className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors backdrop-blur-sm shadow-sm"><Edit2 className="w-4 h-4 text-white"/></button>
+                    <button onClick={() => {setEditingVehicle(v); window.scrollTo({ top: 0, behavior: 'smooth' });}} className="p-1.5 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 rounded-lg transition-colors backdrop-blur-sm shadow-sm"><Edit2 className="w-4 h-4 text-white"/></button>
                     <button onClick={()=>showConfirm("¿Eliminar vehículo?", async () => {try { await deleteDoc(doc(db, 'vehicles', v.id)); } catch (e) {}})} className="p-1.5 bg-red-500/80 hover:bg-red-500 rounded-lg transition-colors backdrop-blur-sm shadow-sm"><Trash2 className="w-4 h-4 text-white"/></button>
                   </div>
                 </div>
@@ -627,7 +627,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
 
       {configSubTab === 'drivers' && (
         <div className="grid md:grid-cols-2 gap-6">
-          <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const enableNotifications = Object.values(driverNotifs).some(v => v); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), role: fd.get('role'), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry'), enableNotifications, notifications: driverNotifs, ...driverDocs }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); showAlert("Perfil actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); showAlert("Usuario creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4 relative">
+          <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const enableNotifications = Object.values(driverNotifs).some(v => v); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), role: fd.get('role'), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry'), enableNotifications, notifications: driverNotifs, ...driverDocs }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); showAlert("Perfil actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); showAlert("Usuario creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-4 relative">
             
             {/* Lógica silenciosa para cargar notificaciones previas al editar */}
             <div className="hidden">
@@ -635,7 +635,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
             </div>
 
             <div className="flex justify-between items-start">
-              <h3 className="font-extrabold text-slate-800 flex items-center gap-2"><User className="text-blue-600"/> {editingDriver ? 'Perfil de Usuario' : 'Nuevo Usuario'}</h3>
+              <h3 className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-2"><User className="text-blue-600"/> {editingDriver ? 'Perfil de Usuario' : 'Nuevo Usuario'}</h3>
               {editingDriver?.createdAt && (
                 <div className="text-right">
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Registro en App</span>
@@ -672,11 +672,11 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                     {currentUserEmail === 'fcastro@logisticats.cl' && <option value="super_admin">Super Administrador</option>}
                  </select>
               </div>
-              <input name="driverName" defaultValue={editingDriver?.name} placeholder="Nombre completo" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
-              <input name="driverEmail" defaultValue={editingDriver?.email} placeholder="Correo Gmail de acceso" required type="email" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="none" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+              <input name="driverName" defaultValue={editingDriver?.name} placeholder="Nombre completo" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
+              <input name="driverEmail" defaultValue={editingDriver?.email} placeholder="Correo Gmail de acceso" required type="email" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="none" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold"/>
             </div>
             
-            <div className="pt-2 border-t border-slate-100">
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Documentación de Respaldo</h4>
                <div className="grid grid-cols-2 gap-3">
                   <DocUploader field="idFront" label="Carnet (Frente)" />
@@ -686,11 +686,11 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                </div>
             </div>
 
-            <div className="space-y-1.5 border-t border-slate-100 pt-3 mt-2">
+            <div className="space-y-1.5 border-t border-slate-100 dark:border-slate-800 pt-3 mt-2">
                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Clase de Licencia</label>
                <div className="grid grid-cols-3 gap-1.5">
                   {LICENCIAS.map(l => (
-                    <label key={l} className="flex items-center gap-1 p-1 bg-slate-50 border rounded-lg text-[11px] font-bold cursor-pointer hover:bg-slate-100">
+                    <label key={l} className="flex items-center gap-1 p-1 bg-slate-50 dark:bg-slate-900/50 border rounded-lg text-[11px] font-bold cursor-pointer hover:bg-slate-100 dark:bg-slate-800">
                       <input type="checkbox" name="licenses" value={l} defaultChecked={editingDriver?.licenses?.includes(l)} className="w-3.5 h-3.5 cursor-pointer" />
                       {l}
                     </label>
@@ -699,7 +699,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
             </div>
             <div className="space-y-1">
                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Vencimiento Licencia</label>
-               <input name="licenseExpiry" type="date" defaultValue={editingDriver?.licenseExpiry || ''} className="w-full border-2 p-2 rounded-xl text-sm font-semibold outline-none text-slate-700 bg-white" />
+               <input name="licenseExpiry" type="date" defaultValue={editingDriver?.licenseExpiry || ''} className="w-full border-2 p-2 rounded-xl text-sm font-semibold outline-none text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900" />
             </div>
 
             {/* PANEL DE NOTIFICACIONES COPIADO EXACTAMENTE */}
@@ -725,10 +725,10 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                          className={`py-3 px-1.5 rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all duration-200 border-2 flex flex-col items-center justify-center gap-1.5 select-none ${
                            isActive
                              ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200 scale-100'
-                             : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 scale-[0.98]'
+                             : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 scale-[0.98]'
                          }`}
                        >
-                         {isActive ? <CheckCircle className="w-5 h-5 mb-0.5 animate-in zoom-in duration-200" /> : <div className="w-5 h-5 mb-0.5 rounded-full border-2 border-slate-300 bg-white"></div>}
+                         {isActive ? <CheckCircle className="w-5 h-5 mb-0.5 animate-in zoom-in duration-200" /> : <div className="w-5 h-5 mb-0.5 rounded-full border-2 border-slate-300 bg-white dark:bg-slate-900"></div>}
                          <span className="text-center leading-tight">{notif.label}</span>
                        </button>
                      );
@@ -736,19 +736,19 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                </div>
             </div>
 
-            <div className="flex gap-3 pt-2 border-t border-slate-100 mt-4">
-              {editingDriver && <button type="button" onClick={() => { setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); }} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>}
+            <div className="flex gap-3 pt-2 border-t border-slate-100 dark:border-slate-800 mt-4">
+              {editingDriver && <button type="button" onClick={() => { setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); }} className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-400 py-3 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>}
               <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-sm transition-colors shadow-lg shadow-blue-200">{editingDriver ? 'Guardar Cambios' : 'Guardar Usuario'}</button>
             </div>
           </form>
           
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 max-h-[85vh] overflow-y-auto">
-            <h3 className="font-extrabold text-slate-800 mb-4">Gestión de Usuarios</h3>
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 max-h-[85vh] overflow-y-auto">
+            <h3 className="font-extrabold text-slate-800 dark:text-slate-200 mb-4">Gestión de Usuarios</h3>
             <div className="space-y-2">
               {drivers.length === 0 ? <p className="text-sm font-semibold text-slate-400">Directorio vacío</p> : drivers.map(d=>(
-                <div key={d.id} className={`flex justify-between items-center p-3 border rounded-xl group transition-all ${d.isHidden ? 'bg-slate-100 border-slate-200 opacity-75' : 'bg-slate-50 border-slate-100'}`}>
+                <div key={d.id} className={`flex justify-between items-center p-3 border rounded-xl group transition-all ${d.isHidden ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 opacity-75' : 'bg-slate-50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800'}`}>
                   <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 bg-white flex items-center justify-center shadow-sm relative">
+                    <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex items-center justify-center shadow-sm relative">
                       {d.photo ? (
                         <img src={d.photo} alt={d.name} className={`w-full h-full object-cover ${d.isHidden ? 'grayscale' : ''}`} />
                       ) : (
@@ -759,8 +759,8 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
 
                     <div className="truncate">
                       <div className="flex items-center gap-2">
-                         <p className={`text-sm font-extrabold truncate ${d.isHidden ? 'text-slate-500 line-through decoration-slate-400' : 'text-slate-800'}`}>{d.name}</p>
-                         {d.isHidden && <span className="bg-slate-200 text-slate-500 border border-slate-300 text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest shrink-0">Oculto</span>}
+                         <p className={`text-sm font-extrabold truncate ${d.isHidden ? 'text-slate-500 dark:text-slate-400 line-through decoration-slate-400' : 'text-slate-800 dark:text-slate-200'}`}>{d.name}</p>
+                         {d.isHidden && <span className="bg-slate-200 text-slate-500 dark:text-slate-400 border border-slate-300 text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest shrink-0">Oculto</span>}
                       </div>
                       <p className="text-xs font-bold text-slate-400 truncate leading-tight">{d.email}</p>
                       <div className="flex flex-wrap items-center gap-1.5 mt-2">
@@ -774,7 +774,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                            {d.role === 'super_admin' ? 'Super Admin' : d.role === 'admin' ? 'Admin' : d.role === 'quoter' ? 'Cotizador' : d.role === 'part_time' ? 'Part-Time' : 'Conductor'}
                         </span>
                         {(!d.role || d.role === 'driver') && d.licenses && d.licenses.length > 0 && (
-                           <span className={`text-[9px] font-black px-2 py-0.5 rounded-md border ${d.isHidden ? 'bg-slate-200 text-slate-500 border-slate-300' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
+                           <span className={`text-[9px] font-black px-2 py-0.5 rounded-md border ${d.isHidden ? 'bg-slate-200 text-slate-500 dark:text-slate-400 border-slate-300' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
                              Licencias: {d.licenses.join(', ')}
                            </span>
                         )}
@@ -786,14 +786,14 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                      <button onClick={async () => {
                          try { await updateDoc(doc(db, 'drivers', d.id), { isHidden: !d.isHidden }); }
                          catch (e) { showAlert("Error al cambiar estado."); }
-                     }} className={`p-2 rounded-lg transition-colors shadow-sm ${d.isHidden ? 'bg-green-100 text-green-600 hover:bg-green-200 border border-green-200' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}`} title={d.isHidden ? "Restaurar Conductor" : "Ocultar Conductor"}>
+                     }} className={`p-2 rounded-lg transition-colors shadow-sm ${d.isHidden ? 'bg-green-100 text-green-600 hover:bg-green-200 border border-green-200' : 'bg-slate-200 text-slate-500 dark:text-slate-400 hover:bg-slate-300'}`} title={d.isHidden ? "Restaurar Conductor" : "Ocultar Conductor"}>
                          {d.isHidden ? <Eye className="w-4 h-4"/> : <EyeOff className="w-4 h-4"/>}
                      </button>
                      <button onClick={() => { 
                        setEditingDriver(d); 
                        setDriverDocs({ photo: d.photo || null, idFront: d.idFront || null, idBack: d.idBack || null, licenseFront: d.licenseFront || null, licenseBack: d.licenseBack || null }); 
                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                     }} className={`px-3 py-2 rounded-lg transition-colors shadow-sm text-xs font-bold flex items-center gap-1.5 ${d.isHidden ? 'bg-slate-200 text-slate-500 hover:bg-slate-300' : 'bg-blue-100 hover:bg-blue-200 text-blue-600'}`} title="Ver Perfil y Documentos"><User className="w-4 h-4"/> Perfil</button>
+                     }} className={`px-3 py-2 rounded-lg transition-colors shadow-sm text-xs font-bold flex items-center gap-1.5 ${d.isHidden ? 'bg-slate-200 text-slate-500 dark:text-slate-400 hover:bg-slate-300' : 'bg-blue-100 hover:bg-blue-200 text-blue-600'}`} title="Ver Perfil y Documentos"><User className="w-4 h-4"/> Perfil</button>
                      <button onClick={() => showConfirm("¿Eliminar conductor?", async()=>await deleteDoc(doc(db,'drivers',d.id)))} className="p-2 bg-red-100 hover:bg-red-200 text-red-500 rounded-lg transition-colors shadow-sm"><Trash2 className="w-4 h-4"/></button>
                   </div>
                 </div>
@@ -842,42 +842,42 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                 setDirectoryList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
                 e.target.reset(); 
              } catch (err) { showAlert("Error al guardar."); } 
-          }} className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+          }} className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-4">
             <div className="flex justify-between items-center">
-               <h3 className="font-extrabold flex items-center gap-2 text-slate-800"><BookOpen className="text-blue-600 w-5 h-5"/> {editingDir ? 'Editar Destino' : 'Nuevo Destino'}</h3>
-               {editingDir && <button type="button" onClick={()=>setEditingDir(null)} className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-lg uppercase">Cancelar</button>}
+               <h3 className="font-extrabold flex items-center gap-2 text-slate-800 dark:text-slate-200"><BookOpen className="text-blue-600 w-5 h-5"/> {editingDir ? 'Editar Destino' : 'Nuevo Destino'}</h3>
+               {editingDir && <button type="button" onClick={()=>setEditingDir(null)} className="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg uppercase">Cancelar</button>}
             </div>
-            <p className="text-[10px] font-bold text-slate-500 mb-2 leading-tight">Agrega los destinos frecuentes. Cuando crees un trabajo y escribas exactamente el mismo lugar, el sistema adjuntará toda esta información automáticamente.</p>
+            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 leading-tight">Agrega los destinos frecuentes. Cuando crees un trabajo y escribas exactamente el mismo lugar, el sistema adjuntará toda esta información automáticamente.</p>
             
             <div className="space-y-1">
                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Lugar / Destino exacto <span className="text-red-500">*</span></label>
-               <input name="placeName" defaultValue={editingDir?.placeName} placeholder="Ej: Samex Quilicura (Obligatorio)" required autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
+               <input name="placeName" defaultValue={editingDir?.placeName} placeholder="Ej: Samex Quilicura (Obligatorio)" required autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
             </div>
             
             <div className="space-y-1">
                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre del Encargado (Opcional)</label>
-               <input name="contactName" defaultValue={editingDir?.contactName} placeholder="Ej: Luis Ahumada" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
+               <input name="contactName" defaultValue={editingDir?.contactName} placeholder="Ej: Luis Ahumada" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
             </div>
             
             <div className="space-y-1">
                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Teléfono (Opcional)</label>
-               <input name="contactPhone" defaultValue={editingDir?.contactPhone} placeholder="Ej: +56912345678" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
+               <input name="contactPhone" defaultValue={editingDir?.contactPhone} placeholder="Ej: +56912345678" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Dirección Exacta (Opcional)</label>
-                  <input name="address" defaultValue={editingDir?.address} placeholder="Ej: Av. Vespucio 1501" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
+                  <input name="address" defaultValue={editingDir?.address} placeholder="Ej: Av. Vespucio 1501" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
                </div>
                <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Comuna / Ciudad (Opcional)</label>
-                  <input name="commune" defaultValue={editingDir?.commune} placeholder="Ej: Quilicura" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
+                  <input name="commune" defaultValue={editingDir?.commune} placeholder="Ej: Quilicura" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold"/>
                </div>
             </div>
 
             <div className="space-y-1">
                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1"><MapPin className="w-3 h-3 text-blue-500"/> Plus Code de Google Maps (Prioridad GPS)</label>
-               <input name="plusCode" defaultValue={editingDir?.plusCode} placeholder="Ej: 8MP3+VX Santiago" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold bg-blue-50/50"/>
+               <input name="plusCode" defaultValue={editingDir?.plusCode} placeholder="Ej: 8MP3+VX Santiago" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-bold bg-blue-50/50"/>
             </div>
 
             <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-black text-sm transition-colors shadow-md shadow-blue-200 mt-2">
@@ -885,9 +885,9 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
             </button>
           </form>
 
-          <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 max-h-[85vh] flex flex-col">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 shrink-0 border-b border-slate-100 pb-4">
-              <h3 className="font-extrabold text-slate-800">Destinos Guardados</h3>
+          <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 max-h-[85vh] flex flex-col">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 shrink-0 border-b border-slate-100 dark:border-slate-800 pb-4">
+              <h3 className="font-extrabold text-slate-800 dark:text-slate-200">Destinos Guardados</h3>
               <div className="relative w-full sm:w-72 shrink-0">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Search className="w-4 h-4 text-slate-400" />
@@ -898,18 +898,18 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                   value={dirSearchTerm}
                   onChange={(e) => setDirSearchTerm(e.target.value)}
                   autoComplete="off" autoCorrect="off" spellCheck="false"
-                  className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-blue-500 transition-colors"
+                  className="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
             </div>
             <div className="space-y-2 overflow-y-auto pr-1 flex-1">
               {directoryList.length === 0 ? <p className="text-sm font-bold text-slate-400 text-center py-4">Directorio vacío</p> : filteredDirectoryList.length === 0 ? <p className="text-sm font-bold text-slate-400 text-center py-4">No se encontraron destinos</p> : filteredDirectoryList.map(d=>(
-                <div key={d.id} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-xl hover:border-blue-200 transition-all">
+                <div key={d.id} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-xl hover:border-blue-200 transition-all">
                   <div className="flex-1 min-w-0 pr-2">
-                    <p className="text-sm font-extrabold text-slate-800 truncate">{d.placeName}</p>
+                    <p className="text-sm font-extrabold text-slate-800 dark:text-slate-200 truncate">{d.placeName}</p>
                     {d.plusCode && <p className="text-[11px] font-black text-blue-600 mt-0.5 truncate flex items-center gap-1"><MapPin className="w-3 h-3"/> {d.plusCode} (Plus Code)</p>}
-                    {(d.address || d.commune) && <p className="text-[11px] font-bold text-slate-500 mt-0.5 truncate flex items-center gap-1"><MapPin className="w-3 h-3 text-slate-400"/> {d.address}{d.address && d.commune ? ', ' : ''}{d.commune}</p>}
-                    {(d.contactName || d.contactPhone) && <p className="text-[11px] font-bold text-slate-500 mt-0.5 truncate flex items-center gap-1"><User className="w-3 h-3 text-emerald-600"/> {d.contactName || 'Sin nombre'} {d.contactPhone && `• ${d.contactPhone}`}</p>}
+                    {(d.address || d.commune) && <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 truncate flex items-center gap-1"><MapPin className="w-3 h-3 text-slate-400"/> {d.address}{d.address && d.commune ? ', ' : ''}{d.commune}</p>}
+                    {(d.contactName || d.contactPhone) && <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 truncate flex items-center gap-1"><User className="w-3 h-3 text-emerald-600"/> {d.contactName || 'Sin nombre'} {d.contactPhone && `• ${d.contactPhone}`}</p>}
                   </div>
                   <div className="flex flex-col gap-1.5 shrink-0 ml-2">
                      <button onClick={() => {setEditingDir(d); window.scrollTo({ top: 0, behavior: 'smooth' });}} className="p-1.5 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors shadow-sm" title="Editar"><Edit2 className="w-3.5 h-3.5"/></button>
@@ -960,64 +960,64 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                 setTollsList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
                 e.target.reset();
              } catch (err) { showAlert("❌ Error al guardar peaje."); }
-          }} className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+          }} className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-4">
              <div className="flex justify-between items-center">
-                <h3 className="font-extrabold flex items-center gap-2 text-slate-800"><Ticket className="text-emerald-600 w-5 h-5"/> {editingToll ? 'Editar Peaje' : 'Nuevo Peaje'}</h3>
-                {editingToll && <button type="button" onClick={()=>setEditingToll(null)} className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-lg uppercase transition-colors hover:bg-slate-200">Cancelar</button>}
+                <h3 className="font-extrabold flex items-center gap-2 text-slate-800 dark:text-slate-200"><Ticket className="text-emerald-600 w-5 h-5"/> {editingToll ? 'Editar Peaje' : 'Nuevo Peaje'}</h3>
+                {editingToll && <button type="button" onClick={()=>setEditingToll(null)} className="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg uppercase transition-colors hover:bg-slate-200">Cancelar</button>}
              </div>
-             <p className="text-[10px] font-bold text-slate-500 mb-2 leading-tight">Configura el nombre, la ruta y el costo por tipo de vehículo para calcular rápidamente en las rendiciones.</p>
+             <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 leading-tight">Configura el nombre, la ruta y el costo por tipo de vehículo para calcular rápidamente en las rendiciones.</p>
              
              <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nombre del Peaje <span className="text-red-500">*</span></label>
-                <input name="name" defaultValue={editingToll?.name} placeholder="Ej: Peaje Lampa" required autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-emerald-500 font-bold"/>
+                <input name="name" defaultValue={editingToll?.name} placeholder="Ej: Peaje Lampa" required autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-emerald-500 font-bold"/>
              </div>
              
              <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Ruta / Autopista (Opcional)</label>
-                <input name="route" defaultValue={editingToll?.route} placeholder="Ej: Ruta 5 Norte" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm outline-none focus:border-emerald-500 font-bold"/>
+                <input name="route" defaultValue={editingToll?.route} placeholder="Ej: Ruta 5 Norte" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-emerald-500 font-bold"/>
              </div>
 
              <div className="grid grid-cols-2 gap-3 bg-emerald-50 p-3 rounded-2xl border border-emerald-100">
                 <div className="col-span-2 text-[10px] font-black text-emerald-600 uppercase tracking-widest border-b border-emerald-200/50 pb-1 mb-1">Valores por Categoría de Vehículo</div>
                 <div className="space-y-1">
-                   <label className="text-[10px] font-bold text-slate-600 ml-1">Auto / SUV ($)</label>
-                   <input name="priceAuto" type="number" defaultValue={editingToll?.prices?.['Auto / SUV']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white"/>
+                   <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 ml-1">Auto / SUV ($)</label>
+                   <input name="priceAuto" type="number" defaultValue={editingToll?.prices?.['Auto / SUV']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
                 </div>
                 <div className="space-y-1">
-                   <label className="text-[10px] font-bold text-slate-600 ml-1">Camioneta ($)</label>
-                   <input name="priceCamioneta" type="number" defaultValue={editingToll?.prices?.['Camioneta']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white"/>
+                   <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 ml-1">Camioneta ($)</label>
+                   <input name="priceCamioneta" type="number" defaultValue={editingToll?.prices?.['Camioneta']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
                 </div>
                 <div className="space-y-1">
-                   <label className="text-[10px] font-bold text-slate-600 ml-1">Furgón Pequeño ($)</label>
-                   <input name="priceFurgonPequeno" type="number" defaultValue={editingToll?.prices?.['Furgón Pequeño']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white"/>
+                   <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 ml-1">Furgón Pequeño ($)</label>
+                   <input name="priceFurgonPequeno" type="number" defaultValue={editingToll?.prices?.['Furgón Pequeño']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
                 </div>
                 <div className="space-y-1">
-                   <label className="text-[10px] font-bold text-slate-600 ml-1">Furgón Grande ($)</label>
-                   <input name="priceFurgonGrande" type="number" defaultValue={editingToll?.prices?.['Furgón Grande']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white"/>
+                   <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 ml-1">Furgón Grande ($)</label>
+                   <input name="priceFurgonGrande" type="number" defaultValue={editingToll?.prices?.['Furgón Grande']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
                 </div>
                 <div className="space-y-1">
-                   <label className="text-[10px] font-bold text-slate-600 ml-1">Camión Simple ($)</label>
-                   <input name="priceCamionSimple" type="number" defaultValue={editingToll?.prices?.['Camión Simple']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white"/>
+                   <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 ml-1">Camión Simple ($)</label>
+                   <input name="priceCamionSimple" type="number" defaultValue={editingToll?.prices?.['Camión Simple']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
                 </div>
                 <div className="space-y-1">
-                   <label className="text-[10px] font-bold text-slate-600 ml-1">Camión Doble ($)</label>
-                   <input name="priceCamionDoble" type="number" defaultValue={editingToll?.prices?.['Camión Doble Cabina']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white"/>
+                   <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 ml-1">Camión Doble ($)</label>
+                   <input name="priceCamionDoble" type="number" defaultValue={editingToll?.prices?.['Camión Doble Cabina']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
                 </div>
                 <div className="space-y-1">
-                   <label className="text-[10px] font-bold text-slate-600 ml-1">Camión (2 Ejes) ($)</label>
-                   <input name="priceCamion2Ejes" type="number" defaultValue={editingToll?.prices?.['Camión (2 Ejes traseros)']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white"/>
+                   <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 ml-1">Camión (2 Ejes) ($)</label>
+                   <input name="priceCamion2Ejes" type="number" defaultValue={editingToll?.prices?.['Camión (2 Ejes traseros)']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
                 </div>
                 <div className="space-y-1">
-                   <label className="text-[10px] font-bold text-slate-600 ml-1">Camión (3 Ejes) ($)</label>
-                   <input name="priceCamion3Ejes" type="number" defaultValue={editingToll?.prices?.['Camión (3 Ejes traseros)']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white"/>
+                   <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 ml-1">Camión (3 Ejes) ($)</label>
+                   <input name="priceCamion3Ejes" type="number" defaultValue={editingToll?.prices?.['Camión (3 Ejes traseros)']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
                 </div>
                 <div className="space-y-1">
-                   <label className="text-[10px] font-bold text-slate-600 ml-1">Camión (8x4) ($)</label>
-                   <input name="priceCamion8x4" type="number" defaultValue={editingToll?.prices?.['Camión Rigid (8x4)']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white"/>
+                   <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 ml-1">Camión (8x4) ($)</label>
+                   <input name="priceCamion8x4" type="number" defaultValue={editingToll?.prices?.['Camión Rigid (8x4)']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
                 </div>
                 <div className="space-y-1">
-                   <label className="text-[10px] font-bold text-slate-600 ml-1">Carro Arrastre ($)</label>
-                   <input name="priceCarro" type="number" defaultValue={editingToll?.prices?.['Carro Arrastre']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white"/>
+                   <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 ml-1">Carro Arrastre ($)</label>
+                   <input name="priceCarro" type="number" defaultValue={editingToll?.prices?.['Carro Arrastre']} placeholder="0" required className="w-full border border-emerald-200 p-2 rounded-lg text-sm outline-none focus:border-emerald-500 font-bold bg-white dark:bg-slate-900"/>
                 </div>
              </div>
 
@@ -1026,28 +1026,28 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
              </button>
           </form>
 
-          <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 max-h-[85vh] flex flex-col">
-             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 shrink-0 border-b border-slate-100 pb-4">
-               <h3 className="font-extrabold text-slate-800">Base de Peajes</h3>
-               <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">Total: {tollsList.length}</span>
+          <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 max-h-[85vh] flex flex-col">
+             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 shrink-0 border-b border-slate-100 dark:border-slate-800 pb-4">
+               <h3 className="font-extrabold text-slate-800 dark:text-slate-200">Base de Peajes</h3>
+               <span className="text-xs font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">Total: {tollsList.length}</span>
              </div>
              <div className="space-y-2 overflow-y-auto pr-1 flex-1">
                {tollsList.length === 0 ? <p className="text-sm font-bold text-slate-400 text-center py-4">No hay peajes configurados.</p> : tollsList.map(t=>(
-                 <div key={t.id} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-xl hover:border-emerald-200 transition-all group">
+                 <div key={t.id} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-xl hover:border-emerald-200 transition-all group">
                    <div className="flex-1 min-w-0 pr-2">
-                     <p className="text-sm font-extrabold text-slate-800 truncate">{t.name}</p>
-                     {t.route && <p className="text-[11px] font-bold text-slate-500 mt-0.5 truncate">{t.route}</p>}
+                     <p className="text-sm font-extrabold text-slate-800 dark:text-slate-200 truncate">{t.name}</p>
+                     {t.route && <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 truncate">{t.route}</p>}
                      <div className="flex gap-1.5 mt-1.5 flex-wrap">
-                        <span className="text-[9px] font-bold bg-white border border-slate-200 text-slate-600 px-1.5 py-0.5 rounded">🚙 Auto: ${t.prices?.['Auto / SUV'] || 0}</span>
-                        <span className="text-[9px] font-bold bg-white border border-slate-200 text-slate-600 px-1.5 py-0.5 rounded">🛻 Camioneta: ${t.prices?.['Camioneta'] || 0}</span>
-                        <span className="text-[9px] font-bold bg-white border border-slate-200 text-slate-600 px-1.5 py-0.5 rounded">🚐 Furgón P: ${t.prices?.['Furgón Pequeño'] || 0}</span>
-                        <span className="text-[9px] font-bold bg-white border border-slate-200 text-slate-600 px-1.5 py-0.5 rounded">🚐 Furgón G: ${t.prices?.['Furgón Grande'] || 0}</span>
-                        <span className="text-[9px] font-bold bg-white border border-slate-200 text-slate-600 px-1.5 py-0.5 rounded">🚚 Camión S: ${t.prices?.['Camión Simple'] || 0}</span>
-                        <span className="text-[9px] font-bold bg-white border border-slate-200 text-slate-600 px-1.5 py-0.5 rounded">🚚 Camión DC: ${t.prices?.['Camión Doble Cabina'] || 0}</span>
-                        <span className="text-[9px] font-bold bg-white border border-slate-200 text-slate-600 px-1.5 py-0.5 rounded">🚛 Camión 2E: ${t.prices?.['Camión (2 Ejes traseros)'] || 0}</span>
-                        <span className="text-[9px] font-bold bg-white border border-slate-200 text-slate-600 px-1.5 py-0.5 rounded">🚛 Camión 3E: ${t.prices?.['Camión (3 Ejes traseros)'] || 0}</span>
-                        <span className="text-[9px] font-bold bg-white border border-slate-200 text-slate-600 px-1.5 py-0.5 rounded">🚚 Camión 8x4: ${t.prices?.['Camión Rigid (8x4)'] || 0}</span>
-                        <span className="text-[9px] font-bold bg-white border border-slate-200 text-slate-600 px-1.5 py-0.5 rounded">🛒 Carro: ${t.prices?.['Carro Arrastre'] || 0}</span>
+                        <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">🚙 Auto: ${t.prices?.['Auto / SUV'] || 0}</span>
+                        <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">🛻 Camioneta: ${t.prices?.['Camioneta'] || 0}</span>
+                        <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">🚐 Furgón P: ${t.prices?.['Furgón Pequeño'] || 0}</span>
+                        <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">🚐 Furgón G: ${t.prices?.['Furgón Grande'] || 0}</span>
+                        <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">🚚 Camión S: ${t.prices?.['Camión Simple'] || 0}</span>
+                        <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">🚚 Camión DC: ${t.prices?.['Camión Doble Cabina'] || 0}</span>
+                        <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">🚛 Camión 2E: ${t.prices?.['Camión (2 Ejes traseros)'] || 0}</span>
+                        <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">🚛 Camión 3E: ${t.prices?.['Camión (3 Ejes traseros)'] || 0}</span>
+                        <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">🚚 Camión 8x4: ${t.prices?.['Camión Rigid (8x4)'] || 0}</span>
+                        <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">🛒 Carro: ${t.prices?.['Carro Arrastre'] || 0}</span>
                      </div>
                    </div>
                    <div className="flex flex-col gap-1.5 shrink-0 ml-2">
@@ -1065,11 +1065,11 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
       )}
 
       {configSubTab === 'equipment' && (
-        <div className="bg-white p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 w-full min-w-0 animate-in fade-in">
+        <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 w-full min-w-0 animate-in fade-in">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="font-extrabold flex items-center gap-2 text-slate-800"><CheckCircle className="text-amber-500 w-5 h-5"/> Lista de Equipamiento</h3>
+            <h3 className="font-extrabold flex items-center gap-2 text-slate-800 dark:text-slate-200"><CheckCircle className="text-amber-500 w-5 h-5"/> Lista de Equipamiento</h3>
           </div>
-          <p className="text-[10px] font-bold text-slate-500 mb-6 leading-tight">Agrega o elimina los ítems que los conductores deben verificar en el checklist. Se actualizará en los celulares al instante.</p>
+          <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-6 leading-tight">Agrega o elimina los ítems que los conductores deben verificar en el checklist. Se actualizará en los celulares al instante.</p>
           
           <form onSubmit={async (e) => {
             e.preventDefault();
@@ -1087,7 +1087,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
               showAlert("✅ Ítem agregado a la lista de equipamiento.");
             } catch (err) { showAlert("❌ Error al guardar."); }
           }} className="flex gap-2 mb-6">
-            <input type="text" value={newEquipmentItem} onChange={(e) => setNewEquipmentItem(e.target.value)} placeholder="Ej: Gata, Chaleco, Botiquín..." autoComplete="off" autoCorrect="off" spellCheck="false" className="flex-1 border-2 border-slate-200 p-3 rounded-xl text-sm font-bold outline-none focus:border-amber-500" />
+            <input type="text" value={newEquipmentItem} onChange={(e) => setNewEquipmentItem(e.target.value)} placeholder="Ej: Gata, Chaleco, Botiquín..." autoComplete="off" autoCorrect="off" spellCheck="false" className="flex-1 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold outline-none focus:border-amber-500" />
             <button type="submit" className="bg-amber-500 hover:bg-amber-600 text-white px-5 py-3 rounded-xl font-black shadow-sm transition-colors flex items-center gap-2">
               <Plus className="w-5 h-5"/> Agregar
             </button>
@@ -1095,8 +1095,8 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-1">
             {equipmentList.map((item, idx) => (
-              <div key={idx} className="flex justify-between items-center bg-slate-50 border border-slate-200 p-3 rounded-xl shadow-sm">
-                <span className="text-sm font-extrabold text-slate-700">{item}</span>
+              <div key={idx} className="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-3 rounded-xl shadow-sm">
+                <span className="text-sm font-extrabold text-slate-700 dark:text-slate-300">{item}</span>
                 <button type="button" onClick={() => showConfirm(`¿Eliminar "${item}" de la lista?`, async () => {
                   const newList = equipmentList.filter(i => i !== item);
                   try {
@@ -1104,7 +1104,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
                     await setDoc(doc(db, 'system_config', 'equipment'), { items: newList }, { merge: true });
                     setEquipmentList(newList);
                   } catch(err) { showAlert("❌ Error al eliminar."); }
-                })} className="p-2 bg-white text-red-500 hover:bg-red-50 hover:text-red-600 rounded-lg shadow-sm border border-slate-100 transition-colors">
+                })} className="p-2 bg-white dark:bg-slate-900 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-lg shadow-sm border border-slate-100 dark:border-slate-800 transition-colors">
                   <Trash2 className="w-4 h-4"/>
                 </button>
               </div>
@@ -1116,7 +1116,7 @@ export default function ConfiView({ currentUserEmail, allClientsList, customClie
 
       {fullScreenDoc && (
         <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center z-[300] p-4 cursor-zoom-out animate-in fade-in" onClick={() => setFullScreenDoc(null)}>
-          <button className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/40 rounded-full text-white transition-colors shadow-lg"><X className="w-6 h-6"/></button>
+          <button className="absolute top-4 right-4 p-2 bg-white dark:bg-slate-900/20 hover:bg-white dark:bg-slate-900/40 rounded-full text-white transition-colors shadow-lg"><X className="w-6 h-6"/></button>
           <img src={fullScreenDoc} className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
         </div>
       )}

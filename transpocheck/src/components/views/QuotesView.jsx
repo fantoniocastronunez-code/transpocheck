@@ -713,9 +713,9 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
         <div className="lg:col-span-8 space-y-6">
           
           {/* Tarjeta 1: Datos del Traslado y Vehículo */}
-          <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-            <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
-              <h3 className="text-sm font-black text-slate-800 flex items-center gap-2"><MapPin className="w-4 h-4 text-purple-600"/> Datos de Ruta y Vehículo</h3>
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800">
+            <div className="flex justify-between items-center mb-4 border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 flex items-center gap-2"><MapPin className="w-4 h-4 text-purple-600"/> Datos de Ruta y Vehículo</h3>
               <button type="button" onClick={() => setShowNewClientForm(true)} className="text-xs font-bold bg-purple-100 text-purple-700 px-3 py-1.5 rounded-xl hover:bg-purple-200 transition-colors flex items-center gap-1">
                 <Plus className="w-3.5 h-3.5"/> Nuevo Cliente
               </button>
@@ -734,7 +734,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1 sm:col-span-2">
                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Empresa Cliente</label>
-                 <select name="client" value={quoteData.client} onChange={handleInputChange} className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500 bg-slate-50">
+                 <select name="client" value={quoteData.client} onChange={handleInputChange} className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-slate-50 dark:bg-slate-900/50">
                     <option value="">Selecciona un cliente...</option>
                     {customClients.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
                  </select>
@@ -742,13 +742,13 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
 
               <div className="space-y-1">
                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Origen</label>
-                 <input type="text" name="origin" list="quotes-directory-list" value={quoteData.origin} onChange={handleInputChange} placeholder="Desde dónde..." autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500"/>
+                 <input type="text" name="origin" list="quotes-directory-list" value={quoteData.origin} onChange={handleInputChange} placeholder="Desde dónde..." autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500"/>
               </div>
 
               <div className="space-y-1">
                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Destino</label>
                  <div className="flex gap-2">
-                   <input type="text" name="destination" list="quotes-directory-list" value={quoteData.destination} onChange={handleInputChange} placeholder="Hasta dónde..." autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500"/>
+                   <input type="text" name="destination" list="quotes-directory-list" value={quoteData.destination} onChange={handleInputChange} placeholder="Hasta dónde..." autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500"/>
                    <button type="button" onClick={calculateRouteDistance} disabled={isCalculatingRoute} className="bg-purple-600 hover:bg-purple-700 text-white px-4 rounded-xl text-xs font-black shadow-sm shrink-0 transition-colors disabled:opacity-50" title="Calcular distancia de ruta real por carretera">
                      {isCalculatingRoute ? '...' : 'Calcular KM'}
                    </button>
@@ -758,14 +758,14 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
               <div className="space-y-1">
                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Distancia Total (KM Ruta)</label>
                  <div className="relative">
-                   <input type="number" name="distanceKm" value={quoteData.distanceKm} onChange={handleInputChange} placeholder="Ej: 120" className="w-full border-2 border-slate-200 rounded-xl p-3 pl-10 text-sm font-bold text-slate-700 outline-none focus:border-purple-500"/>
+                   <input type="number" name="distanceKm" value={quoteData.distanceKm} onChange={handleInputChange} placeholder="Ej: 120" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 pl-10 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500"/>
                    <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                  </div>
               </div>
 
               <div className="space-y-1">
                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Vehículo</label>
-                 <select name="vehicleType" value={quoteData.vehicleType} onChange={handleInputChange} className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500 bg-white">
+                 <select name="vehicleType" value={quoteData.vehicleType} onChange={handleInputChange} className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900">
                     <option value="Auto / SUV">Auto / SUV</option>
                     <option value="Camioneta">Camioneta</option>
                     <option value="Furgón Pequeño">Furgón Pequeño</option>
@@ -781,12 +781,12 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
 
               <div className="space-y-1">
                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Marca</label>
-                 <input type="text" name="brand" list="quotes-brands-list" value={quoteData.brand} onChange={handleInputChange} placeholder="Ej: TOYOTA" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500 uppercase"/>
+                 <input type="text" name="brand" list="quotes-brands-list" value={quoteData.brand} onChange={handleInputChange} placeholder="Ej: TOYOTA" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 uppercase"/>
               </div>
 
               <div className="space-y-1">
                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Modelo</label>
-                 <input type="text" name="model" list="quotes-models-list" value={quoteData.model} onChange={handleInputChange} placeholder="Ej: HILUX" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500 uppercase"/>
+                 <input type="text" name="model" list="quotes-models-list" value={quoteData.model} onChange={handleInputChange} placeholder="Ej: HILUX" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 uppercase"/>
               </div>
 
               <div className="space-y-1">
@@ -820,20 +820,20 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                    autoCorrect="off" 
                    spellCheck="false" 
                    autoCapitalize="characters"
-                   className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-black uppercase text-slate-800 outline-none focus:border-purple-500"
+                   className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-black uppercase text-slate-800 dark:text-slate-200 outline-none focus:border-purple-500"
                 />
               </div>
 
               <div className="space-y-1">
                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Descripción corta</label>
-                 <input type="text" name="description" value={quoteData.description} onChange={handleInputChange} placeholder="Detalles adicionales..." autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500"/>
+                 <input type="text" name="description" value={quoteData.description} onChange={handleInputChange} placeholder="Detalles adicionales..." autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500"/>
               </div>
             </div>
           </div>
 
           {/* Tarjeta 2: Gastos Operativos, Calculadora y Peajes */}
-          <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-5">
-            <h3 className="text-sm font-black text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3"><DollarSign className="w-4 h-4 text-emerald-600"/> Estructura de Costos y Peajes</h3>
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-5">
+            <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3"><DollarSign className="w-4 h-4 text-emerald-600"/> Estructura de Costos y Peajes</h3>
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-1">
@@ -847,7 +847,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
               <div className="space-y-1">
                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Precio Combustible ($/L)</label>
                  <div className="flex gap-2">
-                   <input type="number" name="fuelPrice" value={quoteData.fuelPrice} onChange={handleInputChange} className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500"/>
+                   <input type="number" name="fuelPrice" value={quoteData.fuelPrice} onChange={handleInputChange} className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500"/>
                    <button 
                      type="button" 
                      onClick={fetchFuelPriceWithAI} 
@@ -862,7 +862,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
 
               <div className="space-y-1">
                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Costo Peajes ($ Auto-calculado)</label>
-                 <input type="number" name="tollsCost" value={quoteData.tollsCost} onChange={handleInputChange} placeholder="Total peajes..." className="w-full border-2 border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-700 outline-none focus:border-purple-500"/>
+                 <input type="number" name="tollsCost" value={quoteData.tollsCost} onChange={handleInputChange} placeholder="Total peajes..." className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500"/>
               </div>
 
               <div className="space-y-1">
@@ -904,33 +904,33 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
 
 
               {/* SECCIÓN DE SELECCIÓN DE PEAJES (CON BOTÓN DE MODIFICAR CADA PEAJE) */}
-            <div className="border-t border-slate-100 pt-4">
+            <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
               <div className="flex justify-between items-center mb-3">
-                <span className="text-xs font-black text-slate-700 uppercase tracking-wider">Seleccionar Peajes ({tollsList.length})</span>
+                <span className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Seleccionar Peajes ({tollsList.length})</span>
                 <button type="button" onClick={() => { setEditingTollId(null); setShowNewTollModal(true); }} className="text-[11px] font-bold bg-purple-100 text-purple-700 px-3 py-1.5 rounded-xl hover:bg-purple-200 transition-colors flex items-center gap-1">
                   <Plus className="w-3.5 h-3.5"/> Registrar Nuevo Peaje
                 </button>
               </div>
 
               {tollsList.length === 0 ? (
-                <p className="text-xs font-bold text-slate-400 italic bg-slate-50 p-4 rounded-2xl text-center">No hay peajes creados aún. Registra el primero para calcular automáticamente.</p>
+                <p className="text-xs font-bold text-slate-400 italic bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl text-center">No hay peajes creados aún. Registra el primero para calcular automáticamente.</p>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1 scrollbar-none border border-slate-100 rounded-2xl bg-slate-50">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1 scrollbar-none border border-slate-100 dark:border-slate-800 rounded-2xl bg-slate-50 dark:bg-slate-900/50">
                   {tollsList.map(toll => {
                     const isChecked = selectedTollIds.includes(toll.id);
                     const price = toll.prices?.[quoteData.vehicleType] || 0;
                     return (
-                      <div key={toll.id} className={`flex items-center justify-between p-2.5 rounded-xl border transition-all ${isChecked ? 'bg-purple-50 border-purple-300 shadow-sm' : 'bg-white border-slate-200'}`}>
+                      <div key={toll.id} className={`flex items-center justify-between p-2.5 rounded-xl border transition-all ${isChecked ? 'bg-purple-50 border-purple-300 shadow-sm' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700'}`}>
                         <label className="flex items-center gap-2.5 flex-1 cursor-pointer min-w-0">
                           <input type="checkbox" checked={isChecked} onChange={() => toggleTollSelection(toll.id)} className="w-4 h-4 accent-purple-600 rounded cursor-pointer shrink-0"/>
                           <div className="truncate">
-                            <p className="text-xs font-black text-slate-800 truncate">{toll.name}</p>
+                            <p className="text-xs font-black text-slate-800 dark:text-slate-200 truncate">{toll.name}</p>
                             <p className="text-[10px] font-bold text-slate-400">{toll.route} • KM {toll.km}</p>
                           </div>
                         </label>
                         <div className="flex items-center gap-2 shrink-0 ml-2">
                           <span className="text-xs font-black text-purple-700">{formatMoney(price)}</span>
-                          <button type="button" onClick={() => handleEditToll(toll)} className="text-[10px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-1 rounded-lg transition-colors">Modificar</button>
+                          <button type="button" onClick={() => handleEditToll(toll)} className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-600 dark:text-slate-400 px-2 py-1 rounded-lg transition-colors">Modificar</button>
                         </div>
                       </div>
                     );
@@ -1004,8 +1004,8 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
       </div>
 
       {/* HISTORIAL DE COTIZACIONES GUARDADAS */}
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 mt-8">
-        <h3 className="text-base font-black text-slate-800 mb-4 flex items-center gap-2"><Receipt className="w-5 h-5 text-purple-600"/> Historial de Cotizaciones ({savedQuotes.length})</h3>
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 mt-8">
+        <h3 className="text-base font-black text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2"><Receipt className="w-5 h-5 text-purple-600"/> Historial de Cotizaciones ({savedQuotes.length})</h3>
         
         {savedQuotes.length === 0 ? (
           <p className="text-xs font-bold text-slate-400 text-center py-6">No hay cotizaciones registradas aún.</p>
@@ -1013,7 +1013,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
           <div className="overflow-x-auto pb-24 min-h-[280px]">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="bg-slate-50 text-slate-400 uppercase tracking-widest border-b">
+                <tr className="bg-slate-50 dark:bg-slate-900/50 text-slate-400 uppercase tracking-widest border-b">
                   <th className="p-3">N° Correlativo</th>
                   <th className="p-3">Cliente</th>
                   <th className="p-3">Ruta</th>
@@ -1023,15 +1023,15 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                   <th className="p-3 text-right"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-bold text-slate-700">
+              <tbody className="divide-y divide-slate-100 font-bold text-slate-700 dark:text-slate-300">
                 {savedQuotes.map((q, idx) => {
                   const correlativo = q.quoteNumber || `COT-${idx + 1}`;
                   return (
-                    <tr key={q.id} className="hover:bg-slate-50">
+                    <tr key={q.id} className="hover:bg-slate-50 dark:bg-slate-900/50">
                       <td className="p-3 font-black text-purple-700">{correlativo}</td>
                       <td className="p-3 font-black">{q.client}</td>
                       <td className="p-3 font-medium">{q.origin} ➔ {q.destination} ({q.distanceKm} KM)</td>
-                      <td className="p-3">{q.brand} {q.model} <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded">{q.plateOrVin || 'S/N'}</span></td>
+                      <td className="p-3">{q.brand} {q.model} <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">{q.plateOrVin || 'S/N'}</span></td>
                       <td className="p-3 font-black text-slate-900">{formatMoney(q.finalPrice)}</td>
                       <td className="p-3">
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
@@ -1042,17 +1042,17 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                         </span>
                       </td>
                       <td className="p-3 text-right relative">
-                        <button onClick={() => setActiveActionMenu(activeActionMenu === q.id ? null : q.id)} className="p-2 hover:bg-slate-200 bg-slate-100 text-slate-600 rounded-xl transition-colors shadow-sm">
+                        <button onClick={() => setActiveActionMenu(activeActionMenu === q.id ? null : q.id)} className="p-2 hover:bg-slate-200 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl transition-colors shadow-sm">
                           <MoreVertical className="w-4 h-4"/>
                         </button>
                         
                         {/* Menú Desplegable Inteligente */}
                         {activeActionMenu === q.id && (
-                          <div className={`absolute right-12 ${idx > 0 && idx === savedQuotes.length - 1 ? 'bottom-10' : 'top-10'} bg-white border border-slate-200 shadow-2xl rounded-xl w-48 py-2 z-[99] animate-in fade-in zoom-in-95`}>
-                            <button onClick={() => { handleEditQuote(q); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">Modificar</button>
+                          <div className={`absolute right-12 ${idx > 0 && idx === savedQuotes.length - 1 ? 'bottom-10' : 'top-10'} bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl rounded-xl w-48 py-2 z-[99] animate-in fade-in zoom-in-95`}>
+                            <button onClick={() => { handleEditQuote(q); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-900/50 transition-colors">Modificar</button>
                             <button onClick={() => { handleEditQuote(q); setShowSendModal(true); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-blue-600 hover:bg-blue-50 transition-colors">Enviar Cotización</button>
                             <button onClick={() => { setAcceptQuoteData(q); setShowAcceptModal(true); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-emerald-600 hover:bg-emerald-50 transition-colors">Cotización Aceptada</button>
-                            <div className="my-1 border-t border-slate-100"></div>
+                            <div className="my-1 border-t border-slate-100 dark:border-slate-800"></div>
                             <button onClick={() => { handleDeleteQuote(q.id); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors">Eliminar</button>
                           </div>
                         )}
@@ -1069,21 +1069,21 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
       {/* MODAL: NUEVO CLIENTE */}
       {showNewClientForm && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-          <form onSubmit={handleCreateNewClient} className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl relative animate-in zoom-in-95">
-            <button type="button" onClick={() => setShowNewClientForm(false)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-700"/></button>
-            <h3 className="text-lg font-black text-slate-800 mb-4">Registrar Nuevo Cliente</h3>
+          <form onSubmit={handleCreateNewClient} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl relative animate-in zoom-in-95">
+            <button type="button" onClick={() => setShowNewClientForm(false)} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-700 dark:text-slate-300"/></button>
+            <h3 className="text-lg font-black text-slate-800 dark:text-slate-200 mb-4">Registrar Nuevo Cliente</h3>
             <div className="space-y-3">
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase">Nombre / Empresa</label>
-                <input type="text" required value={newClientData.name} onChange={e => setNewClientData({...newClientData, name: e.target.value})} placeholder="Ej: Comercial SPA" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full border-2 border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500"/>
+                <input type="text" required value={newClientData.name} onChange={e => setNewClientData({...newClientData, name: e.target.value})} placeholder="Ej: Comercial SPA" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500"/>
               </div>
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase">Apellidos / Contacto</label>
-                <input type="text" value={newClientData.lastName} onChange={e => setNewClientData({...newClientData, lastName: e.target.value})} placeholder="Ej: Juan Pérez" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full border-2 border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500"/>
+                <input type="text" value={newClientData.lastName} onChange={e => setNewClientData({...newClientData, lastName: e.target.value})} placeholder="Ej: Juan Pérez" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500"/>
               </div>
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase">Correo de Contacto</label>
-                <input type="email" required value={newClientData.email} onChange={e => setNewClientData({...newClientData, email: e.target.value})} placeholder="contacto@empresa.cl" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="none" className="w-full border-2 border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500"/>
+                <input type="email" required value={newClientData.email} onChange={e => setNewClientData({...newClientData, email: e.target.value})} placeholder="contacto@empresa.cl" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="none" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500"/>
               </div>
             </div>
             <button type="submit" className="w-full mt-5 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 text-xs transition-colors">Guardar Cliente</button>
@@ -1094,10 +1094,10 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
       {/* MODAL: ENVIAR COTIZACIÓN */}
       {showSendModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl relative animate-in zoom-in-95">
-            <button type="button" onClick={() => setShowSendModal(false)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-700"/></button>
-            <h3 className="text-lg font-black text-slate-800 mb-2">Enviar Cotización</h3>
-            <p className="text-xs font-bold text-slate-500 mb-5">Elige cómo enviar esta cotización. Al enviarla o descargarla, se guardará automáticamente como <span className="text-blue-600">ENVIADA</span>.</p>
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl relative animate-in zoom-in-95">
+            <button type="button" onClick={() => setShowSendModal(false)} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-700 dark:text-slate-300"/></button>
+            <h3 className="text-lg font-black text-slate-800 dark:text-slate-200 mb-2">Enviar Cotización</h3>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-5">Elige cómo enviar esta cotización. Al enviarla o descargarla, se guardará automáticamente como <span className="text-blue-600">ENVIADA</span>.</p>
             
             <div className="space-y-3">
               <button 
@@ -1109,9 +1109,9 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
               
               <button 
                 onClick={() => { handleShare('email'); handleSaveQuoteStatus('enviada'); setShowSendModal(false); }}
-                className="w-full bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 font-black py-3.5 rounded-2xl transition-colors shadow-sm flex items-center justify-center gap-2 text-sm"
+                className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-black py-3.5 rounded-2xl transition-colors shadow-sm flex items-center justify-center gap-2 text-sm"
               >
-                <Mail className="w-5 h-5 text-slate-500"/> Enviar por Correo
+                <Mail className="w-5 h-5 text-slate-500 dark:text-slate-400"/> Enviar por Correo
               </button>
               
               <button 
@@ -1128,20 +1128,20 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
       {/* MODAL: NUEVO PEAJE CON PRECIOS POR TIPO DE VEHÍCULO */}
       {showNewTollModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-          <form onSubmit={handleSaveNewToll} className="bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl relative animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
-            <button type="button" onClick={() => setShowNewTollModal(false)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-700"/></button>
-            <h3 className="text-lg font-black text-slate-800 mb-1">{editingTollId ? 'Modificar Peaje' : 'Registrar Nuevo Peaje'}</h3>
+          <form onSubmit={handleSaveNewToll} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-lg shadow-2xl relative animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+            <button type="button" onClick={() => setShowNewTollModal(false)} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-700 dark:text-slate-300"/></button>
+            <h3 className="text-lg font-black text-slate-800 dark:text-slate-200 mb-1">{editingTollId ? 'Modificar Peaje' : 'Registrar Nuevo Peaje'}</h3>
             <p className="text-xs font-bold text-slate-400 mb-4">Configura los valores de este peaje según cada tipo de vehículo.</p>
             
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase">Nombre del Peaje</label>
-                  <input type="text" required value={newTollData.name} onChange={e => setNewTollData({...newTollData, name: e.target.value})} placeholder="Ej: Peaje Lampa" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500"/>
+                  <input type="text" required value={newTollData.name} onChange={e => setNewTollData({...newTollData, name: e.target.value})} placeholder="Ej: Peaje Lampa" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500"/>
                 </div>
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase">Ruta / Dirección</label>
-                  <select value={newTollData.route} onChange={e => setNewTollData({...newTollData, route: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500 bg-white">
+                  <select value={newTollData.route} onChange={e => setNewTollData({...newTollData, route: e.target.value})} className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500 bg-white dark:bg-slate-900">
                     <option value="Ruta 5 Norte">Ruta 5 Norte</option>
                     <option value="Ruta 5 Sur">Ruta 5 Sur</option>
                     <option value="Ruta 68">Ruta 68</option>
@@ -1156,7 +1156,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                       placeholder="Escribe la ruta aquí..." 
                       required
                       autoComplete="off" autoCorrect="off" spellCheck="false"
-                      className="w-full mt-2 border-2 border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500 animate-in fade-in"
+                      className="w-full mt-2 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500 animate-in fade-in"
                     />
                   )}
                 </div>
@@ -1164,15 +1164,15 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
 
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase">Kilómetro de la Ruta (KM)</label>
-                <input type="number" required value={newTollData.km} onChange={e => setNewTollData({...newTollData, km: e.target.value})} placeholder="Ej: 30" className="w-full border-2 border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500"/>
+                <input type="number" required value={newTollData.km} onChange={e => setNewTollData({...newTollData, km: e.target.value})} placeholder="Ej: 30" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500"/>
               </div>
 
               <div className="border-t pt-3">
-                <p className="text-xs font-black text-slate-700 mb-2 uppercase tracking-wider">Tarifas por Tipo de Vehículo ($)</p>
+                <p className="text-xs font-black text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider">Tarifas por Tipo de Vehículo ($)</p>
                 <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
                   {Object.keys(newTollData.prices).map(vType => (
-                    <div key={vType} className="bg-slate-50 p-2 rounded-xl border border-slate-200">
-                      <label className="text-[9px] font-bold text-slate-500 block truncate">{vType}</label>
+                    <div key={vType} className="bg-slate-50 dark:bg-slate-900/50 p-2 rounded-xl border border-slate-200 dark:border-slate-700">
+                      <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400 block truncate">{vType}</label>
                       <input 
                         type="number" 
                         value={newTollData.prices[vType]} 
@@ -1184,7 +1184,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                           }));
                         }} 
                         placeholder="$ Costo" 
-                        className="w-full mt-1 border border-slate-300 rounded-lg p-1.5 text-xs font-black text-purple-700 outline-none focus:border-purple-500 bg-white"
+                        className="w-full mt-1 border border-slate-300 rounded-lg p-1.5 text-xs font-black text-purple-700 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
                       />
                     </div>
                   ))}
@@ -1200,16 +1200,16 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
       {/* MODAL: ACEPTAR COTIZACIÓN Y CREAR TRASLADO */}
       {showAcceptModal && acceptQuoteData && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-          <form onSubmit={handleConfirmAcceptQuote} className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl relative animate-in zoom-in-95">
-            <button type="button" onClick={() => setShowAcceptModal(false)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-700"/></button>
-            <h3 className="text-lg font-black text-slate-800 mb-1">¡Cotización Aceptada! 🎉</h3>
-            <p className="text-xs font-bold text-slate-500 mb-5">¿Creemos el traslado de inmediato? Configura la fecha y el conductor.</p>
+          <form onSubmit={handleConfirmAcceptQuote} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl relative animate-in zoom-in-95">
+            <button type="button" onClick={() => setShowAcceptModal(false)} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-700 dark:text-slate-300"/></button>
+            <h3 className="text-lg font-black text-slate-800 dark:text-slate-200 mb-1">¡Cotización Aceptada! 🎉</h3>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-5">¿Creemos el traslado de inmediato? Configura la fecha y el conductor.</p>
             
             <div className="space-y-4">
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Fecha Programada</label>
                 <div className="relative mt-1">
-                  <input type="date" required value={jobDetails.scheduledDate} onChange={e => setJobDetails({...jobDetails, scheduledDate: e.target.value})} className="w-full border-2 border-slate-200 rounded-xl p-3 pl-10 text-sm font-bold text-slate-700 outline-none focus:border-emerald-500"/>
+                  <input type="date" required value={jobDetails.scheduledDate} onChange={e => setJobDetails({...jobDetails, scheduledDate: e.target.value})} className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 pl-10 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500"/>
                   <Calendar className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                 </div>
               </div>
@@ -1220,7 +1220,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                   <select 
                     value={jobDetails.assignedDriver} 
                     onChange={e => setJobDetails({...jobDetails, assignedDriver: e.target.value})} 
-                    className="w-full border-2 border-slate-200 rounded-xl p-3 pl-10 text-sm font-bold text-slate-700 outline-none focus:border-emerald-500 bg-white"
+                    className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 pl-10 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 bg-white dark:bg-slate-900"
                   >
                     <option value="">Sin asignar (Dejar como Pendiente)</option>
                     {drivers && drivers.map((driver, idx) => (

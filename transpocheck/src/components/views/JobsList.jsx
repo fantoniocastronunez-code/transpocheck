@@ -1364,12 +1364,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
         <div className="flex gap-2 shrink-0 overflow-x-auto pb-1 sm:pb-0 scrollbar-none items-center">
           {isAdminView && (
-            <label className="flex items-center gap-2 cursor-pointer bg-white dark:bg-slate-900 px-4 py-3.5 rounded-2xl border-2 border-slate-200 dark:border-slate-800 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shrink-0">
-              <span className={`text-xs font-black uppercase tracking-widest ${auditMode ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400 dark:text-slate-500'}`}>Modo Auditoría</span>
+            <label className="flex items-center gap-2 cursor-pointer bg-white dark:bg-slate-900 px-4 py-3.5 rounded-2xl border-2 border-slate-200 dark:border-slate-800 shadow-sm hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-800 transition-colors shrink-0">
+              <span className={`text-xs font-black uppercase tracking-widest ${auditMode ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400'}`}>Modo Auditoría</span>
               <div className="relative flex items-center">
                 <input type="checkbox" className="sr-only" checked={auditMode} onChange={() => setAuditMode(!auditMode)} />
                 <div className={`block w-8 h-4 rounded-full transition-colors ${auditMode ? 'bg-purple-500' : 'bg-slate-300 dark:bg-slate-700'}`}></div>
-                <div className={`absolute left-0.5 top-0.5 bg-white w-3 h-3 rounded-full transition-transform ${auditMode ? 'transform translate-x-4' : ''}`}></div>
+                <div className={`absolute left-0.5 top-0.5 bg-white dark:bg-slate-900 w-3 h-3 rounded-full transition-transform ${auditMode ? 'transform translate-x-4' : ''}`}></div>
               </div>
             </label>
           )}
@@ -1433,7 +1433,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         {/* COLUMNA EN CURSO */}
         <div className="w-full lg:flex-1 flex flex-col overflow-hidden">
           <button onClick={() => setIsInProgressOpen(!isInProgressOpen)} className="w-full flex justify-between items-center p-4">
-            <h3 className="font-extrabold text-slate-800 flex items-center gap-2"><Navigation className="w-5 h-5 text-blue-600" /> En Curso ({inProgressJobsList.length})</h3>
+            <h3 className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-2"><Navigation className="w-5 h-5 text-blue-600" /> En Curso ({inProgressJobsList.length})</h3>
             {isInProgressOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
           </button>
           {isInProgressOpen && (
@@ -1450,7 +1450,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         {/* COLUMNA PENDIENTES */}
         <div className="w-full lg:flex-1 flex flex-col overflow-hidden">
           <button onClick={() => setIsPendingOpen(!isPendingOpen)} className="w-full flex justify-between items-center p-4">
-            <h3 className="font-extrabold text-slate-700 flex items-center gap-2"><Clock className="w-5 h-5 text-amber-500" /> Pendientes ({pendingJobsList.length})</h3>
+            <h3 className="font-extrabold text-slate-700 dark:text-slate-300 flex items-center gap-2"><Clock className="w-5 h-5 text-amber-500" /> Pendientes ({pendingJobsList.length})</h3>
             {isPendingOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
           </button>
           {isPendingOpen && (
@@ -1467,16 +1467,16 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       </div>
 
       <div className="mt-10">
-        <h3 className="font-extrabold text-slate-700 mb-4 border-b-2 pb-2">Finalizados de Hoy ({todayHistoryJobs.length})</h3>
+        <h3 className="font-extrabold text-slate-700 dark:text-slate-300 mb-4 border-b-2 pb-2">Finalizados de Hoy ({todayHistoryJobs.length})</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">{todayHistoryJobs.map(j => renderHistoryJobCard(j))}</div>
       </div>
 
       {olderHistoryJobs.length > 0 && (
-        <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden mb-8">
-          <div className="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center flex-wrap gap-3">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden mb-8">
+          <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center flex-wrap gap-3">
             <div className="flex items-center gap-3">
-              <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">Historial Anterior</h4>
-              <span className="bg-slate-200 text-slate-600 text-[10px] font-black px-2 py-0.5 rounded-full">{olderHistoryJobs.length} registros</span>
+              <h4 className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Historial Anterior</h4>
+              <span className="bg-slate-200 text-slate-600 dark:text-slate-400 text-[10px] font-black px-2 py-0.5 rounded-full">{olderHistoryJobs.length} registros</span>
             </div>
           </div>
           <div className="divide-y divide-slate-100 max-h-[500px] overflow-y-auto">
@@ -1484,7 +1484,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               const isFailed = j.status === 'failed';
               const ident = getJobIdentifier(j);
               return (
-                <div key={j.id} onClick={() => setSelectedHistoryJob(j)} className="p-2 sm:p-3 hover:bg-slate-50 flex flex-col transition-colors gap-2 border-b border-slate-100 last:border-0 cursor-pointer">
+                <div key={j.id} onClick={() => setSelectedHistoryJob(j)} className="p-2 sm:p-3 hover:bg-slate-50 dark:bg-slate-900/50 flex flex-col transition-colors gap-2 border-b border-slate-100 dark:border-slate-800 last:border-0 cursor-pointer">
                   {/* FILA ORIGINAL COMPACTA */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
                     <div className="flex items-center gap-2 overflow-hidden">
@@ -1494,7 +1494,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                           {j.tripType === 'simple' ? (
                             <p className="text-xs font-black text-purple-800 truncate">{j.description || 'Servicio en Terreno'}</p>
                           ) : (
-                            <p className="text-xs font-black text-slate-800 truncate">{j.brand} {j.model}</p>
+                            <p className="text-xs font-black text-slate-800 dark:text-slate-200 truncate">{j.brand} {j.model}</p>
                           )}
                           {j.tripType === 'simple' ? (
                             <span className="text-[9px] bg-purple-100 border border-purple-200 text-purple-800 px-1.5 py-0.5 rounded font-black uppercase shadow-sm">SERVICIO</span>
@@ -1502,7 +1502,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                             <LicensePlateBadge text={ident} />
                           )}
                         </div>
-                        <p className="text-[10px] font-bold text-slate-500 truncate">
+                        <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">
                           {j.origin}
                           {j.waypoints && j.waypoints.length > 0 ? ` ➔ +${j.waypoints.length} int.` : ''}
                           {j.destination && j.tripType !== 'simple' ? ` ➔ ${j.destination}` : ''}
@@ -1534,7 +1534,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                         return null;
                       })()}
 
-                      <button onClick={(e) => { e.stopPropagation(); generatePDF(j); }} className="p-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-md transition-colors" title="Descargar PDF"><FileDown className="w-3.5 h-3.5" /></button>
+                      <button onClick={(e) => { e.stopPropagation(); generatePDF(j); }} className="p-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 rounded-md transition-colors" title="Descargar PDF"><FileDown className="w-3.5 h-3.5" /></button>
                       <button onClick={(e) => { e.stopPropagation(); handleShareWhatsAppPDF(j); }} disabled={processingId === `${j.id}-wapp`} className="p-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-md transition-colors disabled:opacity-50" title="Compartir PDF">
                         {processingId === `${j.id}-wapp` ? <Clock className="w-3.5 h-3.5 animate-spin" /> : <Share2 className="w-3.5 h-3.5" />}
                       </button>
@@ -1544,8 +1544,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
                   {/* NUEVO PANEL PRT AUDITORIA */}
                   {isAdminView && auditMode && j.tripType === 'revision' && (j.status === 'completed' || j.status === 'failed') && (
-                    <div className="bg-slate-100/50 border border-slate-200 rounded-lg p-2 mt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-inner ml-4">
-                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Auditar Resultado PRT:</span>
+                    <div className="bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-inner ml-4">
+                      <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Auditar Resultado PRT:</span>
                       <div className="flex gap-1">
                         <button
                           onClick={(e) => {
@@ -1554,7 +1554,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                               try { await updateDoc(doc(db, 'transport_jobs', j.id), { prt_result: 'aprobado', checklist: { ...(j.checklist || {}), rtStatus: 'aprobado' }, status: 'completed', failedReason: deleteField() }); showAlert("✅ Corregido a Legal"); } catch (err) { showAlert("Error al actualizar"); }
                             });
                           }}
-                          className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${j.prt_result === 'aprobado' || j.checklist?.rtStatus === 'aprobado' ? 'bg-green-500 text-white shadow-sm ring-2 ring-green-200' : 'bg-white border border-slate-200 text-slate-500 hover:bg-green-50 hover:text-green-600 hover:border-green-200'}`}>
+                          className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${j.prt_result === 'aprobado' || j.checklist?.rtStatus === 'aprobado' ? 'bg-green-500 text-white shadow-sm ring-2 ring-green-200' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-green-50 hover:text-green-600 hover:border-green-200'}`}>
                           Legal
                         </button>
                         <button
@@ -1564,7 +1564,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                               try { await updateDoc(doc(db, 'transport_jobs', j.id), { prt_result: 'aprobado_ayuda', checklist: { ...(j.checklist || {}), rtStatus: 'aprobado_ayuda' }, status: 'completed', failedReason: deleteField() }); showAlert("✅ Corregido a Con Ayuda"); } catch (err) { showAlert("Error al actualizar"); }
                             });
                           }}
-                          className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${j.prt_result === 'aprobado_ayuda' || j.checklist?.rtStatus === 'aprobado_ayuda' ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-200' : 'bg-white border border-slate-200 text-slate-500 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200'}`}>
+                          className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${j.prt_result === 'aprobado_ayuda' || j.checklist?.rtStatus === 'aprobado_ayuda' ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-200' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200'}`}>
                           Ayuda
                         </button>
                         <button
@@ -1574,7 +1574,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                               try { await updateDoc(doc(db, 'transport_jobs', j.id), { prt_result: 'rechazado', checklist: { ...(j.checklist || {}), rtStatus: 'rechazado' }, status: 'failed', failedReason: 'Rechazo en Planta PRT (Editado por Admin)' }); showAlert("✅ Corregido a Rechazado"); } catch (err) { showAlert("Error al actualizar"); }
                             });
                           }}
-                          className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${j.prt_result === 'rechazado' || j.checklist?.rtStatus === 'rechazado' ? 'bg-red-500 text-white shadow-sm ring-2 ring-red-200' : 'bg-white border border-slate-200 text-slate-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200'}`}>
+                          className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${j.prt_result === 'rechazado' || j.checklist?.rtStatus === 'rechazado' ? 'bg-red-500 text-white shadow-sm ring-2 ring-red-200' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-red-50 hover:text-red-600 hover:border-red-200'}`}>
                           Rechazo
                         </button>
                       </div>
@@ -1583,8 +1583,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
                   {/* NUEVO PANEL AUDITORIA CATEGORIA VEHICULO */}
                   {isAdminView && auditMode && (j.status === 'completed' || j.status === 'failed') && j.tripType !== 'simple' && (
-                    <div className="bg-slate-100/50 border border-slate-200 rounded-lg p-2 mt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-inner ml-4">
-                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Corregir Categoría (Estadísticas):</span>
+                    <div className="bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-inner ml-4">
+                      <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Corregir Categoría (Estadísticas):</span>
                       <select
                         value={j.checklist?.vehicleType || 'auto'}
                         onChange={(e) => {
@@ -1629,7 +1629,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                           });
                         }}
                         disabled={processingId === `${j.id}-updating-cat`}
-                        className="bg-white border border-slate-200 text-slate-700 text-xs font-bold py-1 px-2 rounded-lg outline-none cursor-pointer focus:border-blue-500 shadow-sm transition-colors disabled:opacity-50"
+                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold py-1 px-2 rounded-lg outline-none cursor-pointer focus:border-blue-500 shadow-sm transition-colors disabled:opacity-50"
                       >
                         <option value="auto">Autos / SUV</option>
                         <option value="camioneta">Camioneta</option>
@@ -1650,10 +1650,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     <div className="bg-emerald-50/50 border border-emerald-200 rounded-lg p-2 mt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-inner ml-4">
                       <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Corregir Ingreso ($):</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-extrabold text-slate-700">${Number(j.companyPrice || 0).toLocaleString('es-CL')}</span>
+                        <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">${Number(j.companyPrice || 0).toLocaleString('es-CL')}</span>
                         <button
                           onClick={(e) => { e.stopPropagation(); setEditPriceJob(j); }}
-                          className="bg-white border border-emerald-200 text-emerald-700 text-[10px] font-bold py-1 px-2 rounded-lg outline-none cursor-pointer hover:bg-emerald-100 shadow-sm transition-colors"
+                          className="bg-white dark:bg-slate-900 border border-emerald-200 text-emerald-700 text-[10px] font-bold py-1 px-2 rounded-lg outline-none cursor-pointer hover:bg-emerald-100 shadow-sm transition-colors"
                         >
                           Modificar
                         </button>
@@ -1666,10 +1666,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     <div className="bg-blue-50/50 border border-blue-200 rounded-lg p-2 mt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-inner ml-4">
                       <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Auditar Distancia (KM):</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-extrabold text-slate-700">{j.drivenDistance || 'No calculado'}</span>
+                        <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">{j.drivenDistance || 'No calculado'}</span>
                         <button
                           onClick={(e) => { e.stopPropagation(); setEditKmJob(j); }}
-                          className="bg-white border border-emerald-200 text-emerald-700 text-[10px] font-bold py-1 px-2 rounded-lg outline-none cursor-pointer hover:bg-emerald-100 shadow-sm transition-colors flex items-center gap-1"
+                          className="bg-white dark:bg-slate-900 border border-emerald-200 text-emerald-700 text-[10px] font-bold py-1 px-2 rounded-lg outline-none cursor-pointer hover:bg-emerald-100 shadow-sm transition-colors flex items-center gap-1"
                           title="Editar KM Manualmente"
                         >
                           <Edit2 className="w-3 h-3" /> Modificar
@@ -1677,7 +1677,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                         <button
                           onClick={(e) => { e.stopPropagation(); handleSingleRecalculate(j); }}
                           disabled={processingId === `${j.id}-recalc-km`}
-                          className="bg-white border border-blue-200 text-blue-700 text-[10px] font-bold py-1 px-2 rounded-lg outline-none cursor-pointer hover:bg-blue-100 shadow-sm transition-colors flex items-center gap-1 disabled:opacity-50"
+                          className="bg-white dark:bg-slate-900 border border-blue-200 text-blue-700 text-[10px] font-bold py-1 px-2 rounded-lg outline-none cursor-pointer hover:bg-blue-100 shadow-sm transition-colors flex items-center gap-1 disabled:opacity-50"
                           title="Forzar Recálculo de Ruta"
                         >
                           {processingId === `${j.id}-recalc-km` ? <Clock className="w-3 h-3 animate-spin" /> : <MapIcon className="w-3 h-3" />}
@@ -1691,7 +1691,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             })}
           </div>
           {onLoadMore && (
-            <button onClick={onLoadMore} className="w-full bg-slate-50 hover:bg-slate-100 text-blue-600 font-bold text-sm py-4 transition-colors border-t border-slate-200 shadow-inner">
+            <button onClick={onLoadMore} className="w-full bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:bg-slate-800 text-blue-600 font-bold text-sm py-4 transition-colors border-t border-slate-200 dark:border-slate-700 shadow-inner">
               Cargar más traslados antiguos...
             </button>
           )}
@@ -1701,10 +1701,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       {/* MODALES */}
       {jobToFail && (
         <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[100] p-4">
-          <form onSubmit={(e) => { e.preventDefault(); handleFailJob(jobToFail, e.target.reason.value); }} className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-4">
+          <form onSubmit={(e) => { e.preventDefault(); handleFailJob(jobToFail, e.target.reason.value); }} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm space-y-4">
             <h3 className="text-lg font-extrabold">¿Motivo del fallo?</h3>
             <textarea name="reason" required autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 p-3 rounded-xl font-bold text-sm" rows="3"></textarea>
-            <div className="flex gap-3"><button type="button" onClick={() => setJobToFail(null)} className="flex-1 py-2 bg-slate-100 rounded-xl">Volver</button><button type="submit" className="flex-[2] py-2 bg-red-600 text-white rounded-xl">Confirmar</button></div>
+            <div className="flex gap-3"><button type="button" onClick={() => setJobToFail(null)} className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl">Volver</button><button type="submit" className="flex-[2] py-2 bg-red-600 text-white rounded-xl">Confirmar</button></div>
           </form>
         </div>
       )}
@@ -1749,11 +1749,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
             updatePhase(prtPromptJob, 'prt_done', extraUpdates);
             setPrtPromptJob(null);
-          }} className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl border-t-8 border-red-500 animate-in zoom-in-95 flex flex-col max-h-[90vh]">
+          }} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-xl border-t-8 border-red-500 animate-in zoom-in-95 flex flex-col max-h-[90vh]">
 
             <div className="flex justify-between items-center mb-4 shrink-0">
-              <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5"><XCircle className="text-red-500 w-5 h-5" /> Rechazo PRT</h3>
-              <button type="button" onClick={() => setPrtPromptJob(null)} className="p-1.5 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-600" /></button>
+              <h3 className="text-lg font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1.5"><XCircle className="text-red-500 w-5 h-5" /> Rechazo PRT</h3>
+              <button type="button" onClick={() => setPrtPromptJob(null)} className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-600 dark:text-slate-400" /></button>
             </div>
 
             <div className="overflow-y-auto space-y-5 pr-1 pb-2">
@@ -1762,38 +1762,38 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                 <textarea name="reason" required placeholder="Escribe por qué rechazaron el vehículo..." autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 p-3 rounded-xl font-bold text-sm outline-none focus:border-red-500" rows="2"></textarea>
               </div>
 
-              <div className="space-y-2.5 pt-4 border-t border-slate-100">
+              <div className="space-y-2.5 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">2. ¿Hacia dónde se dirige ahora?</label>
 
-                <button type="button" onClick={() => { setPrtReturnOpt('origin'); setPrtReturnDest(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${prtReturnOpt === 'origin' ? 'border-red-500 bg-red-50 shadow-sm' : 'border-slate-100 bg-slate-50 hover:border-red-200'}`}>
+                <button type="button" onClick={() => { setPrtReturnOpt('origin'); setPrtReturnDest(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${prtReturnOpt === 'origin' ? 'border-red-500 bg-red-50 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-red-200'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${prtReturnOpt === 'origin' ? 'border-red-500' : 'border-slate-300'}`}>
                     {prtReturnOpt === 'origin' && <div className="w-2 h-2 bg-red-500 rounded-full"></div>}
                   </div>
                   <div className="min-w-0">
-                    <p className={`font-extrabold text-sm ${prtReturnOpt === 'origin' ? 'text-red-800' : 'text-slate-700'}`}>Retornar al Origen</p>
-                    <p className="text-[10px] font-bold text-slate-500 truncate">Volver a {prtPromptJob.origin}</p>
+                    <p className={`font-extrabold text-sm ${prtReturnOpt === 'origin' ? 'text-red-800' : 'text-slate-700 dark:text-slate-300'}`}>Retornar al Origen</p>
+                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">Volver a {prtPromptJob.origin}</p>
                   </div>
                 </button>
 
-                <button type="button" onClick={() => { setPrtReturnOpt('prt_help'); setPrtReturnDest(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${prtReturnOpt === 'prt_help' ? 'border-amber-500 bg-amber-50 shadow-sm' : 'border-slate-100 bg-slate-50 hover:border-amber-200'}`}>
+                <button type="button" onClick={() => { setPrtReturnOpt('prt_help'); setPrtReturnDest(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${prtReturnOpt === 'prt_help' ? 'border-amber-500 bg-amber-50 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-amber-200'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${prtReturnOpt === 'prt_help' ? 'border-amber-500' : 'border-slate-300'}`}>
                     {prtReturnOpt === 'prt_help' && <div className="w-2 h-2 bg-amber-500 rounded-full"></div>}
                   </div>
                   <div className="min-w-0">
-                    <p className={`font-extrabold text-sm ${prtReturnOpt === 'prt_help' ? 'text-amber-800' : 'text-slate-700'}`}>Reintentar con Ayuda</p>
-                    <p className="text-[10px] font-bold text-slate-500 truncate">Se queda gestionando ayuda</p>
+                    <p className={`font-extrabold text-sm ${prtReturnOpt === 'prt_help' ? 'text-amber-800' : 'text-slate-700 dark:text-slate-300'}`}>Reintentar con Ayuda</p>
+                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">Se queda gestionando ayuda</p>
                   </div>
                 </button>
 
-                <button type="button" onClick={() => setPrtReturnOpt('other')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-start gap-3 ${prtReturnOpt === 'other' ? 'border-red-500 bg-red-50 shadow-sm' : 'border-slate-100 bg-slate-50 hover:border-red-200'}`}>
+                <button type="button" onClick={() => setPrtReturnOpt('other')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-start gap-3 ${prtReturnOpt === 'other' ? 'border-red-500 bg-red-50 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-red-200'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${prtReturnOpt === 'other' ? 'border-red-500' : 'border-slate-300'}`}>
                     {prtReturnOpt === 'other' && <div className="w-2 h-2 bg-red-500 rounded-full"></div>}
                   </div>
                   <div className="w-full min-w-0">
-                    <p className={`font-extrabold text-sm ${prtReturnOpt === 'other' ? 'text-red-800' : 'text-slate-700'}`}>Ir a Otro Destino</p>
+                    <p className={`font-extrabold text-sm ${prtReturnOpt === 'other' ? 'text-red-800' : 'text-slate-700 dark:text-slate-300'}`}>Ir a Otro Destino</p>
                     {prtReturnOpt === 'other' ? (
                       <div className="mt-2 w-full animate-in fade-in slide-in-from-top-1">
-                        <input type="text" list="directory-destinations-prt-rej" autoFocus required placeholder="Escribe el destino..." value={prtReturnDest} onChange={e => setPrtReturnDest(e.target.value.toUpperCase())} autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full bg-white border border-red-300 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-red-500 font-bold" onClick={(e) => e.stopPropagation()} />
+                        <input type="text" list="directory-destinations-prt-rej" autoFocus required placeholder="Escribe el destino..." value={prtReturnDest} onChange={e => setPrtReturnDest(e.target.value.toUpperCase())} autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full bg-white dark:bg-slate-900 border border-red-300 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-red-500 font-bold" onClick={(e) => e.stopPropagation()} />
 
                         <datalist id="directory-destinations-prt-rej">
                           {directoryMemory.map((dir, idx) => (
@@ -1805,7 +1805,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                         </datalist>
                       </div>
                     ) : (
-                      <p className="text-[10px] font-bold text-slate-500 truncate">Elige un nuevo lugar</p>
+                      <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">Elige un nuevo lugar</p>
                     )}
                   </div>
                 </button>
@@ -1847,42 +1847,42 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
             updatePhase(prtApprovePromptJob, 'prt_done', extraUpdates);
             setPrtApprovePromptJob(null);
-          }} className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl border-t-8 border-green-500 animate-in zoom-in-95 flex flex-col max-h-[90vh]">
+          }} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-xl border-t-8 border-green-500 animate-in zoom-in-95 flex flex-col max-h-[90vh]">
             <div className="flex justify-between items-center mb-4 shrink-0">
-              <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-1.5"><CheckCircle className="text-green-500 w-5 h-5" /> Aprobación PRT</h3>
-              <button type="button" onClick={() => setPrtApprovePromptJob(null)} className="p-1.5 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-600" /></button>
+              <h3 className="text-lg font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1.5"><CheckCircle className="text-green-500 w-5 h-5" /> Aprobación PRT</h3>
+              <button type="button" onClick={() => setPrtApprovePromptJob(null)} className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4 text-slate-600 dark:text-slate-400" /></button>
             </div>
 
             <div className="overflow-y-auto space-y-5 pr-1 pb-2">
               <div className="space-y-2.5">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">1. Tipo de Aprobación</label>
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => setPrtApproveType('aprobado')} className={`flex-1 py-3 rounded-xl font-black text-xs transition-all border-2 ${prtApproveType === 'aprobado' ? 'bg-green-50 border-green-500 text-green-700 shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-500 hover:bg-slate-100'}`}>✅ Legal</button>
-                  <button type="button" onClick={() => setPrtApproveType('aprobado_ayuda')} className={`flex-1 py-3 rounded-xl font-black text-xs transition-all border-2 ${prtApproveType === 'aprobado_ayuda' ? 'bg-amber-50 border-amber-500 text-amber-700 shadow-sm' : 'bg-slate-50 border-slate-100 text-slate-500 hover:bg-slate-100'}`}>🤝 Con Ayuda</button>
+                  <button type="button" onClick={() => setPrtApproveType('aprobado')} className={`flex-1 py-3 rounded-xl font-black text-xs transition-all border-2 ${prtApproveType === 'aprobado' ? 'bg-green-50 border-green-500 text-green-700 shadow-sm' : 'bg-slate-50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>✅ Legal</button>
+                  <button type="button" onClick={() => setPrtApproveType('aprobado_ayuda')} className={`flex-1 py-3 rounded-xl font-black text-xs transition-all border-2 ${prtApproveType === 'aprobado_ayuda' ? 'bg-amber-50 border-amber-500 text-amber-700 shadow-sm' : 'bg-slate-50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>🤝 Con Ayuda</button>
                 </div>
               </div>
 
-              <div className="space-y-2.5 pt-4 border-t border-slate-100">
+              <div className="space-y-2.5 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">2. ¿Hacia dónde se dirige ahora?</label>
-                <button type="button" onClick={() => { setPrtReturnOpt('origin'); setPrtReturnDest(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${prtReturnOpt === 'origin' ? 'border-green-500 bg-green-50 shadow-sm' : 'border-slate-100 bg-slate-50 hover:border-green-200'}`}>
+                <button type="button" onClick={() => { setPrtReturnOpt('origin'); setPrtReturnDest(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${prtReturnOpt === 'origin' ? 'border-green-500 bg-green-50 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-green-200'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${prtReturnOpt === 'origin' ? 'border-green-500' : 'border-slate-300'}`}>
                     {prtReturnOpt === 'origin' && <div className="w-2 h-2 bg-green-500 rounded-full"></div>}
                   </div>
                   <div className="min-w-0">
-                    <p className={`font-extrabold text-sm ${prtReturnOpt === 'origin' ? 'text-green-800' : 'text-slate-700'}`}>Retornar al Origen</p>
-                    <p className="text-[10px] font-bold text-slate-500 truncate">Volver a {prtApprovePromptJob.origin}</p>
+                    <p className={`font-extrabold text-sm ${prtReturnOpt === 'origin' ? 'text-green-800' : 'text-slate-700 dark:text-slate-300'}`}>Retornar al Origen</p>
+                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">Volver a {prtApprovePromptJob.origin}</p>
                   </div>
                 </button>
 
-                <button type="button" onClick={() => setPrtReturnOpt('other')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-start gap-3 ${prtReturnOpt === 'other' ? 'border-green-500 bg-green-50 shadow-sm' : 'border-slate-100 bg-slate-50 hover:border-green-200'}`}>
+                <button type="button" onClick={() => setPrtReturnOpt('other')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-start gap-3 ${prtReturnOpt === 'other' ? 'border-green-500 bg-green-50 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-green-200'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${prtReturnOpt === 'other' ? 'border-green-500' : 'border-slate-300'}`}>
                     {prtReturnOpt === 'other' && <div className="w-2 h-2 bg-green-500 rounded-full"></div>}
                   </div>
                   <div className="w-full min-w-0">
-                    <p className={`font-extrabold text-sm ${prtReturnOpt === 'other' ? 'text-green-800' : 'text-slate-700'}`}>Ir a Otro Destino</p>
+                    <p className={`font-extrabold text-sm ${prtReturnOpt === 'other' ? 'text-green-800' : 'text-slate-700 dark:text-slate-300'}`}>Ir a Otro Destino</p>
                     {prtReturnOpt === 'other' ? (
                       <div className="mt-2 w-full animate-in fade-in slide-in-from-top-1">
-                        <input type="text" list="directory-destinations-prt" autoFocus required placeholder="Escribe el destino..." value={prtReturnDest} onChange={e => setPrtReturnDest(e.target.value.toUpperCase())} autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full bg-white border border-green-300 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-green-500 font-bold" onClick={(e) => e.stopPropagation()} />
+                        <input type="text" list="directory-destinations-prt" autoFocus required placeholder="Escribe el destino..." value={prtReturnDest} onChange={e => setPrtReturnDest(e.target.value.toUpperCase())} autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full bg-white dark:bg-slate-900 border border-green-300 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-green-500 font-bold" onClick={(e) => e.stopPropagation()} />
 
 
                         <datalist id="directory-destinations-prt">
@@ -1895,7 +1895,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                         </datalist>
                       </div>
                     ) : (
-                      <p className="text-[10px] font-bold text-slate-500 truncate">Elige un nuevo lugar</p>
+                      <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">Elige un nuevo lugar</p>
                     )}
                   </div>
                 </button>
@@ -1911,16 +1911,16 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       {relayPromptJob && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-          <div className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 max-w-sm w-full text-center relative animate-in zoom-in-95 border border-slate-100">
-            <button type="button" onClick={() => setRelayPromptJob(null)} className="absolute top-4 right-4 bg-slate-100 p-2 rounded-full hover:bg-slate-200 transition-colors"><X className="w-5 h-5 text-slate-700" /></button>
-            <h3 className="text-xl font-black text-slate-800 mb-1">Traspaso a Compañero</h3>
-            <p className="text-xs font-bold text-slate-500 mb-5">Pide al otro conductor que escanee este código con la cámara de su celular para entregarle el auto.</p>
+          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-6 sm:p-8 max-w-sm w-full text-center relative animate-in zoom-in-95 border border-slate-100 dark:border-slate-800">
+            <button type="button" onClick={() => setRelayPromptJob(null)} className="absolute top-4 right-4 bg-slate-100 dark:bg-slate-800 p-2 rounded-full hover:bg-slate-200 transition-colors"><X className="w-5 h-5 text-slate-700 dark:text-slate-300" /></button>
+            <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 mb-1">Traspaso a Compañero</h3>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-5">Pide al otro conductor que escanee este código con la cámara de su celular para entregarle el auto.</p>
 
-            <div className="bg-white p-3 rounded-2xl border-4 border-slate-100 shadow-inner inline-block">
+            <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl border-4 border-slate-100 dark:border-slate-800 shadow-inner inline-block">
               <img src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`${window.location.origin}/?relay=${relayPromptJob.id}`)}`} alt="QR Relevo" className="w-48 h-48 mx-auto" />
             </div>
 
-            <div className="mt-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+            <div className="mt-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
               <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">O envíale el link por WhatsApp:</p>
               <a
                 href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`🔑 Toma mi relevo del vehículo ${relayPromptJob.plate || relayPromptJob.vin} abriendo este link: ${window.location.origin}/?relay=${relayPromptJob.id}`)}`}
@@ -1937,12 +1937,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       {forceCloseJob && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl flex flex-col max-h-[80vh] animate-in zoom-in-95">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-xl flex flex-col max-h-[80vh] animate-in zoom-in-95">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-2"><CheckCircle className="w-5 h-5 text-emerald-500" /> Asignar y Finalizar</h3>
-              <button onClick={() => setForceCloseJob(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4" /></button>
+              <h3 className="text-lg font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-2"><CheckCircle className="w-5 h-5 text-emerald-500" /> Asignar y Finalizar</h3>
+              <button onClick={() => setForceCloseJob(null)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 transition-colors"><X className="w-4 h-4" /></button>
             </div>
-            <p className="text-sm font-bold text-slate-500 mb-4 pb-4 border-b border-slate-100">Selecciona al conductor que realizó este traslado. El acta se cerrará automáticamente a su nombre (como entrega sin recepción).</p>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">Selecciona al conductor que realizó este traslado. El acta se cerrará automáticamente a su nombre (como entrega sin recepción).</p>
 
             <div className="overflow-y-auto space-y-2 flex-1 pr-1">
               {drivers.map(d => (
@@ -1987,8 +1987,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                       showAlert(`✅ Traslado cerrado exitosamente a nombre de ${d.name}.`);
                     } catch (e) { console.error(e); showAlert("Error al forzar el cierre."); }
                   });
-                }} className="w-full text-left p-3 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-200 border border-slate-100 rounded-xl transition-colors">
-                  <p className="font-extrabold text-slate-800">{d.name}</p>
+                }} className="w-full text-left p-3 bg-slate-50 dark:bg-slate-900/50 hover:bg-emerald-50 hover:border-emerald-200 border border-slate-100 dark:border-slate-800 rounded-xl transition-colors">
+                  <p className="font-extrabold text-slate-800 dark:text-slate-200">{d.name}</p>
                   <p className="text-[10px] font-bold text-slate-400">{d.email}</p>
                 </button>
               ))}
@@ -2000,20 +2000,20 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       {/* NUEVO MENÚ CENTRAL DE FLOTAS */}
       {showFleetMenu && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-xs shadow-2xl flex flex-col animate-in zoom-in-95 border-t-8 border-indigo-500 relative">
-            <button onClick={() => setShowFleetMenu(false)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-5 h-5 text-slate-700" /></button>
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-xs shadow-2xl flex flex-col animate-in zoom-in-95 border-t-8 border-indigo-500 relative">
+            <button onClick={() => setShowFleetMenu(false)} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 transition-colors"><X className="w-5 h-5 text-slate-700 dark:text-slate-300" /></button>
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-indigo-100 p-2.5 rounded-full"><Truck className="w-6 h-6 text-indigo-600" /></div>
-              <h3 className="text-xl font-black text-slate-800 leading-tight">Gestión de<br />Flotas</h3>
+              <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 leading-tight">Gestión de<br />Flotas</h3>
             </div>
             <div className="space-y-3">
               <button onClick={() => { setShowFleetMenu(false); setFleetSelectedIds([]); setShowFleetModal(true); }} className="w-full bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-extrabold py-3.5 rounded-xl transition-colors flex items-center gap-3 px-4 shadow-sm">
                 <Plus className="w-5 h-5" /> Crear Nueva Flota
               </button>
-              <button onClick={() => { setShowFleetMenu(false); setShowActiveFleetsModal(true); }} className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-extrabold py-3.5 rounded-xl transition-colors flex items-center gap-3 px-4 shadow-sm">
+              <button onClick={() => { setShowFleetMenu(false); setShowActiveFleetsModal(true); }} className="w-full bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-extrabold py-3.5 rounded-xl transition-colors flex items-center gap-3 px-4 shadow-sm">
                 <Edit2 className="w-5 h-5 text-indigo-500" /> Modificar Flotas
               </button>
-              <button onClick={() => { setShowFleetMenu(false); setShowActiveFleetsModal(true); }} className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-extrabold py-3.5 rounded-xl transition-colors flex items-center gap-3 px-4 shadow-sm">
+              <button onClick={() => { setShowFleetMenu(false); setShowActiveFleetsModal(true); }} className="w-full bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-extrabold py-3.5 rounded-xl transition-colors flex items-center gap-3 px-4 shadow-sm">
                 <Navigation className="w-5 h-5 text-indigo-500" /> Flotas Activas
               </button>
             </div>
@@ -2023,22 +2023,22 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       {showFleetModal && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-          <div className="bg-white rounded-3xl p-5 w-full max-w-lg shadow-2xl flex flex-col max-h-[95vh] border-t-8 border-indigo-500 animate-in zoom-in-95">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 w-full max-w-lg shadow-2xl flex flex-col max-h-[95vh] border-t-8 border-indigo-500 animate-in zoom-in-95">
             <div className="flex justify-between mb-4">
-              <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><Truck className="w-5 h-5 text-indigo-600" /> Agrupar Flota</h3>
-              <button onClick={() => setShowFleetModal(false)} className="bg-slate-100 p-2 rounded-full hover:bg-slate-200"><X className="w-5 h-5" /></button>
+              <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 flex items-center gap-2"><Truck className="w-5 h-5 text-indigo-600" /> Agrupar Flota</h3>
+              <button onClick={() => setShowFleetModal(false)} className="bg-slate-100 dark:bg-slate-800 p-2 rounded-full hover:bg-slate-200"><X className="w-5 h-5" /></button>
             </div>
             <div className="overflow-y-auto space-y-4 flex-1">
-              <p className="text-xs font-bold text-slate-500">Selecciona los traslados activos que viajarán juntos en convoy. Esto habilitará la firma masiva para todos los conductores de este grupo.</p>
-              <div className="bg-slate-50 border p-3 rounded-xl">
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Selecciona los traslados activos que viajarán juntos en convoy. Esto habilitará la firma masiva para todos los conductores de este grupo.</p>
+              <div className="bg-slate-50 dark:bg-slate-900/50 border p-3 rounded-xl">
                 <div className="max-h-60 overflow-y-auto space-y-1.5">
                   {activeJobs.length === 0 ? (
                     <p className="text-xs font-bold text-slate-400 text-center">No hay vehículos activos.</p>
                   ) : (
                     activeJobs.map(j => (
-                      <label key={j.id} className="flex items-center gap-3 p-3 border rounded-xl bg-white cursor-pointer hover:bg-slate-50">
+                      <label key={j.id} className="flex items-center gap-3 p-3 border rounded-xl bg-white dark:bg-slate-900 cursor-pointer hover:bg-slate-50 dark:bg-slate-900/50">
                         <input type="checkbox" className="w-4 h-4 accent-indigo-600" checked={fleetSelectedIds.includes(j.id)} onChange={e => e.target.checked ? setFleetSelectedIds([...fleetSelectedIds, j.id]) : setFleetSelectedIds(fleetSelectedIds.filter(id => id !== j.id))} />
-                        <div className="text-xs font-black text-slate-700 flex-1 min-w-0">
+                        <div className="text-xs font-black text-slate-700 dark:text-slate-300 flex-1 min-w-0">
                           <div className="truncate">{getJobIdentifier(j)} - {j.tripType === 'simple' ? j.description : `${j.brand} ${j.model}`}</div>
                           {j.fleetGroup && <span className="text-[9px] bg-indigo-100 text-indigo-700 px-1 rounded uppercase mt-1 inline-block">Ya en Flota</span>}
                         </div>
@@ -2058,17 +2058,17 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       {/* NUEVO MODAL: GESTIÓN DE FLOTAS ACTIVAS */}
       {showActiveFleetsModal && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-          <div className="bg-white rounded-3xl p-5 w-full max-w-lg shadow-2xl flex flex-col max-h-[95vh] border-t-8 border-indigo-500 animate-in zoom-in-95">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 w-full max-w-lg shadow-2xl flex flex-col max-h-[95vh] border-t-8 border-indigo-500 animate-in zoom-in-95">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><Navigation className="w-5 h-5 text-indigo-600" /> Flotas Activas</h3>
-              <button onClick={() => setShowActiveFleetsModal(false)} className="bg-slate-100 p-2 rounded-full hover:bg-slate-200"><X className="w-5 h-5 text-slate-700" /></button>
+              <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 flex items-center gap-2"><Navigation className="w-5 h-5 text-indigo-600" /> Flotas Activas</h3>
+              <button onClick={() => setShowActiveFleetsModal(false)} className="bg-slate-100 dark:bg-slate-800 p-2 rounded-full hover:bg-slate-200"><X className="w-5 h-5 text-slate-700 dark:text-slate-300" /></button>
             </div>
             <div className="overflow-y-auto space-y-4 flex-1 pr-1">
-              <p className="text-xs font-bold text-slate-500 mb-2">Aquí puedes ver los convoyes en ruta, quitar un vehículo específico o disolver flotas enteras.</p>
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">Aquí puedes ver los convoyes en ruta, quitar un vehículo específico o disolver flotas enteras.</p>
               {Object.keys(activeJobs.reduce((acc, j) => { if (j.fleetGroup) acc[j.fleetGroup] = true; return acc; }, {})).length === 0 ? (
-                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-8 text-center flex flex-col items-center">
+                <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-2xl p-8 text-center flex flex-col items-center">
                   <Truck className="w-12 h-12 text-slate-300 mb-3" />
-                  <p className="font-extrabold text-slate-500">No hay ninguna flota activa en este momento.</p>
+                  <p className="font-extrabold text-slate-500 dark:text-slate-400">No hay ninguna flota activa en este momento.</p>
                 </div>
               ) : (
                 Object.entries(activeJobs.reduce((acc, job) => {
@@ -2078,7 +2078,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                   }
                   return acc;
                 }, {})).map(([fleetId, fleetJobs]) => (
-                  <div key={fleetId} className="bg-white border-2 border-indigo-100 rounded-2xl overflow-hidden shadow-sm mb-3">
+                  <div key={fleetId} className="bg-white dark:bg-slate-900 border-2 border-indigo-100 rounded-2xl overflow-hidden shadow-sm mb-3">
                     <div className="bg-indigo-50 p-3 flex justify-between items-center border-b border-indigo-100">
                       <p className="font-black text-indigo-800 text-sm flex items-center gap-2">
                         <Truck className="w-4 h-4" /> Convoy: <span className="font-bold text-indigo-500 text-xs">{fleetId.replace('FLT-', '')}</span>
@@ -2087,11 +2087,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     </div>
                     <div className="p-3 space-y-2">
                       {fleetJobs.map(j => (
-                        <div key={j.id} className="flex justify-between items-center bg-slate-50 hover:bg-white p-2.5 rounded-xl border border-slate-100 transition-colors">
+                        <div key={j.id} className="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 hover:bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 transition-colors">
                           <div className="flex-1 min-w-0 flex items-center gap-2">
                             <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full shrink-0"></div>
                             <div className="min-w-0">
-                              <p className="font-extrabold text-slate-700 text-xs truncate flex items-center gap-1.5">
+                              <p className="font-extrabold text-slate-700 dark:text-slate-300 text-xs truncate flex items-center gap-1.5">
                                 {getJobIdentifier(j)}
                               </p>
                               <p className="text-[9px] font-bold text-slate-400 truncate uppercase tracking-wide">
@@ -2109,7 +2109,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                         </div>
                       ))}
                     </div>
-                    <div className="p-2 bg-slate-50 border-t border-slate-100">
+                    <div className="p-2 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800">
                       <button onClick={() => {
                         showConfirm("⚠️ ¿Estás seguro de desarmar y disolver este convoy completo? Los vehículos volverán a ser individuales.", async () => {
                           setProcessingId(`disband-${fleetId}`);
@@ -2133,15 +2133,15 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       {dupPromptJob && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-          <div className="bg-white rounded-3xl p-5 sm:p-6 w-full max-w-md shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 border-t-8 border-purple-500">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 w-full max-w-md shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 border-t-8 border-purple-500">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><Repeat className="w-5 h-5 text-purple-600" /> Nuevo Traslado</h3>
-                <p className="text-xs font-bold text-slate-500 mt-1">
+                <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 flex items-center gap-2"><Repeat className="w-5 h-5 text-purple-600" /> Nuevo Traslado</h3>
+                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">
                   {dupPromptJob.tripType === 'simple' ? dupPromptJob.description : `${dupPromptJob.brand} ${dupPromptJob.model}`} • {getJobIdentifier(dupPromptJob)}
                 </p>
               </div>
-              <button onClick={() => setDupPromptJob(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-5 h-5" /></button>
+              <button onClick={() => setDupPromptJob(null)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 transition-colors"><X className="w-5 h-5" /></button>
             </div>
 
             <div className="overflow-y-auto space-y-5 pr-1 pb-4">
@@ -2150,35 +2150,35 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">¿Qué tipo de ruta hará ahora?</label>
 
-                <button onClick={() => setDupMode('clone')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'clone' ? 'border-purple-600 bg-purple-50' : 'border-slate-100 bg-slate-50 hover:border-purple-200'}`}>
+                <button onClick={() => setDupMode('clone')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'clone' ? 'border-purple-600 bg-purple-50' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-purple-200'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${dupMode === 'clone' ? 'border-purple-600' : 'border-slate-300'}`}>
                     {dupMode === 'clone' && <div className="w-2 h-2 bg-purple-600 rounded-full"></div>}
                   </div>
                   <div>
-                    <p className={`font-extrabold text-sm ${dupMode === 'clone' ? 'text-purple-800' : 'text-slate-700'}`}>Clonar Exactamente Igual</p>
-                    <p className="text-[10px] font-bold text-slate-500 truncate">{dupPromptJob.origin} ➔ {dupPromptJob.destination || 'Mismo destino'}</p>
+                    <p className={`font-extrabold text-sm ${dupMode === 'clone' ? 'text-purple-800' : 'text-slate-700 dark:text-slate-300'}`}>Clonar Exactamente Igual</p>
+                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">{dupPromptJob.origin} ➔ {dupPromptJob.destination || 'Mismo destino'}</p>
                   </div>
                 </button>
 
-                <button onClick={() => setDupMode('return')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'return' ? 'border-purple-600 bg-purple-50' : 'border-slate-100 bg-slate-50 hover:border-purple-200'}`}>
+                <button onClick={() => setDupMode('return')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'return' ? 'border-purple-600 bg-purple-50' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-purple-200'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${dupMode === 'return' ? 'border-purple-600' : 'border-slate-300'}`}>
                     {dupMode === 'return' && <div className="w-2 h-2 bg-purple-600 rounded-full"></div>}
                   </div>
                   <div>
-                    <p className={`font-extrabold text-sm ${dupMode === 'return' ? 'text-purple-800' : 'text-slate-700'}`}>Retornar al Origen</p>
-                    <p className="text-[10px] font-bold text-slate-500 truncate">{dupPromptJob.tripType === 'revision' ? 'PRT' : (dupPromptJob.destination || dupPromptJob.origin)} ➔ {dupPromptJob.origin}</p>
+                    <p className={`font-extrabold text-sm ${dupMode === 'return' ? 'text-purple-800' : 'text-slate-700 dark:text-slate-300'}`}>Retornar al Origen</p>
+                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">{dupPromptJob.tripType === 'revision' ? 'PRT' : (dupPromptJob.destination || dupPromptJob.origin)} ➔ {dupPromptJob.origin}</p>
                   </div>
                 </button>
 
-                <button onClick={() => { setDupMode('continue'); setDupDestination(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'continue' ? 'border-purple-600 bg-purple-50' : 'border-slate-100 bg-slate-50 hover:border-purple-200'}`}>
+                <button onClick={() => { setDupMode('continue'); setDupDestination(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'continue' ? 'border-purple-600 bg-purple-50' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-purple-200'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${dupMode === 'continue' ? 'border-purple-600' : 'border-slate-300'}`}>
                     {dupMode === 'continue' && <div className="w-2 h-2 bg-purple-600 rounded-full"></div>}
                   </div>
                   <div className="w-full overflow-hidden">
-                    <p className={`font-extrabold text-sm ${dupMode === 'continue' ? 'text-purple-800' : 'text-slate-700'}`}>Continuar a Otro Destino</p>
+                    <p className={`font-extrabold text-sm ${dupMode === 'continue' ? 'text-purple-800' : 'text-slate-700 dark:text-slate-300'}`}>Continuar a Otro Destino</p>
                     {dupMode === 'continue' ? (
                       <div className="mt-2 animate-in fade-in slide-in-from-top-1 w-full">
-                        <input type="text" list="directory-destinations" autoFocus placeholder="Escribe el nuevo destino..." value={dupDestination} onChange={e => setDupDestination(e.target.value.toUpperCase())} autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full bg-white border border-purple-200 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-400 font-bold" />
+                        <input type="text" list="directory-destinations" autoFocus placeholder="Escribe el nuevo destino..." value={dupDestination} onChange={e => setDupDestination(e.target.value.toUpperCase())} autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full bg-white dark:bg-slate-900 border border-purple-200 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-400 font-bold" />
                         <datalist id="directory-destinations">
                           {directoryMemory.map((dir, idx) => (
                             <option key={`dir-${idx}`} value={dir.name || dir.address} />
@@ -2190,23 +2190,23 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                         </datalist>
                       </div>
                     ) : (
-                      <p className="text-[10px] font-bold text-slate-500 truncate">{dupPromptJob.tripType === 'revision' ? 'PRT' : (dupPromptJob.destination || dupPromptJob.origin)} ➔ ???</p>
+                      <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">{dupPromptJob.tripType === 'revision' ? 'PRT' : (dupPromptJob.destination || dupPromptJob.origin)} ➔ ???</p>
                     )}
                   </div>
                 </button>
               </div>
 
               {/* ASIGNACIÓN DE CONDUCTORES (MÚLTIPLE) */}
-              <div className="space-y-2 pt-2 border-t border-slate-100">
+              <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Asignar a Conductores</label>
-                <div className="bg-slate-50 border-2 border-slate-100 rounded-xl overflow-hidden">
+                <div className="bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden">
                   <div className="max-h-40 overflow-y-auto p-1.5 space-y-1 scrollbar-none">
 
-                    <div onClick={() => setDupDriverEmails([])} className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${dupDriverEmails.length === 0 ? 'border-purple-500 bg-purple-50' : 'border-transparent hover:bg-slate-100'}`}>
-                      <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border-2 transition-colors ${dupDriverEmails.length === 0 ? 'border-purple-600 bg-purple-600' : 'border-slate-300 bg-white'}`}>
+                    <div onClick={() => setDupDriverEmails([])} className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${dupDriverEmails.length === 0 ? 'border-purple-500 bg-purple-50' : 'border-transparent hover:bg-slate-100 dark:bg-slate-800'}`}>
+                      <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border-2 transition-colors ${dupDriverEmails.length === 0 ? 'border-purple-600 bg-purple-600' : 'border-slate-300 bg-white dark:bg-slate-900'}`}>
                         {dupDriverEmails.length === 0 && <CheckCircle className="w-3 h-3 text-white" />}
                       </div>
-                      <span className={`text-xs font-black ${dupDriverEmails.length === 0 ? 'text-purple-800' : 'text-slate-600'}`}>Nadie aún (Bolsa de Trabajo)</span>
+                      <span className={`text-xs font-black ${dupDriverEmails.length === 0 ? 'text-purple-800' : 'text-slate-600 dark:text-slate-400'}`}>Nadie aún (Bolsa de Trabajo)</span>
                     </div>
 
                     {drivers.filter(d => !d.isHidden).map(d => {
@@ -2218,11 +2218,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                           } else {
                             setDupDriverEmails([...dupDriverEmails, d.email]);
                           }
-                        }} className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${isSelected ? 'border-purple-500 bg-purple-50' : 'border-transparent hover:bg-slate-100'}`}>
-                          <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border-2 transition-colors ${isSelected ? 'border-purple-600 bg-purple-600' : 'border-slate-300 bg-white'}`}>
+                        }} className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${isSelected ? 'border-purple-500 bg-purple-50' : 'border-transparent hover:bg-slate-100 dark:bg-slate-800'}`}>
+                          <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border-2 transition-colors ${isSelected ? 'border-purple-600 bg-purple-600' : 'border-slate-300 bg-white dark:bg-slate-900'}`}>
                             {isSelected && <CheckCircle className="w-3 h-3 text-white" />}
                           </div>
-                          <span className={`text-xs font-black ${isSelected ? 'text-purple-800' : 'text-slate-700'}`}>{d.name}</span>
+                          <span className={`text-xs font-black ${isSelected ? 'text-purple-800' : 'text-slate-700 dark:text-slate-300'}`}>{d.name}</span>
                         </div>
                       );
                     })}
@@ -2233,8 +2233,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
             </div>
 
-            <div className="flex gap-3 pt-3 border-t border-slate-100 mt-auto">
-              <button onClick={() => setDupPromptJob(null)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3.5 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>
+            <div className="flex gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 mt-auto">
+              <button onClick={() => setDupPromptJob(null)} className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 py-3.5 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>
               <button onClick={executeDuplicate} disabled={processingId === `dup-${dupPromptJob.id}`} className="flex-[2] bg-purple-600 hover:bg-purple-700 text-white py-3.5 rounded-xl font-extrabold text-sm transition-colors shadow-lg shadow-purple-200 flex justify-center items-center gap-2 disabled:opacity-50">
                 {processingId === `dup-${dupPromptJob.id}` ? <Clock className="w-5 h-5 animate-spin" /> : 'Crear Traslado'}
               </button>
@@ -2270,21 +2270,21 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             } finally {
               setProcessingId(null);
             }
-          }} className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-5 shadow-2xl border-t-8 border-blue-500 animate-in zoom-in-95">
+          }} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm space-y-5 shadow-2xl border-t-8 border-blue-500 animate-in zoom-in-95">
             <div className="flex justify-between items-center">
-              <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+              <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
                 <Clock className="w-6 h-6 text-blue-600" /> Corregir Fecha
               </h3>
-              <button type="button" onClick={() => setEditDateJob(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors">
-                <X className="w-5 h-5 text-slate-600" />
+              <button type="button" onClick={() => setEditDateJob(null)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 transition-colors">
+                <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
               </button>
             </div>
-            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Trabajo a editar</p>
-              <p className="text-sm font-bold text-slate-700 truncate">
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-300 truncate">
                 {editDateJob.tripType === 'simple' ? editDateJob.description : `${editDateJob.brand} ${editDateJob.model}`}
               </p>
-              <p className="text-xs font-bold text-slate-500">{getJobIdentifier(editDateJob)}</p>
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400">{getJobIdentifier(editDateJob)}</p>
             </div>
             <div>
               <label className="text-[10px] font-black text-blue-600 uppercase tracking-widest ml-1">Fecha Real de Término</label>
@@ -2315,21 +2315,21 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             } finally {
               setProcessingId(null);
             }
-          }} className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-5 shadow-2xl border-t-8 border-emerald-500 animate-in zoom-in-95">
+          }} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm space-y-5 shadow-2xl border-t-8 border-emerald-500 animate-in zoom-in-95">
             <div className="flex justify-between items-center">
-              <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+              <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
                 <DollarSign className="w-6 h-6 text-emerald-600" /> Editar Cobro
               </h3>
-              <button type="button" onClick={() => setEditPriceJob(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors">
-                <X className="w-5 h-5 text-slate-600" />
+              <button type="button" onClick={() => setEditPriceJob(null)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 transition-colors">
+                <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
               </button>
             </div>
-            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Trabajo a editar</p>
-              <p className="text-sm font-bold text-slate-700 truncate">
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-300 truncate">
                 {editPriceJob.tripType === 'simple' ? editPriceJob.description : `${editPriceJob.brand} ${editPriceJob.model}`}
               </p>
-              <p className="text-xs font-bold text-slate-500">{getJobIdentifier(editPriceJob)}</p>
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400">{getJobIdentifier(editPriceJob)}</p>
             </div>
             <div>
               <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest ml-1">Nuevo Valor del Servicio ($)</label>
@@ -2370,21 +2370,21 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             } finally {
               setProcessingId(null);
             }
-          }} className="bg-white rounded-3xl p-6 w-full max-w-sm space-y-5 shadow-2xl border-t-8 border-emerald-500 animate-in zoom-in-95">
+          }} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm space-y-5 shadow-2xl border-t-8 border-emerald-500 animate-in zoom-in-95">
             <div className="flex justify-between items-center">
-              <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+              <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
                 <MapIcon className="w-6 h-6 text-emerald-600" /> Editar Distancia
               </h3>
-              <button type="button" onClick={() => setEditKmJob(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors">
-                <X className="w-5 h-5 text-slate-600" />
+              <button type="button" onClick={() => setEditKmJob(null)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 transition-colors">
+                <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
               </button>
             </div>
-            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Trabajo a editar</p>
-              <p className="text-sm font-bold text-slate-700 truncate">
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-300 truncate">
                 {editKmJob.tripType === 'simple' ? editKmJob.description : `${editKmJob.brand} ${editKmJob.model}`}
               </p>
-              <p className="text-xs font-bold text-slate-500">{getJobIdentifier(editKmJob)}</p>
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400">{getJobIdentifier(editKmJob)}</p>
             </div>
             <div>
               <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest ml-1">Distancia Total (KM)</label>
@@ -2403,22 +2403,22 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       {showBulkSign && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-          <div className="bg-white rounded-3xl p-5 w-full max-w-lg shadow-2xl flex flex-col max-h-[95vh] border-t-8 border-emerald-500">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 w-full max-w-lg shadow-2xl flex flex-col max-h-[95vh] border-t-8 border-emerald-500">
             <div className="flex justify-between mb-4">
-              <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><PenTool className="w-5 h-5 text-emerald-600" /> Firma Masiva</h3>
-              <button onClick={() => setShowBulkSign(false)} className="bg-slate-100 p-2 rounded-full hover:bg-slate-200"><X className="w-5 h-5" /></button>
+              <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 flex items-center gap-2"><PenTool className="w-5 h-5 text-emerald-600" /> Firma Masiva</h3>
+              <button onClick={() => setShowBulkSign(false)} className="bg-slate-100 dark:bg-slate-800 p-2 rounded-full hover:bg-slate-200"><X className="w-5 h-5" /></button>
             </div>
             <div className="overflow-y-auto space-y-4 flex-1">
-              <div className="bg-slate-50 border p-3 rounded-xl">
-                <p className="text-[10px] font-black text-slate-500 uppercase mb-2">Selecciona los vehículos a entregar:</p>
+              <div className="bg-slate-50 dark:bg-slate-900/50 border p-3 rounded-xl">
+                <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase mb-2">Selecciona los vehículos a entregar:</p>
                 <div className="max-h-40 overflow-y-auto space-y-1.5">
                   {inProgressJobsList.filter(j => j.fleetGroup).length === 0 ? (
                     <p className="text-xs font-bold text-slate-400 text-center">No perteneces a ninguna flota activa.</p>
                   ) : (
                     inProgressJobsList.filter(j => j.fleetGroup).map(j => (
-                      <label key={j.id} className="flex items-center gap-3 p-3 border rounded-xl bg-white cursor-pointer hover:bg-slate-50">
+                      <label key={j.id} className="flex items-center gap-3 p-3 border rounded-xl bg-white dark:bg-slate-900 cursor-pointer hover:bg-slate-50 dark:bg-slate-900/50">
                         <input type="checkbox" className="w-4 h-4 accent-emerald-600" checked={bulkSelectedIds.includes(j.id)} onChange={e => e.target.checked ? setBulkSelectedIds([...bulkSelectedIds, j.id]) : setBulkSelectedIds(bulkSelectedIds.filter(id => id !== j.id))} />
-                        <div className="text-xs font-black text-slate-700">
+                        <div className="text-xs font-black text-slate-700 dark:text-slate-300">
                           {getJobIdentifier(j)} - {j.tripType === 'simple' ? j.description : `${j.brand} ${j.model}`}
                         </div>
                       </label>

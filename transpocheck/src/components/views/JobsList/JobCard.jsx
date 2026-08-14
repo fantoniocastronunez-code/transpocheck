@@ -42,7 +42,7 @@ export default function JobCard({ j, ...props }) {
             <div className={`absolute top-0 left-0 bottom-0 w-1.5 transition-all ${isRequested ? 'bg-gradient-to-b from-pink-400 to-pink-600' : (isPending ? 'bg-gradient-to-b from-amber-300 to-amber-500' : 'bg-gradient-to-b from-blue-400 to-blue-600 shadow-[0_0_8px_rgba(59,130,246,0.5)]')}`}></div>
         </div>
         
-        <div className="flex justify-between items-start mb-5 border-b border-slate-100/80 dark:border-slate-800/80 pb-4 pl-2 relative z-20">
+        <div className="flex justify-between items-start mb-5 border-b border-slate-100 dark:border-slate-800/80 dark:border-slate-800/80 pb-4 pl-2 relative z-20">
           <div className="flex flex-col gap-3 w-full">
             <div className="flex justify-between items-start w-full gap-2">
               <div className="shrink-0 relative z-10 flex flex-col items-end gap-1">
@@ -71,7 +71,7 @@ export default function JobCard({ j, ...props }) {
               
               <div className="flex items-center gap-1 relative shrink-0 z-50">
                 {isAdminView && <button onClick={()=>onEditJob(j)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-xl transition-colors"><Edit2 className="w-5 h-5"/></button>}
-                <button onClick={()=>setMenuOpenId(menuOpenId===j.id?null:j.id)} className="p-2 text-slate-400 hover:bg-slate-50 rounded-xl transition-colors"><MoreVertical className="w-5 h-5"/></button>
+                <button onClick={()=>setMenuOpenId(menuOpenId===j.id?null:j.id)} className="p-2 text-slate-400 hover:bg-slate-50 dark:bg-slate-900/50 rounded-xl transition-colors"><MoreVertical className="w-5 h-5"/></button>
                 {/* --- OPTIMIZACIÓN: z-[999] para aplastar cualquier capa inferior --- */}
                 {menuOpenId===j.id && (
                   <div className="absolute right-0 top-10 bg-white dark:bg-slate-800 border dark:border-slate-700 shadow-[0_10px_40px_rgba(0,0,0,0.2)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)] rounded-xl w-56 z-[999] overflow-hidden text-xs dark:text-slate-200">
@@ -164,7 +164,7 @@ export default function JobCard({ j, ...props }) {
                          src={displayPhoto} 
                          alt="Frente" 
                          onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(displayPhoto); }}
-                         className="w-12 h-12 rounded-lg object-cover border border-slate-200 shadow-sm cursor-pointer hover:opacity-80 transition-opacity shrink-0"
+                         className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer hover:opacity-80 transition-opacity shrink-0"
                       />
                    );
                 })()}
@@ -172,9 +172,9 @@ export default function JobCard({ j, ...props }) {
                     {j.tripType === 'simple' ? (
                        <p className="text-lg font-black text-purple-800 leading-tight mt-1 break-words pr-2">{j.description || 'Servicio en Terreno'}</p>
                     ) : (
-                       <p className="text-xl font-black text-slate-800 leading-tight mt-1 break-words pr-2">{j.brand} {j.model}</p>
+                       <p className="text-xl font-black text-slate-800 dark:text-slate-200 leading-tight mt-1 break-words pr-2">{j.brand} {j.model}</p>
                     )}
-                    <p className="text-xs font-bold text-slate-500 mt-0.5 uppercase tracking-wide flex items-center flex-wrap gap-2">
+                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-0.5 uppercase tracking-wide flex items-center flex-wrap gap-2">
                        {j.client}
                        {j.fleetGroup && <span className="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded text-[9px] font-black border border-indigo-200">EN FLOTA (CONVOY)</span>}
                     </p>
@@ -186,7 +186,7 @@ export default function JobCard({ j, ...props }) {
           <div className="mb-4 mt-3 relative z-10 flex flex-col gap-1.5">
             {/* ORIGEN */}
             <div className="bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 z-10">
-              <span className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-0.5">
+              <span className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-0.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500"></div>
                 {j.tripType === 'simple' ? 'Lugar' : 'Desde'}
               </span>
@@ -206,7 +206,7 @@ export default function JobCard({ j, ...props }) {
                        <p className="text-[10px] font-black text-amber-700">{j.waypoints.length} paradas</p>
                      </div>
                   ) : (
-                    <div className="bg-white dark:bg-slate-800 p-1 rounded-full border border-slate-200 dark:border-slate-700 text-slate-300 dark:text-slate-500 shadow-sm">
+                    <div className="bg-white dark:bg-slate-800 p-1 rounded-full border border-slate-200 dark:border-slate-700 text-slate-300 dark:text-slate-500 dark:text-slate-400 shadow-sm">
                       <Navigation className="w-3 h-3 rotate-180" />
                     </div>
                   )}
@@ -230,7 +230,7 @@ export default function JobCard({ j, ...props }) {
                 <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1.5 flex items-center gap-1"><MapPin className="w-3 h-3"/> Ruta intermedia:</p>
                 <div className="flex flex-col gap-1">
                   {j.waypoints.map((wp, i) => (
-                     <span key={i} className="text-[11px] font-bold text-slate-600 leading-snug break-words"><span className="font-black mr-1 text-slate-400">{i + 1}.</span> {wp}</span>
+                     <span key={i} className="text-[11px] font-bold text-slate-600 dark:text-slate-400 leading-snug break-words"><span className="font-black mr-1 text-slate-400">{i + 1}.</span> {wp}</span>
                   ))}
                 </div>
               </div>
@@ -241,14 +241,14 @@ export default function JobCard({ j, ...props }) {
               
               {/* BLOQUE ORIGEN */}
               {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone || j.originAddress || j.originCommune) && (
-                <div className="pt-3 border-t border-slate-200/60 dark:border-slate-800/60 flex flex-col gap-2">
+                <div className="pt-3 border-t border-slate-200 dark:border-slate-700/60 dark:border-slate-800/60 flex flex-col gap-2">
                    {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone) && (
                    <div className="flex items-center justify-between gap-2 bg-white dark:bg-slate-800/40 p-2 rounded-xl border border-slate-100 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
                      <div className="flex items-center gap-2.5 flex-1 min-w-0">
                         <div className="bg-emerald-50 dark:bg-emerald-900/30 p-2 rounded-lg shrink-0 border border-emerald-100 dark:border-emerald-800/50"><Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400"/></div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-0.5 truncate">Encargado Origen</p>
-                          <p className="text-xs font-bold text-slate-700 truncate">{j.originContactName || j.contactName || 'No especificado'}</p>
+                          <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-0.5 truncate">Encargado Origen</p>
+                          <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{j.originContactName || j.contactName || 'No especificado'}</p>
                         </div>
                      </div>
                      {(j.originContactPhone || j.contactPhone) && (
@@ -262,7 +262,7 @@ export default function JobCard({ j, ...props }) {
                    
                    {(j.originAddress || j.originCommune) && (
                       <div className="flex justify-between items-center bg-white dark:bg-slate-900/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm mt-1">
-                        <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-slate-400 dark:text-slate-500"/>{j.originAddress}{j.originAddress && j.originCommune ? ', ' : ''}{j.originCommune}</p>
+                        <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-slate-400 dark:text-slate-500 dark:text-slate-400"/>{j.originAddress}{j.originAddress && j.originCommune ? ', ' : ''}{j.originCommune}</p>
                         {isAccepted && (
                           <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.originAddress || ''} ${j.originCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition-colors border border-blue-200"><Navigation className="w-3 h-3"/> Waze</a>
                         )}
@@ -273,13 +273,13 @@ export default function JobCard({ j, ...props }) {
 
               {/* BLOQUE DESTINO */}
               {(j.destContactName || j.destContactPhone || j.destAddress || j.destCommune) && (
-                <div className="pt-2 border-t border-slate-200/60 flex flex-col gap-2">
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-700/60 flex flex-col gap-2">
                    {(j.destContactName || j.destContactPhone) && (
                    <div className="flex items-center justify-between gap-2 bg-white dark:bg-slate-800/40 p-2 rounded-xl border border-slate-100 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
                      <div className="flex items-center gap-2.5 flex-1 min-w-0">
                         <div className="bg-blue-50 dark:bg-blue-900/30 p-2 rounded-lg shrink-0 border border-blue-100 dark:border-blue-800/50"><Users className="w-4 h-4 text-blue-600 dark:text-blue-400"/></div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-0.5 truncate">Encargado Destino</p>
+                          <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-0.5 truncate">Encargado Destino</p>
                           <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{j.destContactName || 'No especificado'}</p>
                         </div>
                      </div>
@@ -324,7 +324,7 @@ export default function JobCard({ j, ...props }) {
                  return <div className="mb-3 bg-blue-50 border border-blue-200 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-blue-700 uppercase tracking-widest">📅 HOY{timeStr}</span></div>;
              }
              if (diffDays === 1) return <div className="mb-3 bg-cyan-50 border border-cyan-200 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-cyan-700 uppercase tracking-widest">📅 Mañana{timeStr}</span></div>;
-             if (diffDays > 1) return <div className="mb-3 bg-slate-100 border border-slate-200 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-slate-600 uppercase tracking-widest">📅 Para el {d}/{m}/{y}{timeStr}</span></div>;
+             if (diffDays > 1) return <div className="mb-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">📅 Para el {d}/{m}/{y}{timeStr}</span></div>;
              
              // Si ya pasó la fecha planificada pero el viaje ESTÁ EN PROCESO, evitamos el rojo
              if (isStarted) return <div className="mb-3 bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-emerald-700 uppercase tracking-widest">🚀 EN RUTA ({d}/{m}/{y})</span></div>;
@@ -334,17 +334,17 @@ export default function JobCard({ j, ...props }) {
              return <div className="mb-3 bg-blue-50 border border-blue-200 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-blue-700 uppercase tracking-widest">📅 HOY{timeStr}</span></div>;
           })()}
 
-        <div className="relative pl-7 space-y-5 before:absolute before:top-2 before:bottom-2 before:left-[10px] before:w-0.5 before:bg-slate-100 dark:before:bg-slate-800 mb-5">
-          <div className="relative"><div className="absolute -left-7 bg-blue-500 w-5 h-5 rounded-full border-4 border-white dark:border-slate-900 shadow-sm flex items-center justify-center"><CheckCircle className="w-2.5 h-2.5 text-white"/></div><p className="font-extrabold text-slate-800 dark:text-slate-200 text-sm leading-tight break-words">{isAccepted ? (j.assignedDrivers?.find(d => d.email === j.acceptedByEmail)?.name || "Conductor") : "Buscando conductor"}</p><p className="text-xs font-bold text-slate-500 break-words whitespace-normal">{isAccepted ? (j.tripType === 'simple' ? `Asignado a ${j.origin}` : `Retira en ${j.origin}`) : `Para ${j.origin}`}</p></div>
-          <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white dark:border-slate-900 shadow-sm flex items-center justify-center transition-colors ${step2Done ? 'bg-blue-500' : 'bg-slate-200 dark:bg-slate-700'}`}>{step2Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step2Done ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500'}`}>{j.tripType === 'simple' ? 'Realizando Trabajo' : 'Vehículo en Tránsito'}</p></div>
-          <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white dark:border-slate-900 shadow-sm flex items-center justify-center transition-colors ${step3Done ? 'bg-blue-500' : 'bg-slate-200 dark:bg-slate-700'}`}>{step3Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step3Done ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500'}`}>{j.tripType === 'simple' ? 'Trabajo Terminado' : (j.tripType === 'revision' ? 'En PRT' : 'Llegada a Destino')}</p><p className={`text-xs font-bold whitespace-normal break-words pr-2 ${step3Done ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`}>{j.tripType === 'simple' ? (j.destination || '') : (j.tripType === 'revision' ? 'Planta' : j.destination)}</p></div>
+        <div className="relative pl-7 space-y-5 before:absolute before:top-2 before:bottom-2 before:left-[10px] before:w-0.5 before:bg-slate-100 dark:bg-slate-800 dark:before:bg-slate-800 mb-5">
+          <div className="relative"><div className="absolute -left-7 bg-blue-500 w-5 h-5 rounded-full border-4 border-white dark:border-slate-900 shadow-sm flex items-center justify-center"><CheckCircle className="w-2.5 h-2.5 text-white"/></div><p className="font-extrabold text-slate-800 dark:text-slate-200 text-sm leading-tight break-words">{isAccepted ? (j.assignedDrivers?.find(d => d.email === j.acceptedByEmail)?.name || "Conductor") : "Buscando conductor"}</p><p className="text-xs font-bold text-slate-500 dark:text-slate-400 break-words whitespace-normal">{isAccepted ? (j.tripType === 'simple' ? `Asignado a ${j.origin}` : `Retira en ${j.origin}`) : `Para ${j.origin}`}</p></div>
+          <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white dark:border-slate-900 shadow-sm flex items-center justify-center transition-colors ${step2Done ? 'bg-blue-500' : 'bg-slate-200 dark:bg-slate-700'}`}>{step2Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step2Done ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400'}`}>{j.tripType === 'simple' ? 'Realizando Trabajo' : 'Vehículo en Tránsito'}</p></div>
+          <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white dark:border-slate-900 shadow-sm flex items-center justify-center transition-colors ${step3Done ? 'bg-blue-500' : 'bg-slate-200 dark:bg-slate-700'}`}>{step3Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step3Done ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400'}`}>{j.tripType === 'simple' ? 'Trabajo Terminado' : (j.tripType === 'revision' ? 'En PRT' : 'Llegada a Destino')}</p><p className={`text-xs font-bold whitespace-normal break-words pr-2 ${step3Done ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400'}`}>{j.tripType === 'simple' ? (j.destination || '') : (j.tripType === 'revision' ? 'Planta' : j.destination)}</p></div>
           
           {j.tripType === 'revision' && (
             <>
               <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-colors ${step4Done ? (j.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200'}`}>{step4Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step4Done ? (j.prt_result === 'rechazado' ? 'text-red-600' : 'text-green-600') : 'text-slate-400'}`}>Resultado Revisión</p>{step4Done && <p className={`text-xs font-bold ${j.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-600'}`}>{j.prt_result === 'rechazado' ? `Rechazado` : 'Aprobado'}</p>}</div>
               {/* Mostrar a dónde se dirige después de PRT (sea aprobado o rechazado) */}
               {step4Done && (
-                <div className="relative pt-2"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center bg-blue-500`}><Navigation className="w-2.5 h-2.5 text-white"/></div><p className="font-extrabold text-sm leading-tight text-slate-800">En camino a:</p><p className="text-xs font-bold text-blue-600 whitespace-normal break-words pr-2">
+                <div className="relative pt-2"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center bg-blue-500`}><Navigation className="w-2.5 h-2.5 text-white"/></div><p className="font-extrabold text-sm leading-tight text-slate-800 dark:text-slate-200">En camino a:</p><p className="text-xs font-bold text-blue-600 whitespace-normal break-words pr-2">
                     {getRtFinalDestination(j)}
                 </p></div>
               )}
@@ -381,7 +381,7 @@ export default function JobCard({ j, ...props }) {
              </p>
              <ul className="text-xs font-bold text-red-800 space-y-1">
                {expiringDocs.map((docAlert, idx) => (
-                 <li key={idx} className="bg-white/60 px-2 py-1 rounded-md border border-red-100">{docAlert}</li>
+                 <li key={idx} className="bg-white dark:bg-slate-900/60 px-2 py-1 rounded-md border border-red-100">{docAlert}</li>
                ))}
              </ul>
           </div>
@@ -401,7 +401,7 @@ export default function JobCard({ j, ...props }) {
            return null;
         })()}
 
-        <div className="mt-auto pt-3 border-t border-slate-100 flex flex-col gap-2">
+        <div className="mt-auto pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2">
           {isRequested && (
             <>
               {isAdminView ? (
@@ -422,7 +422,7 @@ export default function JobCard({ j, ...props }) {
           )}
 
           {(!isRequested && (j.status === 'accepted' || j.status === 'pending_guide') && j.acceptedByEmail !== currentUserEmail) ? (
-             <div className="bg-slate-50 border border-slate-200 text-slate-500 text-xs font-bold text-center py-3 rounded-xl">Vehículo a cargo de un compañero.</div>
+             <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-xs font-bold text-center py-3 rounded-xl">Vehículo a cargo de un compañero.</div>
           ) : (
             <>
               {isPending && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && (
@@ -483,7 +483,7 @@ export default function JobCard({ j, ...props }) {
                         }} text={`Desliza: Llegué a ${j.checklist?.rtReturnOption === 'other' ? (j.checklist?.rtReturnDestination?.substring(0,10) + '...') : 'Origen'}`} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />
                       )}
 
-                      <button onClick={()=>onStartChecklist(j)} className={`w-full font-bold py-2 rounded-xl text-xs shadow-sm transition-colors ${(j.phase === 'arrived_destination') ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'}`}>
+                      <button onClick={()=>onStartChecklist(j)} className={`w-full font-bold py-2 rounded-xl text-xs shadow-sm transition-colors ${(j.phase === 'arrived_destination') ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'}`}>
                         📸 {(j.phase === 'arrived_destination') ? (j.tripType === 'simple' ? 'Cerrar Acta de Servicio' : 'Cerrar Checklist') : (j.tripType === 'simple' ? 'Pre-llenar Acta' : 'Pre-llenar Checklist')}
                       </button>
                     </>

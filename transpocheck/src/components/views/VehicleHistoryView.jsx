@@ -66,7 +66,7 @@ export default function VehicleHistoryView({ db, showAlert }) {
     return (
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 mt-4">
         {validPhotos.map(([key, url]) => (
-          <div key={key} onClick={() => setFullScreenImage(url)} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 cursor-pointer hover:opacity-80 transition-opacity shadow-sm group">
+          <div key={key} onClick={() => setFullScreenImage(url)} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity shadow-sm group">
             <img src={url} alt={`Evidencia ${key}`} className="w-full h-full object-cover" />
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-900/90 to-transparent p-2 pt-4">
               <p className="text-[9px] text-white font-black uppercase text-center truncate tracking-wider">
@@ -109,7 +109,7 @@ export default function VehicleHistoryView({ db, showAlert }) {
                 value={searchTerm} 
                 onChange={(e) => setSearchTerm(e.target.value)} 
                 placeholder="Ingresa Patente o VIN..." 
-                className="w-full pl-11 pr-4 py-4 bg-white border-2 border-transparent rounded-2xl text-sm font-black uppercase text-slate-800 outline-none focus:border-blue-400 shadow-inner transition-colors"
+                className="w-full pl-11 pr-4 py-4 bg-white dark:bg-slate-900 border-2 border-transparent rounded-2xl text-sm font-black uppercase text-slate-800 dark:text-slate-200 outline-none focus:border-blue-400 shadow-inner transition-colors"
                 required
               />
             </div>
@@ -122,18 +122,18 @@ export default function VehicleHistoryView({ db, showAlert }) {
 
       {/* Resultados */}
       {hasSearched && !isSearching && results.length === 0 && (
-        <div className="bg-white p-8 rounded-3xl border border-slate-200 text-center shadow-sm">
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-700 text-center shadow-sm">
           <AlertTriangle className="w-12 h-12 text-amber-400 mx-auto mb-3" />
-          <h3 className="text-lg font-black text-slate-800">Sin Resultados</h3>
-          <p className="text-slate-500 font-bold text-sm mt-1">No se encontró ningún traslado histórico para la patente/VIN: <span className="text-slate-800 uppercase">{searchTerm}</span></p>
+          <h3 className="text-lg font-black text-slate-800 dark:text-slate-200">Sin Resultados</h3>
+          <p className="text-slate-500 dark:text-slate-400 font-bold text-sm mt-1">No se encontró ningún traslado histórico para la patente/VIN: <span className="text-slate-800 dark:text-slate-200 uppercase">{searchTerm}</span></p>
         </div>
       )}
 
       {results.length > 0 && (
         <div className="space-y-6">
-          <h3 className="font-extrabold text-slate-700 ml-2">Línea de Tiempo del Vehículo ({results.length} traslados)</h3>
+          <h3 className="font-extrabold text-slate-700 dark:text-slate-300 ml-2">Línea de Tiempo del Vehículo ({results.length} traslados)</h3>
           
-          <div className="relative border-l-4 border-slate-200 ml-4 space-y-8 pb-8">
+          <div className="relative border-l-4 border-slate-200 dark:border-slate-700 ml-4 space-y-8 pb-8">
             {results.map((job, index) => {
               const dateStr = new Date(job.completedAt || job.createdAt).toLocaleDateString('es-CL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
               const driverName = job.assignedDrivers?.[0]?.name || job.checklist?.assignedDriverName || job.acceptedByEmail || 'Conductor desconocido';
@@ -142,22 +142,22 @@ export default function VehicleHistoryView({ db, showAlert }) {
                 <div key={job.id} className="relative pl-6 sm:pl-8">
                   {/* Pin de la línea de tiempo */}
                   <div className={`absolute -left-[14px] top-5 w-6 h-6 rounded-full border-4 border-slate-50 shadow-sm flex items-center justify-center ${index === 0 ? 'bg-blue-500' : 'bg-slate-400'}`}>
-                    <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                    <div className="w-1.5 h-1.5 bg-white dark:bg-slate-900 rounded-full"></div>
                   </div>
 
-                  <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                  <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
                     
                     {/* Cabecera del Acta */}
-                    <div className="bg-slate-50 p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="bg-slate-50 dark:bg-slate-900/50 p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{dateStr}</p>
                         <div className="flex items-center gap-3 mb-2">
-                          <h4 className="text-lg font-black text-slate-800 truncate">{job.brand} {job.model}</h4>
+                          <h4 className="text-lg font-black text-slate-800 dark:text-slate-200 truncate">{job.brand} {job.model}</h4>
                           <div className="shrink-0"><LicensePlateBadge text={job.plate || job.vin} /></div>
                         </div>
-                        <div className="flex items-center gap-1 flex-wrap text-sm font-bold text-slate-500 mt-1">
+                        <div className="flex items-center gap-1 flex-wrap text-sm font-bold text-slate-500 dark:text-slate-400 mt-1">
                            <MapPin className="w-4 h-4 text-slate-400 shrink-0"/> 
-                           <span className="text-slate-700">{job.origin}</span>
+                           <span className="text-slate-700 dark:text-slate-300">{job.origin}</span>
                            {(job.destination || job.tripType !== 'simple') && (
                               <>
                                 <span className="text-slate-300 font-black mx-1">➔</span>
@@ -170,7 +170,7 @@ export default function VehicleHistoryView({ db, showAlert }) {
                            )}
                         </div>
                       </div>
-                      <div className="text-left sm:text-right bg-white p-3 rounded-xl border border-slate-100 shadow-sm shrink-0">
+                      <div className="text-left sm:text-right bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm shrink-0">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Responsable del Traslado</p>
                         <p className="text-sm font-bold text-blue-700 flex items-center sm:justify-end gap-1.5"><User className="w-4 h-4"/> {driverName}</p>
                       </div>
@@ -181,7 +181,7 @@ export default function VehicleHistoryView({ db, showAlert }) {
                       
                       {/* Observaciones (Lo más importante para siniestros) */}
                       <div>
-                        <h5 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5 mb-2"><FileText className="w-4 h-4 text-amber-500"/> Observaciones del Conductor</h5>
+                        <h5 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest flex items-center gap-1.5 mb-2"><FileText className="w-4 h-4 text-amber-500"/> Observaciones del Conductor</h5>
                         <div className="bg-amber-50 border border-amber-200 p-3.5 rounded-xl text-sm font-bold text-amber-900 italic">
                           "{job.checklist?.observations || 'Sin observaciones registradas al momento del retiro.'}"
                         </div>
@@ -190,7 +190,7 @@ export default function VehicleHistoryView({ db, showAlert }) {
                       {/* Comentarios del Cliente (Receptor) */}
                       {job.checklist?.clientComments && (
                         <div>
-                          <h5 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5 mb-2"><FileText className="w-4 h-4 text-blue-500"/> Comentarios del Receptor</h5>
+                          <h5 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest flex items-center gap-1.5 mb-2"><FileText className="w-4 h-4 text-blue-500"/> Comentarios del Receptor</h5>
                           <div className="bg-blue-50 border border-blue-200 p-3.5 rounded-xl text-sm font-bold text-blue-900 italic">
                             "{job.checklist.clientComments}"
                           </div>
@@ -199,7 +199,7 @@ export default function VehicleHistoryView({ db, showAlert }) {
 
                       {/* Galería de Fotos */}
                       <div>
-                        <h5 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5 mb-1"><Camera className="w-4 h-4 text-slate-500"/> Evidencia Fotográfica</h5>
+                        <h5 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest flex items-center gap-1.5 mb-1"><Camera className="w-4 h-4 text-slate-500 dark:text-slate-400"/> Evidencia Fotográfica</h5>
                         {renderGallery(job.checklist?.photos)}
                       </div>
 
@@ -215,7 +215,7 @@ export default function VehicleHistoryView({ db, showAlert }) {
       {/* Modal de Imagen a Pantalla Completa */}
       {fullScreenImage && (
         <div className="fixed inset-0 bg-slate-900/95 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm cursor-zoom-out animate-in fade-in duration-200" onClick={() => setFullScreenImage(null)}>
-          <button onClick={() => setFullScreenImage(null)} className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 p-2 rounded-full text-white transition-colors shadow-lg">
+          <button onClick={() => setFullScreenImage(null)} className="absolute top-4 right-4 bg-white dark:bg-slate-900/20 hover:bg-white dark:bg-slate-900/40 p-2 rounded-full text-white transition-colors shadow-lg">
             <X className="w-6 h-6" />
           </button>
           <img src={fullScreenImage} alt="Evidencia Ampliada" className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} />

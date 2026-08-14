@@ -17,25 +17,25 @@ export default function BulkReplaceModal({
 
   return (
     <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-      <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 border-t-8 border-purple-500">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-md shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 border-t-8 border-purple-500">
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><RefreshCw className="w-5 h-5 text-purple-600" /> Renombrar Masivo</h3>
-            <p className="text-xs font-bold text-slate-500 mt-1">Busca y unifica los nombres de orígenes o destinos para que coincidan con tu Directorio.</p>
+            <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 flex items-center gap-2"><RefreshCw className="w-5 h-5 text-purple-600" /> Renombrar Masivo</h3>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">Busca y unifica los nombres de orígenes o destinos para que coincidan con tu Directorio.</p>
           </div>
-          <button onClick={() => setShowReplaceModal(false)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><X className="w-5 h-5" /></button>
+          <button onClick={() => setShowReplaceModal(false)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 transition-colors"><X className="w-5 h-5" /></button>
         </div>
 
         <div className="space-y-4">
-          <div className="flex bg-slate-100 p-1 rounded-xl">
+          <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
             <button
-              className={`flex-1 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-colors ${replaceField === 'destination' ? 'bg-white shadow-sm text-purple-700' : 'text-slate-500 hover:bg-slate-200'}`}
+              className={`flex-1 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-colors ${replaceField === 'destination' ? 'bg-white dark:bg-slate-900 shadow-sm text-purple-700' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200'}`}
               onClick={() => setReplaceField('destination')}
             >
               Destinos
             </button>
             <button
-              className={`flex-1 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-colors ${replaceField === 'origin' ? 'bg-white shadow-sm text-purple-700' : 'text-slate-500 hover:bg-slate-200'}`}
+              className={`flex-1 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-colors ${replaceField === 'origin' ? 'bg-white dark:bg-slate-900 shadow-sm text-purple-700' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200'}`}
               onClick={() => setReplaceField('origin')}
             >
               Orígenes
@@ -44,10 +44,10 @@ export default function BulkReplaceModal({
 
           <div className="space-y-1">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Texto Actual a Reemplazar</label>
-            <input type="text" value={replaceSearchTerm} onChange={e => setReplaceSearchTerm(e.target.value)} placeholder="Ej: kovac bilbao" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full bg-slate-50 border-2 border-slate-200 p-3 rounded-xl text-sm font-bold outline-none focus:border-purple-400" />
+            <input type="text" value={replaceSearchTerm} onChange={e => setReplaceSearchTerm(e.target.value)} placeholder="Ej: kovac bilbao" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold outline-none focus:border-purple-400" />
           </div>
 
-          <div className="flex justify-center -my-1 relative z-10"><div className="bg-white p-1 rounded-full border border-slate-200 shadow-sm"><ChevronDown className="w-4 h-4 text-purple-500" /></div></div>
+          <div className="flex justify-center -my-1 relative z-10"><div className="bg-white dark:bg-slate-900 p-1 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm"><ChevronDown className="w-4 h-4 text-purple-500" /></div></div>
 
           <div className="space-y-1">
             <label className="text-[10px] font-black text-purple-600 uppercase tracking-widest ml-1">Nuevo Texto Oficial</label>
