@@ -9,13 +9,6 @@ import SignaturePad from '../ui/SignaturePad';
 import InAppCamera from '../ui/InAppCamera'; // <-- NUEVO COMPONENTE CENTRALIZADO
 import { resizeImage, formatMoney } from '../../utils/helpers';
 
-import Step1Origin from './ChecklistForm/Step1Origin';
-import Step2Vehicle from './ChecklistForm/Step2Vehicle';
-import Step3Damage from './ChecklistForm/Step3Damage';
-import Step4Destination from './ChecklistForm/Step4Destination';
-import Step5Extras from './ChecklistForm/Step5Extras';
-import Step6Signature from './ChecklistForm/Step6Signature';
-import DejaVuModal from './ChecklistForm/DejaVuModal';
 
 export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList: rawClients, drivers, expenses, vehicles, uploadImageToStorage, pushSyncTask }) {
   // --- MAGIA: RED DE SEGURIDAD ANTI-PANTALLA BLANCA ---
@@ -731,18 +724,6 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
   if (isInvalidJob) return null;
 
-  const formProps = {
-    job, formData, setF, handleImageUpload, removeImage, getRouteStr, drivers,
-    handleQuickSetLocation, step, setStep, showAlert, allClientsList,
-    addDamageMarker, removeDamageMarker, updateDamageMarker, selectedDamageIndex,
-    setSelectedDamageIndex, showHelpOverlay, setShowHelpOverlay, currentImageIndex,
-    setCurrentImageIndex, setShowDamageModal, showDamageModal, tempDamageData,
-    setTempDamageData, fileInputRef, processingId, currentUserEmail,
-    showDejaVuModal, setShowDejaVuModal, dejaVuData, handleAcceptDejaVu,
-    uploadProgress, cameraConfig, setCameraConfig, processingAction,
-    handleRemoteSignRequest, handleOpenQR, handlePhotoClick, isSubmitting, clearDraft, isDraftLoaded
-  };
-
   return (
     <div className="bg-white rounded-3xl shadow-xl border pb-10 relative">
       {isDraftLoaded && (
@@ -817,16 +798,1109 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
         <form onSubmit={submit} className="space-y-5 text-sm">
 
           {/* VISTA: TRABAJO SIMPLE (FAST TRACK) */}
-          <Step1Origin {...formProps} />
-          <Step2Vehicle {...formProps} />
-          <Step3Damage {...formProps} />
-          <Step4Destination {...formProps} />
-          <Step5Extras {...formProps} />
-          <Step6Signature {...formProps} />
+          {job.tripType === 'simple' && step === 1 && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              <div className="bg-purple-50 border-2 border-purple-100 p-4 rounded-2xl shadow-sm mb-4">
+                <p className="text-[10px] font-black text-purple-500 uppercase tracking-widest mb-1">Descripción de la Tarea</p>
+                <p className="text-sm font-bold text-purple-900 leading-snug">{job.description || 'Sin descripción detallada'}</p>
+                {job.client && <p className="text-xs font-bold text-purple-700 mt-2 border-t border-purple-200 pt-2">Cliente / Autoriza: {job.client}</p>}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-slate-50 border-2 border-slate-100 p-3 rounded-xl">
+                  <p className="text-[9px] font-extrabold text-slate-400 uppercase">Lugar</p>
+                  <p className="text-xs font-bold text-slate-700 truncate">{job.origin || 'N/A'}</p>
+                </div>
+                {job.destination && (
+                  <div className="bg-slate-50 border-2 border-slate-100 p-3 rounded-xl">
+                    <p className="text-[9px] font-extrabold text-slate-400 uppercase">Hasta</p>
+                    <p className="text-xs font-bold text-slate-700 truncate">{job.destination}</p>
+                  </div>
+                )}
+              </div>
+
+              <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 mt-6 text-slate-800 uppercase tracking-wider">Notas del Operario</h3>
+              <textarea className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-purple-500 min-h-[100px]" placeholder="Ej: Las plantillas de vinilo no dejaron residuos. Trabajo ejecutado sin novedades..." autoComplete="off" autoCorrect="off" spellCheck="false" value={formData.observations || ''} onChange={(e) => setF('observations', e.target.value)} />
+            </div>
+          )}
+
+          {job.tripType === 'simple' && step === 2 && (() => {
+            const isSpecialJob = job.isPintura || job.isGrabado;
+            const reqPhotos = isSpecialJob ? ((job.qtyPintura || 0) + (job.qtyGrabado || 0)) : 4;
+            const photoKeys = Array.from({ length: reqPhotos > 0 ? reqPhotos : 4 }, (_, i) => `det${i + 1}`);
+
+            return (
+              <div className="space-y-4 animate-in fade-in duration-200">
+                <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Evidencia Fotográfica</h3>
+
+                {isSpecialJob ? (
+                  <div className="bg-purple-50 border-2 border-purple-200 p-4 rounded-2xl mb-4 shadow-sm">
+                    <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-1">Requisito Obligatorio</p>
+                    <p className="text-sm font-bold text-purple-900 leading-tight">Se requieren <span className="font-black bg-purple-200 px-1.5 py-0.5 rounded">{reqPhotos} fotografías</span> individuales (Una por cada patente o vidrio trabajado).</p>
+                  </div>
+                ) : (
+                  <p className="text-xs font-bold text-slate-500 mb-4">Añade al menos 1 fotografía que respalde el trabajo terminado.</p>
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
+                  {photoKeys.map((photoId, idx) => {
+                    let label = `Foto ${idx + 1}`;
+                    if (isSpecialJob) {
+                      if (idx < (job.qtyPintura || 0)) {
+                        label = `Patente ${idx + 1}`;
+                      } else {
+                        label = `Vidrio ${(idx + 1) - (job.qtyPintura || 0)}`;
+                      }
+                    }
+
+                    return (
+                      <button type="button" key={photoId} onClick={() => handlePhotoClick(photoId, label)} className={`w-full h-32 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white shadow-sm transition-all ${formData.photos[photoId] ? 'border-purple-400 ring-2 ring-purple-100' : 'border-dashed border-purple-300 hover:bg-purple-50'}`}>
+                        {formData.photos[photoId] ? <><img src={formData.photos[photoId]} className="absolute inset-0 w-full h-full object-cover opacity-60" /><CheckCircle className="w-6 h-6 text-purple-600 relative z-10 bg-white rounded-full" /><span className="text-[10px] font-black text-purple-900 relative z-10 bg-white/80 px-2 rounded-md">{label}</span></> : <><Camera className="w-6 h-6 text-purple-400" /><span className="text-[10px] font-black text-purple-600 uppercase tracking-wide text-center leading-tight">{label}</span></>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* VISTA: TRASLADO NORMAL */}
+          {job.tripType !== 'simple' && step === 1 && (
+            <div className="space-y-4 animate-in fade-in duration-200">              {isQuick ? (
+              <div className="space-y-2">
+                <select value={formData.client} onChange={(e) => setF('client', e.target.value)} className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 bg-white outline-none focus:border-blue-500">
+                  <option value="">Selecciona el Cliente...</option>
+                  {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
+                  <option value="OTRO">Otro (Ingreso Manual)</option>
+                </select>
+                {formData.client === 'OTRO' && <input value={formData.manualClient} onChange={e => setF('manualClient', e.target.value)} placeholder="Escribe el nombre del cliente" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-slate-700 mt-2" />}
+              </div>
+            ) : (
+              <input value={formData.client} onChange={e => setF('client', e.target.value)} placeholder="Cliente" autoComplete="off" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 bg-slate-50" readOnly />
+            )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <input value={formData.brand} onChange={e => setF('brand', e.target.value)} placeholder="Marca" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 bg-white p-3 rounded-xl font-bold text-slate-800" />
+                <input value={formData.model} onChange={e => setF('model', e.target.value)} placeholder="Modelo" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 bg-white p-3 rounded-xl font-bold text-slate-800" />
+              </div>
+              <input value={formData.plateOrVin} onChange={e => setF('plateOrVin', e.target.value)} placeholder="Patente o VIN" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-300 bg-slate-100 p-3 rounded-xl font-black uppercase text-slate-800 shadow-inner mt-2" />
+
+              {/* ALERTA DÉJÀ VU PERICIAL */}
+              {dejaVuData && (
+                <div className="bg-purple-50 border-2 border-purple-200 p-4 rounded-2xl shadow-sm animate-in zoom-in-95 flex items-start gap-3 mt-4 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-1.5 h-full bg-purple-500"></div>
+                  <div className="bg-purple-200 p-2 rounded-full text-purple-700 animate-pulse shrink-0">
+                    <Search className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-xs font-black text-purple-800 uppercase tracking-widest mb-1">Déjà Vu Pericial</h4>
+                    <p className="text-[11px] font-bold text-purple-600 leading-tight mb-3">
+                      Hay registros de daños previos en este vehículo (Traslado del {new Date(dejaVuData.completedAt).toLocaleDateString()}).
+                    </p>
+                    <button type="button" onClick={() => setShowDejaVuModal(true)} className="bg-purple-600 hover:bg-purple-700 text-white text-[10px] px-3 py-2 rounded-xl font-black uppercase transition-colors shadow-sm w-full">
+                      Ver Daños Anteriores
+                    </button>
+                  </div>
+                </div>
+              )}
+
+
+              {job.tripType === 'revision' && (
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3 mt-4">
+                  <h3 className="text-sm font-extrabold text-blue-600 uppercase tracking-wider flex items-center gap-2"><Clock className="w-5 h-5" /> Tiempo en Planta</h3>
+
+                  {(!formData.prtArrivalTime && formData.rtStatus === 'pendiente') && (
+                    <button type="button" onClick={() => setF('prtArrivalTime', Date.now())} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl shadow-md shadow-blue-200 flex items-center justify-center gap-2 transition-all active:scale-95">
+                      <MapPin className="w-5 h-5" /> LLEGUÉ A LA PRT (Iniciar Tiempo)
+                    </button>
+                  )}
+
+                  {formData.prtArrivalTime && (
+                    <div className="bg-blue-50 border-2 border-blue-200 p-3.5 rounded-xl flex justify-between items-center shadow-sm">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-full ${formData.rtStatus === 'pendiente' ? 'bg-blue-200 text-blue-700 animate-spin' : 'bg-green-200 text-green-700'}`}>
+                          {formData.rtStatus === 'pendiente' ? <Clock className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black text-blue-800 uppercase tracking-widest">Cronómetro Trámite</p>
+                          <p className="text-sm font-bold text-blue-600">
+                            {formData.rtStatus === 'pendiente'
+                              ? `${Math.floor((nowTick - formData.prtArrivalTime) / 60000)} minutos corriendo...`
+                              : `${Math.floor(((formData.prtFinishTime || Date.now()) - formData.prtArrivalTime) / 60000)} min en total (Finalizado)`}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {(formData.prtArrivalTime || formData.rtStatus !== 'pendiente') && (
+                    <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                      <h3 className="text-sm font-extrabold text-slate-700 uppercase tracking-wider mt-5 mb-2">Resultado de la Revisión</h3>
+                      <select value={formData.rtStatus} onChange={e => {
+                        setF('rtStatus', e.target.value);
+                        if (e.target.value !== 'pendiente' && !formData.prtFinishTime && formData.prtArrivalTime) {
+                          setF('prtFinishTime', Date.now()); // Detiene el cronómetro para siempre
+                        }
+                      }} className={`w-full border-2 p-3.5 rounded-xl outline-none font-extrabold text-sm ${formData.rtStatus === 'pendiente' ? 'border-blue-300 bg-white text-blue-700' : formData.rtStatus === 'aprobado' ? 'border-green-200 bg-green-50 text-green-700' : formData.rtStatus === 'aprobado_ayuda' ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
+                        <option value="pendiente" disabled>⏳ TRÁMITE EN CURSO...</option>
+                        <option value="aprobado">✅ APROBADO</option>
+                        <option value="aprobado_ayuda">🤝 APROBADO CON AYUDA</option>
+                        <option value="rechazado">❌ RECHAZADO</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {formData.rtStatus === 'rechazado' && (
+                    <input value={formData.rtRejectReason} onChange={e => setF('rtRejectReason', e.target.value)} placeholder="¿Cuál fue la razón del rechazo?" required={formData.rtStatus === 'rechazado'} autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-red-300 p-3 rounded-xl outline-none focus:border-red-500 font-bold text-red-900 bg-white mt-2 animate-in fade-in" />
+                  )}
+                  {(formData.rtStatus === 'aprobado' || formData.rtStatus === 'aprobado_ayuda') && (
+                    <div className="mt-2 p-3 border border-green-200 bg-white rounded-xl space-y-2 animate-in fade-in">
+                      <p className="text-xs font-bold text-green-800">¿Hacia dónde se dirige el vehículo tras aprobar?</p>
+                      <div className="flex gap-4">
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-green-700">
+                          <input type="radio" name="rtReturnOption" value="origin" checked={formData.rtReturnOption === 'origin'} onChange={e => setF('rtReturnOption', e.target.value)} className="w-4 h-4 accent-green-600" />
+                          Volver al Origen
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-green-700">
+                          <input type="radio" name="rtReturnOption" value="other" checked={formData.rtReturnOption === 'other'} onChange={e => setF('rtReturnOption', e.target.value)} className="w-4 h-4 accent-green-600" />
+                          Otro Destino
+                        </label>
+                      </div>
+                      {formData.rtReturnOption === 'other' && (
+                        <input value={formData.rtReturnDestination} onChange={e => setF('rtReturnDestination', e.target.value)} placeholder="Especifique el destino final..." required={formData.rtReturnOption === 'other'} autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-green-300 p-2.5 rounded-xl outline-none focus:border-green-500 font-bold text-green-900 bg-white" />
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+
+          {job.tripType !== 'simple' && step === 2 && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Documentos del Vehículo</h3>
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                {[{ id: 'soap', label: 'SOAP', icon: <FileText className="w-5 h-5" /> }, { id: 'permiso', label: 'Permiso Circ.', icon: <MapPin className="w-5 h-5" /> }, { id: 'revTecnica', label: 'Rev. Técnica', icon: <CheckCircle className="w-5 h-5" /> }, { id: 'gases', label: 'Gases', icon: <CloudOff className="w-5 h-5" /> }].map(doc => {
+                  const isExp = checkIsExpired(formData.docsExpiry?.[doc.id]);
+                  const isChecked = !!formData.docs[doc.id];
+
+                  return (
+                    <div key={doc.id} className="flex flex-col gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setF('docs', { ...formData.docs, [doc.id]: !isChecked })}
+                        className={`flex flex-col items-center justify-center gap-1.5 h-24 rounded-2xl border-2 active:scale-95 transition-all duration-200 select-none shadow-sm ${!isChecked ? 'border-slate-200 bg-slate-50 text-slate-400 hover:bg-slate-100 hover:border-slate-300' : isExp ? 'border-red-500 bg-red-500 text-white shadow-red-200' : 'border-green-500 bg-green-500 text-white shadow-green-200'}`}
+                      >
+                        {isChecked ? (isExp ? <AlertCircle className="w-6 h-6 animate-in zoom-in" /> : <CheckCircle className="w-6 h-6 animate-in zoom-in" />) : doc.icon}
+                        <span className="font-black text-xs uppercase tracking-wider">{doc.label}</span>
+                      </button>
+                      {isChecked && (
+                        <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                          <div className={`${isExp ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'} border p-2 rounded-xl flex flex-col gap-1 shadow-inner transition-colors`}>
+                            <p className={`text-[9px] font-extrabold uppercase tracking-widest text-center ${isExp ? 'text-red-700' : 'text-green-700'}`}>Vencimiento {isExp && '(VENCIDO)'}</p>
+                            <input type="date" value={formData.docsExpiry?.[doc.id] || ''} onChange={(e) => setF('docsExpiry', { ...(formData.docsExpiry || {}), [doc.id]: e.target.value })} className={`w-full bg-white border p-1.5 rounded-lg text-xs font-black text-slate-700 outline-none text-center transition-colors ${isExp ? 'border-red-300 focus:border-red-500' : 'border-green-200 focus:border-green-500'}`} />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* SECCIÓN DOCUMENTOS EXTERNOS Y BANDEJA */}
+              <div className="mt-8 border-t-2 border-slate-100 pt-5">
+                <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider mb-2 flex items-center gap-2"><FileText className="w-5 h-5 text-indigo-500" /> Documentos Adicionales</h3>
+                <p className="text-[10px] font-bold text-slate-500 mb-4 leading-tight">Si escaneaste con CamScanner o Adobe Scan, pega el link aquí o adjunta el PDF directamente.</p>
+
+                <div className="space-y-4">
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest ml-1">Enlace / Link del Documento</label>
+                    <div className="flex gap-2">
+                      <input type="url" placeholder="Ej: https://acrobat.adobe.com/..." value={formData.scannerLink || ''} onChange={(e) => setF('scannerLink', e.target.value)} className="w-full border-2 border-indigo-100 bg-indigo-50/30 p-3 rounded-xl font-bold text-slate-700 text-sm outline-none focus:border-indigo-500 transition-colors" />
+                      <button type="button" onClick={async () => {
+                        if (!formData.scannerLink) return showAlert("⚠️ Pega un link primero.");
+                        if (job.id === 'NEW_QUICK_JOB') return showAlert("⚠️ Debes 'Finalizar y Guardar' el acta abajo para poder notificar este link.");
+
+                        showAlert("⏳ Guardando link y notificando al cliente...");
+                        try {
+                          const { updateDoc, doc, query, collection, where, getDocs } = await import('firebase/firestore');
+                          const newChecklist = { ...(job.checklist || {}), scannerLink: formData.scannerLink };
+                          await updateDoc(doc(db, 'transport_jobs', job.id), { checklist: newChecklist });
+
+                          // Buscamos al cliente directo en la colección segura para sacar el correo real
+                          const qClient = query(collection(db, 'clients'), where('name', '==', job.client || ''));
+                          const snapClient = await getDocs(qClient);
+
+                          if (!snapClient.empty) {
+                            const clientRecord = snapClient.docs[0].data();
+                            const targetEmail = clientRecord.email?.split(',')[0]?.trim();
+
+                            if (targetEmail) {
+                              fetch('/api/notify-client', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  email: targetEmail,
+                                  clientName: clientRecord.name,
+                                  type: 'revision_tecnica',
+                                  jobDetails: {
+                                    id: job.id,
+                                    driverName: drivers?.find(x => x.email === currentUserEmail)?.name || currentUserEmail,
+                                    vehicle: job.tripType === 'simple' ? (job.description || 'Servicio en Terreno') : (`${job.brand || ''} ${job.model || ''}`.trim() || 'Vehículo'),
+                                    plate: job.plate || job.vin || job.associatedPlate || 'S/N',
+                                    origin: job.origin || 'Origen',
+                                    destination: job.destination || 'Destino',
+                                    checklist: newChecklist
+                                  }
+                                })
+                              }).catch((err) => console.error("Error enviando correo:", err));
+                            }
+                          }
+                          showAlert("✅ Link guardado y cliente notificado exitosamente.");
+                        } catch (err) {
+                          showAlert("❌ Error al guardar el link.");
+                        }
+                      }} className="bg-indigo-600 text-white px-4 rounded-xl font-black text-[10px] shadow-sm hover:bg-indigo-700 active:scale-95 transition-all flex flex-col items-center justify-center leading-tight">
+                        <span>ENVIAR</span><span>AVISO</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 opacity-60"><div className="h-px bg-slate-300 flex-1"></div><span className="text-[10px] font-black uppercase text-slate-400">O Subir Archivo Físico</span><div className="h-px bg-slate-300 flex-1"></div></div>
+
+                  <label className="w-full bg-white border-2 border-dashed border-indigo-300 hover:bg-indigo-50 text-indigo-600 p-4 rounded-2xl font-black text-xs flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm">
+                    <input type="file" accept="application/pdf,image/*" className="hidden" onChange={(e) => {
+                      const f = e.target.files[0];
+                      if (!f) return;
+
+                      // Prevención: Si es un trabajo nuevo, se sube normal al final
+                      if (job.id === 'NEW_QUICK_JOB') {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          setF('scandocPdf', reader.result);
+                          showAlert("✅ Archivo adjuntado temporalmente. Se subirá y notificará al finalizar el acta.");
+                        };
+                        reader.readAsDataURL(f);
+                        return;
+                      }
+
+                      showAlert("⏳ Subiendo documento y notificando al cliente...");
+                      try {
+                        const reader = new FileReader();
+                        reader.onload = async () => {
+                          try {
+                            const base64 = reader.result;
+                            const ext = f.type.includes('pdf') ? 'pdf' : 'jpg';
+
+                            const { getStorage, ref, uploadString, getDownloadURL } = await import('firebase/storage');
+                            const storage = getStorage();
+                            const fileRef = ref(storage, `checklists/${job.id}/documento_PRT_directo_${Date.now()}.${ext}`);
+
+                            const metadata = { contentType: f.type };
+                            await uploadString(fileRef, base64, 'data_url', metadata);
+                            const url = await getDownloadURL(fileRef);
+
+                            const { updateDoc, doc, query, collection, where, getDocs } = await import('firebase/firestore');
+                            const newChecklist = { ...(job.checklist || {}), scandocPdf: url };
+                            await updateDoc(doc(db, 'transport_jobs', job.id), { checklist: newChecklist });
+
+                            setF('scandocPdf', url);
+
+                            // Buscamos al cliente directo en la colección segura para sacar el correo real
+                            const qClient = query(collection(db, 'clients'), where('name', '==', job.client || ''));
+                            const snapClient = await getDocs(qClient);
+
+                            if (!snapClient.empty) {
+                              const clientRecord = snapClient.docs[0].data();
+                              const targetEmail = clientRecord.email?.split(',')[0]?.trim();
+
+                              if (targetEmail) {
+                                fetch('/api/notify-client', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({
+                                    email: targetEmail,
+                                    clientName: clientRecord.name,
+                                    type: 'revision_tecnica',
+                                    jobDetails: {
+                                      id: job.id === 'NEW_QUICK_JOB' ? 'N/A' : job.id,
+                                      driverName: drivers?.find(x => x.email === currentUserEmail)?.name || currentUserEmail,
+                                      vehicle: job.tripType === 'simple' ? (job.description || 'Servicio en Terreno') : (`${job.brand || ''} ${job.model || ''}`.trim() || 'Vehículo'),
+                                      plate: job.plate || job.vin || job.associatedPlate || 'S/N',
+                                      origin: job.origin || 'Origen',
+                                      destination: job.destination || 'Destino',
+                                      checklist: newChecklist
+                                    }
+                                  })
+                                }).catch((err) => console.error("Error enviando correo:", err));
+                              }
+                            }
+
+                            showAlert("✅ Documento guardado y cliente notificado exitosamente.");
+                          } catch (uploadError) {
+                            console.error(uploadError);
+                            showAlert("❌ Error al subir y notificar.");
+                          }
+                        };
+                        reader.readAsDataURL(f);
+                      } catch (err) {
+                        showAlert("❌ Error al leer el documento.");
+                      }
+                    }} />
+                    <FileText className="w-6 h-6" />
+                    <span className="text-center">{formData.scandocPdf ? '✅ ARCHIVO CARGADO (Toca para cambiar)' : 'ADJUNTAR PDF O FOTO Y NOTIFICAR AL CLIENTE'}</span>
+                  </label>
+                </div>
+
+                {job.checklist?.scandocPdfInbox && (
+                  <div className="mt-4 bg-emerald-50 border border-emerald-200 p-3 rounded-xl flex items-center justify-between shadow-sm">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-5 h-5 text-emerald-500" />
+                      <p className="text-[11px] font-black text-emerald-800 uppercase tracking-tight">Doc. Asignado (Bandeja)</p>
+                    </div>
+                    <a href={job.checklist.scandocPdfInbox} target="_blank" rel="noreferrer" className="text-[10px] bg-emerald-600 text-white px-2.5 py-1.5 rounded-lg font-bold shadow-sm hover:bg-emerald-500">VER PDF</a>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+
+          {job.tripType !== 'simple' && step === 3 && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              <div className="space-y-4">
+                <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Observaciones Generales</h3>
+                <textarea className="w-full border-2 border-slate-200 p-3 rounded-xl text-sm font-bold text-slate-700 outline-none focus:border-blue-500 min-h-[90px]" placeholder="Escribe aquí si hay algún daño, rayón o comentario del estado visual del vehículo..." autoComplete="off" autoCorrect="off" spellCheck="false" value={formData.observations || ''} onChange={(e) => setF('observations', e.target.value)} />
+              </div>
+
+              {/* NUEVO: NOTAS DURANTE EL TRASLADO */}
+              <div className="space-y-4 bg-orange-50 p-4 rounded-3xl border border-orange-200 shadow-sm">
+                <h3 className="text-sm font-extrabold pb-2 text-orange-800 uppercase tracking-wider flex items-center gap-2"><AlertCircle className="w-5 h-5" /> Notas durante el traslado</h3>
+                <p className="text-[10px] font-bold text-orange-600 leading-tight">Usa este espacio para reportar eventos como: ruidos extraños, pinchazos, piquetes en parabrisas, u otras novedades ocurridas netamente en la ruta.</p>
+                <textarea className="w-full border-2 border-orange-200 p-3 rounded-xl text-sm font-bold text-orange-800 outline-none focus:border-orange-500 min-h-[90px] bg-white placeholder-orange-300" placeholder="Ej: Piquete en parabrisas en carretera, neumático con baja presión..." autoComplete="off" autoCorrect="off" spellCheck="false" value={formData.transitNotes || ''} onChange={(e) => setF('transitNotes', e.target.value)} />
+              </div>
+
+              {/* NUEVO: VERIFICACIÓN DE EQUIPAMIENTO */}
+              <div className="bg-slate-50 p-4 rounded-3xl border border-slate-200 shadow-sm space-y-4 relative overflow-hidden">
+                <label className="flex items-center gap-3 cursor-pointer relative z-10">
+                  <input type="checkbox" checked={formData.hasEquipment || false} onChange={e => setF('hasEquipment', e.target.checked)} className="w-6 h-6 rounded cursor-pointer accent-blue-600" />
+                  <span className="font-black text-slate-800 text-sm tracking-wide">VERIFICAR EQUIPAMIENTO</span>
+                </label>
+
+                {formData.hasEquipment && (
+                  <div className="animate-in fade-in slide-in-from-top-2 pt-3 border-t border-slate-200 space-y-4 relative z-10">
+                    <div className="grid grid-cols-2 gap-3">
+                      {equipmentList.map(item => {
+                        const isChecked = formData.equipment?.[item] || false;
+                        return (
+                          <label key={item} className={`flex items-start gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer select-none ${isChecked ? 'border-blue-500 bg-blue-100 text-blue-900 shadow-sm' : 'border-slate-200 bg-white text-slate-600 hover:border-blue-300'}`}>
+                            <input type="checkbox" checked={isChecked} onChange={e => setF('equipment', { ...formData.equipment, [item]: e.target.checked })} className="w-4 h-4 accent-blue-600 rounded shrink-0 mt-0.5" />
+                            <span className="text-[11px] font-extrabold leading-tight">{item}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <div className="space-y-1.5 pt-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-1"><FileText className="w-3 h-3" /> Herramientas u otros detalles</label>
+                      <input type="text" placeholder="Ej: Destornillador, chaleco extra..." value={formData.equipmentDetails || ''} onChange={e => setF('equipmentDetails', e.target.value)} autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 p-3 rounded-xl font-bold text-xs outline-none focus:border-blue-500 shadow-inner bg-white" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+
+          {job.tripType !== 'simple' && step === 4 && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              <div className="flex justify-between items-end border-b border-slate-100 pb-2 mb-2">
+                <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Croquis Pericial de Daños</h3>
+                <select value={formData.vehicleType || 'auto'} onChange={e => setF('vehicleType', e.target.value)} className="bg-slate-100 border-2 border-slate-200 text-[10px] font-bold p-1.5 rounded-lg outline-none text-slate-700 cursor-pointer max-w-[140px]">
+                  <option value="auto">🚙 Auto/SUV</option>
+                  <option value="camioneta">🛻 Camioneta</option>
+                  <option value="furgon_pequeno">🚐 Furgón Peq.</option>
+                  <option value="furgon_grande">🚐 Furgón Grande</option>
+                  <option value="camion">🚚 Camión Simple</option>
+                  <option value="camion_doble">🚚 Camión Doble Cab.</option>
+                  <option value="camion_2ejes">🚛 Camión (2 Ejes)</option>
+                  <option value="camion_3ejes">🚛 Camión (3 Ejes)</option>
+                  <option value="camion_8x4">🚚 Camión Rigid (8x4)</option>
+                  <option value="carro_arrastre">🛒 Carro Arrastre</option>
+                </select>
+              </div>
+
+
+              <div className="bg-slate-50 p-4 rounded-3xl border-2 border-slate-100 mb-4 select-none relative">
+                <div className="flex justify-between items-center mb-4 min-h-[40px]">
+                  {!formData.zoomZone ? (
+                    <p className="text-[10px] font-black text-slate-400 uppercase leading-relaxed w-full text-center">
+                      Toca los recuadros para fotos generales.<br />
+                      <span className="text-blue-500 text-xs">Toca un cuadrante del auto para acercar y marcar.</span>
+                    </p>
+                  ) : (
+                    <div className="w-full flex items-center justify-between bg-blue-50 p-2 rounded-xl border border-blue-200 animate-in fade-in">
+                      <p className="text-[11px] font-black text-blue-700 uppercase animate-pulse flex items-center gap-1"><Search className="w-4 h-4" /> Toca el daño exacto</p>
+                      <button type="button" onClick={() => setF('zoomZone', null)} className="bg-white px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 shadow-sm border border-slate-200 flex items-center gap-1 hover:bg-slate-100 transition-colors"><X className="w-3 h-3" /> Volver</button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="relative w-full max-w-[280px] h-[400px] mx-auto my-6">
+                  <div
+                    className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 cursor-crosshair transition-all duration-300 ease-out drop-shadow-lg ${!formData.zoomZone ? 'scale-100 z-10 hover:opacity-90' :
+                        formData.zoomZone === 'tl' ? 'scale-[1.8] origin-top-left z-50' :
+                          formData.zoomZone === 'tr' ? 'scale-[1.8] origin-top-right z-50' :
+                            formData.zoomZone === 'ml' ? 'scale-[1.8] origin-left z-50' :
+                              formData.zoomZone === 'mr' ? 'scale-[1.8] origin-right z-50' :
+                                formData.zoomZone === 'bl' ? 'scale-[1.8] origin-bottom-left z-50' :
+                                  'scale-[1.8] origin-bottom-right z-50'
+                      }`}
+                    style={{ height: formData.vehicleType?.includes('camion') || formData.vehicleType === 'furgon_grande' || formData.vehicleType === 'carro_arrastre' ? '260px' : '220px' }}
+                    onClick={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const x = ((e.clientX - rect.left) / rect.width) * 100;
+                      const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+
+                      if (!formData.zoomZone) {
+                        let zone = y < 33 ? 't' : y < 66 ? 'm' : 'b';
+                        zone += x < 50 ? 'l' : 'r';
+                        setF('zoomZone', zone);
+                        return;
+                      }
+
+
+                      const availableDet = ['det1', 'det2', 'det3', 'det4', 'det5', 'det6', 'det7', 'det8'].find(d => !formData.photos[d]);
+                      if (!availableDet) return showAlert("Máximo de 8 fotos de detalles/daños alcanzado.");
+
+                      setF('pendingPin', { id: availableDet, x, y });
+                      setF('zoomZone', null);
+                      openCamera('Detalle del Daño', f => handlePic(f, availableDet));
+                    }}
+                  >
+                    {!formData.zoomZone && (
+                      <div className="absolute inset-0 grid grid-cols-2 grid-rows-3 pointer-events-none z-40 opacity-40 mix-blend-multiply">
+                        <div className="border-r-2 border-b-2 border-dashed border-blue-500 rounded-tl-[40px]"></div>
+                        <div className="border-b-2 border-dashed border-blue-500 rounded-tr-[40px]"></div>
+                        <div className="border-r-2 border-b-2 border-dashed border-blue-500"></div>
+                        <div className="border-b-2 border-dashed border-blue-500"></div>
+                        <div className="border-r-2 border-dashed border-blue-500 rounded-bl-[40px]"></div>
+                        <div className="border-dashed border-blue-500 rounded-br-[40px]"></div>
+                      </div>
+                    )}
+
+
+                    {(!formData.vehicleType || formData.vehicleType === 'auto') && (
+                      <div className="w-full h-full relative flex justify-center">
+                        {/* Ruedas Delanteras (Neumáticos oscuros) */}
+                        <div className="absolute top-[15%] left-[2%] w-3.5 h-10 bg-slate-800 rounded-sm shadow-md z-0"></div>
+                        <div className="absolute top-[15%] right-[2%] w-3.5 h-10 bg-slate-800 rounded-sm shadow-md z-0"></div>
+
+
+                        {/* Ruedas Traseras (Neumáticos oscuros) */}
+                        <div className="absolute bottom-[12%] left-[2%] w-3.5 h-10 bg-slate-800 rounded-sm shadow-md z-0"></div>
+                        <div className="absolute bottom-[12%] right-[2%] w-3.5 h-10 bg-slate-800 rounded-sm shadow-md z-0"></div>
+
+
+                        {/* Espejos Retrovisores Reales (Pequeños y claros) */}
+                        <div className="absolute top-[34%] left-[4%] w-2 h-4 bg-slate-400 rounded-l-md shadow-sm z-20"></div>
+                        <div className="absolute top-[34%] right-[4%] w-2 h-4 bg-slate-400 rounded-r-md shadow-sm z-20"></div>
+
+
+                        {/* Chasis principal */}
+                        <div className="w-[88%] h-full bg-slate-300 rounded-t-[45px] rounded-b-[35px] border-4 border-slate-400 relative flex flex-col p-1 shadow-inner z-10 overflow-hidden">
+
+                          {/* Líneas aerodinámicas del Capó */}
+                          <div className="absolute top-[-2%] left-[15%] w-[70%] h-[20%] border-x-2 border-slate-400/40 rounded-t-[30px] pointer-events-none"></div>
+
+
+                          {/* Habitáculo */}
+                          <div className="flex flex-col h-full justify-between pt-[18%] pb-[12%] z-10">
+                            {/* Parabrisas Delantero curvo */}
+                            <div className="w-[85%] h-[16%] bg-slate-800/40 mx-auto rounded-t-[25px] rounded-b-[4px] shadow-sm border-t-2 border-white/20"></div>
+
+
+                            {/* Techo y Ventanas Laterales (vidrios oscuros a los lados) */}
+                            <div className="flex-1 w-[80%] mx-auto bg-slate-200 border-x-4 border-slate-800/40 relative flex flex-col my-1 shadow-sm rounded-sm">
+                              {/* Línea divisoria de puertas (Pilar B) */}
+                              <div className="w-full h-1/2 border-b-2 border-slate-400/30"></div>
+                            </div>
+
+
+                            {/* Parabrisas Trasero curvo */}
+                            <div className="w-[80%] h-[11%] bg-slate-800/40 mx-auto rounded-b-[20px] rounded-t-[4px] shadow-sm border-b-2 border-white/20"></div>
+                          </div>
+
+
+                          {/* Línea del Maletero */}
+                          <div className="absolute bottom-1.5 left-[20%] w-[60%] h-4 border-t-2 border-slate-400/60 rounded-t-lg pointer-events-none"></div>
+                        </div>
+                      </div>
+                    )}
+                    {formData.vehicleType === 'furgon_pequeno' && (
+                      <div className="w-full h-full relative flex flex-col items-center z-10">
+                        <div className="w-[80%] h-[18%] bg-slate-300 rounded-t-[35px] border-x-4 border-t-4 border-slate-400 shadow-inner z-0"></div>
+                        <div className="w-[100%] h-[82%] bg-slate-200 rounded-t-[15px] rounded-b-[20px] border-4 border-slate-400 shadow-inner flex flex-col p-1.5 z-10 -mt-2">
+                          <div className="w-[90%] h-[20%] bg-slate-800/40 mx-auto rounded-t-[15px] rounded-b-sm mb-1.5 shadow-sm"></div>
+                          <div className="flex-1 w-[95%] mx-auto bg-slate-300 border-2 border-slate-400/30 rounded-md relative flex justify-center overflow-hidden">
+                            {/* Eliminamos la línea vertical molesta de acá */}
+                            <div className="absolute top-1/4 w-full border-t-2 border-slate-400/20"></div>
+                            <div className="absolute top-2/4 w-full border-t-2 border-slate-400/20"></div>
+                            <div className="absolute top-3/4 w-full border-t-2 border-slate-400/20"></div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {formData.vehicleType === 'furgon_grande' && (
+                      <div className="w-full h-full bg-slate-200 rounded-t-[35px] rounded-b-[10px] border-4 border-slate-400 relative flex flex-col justify-start p-2 shadow-inner z-10">
+                        <div className="w-[85%] h-[15%] bg-slate-800/40 mx-auto rounded-t-[20px] rounded-b-sm mt-1"></div>
+                        <div className="flex-1 w-[90%] mx-auto bg-slate-300 border-2 border-slate-400/30 rounded-sm mt-3 mb-1 flex items-center justify-center relative overflow-hidden shadow-sm">
+                          {/* Eliminamos la línea vertical molesta de acá */}
+                          <div className="absolute top-1/4 w-full border-t border-slate-400/20"></div>
+                          <div className="absolute top-2/4 w-full border-t border-slate-400/20"></div>
+                          <div className="absolute top-3/4 w-full border-t border-slate-400/20"></div>
+                        </div>
+                      </div>
+                    )}
+                    {formData.vehicleType === 'camioneta' && (
+                      <div className="w-full h-full relative flex flex-col">
+                        <div className="w-full h-[55%] bg-slate-300 rounded-t-[35px] rounded-b-md border-4 border-slate-400 p-2 flex flex-col justify-between shadow-inner relative overflow-hidden">
+                          <div className="w-5/6 h-8 bg-slate-800/30 mx-auto rounded-t-xl rounded-b-sm mt-1 z-10"></div>
+                          <div className="flex-1 w-full mx-auto relative flex flex-col justify-center my-1">
+                            <div className="w-full border-t-2 border-slate-400/40"></div>
+                          </div>
+                          <div className="w-5/6 h-4 bg-slate-800/30 mx-auto rounded-b-xl rounded-t-sm mb-0.5 z-10"></div>
+                        </div>
+                        <div className="w-[90%] h-[43%] mx-auto bg-slate-200 border-x-4 border-b-4 border-slate-400 rounded-b-xl mt-1 relative shadow-inner">
+                          <div className="absolute inset-1.5 border-2 border-slate-300/80 rounded-sm"></div>
+                          <div className="absolute inset-y-2 left-1/3 border-l-2 border-slate-300/50"></div>
+                          <div className="absolute inset-y-2 right-1/3 border-r-2 border-slate-300/50"></div>
+                        </div>
+                      </div>
+                    )}
+                    {formData.vehicleType === 'camion' && (
+                      <div className="w-full h-full relative flex flex-col">
+                        <div className="w-[105%] -ml-[2.5%] h-[20%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-300 p-1 flex flex-col justify-end shadow-inner z-10 relative">
+                          <div className="w-full h-1/2 bg-slate-800/40 rounded-t-md rounded-b-sm mb-1"></div>
+                        </div>
+                        <div className="w-full h-[78%] mx-auto bg-slate-200 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
+                          <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
+                        </div>
+                      </div>
+                    )}
+                    {formData.vehicleType === 'camion_doble' && (
+                      <div className="w-full h-full relative flex flex-col">
+                        <div className="w-[105%] -ml-[2.5%] h-[32%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-300 p-1 flex flex-col justify-end gap-1 shadow-inner z-10 relative">
+                          <div className="w-full h-[40%] bg-slate-800/40 rounded-t-md"></div>
+                          <div className="w-full h-[35%] bg-slate-800/40 rounded-sm mb-0.5"></div>
+                        </div>
+                        <div className="w-full h-[66%] mx-auto bg-slate-200 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
+                          <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
+                        </div>
+                      </div>
+                    )}
+                    {(formData.vehicleType === 'camion_2ejes' || formData.vehicleType === 'camion_3ejes' || formData.vehicleType === 'camion_8x4' || formData.vehicleType === 'carro_arrastre') && (
+                      <div className="w-full h-full relative flex flex-col items-center">
+
+                        {formData.vehicleType === 'camion_8x4' && (
+                          <>
+                            <div className="absolute top-[10%] -left-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                            <div className="absolute top-[10%] -right-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                            <div className="absolute top-[22%] -left-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                            <div className="absolute top-[22%] -right-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                            <div className="absolute bottom-[20%] -left-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                            <div className="absolute bottom-[20%] -right-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                            <div className="absolute bottom-[7%] -left-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                            <div className="absolute bottom-[7%] -right-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+
+                            <div className="w-[105%] h-[20%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-400 p-1 flex flex-col justify-end shadow-inner z-10 relative">
+                              <div className="w-full h-1/2 bg-slate-800/50 rounded-t-md rounded-b-sm mb-1"></div>
+                            </div>
+                            <div className="w-full h-[78%] mx-auto bg-slate-200 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
+                              <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
+                            </div>
+                          </>
+                        )}
+
+                        {formData.vehicleType === 'carro_arrastre' && (
+                          <div className="w-full h-full relative overflow-hidden flex justify-center items-center">
+                            <div className="w-[90%] h-[80%] bg-slate-300 rounded-md border-4 border-slate-400 relative overflow-hidden shadow-inner flex justify-center items-center z-10 mt-6">
+                              <div className="w-[90%] h-[90%] border-2 border-slate-300/50 rounded-sm"></div>
+                            </div>
+
+
+                            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-4 h-10 border-x-4 border-t-4 border-slate-500 rounded-t-full bg-slate-400 z-0"></div>
+
+
+                            <div className="absolute top-[48%] left-1/2 -translate-x-1/2 w-[105%] -ml-[2.5%] h-2 bg-slate-800/80 rounded-sm flex justify-between z-0">
+                              <div className="w-4 h-8 rounded-sm bg-slate-800 -ml-1 -mt-3 shadow-md"></div>
+                              <div className="w-4 h-8 rounded-sm bg-slate-800 -mr-1 -mt-3 shadow-md"></div>
+                            </div>
+
+
+                            <div className="absolute top-[56%] left-1/2 -translate-x-1/2 w-[105%] -ml-[2.5%] h-2 bg-slate-800/80 rounded-sm flex justify-between z-0">
+                              <div className="w-4 h-8 rounded-sm bg-slate-800 -ml-1 -mt-3 shadow-md"></div>
+                              <div className="w-4 h-8 rounded-sm bg-slate-800 -mr-1 -mt-3 shadow-md"></div>
+                            </div>
+                          </div>
+                        )}
+
+                        {(formData.vehicleType === 'camion_2ejes' || formData.vehicleType === 'camion_3ejes') && (
+                          <>
+                            <div className="absolute top-[8%] -left-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                            <div className="absolute top-[8%] -right-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                            {formData.vehicleType === 'camion_2ejes' && (
+                              <>
+                                <div className="absolute bottom-[17%] -left-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                                <div className="absolute bottom-[17%] -right-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                                <div className="absolute bottom-[5%] -left-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                                <div className="absolute bottom-[5%] -right-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                              </>
+                            )}
+                            {formData.vehicleType === 'camion_3ejes' && (
+                              <>
+                                <div className="absolute bottom-[27%] -left-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                                <div className="absolute bottom-[27%] -right-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                                <div className="absolute bottom-[16%] -left-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                                <div className="absolute bottom-[16%] -right-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                                <div className="absolute bottom-[5%] -left-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                                <div className="absolute bottom-[5%] -right-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
+                              </>
+                            )}
+                            <div className="w-[105%] h-[20%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-400 p-1 flex flex-col justify-end shadow-inner z-10 relative">
+                              <div className="w-full h-1/2 bg-slate-800/50 rounded-t-md rounded-b-sm mb-1"></div>
+                            </div>
+                            <div className="w-full h-[78%] mx-auto bg-slate-200 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
+                              <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+
+                    {(formData.detailPins || []).map(pin => (
+                      <div key={pin.id} onClick={() => handlePhotoClick(pin.id, 'Detalle del Daño')} className="absolute w-8 h-8 -ml-4 -mt-4 bg-red-500 rounded-full border-2 border-white shadow-xl flex items-center justify-center z-50 animate-in zoom-in cursor-pointer" style={{ left: `${pin.x}%`, top: `${pin.y}%` }}>
+                        <img src={formData.photos[pin.id]} className="w-full h-full object-cover rounded-full opacity-90" alt="Detalle" />
+                        <button type="button" onClick={(e) => { e.stopPropagation(); setF('photos', { ...formData.photos, [pin.id]: false }); setF('detailPins', formData.detailPins.filter(p => p.id !== pin.id)); }} className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] hover:bg-red-700 shadow-md"><X className="w-3 h-3" /></button>
+                      </div>
+                    ))}
+                  </div>
+
+
+                  <button type="button" onClick={() => handlePhotoClick('front', 'FRENTE')} className={`absolute top-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.front ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
+                    {formData.photos.front ? <><img src={formData.photos.front} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50" /><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full" /></> : <><Camera className="w-5 h-5 text-blue-500 mb-1" /><span className="text-[9px] font-black text-slate-500 tracking-wide">FRENTE</span></>}
+                  </button>
+
+
+                  <button type="button" onClick={() => handlePhotoClick('back', 'ATRÁS')} className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.back ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
+                    {formData.photos.back ? <><img src={formData.photos.back} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50" /><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full" /></> : <><Camera className="w-5 h-5 text-blue-500 mb-1" /><span className="text-[9px] font-black text-slate-500 tracking-wide">ATRÁS</span></>}
+                  </button>
+
+
+                  <button type="button" onClick={() => handlePhotoClick('left', 'LATERAL PILOTO')} className={`absolute top-1/2 left-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.left ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
+                    {formData.photos.left ? <><img src={formData.photos.left} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50" /><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full" /></> : <><Camera className="w-5 h-5 text-blue-500 mb-0.5" /><span className="text-[8px] font-black text-slate-500 text-center leading-tight">LATERAL<br />PILOTO</span></>}
+                  </button>
+
+
+                  <button type="button" onClick={() => handlePhotoClick('right', 'LATERAL COPILOTO')} className={`absolute top-1/2 right-0 transform -translate-y-1/2 w-16 h-16 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md z-10 bg-white transition-all ${formData.photos.right ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-blue-50'}`}>
+                    {formData.photos.right ? <><img src={formData.photos.right} className="absolute inset-0 w-full h-full object-cover rounded-2xl opacity-50" /><CheckCircle className="w-6 h-6 text-green-500 relative z-10 bg-white rounded-full" /></> : <><Camera className="w-5 h-5 text-blue-500 mb-0.5" /><span className="text-[8px] font-black text-slate-500 text-center leading-tight">LATERAL<br />COPILOTO</span></>}
+                  </button>
+                </div>
+
+
+                <div className="grid grid-cols-2 gap-3 mt-6 border-t-2 border-slate-100 pt-4">
+                  {[{ id: 'dashboard', l: 'Tablero' }, { id: 'tire', l: 'Repuesto' }, { id: 'interior_front', l: 'Int. Adelante' }, { id: 'interior_back', l: 'Int. Atrás' }].map(p => (
+                    <button type="button" key={p.id} onClick={() => handlePhotoClick(p.id, p.l)} className={`w-full h-12 rounded-xl border-2 flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white shadow-sm transition-all ${formData.photos[p.id] ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 hover:bg-slate-50'}`}>
+                      {formData.photos[p.id] ? <><img src={formData.photos[p.id]} className="absolute inset-0 w-full h-full object-cover opacity-30" /><CheckCircle className="w-5 h-5 text-green-500 relative z-10 bg-white rounded-full" /><span className="text-[10px] font-black text-green-800 relative z-10">{p.l}</span></> : <><Camera className="w-4 h-4 text-slate-400" /><span className="text-[10px] font-black text-slate-500 uppercase">{p.l}</span></>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+
+          {job.tripType !== 'simple' && step === 5 && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Combustible a Bordo</h3>
+
+              <div className="bg-white p-5 rounded-3xl border-2 border-slate-100 shadow-sm relative">
+                <div className="flex justify-between items-center mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2.5 rounded-xl transition-colors ${formData.fuelLevel < 30 ? 'bg-red-50' : 'bg-slate-50'}`}>
+                      <Fuel className={`w-6 h-6 ${formData.fuelLevel < 30 ? 'text-red-500 animate-pulse' : 'text-slate-500'}`} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Estanque</p>
+                      <p className={`text-2xl font-black leading-none transition-colors ${formData.fuelLevel < 30 ? 'text-red-600' : formData.fuelLevel <= 50 ? 'text-amber-500' : 'text-green-600'}`}>
+                        {formData.fuelLevel}%
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-lg transition-colors ${formData.fuelLevel == 0 ? 'bg-red-100 text-red-700' : formData.fuelLevel <= 25 ? 'bg-red-50 text-red-600' : formData.fuelLevel <= 50 ? 'bg-amber-50 text-amber-600' : formData.fuelLevel <= 75 ? 'bg-green-50 text-green-600' : 'bg-green-100 text-green-700'}`}>
+                      {formData.fuelLevel == 0 ? 'Vacío' : formData.fuelLevel <= 25 ? 'Reserva' : formData.fuelLevel <= 50 ? 'Medio' : formData.fuelLevel <= 75 ? '3/4' : 'Lleno'}
+                    </span>
+                  </div>
+                </div>
+
+
+                <div className="relative pt-2 pb-2">
+                  <div className="flex justify-between text-[11px] font-black px-1 mb-2">
+                    <span className="text-red-500">E</span>
+                    <span className="text-slate-300">1/4</span>
+                    <span className="text-slate-300">1/2</span>
+                    <span className="text-slate-300">3/4</span>
+                    <span className="text-green-500">F</span>
+                  </div>
+
+                  <div className="relative h-10 w-full group">
+                    <input
+                      type="range"
+                      min="0" max="100" step="5"
+                      value={formData.fuelLevel}
+                      onChange={(e) => setF('fuelLevel', Number(e.target.value))}
+                      className="absolute z-20 w-full h-full opacity-0 cursor-pointer inset-0 m-0"
+                    />
+
+                    <div className="absolute inset-y-2 inset-x-0 bg-slate-100 rounded-full overflow-hidden shadow-inner border border-slate-200 pointer-events-none">
+                      <div className="absolute inset-0 flex justify-between px-[25%] z-10">
+                        <div className="w-0.5 h-full bg-white/80"></div>
+                        <div className="w-0.5 h-full bg-white/80"></div>
+                        <div className="w-0.5 h-full bg-white/80"></div>
+                      </div>
+
+                      <div
+                        className={`h-full transition-all duration-300 ease-out flex items-center justify-end pr-2 relative ${formData.fuelLevel < 30
+                            ? 'bg-[repeating-linear-gradient(45deg,#ef4444,#ef4444_10px,#dc2626_10px,#dc2626_20px)]'
+                            : formData.fuelLevel <= 50
+                              ? 'bg-amber-400'
+                              : 'bg-green-500'
+                          }`}
+                        style={{ width: `${formData.fuelLevel}%` }}
+                      >
+                        <div className="w-1.5 h-3 bg-white/50 rounded-full relative z-20"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+
+              <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 mt-6 text-slate-800 uppercase tracking-wider">Viáticos y Esperas</h3>
+
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="bg-blue-100 p-2 rounded-lg text-blue-600"><Wallet className="w-5 h-5" /></div>
+                  <div>
+                    <p className="text-xs font-bold text-blue-600 uppercase leading-none">Fondo Asignado</p>
+                    <p className="text-[10px] font-bold text-slate-500 mt-1">Patente: {job.plate || job.vin || 'N/A'}</p>
+                  </div>
+                </div>
+                <p className="text-xl font-extrabold text-blue-700">
+                  {formatMoney((expenses || []).filter(g => g.jobId === job.id && g.type === 'assignment').reduce((acc, curr) => acc + Number(curr.amount || 0), 0))}
+                </p>
+              </div>
+
+
+              {job.tripType === 'revision' && (job.rtData?.revision || job.rtData?.inspeccion || job.rtData?.frenos) && (
+                <div className="bg-indigo-50 border-2 border-indigo-200 rounded-xl p-4 shadow-sm space-y-3">
+                  <h3 className="text-xs font-extrabold text-indigo-800 uppercase tracking-wider flex items-center gap-1.5"><Receipt className="w-4 h-4" /> Valores pagados en Planta (PRT)</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {job.rtData?.revision && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-black text-indigo-600 uppercase">Revisión Técnica ($)</label>
+                        <input type="number" placeholder="Ej: 20000" className="w-full border-2 border-indigo-100 p-2 rounded-xl font-bold text-sm bg-white" value={formData.prtCostRevision || ''} onChange={e => setF('prtCostRevision', e.target.value)} />
+                      </div>
+                    )}
+                    {job.rtData?.inspeccion && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-black text-indigo-600 uppercase">Inspección Visual ($)</label>
+                        <input type="number" placeholder="Ej: 5000" className="w-full border-2 border-indigo-100 p-2 rounded-xl font-bold text-sm bg-white" value={formData.prtCostInspeccion || ''} onChange={e => setF('prtCostInspeccion', e.target.value)} />
+                      </div>
+                    )}
+                    {job.rtData?.frenos && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-black text-indigo-600 uppercase">Certificado Frenos ($)</label>
+                        <input type="number" placeholder="Ej: 8000" className="w-full border-2 border-indigo-100 p-2 rounded-xl font-bold text-sm bg-white" value={formData.prtCostFrenos || ''} onChange={e => setF('prtCostFrenos', e.target.value)} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <div className={`flex flex-col items-center justify-center gap-1.5 h-24 rounded-2xl border-2 select-none shadow-sm ${(job.tripType === 'revision' && formData.prtArrivalTime) || job.waitTimeMinutes >= 1 ? 'border-amber-400 bg-amber-50 text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
+                  <Clock className="w-5 h-5" />
+                  {job.tripType === 'revision' && formData.prtArrivalTime ? (
+                    <span className="font-black text-xs uppercase tracking-wider text-center leading-tight">
+                      Trámite PRT:<br />{Math.floor(((formData.prtFinishTime || Date.now()) - formData.prtArrivalTime) / 60000)} min
+                    </span>
+                  ) : (
+                    <span className="font-black text-xs uppercase tracking-wider text-center leading-tight">Espera: {job.waitTimeMinutes || 0} min</span>
+                  )}
+                </div>
+
+
+                <button type="button" onClick={() => setF('hasFuelCharge', !formData.hasFuelCharge)} className={`flex flex-col items-center justify-center gap-1.5 h-24 rounded-2xl border-2 active:scale-95 transition-all select-none shadow-sm ${formData.hasFuelCharge ? 'border-blue-500 bg-blue-500 text-white shadow-blue-100' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
+                  {formData.hasFuelCharge ? <CheckCircle className="w-5 h-5 animate-in zoom-in" /> : <Fuel className="w-5 h-5" />}
+                  <span className="font-black text-xs uppercase tracking-wider text-center leading-tight">Carga Combust.</span>
+                </button>
+              </div>
+
+
+              {formData.hasFuelCharge && (
+                <div className="animate-in fade-in slide-in-from-top-2 border rounded-xl p-3 bg-slate-50 shadow-inner max-w-sm mx-auto">
+                  <p className="text-[10px] font-black text-blue-700 uppercase tracking-wider text-center mb-1">Monto Rendición Gasolinera ($)</p>
+                  <input type="number" placeholder="Ej: 15000" value={formData.fuelChargeAmount || ''} onChange={(e) => setF('fuelChargeAmount', e.target.value)} className="w-full bg-white border p-2 rounded-xl text-center text-sm font-bold outline-none" />
+                </div>
+              )}
+            </div>
+          )}
+
+
+          {((job.tripType !== 'simple' && step === 6) || (job.tripType === 'simple' && step === 3)) && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Cierre y Conformidad</h3>
+
+              <div className="bg-slate-50 p-4 rounded-2xl border-2 border-slate-200 mb-4 shadow-sm">
+                <h4 className="text-xs font-black text-slate-700 uppercase tracking-widest mb-3 flex items-center gap-2"><MapPin className="w-4 h-4 text-blue-500" /> Kilometraje de Entrega</h4>
+                <div className="flex items-center gap-3">
+                  <input type="number" placeholder="Ej: 145000" value={formData.mileage || ''} onChange={e => setF('mileage', e.target.value)} className="flex-1 border-2 border-slate-300 p-3 rounded-xl font-bold text-slate-700 text-sm outline-none focus:border-blue-500" />
+                  <button type="button" onClick={() => handlePhotoClick('mileage', 'Foto del Odómetro')} className={`h-[48px] px-4 rounded-xl font-black flex items-center justify-center gap-2 transition-all ${formData.photos?.mileage ? 'bg-green-100 text-green-700 border-2 border-green-400 shadow-sm' : 'bg-slate-200 text-slate-600 hover:bg-slate-300 border-2 border-transparent'}`}>
+                    {formData.photos?.mileage ? <><CheckCircle className="w-5 h-5"/> Lista</> : <><Camera className="w-5 h-5"/> Foto</>}
+                  </button>
+                </div>
+              </div>
+
+              <label className="flex items-center gap-3 p-4 bg-slate-800 rounded-2xl border-slate-900 border-2 cursor-pointer shadow-md transition-colors hover:bg-slate-700">
+                <input type="checkbox" checked={formData.noReception} onChange={e => setF('noReception', e.target.checked)} className="w-6 h-6 cursor-pointer accent-blue-500 rounded" />
+                <span className="font-extrabold text-sm text-white">Dejar sin firma (Local cerrado / PRT)</span>
+              </label>
+
+              {!formData.noReception && (
+                <div className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4">
+                  <h3 className="font-extrabold text-blue-800 mb-1 flex items-center gap-2"><Zap className="w-5 h-5" /> Firma Remota o QR</h3>
+                  <p className="text-[11px] font-bold text-blue-600 mb-3">Envía el link al cliente o muéstrale el QR para que firme desde su celular.</p>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={handleRemoteSignRequest} disabled={processingAction === 'wapp'} className="flex-[2] py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-sm flex justify-center items-center gap-1.5 text-xs transition-colors">
+                      {processingAction === 'wapp' ? <Clock className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />} {processingAction === 'wapp' ? 'Cargando...' : 'Compartir Link'}
+                    </button>
+                    <button type="button" onClick={handleOpenQR} disabled={processingAction === 'qr'} className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl shadow-sm flex justify-center items-center gap-1.5 text-xs transition-colors">
+                      {processingAction === 'qr' ? <Clock className="w-4 h-4 animate-spin" /> : <QrCode className="w-4 h-4" />} {processingAction === 'qr' ? 'QR' : 'Mostrar QR'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+
+              {!formData.noReception && (
+                <div className="space-y-3">
+
+                  <div className="flex items-center gap-2 my-2"><div className="h-px bg-slate-200 flex-1"></div><span className="text-[10px] font-bold text-slate-400 uppercase">Firma en pantalla</span><div className="h-px bg-slate-200 flex-1"></div></div>
+
+                  <input required={!formData.noReception} value={formData.receiverName} onChange={e => setF('receiverName', e.target.value)} placeholder="Nombre del receptor" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm" />
+                  <input value={formData.receiverRut} onChange={(e) => { let val = e.target.value.replace(/[^0-9kK]/g, '').toUpperCase(); if (val.length > 1) { const dv = val.slice(-1); const body = val.slice(0, -1); val = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '-' + dv; } setF('receiverRut', val); }} placeholder="RUT Receptor (Opcional)" maxLength="12" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 p-3 rounded-xl font-bold text-slate-700 text-sm" />
+
+                  {formData.clientComments && (
+                    <div className="bg-slate-100 p-2.5 rounded-xl border">
+                      <p className="text-[9px] font-extrabold text-slate-500 uppercase">Comentarios del Receptor:</p>
+                      <p className="text-xs font-bold text-slate-800 italic">"{formData.clientComments}"</p>
+                    </div>
+                  )}
+
+
+                  <div className="relative mt-1">
+                    {formData.signatureData && <div className="absolute top-2 right-2 bg-green-500 text-white text-[9px] px-2 py-0.5 rounded-full font-black flex items-center gap-1 z-10"><CheckCircle className="w-3 h-3" /> CAPTURADA</div>}
+                    <SignaturePad initialData={formData.signatureData} onSave={d => setF('signatureData', d)} onClear={() => setF('signatureData', null)} />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+
+          <div className="flex gap-3 pt-4 border-t border-slate-100 mt-6">
+            {step > 1 && (
+              <button type="button" onClick={() => setStep(step - 1)} className="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-4 py-3 rounded-xl text-sm w-1/3 active:scale-[0.97] transition-all duration-200">
+                Atrás
+              </button>
+            )}
+
+            {step < (job.tripType === 'simple' ? 3 : 6) ? (
+              <button type="button" onClick={() => setStep(step + 1)} className={`group flex-1 text-white font-extrabold py-3 rounded-xl text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0 transition-all duration-200 flex justify-center items-center gap-2 relative overflow-hidden ${job.tripType === 'simple' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
+                <span className="relative z-10">Siguiente Paso</span>
+                <span className="relative z-10 transform group-hover:translate-x-1.5 transition-transform duration-300">➔</span>
+                <div className="absolute inset-0 h-full w-full translate-x-[-100%] group-hover:translate-x-[100%] bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-in-out"></div>
+              </button>
+            ) : (
+              <button type="submit" disabled={isSubmitting} className="group flex-1 bg-green-600 hover:bg-green-700 text-white font-black py-3 rounded-xl text-sm shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0 disabled:opacity-50 disabled:hover:translate-y-0 disabled:active:scale-100 transition-all duration-200 flex justify-center items-center gap-2">
+                {isSubmitting ? <><Clock className="w-4 h-4 animate-spin" /> Guardando GPS y Acta...</> : <><span className="group-hover:animate-bounce">🏁</span> Finalizar y Guardar</>}
+              </button>
+            )}
+          </div>
+
 
         </form>
       </div>
-      <DejaVuModal {...formProps} />
+
+
+      {uploadProgress.active && (
+        <div className="fixed bottom-[88px] left-1/2 transform -translate-x-1/2 z-[60] w-[92%] max-w-sm animate-in slide-in-from-bottom-5 duration-300">
+          <div className="bg-slate-900/95 backdrop-blur-md p-4 rounded-3xl shadow-2xl border-2 border-slate-700 flex flex-col gap-3">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-black text-blue-400 uppercase tracking-widest flex items-center gap-2">
+                <div className="relative">
+                  <CloudOff className="w-5 h-5 text-blue-400 animate-pulse" />
+                </div>
+                Sincronizando
+              </span>
+              <span className="text-xs font-bold text-slate-300 bg-slate-800 px-2 py-0.5 rounded-md border border-slate-700">
+                {uploadProgress.current} / {uploadProgress.total}
+              </span>
+            </div>
+            <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden shadow-inner border border-slate-900">
+              <div className="bg-blue-500 h-full transition-all duration-300 relative" style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}>
+                <div className="absolute inset-0 bg-white/20 w-full h-full animate-[pulse_1s_ease-in-out_infinite]"></div>
+              </div>
+            </div>
+            <p className="text-[10px] text-slate-400 font-bold truncate leading-none">{uploadProgress.text}</p>
+          </div>
+        </div>
+      )}
+      {/* --- CÁMARA INTERNA CENTRALIZADA --- */}
+      <InAppCamera
+        isOpen={cameraConfig.isOpen}
+        title={cameraConfig.title}
+        onClose={() => setCameraConfig(prev => ({ ...prev, isOpen: false }))}
+        onCapture={cameraConfig.onCapture}
+      />
+
+      {/* MODAL DEL DÉJÀ VU PERICIAL */}
+
+
+      {/* MODAL DEL DÉJÀ VU PERICIAL */}
+      {showDejaVuModal && dejaVuData && (
+        <div className="fixed inset-0 bg-slate-900/80 z-[9998] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setShowDejaVuModal(false)}>
+          <div className="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
+            <div className="bg-purple-600 p-4 flex justify-between items-center">
+              <h3 className="text-white font-black flex items-center gap-2"><Search className="w-5 h-5" /> Memoria Histórica</h3>
+              <button onClick={() => setShowDejaVuModal(false)} className="bg-white/20 p-1.5 rounded-full text-white hover:bg-white/30 transition-colors"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-5 overflow-y-auto space-y-4">
+
+              <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl">
+                <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Último Conductor:</p>
+                <p className="text-xs font-extrabold text-slate-700">{dejaVuData.assignedDriverName || dejaVuData.acceptedByEmail}</p>
+              </div>
+
+
+              {dejaVuData.checklist.observations && (
+                <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl">
+                  <p className="text-[10px] font-black text-amber-700 uppercase mb-1">Observaciones Anteriores:</p>
+                  <p className="text-xs font-bold text-amber-900 italic">"{dejaVuData.checklist.observations}"</p>
+                </div>
+              )}
+
+              {dejaVuData.checklist.detailPins && dejaVuData.checklist.detailPins.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Fotos de Daños Registrados:</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {dejaVuData.checklist.detailPins.map(pin => (
+                      dejaVuData.checklist.photos[pin.id] && (
+                        <img
+                          key={pin.id}
+                          src={dejaVuData.checklist.photos[pin.id]}
+                          className="w-full h-24 object-cover rounded-xl border border-slate-200 shadow-sm cursor-pointer hover:opacity-80 transition-opacity"
+                          alt="Daño anterior"
+                          onClick={() => { setShowDejaVuModal(false); setFullScreenImage({ url: dejaVuData.checklist.photos[pin.id] }); }}
+                        />
+                      )
+                    ))}
+                  </div>
+                </div>
+              )}
+              <button type="button" onClick={() => setShowDejaVuModal(false)} className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black rounded-xl transition-colors text-xs uppercase tracking-widest mt-2">
+                Entendido, Volver al Checklist
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* MODAL DEL CÓDIGO QR */}
+      {qrOpen && (
+        <div className="fixed inset-0 bg-slate-900/90 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setQrOpen(false)}>
+          <div className="w-full max-w-sm rounded-3xl p-6 flex flex-col items-center text-center shadow-2xl animate-in zoom-in-95" style={{ backgroundColor: '#ffffff' }} onClick={e => e.stopPropagation()}>
+            <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mb-4 shadow-sm border border-indigo-200">
+              <QrCode className="w-8 h-8" />
+            </div>
+            <h3 className="text-lg font-black mb-1" style={{ color: '#1e293b' }}>Firma Remota</h3>
+            <p className="text-xs font-bold mb-6" style={{ color: '#64748b' }}>Pide al cliente que escanee este código con la cámara de su celular para firmar el acta.</p>
+
+            <div className="p-3 rounded-2xl shadow-inner border-2 border-slate-100 mb-6" style={{ backgroundColor: '#ffffff' }}>
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&bgcolor=ffffff&data=${encodeURIComponent(`${window.location.origin}/?sign=${job.id}`)}`}
+                alt="Código QR"
+                className="w-48 h-48 object-contain"
+                style={{ backgroundColor: '#ffffff' }}
+              />
+            </div>
+
+            <button type="button" onClick={() => setQrOpen(false)} className="w-full py-3.5 hover:bg-slate-200 font-black rounded-xl transition-colors text-xs uppercase tracking-widest shadow-sm border border-slate-200" style={{ backgroundColor: '#f1f5f9', color: '#334155' }}>
+              Cerrar QR
+            </button>
+          </div>
+        </div>
+      )}
+
+      {fullScreenImage && (
+        <div className="fixed inset-0 bg-slate-900/95 z-[9999] flex flex-col items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setFullScreenImage(null)}>
+          <button onClick={() => setFullScreenImage(null)} className="absolute top-4 right-4 bg-white/20 hover:bg-white/40 p-2 rounded-full text-white transition-colors shadow-lg z-10">
+            <X className="w-6 h-6" />
+          </button>
+          <img src={fullScreenImage.url || fullScreenImage} alt="Evidencia Ampliada" className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl mb-6" onClick={(e) => e.stopPropagation()} />
+
+          {fullScreenImage.id && fullScreenImage.label && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setFullScreenImage(null);
+                openCamera(fullScreenImage.label, f => handlePic(f, fullScreenImage.id));
+              }}
+              className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-black text-sm uppercase tracking-widest shadow-[0_0_20px_rgba(37,99,235,0.4)] flex items-center gap-2 active:scale-95 transition-all"
+            >
+              <Camera className="w-5 h-5" /> Tomar Nuevamente
+            </button>
+          )}
+        </div>
+      )}
+
+
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
