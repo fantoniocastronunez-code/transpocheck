@@ -1,6 +1,6 @@
 import React from 'react';
 import { Camera, MapPin, Upload, XCircle, Search, Save, PenTool, CheckCircle, Clock } from 'lucide-react';
-import InAppCamera from './InAppCamera';
+import InAppCamera from '../../ui/InAppCamera';
 
 export default function Step1Origin({ job, formData, setF, handleImageUpload, removeImage, getRouteStr, allClientsList }) {
   return (

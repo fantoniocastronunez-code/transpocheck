@@ -1,6 +1,6 @@
 import React from 'react';
 import { Camera, XCircle, FileText, CheckCircle, Upload, Trash2, Info } from 'lucide-react';
-import InAppCamera from './InAppCamera';
+import InAppCamera from '../../ui/InAppCamera';
 
 export default function Step3Damage({ job, formData, setF, handleImageUpload, removeImage, addDamageMarker, removeDamageMarker, updateDamageMarker, selectedDamageIndex, setSelectedDamageIndex, showHelpOverlay, setShowHelpOverlay, currentImageIndex, setCurrentImageIndex, setShowDamageModal, showDamageModal, tempDamageData, setTempDamageData }) {
   return (

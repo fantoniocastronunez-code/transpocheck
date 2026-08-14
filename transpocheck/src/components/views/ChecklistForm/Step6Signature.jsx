@@ -1,6 +1,6 @@
 import React from 'react';
 import { PenTool, Search } from 'lucide-react';
-import SignaturePad from '../../SignaturePad';
+import SignaturePad from '../../ui/SignaturePad';
 
 export default function Step6Signature({ job, formData, setF }) {
   return (
@@ -85,11 +85,6 @@ export default function Step6Signature({ job, formData, setF }) {
               </button>
             )}
           </div>
-
-
-        </form>
-      </div>
-
 
       {uploadProgress.active && (
         <div className="fixed bottom-[88px] left-1/2 transform -translate-x-1/2 z-[60] w-[92%] max-w-sm animate-in slide-in-from-bottom-5 duration-300">

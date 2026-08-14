@@ -1,6 +1,6 @@
 import React from 'react';
 import { Camera, Upload, XCircle, CheckCircle, Trash2 } from 'lucide-react';
-import InAppCamera from './InAppCamera';
+import InAppCamera from '../../ui/InAppCamera';
 
 export default function Step5Extras({ job, formData, setF, handleImageUpload, removeImage }) {
   return (

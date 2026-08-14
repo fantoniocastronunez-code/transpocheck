@@ -1,6 +1,6 @@
 import React from 'react';
 import { Camera, MapPin, Upload, XCircle, Search, Save, PenTool, CheckCircle, Clock, Trash2 } from 'lucide-react';
-import InAppCamera from './InAppCamera';
+import InAppCamera from '../../ui/InAppCamera';
 
 export default function Step2Vehicle({ job, formData, setF, handleImageUpload, removeImage, fileInputRef, processingId, showDejaVuModal, setShowDejaVuModal, dejaVuData, handleAcceptDejaVu }) {
   return (

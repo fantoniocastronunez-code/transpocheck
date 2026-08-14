@@ -9,6 +9,13 @@ import SignaturePad from '../ui/SignaturePad';
 import InAppCamera from '../ui/InAppCamera'; // <-- NUEVO COMPONENTE CENTRALIZADO
 import { resizeImage, formatMoney } from '../../utils/helpers';
 
+import Step1Origin from './ChecklistForm/Step1Origin';
+import Step2Vehicle from './ChecklistForm/Step2Vehicle';
+import Step3Damage from './ChecklistForm/Step3Damage';
+import Step4Destination from './ChecklistForm/Step4Destination';
+import Step5Extras from './ChecklistForm/Step5Extras';
+import Step6Signature from './ChecklistForm/Step6Signature';
+import DejaVuModal from './ChecklistForm/DejaVuModal';
 
 export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList: rawClients, drivers, expenses, vehicles, uploadImageToStorage, pushSyncTask }) {
   // --- MAGIA: RED DE SEGURIDAD ANTI-PANTALLA BLANCA ---
