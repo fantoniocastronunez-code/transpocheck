@@ -41,11 +41,11 @@ export default function ClientSignView({ jobId, db }) {
     return () => unsub();
   }, [jobId, db]);
 
-  if (loading) return <div className="min-h-screen bg-slate-50 dark:bg-slate-900/50 flex items-center justify-center font-bold text-slate-400"><Clock className="w-5 h-5 mr-2 animate-spin"/> Cargando acta...</div>;
+  if (loading) return <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center font-bold text-slate-400"><Clock className="w-5 h-5 mr-2 animate-spin"/> Cargando acta...</div>;
   
-  if (!job) return <div className="min-h-screen bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center justify-center p-6 text-center font-bold text-red-500"><XCircle className="w-12 h-12 mb-4 text-red-400"/>Acta no encontrada.<br/><span className="text-sm text-slate-400 mt-2">Verifica el link o escanea nuevamente.</span></div>;
+  if (!job) return <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center p-6 text-center font-bold text-red-500"><XCircle className="w-12 h-12 mb-4 text-red-400"/>Acta no encontrada.<br/><span className="text-sm text-slate-400 mt-2">Verifica el link o escanea nuevamente.</span></div>;
   
-  if (!job.checklist) return <div className="min-h-screen bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center justify-center p-6 text-center font-bold text-slate-600 dark:text-slate-400"><Clock className="w-12 h-12 mb-4 text-blue-500 animate-spin mx-auto"/>Sincronizando datos...<br/><span className="text-sm text-slate-400 mt-2">Esperando a que el celular del conductor termine de enviar las fotografías. No cierres esta pantalla, la firma aparecerá automáticamente.</span></div>;
+  if (!job.checklist) return <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center p-6 text-center font-bold text-slate-600 dark:text-slate-400"><Clock className="w-12 h-12 mb-4 text-blue-500 animate-spin mx-auto"/>Sincronizando datos...<br/><span className="text-sm text-slate-400 mt-2">Esperando a que el celular del conductor termine de enviar las fotografías. No cierres esta pantalla, la firma aparecerá automáticamente.</span></div>;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -242,7 +242,7 @@ export default function ClientSignView({ jobId, db }) {
     };
 
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center p-6 text-center">
         <div className={`bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-xl max-w-sm w-full border-t-8 transition-colors duration-500 ${isFinished ? 'border-green-500' : 'border-blue-500'}`}>
           {isFinished ? (
             <>
@@ -277,7 +277,7 @@ export default function ClientSignView({ jobId, db }) {
   const hasPhotos = Object.values(photos).some(val => typeof val === 'string');
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900/50 font-sans pb-10">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 font-sans pb-10">
       <header className="bg-blue-600 text-white p-4 shadow-md text-center">
         <h1 className="font-black text-xl tracking-wide">Acta de Recepción</h1>
       </header>
@@ -305,7 +305,7 @@ export default function ClientSignView({ jobId, db }) {
 
         {fullScreenImage && (
           <div className="fixed inset-0 bg-slate-900/95 z-[200] flex items-center justify-center p-4 backdrop-blur-sm cursor-zoom-out animate-in fade-in duration-200" onClick={() => setFullScreenImage(null)}>
-            <button onClick={() => setFullScreenImage(null)} className="absolute top-4 right-4 bg-white dark:bg-slate-900/20 hover:bg-white dark:bg-slate-900/40 p-2 rounded-full text-white transition-colors shadow-lg">
+            <button onClick={() => setFullScreenImage(null)} className="absolute top-4 right-4 bg-white dark:bg-slate-900 hover:bg-white dark:bg-slate-900 p-2 rounded-full text-white transition-colors shadow-lg">
               <X className="w-6 h-6" />
             </button>
             <img src={fullScreenImage} alt="Evidencia Ampliada" className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} />

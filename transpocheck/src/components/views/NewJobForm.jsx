@@ -608,7 +608,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
 
         {/* BOTÓN DE URGENCIA */}
         <div className="flex justify-end -mt-2">
-          <label className={`flex items-center gap-2 cursor-pointer px-4 py-2.5 rounded-xl border-2 transition-all shadow-sm ${isUrgent ? 'bg-red-50 dark:bg-red-900/30 border-red-500 text-red-700 dark:text-red-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900/50'}`}>
+          <label className={`flex items-center gap-2 cursor-pointer px-4 py-2.5 rounded-xl border-2 transition-all shadow-sm ${isUrgent ? 'bg-red-50 dark:bg-red-900/30 border-red-500 text-red-700 dark:text-red-400' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900'}`}>
             <AlertCircle className={`w-5 h-5 ${isUrgent ? 'animate-pulse text-red-600 dark:text-red-400' : 'text-slate-400'}`} />
             <span className="font-extrabold text-sm uppercase tracking-wider">{isUrgent ? '🚨 Trabajo Urgente' : 'Marcar como Urgente'}</span>
             <div className="relative flex items-center ml-2">
@@ -627,11 +627,11 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
 
         {operationMode === 'traslado' ? (
           <>
-            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 sm:p-6 rounded-2xl space-y-4 animate-in fade-in slide-in-from-bottom-2">
+            <div className="bg-slate-50 dark:bg-slate-900 p-4 sm:p-6 rounded-2xl space-y-4 animate-in fade-in slide-in-from-bottom-2">
               <h3 className="text-base font-bold text-slate-700 dark:text-slate-300">1. Tipo de Servicio</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {/* Traslado Local */}
-                <button type="button" onClick={()=>setTripType('traslado')} className={`relative flex items-center gap-3 p-3.5 border-2 rounded-2xl transition-all duration-300 w-full group overflow-hidden ${tripType === 'traslado' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-[0_0_15px_rgba(59,130,246,0.15)]' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-blue-300 dark:border-blue-700/50 hover:bg-slate-50 dark:bg-slate-900/50'}`}>
+                <button type="button" onClick={()=>setTripType('traslado')} className={`relative flex items-center gap-3 p-3.5 border-2 rounded-2xl transition-all duration-300 w-full group overflow-hidden ${tripType === 'traslado' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-[0_0_15px_rgba(59,130,246,0.15)]' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-blue-300 dark:border-blue-700/50 hover:bg-slate-50 dark:bg-slate-900'}`}>
                    <div className={`p-2 rounded-xl transition-colors shrink-0 ${tripType === 'traslado' ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-blue-100 dark:bg-blue-900/40 group-hover:text-blue-600 dark:text-blue-400'}`}>
                       📍
                    </div>
@@ -640,7 +640,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                 </button>
 
                 {/* A Regiones */}
-                <button type="button" onClick={()=>setTripType('viaje')} className={`relative flex items-center gap-3 p-3.5 border-2 rounded-2xl transition-all duration-300 w-full group overflow-hidden ${tripType === 'viaje' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 shadow-[0_0_15px_rgba(99,102,241,0.15)]' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-indigo-300 dark:border-indigo-700/50 hover:bg-slate-50 dark:bg-slate-900/50'}`}>
+                <button type="button" onClick={()=>setTripType('viaje')} className={`relative flex items-center gap-3 p-3.5 border-2 rounded-2xl transition-all duration-300 w-full group overflow-hidden ${tripType === 'viaje' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 shadow-[0_0_15px_rgba(99,102,241,0.15)]' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-indigo-300 dark:border-indigo-700/50 hover:bg-slate-50 dark:bg-slate-900'}`}>
                    <div className={`p-2 rounded-xl transition-colors shrink-0 ${tripType === 'viaje' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-indigo-100 dark:bg-indigo-900/40 group-hover:text-indigo-600 dark:text-indigo-400'}`}>
                       🛣️
                    </div>
@@ -660,7 +660,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                          if (select) select.value = prtList[0].name;
                       }, 100);
                    }
-                }} className={`relative flex items-center gap-3 p-3.5 border-2 rounded-2xl transition-all duration-300 w-full group overflow-hidden ${tripType === 'revision' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 shadow-[0_0_15px_rgba(16,185,129,0.15)]' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-emerald-300 dark:border-emerald-700/50 hover:bg-slate-50 dark:bg-slate-900/50'}`}>
+                }} className={`relative flex items-center gap-3 p-3.5 border-2 rounded-2xl transition-all duration-300 w-full group overflow-hidden ${tripType === 'revision' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 shadow-[0_0_15px_rgba(16,185,129,0.15)]' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-emerald-300 dark:border-emerald-700/50 hover:bg-slate-50 dark:bg-slate-900'}`}>
                    <div className={`p-2 rounded-xl transition-colors shrink-0 ${tripType === 'revision' ? 'bg-emerald-600 text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-emerald-100 dark:bg-emerald-900/40 group-hover:text-emerald-600 dark:text-emerald-400'}`}>
                       📋
                    </div>
@@ -682,7 +682,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                      </select>
                    </div>
                    {revType === 'A' && (
-                     <div className="grid grid-cols-2 gap-3 text-sm font-bold text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                     <div className="grid grid-cols-2 gap-3 text-sm font-bold text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
                        <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_gases} onChange={e=>setRevA_gases(e.target.checked)} className="w-4 h-4 text-blue-600 dark:text-blue-400 rounded"/> Gases</label>
                        <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_revision} onChange={e=>setRevA_revision(e.target.checked)} className="w-4 h-4 text-blue-600 dark:text-blue-400 rounded"/> Revisión</label>
                        <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={revA_inspeccion} onChange={e=>setRevA_inspeccion(e.target.checked)} className="w-4 h-4 text-blue-600 dark:text-blue-400 rounded"/> Insp. Visual</label>
@@ -690,7 +690,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                      </div>
                    )}
                    {revType === 'B' && (
-                     <select value={revB_tipo} onChange={e=>setRevB_tipo(e.target.value)} className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900/50">
+                     <select value={revB_tipo} onChange={e=>setRevB_tipo(e.target.value)} className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900">
                        <option value="completa">Revisión Completa</option>
                        <option value="gases">Sólo Gases</option>
                      </select>
@@ -699,7 +699,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
               )}
             </div>
 
-            <div className={`p-4 sm:p-6 rounded-2xl space-y-4 animate-in fade-in slide-in-from-bottom-2 transition-colors duration-300 ${vehicleFoundStatus === 'found' ? 'bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800/50' : 'bg-slate-50 dark:bg-slate-900/50 border border-transparent'}`}>
+            <div className={`p-4 sm:p-6 rounded-2xl space-y-4 animate-in fade-in slide-in-from-bottom-2 transition-colors duration-300 ${vehicleFoundStatus === 'found' ? 'bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800/50' : 'bg-slate-50 dark:bg-slate-900 border border-transparent'}`}>
                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                  
                  <div className="flex items-center gap-3">
@@ -794,7 +794,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                )}
             </div>
             
-            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 sm:p-6 rounded-2xl space-y-4 animate-in fade-in slide-in-from-bottom-2">
+            <div className="bg-slate-50 dark:bg-slate-900 p-4 sm:p-6 rounded-2xl space-y-4 animate-in fade-in slide-in-from-bottom-2">
               <h3 className="text-base font-bold text-slate-700 dark:text-slate-300">3. Programación y Ruta</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
@@ -978,7 +978,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
           </div>
         )}
         
-        <div className="bg-slate-50 dark:bg-slate-900/50 p-4 sm:p-6 rounded-2xl space-y-4">
+        <div className="bg-slate-50 dark:bg-slate-900 p-4 sm:p-6 rounded-2xl space-y-4">
            <h3 className="text-base font-bold text-slate-700 dark:text-slate-300">4. Conductores <span className="text-xs text-red-500 font-normal">(Seleccionar o ingresar correo)</span></h3>
 
            <div className="max-h-64 overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 gap-3">

@@ -34,7 +34,7 @@ export default function ArrivalModal({
             <div>
               <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-slate-400">Kilometraje de Término</label>
               <div className="flex items-center gap-2 mt-1">
-                <input type="number" value={arrivalMileage} onChange={e=>setArrivalMileage(e.target.value)} placeholder="Ej: 45250" className="w-[130px] shrink-0 border-2 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl font-bold text-slate-700 dark:text-slate-300 outline-none shadow-sm border-slate-200 dark:border-slate-700 focus:border-purple-400"/>
+                <input type="number" value={arrivalMileage} onChange={e=>setArrivalMileage(e.target.value)} placeholder="Ej: 45250" className="w-[130px] shrink-0 border-2 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl font-bold text-slate-700 dark:text-slate-300 outline-none shadow-sm border-slate-200 dark:border-slate-700 focus:border-purple-400"/>
                 <button 
                   type="button" 
                   onClick={() => openCamera('Foto del Odómetro', 'arrivalPhoto')}

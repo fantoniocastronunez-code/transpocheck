@@ -165,7 +165,7 @@ export default function SignaturePad({ initialData, onSave, onClear }) {
                  if (canvasRef.current) onSave(canvasRef.current.toDataURL('image/png'));
                  setIsFullscreen(true);
               }}
-              className="bg-slate-100 hover:bg-slate-200 text-slate-600 p-1.5 rounded-lg shadow-sm transition-colors border border-slate-200"
+              className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 text-slate-600 p-1.5 rounded-lg shadow-sm transition-colors border border-slate-200"
               title="Pantalla Completa"
             >
               <Maximize className="w-4 h-4"/>

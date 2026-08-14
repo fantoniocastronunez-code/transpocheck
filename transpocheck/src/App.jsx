@@ -514,7 +514,7 @@ function LogisticApp() {
           {/* SECCIÓN 2: ACCESO EQUIPO INTERNO */}
           <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Equipo Interno</p>
-             <button onClick={() => signInWithPopup(auth, googleProvider).catch(e => alert("Error de Acceso: " + e.message))} className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold py-3.5 px-4 rounded-2xl shadow-sm hover:bg-slate-50 dark:bg-slate-900/50 flex items-center justify-center gap-3 transition-all text-sm">
+             <button onClick={() => signInWithPopup(auth, googleProvider).catch(e => alert("Error de Acceso: " + e.message))} className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold py-3.5 px-4 rounded-2xl shadow-sm hover:bg-slate-50 dark:bg-slate-900 flex items-center justify-center gap-3 transition-all text-sm">
                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" /> Ingresar con Google
              </button>
           </div>
@@ -525,7 +525,7 @@ function LogisticApp() {
   // NUEVO: Pantalla de carga global mientras Firebase descarga la base de datos
   if (!dataLoaded) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center p-4">
         {globalStyles}
         <div className="w-16 h-16 border-4 border-blue-200 dark:border-blue-800/50 border-t-blue-600 rounded-full animate-spin mb-4 shadow-sm"></div>
         <p className="text-lg font-extrabold text-slate-700 dark:text-slate-300 tracking-tight">Sincronizando datos...</p>
@@ -568,19 +568,19 @@ function LogisticApp() {
   // EXCEPCIÓN: Conductores con rol part_time o asignados temporalmente entran directo a trabajar.
   if (activeRole === 'driver' && !isPartTimeAssigned && myDriver?.role !== 'part_time' && (needsOnboarding || !myDriver)) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 font-sans pb-10 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-200">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans pb-10 transition-colors duration-300 dark:bg-slate-900 dark:text-slate-200">
         {globalStyles}
         <header className="fixed-nav-bar bg-blue-600 dark:bg-black dark:border-b dark:border-slate-800 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors">
            <div className="flex items-center gap-3">
-             <div className="bg-white dark:bg-slate-900/20 p-1.5 rounded-xl"><img src="/logo.png" className="w-8 h-8 object-contain"/></div>
+             <div className="bg-white dark:bg-slate-900 p-1.5 rounded-xl"><img src="/logo.png" className="w-8 h-8 object-contain"/></div>
              <h1 className="font-alfa text-xl text-white">Verificación Obligatoria</h1>
            </div>
            {isRealAdmin ? (
-             <button onClick={() => { setActiveRole('admin'); setRoleMenuOpen(false); }} className="bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 p-2.5 rounded-xl text-white transition-colors flex items-center gap-2 text-xs font-bold">
+             <button onClick={() => { setActiveRole('admin'); setRoleMenuOpen(false); }} className="bg-white dark:bg-slate-900 hover:bg-white dark:bg-slate-900 p-2.5 rounded-xl text-white transition-colors flex items-center gap-2 text-xs font-bold">
                <LogOut className="w-4 h-4" /> Salir a Admin
              </button>
            ) : (
-             <button onClick={() => signOut(auth)} className="bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 p-2.5 rounded-xl text-white transition-colors flex items-center gap-2 text-xs font-bold">
+             <button onClick={() => signOut(auth)} className="bg-white dark:bg-slate-900 hover:bg-white dark:bg-slate-900 p-2.5 rounded-xl text-white transition-colors flex items-center gap-2 text-xs font-bold">
                <LogOut className="w-4 h-4" /> Salir
              </button>
            )}
@@ -606,12 +606,12 @@ function LogisticApp() {
   // -----------------------------------------------------------------
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 font-sans pb-32 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-200">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans pb-32 transition-colors duration-300 dark:bg-slate-900 dark:text-slate-200">
       {globalStyles}
       <header className="fixed-nav-bar bg-blue-600 dark:bg-black dark:border-b dark:border-slate-800 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300">
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
       {/* Logo de la app más pequeño en móvil */}
-      <div className="bg-white dark:bg-slate-900/20 p-1 sm:p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">
+      <div className="bg-white dark:bg-slate-900 p-1 sm:p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">
         <img src="/logo.png" alt="Logo App" className="w-7 h-7 sm:w-12 sm:h-12 object-contain" />
       </div>
       
@@ -621,7 +621,7 @@ function LogisticApp() {
       </h1>
       
       {/* Logo Logística TS SpA ajustado al nuevo tamaño */}
-      <div className="bg-white dark:bg-slate-900/20 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0 ml-0.5 sm:ml-1 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0 ml-0.5 sm:ml-1 overflow-hidden">
         <img src="/LogoLogistica.png" alt="Logística TS SpA" className="h-8 sm:h-15 object-contain" />
       </div>
     </div>
@@ -634,14 +634,14 @@ function LogisticApp() {
                 setSettingsOpen(!settingsOpen);
                 setRoleMenuOpen(false); // <-- NUEVO: Cierra el ojo al abrir la tuerca
               }} 
-              className="p-2 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 rounded-xl transition-colors shadow-sm border border-white dark:border-slate-800/10"
+              className="p-2 bg-white dark:bg-slate-900 hover:bg-white dark:bg-slate-900 rounded-xl transition-colors shadow-sm border border-white dark:border-slate-800/10"
             >
               <Settings className="w-5 h-5 text-white" />
             </button>
             
             {settingsOpen && (
               <div className="absolute right-0 top-12 mt-1 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2">
-                <div className="p-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+                <div className="p-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
                   <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider text-center">Ajustes de App</p>
                 </div>
                 
@@ -748,7 +748,7 @@ function LogisticApp() {
 
                 </div>
                 {/* VERSIÓN DE LA APP */}
-                <div className="bg-slate-50 dark:bg-slate-900/50 p-2.5 text-center border-t border-slate-100 dark:border-slate-800">
+                <div className="bg-slate-50 dark:bg-slate-900 p-2.5 text-center border-t border-slate-100 dark:border-slate-800">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">LogisticAPP v.3.2.3</p>
                 </div>
               </div>
@@ -762,7 +762,7 @@ function LogisticApp() {
                 setRoleMenuOpen(!roleMenuOpen);
                 setSettingsOpen(false); // <-- NUEVO: Cierra la tuerca al abrir el ojo
               }} 
-              className="flex items-center gap-2 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 px-3 py-2 rounded-xl transition-colors shadow-sm border border-white dark:border-slate-800/10"
+              className="flex items-center gap-2 bg-white dark:bg-slate-900 hover:bg-white dark:bg-slate-900 px-3 py-2 rounded-xl transition-colors shadow-sm border border-white dark:border-slate-800/10"
             >
               <Eye className="w-5 h-5 text-white"/>
                 <span className="hidden md:inline">
@@ -775,15 +775,15 @@ function LogisticApp() {
               </button>
               {roleMenuOpen && (
                 <div className="absolute right-0 top-12 mt-1 w-72 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 text-slate-800 dark:text-slate-200">
-                  <div className="p-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50"><p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider text-center">Panel de Control General</p></div>
+                  <div className="p-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800"><p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider text-center">Panel de Control General</p></div>
                   
                   
-                  <button onClick={() => { setActiveRole('admin'); setMainTab('jobs'); setSimulatedDriverEmail(''); setRoleMenuOpen(false); }} className={`w-full text-left px-4 py-3 text-sm font-bold hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors ${activeRole==='admin'?'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30':'text-slate-600 dark:text-slate-300'}`}>
+                  <button onClick={() => { setActiveRole('admin'); setMainTab('jobs'); setSimulatedDriverEmail(''); setRoleMenuOpen(false); }} className={`w-full text-left px-4 py-3 text-sm font-bold hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors ${activeRole==='admin'?'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30':'text-slate-600 dark:text-slate-300'}`}>
                      <Users className="w-4 h-4"/> Volver a Administrador
                   </button>
 
                   {/* NUEVA SECCIÓN: ASISTIR/SIMULAR CONDUCTOR (DISEÑO MEJORADO Y RÁPIDO) */}
-                  <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50/50 dark:bg-slate-800/30">
+                  <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 dark:bg-slate-800">
                      <p className="text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 mb-2"><Car className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400"/> Entrar como Conductor</p>
                      
                      {/* BOTÓN RÁPIDO DE FAVORITO */}
@@ -815,7 +815,7 @@ function LogisticApp() {
                   </div>
 
                   {/* SECCIÓN EXISTENTE: SIMULAR CLIENTE */}
-                  <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 space-y-2">
+                  <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 space-y-2">
                      <p className="text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5"><Eye className="w-3.5 h-3.5 text-slate-800 dark:text-slate-400"/> Ver Portal de Cliente</p>
                      <select value={simulatedClient} onChange={(e) => setSimulatedClient(e.target.value)} className="w-full border-2 border-slate-200 dark:border-slate-700 p-2.5 rounded-xl text-xs font-bold outline-none focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900 dark:text-slate-200">
                         <option value="">Seleccionar Cliente...</option>
@@ -838,14 +838,14 @@ function LogisticApp() {
               <main className="max-w-5xl mx-auto p-4 pt-20 sm:pt-24">
                 {activeRole === 'admin' ? (
                   <>
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-6 bg-white dark:bg-slate-900/50 p-2 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
-                    <button onClick={() => {setAdminTab('dashboard'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='dashboard'?'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-800/50'}`}><ClipboardList className="w-4 h-4 sm:w-5 sm:h-5"/> Monitor</button>
-                    <button onClick={() => {setAdminTab('newJob'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='newJob'?'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-800/50'}`}><Plus className="w-4 h-4 sm:w-5 sm:h-5"/> Crear</button>
-                    <button onClick={() => setAdminTab('stats')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='stats'?'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 shadow-sm':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-800/50'}`}><Activity className="w-4 h-4 sm:w-5 sm:h-5"/> Estadísticas</button>
+                    <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-6 bg-white dark:bg-slate-900 p-2 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
+                    <button onClick={() => {setAdminTab('dashboard'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='dashboard'?'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/50'}`}><ClipboardList className="w-4 h-4 sm:w-5 sm:h-5"/> Monitor</button>
+                    <button onClick={() => {setAdminTab('newJob'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='newJob'?'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/50'}`}><Plus className="w-4 h-4 sm:w-5 sm:h-5"/> Crear</button>
+                    <button onClick={() => setAdminTab('stats')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='stats'?'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 shadow-sm':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/50'}`}><Activity className="w-4 h-4 sm:w-5 sm:h-5"/> Estadísticas</button>
                     {isSuperAdmin && (
-                      <button onClick={() => setAdminTab('config')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='config'?'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-800/50'}`}><Truck className="w-4 h-4 sm:w-5 sm:h-5"/> Config</button>
+                      <button onClick={() => setAdminTab('config')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='config'?'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/50'}`}><Truck className="w-4 h-4 sm:w-5 sm:h-5"/> Config</button>
                     )}
-                    <button onClick={() => setAdminTab('history')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='history'?'bg-slate-800 dark:bg-slate-700 text-white shadow-md':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-800/50'}`}><ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5"/> Peritaje</button>
+                    <button onClick={() => setAdminTab('history')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='history'?'bg-slate-800 dark:bg-slate-700 text-white shadow-md':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/50'}`}><ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5"/> Peritaje</button>
                   </div>
                     
                     {adminTab === 'dashboard' && (
@@ -973,9 +973,9 @@ function LogisticApp() {
                                      showConfirm("¿Eliminar este documento?", () => deleteDoc(doc(db, 'inbox', docItem.id)));
                                  }} className="p-2.5 bg-red-50 dark:bg-red-900/30 text-red-500 rounded-xl hover:bg-red-100 dark:bg-red-900/40 transition-colors"><Trash2 className="w-4 h-4"/></button>
                               </div>
-                              <div className="flex gap-2 bg-slate-50 dark:bg-slate-900/50 p-2 rounded-xl border border-slate-100 dark:border-slate-800">
+                              <div className="flex gap-2 bg-slate-50 dark:bg-slate-900 p-2 rounded-xl border border-slate-100 dark:border-slate-800">
 
-                                 <a href={docItem.url} target="_blank" rel="noopener noreferrer" className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 py-2.5 rounded-lg text-xs font-black flex items-center justify-center gap-1.5 shadow-sm hover:bg-slate-50 dark:bg-slate-900/50">
+                                 <a href={docItem.url} target="_blank" rel="noopener noreferrer" className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 py-2.5 rounded-lg text-xs font-black flex items-center justify-center gap-1.5 shadow-sm hover:bg-slate-50 dark:bg-slate-900">
                                      <Eye className="w-4 h-4"/> VER
                                  </a>
                                  
@@ -1033,7 +1033,7 @@ function LogisticApp() {
                </main>
             )}
 
-            <nav className="fixed bottom-0 w-full bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex justify-around items-center pt-2 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+            <nav className="fixed bottom-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-around items-center pt-2 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
               {activeRole === 'quoter' ? (
                 <button onClick={() => setMainTab('quotes')} className="flex flex-col items-center text-purple-600 dark:text-purple-400 transition-colors flex-1">
                    <div className="bg-purple-100 dark:bg-purple-900/40 p-2 rounded-xl mb-1"><Receipt className="w-5 h-5"/></div>
@@ -1377,7 +1377,7 @@ function LogisticApp() {
                 </div>
                 <h3 className="text-2xl font-black text-white relative z-10 tracking-wide">¡Aviso Importante!</h3>
               </div>
-              <div className="p-6 text-center flex-1 flex flex-col justify-center bg-slate-50 dark:bg-slate-900/50">
+              <div className="p-6 text-center flex-1 flex flex-col justify-center bg-slate-50 dark:bg-slate-900">
                 <p className="text-base font-extrabold text-slate-700 dark:text-slate-300 mb-8 leading-relaxed whitespace-pre-wrap">{broadcast.message}</p>
                 <button onClick={() => {
                     localStorage.setItem('dismissedBroadcast', broadcast.timestamp.toString());

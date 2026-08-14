@@ -44,7 +44,7 @@ export default function BulkReplaceModal({
 
           <div className="space-y-1">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Texto Actual a Reemplazar</label>
-            <input type="text" value={replaceSearchTerm} onChange={e => setReplaceSearchTerm(e.target.value)} placeholder="Ej: kovac bilbao" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold outline-none focus:border-purple-400" />
+            <input type="text" value={replaceSearchTerm} onChange={e => setReplaceSearchTerm(e.target.value)} placeholder="Ej: kovac bilbao" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold outline-none focus:border-purple-400" />
           </div>
 
           <div className="flex justify-center -my-1 relative z-10"><div className="bg-white dark:bg-slate-900 p-1 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm"><ChevronDown className="w-4 h-4 text-purple-500" /></div></div>

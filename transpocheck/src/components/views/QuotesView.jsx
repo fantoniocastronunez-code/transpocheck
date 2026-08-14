@@ -734,7 +734,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1 sm:col-span-2">
                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Empresa Cliente</label>
-                 <select name="client" value={quoteData.client} onChange={handleInputChange} className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-slate-50 dark:bg-slate-900/50">
+                 <select name="client" value={quoteData.client} onChange={handleInputChange} className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-slate-50 dark:bg-slate-900">
                     <option value="">Selecciona un cliente...</option>
                     {customClients.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
                  </select>
@@ -913,9 +913,9 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
               </div>
 
               {tollsList.length === 0 ? (
-                <p className="text-xs font-bold text-slate-400 italic bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl text-center">No hay peajes creados aún. Registra el primero para calcular automáticamente.</p>
+                <p className="text-xs font-bold text-slate-400 italic bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl text-center">No hay peajes creados aún. Registra el primero para calcular automáticamente.</p>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1 scrollbar-none border border-slate-100 dark:border-slate-800 rounded-2xl bg-slate-50 dark:bg-slate-900/50">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1 scrollbar-none border border-slate-100 dark:border-slate-800 rounded-2xl bg-slate-50 dark:bg-slate-900">
                   {tollsList.map(toll => {
                     const isChecked = selectedTollIds.includes(toll.id);
                     const price = toll.prices?.[quoteData.vehicleType] || 0;
@@ -1013,7 +1013,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
           <div className="overflow-x-auto pb-24 min-h-[280px]">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="bg-slate-50 dark:bg-slate-900/50 text-slate-400 uppercase tracking-widest border-b">
+                <tr className="bg-slate-50 dark:bg-slate-900 text-slate-400 uppercase tracking-widest border-b">
                   <th className="p-3">N° Correlativo</th>
                   <th className="p-3">Cliente</th>
                   <th className="p-3">Ruta</th>
@@ -1027,7 +1027,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                 {savedQuotes.map((q, idx) => {
                   const correlativo = q.quoteNumber || `COT-${idx + 1}`;
                   return (
-                    <tr key={q.id} className="hover:bg-slate-50 dark:bg-slate-900/50">
+                    <tr key={q.id} className="hover:bg-slate-50 dark:bg-slate-900">
                       <td className="p-3 font-black text-purple-700 dark:text-purple-400">{correlativo}</td>
                       <td className="p-3 font-black">{q.client}</td>
                       <td className="p-3 font-medium">{q.origin} ➔ {q.destination} ({q.distanceKm} KM)</td>
@@ -1049,7 +1049,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                         {/* Menú Desplegable Inteligente */}
                         {activeActionMenu === q.id && (
                           <div className={`absolute right-12 ${idx > 0 && idx === savedQuotes.length - 1 ? 'bottom-10' : 'top-10'} bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl rounded-xl w-48 py-2 z-[99] animate-in fade-in zoom-in-95`}>
-                            <button onClick={() => { handleEditQuote(q); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-900/50 transition-colors">Modificar</button>
+                            <button onClick={() => { handleEditQuote(q); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:bg-slate-900 transition-colors">Modificar</button>
                             <button onClick={() => { handleEditQuote(q); setShowSendModal(true); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-900/30 transition-colors">Enviar Cotización</button>
                             <button onClick={() => { setAcceptQuoteData(q); setShowAcceptModal(true); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:bg-emerald-900/30 transition-colors">Cotización Aceptada</button>
                             <div className="my-1 border-t border-slate-100 dark:border-slate-800"></div>
@@ -1171,7 +1171,7 @@ export default function QuotesView({ db, customClients, vehicles, directoryList,
                 <p className="text-xs font-black text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider">Tarifas por Tipo de Vehículo ($)</p>
                 <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
                   {Object.keys(newTollData.prices).map(vType => (
-                    <div key={vType} className="bg-slate-50 dark:bg-slate-900/50 p-2 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <div key={vType} className="bg-slate-50 dark:bg-slate-900 p-2 rounded-xl border border-slate-200 dark:border-slate-700">
                       <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400 block truncate">{vType}</label>
                       <input 
                         type="number" 

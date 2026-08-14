@@ -71,7 +71,7 @@ export default function JobCard({ j, ...props }) {
               
               <div className="flex items-center gap-1 relative shrink-0 z-50">
                 {isAdminView && <button onClick={()=>onEditJob(j)} className="p-2 text-blue-500 hover:bg-blue-50 dark:bg-blue-900/30 rounded-xl transition-colors"><Edit2 className="w-5 h-5"/></button>}
-                <button onClick={()=>setMenuOpenId(menuOpenId===j.id?null:j.id)} className="p-2 text-slate-400 hover:bg-slate-50 dark:bg-slate-900/50 rounded-xl transition-colors"><MoreVertical className="w-5 h-5"/></button>
+                <button onClick={()=>setMenuOpenId(menuOpenId===j.id?null:j.id)} className="p-2 text-slate-400 hover:bg-slate-50 dark:bg-slate-900 rounded-xl transition-colors"><MoreVertical className="w-5 h-5"/></button>
                 {/* --- OPTIMIZACIÓN: z-[999] para aplastar cualquier capa inferior --- */}
                 {menuOpenId===j.id && (
                   <div className="absolute right-0 top-10 bg-white dark:bg-slate-800 border dark:border-slate-700 shadow-[0_10px_40px_rgba(0,0,0,0.2)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)] rounded-xl w-56 z-[999] overflow-hidden text-xs dark:text-slate-200">
@@ -185,7 +185,7 @@ export default function JobCard({ j, ...props }) {
 
           <div className="mb-4 mt-3 relative z-10 flex flex-col gap-1.5">
             {/* ORIGEN */}
-            <div className="bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 z-10">
+            <div className="bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 z-10">
               <span className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-0.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500"></div>
                 {j.tripType === 'simple' ? 'Lugar' : 'Desde'}
@@ -243,7 +243,7 @@ export default function JobCard({ j, ...props }) {
               {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone || j.originAddress || j.originCommune) && (
                 <div className="pt-3 border-t border-slate-200 dark:border-slate-700/60 dark:border-slate-800/60 flex flex-col gap-2">
                    {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone) && (
-                   <div className="flex items-center justify-between gap-2 bg-white dark:bg-slate-800/40 p-2 rounded-xl border border-slate-100 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                   <div className="flex items-center justify-between gap-2 bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
                      <div className="flex items-center gap-2.5 flex-1 min-w-0">
                         <div className="bg-emerald-50 dark:bg-emerald-900/30 p-2 rounded-lg shrink-0 border border-emerald-100 dark:border-emerald-800/50"><Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400"/></div>
                         <div className="flex-1 min-w-0">
@@ -261,7 +261,7 @@ export default function JobCard({ j, ...props }) {
                    )}
                    
                    {(j.originAddress || j.originCommune) && (
-                      <div className="flex justify-between items-center bg-white dark:bg-slate-900/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm mt-1">
+                      <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm mt-1">
                         <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-slate-400 dark:text-slate-500 dark:text-slate-400"/>{j.originAddress}{j.originAddress && j.originCommune ? ', ' : ''}{j.originCommune}</p>
                         {isAccepted && (
                           <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.originAddress || ''} ${j.originCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition-colors border border-blue-200 dark:border-blue-800/50"><Navigation className="w-3 h-3"/> Waze</a>
@@ -275,7 +275,7 @@ export default function JobCard({ j, ...props }) {
               {(j.destContactName || j.destContactPhone || j.destAddress || j.destCommune) && (
                 <div className="pt-2 border-t border-slate-200 dark:border-slate-700/60 flex flex-col gap-2">
                    {(j.destContactName || j.destContactPhone) && (
-                   <div className="flex items-center justify-between gap-2 bg-white dark:bg-slate-800/40 p-2 rounded-xl border border-slate-100 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                   <div className="flex items-center justify-between gap-2 bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
                      <div className="flex items-center gap-2.5 flex-1 min-w-0">
                         <div className="bg-blue-50 dark:bg-blue-900/30 p-2 rounded-lg shrink-0 border border-blue-100 dark:border-blue-800/50"><Users className="w-4 h-4 text-blue-600 dark:text-blue-400"/></div>
                         <div className="flex-1 min-w-0">
@@ -381,7 +381,7 @@ export default function JobCard({ j, ...props }) {
              </p>
              <ul className="text-xs font-bold text-red-800 dark:text-red-300 space-y-1">
                {expiringDocs.map((docAlert, idx) => (
-                 <li key={idx} className="bg-white dark:bg-slate-900/60 px-2 py-1 rounded-md border border-red-100 dark:border-red-800/50">{docAlert}</li>
+                 <li key={idx} className="bg-white dark:bg-slate-900 px-2 py-1 rounded-md border border-red-100 dark:border-red-800/50">{docAlert}</li>
                ))}
              </ul>
           </div>
@@ -422,7 +422,7 @@ export default function JobCard({ j, ...props }) {
           )}
 
           {(!isRequested && (j.status === 'accepted' || j.status === 'pending_guide') && j.acceptedByEmail !== currentUserEmail) ? (
-             <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-xs font-bold text-center py-3 rounded-xl">Vehículo a cargo de un compañero.</div>
+             <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-xs font-bold text-center py-3 rounded-xl">Vehículo a cargo de un compañero.</div>
           ) : (
             <>
               {isPending && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && (

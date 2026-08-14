@@ -27,11 +27,11 @@ export default function KovacsModal({
           <div className="space-y-4 mb-6">
             <div>
               <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Desde (Fecha de Término)</label>
-              <input type="date" value={kovacsStartDate} onChange={e=>setKovacsStartDate(e.target.value)} className="w-full border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-orange-400 focus:ring-4 ring-orange-400/20 transition-all"/>
+              <input type="date" value={kovacsStartDate} onChange={e=>setKovacsStartDate(e.target.value)} className="w-full border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-orange-400 focus:ring-4 ring-orange-400/20 transition-all"/>
             </div>
             <div>
               <label className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1 mb-1 block">Hasta (Fecha de Término)</label>
-              <input type="date" value={kovacsEndDate} onChange={e=>setKovacsEndDate(e.target.value)} className="w-full border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-orange-400 focus:ring-4 ring-orange-400/20 transition-all"/>
+              <input type="date" value={kovacsEndDate} onChange={e=>setKovacsEndDate(e.target.value)} className="w-full border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-orange-400 focus:ring-4 ring-orange-400/20 transition-all"/>
             </div>
           </div>
 

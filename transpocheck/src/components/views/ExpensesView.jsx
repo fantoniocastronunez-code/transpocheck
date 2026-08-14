@@ -378,9 +378,9 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
         <div className="h-8 w-48 bg-slate-200 dark:bg-slate-700/60 animate-pulse rounded-lg mb-6"></div>
         <div className="h-32 bg-slate-200 dark:bg-slate-700/50 animate-pulse rounded-3xl w-full mb-6"></div>
         <div className="space-y-4">
-           <div className="h-24 bg-slate-100 dark:bg-slate-800/80 animate-pulse rounded-2xl w-full"></div>
-           <div className="h-24 bg-slate-100 dark:bg-slate-800/80 animate-pulse rounded-2xl w-full"></div>
-           <div className="h-24 bg-slate-100 dark:bg-slate-800/80 animate-pulse rounded-2xl w-full"></div>
+           <div className="h-24 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-2xl w-full"></div>
+           <div className="h-24 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-2xl w-full"></div>
+           <div className="h-24 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-2xl w-full"></div>
         </div>
       </main>
     );
@@ -423,7 +423,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
               {selectedDriverId === d.id && (
                 <div className="mt-5 border-t border-slate-100 dark:border-slate-800 pt-5 animate-in slide-in-from-top-2 duration-300">
                   
-                  <form onSubmit={(e) => addExp(e, adminTxType, Number(e.target.amount.value), adminTxType === 'expense' ? e.target.detail?.value : '', d.id, d.name, d.email)} className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3 mb-6 relative">
+                  <form onSubmit={(e) => addExp(e, adminTxType, Number(e.target.amount.value), adminTxType === 'expense' ? e.target.detail?.value : '', d.id, d.name, d.email)} className="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3 mb-6 relative">
                     <div className="absolute -top-3 left-4 bg-white dark:bg-slate-900 px-2 text-[10px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-widest border border-slate-200 dark:border-slate-700 rounded-full">Nuevo Registro</div>
                     
                     <div className="flex gap-2 mb-2 pt-1">
@@ -446,10 +446,10 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
                           Asociar a un Traslado (Opcional)
                        </p>
                        {activeOrPendingJobs.length === 0 ? (
-                          <p className="text-xs text-slate-400 font-bold text-center py-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg">No hay traslados activos.</p>
+                          <p className="text-xs text-slate-400 font-bold text-center py-2 bg-slate-50 dark:bg-slate-900 rounded-lg">No hay traslados activos.</p>
                        ) : (
                           <div className="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1">
-                             <label className={`relative flex items-center p-3 rounded-2xl border-2 cursor-pointer transition-all ${selectedJobId === '' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-blue-200 dark:border-blue-800/50'}`}>
+                             <label className={`relative flex items-center p-3 rounded-2xl border-2 cursor-pointer transition-all ${selectedJobId === '' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-blue-200 dark:border-blue-800/50'}`}>
                                 <input type="radio" name="jobSelection" className="hidden" checked={selectedJobId === ''} onChange={() => setSelectedJobId('')} />
                                 <div className="flex-1">
                                    <span className={`block text-xs font-black ${selectedJobId === '' ? 'text-blue-700 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'}`}>Ninguno (Gasto general)</span>
@@ -497,7 +497,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
                     {expenses.filter(e => e.driverId === d.id).length === 0 ? (
                        <p className="text-slate-400 font-bold text-xs text-center py-4 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl">Sin movimientos registrados.</p>
                     ) : expenses.filter(e => e.driverId === d.id).map(exp => (
-                      <div key={exp.id} className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex gap-3 items-start text-xs font-bold w-full overflow-hidden">
+                      <div key={exp.id} className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex gap-3 items-start text-xs font-bold w-full overflow-hidden">
                         <div className="mt-1"><TransactionIcon type={exp.type}/></div>
                         <div className="flex-1 min-w-0">
                           <p className="text-slate-800 dark:text-slate-200 break-words">{exp.detail}</p>
@@ -550,7 +550,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
               <button 
                 type="button"
                 onClick={() => setCameraConfig({ isOpen: true, title: 'Comprobante de Transferencia', target: 'return' })}
-                className={`block w-full border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-colors relative overflow-hidden ${returnReceipt ? 'border-green-400 bg-green-50 dark:bg-green-900/30' : 'border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:bg-slate-900/50'}`}
+                className={`block w-full border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-colors relative overflow-hidden ${returnReceipt ? 'border-green-400 bg-green-50 dark:bg-green-900/30' : 'border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:bg-slate-900'}`}
               >
                 {returnReceipt ? (
                    <div className="relative z-10"><CheckCircle className="w-10 h-10 text-green-500 mx-auto mb-2 bg-white dark:bg-slate-900 rounded-full"/><p className="text-sm font-extrabold text-green-700 dark:text-green-400 mb-2">Comprobante Cargado</p><img src={returnReceipt} className="h-28 object-contain mx-auto rounded-lg shadow-sm border border-green-200 dark:border-green-800/50" alt="preview"/><p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-3 underline">Cambiar foto</p></div>
@@ -559,7 +559,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
                 )}
               </button>
             ) : (
-              <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700 text-center"><p className="text-sm font-bold text-slate-600 dark:text-slate-400">Se registrará que entregaste el dinero en mano.</p></div>
+              <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-center"><p className="text-sm font-bold text-slate-600 dark:text-slate-400">Se registrará que entregaste el dinero en mano.</p></div>
             )}
 
             <div className="flex gap-4 mt-6"><button onClick={() => { setIsReturnOpen(false); setReturnReceipt(null); }} className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 rounded-xl font-bold text-slate-600 dark:text-slate-400">Cancelar</button><button onClick={submitReturn} disabled={isSubmittingReturn} className="flex-[2] py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-extrabold transition-all shadow-lg shadow-green-200 disabled:opacity-50">{isSubmittingReturn ? 'Enviando...' : 'Confirmar'}</button></div>
@@ -603,7 +603,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Vehículo</label>
                 <select 
                   id="vehicleTypeSelect"
-                  className="w-full border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-sm text-slate-700 dark:text-slate-300 shadow-sm cursor-pointer"
+                  className="w-full border-2 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-sm text-slate-700 dark:text-slate-300 shadow-sm cursor-pointer"
                   onChange={(e) => {
                     const tollName = document.getElementById('tollSelectNode')?.value;
                     if (tollName) {
@@ -666,7 +666,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
           <button 
             type="button"
             onClick={() => setCameraConfig({ isOpen: true, title: 'Foto de Boleta / Comprobante', target: 'expense' })}
-            className={`block w-full border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-colors relative overflow-hidden mt-4 ${expenseReceipt ? 'border-green-400 bg-green-50 dark:bg-green-900/30' : 'border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:bg-slate-900/50'}`}
+            className={`block w-full border-2 border-dashed rounded-2xl p-4 text-center cursor-pointer transition-colors relative overflow-hidden mt-4 ${expenseReceipt ? 'border-green-400 bg-green-50 dark:bg-green-900/30' : 'border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:bg-slate-900'}`}
           >
             {expenseReceipt ? (
                <div className="flex items-center gap-3 pl-2">
@@ -706,7 +706,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
         <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-200 mb-4">Mis Movimientos</h3>
         <div className="space-y-3">
           {expenses.filter(e => e.driverId === myDriver.id).map(exp => (
-            <div key={exp.id} className="flex items-start gap-4 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+            <div key={exp.id} className="flex items-start gap-4 p-3 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
               <div className="mt-1"><TransactionIcon type={exp.type}/></div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-extrabold text-slate-800 dark:text-slate-200 break-words">{exp.detail}</p>

@@ -64,13 +64,13 @@ export default function RelayAcceptView({ jobId, db, currentUserEmail, drivers }
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-slate-50 dark:bg-slate-900/50 flex items-center justify-center font-bold text-slate-400"><Clock className="w-5 h-5 mr-2 animate-spin"/> Buscando traslado...</div>;
-  if (!job) return <div className="min-h-screen bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center justify-center p-6 text-center font-bold text-red-500"><XCircle className="w-12 h-12 mb-4 text-red-400"/>Traslado no encontrado.</div>;
-  if (job.status === 'completed' || job.status === 'failed') return <div className="min-h-screen bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center justify-center p-6 text-center font-bold text-slate-600 dark:text-slate-400"><CheckCircle className="w-12 h-12 mb-4 text-green-500"/>Este trabajo ya finalizó.</div>;
+  if (loading) return <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center font-bold text-slate-400"><Clock className="w-5 h-5 mr-2 animate-spin"/> Buscando traslado...</div>;
+  if (!job) return <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center p-6 text-center font-bold text-red-500"><XCircle className="w-12 h-12 mb-4 text-red-400"/>Traslado no encontrado.</div>;
+  if (job.status === 'completed' || job.status === 'failed') return <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center p-6 text-center font-bold text-slate-600 dark:text-slate-400"><CheckCircle className="w-12 h-12 mb-4 text-green-500"/>Este trabajo ya finalizó.</div>;
 
   if (job.acceptedByEmail === currentUserEmail) {
       return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center justify-center p-6 text-center">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center p-6 text-center">
           <Car className="w-12 h-12 mb-4 text-blue-500"/>
           <h2 className="text-xl font-black text-slate-800 dark:text-slate-200">Ya tienes este vehículo</h2>
           <button onClick={() => navigate('/')} className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-xl font-bold">Ir a mis trabajos</button>
@@ -83,13 +83,13 @@ export default function RelayAcceptView({ jobId, db, currentUserEmail, drivers }
   const previousDriverName = previousDriver ? previousDriver.name : job.acceptedByEmail;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center justify-center p-4 text-center">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center p-4 text-center">
       <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-xl max-w-sm w-full border-t-8 border-purple-500 animate-in zoom-in-95">
         <Users className="w-16 h-16 text-purple-500 mx-auto mb-4"/>
         <h2 className="text-2xl font-black text-slate-800 dark:text-slate-200 mb-1">Relevo de Vehículo</h2>
         <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">Estás a punto de tomar el control de este traslado.</p>
         
-        <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700 text-left mb-6">
+        <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 text-left mb-6">
           <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Vehículo a recibir</p>
           <div className="flex justify-between items-center mb-4">
             <p className="font-extrabold text-slate-800 dark:text-slate-200 text-lg">{job.brand} {job.model}</p>

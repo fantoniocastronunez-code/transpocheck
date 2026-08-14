@@ -15,7 +15,7 @@ const getLogoPath = (name) => {
 };
 
 const getBadgeColor = (name) => {
-  if (!name) return 'bg-slate-200 text-slate-500';
+  if (!name) return 'bg-slate-200 dark:bg-slate-700 text-slate-500';
   if (name === 'OTRO') return 'bg-slate-700 text-white';
   const colors = ['bg-red-500', 'bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-purple-500', 'bg-sky-500', 'bg-pink-500'];
   let hash = 0;

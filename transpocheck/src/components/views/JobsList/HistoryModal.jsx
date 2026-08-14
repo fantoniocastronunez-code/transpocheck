@@ -15,7 +15,7 @@ export default function HistoryModal({
   return (
     <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[300] flex items-center justify-center p-4 cursor-default">
       <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95">
-        <div className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-4 sm:p-5 flex justify-between items-start shrink-0 relative">
+        <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 p-4 sm:p-5 flex justify-between items-start shrink-0 relative">
           <div className="flex gap-3 items-center">
             <div className="bg-blue-100 dark:bg-blue-900/40 p-2.5 rounded-xl"><FileText className="w-6 h-6 text-blue-600 dark:text-blue-400"/></div>
             <div>
@@ -35,7 +35,7 @@ export default function HistoryModal({
           {/* 1. INFO VEHÍCULO */}
           <div>
             <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 dark:border-slate-800 pb-1">1. Información del Vehículo</h4>
-            <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+            <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
               <div>
                 <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Marca / Modelo</p>
                 <p className="text-sm font-black text-slate-800 dark:text-slate-200">{selectedHistoryJob.tripType === 'simple' ? selectedHistoryJob.description : `${selectedHistoryJob.brand} ${selectedHistoryJob.model}`}</p>
@@ -58,7 +58,7 @@ export default function HistoryModal({
           {/* 2. VIAJE Y KILOMETRAJE */}
           <div>
             <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 dark:border-slate-800 pb-1">2. Ruta y Kilometraje</h4>
-            <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+            <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
               <div className="flex items-start gap-2 mb-2">
                 <MapPin className="w-4 h-4 text-slate-400 mt-0.5 shrink-0"/>
                 <div>
@@ -111,10 +111,10 @@ export default function HistoryModal({
                <div>
                  <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 dark:border-slate-800 pb-1">3. Vencimiento Documentos</h4>
                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                   <div className="bg-slate-50 dark:bg-slate-900/50 p-2 rounded-lg border border-slate-100 dark:border-slate-800 text-center"><p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">Rev. Técnica</p>{formatExp(vDocs.revTecnica)}</div>
-                   <div className="bg-slate-50 dark:bg-slate-900/50 p-2 rounded-lg border border-slate-100 dark:border-slate-800 text-center"><p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">Gases</p>{formatExp(vDocs.gases)}</div>
-                   <div className="bg-slate-50 dark:bg-slate-900/50 p-2 rounded-lg border border-slate-100 dark:border-slate-800 text-center"><p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">Permiso Circ.</p>{formatExp(vDocs.permiso)}</div>
-                   <div className="bg-slate-50 dark:bg-slate-900/50 p-2 rounded-lg border border-slate-100 dark:border-slate-800 text-center"><p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">SOAP</p>{formatExp(vDocs.soap)}</div>
+                   <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded-lg border border-slate-100 dark:border-slate-800 text-center"><p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">Rev. Técnica</p>{formatExp(vDocs.revTecnica)}</div>
+                   <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded-lg border border-slate-100 dark:border-slate-800 text-center"><p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">Gases</p>{formatExp(vDocs.gases)}</div>
+                   <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded-lg border border-slate-100 dark:border-slate-800 text-center"><p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">Permiso Circ.</p>{formatExp(vDocs.permiso)}</div>
+                   <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded-lg border border-slate-100 dark:border-slate-800 text-center"><p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">SOAP</p>{formatExp(vDocs.soap)}</div>
                  </div>
                </div>
              );
@@ -132,7 +132,7 @@ export default function HistoryModal({
           {selectedHistoryJob.checklist && (
             <div>
               <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 dark:border-slate-800 pb-1">4. Recepción</h4>
-              <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row gap-4 justify-between items-center">
+              <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row gap-4 justify-between items-center">
                 <div className="flex-1 text-center sm:text-left w-full">
                   <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Recibido por</p>
                   <p className="text-sm font-black text-slate-800 dark:text-slate-200">{selectedHistoryJob.checklist.noReception ? 'Sin Recepción Formal' : (selectedHistoryJob.checklist.receiverName || selectedHistoryJob.receiverName || 'No registrado')}</p>

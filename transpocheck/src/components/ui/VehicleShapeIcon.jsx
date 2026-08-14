@@ -28,7 +28,7 @@ const camionetaShape = (
     <div className="w-full h-[40%] bg-white rounded-t-[35px] rounded-b-md border-4 border-slate-500 p-2 flex flex-col justify-between shadow-inner">
       <div className="w-5/6 h-5 bg-slate-800/40 mx-auto rounded-t-xl rounded-b-sm mt-1"></div>
     </div>
-    <div className="w-[90%] h-[60%] mx-auto bg-slate-200 border-x-4 border-b-4 border-slate-500 rounded-b-xl mt-1 relative">
+    <div className="w-[90%] h-[60%] mx-auto bg-slate-200 dark:bg-slate-700 border-x-4 border-b-4 border-slate-500 rounded-b-xl mt-1 relative">
       <div className="absolute inset-2 border-2 border-slate-400 rounded-sm"></div>
     </div>
   </div>
@@ -40,7 +40,7 @@ const camionDobleShape = (
       <div className="w-full h-[40%] bg-slate-800/40 rounded-t-md"></div>
       <div className="w-full h-[35%] bg-slate-800/40 rounded-sm mb-0.5"></div>
     </div>
-    <div className="w-full h-[60%] mx-auto bg-slate-200 border-4 border-slate-500 rounded-sm mt-1 relative overflow-hidden shadow-inner z-10"></div>
+    <div className="w-full h-[60%] mx-auto bg-slate-200 dark:bg-slate-700 border-4 border-slate-500 rounded-sm mt-1 relative overflow-hidden shadow-inner z-10"></div>
   </div>
 );
 
@@ -51,7 +51,7 @@ const heavyTruckShape = (
     <div className="w-full h-[25%] bg-white rounded-t-xl rounded-b-sm border-4 border-slate-500 p-1 flex flex-col justify-end shadow-inner z-10 relative">
       <div className="w-full h-1/2 bg-slate-800/50 rounded-t-md rounded-b-sm mb-1"></div>
     </div>
-    <div className="w-full h-[75%] mx-auto bg-slate-200 border-4 border-slate-500 rounded-sm mt-1 relative overflow-hidden shadow-inner z-10">
+    <div className="w-full h-[75%] mx-auto bg-slate-200 dark:bg-slate-700 border-4 border-slate-500 rounded-sm mt-1 relative overflow-hidden shadow-inner z-10">
        <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_5px,#94a3b8_5px,#94a3b8_8px)] opacity-60"></div>
     </div>
   </div>
@@ -59,7 +59,7 @@ const heavyTruckShape = (
 
 const carroArrastreShape = (
   <div className="w-full h-full relative flex flex-col items-center pt-4">
-    <div className="w-[90%] h-[85%] bg-slate-200 rounded-md border-4 border-slate-500 relative overflow-hidden shadow-inner flex justify-center items-center z-10">
+    <div className="w-[90%] h-[85%] bg-slate-200 dark:bg-slate-700 rounded-md border-4 border-slate-500 relative overflow-hidden shadow-inner flex justify-center items-center z-10">
        <div className="w-[90%] h-[90%] border-2 border-slate-400/50 rounded-sm"></div>
     </div>
     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-6 border-x-4 border-t-4 border-slate-500 rounded-t-full bg-slate-400 z-0"></div>

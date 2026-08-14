@@ -148,7 +148,7 @@ const handleDownloadPDF = async (job) => {
   }, [jobs]);
 
   if (loading) return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900/50 p-4 pt-24 space-y-6 max-w-5xl mx-auto">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 pt-24 space-y-6 max-w-5xl mx-auto">
       <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 max-w-2xl mx-auto h-32 flex flex-col items-center justify-center animate-pulse shadow-sm">
          <div className="w-14 h-14 bg-slate-200 dark:bg-slate-700 rounded-2xl mb-3"></div>
          <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3 mb-2"></div>
@@ -184,11 +184,11 @@ const handleDownloadPDF = async (job) => {
   const initials = clientName ? clientName.substring(0, 2).toUpperCase() : 'CL';
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200 font-sans pb-10 transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans pb-10 transition-colors duration-300">
       
       <header className={`fixed-nav-bar ${branding.primary} text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300`}>
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
-          <div className="bg-white dark:bg-slate-900/20 p-1 sm:p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">
+          <div className="bg-white dark:bg-slate-900 p-1 sm:p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">
             <img src="/logo.png" alt="Logo App" className="w-7 h-7 sm:w-12 sm:h-12 object-contain" />
           </div>
           
@@ -196,14 +196,14 @@ const handleDownloadPDF = async (job) => {
             LogisticAPP
           </h1>
           
-          <div className="bg-white dark:bg-slate-900/20 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0 ml-0.5 sm:ml-1 overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0 ml-0.5 sm:ml-1 overflow-hidden">
             <img src="/LogoLogistica.png" alt="Logística TS SpA" className="h-8 sm:h-15 object-contain" />
           </div>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4 shrink-0">
           {setDarkMode && (
-            <button onClick={() => setDarkMode(!darkMode)} className="p-2 bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 rounded-xl transition-colors shadow-sm border border-white dark:border-slate-800/10">
+            <button onClick={() => setDarkMode(!darkMode)} className="p-2 bg-white dark:bg-slate-900 hover:bg-white dark:bg-slate-900 rounded-xl transition-colors shadow-sm border border-white dark:border-slate-800/10">
               {darkMode ? <Sun className="w-5 h-5 text-yellow-300"/> : <Moon className="w-5 h-5 text-white"/>}
             </button>
           )}
@@ -353,7 +353,7 @@ const handleDownloadPDF = async (job) => {
 
                 <div className="mb-4 mt-3 relative z-10 flex flex-col gap-1.5">
                   {/* ORIGEN */}
-                  <div className="bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 z-10">
+                  <div className="bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 z-10">
                     <span className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
                       <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
                       {job.tripType === 'simple' ? 'Lugar' : 'Desde'}
@@ -491,7 +491,7 @@ const handleDownloadPDF = async (job) => {
                   </div>
                 </div>
                 
-                <div className="bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col gap-2 mb-3 mt-1 shadow-inner relative z-10">
+                <div className="bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col gap-2 mb-3 mt-1 shadow-inner relative z-10">
                   <div className="text-[10px] font-black flex items-center justify-between gap-1">
                     <span className="truncate text-slate-700 dark:text-slate-300 max-w-[45%]" title={job.origin}>
                        <MapPin className="inline w-3 h-3 mr-0.5 -mt-0.5 text-slate-400 shrink-0"/>
@@ -548,7 +548,7 @@ const handleDownloadPDF = async (job) => {
           <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl w-full max-w-[420px] max-h-[92vh] flex flex-col relative overflow-hidden animate-in fade-in zoom-in-95">
             
             {/* CABECERA FLOTANTE */}
-            <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 shrink-0">
+            <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900 shrink-0">
               <div>
                 <h2 className="text-xl font-black text-slate-800 dark:text-slate-200 tracking-tight">Firma de Recepción</h2>
                 <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1">Selecciona los vehículos a recepcionar</p>
@@ -631,7 +631,7 @@ const handleDownloadPDF = async (job) => {
             </div>
             
             {/* PIE DE PÁGINA (Botón Independiente) */}
-            <div className="p-5 sm:p-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700 shrink-0">
+            <div className="p-5 sm:p-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 shrink-0">
               <button type="submit" form="batch-sign-form" className="w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black py-4 rounded-2xl shadow-[0_8px_20px_rgba(37,99,235,0.3)] transition-all text-[15px] flex items-center justify-center gap-2">
                 <CheckCircle className="w-5 h-5"/> Confirmar Lote ({batchFormData.selectedIds.length})
               </button>
@@ -664,14 +664,14 @@ const handleDownloadPDF = async (job) => {
                    window.open(fullScreenPhoto, '_blank');
                  }
                }} 
-               className="bg-white dark:bg-slate-900/20 p-2 rounded-full hover:bg-white dark:bg-slate-900/40 transition-colors shadow-lg backdrop-blur-md flex items-center justify-center"
+               className="bg-white dark:bg-slate-900 p-2 rounded-full hover:bg-white dark:bg-slate-900 transition-colors shadow-lg backdrop-blur-md flex items-center justify-center"
                title="Descargar Imagen"
              >
                <FileDown className="w-6 h-6 text-white"/>
              </button>
              <button 
                onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(null); }} 
-               className="bg-white dark:bg-slate-900/20 p-2 rounded-full hover:bg-white dark:bg-slate-900/40 transition-colors shadow-lg backdrop-blur-md flex items-center justify-center" 
+               className="bg-white dark:bg-slate-900 p-2 rounded-full hover:bg-white dark:bg-slate-900 transition-colors shadow-lg backdrop-blur-md flex items-center justify-center" 
                title="Cerrar"
              >
                 <X className="w-6 h-6 text-white"/>
@@ -685,7 +685,7 @@ const handleDownloadPDF = async (job) => {
       {selectedHistoryJob && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[300] flex items-center justify-center p-4 cursor-default">
           <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95">
-            <div className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-4 sm:p-5 flex justify-between items-start shrink-0 relative">
+            <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 p-4 sm:p-5 flex justify-between items-start shrink-0 relative">
               <div className="flex gap-3 items-center">
                 <div className="bg-blue-100 dark:bg-blue-900/40 p-2.5 rounded-xl"><FileText className="w-6 h-6 text-blue-600 dark:text-blue-400"/></div>
                 <div>
@@ -705,7 +705,7 @@ const handleDownloadPDF = async (job) => {
               {/* 1. INFO VEHÍCULO */}
               <div>
                 <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 dark:border-slate-800 pb-1">1. Información del Vehículo</h4>
-                <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
                   <div>
                     <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Marca / Modelo</p>
                     <p className="text-sm font-black text-slate-800 dark:text-slate-200">{selectedHistoryJob.tripType === 'simple' ? selectedHistoryJob.description : `${selectedHistoryJob.brand} ${selectedHistoryJob.model}`}</p>
@@ -731,7 +731,7 @@ const handleDownloadPDF = async (job) => {
               {/* 2. VIAJE Y KILOMETRAJE */}
               <div>
                 <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 dark:border-slate-800 pb-1">2. Ruta y Kilometraje</h4>
-                <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
                   <div className="flex items-start gap-2 mb-2">
                     <MapPin className="w-4 h-4 text-slate-400 mt-0.5 shrink-0"/>
                     <div>
@@ -781,10 +781,10 @@ const handleDownloadPDF = async (job) => {
                    <div>
                      <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 dark:border-slate-800 pb-1">3. Vencimiento Documentos</h4>
                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                       <div className="bg-slate-50 dark:bg-slate-900/50 p-2 rounded-lg border border-slate-100 dark:border-slate-800 text-center"><p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">Rev. Técnica</p>{formatExp(vDocs.revTecnica)}</div>
-                       <div className="bg-slate-50 dark:bg-slate-900/50 p-2 rounded-lg border border-slate-100 dark:border-slate-800 text-center"><p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">Gases</p>{formatExp(vDocs.gases)}</div>
-                       <div className="bg-slate-50 dark:bg-slate-900/50 p-2 rounded-lg border border-slate-100 dark:border-slate-800 text-center"><p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">Permiso Circ.</p>{formatExp(vDocs.permiso)}</div>
-                       <div className="bg-slate-50 dark:bg-slate-900/50 p-2 rounded-lg border border-slate-100 dark:border-slate-800 text-center"><p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">SOAP</p>{formatExp(vDocs.soap)}</div>
+                       <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded-lg border border-slate-100 dark:border-slate-800 text-center"><p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">Rev. Técnica</p>{formatExp(vDocs.revTecnica)}</div>
+                       <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded-lg border border-slate-100 dark:border-slate-800 text-center"><p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">Gases</p>{formatExp(vDocs.gases)}</div>
+                       <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded-lg border border-slate-100 dark:border-slate-800 text-center"><p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">Permiso Circ.</p>{formatExp(vDocs.permiso)}</div>
+                       <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded-lg border border-slate-100 dark:border-slate-800 text-center"><p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">SOAP</p>{formatExp(vDocs.soap)}</div>
                      </div>
                    </div>
                  );
@@ -802,7 +802,7 @@ const handleDownloadPDF = async (job) => {
               {selectedHistoryJob.checklist && (
                 <div>
                   <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 dark:border-slate-800 pb-1">4. Recepción</h4>
-                  <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row gap-4 justify-between items-center">
+                  <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row gap-4 justify-between items-center">
                     <div className="flex-1 text-center sm:text-left w-full">
                       <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Recibido por</p>
                       <p className="text-sm font-black text-slate-800 dark:text-slate-200">{selectedHistoryJob.checklist.noReception ? 'Sin Recepción Formal' : (selectedHistoryJob.checklist.receiverName || selectedHistoryJob.receiverName || 'No registrado')}</p>

@@ -42,7 +42,7 @@ export default function TrackingModal({
 
         <div className="overflow-y-auto space-y-4 pr-1 pb-4 scrollbar-none">
           {/* ESTADOS DEL VIAJE */}
-          <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 relative overflow-hidden">
+          <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 relative overflow-hidden">
             <div className="absolute left-[27px] top-8 bottom-8 w-1 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
             {/* Origen */}
             <div className="flex gap-4 items-start relative z-10 mb-6">

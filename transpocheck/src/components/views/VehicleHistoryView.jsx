@@ -148,7 +148,7 @@ export default function VehicleHistoryView({ db, showAlert }) {
                   <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
                     
                     {/* Cabecera del Acta */}
-                    <div className="bg-slate-50 dark:bg-slate-900/50 p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="bg-slate-50 dark:bg-slate-900 p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{dateStr}</p>
                         <div className="flex items-center gap-3 mb-2">
@@ -215,7 +215,7 @@ export default function VehicleHistoryView({ db, showAlert }) {
       {/* Modal de Imagen a Pantalla Completa */}
       {fullScreenImage && (
         <div className="fixed inset-0 bg-slate-900/95 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm cursor-zoom-out animate-in fade-in duration-200" onClick={() => setFullScreenImage(null)}>
-          <button onClick={() => setFullScreenImage(null)} className="absolute top-4 right-4 bg-white dark:bg-slate-900/20 hover:bg-white dark:bg-slate-900/40 p-2 rounded-full text-white transition-colors shadow-lg">
+          <button onClick={() => setFullScreenImage(null)} className="absolute top-4 right-4 bg-white dark:bg-slate-900 hover:bg-white dark:bg-slate-900 p-2 rounded-full text-white transition-colors shadow-lg">
             <X className="w-6 h-6" />
           </button>
           <img src={fullScreenImage} alt="Evidencia Ampliada" className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} />

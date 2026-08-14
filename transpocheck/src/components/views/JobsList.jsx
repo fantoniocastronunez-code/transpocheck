@@ -1364,7 +1364,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
         <div className="flex gap-2 shrink-0 overflow-x-auto pb-1 sm:pb-0 scrollbar-none items-center">
           {isAdminView && (
-            <label className="flex items-center gap-2 cursor-pointer bg-white dark:bg-slate-900 px-4 py-3.5 rounded-2xl border-2 border-slate-200 dark:border-slate-800 shadow-sm hover:bg-slate-50 dark:bg-slate-900/50 dark:hover:bg-slate-800 transition-colors shrink-0">
+            <label className="flex items-center gap-2 cursor-pointer bg-white dark:bg-slate-900 px-4 py-3.5 rounded-2xl border-2 border-slate-200 dark:border-slate-800 shadow-sm hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 transition-colors shrink-0">
               <span className={`text-xs font-black uppercase tracking-widest ${auditMode ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400'}`}>Modo Auditoría</span>
               <div className="relative flex items-center">
                 <input type="checkbox" className="sr-only" checked={auditMode} onChange={() => setAuditMode(!auditMode)} />
@@ -1473,7 +1473,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       {olderHistoryJobs.length > 0 && (
         <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden mb-8">
-          <div className="bg-slate-50 dark:bg-slate-900/50 p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center flex-wrap gap-3">
+          <div className="bg-slate-50 dark:bg-slate-900 p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center flex-wrap gap-3">
             <div className="flex items-center gap-3">
               <h4 className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Historial Anterior</h4>
               <span className="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 text-[10px] font-black px-2 py-0.5 rounded-full">{olderHistoryJobs.length} registros</span>
@@ -1484,7 +1484,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               const isFailed = j.status === 'failed';
               const ident = getJobIdentifier(j);
               return (
-                <div key={j.id} onClick={() => setSelectedHistoryJob(j)} className="p-2 sm:p-3 hover:bg-slate-50 dark:bg-slate-900/50 flex flex-col transition-colors gap-2 border-b border-slate-100 dark:border-slate-800 last:border-0 cursor-pointer">
+                <div key={j.id} onClick={() => setSelectedHistoryJob(j)} className="p-2 sm:p-3 hover:bg-slate-50 dark:bg-slate-900 flex flex-col transition-colors gap-2 border-b border-slate-100 dark:border-slate-800 last:border-0 cursor-pointer">
                   {/* FILA ORIGINAL COMPACTA */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
                     <div className="flex items-center gap-2 overflow-hidden">
@@ -1544,7 +1544,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
                   {/* NUEVO PANEL PRT AUDITORIA */}
                   {isAdminView && auditMode && j.tripType === 'revision' && (j.status === 'completed' || j.status === 'failed') && (
-                    <div className="bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-inner ml-4">
+                    <div className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-inner ml-4">
                       <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Auditar Resultado PRT:</span>
                       <div className="flex gap-1">
                         <button
@@ -1583,7 +1583,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
                   {/* NUEVO PANEL AUDITORIA CATEGORIA VEHICULO */}
                   {isAdminView && auditMode && (j.status === 'completed' || j.status === 'failed') && j.tripType !== 'simple' && (
-                    <div className="bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-inner ml-4">
+                    <div className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 mt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-inner ml-4">
                       <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Corregir Categoría (Estadísticas):</span>
                       <select
                         value={j.checklist?.vehicleType || 'auto'}
@@ -1691,7 +1691,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             })}
           </div>
           {onLoadMore && (
-            <button onClick={onLoadMore} className="w-full bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-bold text-sm py-4 transition-colors border-t border-slate-200 dark:border-slate-700 shadow-inner">
+            <button onClick={onLoadMore} className="w-full bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-bold text-sm py-4 transition-colors border-t border-slate-200 dark:border-slate-700 shadow-inner">
               Cargar más traslados antiguos...
             </button>
           )}
@@ -1765,7 +1765,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               <div className="space-y-2.5 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">2. ¿Hacia dónde se dirige ahora?</label>
 
-                <button type="button" onClick={() => { setPrtReturnOpt('origin'); setPrtReturnDest(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${prtReturnOpt === 'origin' ? 'border-red-500 bg-red-50 dark:bg-red-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-red-200 dark:border-red-800/50'}`}>
+                <button type="button" onClick={() => { setPrtReturnOpt('origin'); setPrtReturnDest(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${prtReturnOpt === 'origin' ? 'border-red-500 bg-red-50 dark:bg-red-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-red-200 dark:border-red-800/50'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${prtReturnOpt === 'origin' ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'}`}>
                     {prtReturnOpt === 'origin' && <div className="w-2 h-2 bg-red-500 rounded-full"></div>}
                   </div>
@@ -1775,7 +1775,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                   </div>
                 </button>
 
-                <button type="button" onClick={() => { setPrtReturnOpt('prt_help'); setPrtReturnDest(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${prtReturnOpt === 'prt_help' ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-amber-200 dark:border-amber-800/50'}`}>
+                <button type="button" onClick={() => { setPrtReturnOpt('prt_help'); setPrtReturnDest(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${prtReturnOpt === 'prt_help' ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-amber-200 dark:border-amber-800/50'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${prtReturnOpt === 'prt_help' ? 'border-amber-500' : 'border-slate-300 dark:border-slate-600'}`}>
                     {prtReturnOpt === 'prt_help' && <div className="w-2 h-2 bg-amber-500 rounded-full"></div>}
                   </div>
@@ -1785,7 +1785,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                   </div>
                 </button>
 
-                <button type="button" onClick={() => setPrtReturnOpt('other')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-start gap-3 ${prtReturnOpt === 'other' ? 'border-red-500 bg-red-50 dark:bg-red-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-red-200 dark:border-red-800/50'}`}>
+                <button type="button" onClick={() => setPrtReturnOpt('other')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-start gap-3 ${prtReturnOpt === 'other' ? 'border-red-500 bg-red-50 dark:bg-red-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-red-200 dark:border-red-800/50'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${prtReturnOpt === 'other' ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'}`}>
                     {prtReturnOpt === 'other' && <div className="w-2 h-2 bg-red-500 rounded-full"></div>}
                   </div>
@@ -1857,14 +1857,14 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               <div className="space-y-2.5">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">1. Tipo de Aprobación</label>
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => setPrtApproveType('aprobado')} className={`flex-1 py-3 rounded-xl font-black text-xs transition-all border-2 ${prtApproveType === 'aprobado' ? 'bg-green-50 dark:bg-green-900/30 border-green-500 text-green-700 dark:text-green-400 shadow-sm' : 'bg-slate-50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>✅ Legal</button>
-                  <button type="button" onClick={() => setPrtApproveType('aprobado_ayuda')} className={`flex-1 py-3 rounded-xl font-black text-xs transition-all border-2 ${prtApproveType === 'aprobado_ayuda' ? 'bg-amber-50 dark:bg-amber-900/30 border-amber-500 text-amber-700 dark:text-amber-400 shadow-sm' : 'bg-slate-50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>🤝 Con Ayuda</button>
+                  <button type="button" onClick={() => setPrtApproveType('aprobado')} className={`flex-1 py-3 rounded-xl font-black text-xs transition-all border-2 ${prtApproveType === 'aprobado' ? 'bg-green-50 dark:bg-green-900/30 border-green-500 text-green-700 dark:text-green-400 shadow-sm' : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>✅ Legal</button>
+                  <button type="button" onClick={() => setPrtApproveType('aprobado_ayuda')} className={`flex-1 py-3 rounded-xl font-black text-xs transition-all border-2 ${prtApproveType === 'aprobado_ayuda' ? 'bg-amber-50 dark:bg-amber-900/30 border-amber-500 text-amber-700 dark:text-amber-400 shadow-sm' : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>🤝 Con Ayuda</button>
                 </div>
               </div>
 
               <div className="space-y-2.5 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">2. ¿Hacia dónde se dirige ahora?</label>
-                <button type="button" onClick={() => { setPrtReturnOpt('origin'); setPrtReturnDest(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${prtReturnOpt === 'origin' ? 'border-green-500 bg-green-50 dark:bg-green-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-green-200 dark:border-green-800/50'}`}>
+                <button type="button" onClick={() => { setPrtReturnOpt('origin'); setPrtReturnDest(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${prtReturnOpt === 'origin' ? 'border-green-500 bg-green-50 dark:bg-green-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-green-200 dark:border-green-800/50'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${prtReturnOpt === 'origin' ? 'border-green-500' : 'border-slate-300 dark:border-slate-600'}`}>
                     {prtReturnOpt === 'origin' && <div className="w-2 h-2 bg-green-500 rounded-full"></div>}
                   </div>
@@ -1874,7 +1874,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                   </div>
                 </button>
 
-                <button type="button" onClick={() => setPrtReturnOpt('other')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-start gap-3 ${prtReturnOpt === 'other' ? 'border-green-500 bg-green-50 dark:bg-green-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-green-200 dark:border-green-800/50'}`}>
+                <button type="button" onClick={() => setPrtReturnOpt('other')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-start gap-3 ${prtReturnOpt === 'other' ? 'border-green-500 bg-green-50 dark:bg-green-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-green-200 dark:border-green-800/50'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${prtReturnOpt === 'other' ? 'border-green-500' : 'border-slate-300 dark:border-slate-600'}`}>
                     {prtReturnOpt === 'other' && <div className="w-2 h-2 bg-green-500 rounded-full"></div>}
                   </div>
@@ -1920,7 +1920,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               <img src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`${window.location.origin}/?relay=${relayPromptJob.id}`)}`} alt="QR Relevo" className="w-48 h-48 mx-auto" />
             </div>
 
-            <div className="mt-4 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+            <div className="mt-4 bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
               <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">O envíale el link por WhatsApp:</p>
               <a
                 href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`🔑 Toma mi relevo del vehículo ${relayPromptJob.plate || relayPromptJob.vin} abriendo este link: ${window.location.origin}/?relay=${relayPromptJob.id}`)}`}
@@ -1987,7 +1987,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                       showAlert(`✅ Traslado cerrado exitosamente a nombre de ${d.name}.`);
                     } catch (e) { console.error(e); showAlert("Error al forzar el cierre."); }
                   });
-                }} className="w-full text-left p-3 bg-slate-50 dark:bg-slate-900/50 hover:bg-emerald-50 dark:bg-emerald-900/30 hover:border-emerald-200 dark:border-emerald-800/50 border border-slate-100 dark:border-slate-800 rounded-xl transition-colors">
+                }} className="w-full text-left p-3 bg-slate-50 dark:bg-slate-900 hover:bg-emerald-50 dark:bg-emerald-900/30 hover:border-emerald-200 dark:border-emerald-800/50 border border-slate-100 dark:border-slate-800 rounded-xl transition-colors">
                   <p className="font-extrabold text-slate-800 dark:text-slate-200">{d.name}</p>
                   <p className="text-[10px] font-bold text-slate-400">{d.email}</p>
                 </button>
@@ -2010,10 +2010,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               <button onClick={() => { setShowFleetMenu(false); setFleetSelectedIds([]); setShowFleetModal(true); }} className="w-full bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:bg-indigo-900/40 border border-indigo-200 dark:border-indigo-800/50 text-indigo-700 dark:text-indigo-400 font-extrabold py-3.5 rounded-xl transition-colors flex items-center gap-3 px-4 shadow-sm">
                 <Plus className="w-5 h-5" /> Crear Nueva Flota
               </button>
-              <button onClick={() => { setShowFleetMenu(false); setShowActiveFleetsModal(true); }} className="w-full bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-extrabold py-3.5 rounded-xl transition-colors flex items-center gap-3 px-4 shadow-sm">
+              <button onClick={() => { setShowFleetMenu(false); setShowActiveFleetsModal(true); }} className="w-full bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-extrabold py-3.5 rounded-xl transition-colors flex items-center gap-3 px-4 shadow-sm">
                 <Edit2 className="w-5 h-5 text-indigo-500" /> Modificar Flotas
               </button>
-              <button onClick={() => { setShowFleetMenu(false); setShowActiveFleetsModal(true); }} className="w-full bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-extrabold py-3.5 rounded-xl transition-colors flex items-center gap-3 px-4 shadow-sm">
+              <button onClick={() => { setShowFleetMenu(false); setShowActiveFleetsModal(true); }} className="w-full bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-extrabold py-3.5 rounded-xl transition-colors flex items-center gap-3 px-4 shadow-sm">
                 <Navigation className="w-5 h-5 text-indigo-500" /> Flotas Activas
               </button>
             </div>
@@ -2030,13 +2030,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             </div>
             <div className="overflow-y-auto space-y-4 flex-1">
               <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Selecciona los traslados activos que viajarán juntos en convoy. Esto habilitará la firma masiva para todos los conductores de este grupo.</p>
-              <div className="bg-slate-50 dark:bg-slate-900/50 border p-3 rounded-xl">
+              <div className="bg-slate-50 dark:bg-slate-900 border p-3 rounded-xl">
                 <div className="max-h-60 overflow-y-auto space-y-1.5">
                   {activeJobs.length === 0 ? (
                     <p className="text-xs font-bold text-slate-400 text-center">No hay vehículos activos.</p>
                   ) : (
                     activeJobs.map(j => (
-                      <label key={j.id} className="flex items-center gap-3 p-3 border rounded-xl bg-white dark:bg-slate-900 cursor-pointer hover:bg-slate-50 dark:bg-slate-900/50">
+                      <label key={j.id} className="flex items-center gap-3 p-3 border rounded-xl bg-white dark:bg-slate-900 cursor-pointer hover:bg-slate-50 dark:bg-slate-900">
                         <input type="checkbox" className="w-4 h-4 accent-indigo-600" checked={fleetSelectedIds.includes(j.id)} onChange={e => e.target.checked ? setFleetSelectedIds([...fleetSelectedIds, j.id]) : setFleetSelectedIds(fleetSelectedIds.filter(id => id !== j.id))} />
                         <div className="text-xs font-black text-slate-700 dark:text-slate-300 flex-1 min-w-0">
                           <div className="truncate">{getJobIdentifier(j)} - {j.tripType === 'simple' ? j.description : `${j.brand} ${j.model}`}</div>
@@ -2066,7 +2066,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             <div className="overflow-y-auto space-y-4 flex-1 pr-1">
               <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">Aquí puedes ver los convoyes en ruta, quitar un vehículo específico o disolver flotas enteras.</p>
               {Object.keys(activeJobs.reduce((acc, j) => { if (j.fleetGroup) acc[j.fleetGroup] = true; return acc; }, {})).length === 0 ? (
-                <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-2xl p-8 text-center flex flex-col items-center">
+                <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-8 text-center flex flex-col items-center">
                   <Truck className="w-12 h-12 text-slate-300 mb-3" />
                   <p className="font-extrabold text-slate-500 dark:text-slate-400">No hay ninguna flota activa en este momento.</p>
                 </div>
@@ -2087,7 +2087,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     </div>
                     <div className="p-3 space-y-2">
                       {fleetJobs.map(j => (
-                        <div key={j.id} className="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 hover:bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 transition-colors">
+                        <div key={j.id} className="flex justify-between items-center bg-slate-50 dark:bg-slate-900 hover:bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 transition-colors">
                           <div className="flex-1 min-w-0 flex items-center gap-2">
                             <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full shrink-0"></div>
                             <div className="min-w-0">
@@ -2109,7 +2109,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                         </div>
                       ))}
                     </div>
-                    <div className="p-2 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800">
+                    <div className="p-2 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
                       <button onClick={() => {
                         showConfirm("⚠️ ¿Estás seguro de desarmar y disolver este convoy completo? Los vehículos volverán a ser individuales.", async () => {
                           setProcessingId(`disband-${fleetId}`);
@@ -2150,7 +2150,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">¿Qué tipo de ruta hará ahora?</label>
 
-                <button onClick={() => setDupMode('clone')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'clone' ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/30' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-purple-200 dark:border-purple-800/50'}`}>
+                <button onClick={() => setDupMode('clone')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'clone' ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/30' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-purple-200 dark:border-purple-800/50'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${dupMode === 'clone' ? 'border-purple-600' : 'border-slate-300 dark:border-slate-600'}`}>
                     {dupMode === 'clone' && <div className="w-2 h-2 bg-purple-600 rounded-full"></div>}
                   </div>
@@ -2160,7 +2160,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                   </div>
                 </button>
 
-                <button onClick={() => setDupMode('return')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'return' ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/30' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-purple-200 dark:border-purple-800/50'}`}>
+                <button onClick={() => setDupMode('return')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'return' ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/30' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-purple-200 dark:border-purple-800/50'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${dupMode === 'return' ? 'border-purple-600' : 'border-slate-300 dark:border-slate-600'}`}>
                     {dupMode === 'return' && <div className="w-2 h-2 bg-purple-600 rounded-full"></div>}
                   </div>
@@ -2170,7 +2170,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                   </div>
                 </button>
 
-                <button onClick={() => { setDupMode('continue'); setDupDestination(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'continue' ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/30' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-purple-200 dark:border-purple-800/50'}`}>
+                <button onClick={() => { setDupMode('continue'); setDupDestination(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'continue' ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/30' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-purple-200 dark:border-purple-800/50'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${dupMode === 'continue' ? 'border-purple-600' : 'border-slate-300 dark:border-slate-600'}`}>
                     {dupMode === 'continue' && <div className="w-2 h-2 bg-purple-600 rounded-full"></div>}
                   </div>
@@ -2199,7 +2199,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               {/* ASIGNACIÓN DE CONDUCTORES (MÚLTIPLE) */}
               <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Asignar a Conductores</label>
-                <div className="bg-slate-50 dark:bg-slate-900/50 border-2 border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden">
+                <div className="bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden">
                   <div className="max-h-40 overflow-y-auto p-1.5 space-y-1 scrollbar-none">
 
                     <div onClick={() => setDupDriverEmails([])} className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${dupDriverEmails.length === 0 ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30' : 'border-transparent hover:bg-slate-100 dark:bg-slate-800'}`}>
@@ -2279,7 +2279,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                 <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
               </button>
             </div>
-            <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+            <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Trabajo a editar</p>
               <p className="text-sm font-bold text-slate-700 dark:text-slate-300 truncate">
                 {editDateJob.tripType === 'simple' ? editDateJob.description : `${editDateJob.brand} ${editDateJob.model}`}
@@ -2324,7 +2324,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                 <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
               </button>
             </div>
-            <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+            <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Trabajo a editar</p>
               <p className="text-sm font-bold text-slate-700 dark:text-slate-300 truncate">
                 {editPriceJob.tripType === 'simple' ? editPriceJob.description : `${editPriceJob.brand} ${editPriceJob.model}`}
@@ -2379,7 +2379,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                 <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
               </button>
             </div>
-            <div className="bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+            <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Trabajo a editar</p>
               <p className="text-sm font-bold text-slate-700 dark:text-slate-300 truncate">
                 {editKmJob.tripType === 'simple' ? editKmJob.description : `${editKmJob.brand} ${editKmJob.model}`}
@@ -2409,14 +2409,14 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               <button onClick={() => setShowBulkSign(false)} className="bg-slate-100 dark:bg-slate-800 p-2 rounded-full hover:bg-slate-200 dark:bg-slate-700"><X className="w-5 h-5" /></button>
             </div>
             <div className="overflow-y-auto space-y-4 flex-1">
-              <div className="bg-slate-50 dark:bg-slate-900/50 border p-3 rounded-xl">
+              <div className="bg-slate-50 dark:bg-slate-900 border p-3 rounded-xl">
                 <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase mb-2">Selecciona los vehículos a entregar:</p>
                 <div className="max-h-40 overflow-y-auto space-y-1.5">
                   {inProgressJobsList.filter(j => j.fleetGroup).length === 0 ? (
                     <p className="text-xs font-bold text-slate-400 text-center">No perteneces a ninguna flota activa.</p>
                   ) : (
                     inProgressJobsList.filter(j => j.fleetGroup).map(j => (
-                      <label key={j.id} className="flex items-center gap-3 p-3 border rounded-xl bg-white dark:bg-slate-900 cursor-pointer hover:bg-slate-50 dark:bg-slate-900/50">
+                      <label key={j.id} className="flex items-center gap-3 p-3 border rounded-xl bg-white dark:bg-slate-900 cursor-pointer hover:bg-slate-50 dark:bg-slate-900">
                         <input type="checkbox" className="w-4 h-4 accent-emerald-600" checked={bulkSelectedIds.includes(j.id)} onChange={e => e.target.checked ? setBulkSelectedIds([...bulkSelectedIds, j.id]) : setBulkSelectedIds(bulkSelectedIds.filter(id => id !== j.id))} />
                         <div className="text-xs font-black text-slate-700 dark:text-slate-300">
                           {getJobIdentifier(j)} - {j.tripType === 'simple' ? j.description : `${j.brand} ${j.model}`}

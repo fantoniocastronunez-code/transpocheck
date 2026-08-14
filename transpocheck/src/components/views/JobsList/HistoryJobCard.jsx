@@ -41,7 +41,7 @@ export default function HistoryJobCard({ j, ...props }) {
           </div>
         </div>
         
-        <div className="bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col gap-2 mb-3 shadow-inner">
+        <div className="bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col gap-2 mb-3 shadow-inner">
           {/* Fila de Ruta: Origen y Destino (Vertical) */}
           <div className="flex flex-col gap-1.5 w-full">
             <div className="bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm flex items-start gap-2">
@@ -126,7 +126,7 @@ export default function HistoryJobCard({ j, ...props }) {
 
         {/* NUEVO: CRONÓMETRO Y KILOMETRAJE EN LA TARJETA FINALIZADA */}
         {(j.status === 'completed' || j.status === 'failed') && (
-            <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 mb-3 shadow-inner">
+            <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 mb-3 shadow-inner">
                 <div className="flex items-center gap-2 flex-1">
                     <div className="bg-blue-100 dark:bg-blue-900/40 p-1.5 rounded-lg"><Clock className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400"/></div>
                     <div className="flex flex-col">
@@ -188,7 +188,7 @@ export default function HistoryJobCard({ j, ...props }) {
 
         {/* NUEVO: SELECTOR RÁPIDO DE PRT PARA ADMIN */}
         {isAdminView && j.tripType === 'revision' && (j.status === 'completed' || j.status === 'failed') && (
-            <div className="mb-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl p-2 flex flex-col gap-1.5 shadow-inner">
+            <div className="mb-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2 flex flex-col gap-1.5 shadow-inner">
                 <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Auditar Resultado PRT:</span>
                 <div className="flex gap-1">
                     <button 

@@ -266,8 +266,8 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                     </div>
                     
                     {/* CONTROLADOR DE MESES */}
-                    <div className="flex items-center gap-3 bg-white dark:bg-slate-900/10 p-1.5 rounded-2xl backdrop-blur-sm border border-white dark:border-slate-800/20 w-fit shrink-0">
-                        <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))} className="p-2 hover:bg-white dark:bg-slate-900/20 rounded-xl transition-colors active:scale-95">
+                    <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-1.5 rounded-2xl backdrop-blur-sm border border-white dark:border-slate-800/20 w-fit shrink-0">
+                        <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))} className="p-2 hover:bg-white dark:bg-slate-900 rounded-xl transition-colors active:scale-95">
                             <ChevronLeft className="w-5 h-5 text-white" />
                         </button>
                         <div className="flex flex-col items-center justify-center min-w-[120px]">
@@ -276,28 +276,28 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                                 {viewDate.toLocaleString('es-CL', { month: 'long', year: 'numeric' })}
                             </p>
                         </div>
-                        <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))} disabled={viewDate.getMonth() === new Date().getMonth() && viewDate.getFullYear() === new Date().getFullYear()} className="p-2 hover:bg-white dark:bg-slate-900/20 rounded-xl transition-colors active:scale-95 disabled:opacity-30 disabled:pointer-events-none">
+                        <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))} disabled={viewDate.getMonth() === new Date().getMonth() && viewDate.getFullYear() === new Date().getFullYear()} className="p-2 hover:bg-white dark:bg-slate-900 rounded-xl transition-colors active:scale-95 disabled:opacity-30 disabled:pointer-events-none">
                             <ChevronRight className="w-5 h-5 text-white" />
                         </button>
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900/5 border border-white dark:border-slate-800/10 p-3 rounded-2xl mb-6 relative z-10 flex flex-col sm:flex-row justify-center items-center gap-2 text-center">
+                <div className="bg-white dark:bg-slate-900 border border-white dark:border-slate-800/10 p-3 rounded-2xl mb-6 relative z-10 flex flex-col sm:flex-row justify-center items-center gap-2 text-center">
                     <p className="text-xs font-bold text-blue-100">
                         Mostrando registros desde el <span className="text-white font-black">1 de {viewDate.toLocaleString('es-CL', { month: 'long' })}</span> hasta el <span className="text-white font-black">{new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate()} de {viewDate.toLocaleString('es-CL', { month: 'long' })}</span>.
                     </p>
                 </div>
                 
                 <div className="flex flex-wrap gap-4 relative z-10">
-                    <div className="bg-white dark:bg-slate-900/10 backdrop-blur-md border border-white dark:border-slate-800/20 p-4 rounded-2xl flex-1 min-w-[120px]">
+                    <div className="bg-white dark:bg-slate-900 backdrop-blur-md border border-white dark:border-slate-800/20 p-4 rounded-2xl flex-1 min-w-[120px]">
                         <p className="text-[10px] font-black uppercase tracking-widest text-blue-200 mb-1">Total Traslados</p>
                         <p className="text-3xl font-black">{stats.totalJobs || 0}</p>
                     </div>
-                    <div className="bg-white dark:bg-slate-900/10 backdrop-blur-md border border-white dark:border-slate-800/20 p-4 rounded-2xl flex-1 min-w-[120px]">
+                    <div className="bg-white dark:bg-slate-900 backdrop-blur-md border border-white dark:border-slate-800/20 p-4 rounded-2xl flex-1 min-w-[120px]">
                         <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200 mb-1 flex items-center gap-1"><MapIcon className="w-3 h-3" /> KM del Período</p>
                         <p className="text-3xl font-black text-emerald-300">{stats.totalKm || 0} <span className="text-sm font-bold text-emerald-100">km</span></p>
                     </div>
-                    <div className="bg-white dark:bg-slate-900/10 backdrop-blur-md border border-white dark:border-slate-800/20 p-4 rounded-2xl flex-1 min-w-[120px]">
+                    <div className="bg-white dark:bg-slate-900 backdrop-blur-md border border-white dark:border-slate-800/20 p-4 rounded-2xl flex-1 min-w-[120px]">
                         <p className="text-[10px] font-black uppercase tracking-widest text-amber-200 mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> Ingresos Totales</p>
                         <p className="text-3xl font-black text-amber-300"><span className="text-sm font-bold text-amber-100">$</span>{stats.totalRevenue ? stats.totalRevenue.toLocaleString('es-CL') : 0}</p>
                     </div>
@@ -317,7 +317,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                     ) : (
                         <div className="space-y-2">
                             {stats.topClients.map(([name, count], idx) => (
-                                <button key={name} onClick={() => handleClientClick(name)} className="w-full text-left flex items-center gap-3 p-2 hover:bg-slate-50 dark:bg-slate-900/50 hover:scale-[1.01] active:scale-95 transition-all rounded-xl border border-transparent hover:border-slate-100 dark:border-slate-800 hover:shadow-sm">
+                                <button key={name} onClick={() => handleClientClick(name)} className="w-full text-left flex items-center gap-3 p-2 hover:bg-slate-50 dark:bg-slate-900 hover:scale-[1.01] active:scale-95 transition-all rounded-xl border border-transparent hover:border-slate-100 dark:border-slate-800 hover:shadow-sm">
                                     <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${idx === 0 ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>{idx + 1}</span>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex justify-between mb-1">
@@ -345,7 +345,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                     ) : (
                         <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 scrollbar-none">
                             {stats.topClientsByRevenue.map(([name, revenue], idx) => (
-                                <button key={name} onClick={() => handleClientClick(name)} className="w-full text-left flex items-center gap-3 p-2.5 hover:bg-slate-50 dark:bg-slate-900/50 hover:scale-[1.01] active:scale-95 transition-all rounded-xl border border-transparent hover:border-slate-100 dark:border-slate-800 hover:shadow-sm">
+                                <button key={name} onClick={() => handleClientClick(name)} className="w-full text-left flex items-center gap-3 p-2.5 hover:bg-slate-50 dark:bg-slate-900 hover:scale-[1.01] active:scale-95 transition-all rounded-xl border border-transparent hover:border-slate-100 dark:border-slate-800 hover:shadow-sm">
                                     <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${idx === 0 ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>{idx + 1}</span>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{name}</p>
@@ -420,7 +420,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                                     {stats.topDriversKm.map(([name, km], idx) => (
                                         <tr key={name} onClick={() => handleDriverKmClick(name)} className="hover:bg-slate-100 dark:bg-slate-800 active:bg-slate-200 dark:bg-slate-700 cursor-pointer transition-colors group">
                                             <td className="py-2.5 pr-2 border-b border-slate-50 text-center rounded-l-xl">
-                                                <span className={`inline-flex w-5 h-5 rounded-full items-center justify-center text-[9px] font-black ${idx === 0 ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400' : idx === 1 ? 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400' : idx === 2 ? 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400' : 'bg-slate-50 dark:bg-slate-900/50 text-slate-400 group-hover:bg-white dark:bg-slate-900'}`}>
+                                                <span className={`inline-flex w-5 h-5 rounded-full items-center justify-center text-[9px] font-black ${idx === 0 ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400' : idx === 1 ? 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400' : idx === 2 ? 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400' : 'bg-slate-50 dark:bg-slate-900 text-slate-400 group-hover:bg-white dark:bg-slate-900'}`}>
                                                     {idx + 1}
                                                 </span>
                                             </td>
@@ -466,7 +466,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                                 if (!leader) return null;
 
                                 return (
-                                    <button key={key} onClick={() => handleCategoryClick(key, leader.name, label)} className="w-full text-left flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:bg-slate-800 hover:scale-[1.02] active:scale-95 transition-all p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                                    <button key={key} onClick={() => handleCategoryClick(key, leader.name, label)} className="w-full text-left flex justify-between items-center bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:bg-slate-800 hover:scale-[1.02] active:scale-95 transition-all p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
                                         <div className="flex flex-col min-w-0 pr-2">
                                             <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider truncate">{label}</span>
                                             <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{leader.name}</span>
@@ -493,7 +493,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                             {stats.topPlates.map(([plate, count], idx) => (
-                                <button key={plate} onClick={() => handlePlateClick(plate)} className="w-full text-left flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:bg-slate-800 hover:scale-[1.02] active:scale-95 transition-all rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                                <button key={plate} onClick={() => handlePlateClick(plate)} className="w-full text-left flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:bg-slate-800 hover:scale-[1.02] active:scale-95 transition-all rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
                                     <div className="flex items-center gap-2.5">
                                         <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black shrink-0 ${idx === 0 ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}>{idx + 1}</span>
                                         <div className="bg-white dark:bg-slate-900 border-2 border-slate-800 text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded-md text-xs font-black tracking-widest shadow-sm">
@@ -516,7 +516,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-in fade-in duration-200">
                     <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col animate-in zoom-in-95 duration-200 border border-slate-200 dark:border-slate-700">
                         
-                        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50 rounded-t-3xl">
+                        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900 rounded-t-3xl">
                             <div className="min-w-0 pr-4">
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Auditoría de Registros</p>
                                 <h3 className="font-black text-slate-800 dark:text-slate-200 text-[15px] truncate">{modalData.title}</h3>
@@ -531,7 +531,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                             </div>
                         </div>
                         
-                        <div className="p-4 overflow-y-auto scrollbar-none flex-1 space-y-3 bg-slate-100 dark:bg-slate-800/50 rounded-b-3xl">
+                        <div className="p-4 overflow-y-auto scrollbar-none flex-1 space-y-3 bg-slate-100 dark:bg-slate-800 rounded-b-3xl">
                             {modalData.jobs.length === 0 ? (
                                 <p className="text-center text-slate-400 font-bold py-6 text-sm">No se encontraron registros activos.</p>
                             ) : (
@@ -550,7 +550,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                                         </div>
                                         
                                         {/* RUTA: DESDE - HASTA */}
-                                        <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3 mb-3 border border-slate-100 dark:border-slate-800 space-y-2.5 ml-1.5">
+                                        <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-3 mb-3 border border-slate-100 dark:border-slate-800 space-y-2.5 ml-1.5">
                                             <div className="flex items-start gap-2.5">
                                                 <div className="bg-blue-100 dark:bg-blue-900/40 p-1.5 rounded-full shrink-0"><MapPin className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400"/></div>
                                                 <div className="flex-1 min-w-0 pt-0.5">

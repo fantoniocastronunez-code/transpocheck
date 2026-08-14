@@ -16,8 +16,8 @@ const VinPlateBadge = ({ vin, className = "" }) => {
       title="Número de Chasis (VIN)"
     >
       {/* Remaches simulados */}
-      <div className="absolute left-[3px] top-1/2 -translate-y-1/2 w-[2.5px] h-[2.5px] rounded-full bg-slate-300 border-[0.5px] border-slate-500 shadow-inner"></div>
-      <div className="absolute right-[3px] top-1/2 -translate-y-1/2 w-[2.5px] h-[2.5px] rounded-full bg-slate-300 border-[0.5px] border-slate-500 shadow-inner"></div>
+      <div className="absolute left-[3px] top-1/2 -translate-y-1/2 w-[2.5px] h-[2.5px] rounded-full bg-slate-300 dark:bg-slate-600 border-[0.5px] border-slate-500 shadow-inner"></div>
+      <div className="absolute right-[3px] top-1/2 -translate-y-1/2 w-[2.5px] h-[2.5px] rounded-full bg-slate-300 dark:bg-slate-600 border-[0.5px] border-slate-500 shadow-inner"></div>
 
       {/* Texto troquelado */}
       <span 
