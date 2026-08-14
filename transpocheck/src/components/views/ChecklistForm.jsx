@@ -494,9 +494,6 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     if (isSubmitting) return;
     if (!formData.noReception && !formData.signatureData) return showAlert("La firma del receptor es mandatoria.");
 
-    // Validación Kilometraje de Entrega
-    if (!formData.mileage) return showAlert("⚠️ Debes ingresar el kilometraje de entrega.");
-    if (!formData.photos?.mileage) return showAlert("⚠️ Debes adjuntar la fotografía del odómetro (kilometraje).");
 
     // MAGIA: Solo exigimos marcar el tiempo si el resultado sigue pendiente. 
     // Si un Admin forzó el resultado desde afuera, permitimos cerrar el acta sin tiempo.
@@ -1666,16 +1663,6 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
           {((job.tripType !== 'simple' && step === 6) || (job.tripType === 'simple' && step === 3)) && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="text-sm font-extrabold border-b border-slate-100 pb-2 text-slate-800 uppercase tracking-wider">Cierre y Conformidad</h3>
-
-              <div className="bg-slate-50 p-4 rounded-2xl border-2 border-slate-200 mb-4 shadow-sm">
-                <h4 className="text-xs font-black text-slate-700 uppercase tracking-widest mb-3 flex items-center gap-2"><MapPin className="w-4 h-4 text-blue-500" /> Kilometraje de Entrega</h4>
-                <div className="flex items-center gap-3">
-                  <input type="number" placeholder="Ej: 145000" value={formData.mileage || ''} onChange={e => setF('mileage', e.target.value)} className="flex-1 border-2 border-slate-300 p-3 rounded-xl font-bold text-slate-700 text-sm outline-none focus:border-blue-500" />
-                  <button type="button" onClick={() => handlePhotoClick('mileage', 'Foto del Odómetro')} className={`h-[48px] px-4 rounded-xl font-black flex items-center justify-center gap-2 transition-all ${formData.photos?.mileage ? 'bg-green-100 text-green-700 border-2 border-green-400 shadow-sm' : 'bg-slate-200 text-slate-600 hover:bg-slate-300 border-2 border-transparent'}`}>
-                    {formData.photos?.mileage ? <><CheckCircle className="w-5 h-5" /> Lista</> : <><Camera className="w-5 h-5" /> Foto</>}
-                  </button>
-                </div>
-              </div>
 
               <label className="flex items-center gap-3 p-4 bg-slate-800 rounded-2xl border-slate-900 border-2 cursor-pointer shadow-md transition-colors hover:bg-slate-700">
                 <input type="checkbox" checked={formData.noReception} onChange={e => setF('noReception', e.target.checked)} className="w-6 h-6 cursor-pointer accent-blue-500 rounded" />
