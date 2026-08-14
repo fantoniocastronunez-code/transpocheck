@@ -124,7 +124,8 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
       DeviceOrientationEvent.requestPermission().catch(() => { });
     }
 
-    setCameraConfig({ isOpen: true, title, onCapture: callback });
+    // EL FIX: Ahora sí le pasamos el "enableAnnotation" al estado para que la cámara sepa que debe usar el croquis
+    setCameraConfig({ isOpen: true, title, onCapture: callback, enableAnnotation });
   };
   // ----------------------------------------
   // Estados para el Déjà Vu Pericial
@@ -1876,6 +1877,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     </div>
   );
 }
+
 
 
 
