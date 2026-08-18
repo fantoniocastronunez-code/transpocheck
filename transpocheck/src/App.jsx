@@ -453,8 +453,12 @@ function LogisticApp() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 flex flex-col items-center justify-center p-4">
         {globalStyles}
         <div className="bg-white dark:bg-slate-900 p-8 sm:p-10 rounded-3xl shadow-xl w-full max-w-md text-center border border-blue-50">
-          <div className="bg-blue-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-200 transform rotate-3 hover:rotate-0 transition-transform"><Car className="w-10 h-10 text-white" /></div>
-          <h1 className="text-4xl font-extrabold text-slate-900 mb-2 tracking-tight">LogisticAPP</h1>
+          <div className="flex justify-center items-center gap-6 mb-6">
+            <img src="/LogoLogistica.png" alt="Logistica TS" className="h-24 w-auto object-contain drop-shadow-md hover:scale-105 transition-transform" />
+            <div className="w-px h-16 bg-slate-200 dark:bg-slate-700"></div>
+            <img src="/logo.png" alt="LogisticAPP" className="h-20 w-auto object-contain drop-shadow-md hover:scale-105 transition-transform" />
+          </div>
+          <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white mb-2 tracking-tight">LogisticAPP</h1>
           
           {/* SECCIÓN 1: ACCESO DIRECTO PARA CLIENTES */}
           <div className="mt-8 mb-8">

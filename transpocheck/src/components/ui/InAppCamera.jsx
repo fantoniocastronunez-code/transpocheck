@@ -100,11 +100,14 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
       const beta = event.beta;  
 
       if (gamma === null || beta === null) return;
-      if (Math.abs(beta) < 25 || Math.abs(beta) > 155) return; // Filtro de planitud
+      
+      // Filtro de planitud: solo ignorar si está apoyado plano (beta cerca a 0 o 180 Y gamma cerca a 0)
+      if ((Math.abs(beta) < 25 || Math.abs(beta) > 155) && Math.abs(gamma) < 35) return;
 
-      if (gamma > 60) setLandscapeAngle(-90);
-      else if (gamma < -60) setLandscapeAngle(90); 
-      else if (gamma > -30 && gamma < 30) setLandscapeAngle(0);  
+      // Mejorar los ángulos de detección para mayor sensibilidad
+      if (gamma > 45) setLandscapeAngle(-90);
+      else if (gamma < -45) setLandscapeAngle(90); 
+      else if (gamma > -35 && gamma < 35) setLandscapeAngle(0);  
     };
 
     if (isOpen) window.addEventListener('deviceorientation', handleOrientation);
