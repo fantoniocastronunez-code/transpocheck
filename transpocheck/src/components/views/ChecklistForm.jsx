@@ -482,12 +482,18 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
   const checkIsExpired = (dateStr) => {
     if (!dateStr) return false;
-    const [y, m, day] = dateStr.split('-');
-    if (!y || !m || !day) return false;
-    const exp = new Date(y, m - 1, day);
+    const parts = dateStr.split('-');
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return exp < today;
+    if (parts.length === 2) {
+      const exp = new Date(parts[0], parts[1], 0);
+      return exp < today;
+    } else {
+      const [y, m, day] = parts;
+      if (!y || !m || !day) return false;
+      const exp = new Date(y, m - 1, day);
+      return exp < today;
+    }
   };
 
   const submit = async (e) => {
@@ -997,7 +1003,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                         <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                           <div className={`${isExp ? 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800/50' : 'bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800/50'} border p-2 rounded-xl flex flex-col gap-1 shadow-inner transition-colors`}>
                             <p className={`text-[9px] font-extrabold uppercase tracking-widest text-center ${isExp ? 'text-red-700 dark:text-red-400' : 'text-green-700 dark:text-green-400'}`}>Vencimiento {isExp && '(VENCIDO)'}</p>
-                            <input type="date" value={formData.docsExpiry?.[doc.id] || ''} onChange={(e) => setF('docsExpiry', { ...(formData.docsExpiry || {}), [doc.id]: e.target.value })} className={`w-full bg-white dark:bg-slate-900 border p-1.5 rounded-lg text-xs font-black text-slate-700 dark:text-slate-300 outline-none text-center transition-colors ${isExp ? 'border-red-300 dark:border-red-700/50 focus:border-red-500' : 'border-green-200 dark:border-green-800/50 focus:border-green-500'}`} />
+                            <input type="month" value={(formData.docsExpiry?.[doc.id] || '').substring(0, 7)} onChange={(e) => setF('docsExpiry', { ...(formData.docsExpiry || {}), [doc.id]: e.target.value })} className={`w-full bg-white dark:bg-slate-900 border p-1.5 rounded-lg text-xs font-black text-slate-700 dark:text-slate-300 outline-none text-center transition-colors ${isExp ? 'border-red-300 dark:border-red-700/50 focus:border-red-500' : 'border-green-200 dark:border-green-800/50 focus:border-green-500'}`} />
                           </div>
                         </div>
                       )}
