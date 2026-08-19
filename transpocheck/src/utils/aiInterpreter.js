@@ -54,11 +54,15 @@ REGLAS CRÍTICAS:
     });
 
     if (!response.ok) {
-      throw new Error("Error en la respuesta de Gemini API");
+      const errData = await response.text();
+      throw new Error(`Error Gemini API (${response.status}): ${errData}`);
     }
 
     const data = await response.json();
-    const resultText = data.candidates[0].content.parts[0].text;
+    let resultText = data.candidates[0].content.parts[0].text;
+    
+    // Limpiar markdown (```json ... ```) si la IA lo incluyó por error
+    resultText = resultText.replace(/```json/gi, '').replace(/```/g, '').trim();
     
     // Parsear el JSON
     return JSON.parse(resultText);

@@ -479,7 +479,8 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
         
         showAlert("✅ Checklist actualizado por IA según tu dictado.");
       } catch (error) {
-        showAlert("❌ No se pudo interpretar el comando de voz.");
+        console.error(error);
+        showAlert("❌ No se pudo interpretar el comando de voz: " + error.message);
       } finally {
         setIsInterpreting(false);
       }
