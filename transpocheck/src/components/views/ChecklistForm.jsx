@@ -3,11 +3,12 @@ import { updateDoc, doc, setDoc, addDoc, collection, query, where, getDocs, onSn
 import {
   FileText, MapPin, CheckCircle, CloudOff, AlertCircle, Eye,
   Trash2, Camera, Search, X, Fuel, Clock, Wallet, Receipt,
-  Share2, QrCode, Save, Zap
+  Share2, QrCode, Save, Zap, Mic, Loader2
 } from 'lucide-react';
 import SignaturePad from '../ui/SignaturePad';
 import InAppCamera from '../ui/InAppCamera'; // <-- NUEVO COMPONENTE CENTRALIZADO
 import { resizeImage, formatMoney } from '../../utils/helpers';
+import { processVoiceCommand } from '../../utils/aiInterpreter';
 
 
 export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList: rawClients, drivers, expenses, vehicles, uploadImageToStorage, pushSyncTask }) {
@@ -79,6 +80,9 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
   const [fullScreenImage, setFullScreenImage] = useState(null);
   const [uploadProgress, setUploadProgress] = useState({ active: false, current: 0, total: 0, text: '' });
   const [nowTick, setNowTick] = useState(Date.now());
+  const [isListening, setIsListening] = useState(false);
+  const [isInterpreting, setIsInterpreting] = useState(false);
+  const recognitionRef = useRef(null);
 
   // Lista dinámica de equipamiento
   const [equipmentList, setEquipmentList] = useState([
@@ -418,6 +422,85 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
 
   const setF = (f, v) => setFormData(p => ({ ...p, [f]: v }));
+
+  // --- INICIO: LÓGICA DE ASISTENTE DE VOZ ---
+  const toggleVoiceAssistant = () => {
+    if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      showAlert("Tu navegador no soporta el reconocimiento de voz nativo. Usa Chrome o Safari.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'es-CL';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = async (event) => {
+      const transcript = event.results[0][0].transcript;
+      setIsListening(false);
+      setIsInterpreting(true);
+      
+      try {
+        const result = await processVoiceCommand(transcript);
+        
+        if (result.docsExpiry) {
+          setF('docsExpiry', { ...formData.docsExpiry, ...result.docsExpiry });
+        }
+        if (typeof result.hasEquipment === 'boolean') {
+          setF('hasEquipment', result.hasEquipment);
+        }
+        if (result.equipment) {
+          setF('equipment', { ...formData.equipment, ...result.equipment });
+        }
+        if (result.equipmentDetails) {
+          setF('equipmentDetails', result.equipmentDetails);
+        }
+        if (typeof result.fuelLevel === 'number') {
+          setF('fuelLevel', result.fuelLevel);
+        }
+        if (typeof result.hasFuelCharge === 'boolean') {
+          setF('hasFuelCharge', result.hasFuelCharge);
+        }
+        if (typeof result.fuelChargeAmount === 'number') {
+          setF('fuelChargeAmount', result.fuelChargeAmount);
+        }
+        
+        showAlert("✅ Checklist actualizado por IA según tu dictado.");
+      } catch (error) {
+        showAlert("❌ No se pudo interpretar el comando de voz.");
+      } finally {
+        setIsInterpreting(false);
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Error de reconocimiento de voz:", event.error);
+      setIsListening(false);
+      if (event.error !== 'aborted') {
+         showAlert("❌ Error al escuchar el micrófono. Revisa los permisos.");
+      }
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  };
+  // --- FIN: LÓGICA DE ASISTENTE DE VOZ ---
 
   const clearDraft = () => {
     showConfirm("¿Eliminar borrador y empezar de nuevo?", async () => {
@@ -1742,7 +1825,27 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
         </form>
       </div>
-
+      {/* BOTÓN FLOTANTE DEL ASISTENTE DE VOZ */}
+      <button
+        type="button"
+        onClick={toggleVoiceAssistant}
+        disabled={isInterpreting}
+        className={`fixed bottom-24 right-4 z-50 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 border-2 border-white/20 ${
+          isListening 
+            ? 'bg-red-500 animate-pulse scale-110 shadow-red-500/50' 
+            : isInterpreting 
+              ? 'bg-amber-500 cursor-not-allowed' 
+              : 'bg-indigo-600 hover:bg-indigo-700 hover:scale-105 active:scale-95'
+        }`}
+      >
+        {isListening ? (
+          <Mic className="w-6 h-6 text-white animate-bounce" />
+        ) : isInterpreting ? (
+          <Loader2 className="w-6 h-6 text-white animate-spin" />
+        ) : (
+          <Mic className="w-6 h-6 text-white" />
+        )}
+      </button>
 
       {uploadProgress.active && (
         <div className="fixed bottom-[88px] left-1/2 transform -translate-x-1/2 z-[60] w-[92%] max-w-sm animate-in slide-in-from-bottom-5 duration-300">
