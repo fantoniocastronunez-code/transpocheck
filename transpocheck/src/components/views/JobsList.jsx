@@ -914,8 +914,16 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     }
   };
   const buildPDFDoc = async (job) => {
-    const { buildPDFDoc: masterPDFBuilder } = await import('../../utils/pdfGenerator');
-    return await masterPDFBuilder(job, drivers);
+    try {
+      const { buildPDFDoc: masterPDFBuilder } = await import('../../utils/pdfGenerator');
+      return await masterPDFBuilder(job, drivers);
+    } catch (error) {
+      if (error.message && error.message.toLowerCase().includes('failed to fetch dynamically imported module')) {
+        window.location.reload();
+        return new Promise(() => {});
+      }
+      throw error;
+    }
   };
 
   const getDStr = j => j.scheduledDate ? formatDateDisplay(j.scheduledDate) : formatDateDisplay(new Date().toISOString().split('T')[0]);

@@ -113,6 +113,10 @@ const handleDownloadPDF = async (job) => {
       docPDF.save(fileName); 
       setDownloadingId(null);
     } catch (error) {
+      if (error.message && error.message.toLowerCase().includes('failed to fetch dynamically imported module')) {
+        window.location.reload();
+        return;
+      }
       console.error("Error crítico generando PDF en Portal:", error);
       alert("Hubo un error al descargar el PDF. Verifica tu conexión a internet e intenta de nuevo.");
       setDownloadingId(null);
