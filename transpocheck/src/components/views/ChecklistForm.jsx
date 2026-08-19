@@ -9,6 +9,27 @@ import SignaturePad from '../ui/SignaturePad';
 import InAppCamera from '../ui/InAppCamera'; // <-- NUEVO COMPONENTE CENTRALIZADO
 import { resizeImage, formatMoney } from '../../utils/helpers';
 import { processVoiceCommand } from '../../utils/aiInterpreter';
+const FormattedMonthInput = ({ value, onChange, isExp }) => {
+  const [focused, setFocused] = useState(false);
+  const formatMonthToShort = (yyyyMm) => {
+    if (!yyyyMm) return '';
+    const [y, m] = yyyyMm.split('-');
+    if (!y || !m) return yyyyMm;
+    const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    return `${months[parseInt(m, 10) - 1]}-${y}`;
+  };
+  return (
+    <input
+      type={focused ? "month" : "text"}
+      value={focused ? value : formatMonthToShort(value)}
+      onChange={onChange}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      placeholder="MM-AAAA"
+      className={`w-full bg-white dark:bg-slate-900 border p-1.5 rounded-lg text-xs font-black text-slate-700 dark:text-slate-300 outline-none text-center transition-colors uppercase ${isExp ? 'border-red-300 dark:border-red-700/50 focus:border-red-500' : 'border-green-200 dark:border-green-800/50 focus:border-green-500'}`}
+    />
+  );
+};
 
 
 export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList: rawClients, drivers, expenses, vehicles, uploadImageToStorage, pushSyncTask }) {
@@ -83,6 +104,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
   const [isListening, setIsListening] = useState(false);
   const [isInterpreting, setIsInterpreting] = useState(false);
   const recognitionRef = useRef(null);
+  const [liveTranscript, setLiveTranscript] = useState('');
 
   // Lista dinámica de equipamiento
   const [equipmentList, setEquipmentList] = useState([
@@ -440,15 +462,26 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
     const recognition = new SpeechRecognition();
     recognition.lang = 'es-CL';
-    recognition.interimResults = false;
+    recognition.interimResults = true;
     recognition.maxAlternatives = 1;
 
     recognition.onstart = () => {
       setIsListening(true);
+      setLiveTranscript('');
     };
 
     recognition.onresult = async (event) => {
-      const transcript = event.results[0][0].transcript;
+      let transcript = '';
+      let isFinal = false;
+      for (let i = 0; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+        if (event.results[i].isFinal) isFinal = true;
+      }
+      setLiveTranscript(transcript);
+
+      if (!isFinal) return;
+      
+      recognition.stop();
       setIsListening(false);
       setIsInterpreting(true);
       
@@ -483,6 +516,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
         showAlert("❌ No se pudo interpretar el comando de voz: " + error.message);
       } finally {
         setIsInterpreting(false);
+        setTimeout(() => setLiveTranscript(''), 4000);
       }
     };
 
@@ -1087,7 +1121,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                         <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                           <div className={`${isExp ? 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800/50' : 'bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800/50'} border p-2 rounded-xl flex flex-col gap-1 shadow-inner transition-colors`}>
                             <p className={`text-[9px] font-extrabold uppercase tracking-widest text-center ${isExp ? 'text-red-700 dark:text-red-400' : 'text-green-700 dark:text-green-400'}`}>Vencimiento {isExp && '(VENCIDO)'}</p>
-                            <input type="month" value={(formData.docsExpiry?.[doc.id] || '').substring(0, 7)} onChange={(e) => setF('docsExpiry', { ...(formData.docsExpiry || {}), [doc.id]: e.target.value })} className={`w-full bg-white dark:bg-slate-900 border p-1.5 rounded-lg text-xs font-black text-slate-700 dark:text-slate-300 outline-none text-center transition-colors ${isExp ? 'border-red-300 dark:border-red-700/50 focus:border-red-500' : 'border-green-200 dark:border-green-800/50 focus:border-green-500'}`} />
+                            <FormattedMonthInput value={(formData.docsExpiry?.[doc.id] || '').substring(0, 7)} onChange={(e) => setF('docsExpiry', { ...(formData.docsExpiry || {}), [doc.id]: e.target.value })} isExp={isExp} />
                           </div>
                         </div>
                       )}
@@ -1847,6 +1881,20 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
           <Mic className="w-6 h-6 text-white" />
         )}
       </button>
+
+      {/* MODAL DE TRANSCRIPCIÓN EN VIVO */}
+      {(isListening || isInterpreting || liveTranscript) && (
+        <div className="fixed bottom-40 right-4 z-50 bg-slate-900/95 backdrop-blur-md p-4 rounded-2xl border-2 border-indigo-500 shadow-2xl max-w-xs animate-in slide-in-from-bottom-2">
+          <p className="text-white font-bold text-sm italic">
+            {liveTranscript ? `"${liveTranscript}"` : 'Escuchando...'}
+          </p>
+          {isInterpreting && (
+            <p className="text-xs text-indigo-300 mt-2 flex items-center gap-1">
+              <Loader2 className="w-3 h-3 animate-spin"/> Procesando con IA...
+            </p>
+          )}
+        </div>
+      )}
 
       {uploadProgress.active && (
         <div className="fixed bottom-[88px] left-1/2 transform -translate-x-1/2 z-[60] w-[92%] max-w-sm animate-in slide-in-from-bottom-5 duration-300">
