@@ -10,7 +10,17 @@ import InAppCamera from '../ui/InAppCamera'; // <-- NUEVO COMPONENTE CENTRALIZAD
 import { resizeImage, formatMoney } from '../../utils/helpers';
 import { processVoiceCommand } from '../../utils/aiInterpreter';
 const FormattedMonthInput = ({ value, onChange, isExp }) => {
-  const [focused, setFocused] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
+  // Initialize selected year when opening
+  useEffect(() => {
+    if (isOpen) {
+      const initialY = value ? parseInt(value.split('-')[0], 10) : new Date().getFullYear();
+      setSelectedYear(initialY);
+    }
+  }, [isOpen, value]);
+
   const formatMonthToShort = (yyyyMm) => {
     if (!yyyyMm) return '';
     const [y, m] = yyyyMm.split('-');
@@ -18,16 +28,88 @@ const FormattedMonthInput = ({ value, onChange, isExp }) => {
     const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
     return `${months[parseInt(m, 10) - 1]}-${y}`;
   };
+
+  const handleSelect = (y, m) => {
+    const formatted = `${y}-${m.toString().padStart(2, '0')}`;
+    // Simulate event object to match existing onChange expectations
+    onChange({ target: { value: formatted } });
+    setIsOpen(false);
+  };
+
+  const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
   return (
-    <input
-      type={focused ? "month" : "text"}
-      value={focused ? value : formatMonthToShort(value)}
-      onChange={onChange}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
-      placeholder="MM-AAAA"
-      className={`w-full bg-white dark:bg-slate-900 border p-1.5 rounded-lg text-xs font-black text-slate-700 dark:text-slate-300 outline-none text-center transition-colors uppercase ${isExp ? 'border-red-300 dark:border-red-700/50 focus:border-red-500' : 'border-green-200 dark:border-green-800/50 focus:border-green-500'}`}
-    />
+    <>
+      <div
+        onClick={() => setIsOpen(true)}
+        className={`w-full bg-white dark:bg-slate-900 border p-1.5 rounded-lg text-xs font-black text-slate-700 dark:text-slate-300 outline-none text-center transition-colors uppercase cursor-pointer flex items-center justify-center min-h-[34px] ${isExp ? 'border-red-300 dark:border-red-700/50' : 'border-green-200 dark:border-green-800/50'} ${!value ? 'text-slate-400 dark:text-slate-500' : ''}`}
+      >
+        {value ? formatMonthToShort(value) : 'MM-AAAA'}
+      </div>
+
+      {isOpen && (
+        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-xs overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+              <h3 className="font-bold text-slate-800 dark:text-white">Seleccionar Fecha</h3>
+              <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 bg-slate-200/50 dark:bg-slate-700/50 rounded-full">
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div className="p-4">
+              <div className="flex justify-between items-center mb-4 bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
+                <button 
+                  onClick={() => setSelectedYear(y => y - 1)}
+                  className="w-10 h-10 flex items-center justify-center bg-white dark:bg-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 shadow-sm transition-colors"
+                >
+                  -
+                </button>
+                <span className="text-lg font-black text-slate-800 dark:text-white">{selectedYear}</span>
+                <button 
+                  onClick={() => setSelectedYear(y => y + 1)}
+                  className="w-10 h-10 flex items-center justify-center bg-white dark:bg-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 shadow-sm transition-colors"
+                >
+                  +
+                </button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                {months.map((m, i) => {
+                  const monthNum = i + 1;
+                  const isSelected = value && parseInt(value.split('-')[1], 10) === monthNum && parseInt(value.split('-')[0], 10) === selectedYear;
+                  return (
+                    <button
+                      key={m}
+                      onClick={() => handleSelect(selectedYear, monthNum)}
+                      className={`py-3 rounded-xl font-bold text-sm transition-all active:scale-95 ${
+                        isSelected 
+                          ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30 ring-2 ring-blue-600 ring-offset-2 dark:ring-offset-slate-900' 
+                          : 'bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-700/50'
+                      }`}
+                    >
+                      {m}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-800">
+               <button 
+                 onClick={() => {
+                   onChange({ target: { value: '' } });
+                   setIsOpen(false);
+                 }}
+                 className="w-full py-2.5 rounded-xl font-bold text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+               >
+                 Borrar Fecha
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
