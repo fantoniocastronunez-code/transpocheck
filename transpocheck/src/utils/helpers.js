@@ -12,6 +12,12 @@ export const formatDateDisplay = (dateString) => {
   return `${d}/${m}/${y}`;
 };
 
+export const getVehicleIdentifierLabel = (val) => {
+  const cleanVal = val || '';
+  if (cleanVal.length === 17) return `VIN: ${cleanVal}`;
+  return `Patente: ${cleanVal || 'S/N'}`;
+};
+
 export const resizeImage = (file, maxWidth = 1280, quality = 0.75) => {
   return new Promise((resolve, reject) => {
     // 1. Método de Respaldo Clásico (Por si es un iPhone/Safari muy antiguo)

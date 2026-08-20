@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { 
     BarChart3, Users, Car, CheckCircle, Map as MapIcon, Navigation, Repeat, X, MapPin, DollarSign, Download, ChevronLeft, ChevronRight, Calendar
 } from 'lucide-react';
+import { getVehicleIdentifierLabel } from '../../utils/helpers';
 
 export default function StatsView({ jobs = [], drivers = [], vehicles = [], allClientsList = [] }) {
     // ESTADO DEL MODAL (Ventana flotante de detalles)
@@ -222,7 +223,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
             const plate = (j.plate && j.plate !== 'S/N') ? j.plate : ((j.vin && j.vin !== 'S/N') ? j.vin : null);
             return plate && plate.toUpperCase().trim() === targetPlate;
         });
-        setModalData({ title: `Movimientos Patente: ${targetPlate}`, jobs: filtered });
+        setModalData({ title: `Movimientos ${getVehicleIdentifierLabel(targetPlate)}`, jobs: filtered });
     };
 
     // NUEVO: Exportar tabla a Excel (CSV)

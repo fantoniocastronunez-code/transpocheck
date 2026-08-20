@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import SignaturePad from '../ui/SignaturePad';
 import InAppCamera from '../ui/InAppCamera'; // <-- NUEVO COMPONENTE CENTRALIZADO
-import { resizeImage, formatMoney } from '../../utils/helpers';
+import { resizeImage, formatMoney, getVehicleIdentifierLabel } from '../../utils/helpers';
 import { processVoiceCommand } from '../../utils/aiInterpreter';
 const FormattedMonthInput = ({ value, onChange, isExp }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -751,14 +751,16 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
       }
     };
 
+    const getIdentifier = getVehicleIdentifierLabel;
+
     if (d.hasFuelCharge && d.fuelChargeAmount) {
-      processExpense(d.fuelChargeAmount, `Carga Combustible (Patente: ${d.plateOrVin || 'S/N'})`);
+      processExpense(d.fuelChargeAmount, `Carga Combustible (${getIdentifier(d.plateOrVin)})`);
     }
 
     if (job.tripType === 'revision') {
-      if (job.rtData?.revision && d.prtCostRevision) processExpense(d.prtCostRevision, `Valor Revisión Técnica (Patente: ${d.plateOrVin || 'S/N'})`);
-      if (job.rtData?.inspeccion && d.prtCostInspeccion) processExpense(d.prtCostInspeccion, `Valor Inspección Visual (Patente: ${d.plateOrVin || 'S/N'})`);
-      if (job.rtData?.frenos && d.prtCostFrenos) processExpense(d.prtCostFrenos, `Valor Cert. Frenos (Patente: ${d.plateOrVin || 'S/N'})`);
+      if (job.rtData?.revision && d.prtCostRevision) processExpense(d.prtCostRevision, `Valor Revisión Técnica (${getIdentifier(d.plateOrVin)})`);
+      if (job.rtData?.inspeccion && d.prtCostInspeccion) processExpense(d.prtCostInspeccion, `Valor Inspección Visual (${getIdentifier(d.plateOrVin)})`);
+      if (job.rtData?.frenos && d.prtCostFrenos) processExpense(d.prtCostFrenos, `Valor Cert. Frenos (${getIdentifier(d.plateOrVin)})`);
     }
 
     // Comprobar saldo ANTES de dejar ir al conductor
@@ -780,7 +782,8 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     onComplete(); // ESTO CIERRA LA PANTALLA INSTANTÁNEAMENTE
 
     // Registra la tarea en la cola global
-    const syncTask = pushSyncTask ? pushSyncTask(`Acta Patente ${d.plateOrVin || 'S/N'}`) : { finish: () => { }, error: () => { } };
+    const identifierLabel = getVehicleIdentifierLabel(d.plateOrVin).replace(': ', ' ');
+    const syncTask = pushSyncTask ? pushSyncTask(`Acta ${identifierLabel}`) : { finish: () => { }, error: () => { } };
 
     // --- 3. SUBIDA SILENCIOSA (SEGUNDO PLANO) ---
     const ejecutarSegundoPlano = async () => {
@@ -1802,7 +1805,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
                   <div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-lg text-blue-600 dark:text-blue-400"><Wallet className="w-5 h-5" /></div>
                   <div>
                     <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase leading-none">Fondo Asignado</p>
-                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-1">Patente: {job.plate || job.vin || 'N/A'}</p>
+                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-1">{getVehicleIdentifierLabel(job.plate || job.vin)}</p>
                   </div>
                 </div>
                 <p className="text-xl font-extrabold text-blue-700 dark:text-blue-400">
