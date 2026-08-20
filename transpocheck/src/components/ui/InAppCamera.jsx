@@ -135,16 +135,26 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
     } else if (level === 2) {
        targetDevice = findByKeyword(['tele', 'telephoto', 'zoom', '2x', 'teleobjetivo']);
        if (!targetDevice) {
-           targetDevice = devices.length > 1 ? devices[1] : devices[0];
-           fallbackDigitalZoom = 2; 
+           if (devices.length >= 3) {
+               targetDevice = devices[2];
+               fallbackDigitalZoom = 1;
+           } else if (devices.length === 2) {
+               targetDevice = devices[1]; 
+               fallbackDigitalZoom = 2; // Digital zoom on the main camera
+           } else {
+               targetDevice = devices[0];
+               fallbackDigitalZoom = 2;
+           }
        } else {
            fallbackDigitalZoom = 1;
        }
     } else {
-       targetDevice = findByKeyword(['main', 'principal', 'estandar', 'standard']);
+       targetDevice = findByKeyword(['main', 'principal', 'estandar', 'standard', '1x']);
        if (!targetDevice) {
-           // Filtro universal: si no hay etiquetas claras, la cámara principal suele ser la 1 (si hay múltiples lentes)
-           targetDevice = devices.find(d => !d.label.toLowerCase().includes('ultra') && !d.label.toLowerCase().includes('tele') && !d.label.toLowerCase().includes('angular')) || (devices.length > 1 ? devices[1] : devices[0]);
+           // En iOS Safari, a menudo todas se llaman "Cámara trasera". 
+           // Si tenemos más de 1 lente, asumimos que el 0 es el gran angular (0.5x) y el 1 es el principal (1x).
+           const nonUltra = devices.find(d => !d.label.toLowerCase().includes('ultra') && !d.label.toLowerCase().includes('tele') && !d.label.toLowerCase().includes('angular') && d.deviceId !== devices[0]?.deviceId);
+           targetDevice = nonUltra || (devices.length > 1 ? devices[1] : devices[0]);
        }
        fallbackDigitalZoom = 1;
     }
