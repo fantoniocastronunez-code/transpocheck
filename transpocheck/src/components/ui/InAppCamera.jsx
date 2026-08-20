@@ -259,7 +259,8 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
     const y = (clientY - rect.top) * scaleY;
     
     ctx.lineTo(x, y);
-    ctx.strokeStyle = '#ef4444'; // Red-500
+    ctx.globalCompositeOperation = 'difference';
+    ctx.strokeStyle = 'white'; // Blanco con diferencia invierte el color subyacente
     ctx.lineWidth = Math.max(4, canvas.width / 120); 
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
