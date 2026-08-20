@@ -259,9 +259,15 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
     const y = (clientY - rect.top) * scaleY;
     
     ctx.lineTo(x, y);
-    ctx.globalCompositeOperation = 'difference';
-    ctx.strokeStyle = 'white'; // Blanco con diferencia invierte el color subyacente
-    ctx.lineWidth = Math.max(4, canvas.width / 120); 
+    ctx.globalCompositeOperation = 'source-over';
+    
+    // Borde negro (Sombra fuerte) para contraste en fondos claros
+    ctx.shadowColor = 'black';
+    ctx.shadowBlur = 8;
+    
+    // Color principal fluorescente para contraste en fondos oscuros
+    ctx.strokeStyle = '#eab308'; // Amarillo brillante (Yellow-500)
+    ctx.lineWidth = Math.max(5, canvas.width / 100); 
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.stroke();
