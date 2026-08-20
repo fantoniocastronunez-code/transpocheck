@@ -52,7 +52,7 @@ const FormattedMonthInput = ({ value, onChange, isExp }) => {
           <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-xs overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
             <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
               <h3 className="font-bold text-slate-800 dark:text-white">Seleccionar Fecha</h3>
-              <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 bg-slate-200/50 dark:bg-slate-700/50 rounded-full">
+              <button type="button" onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 bg-slate-200/50 dark:bg-slate-700/50 rounded-full">
                 <X size={18} />
               </button>
             </div>
@@ -60,6 +60,7 @@ const FormattedMonthInput = ({ value, onChange, isExp }) => {
             <div className="p-4">
               <div className="flex justify-between items-center mb-4 bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
                 <button 
+                  type="button"
                   onClick={() => setSelectedYear(y => y - 1)}
                   className="w-10 h-10 flex items-center justify-center bg-white dark:bg-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 shadow-sm transition-colors"
                 >
@@ -67,6 +68,7 @@ const FormattedMonthInput = ({ value, onChange, isExp }) => {
                 </button>
                 <span className="text-lg font-black text-slate-800 dark:text-white">{selectedYear}</span>
                 <button 
+                  type="button"
                   onClick={() => setSelectedYear(y => y + 1)}
                   className="w-10 h-10 flex items-center justify-center bg-white dark:bg-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 shadow-sm transition-colors"
                 >
@@ -81,6 +83,7 @@ const FormattedMonthInput = ({ value, onChange, isExp }) => {
                   return (
                     <button
                       key={m}
+                      type="button"
                       onClick={() => handleSelect(selectedYear, monthNum)}
                       className={`py-3 rounded-xl font-bold text-sm transition-all active:scale-95 ${
                         isSelected 
@@ -97,6 +100,7 @@ const FormattedMonthInput = ({ value, onChange, isExp }) => {
             
             <div className="p-3 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-800">
                <button 
+                 type="button"
                  onClick={() => {
                    onChange({ target: { value: '' } });
                    setIsOpen(false);
