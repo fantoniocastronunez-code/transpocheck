@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Camera, X, CheckCircle, RefreshCw, Edit3 } from 'lucide-react';
 
 export default function InAppCamera({ isOpen, onClose, onCapture, title, enableAnnotation = false }) {
@@ -314,9 +315,8 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
 
   if (!isOpen) return null;
 
-  if (previewImage) {
-    return (
-      <div className="fixed inset-0 bg-black z-[99999] flex flex-col animate-in fade-in duration-200">
+  const modalContent = previewImage ? (
+      <div className="fixed inset-0 w-full h-[100dvh] bg-black z-[99999] flex flex-col animate-in fade-in duration-200">
         <div className="bg-black text-white p-4 flex justify-between items-center z-10 shadow-md border-b border-slate-800">
           <h3 className="font-black text-sm uppercase tracking-widest flex items-center gap-2 truncate max-w-[50%]"><Edit3 className="w-5 h-5 text-red-400 shrink-0"/> Marcar Daños</h3>
           <button onClick={onClose} className="bg-white/10 p-2 rounded-full text-white hover:bg-white/20 transition-colors"><X className="w-5 h-5"/></button>
@@ -359,11 +359,10 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
            </button>
         </div>
       </div>
-    );
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black z-[99999] flex flex-col animate-in fade-in duration-200">
+        </div>
+      </div>
+  ) : (
+    <div className="fixed inset-0 w-full h-[100dvh] bg-black z-[99999] flex flex-col animate-in fade-in duration-200">
       <div className="bg-black text-white p-4 flex justify-between items-center z-10 shadow-md border-b border-slate-800">
         <h3 className="font-black text-sm uppercase tracking-widest flex items-center gap-2 truncate max-w-[40%]"><Camera className="w-5 h-5 text-blue-400 shrink-0"/> {title}</h3>
         <div className="flex items-center gap-3">
@@ -422,4 +421,6 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
