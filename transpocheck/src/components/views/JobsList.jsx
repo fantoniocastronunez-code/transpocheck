@@ -1534,7 +1534,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                         const oldHistDocHref = j.guideLink || j.guideUrl || j.docLink || j.docUrl || j.rtLink || j.rtDoc || (j.rtData && j.rtData.link) || j.pdfUrl || j.fileUrl || j.checklist?.guiaDespachoPdf || j.checklist?.guiaDespachoLink;
                         if (oldHistDocHref) {
                           return (
-                            <a href={oldHistDocHref} onClick={(e) => e.stopPropagation()} target="_blank" rel="noreferrer" className="p-1.5 bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 dark:bg-cyan-900/40 rounded-md transition-colors" title="Ver Guía/Doc Adjunto">
+                            <a href={oldHistDocHref} onClick={(e) => e.stopPropagation()} target="_blank" rel="noreferrer" className="relative p-1.5 bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 dark:bg-cyan-900/40 rounded-md transition-colors" title="Ver Guía/Doc Adjunto">
+                              <span className="absolute -top-1.5 -right-1.5 bg-cyan-600 text-white text-[7px] font-black px-1 py-0.5 rounded shadow-sm">GUÍA</span>
                               <FileText className="w-3.5 h-3.5" />
                             </a>
                           );

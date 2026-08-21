@@ -251,7 +251,7 @@ export default function HistoryJobCard({ j, ...props }) {
              if (historyDocHref) {
                 return (
                   <a href={historyDocHref} onClick={(e)=>e.stopPropagation()} target="_blank" rel="noreferrer" className="flex-1 py-1.5 flex justify-center items-center bg-cyan-50 dark:bg-cyan-900/30 hover:bg-cyan-100 dark:bg-cyan-900/40 text-cyan-600 dark:text-cyan-400 rounded-lg transition-colors relative" title="Ver Guía/Doc Adjunto">
-                     <span className="absolute -top-1.5 -right-1.5 bg-cyan-600 text-white text-[7px] font-black px-1 py-0.5 rounded shadow-sm">DOC</span>
+                     <span className="absolute -top-1.5 -right-1.5 bg-cyan-600 text-white text-[7px] font-black px-1 py-0.5 rounded shadow-sm">GUÍA</span>
                      <FileText className="w-3.5 h-3.5"/>
                   </a>
                 );
