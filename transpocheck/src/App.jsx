@@ -365,6 +365,19 @@ function LogisticApp() {
         overscroll-behavior-y: none;
         touch-action: manipulation;
         -webkit-tap-highlight-color: transparent;
+
+        /* Sombreado claro para resaltar texto en modo claro */
+        text-shadow: 0px 1px 2px rgba(255, 255, 255, 0.9), 0px 0px 5px rgba(255, 255, 255, 0.7);
+      }
+
+      html.dark body {
+        /* Sombreado oscuro para resaltar texto en modo oscuro */
+        text-shadow: 0px 1px 3px rgba(0, 0, 0, 0.9), 0px 0px 6px rgba(0, 0, 0, 0.6);
+      }
+
+      /* Evitar que botones e inputs se vean sucios */
+      button, input, select, textarea, .no-shadow {
+        text-shadow: none !important;
       }
       
       .font-alfa { font-family: 'Alfa Slab One', serif; font-weight: 400; }
@@ -615,7 +628,7 @@ function LogisticApp() {
       style={{ 
         backgroundImage: darkMode 
           ? "linear-gradient(to bottom, rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.95)), url('/bg_glass.jpg')" 
-          : "linear-gradient(to bottom, rgba(241, 245, 249, 0.4), rgba(203, 213, 225, 0.7)), url('/bg_road_light.jpg')" 
+          : "linear-gradient(to bottom, rgba(241, 245, 249, 0.4), rgba(203, 213, 225, 0.7)), url('/bg_desert_light.jpg')" 
       }}
     >
       {globalStyles}
