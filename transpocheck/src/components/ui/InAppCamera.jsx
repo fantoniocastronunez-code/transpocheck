@@ -21,7 +21,12 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
     if (stream && !isFirst) stream.getTracks().forEach(t => t.stop());
     
     try {
-       const constraints = deviceId ? { video: { deviceId: { exact: deviceId } } } : { video: { facingMode: 'environment' } };
+       // Solicitar máxima resolución posible (ideal 4K, el navegador ajustará al máximo de la cámara)
+       const baseConstraints = { width: { ideal: 4096 }, height: { ideal: 2160 } };
+       const constraints = deviceId 
+         ? { video: { deviceId: { exact: deviceId }, ...baseConstraints } } 
+         : { video: { facingMode: 'environment', ...baseConstraints } };
+       
        const newStream = await navigator.mediaDevices.getUserMedia(constraints);
        
        if (isFirst) {
