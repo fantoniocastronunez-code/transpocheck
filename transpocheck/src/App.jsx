@@ -617,7 +617,7 @@ function LogisticApp() {
       style={{ 
         backgroundImage: darkMode 
           ? "linear-gradient(to bottom, rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.95)), url('/bg_glass.jpg')" 
-          : "linear-gradient(to bottom, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.9)), url('/bg_glass_light.jpg')" 
+          : "linear-gradient(to bottom, rgba(241, 245, 249, 0.4), rgba(203, 213, 225, 0.7)), url('/bg_glass_light.jpg')" 
       }}
     >
       {globalStyles}
