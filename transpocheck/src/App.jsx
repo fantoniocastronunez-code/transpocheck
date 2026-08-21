@@ -358,7 +358,12 @@ function LogisticApp() {
       
       body { 
         font-family: 'Nunito', sans-serif; 
-        background-color: #f8fafc; 
+        background-color: #1a1a2e; /* Fallback */
+        background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.95)), url('/bg_glass.jpg');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        color: #f8fafc;
         transition: background-color 0.3s; 
         
         /* MAGIA APP NATIVA */
@@ -450,9 +455,9 @@ function LogisticApp() {
   
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-slate-100 flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
         {globalStyles}
-        <div className="bg-white dark:bg-slate-900 p-8 sm:p-10 rounded-3xl shadow-xl w-full max-w-md text-center border border-blue-50">
+        <div className="bg-white/10 dark:bg-black/40 backdrop-blur-md p-8 sm:p-10 rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.3)] w-full max-w-md text-center border border-white/20">
           <div className="flex justify-center items-center gap-6 mb-6">
             <img src="/LogoLogistica.png" alt="Logistica TS" className="h-24 w-auto object-contain drop-shadow-md hover:scale-105 transition-transform" />
             <div className="w-px h-16 bg-slate-200 dark:bg-slate-700"></div>
@@ -572,9 +577,9 @@ function LogisticApp() {
   // EXCEPCIÓN: Conductores con rol part_time o asignados temporalmente entran directo a trabajar.
   if (activeRole === 'driver' && !isPartTimeAssigned && myDriver?.role !== 'part_time' && (needsOnboarding || !myDriver)) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans pb-10 transition-colors duration-300 dark:bg-slate-900 dark:text-slate-200">
+      <div className="min-h-screen text-slate-800 dark:text-slate-200 font-sans pb-10 transition-colors duration-300">
         {globalStyles}
-        <header className="fixed-nav-bar bg-blue-600 dark:bg-black dark:border-b dark:border-slate-800 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors">
+        <header className="fixed-nav-bar bg-black/40 backdrop-blur-md border-b border-white/10 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors">
            <div className="flex items-center gap-3">
              <div className="bg-white dark:bg-slate-900 p-1.5 rounded-xl"><img src="/logo.png" className="w-8 h-8 object-contain"/></div>
              <h1 className="font-alfa text-xl text-white">Verificación Obligatoria</h1>
@@ -610,9 +615,9 @@ function LogisticApp() {
   // -----------------------------------------------------------------
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans pb-32 transition-colors duration-300 dark:bg-slate-900 dark:text-slate-200">
+    <div className="min-h-screen text-slate-800 dark:text-slate-200 font-sans pb-32 transition-colors duration-300">
       {globalStyles}
-      <header className="fixed-nav-bar bg-blue-600 dark:bg-black dark:border-b dark:border-slate-800 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300">
+      <header className="fixed-nav-bar bg-black/40 backdrop-blur-md border-b border-white/10 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300">
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
       {/* Logo de la app más pequeño en móvil */}
       <div className="bg-white dark:bg-slate-900 p-1 sm:p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">

@@ -936,7 +936,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
   if (isInvalidJob) return null;
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl border pb-10 relative">
+    <div className="bg-white/10 dark:bg-black/30 backdrop-blur-md rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.2)] border border-white/20 pb-10 relative">
       {isDraftLoaded && (
         <div className="absolute -top-12 left-0 right-0 flex justify-center items-center">
           <div className="bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 text-xs px-3 py-1.5 rounded-full font-bold flex items-center gap-2 shadow-sm border border-amber-200 dark:border-amber-800/50">
@@ -949,7 +949,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
       <div className="bg-blue-600 text-white p-5 flex justify-between items-center rounded-t-3xl"><h2 className="font-bold text-base"><FileText className="inline w-5 h-5 mr-1" /> Formulario Checklist</h2><button type="button" onClick={() => showConfirm("¿Deseas salir? (Tu progreso quedará guardado localmente)", onCancel)} className="bg-blue-800 px-3 py-1 rounded-xl text-xs font-bold">Salir</button></div>
 
-      <div className="sticky top-[64px] sm:top-[80px] z-15 bg-white dark:bg-slate-900 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 px-5 py-3 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)]">
+      <div className="sticky top-[64px] sm:top-[80px] z-15 bg-white/20 dark:bg-black/50 backdrop-blur-lg border-b border-white/20 px-5 py-3 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.2)]">
         <div className="flex justify-between items-center mb-1.5">
           <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Progreso del Acta</span>
           <span className="text-xs font-black text-blue-600 dark:text-blue-400">

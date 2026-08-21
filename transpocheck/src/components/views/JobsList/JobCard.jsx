@@ -32,7 +32,7 @@ export default function JobCard({ j, ...props }) {
     return (
       // --- OPTIMIZACIÓN: Quitamos el overflow-hidden del padre para que el menú no se corte ---
       // Además, si la tarjeta tiene el menú abierto, elevamos su z-index
-      <div key={j.id} className={`bg-white dark:bg-slate-900 rounded-[2rem] border p-4 sm:p-5 flex flex-col shadow-sm relative hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)] hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-default group ${j.isUrgent ? 'border-red-400 ring-2 ring-red-100 dark:ring-red-900/30' : (j.fleetGroup ? 'border-indigo-200 dark:border-indigo-900/50' : 'border-slate-100 dark:border-slate-800')} ${menuOpenId === j.id ? 'z-50' : 'z-10'}`}>
+      <div key={j.id} className={`bg-white/10 dark:bg-black/30 backdrop-blur-md rounded-[2rem] border p-4 sm:p-5 flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.15)] relative hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-default group ${j.isUrgent ? 'border-red-400/50 ring-2 ring-red-400/30' : (j.fleetGroup ? 'border-indigo-400/50' : 'border-white/20')} ${menuOpenId === j.id ? 'z-50' : 'z-10'}`}>
         
         {/* --- OPTIMIZACIÓN: Los fondos decorativos ahora viven en un contenedor con overflow-hidden para no salirse de los bordes redondeados --- */}
         <div className="absolute inset-0 rounded-[2rem] overflow-hidden pointer-events-none">
@@ -42,7 +42,7 @@ export default function JobCard({ j, ...props }) {
             <div className={`absolute top-0 left-0 bottom-0 w-1.5 transition-all ${isRequested ? 'bg-gradient-to-b from-pink-400 to-pink-600' : (isPending ? 'bg-gradient-to-b from-amber-300 to-amber-500' : 'bg-gradient-to-b from-blue-400 to-blue-600 shadow-[0_0_8px_rgba(59,130,246,0.5)]')}`}></div>
         </div>
         
-        <div className="flex justify-between items-start mb-5 border-b border-slate-100 dark:border-slate-800/80 dark:border-slate-800/80 pb-4 pl-2 relative z-20">
+        <div className="flex justify-between items-start mb-5 border-b border-white/10 pb-4 pl-2 relative z-20">
           <div className="flex flex-col gap-3 w-full">
             <div className="flex justify-between items-start w-full gap-2">
               <div className="shrink-0 relative z-10 flex flex-col items-end gap-1">
@@ -74,7 +74,7 @@ export default function JobCard({ j, ...props }) {
                 <button onClick={()=>setMenuOpenId(menuOpenId===j.id?null:j.id)} className="p-2 text-slate-400 hover:bg-slate-50 dark:bg-slate-900 rounded-xl transition-colors"><MoreVertical className="w-5 h-5"/></button>
                 {/* --- OPTIMIZACIÓN: z-[999] para aplastar cualquier capa inferior --- */}
                 {menuOpenId===j.id && (
-                  <div className="absolute right-0 top-10 bg-white dark:bg-slate-800 border dark:border-slate-700 shadow-[0_10px_40px_rgba(0,0,0,0.2)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.5)] rounded-xl w-56 z-[999] overflow-hidden text-xs dark:text-slate-200">
+                  <div className="absolute right-0 top-10 bg-white/20 dark:bg-black/50 backdrop-blur-lg border border-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.3)] rounded-xl w-56 z-[999] overflow-hidden text-xs dark:text-slate-200">
                     <button onClick={() => {
                       const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
                       const textToShare = `📍 Sigue en tiempo real todos los traslados de ${j.client || 'tu empresa'} aquí:\n${url}`;
