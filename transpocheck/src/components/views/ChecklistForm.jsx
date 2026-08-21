@@ -158,7 +158,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
     client: job.client || '', manualClient: '', brand: job.brand || '', model: job.model || '', plateOrVin: job.plate || job.vin || '', origin: job.origin || '', destination: job.destination || '',
     vehicleType: job.checklist?.vehicleType || job.vehicleType || matchedVehicle?.vehicleType || matchedVehicle?.type || 'auto',
     fuelLevel: 50, mileage: job.checklist?.mileage || '',
-    photos: job.checklist?.photos || { front: false, left: false, right: false, back: false, tire: false, dashboard: false, mileage: false, ...Array.from({ length: 30 }).reduce((acc, _, i) => { acc[`det${i + 1}`] = false; return acc; }, {}) },
+    photos: job.checklist?.photos || { front: false, left: false, right: false, back: false, tire: false, dashboard: false, mileage: false, vin: false, ...Array.from({ length: 30 }).reduce((acc, _, i) => { acc[`det${i + 1}`] = false; return acc; }, {}) },
     detailPins: job.checklist?.detailPins || [],
     pendingPin: null,
     docs: job.checklist?.docs || initialDocs,
@@ -718,6 +718,12 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
       if (currentPhotos < reqPhotos) {
         return showAlert(`⚠️ Evidencia Incompleta: Debes adjuntar las ${reqPhotos} fotografías requeridas para poder cerrar y rendir esta acta.`);
       }
+    }
+
+    // Validación VIN Kovacs
+    const isKovacs = formData.client && formData.client.toLowerCase().includes('kovacs');
+    if (isKovacs && !formData.photos?.vin) {
+      return showAlert("⚠️ Evidencia Incompleta: Es obligatorio adjuntar la foto del NÚMERO VIN para todos los vehículos de Kovacs.");
     }
 
     setIsSubmitting(true);
@@ -1724,11 +1730,17 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
 
                 <div className="grid grid-cols-2 gap-3 mt-6 border-t-2 border-slate-100 dark:border-slate-800 pt-4">
-                  {[{ id: 'dashboard', l: 'Tablero' }, { id: 'tire', l: 'Repuesto' }, { id: 'interior_front', l: 'Int. Adelante' }, { id: 'interior_back', l: 'Int. Atrás' }].map(p => (
-                    <button type="button" key={p.id} onClick={() => handlePhotoClick(p.id, p.l)} className={`w-full h-12 rounded-xl border-2 flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white dark:bg-slate-900 shadow-sm transition-all ${formData.photos[p.id] ? 'border-green-400 ring-2 ring-green-100' : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:bg-slate-900'}`}>
-                      {formData.photos[p.id] ? <><img src={formData.photos[p.id]} className="absolute inset-0 w-full h-full object-cover opacity-30" /><CheckCircle className="w-5 h-5 text-green-500 relative z-10 bg-white dark:bg-slate-900 rounded-full" /><span className="text-[10px] font-black text-green-800 dark:text-green-300 relative z-10">{p.l}</span></> : <><Camera className="w-4 h-4 text-slate-400" /><span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase">{p.l}</span></>}
-                    </button>
-                  ))}
+                  {(() => {
+                    const extraPhotos = [{ id: 'dashboard', l: 'Tablero' }, { id: 'tire', l: 'Repuesto' }, { id: 'interior_front', l: 'Int. Adelante' }, { id: 'interior_back', l: 'Int. Atrás' }];
+                    if (formData.client && formData.client.toLowerCase().includes('kovacs')) {
+                       extraPhotos.unshift({ id: 'vin', l: 'Número VIN (Oblig.)' });
+                    }
+                    return extraPhotos.map(p => (
+                      <button type="button" key={p.id} onClick={() => handlePhotoClick(p.id, p.l)} className={`w-full h-12 rounded-xl border-2 flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white dark:bg-slate-900 shadow-sm transition-all ${formData.photos[p.id] ? 'border-green-400 ring-2 ring-green-100' : (p.id === 'vin' ? 'border-dashed border-red-300 dark:border-red-700/50 hover:bg-red-50 dark:hover:bg-red-900/30' : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:bg-slate-900')}`}>
+                        {formData.photos[p.id] ? <><img src={formData.photos[p.id]} className="absolute inset-0 w-full h-full object-cover opacity-30" /><CheckCircle className="w-5 h-5 text-green-500 relative z-10 bg-white dark:bg-slate-900 rounded-full" /><span className="text-[10px] font-black text-green-800 dark:text-green-300 relative z-10">{p.l}</span></> : <><Camera className={`w-4 h-4 ${p.id === 'vin' ? 'text-red-400 animate-pulse' : 'text-slate-400'}`} /><span className={`text-[10px] font-black uppercase ${p.id === 'vin' ? 'text-red-500 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'}`}>{p.l}</span></>}
+                      </button>
+                    ));
+                  })()}
                 </div>
               </div>
             </div>
