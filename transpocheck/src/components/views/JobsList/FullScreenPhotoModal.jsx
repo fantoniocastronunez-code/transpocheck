@@ -50,18 +50,25 @@ export default function FullScreenPhotoModal({
             initialScale={1}
             minScale={0.5}
             maxScale={8}
+            centerOnInit={true}
             centerZoomedOut={true}
+            limitToBounds={true}
             wheel={{ step: 0.1 }}
             pinch={{ step: 5 }}
             doubleClick={{ disabled: false, step: 0.5 }}
+            panning={{ disabled: false }}
          >
             {({ zoomIn, zoomOut, resetTransform }) => (
                <React.Fragment>
-                  <TransformComponent wrapperStyle={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <TransformComponent 
+                     wrapperStyle={{ width: "100%", height: "100%" }}
+                     contentStyle={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}
+                  >
                      <img 
                         src={fullScreenPhoto} 
                         alt="Ampliación" 
-                        className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl pointer-events-auto" 
+                        draggable={false}
+                        className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl select-none" 
                      />
                   </TransformComponent>
                   
