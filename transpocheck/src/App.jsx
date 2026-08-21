@@ -358,12 +358,7 @@ function LogisticApp() {
       
       body { 
         font-family: 'Nunito', sans-serif; 
-        background-color: #1a1a2e; /* Fallback */
-        background-image: linear-gradient(to bottom, rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.95)), url('/bg_glass.jpg');
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-        color: #f8fafc;
+        background-color: transparent;
         transition: background-color 0.3s; 
         
         /* MAGIA APP NATIVA */
@@ -615,9 +610,12 @@ function LogisticApp() {
   // -----------------------------------------------------------------
 
   return (
-    <div className="min-h-screen text-slate-800 dark:text-slate-200 font-sans pb-32 transition-colors duration-300">
+    <div 
+      className="min-h-screen text-slate-800 dark:text-slate-200 font-sans pb-32 transition-colors duration-300 bg-cover bg-fixed bg-center"
+      style={{ backgroundImage: "linear-gradient(to bottom, rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.95)), url('/bg_glass.jpg')" }}
+    >
       {globalStyles}
-      <header className="fixed-nav-bar bg-black/40 backdrop-blur-md border-b border-white/10 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300">
+      <header className="fixed-nav-bar bg-white/30 dark:bg-black/40 backdrop-blur-md border-b border-white/10 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300">
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
       {/* Logo de la app más pequeño en móvil */}
       <div className="bg-white dark:bg-slate-900 p-1 sm:p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">
