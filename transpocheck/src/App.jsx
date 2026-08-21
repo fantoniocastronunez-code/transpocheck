@@ -82,6 +82,7 @@ function LogisticApp() {
   const [simulatedClient, setSimulatedClient] = useState(() => localStorage.getItem('app_simulatedClient') || '');
   const [simulatedDriverEmail, setSimulatedDriverEmail] = useState(() => localStorage.getItem('app_simulatedDriver') || '');
   const [favDriverEmail, setFavDriverEmail] = useState(() => localStorage.getItem('favDriverEmail') || '');
+  const [uiViewMode, setUiViewMode] = useState(() => localStorage.getItem('app_uiViewMode') || 'pc');
 
   // NUEVO: Sincronización automática de la memoria cada vez que cambias de vista
   useEffect(() => { localStorage.setItem('app_adminTab', adminTab); }, [adminTab]);
@@ -90,6 +91,7 @@ function LogisticApp() {
   useEffect(() => { localStorage.setItem('app_activeRole', activeRole); }, [activeRole]);
   useEffect(() => { localStorage.setItem('app_simulatedClient', simulatedClient); }, [simulatedClient]);
   useEffect(() => { localStorage.setItem('app_simulatedDriver', simulatedDriverEmail); }, [simulatedDriverEmail]);
+  useEffect(() => { localStorage.setItem('app_uiViewMode', uiViewMode); }, [uiViewMode]);
   
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -611,7 +613,7 @@ function LogisticApp() {
 
   return (
     <div 
-      className="min-h-screen text-slate-800 dark:text-slate-200 font-sans pb-32 transition-colors duration-300 bg-cover bg-fixed bg-center"
+      className={`min-h-screen text-slate-800 dark:text-slate-200 font-sans pb-32 transition-colors duration-300 bg-cover bg-fixed bg-center mx-auto relative ${uiViewMode === 'smartphone' ? 'max-w-md shadow-[0_0_50px_rgba(0,0,0,0.5)] border-x border-white/10' : uiViewMode === 'tablet' ? 'max-w-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] border-x border-white/10' : 'w-full'}`}
       style={{ backgroundImage: "linear-gradient(to bottom, rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.95)), url('/bg_glass.jpg')" }}
     >
       {globalStyles}
@@ -742,6 +744,18 @@ function LogisticApp() {
                       }} className="w-full py-2 bg-purple-100 dark:bg-purple-900/40 hover:bg-purple-200 text-purple-700 dark:text-purple-400 rounded-xl text-xs font-black uppercase tracking-wider shadow-sm transition-colors active:bg-purple-300 flex justify-center items-center gap-2">
                         ACTUALIZAR A TODOS
                       </button>
+                    </div>
+                  )}
+
+                  {/* --- BOTONES DE VISTA (SÓLO PARA SUPERADMINS) --- */}
+                  {activeRole === 'admin' && isSuperAdmin && (
+                    <div className="border-t border-slate-100 dark:border-slate-800 pt-3 mt-1 w-full space-y-2">
+                      <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider text-center">Modo de Vista (Emulador)</p>
+                      <div className="flex gap-2 justify-center">
+                        <button onClick={() => setUiViewMode('smartphone')} className={`p-2 flex-1 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1 ${uiViewMode === 'smartphone' ? 'bg-blue-600 text-white border-blue-500 shadow-inner' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`} title="Smartphone">📱 Móvil</button>
+                        <button onClick={() => setUiViewMode('tablet')} className={`p-2 flex-1 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1 ${uiViewMode === 'tablet' ? 'bg-blue-600 text-white border-blue-500 shadow-inner' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`} title="Tablet">💊 Tablet</button>
+                        <button onClick={() => setUiViewMode('pc')} className={`p-2 flex-1 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1 ${uiViewMode === 'pc' ? 'bg-blue-600 text-white border-blue-500 shadow-inner' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`} title="PC">💻 PC</button>
+                      </div>
                     </div>
                   )}
                   
