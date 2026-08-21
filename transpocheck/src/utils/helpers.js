@@ -18,7 +18,7 @@ export const getVehicleIdentifierLabel = (val) => {
   return `Patente: ${cleanVal || 'S/N'}`;
 };
 
-export const resizeImage = (file, maxWidth = 1280, quality = 0.75) => {
+export const resizeImage = (file, maxWidth = 1920, quality = 0.85) => {
   return new Promise((resolve, reject) => {
     // 1. Método de Respaldo Clásico (Por si es un iPhone/Safari muy antiguo)
     const runFallback = () => {

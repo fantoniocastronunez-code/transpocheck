@@ -215,7 +215,7 @@ export default function VehicleHistoryView({ db, showAlert }) {
       {/* Modal de Imagen a Pantalla Completa */}
       {fullScreenImage && (
         <div className="fixed inset-0 bg-slate-900/95 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm cursor-zoom-out animate-in fade-in duration-200" onClick={() => setFullScreenImage(null)}>
-          <button onClick={() => setFullScreenImage(null)} className="absolute top-4 right-4 bg-white dark:bg-slate-900 hover:bg-white dark:bg-slate-900 p-2 rounded-full text-white transition-colors shadow-lg">
+          <button onClick={() => setFullScreenImage(null)} className="absolute top-4 right-4 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 p-2 rounded-full text-slate-800 dark:text-white transition-colors shadow-lg">
             <X className="w-6 h-6" />
           </button>
           <img src={fullScreenImage} alt="Evidencia Ampliada" className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} />

@@ -28,17 +28,17 @@ export default function FullScreenPhotoModal({
                window.open(fullScreenPhoto, '_blank');
              }
            }} 
-           className="bg-white dark:bg-slate-900 p-2 rounded-full hover:bg-white dark:bg-slate-900 transition-colors shadow-lg backdrop-blur-md flex items-center justify-center"
+           className="bg-white dark:bg-slate-900 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-lg backdrop-blur-md flex items-center justify-center"
            title="Descargar Imagen"
          >
-           <FileDown className="w-6 h-6 text-white"/>
+           <FileDown className="w-6 h-6 text-slate-800 dark:text-white"/>
          </button>
          <button 
            onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(null); }} 
-           className="bg-white dark:bg-slate-900 p-2 rounded-full hover:bg-white dark:bg-slate-900 transition-colors shadow-lg backdrop-blur-md flex items-center justify-center" 
+           className="bg-white dark:bg-slate-900 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-lg backdrop-blur-md flex items-center justify-center" 
            title="Cerrar"
          >
-            <X className="w-6 h-6 text-white"/>
+            <X className="w-6 h-6 text-slate-800 dark:text-white"/>
          </button>
        </div>
        <img src={fullScreenPhoto} alt="Ampliación" className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl cursor-default" onClick={(e) => e.stopPropagation()} />
