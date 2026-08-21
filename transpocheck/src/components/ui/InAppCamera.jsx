@@ -359,8 +359,6 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
            </button>
         </div>
       </div>
-        </div>
-      </div>
   ) : (
     <div className="fixed inset-0 w-full h-[100dvh] bg-black z-[99999] flex flex-col animate-in fade-in duration-200">
       <div className="bg-black text-white p-4 flex justify-between items-center z-10 shadow-md border-b border-slate-800">
