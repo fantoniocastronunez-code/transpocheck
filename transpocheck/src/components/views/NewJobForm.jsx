@@ -653,10 +653,10 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                    setTripType('revision');
                    // MAGIA: Auto-asignamos la primera planta PRT si no hay destino previo,
                    // o si el destino anterior no era una PRT
-                   const destInput = document.querySelector('select[name="destination"]');
+                   const destInput = document.querySelector('select[name="prtSelect"]');
                    if (!jobToEdit && prtList.length > 0 && (!destInput || !destInput.value)) {
                       setTimeout(() => {
-                         const select = document.querySelector('select[name="destination"]');
+                         const select = document.querySelector('select[name="prtSelect"]');
                          if (select) select.value = prtList[0].name;
                       }, 100);
                    }
@@ -825,7 +825,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                   <div className="space-y-3 md:row-span-2">
                      <div className="space-y-1">
                         <label className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider ml-1">Planta de Revisión</label>
-                        <select name="prtSelect" defaultValue={jobToEdit?.destination?.split('->')[0]?.trim() || (prtList.length > 0 ? prtList[0].name : '')} required className="w-full border-2 border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-900/30 p-3 text-sm rounded-xl outline-none focus:border-emerald-500 font-bold text-emerald-800 dark:text-emerald-300 shadow-sm cursor-pointer">
+                        <select key={`prtSelect-${prtList.length}`} name="prtSelect" defaultValue={jobToEdit?.destination?.split('->')[0]?.trim() || (prtList.length > 0 ? prtList[0].name : '')} required className="w-full border-2 border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-900/30 p-3 text-sm rounded-xl outline-none focus:border-emerald-500 font-bold text-emerald-800 dark:text-emerald-300 shadow-sm cursor-pointer">
                           <option value="">Selecciona la Planta...</option>
                           {prtList.map((p, idx) => <option key={idx} value={p.name}>{p.name}</option>)}
                         </select>
