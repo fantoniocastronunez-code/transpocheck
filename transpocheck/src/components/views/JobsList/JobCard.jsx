@@ -70,8 +70,8 @@ export default function JobCard({ j, ...props }) {
               </div>
               
               <div className="flex items-center gap-1 relative shrink-0 z-50">
-                {isAdminView && <button onClick={()=>onEditJob(j)} className="p-2 text-blue-500 hover:bg-blue-50 dark:bg-blue-900/30 rounded-xl transition-colors"><Edit2 className="w-5 h-5"/></button>}
-                <button onClick={()=>setMenuOpenId(menuOpenId===j.id?null:j.id)} className="p-2 text-slate-400 hover:bg-slate-50 dark:bg-slate-900 rounded-xl transition-colors"><MoreVertical className="w-5 h-5"/></button>
+                {isAdminView && <button onClick={()=>onEditJob(j)} className="p-2 bg-white/40 dark:bg-black/40 text-blue-600 dark:text-blue-400 hover:bg-white/60 dark:hover:bg-black/60 rounded-xl transition-colors backdrop-blur-sm border border-white/20 shadow-sm"><Edit2 className="w-5 h-5"/></button>}
+                <button onClick={()=>setMenuOpenId(menuOpenId===j.id?null:j.id)} className="p-2 bg-white/40 dark:bg-black/40 text-slate-700 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-black/60 rounded-xl transition-colors backdrop-blur-sm border border-white/20 shadow-sm"><MoreVertical className="w-5 h-5"/></button>
                 {/* --- OPTIMIZACIÓN: z-[999] para aplastar cualquier capa inferior --- */}
                 {menuOpenId===j.id && (
                   <div className="absolute right-0 top-10 bg-white/20 dark:bg-black/50 backdrop-blur-lg border border-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.3)] rounded-xl w-56 z-[999] overflow-hidden text-xs dark:text-slate-200">
