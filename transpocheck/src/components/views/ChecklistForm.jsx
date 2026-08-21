@@ -771,6 +771,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
       if (job.rtData?.revision && d.prtCostRevision) processExpense(d.prtCostRevision, `Valor Revisión Técnica (${getIdentifier(d.plateOrVin)})`);
       if (job.rtData?.inspeccion && d.prtCostInspeccion) processExpense(d.prtCostInspeccion, `Valor Inspección Visual (${getIdentifier(d.plateOrVin)})`);
       if (job.rtData?.frenos && d.prtCostFrenos) processExpense(d.prtCostFrenos, `Valor Cert. Frenos (${getIdentifier(d.plateOrVin)})`);
+      if (job.rtData?.gases && d.prtCostGases) processExpense(d.prtCostGases, `Valor Cert. Gases (${getIdentifier(d.plateOrVin)})`);
     }
 
     // Comprobar saldo ANTES de dejar ir al conductor
@@ -1830,26 +1831,32 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
               </div>
 
 
-              {job.tripType === 'revision' && (job.rtData?.revision || job.rtData?.inspeccion || job.rtData?.frenos) && (
-                <div className="bg-indigo-50 dark:bg-indigo-900/30 border-2 border-indigo-200 dark:border-indigo-800/50 rounded-xl p-4 shadow-sm space-y-3">
+              {job.tripType === 'revision' && (job.rtData?.revision || job.rtData?.inspeccion || job.rtData?.frenos || job.rtData?.gases) && (
+                <div className="bg-indigo-50 dark:bg-indigo-900/30 border-2 border-indigo-200 dark:border-indigo-800/50 rounded-xl p-4 shadow-sm space-y-3 mt-4">
                   <h3 className="text-xs font-extrabold text-indigo-800 dark:text-indigo-300 uppercase tracking-wider flex items-center gap-1.5"><Receipt className="w-4 h-4" /> Valores pagados en Planta (PRT)</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {job.rtData?.revision && (
                       <div className="flex flex-col gap-1">
                         <label className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase">Revisión Técnica ($)</label>
-                        <input type="number" placeholder="Ej: 20000" className="w-full border-2 border-indigo-100 dark:border-indigo-800/50 p-2 rounded-xl font-bold text-sm bg-white dark:bg-slate-900" value={formData.prtCostRevision || ''} onChange={e => setF('prtCostRevision', e.target.value)} />
+                        <input type="number" placeholder="Ej: 20000" className="w-full border-2 border-indigo-100 dark:border-indigo-800/50 p-2 rounded-xl font-bold text-sm bg-white dark:bg-slate-900 outline-none" value={formData.prtCostRevision || ''} onChange={e => setF('prtCostRevision', e.target.value)} />
                       </div>
                     )}
                     {job.rtData?.inspeccion && (
                       <div className="flex flex-col gap-1">
                         <label className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase">Inspección Visual ($)</label>
-                        <input type="number" placeholder="Ej: 5000" className="w-full border-2 border-indigo-100 dark:border-indigo-800/50 p-2 rounded-xl font-bold text-sm bg-white dark:bg-slate-900" value={formData.prtCostInspeccion || ''} onChange={e => setF('prtCostInspeccion', e.target.value)} />
+                        <input type="number" placeholder="Ej: 5000" className="w-full border-2 border-indigo-100 dark:border-indigo-800/50 p-2 rounded-xl font-bold text-sm bg-white dark:bg-slate-900 outline-none" value={formData.prtCostInspeccion || ''} onChange={e => setF('prtCostInspeccion', e.target.value)} />
                       </div>
                     )}
                     {job.rtData?.frenos && (
                       <div className="flex flex-col gap-1">
                         <label className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase">Certificado Frenos ($)</label>
-                        <input type="number" placeholder="Ej: 8000" className="w-full border-2 border-indigo-100 dark:border-indigo-800/50 p-2 rounded-xl font-bold text-sm bg-white dark:bg-slate-900" value={formData.prtCostFrenos || ''} onChange={e => setF('prtCostFrenos', e.target.value)} />
+                        <input type="number" placeholder="Ej: 8000" className="w-full border-2 border-indigo-100 dark:border-indigo-800/50 p-2 rounded-xl font-bold text-sm bg-white dark:bg-slate-900 outline-none" value={formData.prtCostFrenos || ''} onChange={e => setF('prtCostFrenos', e.target.value)} />
+                      </div>
+                    )}
+                    {job.rtData?.gases && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase">Certificado Gases ($)</label>
+                        <input type="number" placeholder="Ej: 6000" className="w-full border-2 border-indigo-100 dark:border-indigo-800/50 p-2 rounded-xl font-bold text-sm bg-white dark:bg-slate-900 outline-none" value={formData.prtCostGases || ''} onChange={e => setF('prtCostGases', e.target.value)} />
                       </div>
                     )}
                   </div>
