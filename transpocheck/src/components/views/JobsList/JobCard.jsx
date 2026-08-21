@@ -185,7 +185,7 @@ export default function JobCard({ j, ...props }) {
 
           <div className="mb-4 mt-3 relative z-10 flex flex-col gap-1.5">
             {/* ORIGEN */}
-            <div className="bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 z-10">
+            <div className="bg-white/20 dark:bg-black/40 backdrop-blur-sm p-2.5 rounded-xl border border-white/20 shadow-[0_2px_8px_rgba(0,0,0,0.05)] z-10">
               <span className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-0.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500"></div>
                 {j.tripType === 'simple' ? 'Lugar' : 'Desde'}
@@ -213,7 +213,7 @@ export default function JobCard({ j, ...props }) {
                 </div>
 
                 {/* DESTINO */}
-                <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_10px_rgba(0,0,0,0.04)] dark:shadow-none z-10">
+                <div className="bg-white/20 dark:bg-black/40 backdrop-blur-md p-3 rounded-2xl border border-white/20 shadow-[0_4px_16px_rgba(0,0,0,0.1)] z-10">
                   <span className="flex items-center gap-1.5 text-[9px] font-black text-blue-500 uppercase tracking-widest mb-1">
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
                     Hasta
@@ -261,7 +261,7 @@ export default function JobCard({ j, ...props }) {
                    )}
                    
                    {(j.originAddress || j.originCommune) && (
-                      <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm mt-1">
+                      <div className="flex justify-between items-center bg-white/20 dark:bg-black/40 backdrop-blur-sm p-2.5 rounded-xl border border-white/20 shadow-sm mt-1">
                         <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-slate-400 dark:text-slate-500 dark:text-slate-400"/>{j.originAddress}{j.originAddress && j.originCommune ? ', ' : ''}{j.originCommune}</p>
                         {isAccepted && (
                           <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.originAddress || ''} ${j.originCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition-colors border border-blue-200 dark:border-blue-800/50"><Navigation className="w-3 h-3"/> Waze</a>
@@ -422,7 +422,7 @@ export default function JobCard({ j, ...props }) {
           )}
 
           {(!isRequested && (j.status === 'accepted' || j.status === 'pending_guide') && j.acceptedByEmail !== currentUserEmail) ? (
-             <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 text-xs font-bold text-center py-3 rounded-xl">Vehículo a cargo de un compañero.</div>
+             <div className="bg-white/10 dark:bg-black/30 backdrop-blur-sm border border-white/20 text-slate-600 dark:text-slate-300 text-xs font-bold text-center py-3 rounded-xl">Vehículo a cargo de un compañero.</div>
           ) : (
             <>
               {isPending && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && (

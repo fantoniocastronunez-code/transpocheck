@@ -614,7 +614,11 @@ function LogisticApp() {
   return (
     <div 
       className={`min-h-screen text-slate-800 dark:text-slate-200 font-sans pb-32 transition-colors duration-300 bg-cover bg-fixed bg-center mx-auto relative ${uiViewMode === 'smartphone' ? 'max-w-md shadow-[0_0_50px_rgba(0,0,0,0.5)] border-x border-white/10' : uiViewMode === 'tablet' ? 'max-w-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] border-x border-white/10' : 'w-full'}`}
-      style={{ backgroundImage: "linear-gradient(to bottom, rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.95)), url('/bg_glass.jpg')" }}
+      style={{ 
+        backgroundImage: darkMode 
+          ? "linear-gradient(to bottom, rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.95)), url('/bg_glass.jpg')" 
+          : "linear-gradient(to bottom, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.9)), url('/bg_glass_light.jpg')" 
+      }}
     >
       {globalStyles}
       <header className="fixed-nav-bar bg-white/30 dark:bg-black/40 backdrop-blur-md border-b border-white/10 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300">
