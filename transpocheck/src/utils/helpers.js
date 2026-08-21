@@ -151,8 +151,8 @@ export const getExtraWappTxt = (j) => {
      t += `\nCARGA DE COMBUSTIBLE: ${fuelCost ? new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(fuelCost) : 'Sí'}`;
   }
   
-  if (j.tripType === 'revision') {
-    const prtTotal = Number(j.checklist?.prtCostRevision || 0) + Number(j.checklist?.prtCostInspeccion || 0) + Number(j.checklist?.prtCostFrenos || 0);
+  if (j.tripType === 'revision' && j.checklist) {
+    const prtTotal = Number(j.checklist?.prtCostRevision || 0) + Number(j.checklist?.prtCostInspeccion || 0) + Number(j.checklist?.prtCostFrenos || 0) + Number(j.checklist?.prtCostGases || 0);
     if (prtTotal > 0) {
       t += `\nVALOR PRT: ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(prtTotal)}`;
     }
