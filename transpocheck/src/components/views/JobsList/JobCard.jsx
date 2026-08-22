@@ -407,7 +407,7 @@ export default function JobCard({ j, ...props }) {
               {isAdminView ? (
                 <div className="flex gap-2">
                   <button onClick={() => handleApproveRequest(j)} disabled={processingId === `${j.id}-approve`} className="flex-1 bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-1 disabled:opacity-50">
-                    {processingId === `${j.id}-approve` ? <Clock className="w-4 h-4 animate-spin"/> : <CheckCircle className="w-4 h-4"/>} Aprobar
+                    {processingId === `${j.id}-approve` ? <Clock className="w-4 h-4 animate-spin"/> : <CheckCircle className="w-4 h-4"/>} {processingId === `${j.id}-approve` ? 'Procesando...' : 'Aprobar'}
                   </button>
                   <button onClick={() => handleRejectRequest(j)} className="flex-1 bg-red-100 dark:bg-red-900/40 hover:bg-red-200 text-red-700 dark:text-red-400 font-bold py-3 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-1">
                     <XCircle className="w-4 h-4"/> Rechazar
@@ -466,9 +466,11 @@ export default function JobCard({ j, ...props }) {
                       {j.phase === 'arrived_prt' && (
                         <div className="flex gap-2">
                           <button onClick={() => { setPrtApproveType('aprobado'); setPrtReturnOpt('origin'); setPrtReturnDest(''); setPrtApprovePromptJob(j); }} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-1 disabled:opacity-50">
-                             {processingId === `${j.id}-prt_done` ? <Clock className="w-3 h-3 animate-spin"/> : '✅'} Aprobado
+                             {processingId === `${j.id}-prt_done` ? <Clock className="w-3 h-3 animate-spin"/> : '✅'} {processingId === `${j.id}-prt_done` ? 'Procesando...' : 'Aprobado'}
                           </button>
-                          <button onClick={() => { setPrtReturnOpt('origin'); setPrtReturnDest(''); setPrtPromptJob(j); }} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors disabled:opacity-50">❌ Rechazado</button>
+                          <button onClick={() => { setPrtReturnOpt('origin'); setPrtReturnDest(''); setPrtPromptJob(j); }} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors disabled:opacity-50 flex justify-center items-center gap-1">
+                             {processingId === `${j.id}-prt_done` ? <Clock className="w-3 h-3 animate-spin"/> : '❌'} {processingId === `${j.id}-prt_done` ? 'Procesando...' : 'Rechazado'}
+                          </button>
                         </div>
                       )}
 

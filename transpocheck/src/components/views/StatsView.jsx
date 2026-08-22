@@ -325,8 +325,8 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                     </div>
                     
                     {/* CONTROLADOR DE MESES */}
-                    <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-1.5 rounded-2xl backdrop-blur-sm border border-white dark:border-slate-800/20 w-fit shrink-0">
-                        <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))} className="p-2 hover:bg-white dark:bg-slate-900 rounded-xl transition-colors active:scale-95">
+                    <div className="flex items-center gap-3 bg-white/10 dark:bg-slate-900/40 p-1.5 rounded-2xl backdrop-blur-md border border-white/20 dark:border-slate-800/20 w-fit shrink-0">
+                        <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))} className="p-2 hover:bg-white/20 dark:bg-slate-900 rounded-xl transition-colors active:scale-95">
                             <ChevronLeft className="w-5 h-5 text-white" />
                         </button>
                         <div className="flex flex-col items-center justify-center min-w-[120px]">
@@ -335,7 +335,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                                 {viewDate.toLocaleString('es-CL', { month: 'long', year: 'numeric' })}
                             </p>
                         </div>
-                        <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))} disabled={viewDate.getMonth() === new Date().getMonth() && viewDate.getFullYear() === new Date().getFullYear()} className="p-2 hover:bg-white dark:bg-slate-900 rounded-xl transition-colors active:scale-95 disabled:opacity-30 disabled:pointer-events-none">
+                        <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))} disabled={viewDate.getMonth() === new Date().getMonth() && viewDate.getFullYear() === new Date().getFullYear()} className="p-2 hover:bg-white/20 dark:bg-slate-900 rounded-xl transition-colors active:scale-95 disabled:opacity-30 disabled:pointer-events-none">
                             <ChevronRight className="w-5 h-5 text-white" />
                         </button>
                     </div>
@@ -348,26 +348,26 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                         title="Guardar foto del mes (permanente)"
                     >
                         {isFreezing ? <Clock className="w-5 h-5 animate-spin" /> : (frozenStats ? <Shield className="w-5 h-5" /> : <Save className="w-5 h-5" />)}
-                        <span className="text-xs font-bold hidden sm:inline">{frozenStats ? 'Mes Congelado' : 'Congelar Mes'}</span>
+                        <span className="text-xs font-bold hidden sm:inline">{isFreezing ? 'Procesando...' : (frozenStats ? 'Mes Congelado' : 'Congelar Mes')}</span>
                     </button>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 border border-white dark:border-slate-800/10 p-3 rounded-2xl mb-6 relative z-10 flex flex-col sm:flex-row justify-center items-center gap-2 text-center">
+                <div className="bg-white/10 dark:bg-slate-900/40 backdrop-blur-md border border-white/20 dark:border-slate-800/10 p-3 rounded-2xl mb-6 relative z-10 flex flex-col sm:flex-row justify-center items-center gap-2 text-center">
                     <p className="text-xs font-bold text-blue-100">
                         Mostrando registros desde el <span className="text-white font-black">1 de {viewDate.toLocaleString('es-CL', { month: 'long' })}</span> hasta el <span className="text-white font-black">{new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate()} de {viewDate.toLocaleString('es-CL', { month: 'long' })}</span>.
                     </p>
                 </div>
                 
                 <div className="flex flex-wrap gap-4 relative z-10">
-                    <div className="bg-white dark:bg-slate-900 backdrop-blur-md border border-white dark:border-slate-800/20 p-4 rounded-2xl flex-1 min-w-[120px]">
+                    <div className="bg-white/10 dark:bg-slate-900/40 backdrop-blur-md border border-white/20 dark:border-slate-800/20 p-4 rounded-2xl flex-1 min-w-[120px]">
                         <p className="text-[10px] font-black uppercase tracking-widest text-blue-200 mb-1">Total Traslados</p>
                         <p className="text-3xl font-black">{stats.totalJobs || 0}</p>
                     </div>
-                    <div className="bg-white dark:bg-slate-900 backdrop-blur-md border border-white dark:border-slate-800/20 p-4 rounded-2xl flex-1 min-w-[120px]">
+                    <div className="bg-white/10 dark:bg-slate-900/40 backdrop-blur-md border border-white/20 dark:border-slate-800/20 p-4 rounded-2xl flex-1 min-w-[120px]">
                         <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200 mb-1 flex items-center gap-1"><MapIcon className="w-3 h-3" /> KM del Período</p>
                         <p className="text-3xl font-black text-emerald-300">{stats.totalKm || 0} <span className="text-sm font-bold text-emerald-100">km</span></p>
                     </div>
-                    <div className="bg-white dark:bg-slate-900 backdrop-blur-md border border-white dark:border-slate-800/20 p-4 rounded-2xl flex-1 min-w-[120px]">
+                    <div className="bg-white/10 dark:bg-slate-900/40 backdrop-blur-md border border-white/20 dark:border-slate-800/20 p-4 rounded-2xl flex-1 min-w-[120px]">
                         <p className="text-[10px] font-black uppercase tracking-widest text-amber-200 mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> Ingresos Totales</p>
                         <p className="text-3xl font-black text-amber-300"><span className="text-sm font-bold text-amber-100">$</span>{stats.totalRevenue ? stats.totalRevenue.toLocaleString('es-CL') : 0}</p>
                     </div>

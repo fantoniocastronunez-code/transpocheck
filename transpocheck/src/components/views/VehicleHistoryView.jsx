@@ -115,7 +115,7 @@ export default function VehicleHistoryView({ db, showAlert }) {
               />
             </div>
             <button type="submit" disabled={isSearching} className="bg-blue-500 hover:bg-blue-400 text-white px-6 py-4 rounded-2xl font-black text-sm transition-colors shadow-lg disabled:opacity-50 flex items-center gap-2">
-              {isSearching ? <Clock className="w-5 h-5 animate-spin" /> : 'Buscar'}
+              {isSearching ? <><Clock className="w-5 h-5 animate-spin" /> Buscando...</> : 'Buscar'}
             </button>
           </form>
         </div>
