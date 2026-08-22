@@ -51,6 +51,7 @@ const JobsList = lazyWithRetry(() => import('./components/views/JobsList'));
 const ChecklistForm = lazyWithRetry(() => import('./components/views/ChecklistForm'));
 const VehicleHistoryView = lazyWithRetry(() => import('./components/views/VehicleHistoryView'));
 const StatsView = lazyWithRetry(() => import('./components/views/StatsView'));
+const DriverDashboardView = lazyWithRetry(() => import('./components/views/DriverDashboardView'));
 // QuotesView ha sido removido.
 
 // EL NUEVO MOTOR (Hook)
@@ -919,6 +920,7 @@ function LogisticApp() {
 
             {mainTab === 'ranking' && <LeaderboardView jobs={jobs} drivers={drivers} isAdminView={activeRole === 'admin'} db={db} />}
             {mainTab === 'expenses' && <ExpensesView role={activeRole} drivers={drivers} jobs={jobs} expenses={expenses} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />}
+            {mainTab === 'profile' && <DriverDashboardView myDriver={myDriver} jobs={jobs} expenses={expenses} drivers={drivers} currentUserEmail={currentUserEmail} />}
             {mainTab === 'quotes' && (
                <main className="max-w-2xl mx-auto p-4 pt-20 sm:pt-24 pb-32 animate-in fade-in duration-300">
                   <div className="bg-purple-600 text-white p-8 rounded-3xl shadow-lg text-center">
@@ -1100,6 +1102,12 @@ function LogisticApp() {
                      <div className={`${mainTab==='expenses' ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Wallet className="w-5 h-5"/></div>
                      <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Gastos</span>
                   </button>
+                  {activeRole === 'driver' && (
+                     <button onClick={() => setMainTab('profile')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='profile' ? 'text-violet-600 dark:text-violet-500' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-violet-600 dark:text-violet-400 dark:hover:text-violet-500'}`}>
+                        <div className={`${mainTab==='profile' ? 'bg-violet-100 dark:bg-violet-900/40' : 'bg-transparent'} p-2 rounded-xl mb-1`}><User className="w-5 h-5"/></div>
+                        <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Perfil</span>
+                     </button>
+                  )}
                 </>
               )}
             </nav>
