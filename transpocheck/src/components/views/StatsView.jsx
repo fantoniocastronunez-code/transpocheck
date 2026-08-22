@@ -1,11 +1,11 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { 
-    BarChart3, Users, Car, CheckCircle, Map as MapIcon, Navigation, Repeat, X, MapPin, DollarSign, Download, ChevronLeft, ChevronRight, Calendar, Save, Shield
+    BarChart3, Users, Car, CheckCircle, Map as MapIcon, Navigation, Repeat, X, MapPin, DollarSign, Download, ChevronLeft, ChevronRight, Calendar, Save, Shield, Clock
 } from 'lucide-react';
 import { getVehicleIdentifierLabel } from '../../utils/helpers';
 
-export default function StatsView({ jobs = [], drivers = [], vehicles = [], allClientsList = [], db }) {
+export default function StatsView({ jobs = [], drivers = [], vehicles = [], allClientsList = [], db, showAlert, showConfirm }) {
     // ESTADO DEL MODAL (Ventana flotante de detalles)
     const [modalData, setModalData] = useState(null);
     
@@ -199,28 +199,34 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
     // Al agregar viewDate a este arreglo, React recalculará las métricas cada vez que cambies de mes
     }, [jobs, drivers, viewDate, frozenStats]);
 
-    const handleFreezeMonth = async () => {
-        if (!db) return alert("Error: BD no conectada");
+    const handleFreezeMonth = () => {
+        if (!db) {
+            if (showAlert) showAlert("Error: BD no conectada", "error");
+            return;
+        }
         
         const monthNamesStr = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
         const monthName = monthNamesStr[viewDate.getMonth()];
         const year = viewDate.getFullYear();
-        if (!window.confirm(`¿Congelar las estadísticas de ${monthName} ${year}?\n\nAl congelar, los datos de este mes quedarán guardados permanentemente (Foto estática) y no se borrarán si haces limpieza de la base de datos de trabajos.\n\nNormalmente se hace el último día del mes o el primer día del siguiente.`)) return;
         
-        setIsFreezing(true);
-        try {
-            await setDoc(doc(db, 'monthly_stats', currentMonthKey), {
-                monthKey: currentMonthKey,
-                timestamp: Date.now(),
-                stats: { ...stats, monthlyJobs: [] } // Eliminamos los trabajos crudos para no exceder límite de Firestore y evitar anidaciones
+        if (showConfirm) {
+            showConfirm(`¿Congelar las estadísticas de ${monthName} ${year}?\n\nAl congelar, los datos de este mes quedarán guardados permanentemente (Foto estática) y no se borrarán si haces limpieza de la base de datos de trabajos.\n\nNormalmente se hace el último día del mes o el primer día del siguiente.`, async () => {
+                setIsFreezing(true);
+                try {
+                    await setDoc(doc(db, 'monthly_stats', currentMonthKey), {
+                        monthKey: currentMonthKey,
+                        timestamp: Date.now(),
+                        stats: { ...stats, monthlyJobs: [] } // Eliminamos los trabajos crudos para no exceder límite de Firestore y evitar anidaciones
+                    });
+                    setFrozenStats({ ...stats, monthlyJobs: [] });
+                    if (showAlert) showAlert("Estadísticas congeladas correctamente.", "success");
+                } catch (e) {
+                    console.error(e);
+                    if (showAlert) showAlert("Error al congelar estadísticas.", "error");
+                } finally {
+                    setIsFreezing(false);
+                }
             });
-            setFrozenStats({ ...stats, monthlyJobs: [] });
-            alert("✅ Estadísticas congeladas correctamente.");
-        } catch (e) {
-            console.error(e);
-            alert("Error al congelar estadísticas.");
-        } finally {
-            setIsFreezing(false);
         }
     };
 
