@@ -81,8 +81,8 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
             clientRevenues[cName] = (clientRevenues[cName] || 0) + price;
             totalRevenue += price;
         });
-        const topClients = Object.entries(clientCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-        const topClientsByRevenue = Object.entries(clientRevenues).sort((a, b) => b[1] - a[1]);
+        const topClients = Object.entries(clientCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, count]) => ({ name, count }));
+        const topClientsByRevenue = Object.entries(clientRevenues).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({ name, value }));
 
         // --- PRT ---
         const prtJobs = monthlyJobs.filter(j => j.tripType === 'revision');
@@ -139,7 +139,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                 }
             }
         });
-        const topDriversKm = Object.entries(driverKms).sort((a, b) => b[1] - a[1]);
+        const topDriversKm = Object.entries(driverKms).sort((a, b) => b[1] - a[1]).map(([name, km]) => ({ name, km }));
 
         // --- Especialización por Tipo ---
         const categoryCounts = {
@@ -180,7 +180,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                 plateCounts[cleanPlate] = (plateCounts[cleanPlate] || 0) + 1;
             }
         });
-        const topPlates = Object.entries(plateCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        const topPlates = Object.entries(plateCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([plate, count]) => ({ plate, count }));
 
         return {
             monthlyJobs,
@@ -212,9 +212,9 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
             await setDoc(doc(db, 'monthly_stats', currentMonthKey), {
                 monthKey: currentMonthKey,
                 timestamp: Date.now(),
-                stats: stats
+                stats: { ...stats, monthlyJobs: [] } // Eliminamos los trabajos crudos para no exceder límite de Firestore y evitar anidaciones
             });
-            setFrozenStats(stats);
+            setFrozenStats({ ...stats, monthlyJobs: [] });
             alert("✅ Estadísticas congeladas correctamente.");
         } catch (e) {
             console.error(e);
@@ -380,7 +380,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                         <p className="text-xs text-center text-slate-400 font-bold py-4">No hay datos suficientes este mes.</p>
                     ) : (
                         <div className="space-y-2">
-                            {stats.topClients.map(([name, count], idx) => (
+                            {stats.topClients.map(({name, count}, idx) => (
                                 <button key={name} onClick={() => handleClientClick(name)} className="w-full text-left flex items-center gap-3 p-2 hover:bg-slate-50 dark:bg-slate-900 hover:scale-[1.01] active:scale-95 transition-all rounded-xl border border-transparent hover:border-slate-100 dark:border-slate-800 hover:shadow-sm">
                                     <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${idx === 0 ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>{idx + 1}</span>
                                     <div className="flex-1 min-w-0">
@@ -389,7 +389,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                                             <span className="text-xs font-black text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-md">{count} viajes</span>
                                         </div>
                                         <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                                            <div className="bg-blue-500 h-full rounded-full transition-all duration-1000" style={{ width: `${getPercent(count, stats.topClients[0][1])}%` }}></div>
+                                            <div className="bg-blue-500 h-full rounded-full transition-all duration-1000" style={{ width: `${getPercent(count, stats.topClients[0].count)}%` }}></div>
                                         </div>
                                     </div>
                                 </button>
@@ -408,7 +408,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                         <p className="text-xs text-center text-slate-400 font-bold py-4">No hay ingresos registrados este mes.</p>
                     ) : (
                         <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 scrollbar-none">
-                            {stats.topClientsByRevenue.map(([name, revenue], idx) => (
+                            {stats.topClientsByRevenue.map(({name, value: revenue}, idx) => (
                                 <button key={name} onClick={() => handleClientClick(name)} className="w-full text-left flex items-center gap-3 p-2.5 hover:bg-slate-50 dark:bg-slate-900 hover:scale-[1.01] active:scale-95 transition-all rounded-xl border border-transparent hover:border-slate-100 dark:border-slate-800 hover:shadow-sm">
                                     <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${idx === 0 ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>{idx + 1}</span>
                                     <div className="flex-1 min-w-0">
@@ -481,7 +481,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {stats.topDriversKm.map(([name, km], idx) => (
+                                    {stats.topDriversKm.map(({name, km}, idx) => (
                                         <tr key={name} onClick={() => handleDriverKmClick(name)} className="hover:bg-slate-100 dark:bg-slate-800 active:bg-slate-200 dark:bg-slate-700 cursor-pointer transition-colors group">
                                             <td className="py-2.5 pr-2 border-b border-slate-50 text-center rounded-l-xl">
                                                 <span className={`inline-flex w-5 h-5 rounded-full items-center justify-center text-[9px] font-black ${idx === 0 ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400' : idx === 1 ? 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400' : idx === 2 ? 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400' : 'bg-slate-50 dark:bg-slate-900 text-slate-400 group-hover:bg-white dark:bg-slate-900'}`}>
@@ -556,7 +556,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                         <p className="text-xs text-center text-slate-400 font-bold py-4">No hay patentes registradas este mes.</p>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                            {stats.topPlates.map(([plate, count], idx) => (
+                            {stats.topPlates.map(({plate, count}, idx) => (
                                 <button key={plate} onClick={() => handlePlateClick(plate)} className="w-full text-left flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:bg-slate-800 hover:scale-[1.02] active:scale-95 transition-all rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
                                     <div className="flex items-center gap-2.5">
                                         <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black shrink-0 ${idx === 0 ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}>{idx + 1}</span>
