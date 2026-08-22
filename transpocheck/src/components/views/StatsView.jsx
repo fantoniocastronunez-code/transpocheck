@@ -1,18 +1,45 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { 
-    BarChart3, Users, Car, CheckCircle, Map as MapIcon, Navigation, Repeat, X, MapPin, DollarSign, Download, ChevronLeft, ChevronRight, Calendar
+    BarChart3, Users, Car, CheckCircle, Map as MapIcon, Navigation, Repeat, X, MapPin, DollarSign, Download, ChevronLeft, ChevronRight, Calendar, Save, Shield
 } from 'lucide-react';
 import { getVehicleIdentifierLabel } from '../../utils/helpers';
 
-export default function StatsView({ jobs = [], drivers = [], vehicles = [], allClientsList = [] }) {
+export default function StatsView({ jobs = [], drivers = [], vehicles = [], allClientsList = [], db }) {
     // ESTADO DEL MODAL (Ventana flotante de detalles)
     const [modalData, setModalData] = useState(null);
     
     // NUEVO: Estado para controlar el mes que se está visualizando
     const [viewDate, setViewDate] = useState(new Date());
 
+    // STATS CONGELADAS
+    const [frozenStats, setFrozenStats] = useState(null);
+    const [isFreezing, setIsFreezing] = useState(false);
+
+    const currentMonthKey = `${viewDate.getFullYear()}-${(viewDate.getMonth() + 1).toString().padStart(2, '0')}`;
+
+    useEffect(() => {
+        if (!db) return;
+        const fetchFrozenStats = async () => {
+            try {
+                const docRef = doc(db, 'monthly_stats', currentMonthKey);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    setFrozenStats(docSnap.data().stats);
+                } else {
+                    setFrozenStats(null);
+                }
+            } catch (e) {
+                console.error("Error fetching frozen stats:", e);
+            }
+        };
+        fetchFrozenStats();
+    }, [currentMonthKey, db]);
+
     // 1. CÁLCULO DE MÉTRICAS
     const stats = useMemo(() => {
+        if (frozenStats) return frozenStats;
+
         if (!Array.isArray(jobs)) {
             return { monthlyJobs: [], totalJobs: 0, topClients: [], prtStats: { total: 0, approved: 0, help: 0, rejected: 0 }, totalKm: 0, todayKm: 0, topDriversKm: [], topDriversByCategory: {}, topPlates: [] };
         }
@@ -170,7 +197,32 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
         };
 
     // Al agregar viewDate a este arreglo, React recalculará las métricas cada vez que cambies de mes
-    }, [jobs, drivers, viewDate]);
+    }, [jobs, drivers, viewDate, frozenStats]);
+
+    const handleFreezeMonth = async () => {
+        if (!db) return alert("Error: BD no conectada");
+        
+        const monthNamesStr = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        const monthName = monthNamesStr[viewDate.getMonth()];
+        const year = viewDate.getFullYear();
+        if (!window.confirm(`¿Congelar las estadísticas de ${monthName} ${year}?\n\nAl congelar, los datos de este mes quedarán guardados permanentemente (Foto estática) y no se borrarán si haces limpieza de la base de datos de trabajos.\n\nNormalmente se hace el último día del mes o el primer día del siguiente.`)) return;
+        
+        setIsFreezing(true);
+        try {
+            await setDoc(doc(db, 'monthly_stats', currentMonthKey), {
+                monthKey: currentMonthKey,
+                timestamp: Date.now(),
+                stats: stats
+            });
+            setFrozenStats(stats);
+            alert("✅ Estadísticas congeladas correctamente.");
+        } catch (e) {
+            console.error(e);
+            alert("Error al congelar estadísticas.");
+        } finally {
+            setIsFreezing(false);
+        }
+    };
 
     // UI HELPER
     const getPercent = (value, total) => total === 0 ? 0 : Math.round((value / total) * 100);
@@ -281,6 +333,17 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                             <ChevronRight className="w-5 h-5 text-white" />
                         </button>
                     </div>
+
+                    {/* BOTÓN CONGELAR MES */}
+                    <button 
+                        onClick={handleFreezeMonth} 
+                        disabled={isFreezing}
+                        className={`p-3 rounded-2xl transition-all shadow-sm flex items-center gap-2 ${frozenStats ? 'bg-emerald-500/20 text-emerald-200 border border-emerald-500/30 cursor-default' : 'bg-white/10 hover:bg-white/20 text-white border border-white/20 active:scale-95'}`}
+                        title="Guardar foto del mes (permanente)"
+                    >
+                        {isFreezing ? <Clock className="w-5 h-5 animate-spin" /> : (frozenStats ? <Shield className="w-5 h-5" /> : <Save className="w-5 h-5" />)}
+                        <span className="text-xs font-bold hidden sm:inline">{frozenStats ? 'Mes Congelado' : 'Congelar Mes'}</span>
+                    </button>
                 </div>
 
                 <div className="bg-white dark:bg-slate-900 border border-white dark:border-slate-800/10 p-3 rounded-2xl mb-6 relative z-10 flex flex-col sm:flex-row justify-center items-center gap-2 text-center">

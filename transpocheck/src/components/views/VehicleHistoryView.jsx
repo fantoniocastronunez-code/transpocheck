@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { Search, ShieldCheck, Calendar, User, MapPin, Camera, X, AlertTriangle, FileText, Clock } from 'lucide-react';
+import { Search, ShieldCheck, Calendar, User, MapPin, Camera, X, AlertTriangle, FileText, Clock, Activity } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
+import VehicleShapeIcon from '../ui/VehicleShapeIcon';
 
 export default function VehicleHistoryView({ db, showAlert }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -131,7 +132,60 @@ export default function VehicleHistoryView({ db, showAlert }) {
 
       {results.length > 0 && (
         <div className="space-y-6">
-          <h3 className="font-extrabold text-slate-700 dark:text-slate-300 ml-2">Línea de Tiempo del Vehículo ({results.length} traslados)</h3>
+          
+          {/* MAPA DE CALOR HISTÓRICO */}
+          {(() => {
+            const allPins = [];
+            const vehicleType = results[0]?.vehicleType || results[0]?.type || 'auto';
+            
+            results.forEach(job => {
+              if (job.checklist?.detailPins && Array.isArray(job.checklist.detailPins)) {
+                allPins.push(...job.checklist.detailPins);
+              }
+            });
+
+            if (allPins.length === 0) return null;
+
+            return (
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+                <h3 className="font-extrabold text-slate-700 dark:text-slate-300 flex items-center gap-2 mb-4">
+                  <Activity className="w-5 h-5 text-red-500" /> Mapa de Calor de Daños ({allPins.length} incidentes históricos)
+                </h3>
+                <div className="relative w-full max-w-xs mx-auto aspect-[1/2] bg-slate-100 dark:bg-slate-800 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center p-4">
+                  <div className="relative w-full h-full pointer-events-none">
+                    <VehicleShapeIcon type={vehicleType} />
+                    {allPins.map((pin, i) => (
+                      <div 
+                        key={i} 
+                        className="absolute w-8 h-8 -ml-4 -mt-4 bg-red-500 rounded-full blur-md mix-blend-multiply dark:mix-blend-screen animate-pulse"
+                        style={{ 
+                          left: `${pin.x}%`, 
+                          top: `${pin.y}%`, 
+                          opacity: 0.6 // Opacidad acumulativa, se superponen y se vuelven más intensos
+                        }}
+                      />
+                    ))}
+                    {/* Renderizamos los puntos centrales también para mayor precisión visual */}
+                    {allPins.map((pin, i) => (
+                      <div 
+                        key={`core-${i}`} 
+                        className="absolute w-2 h-2 -ml-1 -mt-1 bg-red-600 dark:bg-red-400 rounded-full"
+                        style={{ 
+                          left: `${pin.x}%`, 
+                          top: `${pin.y}%`
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <p className="text-center text-xs font-bold text-slate-500 mt-4">
+                  Las zonas más rojas indican áreas con daños recurrentes reportados por distintos conductores a lo largo del tiempo.
+                </p>
+              </div>
+            );
+          })()}
+
+          <h3 className="font-extrabold text-slate-700 dark:text-slate-300 ml-2 mt-8">Línea de Tiempo del Vehículo ({results.length} traslados)</h3>
           
           <div className="relative border-l-4 border-slate-200 dark:border-slate-700 ml-4 space-y-8 pb-8">
             {results.map((job, index) => {

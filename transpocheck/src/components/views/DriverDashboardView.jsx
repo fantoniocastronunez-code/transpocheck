@@ -465,9 +465,17 @@ export default function DriverDashboardView({ myDriver, jobs, expenses, drivers,
                     <p className={`text-xs font-black truncate ${isFailed ? 'text-red-600 dark:text-red-400' : 'text-slate-800 dark:text-slate-200'}`}>
                       {isService ? (j.description || 'Servicio en Terreno') : `${j.brand || ''} ${j.model || ''}`.trim() || 'Vehículo'}
                     </p>
-                    <p className="text-[10px] font-bold text-slate-400 truncate">
-                      {j.client || 'Sin cliente'} · {j.origin || '-'} → {j.destination || '-'}
-                    </p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <p className="text-[10px] font-bold text-slate-400 truncate max-w-[150px]">
+                        {j.client || 'Sin cliente'} · {j.origin || '-'} → {j.destination || '-'}
+                      </p>
+                      {j.clientRating && (
+                        <div className="flex items-center">
+                          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                          <span className="text-[9px] font-black text-slate-500 ml-0.5">{j.clientRating.score}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Placa y fecha */}

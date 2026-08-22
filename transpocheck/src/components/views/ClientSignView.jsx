@@ -3,7 +3,7 @@ import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { 
   Clock, XCircle, CheckCircle, Download, Camera, 
-  X, AlertCircle, User 
+  X, AlertCircle, User, Star
 } from 'lucide-react';
 import SignaturePad from '../ui/SignaturePad';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
@@ -13,6 +13,8 @@ export default function ClientSignView({ jobId, db }) {
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({ name: '', rut: '', comments: '', signature: null });
+  const [ratingData, setRatingData] = useState({ score: 0, comment: '' });
+  const [isRatingSubmitting, setIsRatingSubmitting] = useState(false);
   const [fullScreenImage, setFullScreenImage] = useState(null); 
   const [alertMessage, setAlertMessage] = useState(null); 
   const [isDownloading, setIsDownloading] = useState(false); 
@@ -269,6 +271,59 @@ export default function ClientSignView({ jobId, db }) {
             </>
           )}
         </div>
+
+        {/* --- NUEVO: TARJETA DE RATING --- */}
+        {isFinished && !job.clientRating && (
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-lg max-w-sm w-full mt-4 border border-slate-200 dark:border-slate-800 animate-in slide-in-from-bottom-4 duration-500">
+            <h3 className="text-lg font-black text-slate-800 dark:text-slate-200 mb-1">¿Qué tal el servicio?</h3>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-4">Tu opinión es muy importante para nosotros (Opcional)</p>
+            
+            <div className="flex justify-center gap-2 mb-4">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button 
+                  key={star} 
+                  type="button" 
+                  onClick={() => setRatingData({ ...ratingData, score: star })}
+                  className="transition-transform hover:scale-110 active:scale-95 p-1 outline-none"
+                >
+                  <Star className={`w-8 h-8 ${ratingData.score >= star ? 'fill-yellow-400 text-yellow-400 drop-shadow-sm' : 'text-slate-200 dark:text-slate-700'}`} />
+                </button>
+              ))}
+            </div>
+
+            {ratingData.score > 0 && (
+              <div className="space-y-3 animate-in fade-in zoom-in-95 duration-300">
+                <textarea 
+                  placeholder="Déjanos un comentario (opcional)..."
+                  value={ratingData.comment}
+                  onChange={(e) => setRatingData({ ...ratingData, comment: e.target.value })}
+                  className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500 min-h-[80px]"
+                />
+                <button 
+                  onClick={async () => {
+                    if (isRatingSubmitting) return;
+                    setIsRatingSubmitting(true);
+                    try {
+                      await updateDoc(doc(db, 'transport_jobs', jobId), { clientRating: { ...ratingData, timestamp: Date.now() } });
+                      setJob(prev => ({ ...prev, clientRating: { ...ratingData, timestamp: Date.now() } }));
+                    } catch (err) { alert("Error al enviar calificación."); } 
+                    finally { setIsRatingSubmitting(false); }
+                  }}
+                  disabled={isRatingSubmitting}
+                  className="w-full bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-black py-3 rounded-xl transition-colors shadow-md disabled:opacity-50"
+                >
+                  {isRatingSubmitting ? 'Enviando...' : 'Enviar Calificación'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {job.clientRating && (
+          <div className="mt-4 flex items-center justify-center gap-2 text-green-600 dark:text-green-400 font-bold text-sm bg-green-50 dark:bg-green-900/30 px-4 py-2 rounded-full animate-in zoom-in-95">
+            <CheckCircle className="w-4 h-4"/> ¡Gracias por tu evaluación!
+          </div>
+        )}
       </div>
     );
   }
