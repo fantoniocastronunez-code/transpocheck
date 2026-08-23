@@ -60,6 +60,24 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
   // Asignación de permisos 100% dinámicos
   const isRealAdmin = isSuperAdmin || ['hcastro@logisticats.cl'].includes(actualUserEmail) || 
                       currentUserProfile?.role === 'admin';
+                      
+  // Permisos granulares
+  const defaultPermissions = {
+    create_jobs: true,
+    manage_users: true,
+    manage_clients: true,
+    manage_vehicles: true,
+    manage_directory: true,
+    manage_tolls: true,
+    manage_equipment: true,
+    manage_expenses: true,
+    manage_stats: true,
+    manage_history: true
+  };
+  
+  const adminPermissions = isSuperAdmin 
+    ? defaultPermissions 
+    : (currentUserProfile?.permissions || defaultPermissions);
   
   const isQuoter = currentUserProfile?.role === 'quoter';
   const isPartTime = currentUserProfile?.role === 'part_time';
@@ -221,6 +239,7 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
 
   return {
     user, actualUserEmail, currentUserEmail, isRealAdmin, isSuperAdmin, isQuoter, isPartTime,
+    adminPermissions,
     jobs, drivers, expenses, vehicles, customClients,
     broadcast, dataLoaded, notificationsEnabled,
     requestNotificationPermission

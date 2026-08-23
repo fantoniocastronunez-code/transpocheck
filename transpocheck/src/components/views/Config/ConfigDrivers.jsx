@@ -3,12 +3,26 @@ import { collection, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestor
 import { Camera, Eye, EyeOff, User, Edit2, Trash2, Clock, CheckCircle } from 'lucide-react';
 import { LICENCIAS, resizeImage } from '../../../utils/helpers';
 
-export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert, showConfirm, setFullScreenDoc }) {
+export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert, showConfirm, setFullScreenDoc, isSuperAdmin }) {
   const [editingDriver, setEditingDriver] = useState(null);
   const [driverDocs, setDriverDocs] = useState({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null });
   
   const defaultDriverNotifs = { asignacion: true, modificacion: true, nuevo_monto: true, rendicion_pendiente: true };
   const [driverNotifs, setDriverNotifs] = useState(defaultDriverNotifs);
+
+  const defaultPermissions = {
+    create_jobs: true,
+    manage_users: true,
+    manage_clients: true,
+    manage_vehicles: true,
+    manage_directory: true,
+    manage_tolls: true,
+    manage_equipment: true,
+    manage_expenses: true,
+    manage_stats: true,
+    manage_history: true
+  };
+  const [driverPermissions, setDriverPermissions] = useState(defaultPermissions);
 
   const handleDocUpload = async (e, field, size) => {
     const file = e.target.files[0];
@@ -44,11 +58,12 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
-      <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const enableNotifications = Object.values(driverNotifs).some(v => v); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), role: fd.get('role'), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry'), enableNotifications, notifications: driverNotifs, ...driverDocs }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); showAlert("Perfil actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); showAlert("Usuario creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-4 relative">
+      <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const enableNotifications = Object.values(driverNotifs).some(v => v); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), role: fd.get('role'), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry'), enableNotifications, notifications: driverNotifs, permissions: driverPermissions, ...driverDocs }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); setDriverPermissions(defaultPermissions); showAlert("Perfil actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); setDriverPermissions(defaultPermissions); showAlert("Usuario creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-4 relative">
         
         {/* Lógica silenciosa para cargar notificaciones previas al editar */}
         <div className="hidden">
            {editingDriver && driverNotifs === defaultDriverNotifs && editingDriver.notifications && setDriverNotifs(editingDriver.notifications)}
+           {editingDriver && driverPermissions === defaultPermissions && editingDriver.permissions && setDriverPermissions(editingDriver.permissions)}
         </div>
 
         <div className="flex justify-between items-start">
@@ -152,8 +167,49 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
            </div>
         </div>
 
+        {isSuperAdmin && (
+          <div className="bg-purple-50 dark:bg-purple-900/30 border border-purple-100 dark:border-purple-800/50 p-4 rounded-xl shadow-sm space-y-3 mt-4">
+             <div className="border-b border-purple-200 dark:border-purple-800/50 pb-2">
+                <p className="text-xs font-extrabold text-purple-900 dark:text-purple-300 flex items-center gap-1.5">Permisos de Acceso (Super Admin)</p>
+                <p className="text-[10px] font-bold text-purple-600 dark:text-purple-400 mt-0.5 leading-tight">Activa o desactiva módulos para este usuario.</p>
+             </div>
+
+             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+                {[
+                  { id: 'create_jobs', label: 'Crear Traslados' },
+                  { id: 'manage_users', label: 'Usuarios' },
+                  { id: 'manage_clients', label: 'Clientes' },
+                  { id: 'manage_vehicles', label: 'Vehículos' },
+                  { id: 'manage_directory', label: 'Directorio' },
+                  { id: 'manage_tolls', label: 'Peajes' },
+                  { id: 'manage_equipment', label: 'Equipamiento' },
+                  { id: 'manage_expenses', label: 'Gastos' },
+                  { id: 'manage_stats', label: 'Estadísticas' },
+                  { id: 'manage_history', label: 'Peritaje' }
+                ].map(perm => {
+                   const isActive = driverPermissions[perm.id];
+                   return (
+                     <button
+                       key={perm.id}
+                       type="button"
+                       onClick={() => setDriverPermissions({...driverPermissions, [perm.id]: !isActive})}
+                       className={`py-2 px-1.5 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all duration-200 border-2 flex flex-col items-center justify-center gap-1.5 select-none ${
+                         isActive
+                           ? 'bg-purple-600 border-purple-600 text-white shadow-sm scale-100'
+                           : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-purple-300 dark:border-purple-700/50 hover:text-purple-500 hover:bg-purple-50 dark:bg-purple-900/30 scale-[0.98]'
+                       }`}
+                     >
+                       {isActive ? <CheckCircle className="w-4 h-4 mb-0.5 animate-in zoom-in duration-200" /> : <div className="w-4 h-4 mb-0.5 rounded-full border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900"></div>}
+                       <span className="text-center leading-tight">{perm.label}</span>
+                     </button>
+                   );
+                })}
+             </div>
+          </div>
+        )}
+
         <div className="flex gap-3 pt-2 border-t border-slate-100 dark:border-slate-800 mt-4">
-          {editingDriver && <button type="button" onClick={() => { setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); }} className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 py-3 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>}
+          {editingDriver && <button type="button" onClick={() => { setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); setDriverPermissions(defaultPermissions); }} className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 py-3 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>}
           <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-sm transition-colors shadow-lg shadow-blue-200">{editingDriver ? 'Guardar Cambios' : 'Guardar Usuario'}</button>
         </div>
       </form>

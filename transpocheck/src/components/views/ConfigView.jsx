@@ -64,19 +64,29 @@ function StorageWidget() {
   );
 }
 
-export default function ConfigView({ currentUserEmail, allClientsList, customClients, vehicles, drivers, db, showAlert, showConfirm }) {
+export default function ConfigView({ currentUserEmail, allClientsList, customClients, vehicles, drivers, db, showAlert, showConfirm, isSuperAdmin, adminPermissions }) {
   const [configSubTab, setConfigSubTab] = useState('clients');
   const [fullScreenDoc, setFullScreenDoc] = useState(null); 
+  
+  // Set default tab safely based on permissions
+  useEffect(() => {
+     if (adminPermissions?.manage_clients !== false) { setConfigSubTab('clients'); }
+     else if (adminPermissions?.manage_vehicles !== false) { setConfigSubTab('vehicles'); }
+     else if (adminPermissions?.manage_users !== false) { setConfigSubTab('drivers'); }
+     else if (adminPermissions?.manage_directory !== false) { setConfigSubTab('directory'); }
+     else if (adminPermissions?.manage_tolls !== false) { setConfigSubTab('tolls'); }
+     else if (adminPermissions?.manage_equipment !== false) { setConfigSubTab('equipment'); }
+  }, [adminPermissions]);
 
   return (
     <div className="space-y-6 relative w-full">
       <div className="flex flex-wrap gap-2 pb-2 w-full">
-         <button onClick={()=>setConfigSubTab('clients')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='clients'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Clientes</button>
-         <button onClick={()=>setConfigSubTab('vehicles')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='vehicles'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Vehículos</button>
-         <button onClick={()=>setConfigSubTab('drivers')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='drivers'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Usuarios</button>
-         <button onClick={()=>setConfigSubTab('directory')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='directory'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Directorio</button>
-         <button onClick={()=>setConfigSubTab('tolls')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='tolls'?'bg-emerald-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Peajes</button>
-         <button onClick={()=>setConfigSubTab('equipment')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='equipment'?'bg-amber-500 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Equipamiento</button>
+         {adminPermissions?.manage_clients !== false && <button onClick={()=>setConfigSubTab('clients')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='clients'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Clientes</button>}
+         {adminPermissions?.manage_vehicles !== false && <button onClick={()=>setConfigSubTab('vehicles')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='vehicles'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Vehículos</button>}
+         {adminPermissions?.manage_users !== false && <button onClick={()=>setConfigSubTab('drivers')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='drivers'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Usuarios</button>}
+         {adminPermissions?.manage_directory !== false && <button onClick={()=>setConfigSubTab('directory')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='directory'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Directorio</button>}
+         {adminPermissions?.manage_tolls !== false && <button onClick={()=>setConfigSubTab('tolls')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='tolls'?'bg-emerald-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Peajes</button>}
+         {adminPermissions?.manage_equipment !== false && <button onClick={()=>setConfigSubTab('equipment')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='equipment'?'bg-amber-500 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Equipamiento</button>}
       </div>
       
       <StorageWidget />
@@ -107,7 +117,8 @@ export default function ConfigView({ currentUserEmail, allClientsList, customCli
           db={db} 
           showAlert={showAlert} 
           showConfirm={showConfirm} 
-          setFullScreenDoc={setFullScreenDoc} 
+          setFullScreenDoc={setFullScreenDoc}
+          isSuperAdmin={isSuperAdmin} 
         />
       )}
 

@@ -874,12 +874,18 @@ function LogisticApp() {
                   <>
                     <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-6 bg-white dark:bg-slate-900 p-2 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
                     <button onClick={() => {setAdminTab('dashboard'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='dashboard'?'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/50'}`}><ClipboardList className="w-4 h-4 sm:w-5 sm:h-5"/> Monitor</button>
-                    <button onClick={() => {setAdminTab('newJob'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='newJob'?'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/50'}`}><Plus className="w-4 h-4 sm:w-5 sm:h-5"/> Crear</button>
-                    <button onClick={() => setAdminTab('stats')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='stats'?'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 shadow-sm':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/50'}`}><Activity className="w-4 h-4 sm:w-5 sm:h-5"/> Estadísticas</button>
-                    {isSuperAdmin && (
+                    {adminPermissions?.create_jobs !== false && (
+                      <button onClick={() => {setAdminTab('newJob'); setEditingJob(null);}} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='newJob'?'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/50'}`}><Plus className="w-4 h-4 sm:w-5 sm:h-5"/> Crear</button>
+                    )}
+                    {adminPermissions?.manage_stats !== false && (
+                      <button onClick={() => setAdminTab('stats')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='stats'?'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 shadow-sm':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/50'}`}><Activity className="w-4 h-4 sm:w-5 sm:h-5"/> Estadísticas</button>
+                    )}
+                    {(isSuperAdmin || adminPermissions?.manage_users || adminPermissions?.manage_clients || adminPermissions?.manage_vehicles || adminPermissions?.manage_directory || adminPermissions?.manage_tolls || adminPermissions?.manage_equipment) && (
                       <button onClick={() => setAdminTab('config')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='config'?'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/50'}`}><Truck className="w-4 h-4 sm:w-5 sm:h-5"/> Config</button>
                     )}
-                    <button onClick={() => setAdminTab('history')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='history'?'bg-slate-800 dark:bg-slate-700 text-white shadow-md':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/50'}`}><ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5"/> Peritaje</button>
+                    {adminPermissions?.manage_history !== false && (
+                      <button onClick={() => setAdminTab('history')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab==='history'?'bg-slate-800 dark:bg-slate-700 text-white shadow-md':'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/50'}`}><ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5"/> Peritaje</button>
+                    )}
                   </div>
                     
                     {adminTab === 'dashboard' && (
@@ -905,7 +911,7 @@ function LogisticApp() {
                     
                     {adminTab === 'stats' && <div className="animate-in zoom-in-[0.98] duration-300"><StatsView jobs={jobs} drivers={drivers} vehicles={vehicles} allClientsList={allClientsList} db={db} showAlert={showAlert} showConfirm={showConfirm} /></div>}
 
-                    {isSuperAdmin && adminTab === 'config' && <div className="animate-in zoom-in-[0.98] duration-300"><ConfigView currentUserEmail={currentUserEmail} allClientsList={allClientsList} customClients={customClients} vehicles={vehicles} drivers={drivers} db={db} showAlert={showAlert} showConfirm={showConfirm} /></div>}
+                    {isSuperAdmin && adminTab === 'config' && <div className="animate-in zoom-in-[0.98] duration-300"><ConfigView currentUserEmail={currentUserEmail} allClientsList={allClientsList} customClients={customClients} vehicles={vehicles} drivers={drivers} db={db} showAlert={showAlert} showConfirm={showConfirm} isSuperAdmin={isSuperAdmin} adminPermissions={adminPermissions} /></div>}
                   </>
                 ) : (
                   <div className="space-y-6">
@@ -1102,10 +1108,12 @@ function LogisticApp() {
                      <div className={`${mainTab==='ranking' ? 'bg-yellow-100 dark:bg-yellow-900/40' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Trophy className="w-5 h-5"/></div>
                      <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Ranking</span>
                   </button>
-                  <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='expenses' ? 'text-emerald-600 dark:text-emerald-500' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:text-emerald-400 dark:hover:text-emerald-500'}`}>
-                     <div className={`${mainTab==='expenses' ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Wallet className="w-5 h-5"/></div>
-                     <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Gastos</span>
-                  </button>
+                  {(activeRole !== 'admin' || adminPermissions?.manage_expenses !== false) && (
+                    <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='expenses' ? 'text-emerald-600 dark:text-emerald-500' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:text-emerald-400 dark:hover:text-emerald-500'}`}>
+                       <div className={`${mainTab==='expenses' ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Wallet className="w-5 h-5"/></div>
+                       <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Gastos</span>
+                    </button>
+                  )}
                   {activeRole === 'driver' && (
                      <button onClick={() => setMainTab('profile')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='profile' ? 'text-violet-600 dark:text-violet-500' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-violet-600 dark:text-violet-400 dark:hover:text-violet-500'}`}>
                         <div className={`${mainTab==='profile' ? 'bg-violet-100 dark:bg-violet-900/40' : 'bg-transparent'} p-2 rounded-xl mb-1`}><User className="w-5 h-5"/></div>
