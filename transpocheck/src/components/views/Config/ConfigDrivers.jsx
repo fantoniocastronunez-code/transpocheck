@@ -93,12 +93,12 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
           <div className="space-y-1">
              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Rol en el Sistema</label>
              <select name="role" defaultValue={editingDriver?.role || 'driver'} className="w-full border-2 border-purple-200 dark:border-purple-800/50 bg-purple-50 dark:bg-purple-900/30 p-3 rounded-xl text-sm font-black text-purple-900 dark:text-purple-300 outline-none focus:border-purple-500">
-                <option value="driver">Conductor Titular (Con documentos)</option>
-                <option value="driver_regions">Conductor Regiones</option>
-                <option value="part_time">Conductor Part-Time (Sin validación docs)</option>
-                <option value="quoter">Cotizador / Ventas</option>
-                <option value="admin">Administrador (Oficina)</option>
-                {currentUserEmail === 'fcastro@logisticats.cl' && <option value="super_admin">Super Administrador</option>}
+                <option value="driver" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Conductor Titular (Con documentos)</option>
+                <option value="driver_regions" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Conductor Regiones</option>
+                <option value="part_time" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Conductor Part-Time (Sin validación docs)</option>
+                <option value="quoter" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Cotizador / Ventas</option>
+                <option value="admin" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Administrador (Oficina)</option>
+                {currentUserEmail === 'fcastro@logisticats.cl' && <option value="super_admin" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Super Administrador</option>}
              </select>
           </div>
           <input name="driverName" defaultValue={editingDriver?.name} placeholder="Nombre completo" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-blue-500 font-semibold bg-transparent"/>
