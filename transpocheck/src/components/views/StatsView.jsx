@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { 
-    BarChart3, Users, Car, CheckCircle, Map as MapIcon, Navigation, Repeat, X, MapPin, DollarSign, Download, ChevronLeft, ChevronRight, Calendar, Save, Shield, Clock
+    BarChart3, Users, Car, CheckCircle, Map as MapIcon, Navigation, Repeat, X, MapPin, DollarSign, Download, ChevronLeft, ChevronRight, Calendar, Save, Shield, Clock, Settings
 } from 'lucide-react';
 import { getVehicleIdentifierLabel } from '../../utils/helpers';
 
@@ -619,22 +619,43 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                                             <span className="bg-slate-800 text-white text-[10px] font-black px-2.5 py-1 rounded-md tracking-widest shadow-sm shrink-0">{j.plate || j.vin || 'S/N'}</span>
                                         </div>
                                         
-                                        {/* RUTA: DESDE - HASTA */}
+                                        {/* RUTA: DESDE - HASTA o SERVICIO */}
                                         <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-3 mb-3 border border-slate-100 dark:border-slate-800 space-y-2.5 ml-1.5">
-                                            <div className="flex items-start gap-2.5">
-                                                <div className="bg-blue-100 dark:bg-blue-900/40 p-1.5 rounded-full shrink-0"><MapPin className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400"/></div>
-                                                <div className="flex-1 min-w-0 pt-0.5">
-                                                    <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest leading-none mb-0.5">Desde (Origen)</p>
-                                                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300 leading-snug line-clamp-2">{j.origin || 'Origen no especificado'}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-start gap-2.5">
-                                                <div className="bg-amber-100 dark:bg-amber-900/40 p-1.5 rounded-full shrink-0"><Navigation className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400"/></div>
-                                                <div className="flex-1 min-w-0 pt-0.5">
-                                                    <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest leading-none mb-0.5">Hasta (Destino)</p>
-                                                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300 leading-snug line-clamp-2">{j.destination || j.destName || 'Destino no especificado'}</p>
-                                                </div>
-                                            </div>
+                                            {j.operationMode === 'servicio' ? (
+                                                <>
+                                                    <div className="flex items-start gap-2.5">
+                                                        <div className="bg-purple-100 dark:bg-purple-900/40 p-1.5 rounded-full shrink-0"><Settings className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400"/></div>
+                                                        <div className="flex-1 min-w-0 pt-0.5">
+                                                            <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest leading-none mb-0.5">Servicio Realizado</p>
+                                                            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 leading-snug line-clamp-2">{j.description || 'Servicio no especificado'}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-start gap-2.5">
+                                                        <div className="bg-blue-100 dark:bg-blue-900/40 p-1.5 rounded-full shrink-0"><MapPin className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400"/></div>
+                                                        <div className="flex-1 min-w-0 pt-0.5">
+                                                            <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest leading-none mb-0.5">Ubicación</p>
+                                                            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 leading-snug line-clamp-2">{j.origin || 'Ubicación no especificada'}</p>
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <div className="flex items-start gap-2.5">
+                                                        <div className="bg-blue-100 dark:bg-blue-900/40 p-1.5 rounded-full shrink-0"><MapPin className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400"/></div>
+                                                        <div className="flex-1 min-w-0 pt-0.5">
+                                                            <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest leading-none mb-0.5">Desde (Origen)</p>
+                                                            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 leading-snug line-clamp-2">{j.origin || 'Origen no especificado'}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-start gap-2.5">
+                                                        <div className="bg-amber-100 dark:bg-amber-900/40 p-1.5 rounded-full shrink-0"><Navigation className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400"/></div>
+                                                        <div className="flex-1 min-w-0 pt-0.5">
+                                                            <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest leading-none mb-0.5">Hasta (Destino)</p>
+                                                            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 leading-snug line-clamp-2">{j.destination || j.destName || 'Destino no especificado'}</p>
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
 
                                         {/* CONDUCTOR Y DISTANCIA */}
