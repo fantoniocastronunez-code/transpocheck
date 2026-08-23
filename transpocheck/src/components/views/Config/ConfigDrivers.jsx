@@ -218,25 +218,26 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
         <h3 className="font-extrabold text-slate-800 dark:text-slate-200 mb-4">Gestión de Usuarios</h3>
         <div className="space-y-2">
           {drivers.length === 0 ? <p className="text-sm font-semibold text-slate-400">Directorio vacío</p> : drivers.map(d=>(
-            <div key={d.id} className={`flex justify-between items-center p-3 border rounded-xl group transition-all ${d.isHidden ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 opacity-75' : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800'}`}>
-              <div className="flex items-center gap-3 overflow-hidden">
-                <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex items-center justify-center shadow-sm relative">
+            <div key={d.id} className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border rounded-2xl group transition-all ${d.isHidden ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 opacity-75' : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800'}`}>
+              <div className="flex items-start sm:items-center gap-3 overflow-hidden w-full">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden shrink-0 border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex items-center justify-center shadow-sm relative mt-1 sm:mt-0">
                   {d.photo ? (
                     <img src={d.photo} alt={d.name} className={`w-full h-full object-cover ${d.isHidden ? 'grayscale' : ''}`} />
                   ) : (
-                    <User className="w-5 h-5 text-slate-400" />
+                    <User className="w-6 h-6 sm:w-7 sm:h-7 text-slate-400" />
                   )}
-                  {d.isHidden && <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center"><EyeOff className="w-4 h-4 text-white"/></div>}
+                  {d.isHidden && <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center"><EyeOff className="w-5 h-5 text-white"/></div>}
                 </div>
 
-                <div className="truncate">
-                  <div className="flex items-center gap-2">
-                     <p className={`text-sm font-extrabold truncate ${d.isHidden ? 'text-slate-500 dark:text-slate-400 line-through decoration-slate-400' : 'text-slate-800 dark:text-slate-200'}`}>{d.name}</p>
-                     {d.isHidden && <span className="bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-600 text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest shrink-0">Oculto</span>}
+                <div className="flex-1 min-w-0 flex flex-col justify-center">
+                  <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                     <p className={`text-base sm:text-lg font-extrabold leading-tight break-words ${d.isHidden ? 'text-slate-500 dark:text-slate-400 line-through decoration-slate-400' : 'text-slate-800 dark:text-slate-200'}`}>{d.name}</p>
+                     {d.isHidden && <span className="bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-600 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest shrink-0">Oculto</span>}
                   </div>
-                  <p className="text-xs font-bold text-slate-400 truncate leading-tight">{d.email}</p>
-                  <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider border ${
+                  <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 break-all leading-tight mb-1.5">{d.email}</p>
+                  
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider border ${
                        d.role === 'super_admin' ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/50' :
                        d.role === 'admin' ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800/50' :
                        d.role === 'quoter' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800/50' :
@@ -246,27 +247,28 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
                        {d.role === 'super_admin' ? 'Super Admin' : d.role === 'admin' ? 'Admin' : d.role === 'quoter' ? 'Cotizador' : d.role === 'part_time' ? 'Part-Time' : 'Conductor'}
                     </span>
                     {(!d.role || d.role === 'driver') && d.licenses && d.licenses.length > 0 && (
-                       <span className={`text-[9px] font-black px-2 py-0.5 rounded-md border ${d.isHidden ? 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-600' : 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800/50'}`}>
+                       <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${d.isHidden ? 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-600' : 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800/50'}`}>
                          Licencias: {d.licenses.join(', ')}
                        </span>
                     )}
                   </div>
-                  {d.createdAt && <p className="text-[9px] font-bold text-slate-400 mt-1.5 flex items-center gap-1"><Clock className="w-3 h-3"/> Ingreso: {new Date(d.createdAt).toLocaleDateString('es-CL')}</p>}
+                  {d.createdAt && <p className="text-[10px] sm:text-xs font-bold text-slate-400 dark:text-slate-500 mt-2.5 flex items-center gap-1"><Clock className="w-3.5 h-3.5"/> Ingreso: {new Date(d.createdAt).toLocaleDateString('es-CL')}</p>}
                 </div>
               </div>
-              <div className="flex gap-1.5 shrink-0 ml-2">
+              
+              <div className="flex gap-2 shrink-0 w-full sm:w-auto justify-end mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-0 border-slate-200 dark:border-slate-700/70">
                  <button onClick={async () => {
                      try { await updateDoc(doc(db, 'drivers', d.id), { isHidden: !d.isHidden }); }
                      catch (e) { showAlert("Error al cambiar estado."); }
-                 }} className={`p-2 rounded-lg transition-colors shadow-sm ${d.isHidden ? 'bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 hover:bg-green-200 border border-green-200 dark:border-green-800/50' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-300 dark:bg-slate-600'}`} title={d.isHidden ? "Restaurar Conductor" : "Ocultar Conductor"}>
-                     {d.isHidden ? <Eye className="w-4 h-4"/> : <EyeOff className="w-4 h-4"/>}
+                 }} className={`p-3 sm:p-2.5 flex-1 sm:flex-none flex items-center justify-center rounded-xl transition-colors shadow-sm ${d.isHidden ? 'bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 hover:bg-green-200 border border-green-200 dark:border-green-800/50' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-300 dark:bg-slate-600'}`} title={d.isHidden ? "Restaurar Conductor" : "Ocultar Conductor"}>
+                     {d.isHidden ? <Eye className="w-5 h-5"/> : <EyeOff className="w-5 h-5"/>}
                  </button>
                  <button onClick={() => { 
                    setEditingDriver(d); 
                    setDriverDocs({ photo: d.photo || null, idFront: d.idFront || null, idBack: d.idBack || null, licenseFront: d.licenseFront || null, licenseBack: d.licenseBack || null }); 
                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                 }} className={`px-3 py-2 rounded-lg transition-colors shadow-sm text-xs font-bold flex items-center gap-1.5 ${d.isHidden ? 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-300 dark:bg-slate-600' : 'bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 text-blue-600 dark:text-blue-400'}`} title="Ver Perfil y Documentos"><User className="w-4 h-4"/> Perfil</button>
-                 <button onClick={() => showConfirm("¿Eliminar conductor?", async()=>await deleteDoc(doc(db,'drivers',d.id)))} className="p-2 bg-red-100 dark:bg-red-900/40 hover:bg-red-200 text-red-500 rounded-lg transition-colors shadow-sm"><Trash2 className="w-4 h-4"/></button>
+                 }} className={`px-4 py-3 sm:py-2.5 flex-[2] sm:flex-none justify-center rounded-xl transition-colors shadow-sm text-sm font-extrabold flex items-center gap-2 ${d.isHidden ? 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-300 dark:bg-slate-600' : 'bg-blue-600 hover:bg-blue-700 text-white'}`} title="Ver Perfil y Documentos"><User className="w-4.5 h-4.5"/> Perfil</button>
+                 <button onClick={() => showConfirm("¿Eliminar conductor?", async()=>await deleteDoc(doc(db,'drivers',d.id)))} className="p-3 sm:p-2.5 flex-1 sm:flex-none flex items-center justify-center bg-red-100 dark:bg-red-900/40 hover:bg-red-200 text-red-500 rounded-xl transition-colors shadow-sm"><Trash2 className="w-5 h-5"/></button>
               </div>
             </div>
           ))}
