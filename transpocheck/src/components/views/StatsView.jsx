@@ -36,69 +36,6 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
         fetchFrozenStats();
     }, [currentMonthKey, db]);
 
-    // NUEVO: AUTO-CONGELAR MESES PASADOS (Retroactivo al visualizar)
-    useEffect(() => {
-        const now = new Date();
-        const isPastMonth = viewDate.getFullYear() < now.getFullYear() || 
-                           (viewDate.getFullYear() === now.getFullYear() && viewDate.getMonth() < now.getMonth());
-
-        if (isPastMonth && !frozenStats && !isFreezing && db && stats?.totalJobs > 0) {
-            setIsFreezing(true);
-            const autoFreezePast = async () => {
-                try {
-                    await setDoc(doc(db, 'monthly_stats', currentMonthKey), {
-                        monthKey: currentMonthKey,
-                        timestamp: Date.now(),
-                        stats: { ...stats, monthlyJobs: [] },
-                        autoFrozen: true
-                    });
-                    setFrozenStats({ ...stats, monthlyJobs: [] });
-                } catch (e) {
-                    console.error("Error auto-congelando mes pasado", e);
-                } finally {
-                    setIsFreezing(false);
-                }
-            };
-            autoFreezePast();
-        }
-    }, [viewDate, frozenStats, isFreezing, db, stats, currentMonthKey]);
-
-    // NUEVO: AUTO-CONGELAR ÚLTIMO DÍA DEL MES A LAS 23:59
-    useEffect(() => {
-        const interval = setInterval(() => {
-            const now = new Date();
-            const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-            
-            // Si mañana es día 1, entonces hoy es el último día del mes. Y revisamos si son las 23:59
-            if (tomorrow.getDate() === 1 && now.getHours() === 23 && now.getMinutes() >= 59) {
-                const isCurrentMonthView = viewDate.getMonth() === now.getMonth() && viewDate.getFullYear() === now.getFullYear();
-                
-                if (isCurrentMonthView && !frozenStats && !isFreezing && db && stats?.totalJobs > 0) {
-                     setIsFreezing(true);
-                     const autoFreezeCurrent = async () => {
-                        try {
-                            await setDoc(doc(db, 'monthly_stats', currentMonthKey), {
-                                monthKey: currentMonthKey,
-                                timestamp: Date.now(),
-                                stats: { ...stats, monthlyJobs: [] },
-                                autoFrozenEndDay: true
-                            });
-                            setFrozenStats({ ...stats, monthlyJobs: [] });
-                            if (showAlert) showAlert("Cierre de mes automático completado.", "success");
-                        } catch (e) {
-                            console.error(e);
-                        } finally {
-                            setIsFreezing(false);
-                        }
-                     };
-                     autoFreezeCurrent();
-                }
-            }
-        }, 60000); // 1 minuto
-        
-        return () => clearInterval(interval);
-    }, [viewDate, frozenStats, isFreezing, db, stats, currentMonthKey, showAlert]);
-
     // 1. CÁLCULO DE MÉTRICAS
     const stats = useMemo(() => {
         if (frozenStats) return frozenStats;
@@ -261,6 +198,69 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
 
     // Al agregar viewDate a este arreglo, React recalculará las métricas cada vez que cambies de mes
     }, [jobs, drivers, viewDate, frozenStats]);
+
+    // NUEVO: AUTO-CONGELAR MESES PASADOS (Retroactivo al visualizar)
+    useEffect(() => {
+        const now = new Date();
+        const isPastMonth = viewDate.getFullYear() < now.getFullYear() || 
+                           (viewDate.getFullYear() === now.getFullYear() && viewDate.getMonth() < now.getMonth());
+
+        if (isPastMonth && !frozenStats && !isFreezing && db && stats?.totalJobs > 0) {
+            setIsFreezing(true);
+            const autoFreezePast = async () => {
+                try {
+                    await setDoc(doc(db, 'monthly_stats', currentMonthKey), {
+                        monthKey: currentMonthKey,
+                        timestamp: Date.now(),
+                        stats: { ...stats, monthlyJobs: [] },
+                        autoFrozen: true
+                    });
+                    setFrozenStats({ ...stats, monthlyJobs: [] });
+                } catch (e) {
+                    console.error("Error auto-congelando mes pasado", e);
+                } finally {
+                    setIsFreezing(false);
+                }
+            };
+            autoFreezePast();
+        }
+    }, [viewDate, frozenStats, isFreezing, db, stats, currentMonthKey]);
+
+    // NUEVO: AUTO-CONGELAR ÚLTIMO DÍA DEL MES A LAS 23:59
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const now = new Date();
+            const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+            
+            // Si mañana es día 1, entonces hoy es el último día del mes. Y revisamos si son las 23:59
+            if (tomorrow.getDate() === 1 && now.getHours() === 23 && now.getMinutes() >= 59) {
+                const isCurrentMonthView = viewDate.getMonth() === now.getMonth() && viewDate.getFullYear() === now.getFullYear();
+                
+                if (isCurrentMonthView && !frozenStats && !isFreezing && db && stats?.totalJobs > 0) {
+                     setIsFreezing(true);
+                     const autoFreezeCurrent = async () => {
+                        try {
+                            await setDoc(doc(db, 'monthly_stats', currentMonthKey), {
+                                monthKey: currentMonthKey,
+                                timestamp: Date.now(),
+                                stats: { ...stats, monthlyJobs: [] },
+                                autoFrozenEndDay: true
+                            });
+                            setFrozenStats({ ...stats, monthlyJobs: [] });
+                            if (showAlert) showAlert("Cierre de mes automático completado.", "success");
+                        } catch (e) {
+                            console.error(e);
+                        } finally {
+                            setIsFreezing(false);
+                        }
+                     };
+                     autoFreezeCurrent();
+                }
+            }
+        }, 60000); // 1 minuto
+        
+        return () => clearInterval(interval);
+    }, [viewDate, frozenStats, isFreezing, db, stats, currentMonthKey, showAlert]);
 
     const handleFreezeMonth = () => {
         if (!db) {
