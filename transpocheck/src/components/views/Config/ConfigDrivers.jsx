@@ -60,11 +60,7 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
     <div className="grid md:grid-cols-2 gap-6">
       <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const enableNotifications = Object.values(driverNotifs).some(v => v); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), role: fd.get('role'), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry'), enableNotifications, notifications: driverNotifs, permissions: driverPermissions, ...driverDocs }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); setDriverPermissions(defaultPermissions); showAlert("Perfil actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); setDriverPermissions(defaultPermissions); showAlert("Usuario creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-4 relative">
         
-        {/* Lógica silenciosa para cargar notificaciones previas al editar */}
-        <div className="hidden">
-           {editingDriver && driverNotifs === defaultDriverNotifs && editingDriver.notifications && setDriverNotifs(editingDriver.notifications)}
-           {editingDriver && driverPermissions === defaultPermissions && editingDriver.permissions && setDriverPermissions(editingDriver.permissions)}
-        </div>
+
 
         <div className="flex justify-between items-start">
           <h3 className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-2"><User className="text-blue-600 dark:text-blue-400"/> {editingDriver ? 'Perfil de Usuario' : 'Nuevo Usuario'}</h3>
@@ -266,6 +262,8 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
                  <button onClick={() => { 
                    setEditingDriver(d); 
                    setDriverDocs({ photo: d.photo || null, idFront: d.idFront || null, idBack: d.idBack || null, licenseFront: d.licenseFront || null, licenseBack: d.licenseBack || null }); 
+                   setDriverNotifs(d.notifications || defaultDriverNotifs);
+                   setDriverPermissions(d.permissions || defaultPermissions);
                    window.scrollTo({ top: 0, behavior: 'smooth' });
                  }} className={`px-4 py-3 sm:py-2.5 flex-[2] sm:flex-none justify-center rounded-xl transition-colors shadow-sm text-sm font-extrabold flex items-center gap-2 ${d.isHidden ? 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-300 dark:bg-slate-600' : 'bg-blue-600 hover:bg-blue-700 text-white'}`} title="Ver Perfil y Documentos"><User className="w-4.5 h-4.5"/> Perfil</button>
                  <button onClick={() => showConfirm("¿Eliminar conductor?", async()=>await deleteDoc(doc(db,'drivers',d.id)))} className="p-3 sm:p-2.5 flex-1 sm:flex-none flex items-center justify-center bg-red-100 dark:bg-red-900/40 hover:bg-red-200 text-red-500 rounded-xl transition-colors shadow-sm"><Trash2 className="w-5 h-5"/></button>
