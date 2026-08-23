@@ -94,6 +94,7 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Rol en el Sistema</label>
              <select name="role" defaultValue={editingDriver?.role || 'driver'} className="w-full border-2 border-purple-200 dark:border-purple-800/50 bg-purple-50 dark:bg-purple-900/30 p-3 rounded-xl text-sm font-black text-purple-900 dark:text-purple-300 outline-none focus:border-purple-500">
                 <option value="driver">Conductor Titular (Con documentos)</option>
+                <option value="driver_regions">Conductor Regiones</option>
                 <option value="part_time">Conductor Part-Time (Sin validación docs)</option>
                 <option value="quoter">Cotizador / Ventas</option>
                 <option value="admin">Administrador (Oficina)</option>
@@ -237,10 +238,11 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
                        d.role === 'super_admin' ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/50' :
                        d.role === 'admin' ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800/50' :
                        d.role === 'quoter' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800/50' :
+                       d.role === 'driver_regions' ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800/50' :
                        d.role === 'part_time' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800/50' :
                        'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50'
                     }`}>
-                       {d.role === 'super_admin' ? 'Super Admin' : d.role === 'admin' ? 'Admin' : d.role === 'quoter' ? 'Cotizador' : d.role === 'part_time' ? 'Part-Time' : 'Conductor'}
+                       {d.role === 'super_admin' ? 'Super Admin' : d.role === 'admin' ? 'Admin' : d.role === 'quoter' ? 'Cotizador' : d.role === 'driver_regions' ? 'Cond. Regiones' : d.role === 'part_time' ? 'Part-Time' : 'Conductor'}
                     </span>
                     {(!d.role || d.role === 'driver') && d.licenses && d.licenses.length > 0 && (
                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${d.isHidden ? 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-600' : 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800/50'}`}>

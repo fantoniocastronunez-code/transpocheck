@@ -1001,24 +1001,28 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
            <h3 className="text-base font-bold text-slate-700 dark:text-slate-300">4. Conductores <span className="text-xs text-red-500 font-normal">(Seleccionar o ingresar correo)</span></h3>
 
            <div className="max-h-64 overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {drivers.length === 0 ? <p className="text-sm text-slate-400 p-4 font-semibold col-span-full text-center">No hay conductores registrados.</p> : drivers.map(d => {
-                const isSelected = selectedDriversUI.includes(d.id);
-                return (
-                <label key={d.id} className="relative flex cursor-pointer group">
-                  <input type="checkbox" name="assignedDriverId" value={d.id} checked={isSelected} onChange={() => setSelectedDriversUI(prev => prev.includes(d.id) ? prev.filter(id => id !== d.id) : [...prev, d.id])} className="sr-only" />
-                  
-                  <div className={`w-full flex items-center p-3 bg-white dark:bg-slate-900 border-2 rounded-2xl transition-all ${isSelected ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'border-slate-200 dark:border-slate-700 group-hover:border-blue-300 dark:border-blue-700/50'}`}>
-                    <div className={`p-2.5 rounded-xl transition-colors shrink-0 ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
-                      <User className="w-5 h-5" />
-                    </div>
-                    <div className="ml-3 flex-1 overflow-hidden">
-                      <span className={`block text-sm font-extrabold truncate ${isSelected ? 'text-blue-700 dark:text-blue-400' : 'text-slate-800 dark:text-slate-200'}`}>{d.name}</span>
-                      <span className={`block text-[10px] font-bold truncate mt-0.5 ${isSelected ? 'text-blue-500' : 'text-slate-400'}`}>{d.email}</span>
-                    </div>
-                    <CheckCircle className={`w-6 h-6 transition-transform duration-200 shrink-0 ml-2 ${isSelected ? 'scale-100 text-blue-600 dark:text-blue-400' : 'scale-0 text-slate-300'}`} />
-                  </div>
-                </label>
-              )})}
+              {drivers.length === 0 ? <p className="text-sm text-slate-400 p-4 font-semibold col-span-full text-center">No hay conductores registrados.</p> : (() => {
+                 const visibleDrivers = drivers.filter(d => !d.isHidden && !(d.role === 'driver_regions' && tripType !== 'viaje'));
+                 if (visibleDrivers.length === 0) return <p className="text-sm text-slate-400 p-4 font-semibold col-span-full text-center">No hay conductores disponibles.</p>;
+                 return visibleDrivers.map(d => {
+                    const isSelected = selectedDriversUI.includes(d.id);
+                    return (
+                    <label key={d.id} className="relative flex cursor-pointer group">
+                      <input type="checkbox" name="assignedDriverId" value={d.id} checked={isSelected} onChange={() => setSelectedDriversUI(prev => prev.includes(d.id) ? prev.filter(id => id !== d.id) : [...prev, d.id])} className="sr-only" />
+                      
+                      <div className={`w-full flex items-center p-3 bg-white dark:bg-slate-900 border-2 rounded-2xl transition-all ${isSelected ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/30' : 'border-slate-200 dark:border-slate-700 group-hover:border-blue-300 dark:border-blue-700/50'}`}>
+                        <div className={`p-2.5 rounded-xl transition-colors shrink-0 ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+                          <User className="w-5 h-5" />
+                        </div>
+                        <div className="ml-3 flex-1 overflow-hidden">
+                          <span className={`block text-sm font-extrabold truncate ${isSelected ? 'text-blue-700 dark:text-blue-400' : 'text-slate-800 dark:text-slate-200'}`}>{d.name}</span>
+                          <span className={`block text-[10px] font-bold truncate mt-0.5 ${isSelected ? 'text-blue-500' : 'text-slate-400'}`}>{d.email}</span>
+                        </div>
+                        <CheckCircle className={`w-6 h-6 transition-transform duration-200 shrink-0 ml-2 ${isSelected ? 'scale-100 text-blue-600 dark:text-blue-400' : 'scale-0 text-slate-300'}`} />
+                      </div>
+                    </label>
+                  )});
+              })()}
            </div>
 
            <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800/50 p-4 rounded-xl mt-4">
