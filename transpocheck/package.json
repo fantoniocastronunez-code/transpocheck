@@ -22,7 +22,9 @@
     "pdfjs-dist": "^6.2.108",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "react-qr-code": "^2.2.0",
     "react-router-dom": "^7.18.0",
+    "react-signature-canvas": "^1.1.0-alpha.2",
     "react-zoom-pan-pinch": "^4.0.4",
     "tesseract.js": "^7.0.0"
   },
