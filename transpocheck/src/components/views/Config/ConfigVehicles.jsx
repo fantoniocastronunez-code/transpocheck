@@ -1,11 +1,45 @@
 import React, { useState } from 'react';
 import { collection, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
-import { Truck, Edit2, Trash2 } from 'lucide-react';
+import { Truck, Edit2, Trash2, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import LicensePlateBadge from '../../ui/LicensePlateBadge';
 
 export default function ConfigVehicles({ allClientsList, vehicles, db, showAlert, showConfirm }) {
   const [editingVehicle, setEditingVehicle] = useState(null);
-  const [fleetFilter, setFleetFilter] = useState('');
+  const [expandedClients, setExpandedClients] = useState({});
+
+  const toggleClient = (c) => setExpandedClients(p => ({...p, [c]: !p[c]}));
+
+  // Group vehicles by client
+  const groupedVehicles = {};
+  vehicles.forEach(v => {
+      const c = v.client || 'Sin Cliente';
+      if (!groupedVehicles[c]) groupedVehicles[c] = [];
+      groupedVehicles[c].push(v);
+  });
+
+  const handleBulkClean = async () => {
+     const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+     const toDelete = vehicles.filter(v => {
+         const trips = v.tripsCount || 0;
+         if (trips > 1) return false;
+         const refDate = v.lastTripDate || v.createdAt || 0;
+         return refDate < thirtyDaysAgo;
+     });
+
+     if (toDelete.length === 0) return showAlert("No hay vehículos inactivos que cumplan las condiciones (máximo 1 traslado y más de 30 días de inactividad).");
+
+     showConfirm(`¿Estás seguro de borrar masivamente ${toDelete.length} vehículos inactivos?`, async () => {
+         showAlert(`⏳ Borrando ${toDelete.length} vehículos...`);
+         try {
+             const deletePromises = toDelete.map(v => deleteDoc(doc(db, 'vehicles', v.id)));
+             await Promise.all(deletePromises);
+             showAlert(`✅ ${toDelete.length} vehículos eliminados exitosamente.`);
+         } catch(e) {
+             console.error(e);
+             showAlert("❌ Error al borrar vehículos.");
+         }
+     });
+  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full min-w-0">
@@ -63,64 +97,55 @@ export default function ConfigVehicles({ allClientsList, vehicles, db, showAlert
       </form>
 
       <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 w-full min-w-0 flex flex-col">
-        <div className="flex justify-between items-center mb-4 gap-2">
-          <h3 className="font-extrabold text-slate-800 dark:text-slate-200 whitespace-nowrap">Base Flota</h3>
-          <select onChange={(e) => setFleetFilter(e.target.value)} className="border-2 border-slate-200 dark:border-slate-700 p-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 outline-none focus:border-blue-500 flex-1 max-w-[150px] sm:max-w-full truncate bg-transparent">
-            <option value="">Todos los Clientes</option>
-            {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
-            <option value="OTRO">Otros</option>
-          </select>
+        <div className="flex justify-between items-center mb-4 gap-2 flex-wrap">
+          <h3 className="font-extrabold text-slate-800 dark:text-slate-200 whitespace-nowrap">Base Flota Agrupada</h3>
+          <button onClick={handleBulkClean} className="bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-400 border border-red-200 dark:border-red-800/50 px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-colors">
+            <AlertTriangle className="w-4 h-4"/> Limpiar Inactivos
+          </button>
         </div>
         <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1 sm:pr-2">
-          {vehicles.filter(v => {
-            if (!fleetFilter) return true;
-            if (fleetFilter === 'OTRO') return !allClientsList.includes(v.client);
-            return v.client === fleetFilter;
-          }).map(v=>{
-            const clientUpper = v.client?.toUpperCase() || '';
-            const grad = clientUpper.includes('KOVACS') ? 'from-red-600 to-red-800' : clientUpper.includes('SALFA') ? 'from-emerald-600 to-emerald-800' : clientUpper.includes('GRANDLEASING') ? 'from-slate-700 to-slate-900' : 'from-blue-600 to-blue-800';
-            
-            const logoUrl = clientUpper.includes('KOVACS') ? '/logos/kovacs.png' : 
-                            clientUpper.includes('SALFA') ? '/logos/salfa.png' : 
-                            clientUpper.includes('GRANDLEASING') ? '/logos/grandleasing.png' : 
-                            clientUpper.includes('ENEX') ? '/logos/enex.png' : 
-                            `/logos/${v.client?.toLowerCase().replace(/[^a-z0-9]/g, '')}.png`;
+          {Object.keys(groupedVehicles).sort().map(clientName => {
+             const isExpanded = expandedClients[clientName];
+             const clientVehicles = groupedVehicles[clientName];
+             
+             return (
+               <div key={clientName} className="border-2 border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden bg-slate-50 dark:bg-slate-800/50">
+                  <button onClick={() => toggleClient(clientName)} className="w-full flex justify-between items-center p-4 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors outline-none focus:ring-2 ring-inset ring-blue-500">
+                     <div className="flex items-center gap-3">
+                        <div className="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 w-8 h-8 rounded-full flex items-center justify-center font-black text-sm">
+                           {clientVehicles.length}
+                        </div>
+                        <span className="font-extrabold text-slate-700 dark:text-slate-200 uppercase">{clientName}</span>
+                     </div>
+                     {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400"/> : <ChevronDown className="w-5 h-5 text-slate-400"/>}
+                  </button>
 
-            let emoji = '🚙';
-            if (v.vehicleType === 'camioneta') emoji = '🛻';
-            else if (v.vehicleType?.includes('furgon')) emoji = '🚐';
-            else if (v.vehicleType?.includes('2ejes') || v.vehicleType?.includes('3ejes') || v.vehicleType?.includes('8x4')) emoji = '🚛';
-            else if (v.vehicleType?.includes('camion')) emoji = '🚚';
-            else if (v.vehicleType === 'carro_arrastre') emoji = '🛒';
-
-            return (
-            <div key={v.id} className={`relative overflow-hidden p-3.5 sm:p-4 rounded-2xl shadow-md bg-gradient-to-br ${grad} text-white group transition-all w-full`}>
-              
-              <div className="absolute -left-2 -bottom-2 w-32 h-32 opacity-30 pointer-events-none mix-blend-overlay rotate-[-15deg] grayscale">
-                <img src={logoUrl} alt="" className="w-full h-full object-contain" onError={(e) => e.target.style.display='none'}/>
-              </div>
-
-              <div className="absolute -right-2 -bottom-4 opacity-40 pointer-events-none text-[120px] leading-none select-none mix-blend-overlay grayscale">
-                {emoji}
-              </div>
-
-              <div className="flex justify-between items-start gap-2 relative z-10 w-full">
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-black text-white/70 uppercase tracking-widest truncate">{v.client || 'Sin cliente'}</p>
-                  <p className="text-base sm:text-lg font-black leading-tight mt-0.5 truncate">{v.brand} {v.model}</p>
-                  {v.vehicleType && <span className="inline-block mt-1.5 text-[9px] font-black bg-white dark:bg-slate-900 px-2 py-0.5 rounded-md uppercase backdrop-blur-md border border-white dark:border-slate-800/10 truncate max-w-full">{v.vehicleType.replace('_', ' ')}</span>}
-                </div>
-                <div className="shrink-0 relative z-20">
-                  <LicensePlateBadge text={v.plate} />
-                </div>
-              </div>
-
-              <div className="flex gap-2 mt-4 relative z-20 justify-end border-t border-white dark:border-slate-800/10 pt-3">
-                <button onClick={() => {setEditingVehicle(v); window.scrollTo({ top: 0, behavior: 'smooth' });}} className="p-1.5 bg-white dark:bg-slate-900 hover:bg-white dark:bg-slate-900 rounded-lg transition-colors backdrop-blur-sm shadow-sm"><Edit2 className="w-4 h-4 text-white"/></button>
-                <button onClick={()=>showConfirm("¿Eliminar vehículo?", async () => {try { await deleteDoc(doc(db, 'vehicles', v.id)); } catch (e) {}})} className="p-1.5 bg-red-500/80 hover:bg-red-500 rounded-lg transition-colors backdrop-blur-sm shadow-sm"><Trash2 className="w-4 h-4 text-white"/></button>
-              </div>
-            </div>
-          )})}
+                  {isExpanded && (
+                     <div className="p-3 space-y-2 bg-slate-50 dark:bg-slate-800/30">
+                       {clientVehicles.map(v => {
+                          const tripsCount = v.tripsCount || 0;
+                          return (
+                            <div key={v.id} className="flex flex-wrap sm:flex-nowrap justify-between items-center bg-white dark:bg-slate-900 p-3 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 gap-3">
+                               <div>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <LicensePlateBadge text={v.plate} />
+                                    {v.vehicleType && <span className="text-[9px] font-black bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md uppercase text-slate-600 dark:text-slate-300">{v.vehicleType.replace('_', ' ')}</span>}
+                                  </div>
+                                  <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase truncate max-w-[150px] sm:max-w-xs">{v.brand} {v.model}</p>
+                                  <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 mt-1 uppercase">Trasladado: {tripsCount} ve{tripsCount === 1 ? 'z' : 'ces'}</p>
+                               </div>
+                               <div className="flex gap-2">
+                                  <button onClick={() => {setEditingVehicle(v); window.scrollTo({ top: 0, behavior: 'smooth' });}} className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"><Edit2 className="w-4 h-4 text-slate-600 dark:text-slate-300"/></button>
+                                  <button onClick={()=>showConfirm("¿Eliminar vehículo?", async () => {try { await deleteDoc(doc(db, 'vehicles', v.id)); } catch (e) {}})} className="p-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
+                               </div>
+                            </div>
+                          );
+                       })}
+                     </div>
+                  )}
+               </div>
+             );
+          })}
           {vehicles.length === 0 && <p className="text-sm font-semibold text-slate-400 text-center py-4">No hay vehículos registrados</p>}
         </div>
       </div>

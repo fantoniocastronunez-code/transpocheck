@@ -540,8 +540,26 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                await addDoc(collection(db, 'transport_jobs'), currentJobData);
             }
             
-            if (operationMode === 'traslado' && (vPlate || vVin) && !vehicles.find(veh => (vPlate && veh.plate === vPlate) || (vVin && veh.vin === vVin))) {
-                await addDoc(collection(db, 'vehicles'), { plate: vPlate, vin: vVin, vehicleType: v.vehicleType, brand: vBrand, model: vModel, client: finalClient, createdAt: Date.now() + index });
+            if (operationMode === 'traslado' && (vPlate || vVin) && !jobToEdit) {
+                const existingVehicle = vehicles.find(veh => (vPlate && veh.plate === vPlate) || (vVin && veh.vin === vVin));
+                if (existingVehicle) {
+                    await updateDoc(doc(db, 'vehicles', existingVehicle.id), {
+                        tripsCount: (existingVehicle.tripsCount || 0) + 1,
+                        lastTripDate: Date.now()
+                    });
+                } else {
+                    await addDoc(collection(db, 'vehicles'), { 
+                        plate: vPlate, 
+                        vin: vVin, 
+                        vehicleType: v.vehicleType, 
+                        brand: vBrand, 
+                        model: vModel, 
+                        client: finalClient, 
+                        createdAt: Date.now() + index,
+                        tripsCount: 1,
+                        lastTripDate: Date.now()
+                    });
+                }
             }
             
             return { currentJobData, vPlate, vVin, vBrand, vModel };
