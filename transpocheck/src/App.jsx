@@ -157,6 +157,7 @@ function LogisticApp() {
   // 🚀 LA MAGIA: EL HOOK QUE HACE TODO EL TRABAJO SUCIO
   const { 
     user, actualUserEmail, currentUserEmail, isRealAdmin, isSuperAdmin, isQuoter, isPartTime,
+    adminPermissions,
     jobs, drivers, expenses, vehicles, customClients, 
     broadcast, dataLoaded, notificationsEnabled, requestNotificationPermission
   } = useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAlert);
