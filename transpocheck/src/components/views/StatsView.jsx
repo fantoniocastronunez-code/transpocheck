@@ -36,6 +36,69 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
         fetchFrozenStats();
     }, [currentMonthKey, db]);
 
+    // NUEVO: AUTO-CONGELAR MESES PASADOS (Retroactivo al visualizar)
+    useEffect(() => {
+        const now = new Date();
+        const isPastMonth = viewDate.getFullYear() < now.getFullYear() || 
+                           (viewDate.getFullYear() === now.getFullYear() && viewDate.getMonth() < now.getMonth());
+
+        if (isPastMonth && !frozenStats && !isFreezing && db && stats?.totalJobs > 0) {
+            setIsFreezing(true);
+            const autoFreezePast = async () => {
+                try {
+                    await setDoc(doc(db, 'monthly_stats', currentMonthKey), {
+                        monthKey: currentMonthKey,
+                        timestamp: Date.now(),
+                        stats: { ...stats, monthlyJobs: [] },
+                        autoFrozen: true
+                    });
+                    setFrozenStats({ ...stats, monthlyJobs: [] });
+                } catch (e) {
+                    console.error("Error auto-congelando mes pasado", e);
+                } finally {
+                    setIsFreezing(false);
+                }
+            };
+            autoFreezePast();
+        }
+    }, [viewDate, frozenStats, isFreezing, db, stats, currentMonthKey]);
+
+    // NUEVO: AUTO-CONGELAR ÚLTIMO DÍA DEL MES A LAS 23:59
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const now = new Date();
+            const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+            
+            // Si mañana es día 1, entonces hoy es el último día del mes. Y revisamos si son las 23:59
+            if (tomorrow.getDate() === 1 && now.getHours() === 23 && now.getMinutes() >= 59) {
+                const isCurrentMonthView = viewDate.getMonth() === now.getMonth() && viewDate.getFullYear() === now.getFullYear();
+                
+                if (isCurrentMonthView && !frozenStats && !isFreezing && db && stats?.totalJobs > 0) {
+                     setIsFreezing(true);
+                     const autoFreezeCurrent = async () => {
+                        try {
+                            await setDoc(doc(db, 'monthly_stats', currentMonthKey), {
+                                monthKey: currentMonthKey,
+                                timestamp: Date.now(),
+                                stats: { ...stats, monthlyJobs: [] },
+                                autoFrozenEndDay: true
+                            });
+                            setFrozenStats({ ...stats, monthlyJobs: [] });
+                            if (showAlert) showAlert("Cierre de mes automático completado.", "success");
+                        } catch (e) {
+                            console.error(e);
+                        } finally {
+                            setIsFreezing(false);
+                        }
+                     };
+                     autoFreezeCurrent();
+                }
+            }
+        }, 60000); // 1 minuto
+        
+        return () => clearInterval(interval);
+    }, [viewDate, frozenStats, isFreezing, db, stats, currentMonthKey, showAlert]);
+
     // 1. CÁLCULO DE MÉTRICAS
     const stats = useMemo(() => {
         if (frozenStats) return frozenStats;
@@ -614,14 +677,16 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                                             <div className="pr-2">
                                                 <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-0.5">{new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL')}</p>
                                                 <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-tight truncate">{j.client || 'Sin cliente'}</p>
-                                                <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 uppercase tracking-wide">{j.brand || 'S/MARCA'} {j.model || ''}</p>
+                                                <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 uppercase tracking-wide">
+                                                    {(j.operationMode === 'servicio' || !!j.description) ? (j.associatedVehicle || 'Servicio en Terreno') : `${j.brand || 'S/MARCA'} ${j.model || ''}`}
+                                                </p>
                                             </div>
-                                            <span className="bg-slate-800 text-white text-[10px] font-black px-2.5 py-1 rounded-md tracking-widest shadow-sm shrink-0">{j.plate || j.vin || 'S/N'}</span>
+                                            <span className="bg-slate-800 text-white text-[10px] font-black px-2.5 py-1 rounded-md tracking-widest shadow-sm shrink-0">{j.plate || j.vin || j.associatedPlate || 'S/N'}</span>
                                         </div>
                                         
                                         {/* RUTA: DESDE - HASTA o SERVICIO */}
                                         <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-3 mb-3 border border-slate-100 dark:border-slate-800 space-y-2.5 ml-1.5">
-                                            {j.operationMode === 'servicio' ? (
+                                            {(j.operationMode === 'servicio' || !!j.description) ? (
                                                 <>
                                                     <div className="flex items-start gap-2.5">
                                                         <div className="bg-purple-100 dark:bg-purple-900/40 p-1.5 rounded-full shrink-0"><Settings className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400"/></div>
