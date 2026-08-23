@@ -899,7 +899,7 @@ function LogisticApp() {
                       </div>
                     )}
                     
-                    {adminTab === 'newJob' && <div className="animate-in zoom-in-[0.98] slide-in-from-bottom-8 duration-500 ease-out"><NewJobForm key={editingJob ? editingJob.id : 'new'} jobToEdit={editingJob} onCancelEdit={() => {setEditingJob(null); setAdminTab('dashboard');}} allClientsList={allClientsList} vehicles={vehicles} drivers={drivers.filter(d => !d.isHidden)} db={db} showAlert={showAlert} onSuccess={() => setAdminTab('dashboard')} pushSyncTask={pushSyncTask} /></div>}
+                    {adminTab === 'newJob' && <div className="animate-in zoom-in-[0.98] slide-in-from-bottom-8 duration-500 ease-out"><NewJobForm key={editingJob ? editingJob.id : 'new'} jobToEdit={editingJob} onCancelEdit={() => {setEditingJob(null); setAdminTab('dashboard');}} allClientsList={allClientsList} vehicles={vehicles} drivers={drivers.filter(d => !d.isHidden)} db={db} showAlert={showAlert} onSuccess={() => setAdminTab('dashboard')} pushSyncTask={pushSyncTask} myDriver={myDriver} user={user} /></div>}
                     
                     {adminTab === 'history' && <div className="animate-in zoom-in-[0.98] duration-300"><VehicleHistoryView db={db} showAlert={showAlert} /></div>}
                     

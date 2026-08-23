@@ -10,7 +10,7 @@ import InAppCamera from '../ui/InAppCamera';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
-export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers, db, showAlert, onSuccess, pushSyncTask }) {
+export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers, db, showAlert, onSuccess, pushSyncTask, myDriver, user }) {
   const [isOcrProcessing, setIsOcrProcessing] = useState(false);
   
   // NUEVO: Leer borrador silencioso (Solo se usa si NO estamos editando un trabajo existente)
@@ -537,6 +537,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                currentJobData.status = 'pending';
                currentJobData.createdAt = Date.now() + index; // ID de tiempo único
                currentJobData.checklist = null;
+               currentJobData.createdBy = myDriver?.name || user?.displayName || user?.email || 'Admin';
                await addDoc(collection(db, 'transport_jobs'), currentJobData);
             }
             

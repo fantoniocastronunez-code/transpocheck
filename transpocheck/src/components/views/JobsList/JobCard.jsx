@@ -161,6 +161,9 @@ export default function JobCard({ j, ...props }) {
                        {j.client}
                        {j.fleetGroup && <span className="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 px-1.5 py-0.5 rounded text-[9px] font-black border border-indigo-200 dark:border-indigo-800/50">EN FLOTA (CONVOY)</span>}
                     </p>
+                    {j.createdBy && (
+                       <p className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 mt-0.5">Creado por: {j.createdBy}</p>
+                    )}
                 </div>
               </div>
             </div>
