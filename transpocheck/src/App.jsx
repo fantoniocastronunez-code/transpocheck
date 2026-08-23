@@ -1458,9 +1458,10 @@ export default function App() {
     <Router>
       {/* ENVUELVE LA APP PARA ATRAPAR LAS CARGAS DIFERIDAS DE LAS VISTAS */}
       <React.Suspense fallback={
-        <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
-          <div className="w-16 h-16 border-4 border-slate-900 border-t-blue-600 rounded-full animate-spin mb-4 shadow-[0_0_20px_rgba(37,99,235,0.3)]"></div>
-          <p className="text-[11px] font-black text-slate-400 tracking-widest uppercase animate-pulse">Optimizando módulos...</p>
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center p-4">
+          <div className="w-16 h-16 border-4 border-blue-200 dark:border-blue-800/50 border-t-blue-600 rounded-full animate-spin mb-4 shadow-sm"></div>
+          <p className="text-lg font-extrabold text-slate-700 dark:text-slate-300 tracking-tight animate-pulse">Cargando aplicación...</p>
+          <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">LogisticAPP</p>
         </div>
       }>
         <LogisticApp />
