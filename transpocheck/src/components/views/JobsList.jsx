@@ -1397,13 +1397,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                   <button type="button" onClick={handlePurgeOldJobs} className="group bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 transition-colors">
                     <Trash2 className="w-5 h-5" /> Limpiar DB
                   </button>
-                  <button type="button" onClick={() => setShowReplaceModal(true)} className="group bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800/50 px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 transition-colors">
-                    <RefreshCw className="w-5 h-5" /> Renombrar Masivo
-                  </button>
-                  <button type="button" onClick={handleRecalculateKm} disabled={isCalculatingKm} className="group bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 disabled:opacity-50 shadow-md transition-colors">
-                    {isCalculatingKm ? <Clock className="w-5 h-5 animate-spin" /> : <MapIcon className="w-5 h-5" />}
-                    {isCalculatingKm ? `Calc: ${calcProgress}` : 'Recalcular KM'}
-                  </button>
+
                   <button type="button" onClick={handleDownloadAllZIP} className="group bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 transition-colors">
                     <FileDown className="w-5 h-5" /> ZIP
                   </button>

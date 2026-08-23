@@ -137,6 +137,10 @@ function LogisticApp() {
   const closeDialog = () => setDialogConfig(null);
 
   const showAlert = (message) => {
+    if (!message) {
+      setDialogConfig(null);
+      return;
+    }
     setDialogConfig({ type: 'alert', message });
     
     // Auto-cierre inteligente: Si el mensaje contiene "✅", se cierra en 1 segundo (1000ms)

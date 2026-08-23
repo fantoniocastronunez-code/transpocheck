@@ -93,24 +93,7 @@ export default function JobCard({ j, ...props }) {
                         setMenuOpenId(null);
                       }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-t border-slate-50 dark:border-slate-700/50"><Share2 className="w-4 h-4"/> Notificar Receptor</button>
                     )}
-                    <button onClick={() => {
-                      const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
-                      const textToShare = `📍 Sigue en tiempo real todos los traslados de ${j.client || 'tu empresa'} aquí:\n${url}`;
-                      const textArea = document.createElement("textarea");
-                      textArea.value = textToShare; textArea.style.position = "fixed"; document.body.appendChild(textArea);
-                      textArea.focus(); textArea.select();
-                      try { document.execCommand('copy'); showAlert("✅ Portal de Cliente copiado. ¡Pégalo en WhatsApp!"); } catch(e) {}
-                      document.body.removeChild(textArea); setMenuOpenId(null);
-                    }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"><Navigation className="w-4 h-4"/> Portal Cliente</button>
-                    
-                    {isAccepted && (
-                      <button onClick={() => {
-                        const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
-                        const textToShare = `📍 Hola! El vehículo ${ident} va en camino a ${j.destination || 'su destino'}. Puedes seguir el traslado en tiempo real aquí:\n${url}`;
-                        window.open(`https://wa.me/?text=${encodeURIComponent(textToShare)}`, '_blank');
-                        setMenuOpenId(null);
-                      }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-t border-slate-50 dark:border-slate-700/50"><Share2 className="w-4 h-4"/> Notificar Receptor</button>
-                    )}
+
 
                     {/* NUEVO BOTÓN: DESHACER PASO */}
                     {isAccepted && j.phase && j.phase !== 'claimed' && (isAdminView || j.acceptedByEmail === currentUserEmail) && (

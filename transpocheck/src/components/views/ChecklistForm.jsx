@@ -1854,7 +1854,7 @@ export default function ChecklistForm({ job: rawJob, db, currentUserEmail, onCan
 
               {formData.hasFuelCharge && (
                 <div className="animate-in fade-in slide-in-from-top-2 border rounded-xl p-3 bg-slate-50 dark:bg-slate-900 shadow-inner max-w-sm mx-auto">
-                  <p className="text-[10px] font-black text-blue-700 dark:text-blue-400 uppercase tracking-wider text-center mb-1">Monto Rendición Gasolinera ($)</p>
+                  <p className="text-[10px] font-black text-blue-700 dark:text-blue-400 uppercase tracking-wider text-center mb-1">Monto Combustible ($)</p>
                   <input type="number" placeholder="Ej: 15000" value={formData.fuelChargeAmount || ''} onChange={(e) => setF('fuelChargeAmount', e.target.value)} className="w-full bg-white dark:bg-slate-900 border p-2 rounded-xl text-center text-sm font-bold outline-none" />
                 </div>
               )}
