@@ -5,7 +5,26 @@ import { Clock, DollarSign } from 'lucide-react';
 import { db } from '../../../../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 
-export const StepFuel = () => {
+const CurrencyInput = ({ value, onChange, placeholder, label }) => (
+  <div className="flex flex-col gap-1">
+    {label && <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-2">{label}</label>}
+    <div className="relative">
+      <input 
+        type="text" 
+        inputMode="numeric"
+        placeholder={placeholder} 
+        value={value ? `$ ${Number(value).toLocaleString('es-CL')}` : ''} 
+        onChange={e => {
+          const raw = parseInt(e.target.value.replace(/\D/g, ''), 10);
+          onChange(isNaN(raw) ? 0 : raw);
+        }} 
+        className="w-full border-2 border-slate-200 dark:border-slate-700 pl-4 pr-4 p-3 rounded-2xl font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 outline-none focus:border-blue-500 transition-colors shadow-inner" 
+      />
+    </div>
+  </div>
+);
+
+export const StepFuel = ({ openCamera }) => {
   const { formData, setF, job } = useChecklist();
 
   const [assignedAmount, setAssignedAmount] = useState(0);
@@ -88,24 +107,7 @@ export const StepFuel = () => {
     return () => window.removeEventListener('deleteImage', handleDelete);
   }, [setF]);
 
-  const CurrencyInput = ({ value, onChange, placeholder, label }) => (
-    <div className="flex flex-col gap-1">
-      {label && <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-2">{label}</label>}
-      <div className="relative">
-        <input 
-          type="text" 
-          inputMode="numeric"
-          placeholder={placeholder} 
-          value={value ? `$ ${Number(value).toLocaleString('es-CL')}` : ''} 
-          onChange={e => {
-            const raw = parseInt(e.target.value.replace(/\D/g, ''), 10);
-            onChange(isNaN(raw) ? 0 : raw);
-          }} 
-          className="w-full border-2 border-slate-200 dark:border-slate-700 pl-4 pr-4 p-3 rounded-2xl font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 outline-none focus:border-blue-500 transition-colors shadow-inner" 
-        />
-      </div>
-    </div>
-  );
+  }, [setF]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
