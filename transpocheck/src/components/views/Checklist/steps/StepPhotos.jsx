@@ -5,7 +5,7 @@ import { VehicleCroquis } from '../components/VehicleCroquis';
 import { resizeImage } from '../../../../utils/helpers';
 
 export const StepPhotos = ({ openCamera }) => {
-  const { job, formData, setF, uploadImageToStorage, showAlert } = useChecklist();
+  const { job, formData, setF, setFormData, uploadImageToStorage, showAlert } = useChecklist();
 
   const handlePic = async (eOrFile, id) => {
     const f = eOrFile.target ? eOrFile.target.files[0] : eOrFile;
