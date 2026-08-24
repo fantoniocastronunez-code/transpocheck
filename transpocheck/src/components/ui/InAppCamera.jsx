@@ -126,12 +126,14 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
 
       if (gamma === null || beta === null) return;
       
-      // Filtro de planitud: solo ignorar si está apoyado plano (beta cerca a 0 o 180 Y gamma cerca a 0)
-      if ((Math.abs(beta) < 25 || Math.abs(beta) > 155) && Math.abs(gamma) < 35) return;
+      // Filtro de planitud estricto (Gimbal lock):
+      // Si el teléfono está apuntando muy hacia abajo o arriba, ignorar cambios
+      // porque gamma se vuelve errático. Mantenemos el último estado.
+      if (Math.abs(beta) < 35 || Math.abs(beta) > 145) return;
 
-      // Mejorar los ángulos de detección para mayor sensibilidad
-      if (gamma > 45) setLandscapeAngle(-90);
-      else if (gamma < -45) setLandscapeAngle(90); 
+      // Histéresis: ángulos más amplios para activar, más cerrados para desactivar
+      if (gamma > 55) setLandscapeAngle(-90);
+      else if (gamma < -55) setLandscapeAngle(90); 
       else if (gamma > -35 && gamma < 35) setLandscapeAngle(0);  
     };
 

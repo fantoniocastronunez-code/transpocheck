@@ -4,6 +4,7 @@ import { useChecklist } from '../ChecklistContext';
 import { useDejaVu } from '../hooks/useDejaVu';
 import { db } from '../../../../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
+import DejaVuModal from '../components/DejaVuModal';
 
 export const StepData = () => {
   const { job, formData, setF, isQuick, allClientsList } = useChecklist();
@@ -224,6 +225,13 @@ export const StepData = () => {
           )}
         </div>
       )}
+
+      {/* RENDERIZADO DEL MODAL DÉJÀ VU */}
+      <DejaVuModal 
+        showDejaVuModal={showDejaVuModal} 
+        setShowDejaVuModal={setShowDejaVuModal} 
+        dejaVuData={dejaVuData} 
+      />
     </div>
   );
 };

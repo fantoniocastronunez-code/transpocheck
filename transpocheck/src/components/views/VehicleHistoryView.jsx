@@ -205,9 +205,9 @@ export default function VehicleHistoryView({ db, showAlert }) {
                     <div className="bg-slate-50 dark:bg-slate-900 p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{dateStr}</p>
-                        <div className="flex items-center gap-3 mb-2">
-                          <h4 className="text-lg font-black text-slate-800 dark:text-slate-200 truncate">{job.brand} {job.model}</h4>
+                        <div className="flex flex-col items-start gap-1 mb-2">
                           <div className="shrink-0"><LicensePlateBadge text={job.plate || job.vin} /></div>
+                          <h4 className="text-lg font-black text-slate-800 dark:text-slate-200 truncate">{job.brand} {job.model}</h4>
                         </div>
                         <div className="flex items-center gap-1 flex-wrap text-sm font-bold text-slate-500 dark:text-slate-400 mt-1">
                            <MapPin className="w-4 h-4 text-slate-400 shrink-0"/> 

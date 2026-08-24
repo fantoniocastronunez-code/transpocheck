@@ -44,11 +44,6 @@ const ChecklistInner = ({ openCamera }) => {
       return showAlert("⚠️ Debes registrar un resultado final para la Revisión Técnica antes de cerrar.");
     }
 
-    if (job?.client && job.client.toLowerCase().includes('kovacs')) {
-      if (!formData.scandocPdf && !formData.scannerLink) {
-        return showAlert("⚠️ Para traslados de Kovacs, es obligatorio adjuntar la guía escaneada (PDF o Link).");
-      }
-    }
     setShowFinalModal(true);
   };
 
