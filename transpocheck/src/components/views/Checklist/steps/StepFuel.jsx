@@ -1,10 +1,24 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useChecklist } from '../ChecklistContext';
 import { formatMoney } from '../../../../utils/helpers';
-import { Clock } from 'lucide-react';
+import { Clock, DollarSign } from 'lucide-react';
+import { db } from '../../../../firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 export const StepFuel = () => {
   const { formData, setF, job } = useChecklist();
+
+  const [assignedAmount, setAssignedAmount] = useState(0);
+
+  useEffect(() => {
+    if (!job?.id || job.id === 'NEW_QUICK_JOB') return;
+    const q = query(collection(db, 'expenses'), where('jobId', '==', job.id), where('type', '==', 'assignment'));
+    getDocs(q).then(snap => {
+      let total = 0;
+      snap.forEach(doc => { total += Number(doc.data().amount) || 0; });
+      setAssignedAmount(total);
+    }).catch(console.error);
+  }, [job?.id]);
 
   // Opciones de Combustible (ahora en octavos para más precisión)
   const fuelLevels = [
@@ -38,6 +52,25 @@ export const StepFuel = () => {
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       
+      {/* Monto Asignado */}
+      {assignedAmount > 0 && (
+        <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-3xl border border-emerald-200/60 dark:border-emerald-800/60 shadow-sm flex items-center justify-between animate-in fade-in zoom-in-95">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-800 flex items-center justify-center shrink-0">
+              <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-emerald-600/80 dark:text-emerald-400/80 uppercase tracking-widest leading-none mb-1">
+                Fondo para este vehículo
+              </p>
+              <p className="text-xl font-extrabold text-emerald-800 dark:text-emerald-300 leading-none">
+                ${assignedAmount.toLocaleString('es-CL')}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Carga de Combustible */}
       <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 shadow-sm space-y-4">
         <h3 className="text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest flex items-center justify-between">
