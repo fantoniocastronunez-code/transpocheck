@@ -99,12 +99,29 @@ const ChecklistInner = ({ openCamera }) => {
       
       // Lanzar Sync en Background
       if (pushSyncTask) {
-        pushSyncTask(job.id, formData);
+        const syncTask = pushSyncTask(`Sync ${job.plate || job.vin || 'Vehículo'}`);
         showAlert("✅ Subida iniciada en segundo plano. Puedes continuar usando la app.");
         onComplete();
+        
+        // Ejecutar en segundo plano sin await
+        (async () => {
+          try {
+            const finalData = await syncFilesToStorage(draftData, () => {});
+            await updateDoc(doc(db, 'transport_jobs', job.id), {
+              checklist: finalData,
+              status: 'completed',
+              completedAt: Date.now(),
+              draft: null // Borrar draft
+            });
+            syncTask.finish();
+          } catch (e) {
+            console.error("Error en background sync:", e);
+            syncTask.error(e);
+          }
+        })();
       } else {
         // Fallback sincrónico si no existe el hook de background
-        const finalData = await syncFilesToStorage(formData, setUploadProgress);
+        const finalData = await syncFilesToStorage(draftData, setUploadProgress);
         await updateDoc(doc(db, 'transport_jobs', job.id), {
           checklist: finalData,
           status: 'completed',
