@@ -66,7 +66,15 @@ export const StepSignature = () => {
           
           <div className="space-y-3">
              <input type="text" placeholder="Nombre de quien recibe" value={formData.receiverName || ''} onChange={e => setF('receiverName', e.target.value)} className="w-full border-2 border-slate-200 dark:border-slate-700 p-3.5 rounded-2xl text-sm font-bold bg-slate-50/50 dark:bg-slate-800/50 outline-none focus:border-blue-500 transition-colors" />
-             <input type="text" placeholder="RUT (Ej: 12.345.678-9)" value={formData.receiverRut || ''} onChange={e => setF('receiverRut', e.target.value)} className="w-full border-2 border-slate-200 dark:border-slate-700 p-3.5 rounded-2xl text-sm font-bold bg-slate-50/50 dark:bg-slate-800/50 outline-none focus:border-blue-500 transition-colors" />
+             <input type="text" placeholder="RUT (Ej: 12.345.678-9)" value={formData.receiverRut || ''} onChange={e => {
+                let val = e.target.value.replace(/[^0-9kK]/g, '').toUpperCase();
+                if (val.length > 1) {
+                  const dv = val.slice(-1);
+                  const digits = val.slice(0, -1);
+                  val = digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '-' + dv;
+                }
+                setF('receiverRut', val);
+             }} className="w-full border-2 border-slate-200 dark:border-slate-700 p-3.5 rounded-2xl text-sm font-bold bg-slate-50/50 dark:bg-slate-800/50 outline-none focus:border-blue-500 transition-colors" />
           </div>
 
           <div className="mt-2 relative">

@@ -1,6 +1,6 @@
 import { formatDateDisplay } from './helpers';
 
-export const buildPDFDoc = async (job, drivers = []) => {
+export const buildPDFDoc = async (job, isPublic = false, drivers = []) => {
     const jsPDFModule = await import('jspdf');
     const JsPDFClass = jsPDFModule.default?.jsPDF || jsPDFModule.default || jsPDFModule.jsPDF;
     const docPDF = new JsPDFClass();
@@ -173,7 +173,7 @@ export const buildPDFDoc = async (job, drivers = []) => {
 
         if (job.checklist?.hasFuelCharge) {
           let hFuelAfter = drawFuelMeter(15, currentY + 3, job.checklist?.fuelLevelAfter ?? job.checklist?.fuelLevel, "Combustible Final:");
-          let hChargeAmount = drawKV("Monto Cargado", `$${(job.checklist?.fuelChargeAmount || 0).toLocaleString('es-CL')}`, 65, currentY, 45);
+          let hChargeAmount = !isPublic ? drawKV("Monto Cargado", `$${(job.checklist?.fuelChargeAmount || 0).toLocaleString('es-CL')}`, 65, currentY, 45) : 0;
           currentY += Math.max(hFuelAfter, hChargeAmount) + 6;
         }
         let hPerm = drawKV("Permiso Circ.", getDocStatus('permiso'), 15, currentY, 45);
@@ -215,7 +215,7 @@ export const buildPDFDoc = async (job, drivers = []) => {
 
         if (job.waitTimeMinutes && job.waitTimeMinutes > 20) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38); const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA EN ORIGEN: ${job.waitTimeMinutes} minutos`, leftColWidth); docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2; } else if (job.checklist?.hasWaitTime) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38);  const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth);  docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2;  }
         
-        if (job.tripType === 'revision') {
+        if (job.tripType === 'revision' && !isPublic) {
           const prtTotal = (Number(job.checklist?.prtCostRevision)||0) + (Number(job.checklist?.prtCostInspeccion)||0) + (Number(job.checklist?.prtCostFrenos)||0) + (Number(job.checklist?.prtCostGases)||0);
           if (prtTotal > 0) {
             docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(37, 99, 235);

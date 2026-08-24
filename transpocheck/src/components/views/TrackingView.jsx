@@ -105,7 +105,7 @@ const handleDownloadPDF = async (job) => {
     try {
       setDownloadingId(job.id); 
       const { buildPDFDoc: masterPDFBuilder } = await import('../../utils/pdfGenerator');
-      const docPDF = await masterPDFBuilder(job);
+      const docPDF = await masterPDFBuilder(job, true);
 
       const cleanPlate = job.plate || job.vin || 'SN';
       const dateStrForFile = (job.scheduledDate || new Date().toISOString().split('T')[0]).replace(/\//g, '-');
