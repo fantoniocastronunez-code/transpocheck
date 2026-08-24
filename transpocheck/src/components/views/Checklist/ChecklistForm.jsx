@@ -12,6 +12,7 @@ import { StepData } from './steps/StepData';
 import { StepDocs } from './steps/StepDocs';
 import { StepNotes } from './steps/StepNotes';
 import { StepPhotos } from './steps/StepPhotos';
+import { ImageViewer } from '../../ui/ImageViewer';
 import { StepFuel } from './steps/StepFuel';
 import { StepSignature } from './steps/StepSignature';
 
@@ -245,6 +246,8 @@ export const ChecklistForm = (props) => {
           setCameraConfig({ isOpen: false, title: '', onCapture: null, enableAnnotation: false });
         }}
       />
+      
+      <ImageViewer />
     </ChecklistProvider>
   );
 };

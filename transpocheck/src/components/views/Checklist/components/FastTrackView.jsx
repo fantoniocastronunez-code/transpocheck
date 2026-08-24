@@ -5,7 +5,7 @@ import { StepSignature } from '../steps/StepSignature';
 import { resizeImage } from '../../../../utils/helpers';
 
 export const FastTrackView = ({ openCamera }) => {
-  const { job, formData, setF, uploadImageToStorage, showAlert, step } = useChecklist();
+  const { job, formData, setF, setFormData, uploadImageToStorage, showAlert, step } = useChecklist();
   
   const isPintura = job?.isPintura || job?.isGrabado;
   const requeridas = isPintura ? ((job.qtyPintura || 0) + (job.qtyGrabado || 0)) : 1;
@@ -48,6 +48,37 @@ export const FastTrackView = ({ openCamera }) => {
       }
     }
   };
+
+  React.useEffect(() => {
+    const handleDelete = (e) => {
+      const { id } = e.detail;
+      // In fast track, detailPins are not used much, but we clear the photo
+      setFormData?.(prev => ({
+        ...prev,
+        photos: { ...prev.photos, [id]: false }
+      }));
+      // fallback if setFormData isn't extracted
+      if (!setFormData) {
+        setF('photos', { ...formData.photos, [id]: false });
+      }
+    };
+
+    const handleRetake = (e) => {
+      const { id } = e.detail;
+      handleDelete(e);
+      setTimeout(() => {
+        handlePhotoClick(id);
+      }, 300);
+    };
+
+    window.addEventListener('deleteImage', handleDelete);
+    window.addEventListener('retakeImage', handleRetake);
+
+    return () => {
+      window.removeEventListener('deleteImage', handleDelete);
+      window.removeEventListener('retakeImage', handleRetake);
+    };
+  }, [setF, setFormData, formData.photos]);
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 pb-24">

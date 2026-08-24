@@ -60,6 +60,34 @@ export const StepPhotos = ({ openCamera }) => {
     }
   };
 
+  React.useEffect(() => {
+    const handleDelete = (e) => {
+      const { id } = e.detail;
+      setFormData(prev => ({
+        ...prev,
+        photos: { ...prev.photos, [id]: false },
+        detailPins: (prev.detailPins || []).filter(p => p.id !== id)
+      }));
+    };
+
+    const handleRetake = (e) => {
+      const { id, label } = e.detail;
+      handleDelete(e);
+      setTimeout(() => {
+        handlePhotoClick(id, label, true); // Assume retakes might need annotation, or pass from event
+      }, 300); // Wait for modal to close
+    };
+
+    window.addEventListener('deleteImage', handleDelete);
+    window.addEventListener('retakeImage', handleRetake);
+
+    return () => {
+      window.removeEventListener('deleteImage', handleDelete);
+      window.removeEventListener('retakeImage', handleRetake);
+    };
+  }, [setFormData, formData.photos]);
+
+
   return (
     <div className="space-y-5 animate-in fade-in duration-300">
       
