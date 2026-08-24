@@ -29,6 +29,7 @@ const ChecklistInner = ({ openCamera }) => {
   } = useChecklist();
 
   const [uploadProgress, setUploadProgress] = useState({ active: false, current: 0, total: 0, text: '' });
+  const [showFinalModal, setShowFinalModal] = useState(false);
 
   // Instanciar Hooks
   const { syncFilesToStorage } = useChecklistSync({
@@ -38,10 +39,21 @@ const ChecklistInner = ({ openCamera }) => {
 
   const { isListening, isInterpreting, toggleVoiceAssistant } = useVoiceAssistant(formData, (f, v) => setFormData(p => ({ ...p, [f]: v })), showAlert);
 
-  const handleSubmitFinal = async () => {
+  const handlePreSubmit = () => {
     if (job?.tripType === 'revision' && formData.rtStatus === 'pendiente') {
       return showAlert("⚠️ Debes registrar un resultado final para la Revisión Técnica antes de cerrar.");
     }
+
+    if (job?.client && job.client.toLowerCase().includes('kovacs')) {
+      if (!formData.scandocPdf && !formData.scannerLink) {
+        return showAlert("⚠️ Para traslados de Kovacs, es obligatorio adjuntar la guía escaneada (PDF o Link).");
+      }
+    }
+    setShowFinalModal(true);
+  };
+
+  const handleSubmitFinal = async () => {
+    setShowFinalModal(false);
     
     // Si no está firmado, preguntar.
     if (!formData.signatureData && !formData.noReception && job?.tripType !== 'simple') {
@@ -272,6 +284,83 @@ const ChecklistInner = ({ openCamera }) => {
         </button>
       </div>
       
+      {/* Overlay de Carga Principal */}
+      {showFinalModal && !uploadProgress.active && (
+        <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md z-[90] flex flex-col items-center justify-center p-4 sm:p-8 animate-in fade-in">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-2xl w-full max-w-sm flex flex-col gap-5 relative overflow-hidden">
+            <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest text-center border-b border-slate-100 dark:border-slate-800 pb-3">Datos Finales</h3>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Kilometraje / Odómetro</label>
+                <input 
+                  type="number" 
+                  placeholder="Ej: 154000" 
+                  value={formData.mileage || ''} 
+                  onChange={e => setFormData(p => ({ ...p, mileage: e.target.value }))}
+                  className="w-full border-2 border-slate-200 dark:border-slate-700 p-3.5 rounded-2xl font-bold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 outline-none focus:border-blue-500 transition-colors"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Foto Odómetro (Opcional)</label>
+                <button 
+                  type="button" 
+                  onClick={() => openCamera('Odómetro', f => {
+                    const reader = new FileReader();
+                    reader.onload = () => setFormData(p => ({ ...p, photos: { ...p.photos, mileage: reader.result } }));
+                    reader.readAsDataURL(f);
+                  })}
+                  className={`w-full h-14 rounded-2xl border-2 flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden transition-all ${formData.photos?.mileage ? 'border-green-400 ring-2 ring-green-100 bg-white dark:bg-slate-900' : 'border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 bg-transparent'}`}
+                >
+                  {formData.photos?.mileage ? (
+                    <>
+                      <img src={formData.photos.mileage} className="absolute inset-0 w-full h-full object-cover opacity-30" />
+                      <span className="text-[10px] font-black text-green-800 dark:text-green-300 relative z-10">Foto OK</span>
+                    </>
+                  ) : (
+                    <span className="text-[10px] font-black text-slate-500 uppercase">Tomar Foto</span>
+                  )}
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Ubicación de Llaves</label>
+                <select 
+                  value={formData.keyLocation || ''} 
+                  onChange={e => setFormData(p => ({ ...p, keyLocation: e.target.value }))}
+                  className="w-full border-2 border-slate-200 dark:border-slate-700 p-3.5 rounded-2xl font-bold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 outline-none focus:border-blue-500 transition-colors cursor-pointer"
+                >
+                  <option value="">Seleccione...</option>
+                  <option value="puestas">Puestas en vehículo</option>
+                  <option value="puerta">En la puerta/guantera</option>
+                  <option value="mano">Entregadas en mano</option>
+                  <option value="buzon">Dejadas en buzón</option>
+                </select>
+              </div>
+
+              {formData.keyLocation === 'mano' && (
+                <div className="space-y-2 animate-in slide-in-from-top-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">¿A quién?</label>
+                  <input 
+                    type="text" 
+                    placeholder="Nombre de la persona" 
+                    value={formData.keyHandedTo || ''} 
+                    onChange={e => setFormData(p => ({ ...p, keyHandedTo: e.target.value }))}
+                    className="w-full border-2 border-slate-200 dark:border-slate-700 p-3.5 rounded-2xl font-bold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 outline-none focus:border-blue-500 transition-colors"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 mt-2">
+              <button onClick={() => setShowFinalModal(false)} className="flex-1 py-3.5 rounded-2xl font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Volver</button>
+              <button onClick={handleSubmitFinal} className="flex-[2] py-3.5 rounded-2xl font-black text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-all active:scale-95 flex items-center justify-center gap-2">Confirmar <Save className="w-4 h-4" /></button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Overlay de Carga Principal */}
       {uploadProgress.active && (
         <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex flex-col items-center justify-center p-8 animate-in fade-in">
