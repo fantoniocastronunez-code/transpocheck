@@ -1,12 +1,11 @@
 import React, { useRef } from 'react';
 import { Share2, FileSignature } from 'lucide-react';
 import { useChecklist } from '../ChecklistContext';
-import SignatureCanvas from 'react-signature-canvas';
+import SignaturePad from '../../../ui/SignaturePad';
 import QRCode from 'react-qr-code';
 
 export const StepSignature = () => {
   const { job, formData, setF, showAlert } = useChecklist();
-  const sigCanvas = useRef();
 
   const handleShare = async () => {
     try {
@@ -27,11 +26,11 @@ export const StepSignature = () => {
     }
   };
 
-  const saveSignature = () => {
-    if (sigCanvas.current.isEmpty()) {
+  const saveSignature = (dataUrl) => {
+    if (!dataUrl) {
       return showAlert("⚠️ Por favor firme antes de guardar.");
     }
-    setF('signatureData', sigCanvas.current.getTrimmedCanvas().toDataURL('image/png'));
+    setF('signatureData', dataUrl);
   };
 
   return (
@@ -70,22 +69,12 @@ export const StepSignature = () => {
              <input type="text" placeholder="RUT (Ej: 12.345.678-9)" value={formData.receiverRut || ''} onChange={e => setF('receiverRut', e.target.value)} className="w-full border-2 border-slate-200 dark:border-slate-700 p-3.5 rounded-2xl text-sm font-bold bg-slate-50/50 dark:bg-slate-800/50 outline-none focus:border-blue-500 transition-colors" />
           </div>
 
-          <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl overflow-hidden bg-slate-50 dark:bg-slate-800">
-            <SignatureCanvas 
-              ref={sigCanvas} 
-              canvasProps={{ className: 'w-full h-40' }} 
-              backgroundColor="transparent"
-              penColor={document.documentElement.classList.contains('dark') ? 'white' : 'black'}
-            />
-          </div>
-          
-          <div className="flex gap-2">
-            <button type="button" onClick={() => sigCanvas.current.clear()} className="w-1/3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-black py-3 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-xs">
-              BORRAR
-            </button>
-            <button type="button" onClick={saveSignature} className="w-2/3 bg-slate-800 dark:bg-slate-700 text-white font-black py-3 rounded-xl hover:bg-slate-900 dark:hover:bg-slate-600 shadow-md transition-colors text-xs">
-              GUARDAR FIRMA
-            </button>
+          <div className="mt-2 relative">
+             <SignaturePad 
+               initialData={null}
+               onSave={(dataUrl) => saveSignature(dataUrl)}
+               onClear={() => setF('signatureData', null)}
+             />
           </div>
         </div>
       )}
