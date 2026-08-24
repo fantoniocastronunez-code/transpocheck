@@ -53,22 +53,36 @@ export const useChecklistSync = ({
         isFirstLoad = false;
       } else {
         if (data?.prt_result) {
-          setFormData(prev => ({
-            ...prev,
-            rtStatus: data.prt_result,
-            rtRejectReason: data.prt_reason || prev.rtRejectReason
-          }));
+          setFormData(prev => {
+            const newReason = data.prt_reason || prev.rtRejectReason;
+            if (prev.rtStatus === data.prt_result && prev.rtRejectReason === newReason) return prev;
+            return {
+              ...prev,
+              rtStatus: data.prt_result,
+              rtRejectReason: newReason
+            };
+          });
         }
       }
 
       if (data?.checklist?.clientSigned) {
-        setFormData(prev => ({
-          ...prev,
-          signatureData: data.checklist.signatureData,
-          receiverName: data.checklist.receiverName,
-          receiverRut: data.checklist.receiverRut,
-          clientComments: data.checklist.clientComments || ''
-        }));
+        setFormData(prev => {
+          if (
+            prev.signatureData === data.checklist.signatureData &&
+            prev.receiverName === data.checklist.receiverName &&
+            prev.receiverRut === data.checklist.receiverRut &&
+            prev.clientComments === (data.checklist.clientComments || '')
+          ) {
+            return prev;
+          }
+          return {
+            ...prev,
+            signatureData: data.checklist.signatureData,
+            receiverName: data.checklist.receiverName,
+            receiverRut: data.checklist.receiverRut,
+            clientComments: data.checklist.clientComments || ''
+          };
+        });
       }
     });
     return () => unsub();
@@ -81,7 +95,7 @@ export const useChecklistSync = ({
       const draftData = JSON.parse(JSON.stringify(formData));
 
       for (const key in draftData.photos) {
-        if (draftData.photos[key] && !draftData.photos[key].startsWith('http')) {
+        if (typeof draftData.photos[key] === 'string' && !draftData.photos[key].startsWith('http')) {
           draftData.photos[key] = false;
         }
       }

@@ -48,7 +48,7 @@ const ConfigView = lazyWithRetry(() => import('./components/views/ConfigView'));
 const TrackingView = lazyWithRetry(() => import('./components/views/TrackingView'));
 const NewJobForm = lazyWithRetry(() => import('./components/views/NewJobForm'));
 const JobsList = lazyWithRetry(() => import('./components/views/JobsList'));
-const ChecklistForm = lazyWithRetry(() => import('./components/views/ChecklistForm'));
+const ChecklistForm = lazyWithRetry(() => import('./components/views/Checklist/ChecklistForm.jsx'));
 const VehicleHistoryView = lazyWithRetry(() => import('./components/views/VehicleHistoryView'));
 const StatsView = lazyWithRetry(() => import('./components/views/StatsView'));
 const DriverDashboardView = lazyWithRetry(() => import('./components/views/DriverDashboardView'));
