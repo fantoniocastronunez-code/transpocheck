@@ -9,6 +9,7 @@ export default defineConfig({
     tailwindcss(),
     // CACHÉ AGRESIVO EXTREMO PWA
     VitePWA({ 
+      selfDestroying: true, // <-- MATA EL SERVICE WORKER INMEDIATAMENTE
       registerType: 'autoUpdate',
       includeAssets: ['logo.png', 'LogoLogistica.png', 'robots.txt', 'apple-touch-icon.png'],
       
