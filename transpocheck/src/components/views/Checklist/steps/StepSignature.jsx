@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Share2, FileSignature } from 'lucide-react';
+import { Share2, FileSignature, CheckCircle } from 'lucide-react';
 import { useChecklist } from '../ChecklistContext';
 import SignaturePad from '../../../ui/SignaturePad';
 import QRCode from 'react-qr-code';
