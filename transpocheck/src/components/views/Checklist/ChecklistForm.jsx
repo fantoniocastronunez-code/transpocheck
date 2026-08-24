@@ -3,6 +3,7 @@ import { ArrowLeft, Mic, Loader2, Save } from 'lucide-react';
 import { ChecklistProvider, useChecklist } from './ChecklistContext';
 import { useChecklistSync } from './hooks/useChecklistSync';
 import { useVoiceAssistant } from './hooks/useVoiceAssistant';
+import InAppCamera from '../../ui/InAppCamera';
 
 import { TabsHeader } from './components/TabsHeader';
 import { FastTrackView } from './components/FastTrackView';
@@ -222,9 +223,28 @@ const ChecklistInner = ({ openCamera }) => {
 
 // Componente Wrapper Exportado
 export const ChecklistForm = (props) => {
+  const [cameraConfig, setCameraConfig] = useState({ isOpen: false, title: '', onCapture: null, enableAnnotation: false });
+
+  const openCamera = (title, onCapture, enableAnnotation = false) => {
+    setCameraConfig({ isOpen: true, title, onCapture, enableAnnotation });
+  };
+
   return (
     <ChecklistProvider {...props}>
-      <ChecklistInner openCamera={props.openCamera} />
+      <ChecklistInner openCamera={openCamera} />
+      
+      <InAppCamera 
+        isOpen={cameraConfig.isOpen}
+        title={cameraConfig.title}
+        enableAnnotation={cameraConfig.enableAnnotation}
+        onClose={() => setCameraConfig({ isOpen: false, title: '', onCapture: null, enableAnnotation: false })}
+        onCapture={(file) => {
+          if (cameraConfig.onCapture) {
+            cameraConfig.onCapture(file);
+          }
+          setCameraConfig({ isOpen: false, title: '', onCapture: null, enableAnnotation: false });
+        }}
+      />
     </ChecklistProvider>
   );
 };
