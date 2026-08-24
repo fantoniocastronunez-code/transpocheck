@@ -30,8 +30,9 @@ const lazyWithRetry = (componentImport) =>
       window.localStorage.setItem('page-has-been-force-refreshed', 'false');
       return component;
     } catch (error) {
+      console.error("🔥 ERROR EN LAZY LOAD:", error);
       if (!pageHasAlreadyBeenForceRefreshed) {
-        window.localStorage.setItem('page-has-been-force-refreshed', 'true');
+        window.sessionStorage.setItem('page-has-been-force-refreshed', 'true');
         // Destruir el Service Worker (PWA Caché) para obligar a descargar la nueva versión
         if ('serviceWorker' in navigator) {
           navigator.serviceWorker.getRegistrations().then(function(registrations) {
@@ -52,8 +53,9 @@ const lazyWithRetry = (componentImport) =>
         setTimeout(() => {
           window.location.reload(true);
         }, 1000); // Esperar 1s para que los SW se aniquilen
-        return;
+        return { default: () => <div className="p-10 text-center font-bold text-red-500">Recargando...</div> };
       }
+      console.error("El chunk de React sigue fallando tras recargar.");
       throw error;
     }
   });
@@ -1139,7 +1141,7 @@ function LogisticApp() {
             </nav>
           </>
         } />
-        
+
         <Route path="/checklist" element={
           selectedJob ? (
             <main className="max-w-2xl mx-auto p-4 pt-20 sm:pt-24 pb-24 animate-in zoom-in-[0.98] slide-in-from-bottom-8 duration-500 ease-out">
