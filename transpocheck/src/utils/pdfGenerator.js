@@ -214,6 +214,16 @@ export const buildPDFDoc = async (job, drivers = []) => {
         }
 
         if (job.waitTimeMinutes && job.waitTimeMinutes > 20) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38); const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA EN ORIGEN: ${job.waitTimeMinutes} minutos`, leftColWidth); docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2; } else if (job.checklist?.hasWaitTime) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38);  const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth);  docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2;  }
+        
+        if (job.tripType === 'revision') {
+          const prtTotal = (Number(job.checklist?.prtCostRevision)||0) + (Number(job.checklist?.prtCostInspeccion)||0) + (Number(job.checklist?.prtCostFrenos)||0) + (Number(job.checklist?.prtCostGases)||0);
+          if (prtTotal > 0) {
+            docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(37, 99, 235);
+            const prtStr = docPDF.splitTextToSize(`VALOR PRT TOTAL: $${prtTotal.toLocaleString('es-CL')} (Rev: $${(Number(job.checklist?.prtCostRevision)||0).toLocaleString('es-CL')} | Insp: $${(Number(job.checklist?.prtCostInspeccion)||0).toLocaleString('es-CL')} | Fre: $${(Number(job.checklist?.prtCostFrenos)||0).toLocaleString('es-CL')} | Gas: $${(Number(job.checklist?.prtCostGases)||0).toLocaleString('es-CL')})`, leftColWidth);
+            docPDF.text(prtStr, 15, currentY);
+            currentY += (prtStr.length * 4) + 2;
+          }
+        }
 
         sectionNum++;
     }

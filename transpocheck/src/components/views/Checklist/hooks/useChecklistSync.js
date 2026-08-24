@@ -158,6 +158,14 @@ export const useChecklistSync = ({
       } catch (err) { console.error("Error subiendo firma:", err); }
     }
 
+    if (d.fuelReceipt && d.fuelReceipt.startsWith('data:image')) {
+      try {
+        const url = await uploadImageToStorage(d.fuelReceipt, `checklists/${jobIdFolder}`, `fuel_receipt_${Date.now()}.jpg`);
+        d.fuelReceipt = url;
+        updateProgress('Boleta Combustible');
+      } catch (err) { console.error("Error subiendo boleta de combustible:", err); }
+    }
+
     if (d.scandocPdf && d.scandocPdf.startsWith('data:')) {
       try {
         const ext = d.scandocPdf.includes('application/pdf') ? 'pdf' : 'jpg';

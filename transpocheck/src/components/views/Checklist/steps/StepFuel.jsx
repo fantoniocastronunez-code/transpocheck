@@ -49,6 +49,64 @@ export const StepFuel = () => {
     }
   }, [job, formData.clientArrivalTime, formData.clientDepartureTime, setF]);
 
+  const handlePic = async (eOrFile, id) => {
+    const f = eOrFile.target ? eOrFile.target.files[0] : eOrFile;
+    if (!f) return;
+    try {
+      const { resizeImage } = await import('../../../../utils/helpers');
+      const dataUrl = await resizeImage(f, 1920, 0.85);
+      setF(id, dataUrl);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handlePhotoClick = (id, label) => {
+    if (formData[id]) {
+      const evt = new CustomEvent('openFullScreenImage', { detail: { url: formData[id], id, label }});
+      window.dispatchEvent(evt);
+    } else {
+      if(openCamera) {
+        openCamera(label, f => handlePic(f, id));
+      } else {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.capture = 'environment';
+        input.onchange = (e) => handlePic(e, id);
+        input.click();
+      }
+    }
+  };
+
+  React.useEffect(() => {
+    const handleDelete = (e) => {
+      const { id } = e.detail;
+      if (id === 'fuelReceipt') setF(id, null);
+    };
+    window.addEventListener('deleteImage', handleDelete);
+    return () => window.removeEventListener('deleteImage', handleDelete);
+  }, [setF]);
+
+  const CurrencyInput = ({ value, onChange, placeholder, label }) => (
+    <div className="flex flex-col gap-1">
+      {label && <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-2">{label}</label>}
+      <div className="relative">
+        <input 
+          type="text" 
+          inputMode="numeric"
+          placeholder={placeholder} 
+          value={value ? `$ ${Number(value).toLocaleString('es-CL')}` : ''} 
+          onChange={e => {
+            const raw = parseInt(e.target.value.replace(/\D/g, ''), 10);
+            onChange(isNaN(raw) ? 0 : raw);
+          }} 
+          className="w-full border-2 border-slate-200 dark:border-slate-700 pl-4 pr-4 p-3 rounded-2xl font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 outline-none focus:border-blue-500 transition-colors shadow-inner" 
+        />
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       
@@ -67,6 +125,24 @@ export const StepFuel = () => {
                 ${assignedAmount.toLocaleString('es-CL')}
               </p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Gastos PRT / Trámites */}
+      {job?.tripType === 'revision' && (
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 shadow-sm space-y-4">
+          <h3 className="text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">
+            Costos del Trámite / PRT
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            <CurrencyInput label="Revisión Técnica" placeholder="$0" value={formData.prtCostRevision} onChange={v => setF('prtCostRevision', v)} />
+            <CurrencyInput label="Inspección Visual" placeholder="$0" value={formData.prtCostInspeccion} onChange={v => setF('prtCostInspeccion', v)} />
+            <CurrencyInput label="Frenos" placeholder="$0" value={formData.prtCostFrenos} onChange={v => setF('prtCostFrenos', v)} />
+            <CurrencyInput label="Gases" placeholder="$0" value={formData.prtCostGases} onChange={v => setF('prtCostGases', v)} />
+          </div>
+          <div className="pt-2">
+             <p className="text-xs font-bold text-slate-500">Total Trámite: <span className="text-slate-800 dark:text-slate-200">${((formData.prtCostRevision||0)+(formData.prtCostInspeccion||0)+(formData.prtCostFrenos||0)+(formData.prtCostGases||0)).toLocaleString('es-CL')}</span></p>
           </div>
         </div>
       )}
@@ -132,15 +208,31 @@ export const StepFuel = () => {
           
           {formData.hasFuelCharge && (
             <div className="mt-3 animate-in fade-in slide-in-from-top-2 space-y-4">
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-400">$</span>
-                <input 
-                  type="number" 
-                  placeholder="Monto cargado" 
-                  value={formData.fuelChargeAmount || ''} 
-                  onChange={e => setF('fuelChargeAmount', parseInt(e.target.value, 10))} 
-                  className="w-full border-2 border-slate-200 dark:border-slate-700 pl-8 p-3 rounded-2xl font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 outline-none focus:border-blue-500 transition-colors shadow-inner" 
-                />
+              <CurrencyInput placeholder="Monto cargado de combustible" value={formData.fuelChargeAmount} onChange={v => setF('fuelChargeAmount', v)} />
+              
+              <div className="mt-2">
+                <button 
+                  type="button" 
+                  onClick={() => handlePhotoClick('fuelReceipt', 'Boleta Combustible')} 
+                  className={`w-full h-14 rounded-2xl border-2 flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white dark:bg-slate-900 shadow-sm transition-all 
+                  ${formData.fuelReceipt 
+                    ? 'border-green-400 ring-2 ring-green-100' 
+                    : 'border-dashed border-red-300 dark:border-red-700/50 hover:bg-red-50 dark:hover:bg-red-900/30'
+                  }`}
+                >
+                  {formData.fuelReceipt ? (
+                    <>
+                      <img src={formData.fuelReceipt} className="absolute inset-0 w-full h-full object-cover opacity-30" />
+                      <div className="w-5 h-5 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center relative z-10"><svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg></div>
+                      <span className="text-[10px] font-black text-green-800 dark:text-green-300 relative z-10">Boleta OK</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4 text-red-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                      <span className="text-[10px] font-black uppercase text-red-500 dark:text-red-400">Tomar Foto a Boleta (Obligatorio)</span>
+                    </>
+                  )}
+                </button>
               </div>
 
               {/* Medidor posterior a la carga */}

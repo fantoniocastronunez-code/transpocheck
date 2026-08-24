@@ -16,7 +16,7 @@ import { ImageViewer } from '../../ui/ImageViewer';
 import { StepFuel } from './steps/StepFuel';
 import { StepSignature } from './steps/StepSignature';
 
-import { doc, updateDoc, setDoc } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, getDoc, addDoc, collection } from 'firebase/firestore';
 import { db } from '../../../firebase'; // Ajustar si es necesario
 
 // Este es el componente que realmente usa el contexto
@@ -97,6 +97,56 @@ const ChecklistInner = ({ openCamera }) => {
       
       await updateDoc(doc(db, 'transport_jobs', job.id), updates);
       
+      // Función para procesar y descontar gastos automáticamente
+      const processChecklistExpenses = async (finalData) => {
+        const driverObj = drivers?.find(d => d.email === currentUserEmail);
+        if (!driverObj || !driverObj.id) return;
+        
+        let newBalance = driverObj.balance || 0;
+        
+        // Gasto de Combustible
+        if (finalData.hasFuelCharge && finalData.fuelChargeAmount > 0) {
+          await addDoc(collection(db, 'expenses'), {
+            driverId: driverObj.id,
+            driverEmail: driverObj.email,
+            driverName: driverObj.name,
+            type: 'expense',
+            amount: Number(finalData.fuelChargeAmount),
+            detail: 'Carga de combustible (Auto-generado desde Checklist)',
+            jobId: job.id,
+            deductedAmount: Number(finalData.fuelChargeAmount),
+            receiptImage: finalData.fuelReceipt || null,
+            createdAt: Date.now()
+          });
+          newBalance -= Number(finalData.fuelChargeAmount);
+        }
+
+        // Gastos PRT
+        if (job.tripType === 'revision') {
+          const prtTotal = (Number(finalData.prtCostRevision)||0) + (Number(finalData.prtCostInspeccion)||0) + (Number(finalData.prtCostFrenos)||0) + (Number(finalData.prtCostGases)||0);
+          if (prtTotal > 0) {
+            await addDoc(collection(db, 'expenses'), {
+              driverId: driverObj.id,
+              driverEmail: driverObj.email,
+              driverName: driverObj.name,
+              type: 'expense',
+              amount: prtTotal,
+              detail: 'Trámite PRT (Auto-generado desde Checklist)',
+              jobId: job.id,
+              deductedAmount: prtTotal,
+              receiptImage: null, // PRT no requiere boleta según cliente
+              createdAt: Date.now()
+            });
+            newBalance -= prtTotal;
+          }
+        }
+
+        // Si el balance cambió, actualizar al conductor
+        if (newBalance !== (driverObj.balance || 0)) {
+          await updateDoc(doc(db, 'drivers', driverObj.id), { balance: newBalance });
+        }
+      };
+
       // Lanzar Sync en Background
       if (pushSyncTask) {
         const syncTask = pushSyncTask(`Sync ${job.plate || job.vin || 'Vehículo'}`);
@@ -113,6 +163,7 @@ const ChecklistInner = ({ openCamera }) => {
               completedAt: Date.now(),
               draft: null // Borrar draft
             });
+            await processChecklistExpenses(finalData);
             syncTask.finish();
           } catch (e) {
             console.error("Error en background sync:", e);
@@ -128,6 +179,7 @@ const ChecklistInner = ({ openCamera }) => {
           completedAt: Date.now(),
           draft: null // Borrar draft
         });
+        await processChecklistExpenses(finalData);
         showAlert("✅ Checklist Guardado Correctamente.");
         onComplete();
       }
@@ -195,7 +247,7 @@ const ChecklistInner = ({ openCamera }) => {
             {step === 2 && <StepDocs />}
             {step === 3 && <StepNotes />}
             {step === 4 && <StepPhotos openCamera={openCamera} />}
-            {step === 5 && <StepFuel />}
+            {step === 5 && <StepFuel openCamera={openCamera} />}
             {step === 6 && <StepSignature />}
           </div>
         )}
