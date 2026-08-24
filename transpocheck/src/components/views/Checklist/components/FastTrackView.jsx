@@ -1,12 +1,26 @@
-import React from 'react';
-import { Camera, CheckCircle, FileText } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Camera, CheckCircle, FileText, DollarSign } from 'lucide-react';
 import { useChecklist } from '../ChecklistContext';
 import { StepSignature } from '../steps/StepSignature';
 import { resizeImage } from '../../../../utils/helpers';
+import { db } from '../../../../firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 export const FastTrackView = ({ openCamera }) => {
   const { job, formData, setF, setFormData, uploadImageToStorage, showAlert, step } = useChecklist();
   
+  const [assignedAmount, setAssignedAmount] = useState(0);
+
+  useEffect(() => {
+    if (!job?.id || job.id === 'NEW_QUICK_JOB') return;
+    const q = query(collection(db, 'expenses'), where('jobId', '==', job.id), where('type', '==', 'assignment'));
+    getDocs(q).then(snap => {
+      let total = 0;
+      snap.forEach(doc => { total += Number(doc.data().amount) || 0; });
+      setAssignedAmount(total);
+    }).catch(console.error);
+  }, [job?.id]);
+
   const isPintura = job?.isPintura || job?.isGrabado;
   const requeridas = isPintura ? ((job.qtyPintura || 0) + (job.qtyGrabado || 0)) : 1;
 
@@ -95,6 +109,26 @@ export const FastTrackView = ({ openCamera }) => {
                onChange={(e) => setF('observations', e.target.value)} 
              />
           </div>
+          
+          {/* Monto Asignado */}
+          {assignedAmount > 0 && (
+            <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-3xl border border-emerald-200/60 dark:border-emerald-800/60 shadow-sm flex items-center justify-between animate-in fade-in zoom-in-95">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-800 flex items-center justify-center shrink-0">
+                  <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-emerald-600/80 dark:text-emerald-400/80 uppercase tracking-widest leading-none mb-1">
+                    Fondo para este vehículo
+                  </p>
+                  <p className="text-xl font-extrabold text-emerald-800 dark:text-emerald-300 leading-none">
+                    ${assignedAmount.toLocaleString('es-CL')}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
       )}
 
