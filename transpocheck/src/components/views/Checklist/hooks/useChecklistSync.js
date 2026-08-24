@@ -72,7 +72,7 @@ export const useChecklistSync = ({
       }
     });
     return () => unsub();
-  }, [job?.id, isQuick, db, defaultData, matchedVehicle]);
+  }, [job?.id, isQuick, db]);
 
   // 2. Guardado Automático de Borradores (Drafts)
   useEffect(() => {
