@@ -58,7 +58,7 @@ export const StepSignature = () => {
       )}
 
       {/* Firma en Pantalla */}
-      {!formData.noReception && !formData.signatureData && (
+      {!formData.noReception && !formData.signatureLocked && (
         <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 shadow-sm space-y-4">
           <h3 className="text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest flex items-center gap-2">
             <FileSignature className="w-4 h-4" /> Firma en Dispositivo
@@ -79,16 +79,23 @@ export const StepSignature = () => {
 
           <div className="mt-2 relative">
              <SignaturePad 
-               initialData={null}
-               onSave={(dataUrl) => saveSignature(dataUrl)}
-               onClear={() => setF('signatureData', null)}
+               initialData={formData.signatureData || null}
+               onChange={(dataUrl) => setF('signatureData', dataUrl)}
+               onSave={(dataUrl) => {
+                 saveSignature(dataUrl);
+                 setF('signatureLocked', true);
+               }}
+               onClear={() => {
+                 setF('signatureData', null);
+                 setF('signatureLocked', false);
+               }}
              />
           </div>
         </div>
       )}
 
       {/* Mostrar Firma Guardada */}
-      {formData.signatureData && (
+      {formData.signatureLocked && formData.signatureData && (
         <div className="bg-green-50/50 dark:bg-green-900/10 p-5 rounded-3xl border border-green-200/50 dark:border-green-800/30 shadow-sm text-center relative overflow-hidden animate-in zoom-in-95">
           <div className="absolute top-0 right-0 p-3"><CheckCircle className="w-6 h-6 text-green-500" /></div>
           <h3 className="text-[11px] font-black text-green-800 dark:text-green-300 uppercase tracking-widest mb-4">
@@ -96,7 +103,7 @@ export const StepSignature = () => {
           </h3>
           <img src={formData.signatureData} alt="Firma" className="mx-auto h-24 object-contain opacity-80 mix-blend-multiply dark:mix-blend-screen dark:invert" />
           {formData.receiverName && <p className="text-sm font-bold text-green-900 dark:text-green-100 mt-2">{formData.receiverName}</p>}
-          <button type="button" onClick={() => setF('signatureData', null)} className="text-[10px] font-black text-green-600/70 hover:text-green-700 underline mt-3">Volver a firmar</button>
+          <button type="button" onClick={() => setF('signatureLocked', false)} className="text-[10px] font-black text-green-600/70 hover:text-green-700 underline mt-3">Volver a firmar</button>
         </div>
       )}
 

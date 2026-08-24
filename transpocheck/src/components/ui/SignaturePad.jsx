@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Eraser, Maximize, Minimize, CheckCircle } from 'lucide-react';
 
-export default function SignaturePad({ initialData, onSave, onClear }) {
+export default function SignaturePad({ initialData, onSave, onClear, onChange }) {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -105,6 +105,9 @@ export default function SignaturePad({ initialData, onSave, onClear }) {
   const stopDrawing = () => {
     if (isDrawing) {
       setIsDrawing(false);
+      if (onChange && canvasRef.current) {
+        onChange(canvasRef.current.toDataURL('image/png'));
+      }
     }
   };
 
