@@ -64,10 +64,21 @@ export const StepData = () => {
       <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 shadow-sm space-y-4 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 dark:bg-blue-900/20 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
         
-        <h3 className="text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest flex items-center gap-2">
+        <h3 className="text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest flex items-center gap-2 relative z-10">
           Vehículo
         </h3>
         
+        <div className="relative z-10">
+          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 absolute -top-2 left-3 bg-white dark:bg-slate-900 px-1 z-10">Patente o VIN</label>
+          <input
+            value={formData.plateOrVin}
+            onChange={e => setF('plateOrVin', e.target.value)}
+            placeholder="XX-YY-11"
+            autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters"
+            className="w-full border-2 border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 p-4 rounded-2xl font-black text-lg uppercase text-slate-800 dark:text-slate-200 shadow-inner text-center tracking-[0.2em] focus:border-blue-500 outline-none transition-all relative"
+          />
+        </div>
+
         <div className="grid grid-cols-2 gap-3 relative z-10">
           <input
             value={formData.brand}
@@ -82,17 +93,6 @@ export const StepData = () => {
             placeholder="Modelo"
             autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters"
             className="w-full border-2 border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 p-3.5 rounded-2xl font-bold text-slate-800 dark:text-slate-200 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 outline-none transition-all shadow-inner"
-          />
-        </div>
-        
-        <div className="relative z-10 pt-1">
-          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 absolute -top-2 left-3 bg-white dark:bg-slate-900 px-1">Patente o VIN</label>
-          <input
-            value={formData.plateOrVin}
-            onChange={e => setF('plateOrVin', e.target.value)}
-            placeholder="XX-YY-11"
-            autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters"
-            className="w-full border-2 border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 p-4 rounded-2xl font-black text-lg uppercase text-slate-800 dark:text-slate-200 shadow-inner text-center tracking-[0.2em] focus:border-blue-500 outline-none transition-all"
           />
         </div>
       </div>

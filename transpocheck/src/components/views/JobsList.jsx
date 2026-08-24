@@ -956,7 +956,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       const cleanPlate = getJobIdentifier(job);
       const fileName = generateStandardFileName(job, getDStr(job), cleanPlate);
       docPDF.save(fileName);
-    } catch (e) { console.error(e); showAlert("Hubo un error al generar PDF."); }
+    } catch (e) { 
+      console.error(e); 
+      showAlert("Error PDF: " + (e.message || e.toString() || 'Falla desconocida')); 
+    }
     finally { setProcessingId(null); }
   };
 
