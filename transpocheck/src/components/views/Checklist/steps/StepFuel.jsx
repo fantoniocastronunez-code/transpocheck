@@ -1,18 +1,39 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useChecklist } from '../ChecklistContext';
 import { formatMoney } from '../../../../utils/helpers';
+import { Clock } from 'lucide-react';
 
 export const StepFuel = () => {
-  const { formData, setF, expenses } = useChecklist();
+  const { formData, setF, job } = useChecklist();
 
-  // Opciones de Combustible
+  // Opciones de Combustible (ahora en octavos para más precisión)
   const fuelLevels = [
     { label: 'E', value: 0 },
+    { label: '', value: 12.5 },
     { label: '1/4', value: 25 },
+    { label: '', value: 37.5 },
     { label: '1/2', value: 50 },
+    { label: '', value: 62.5 },
     { label: '3/4', value: 75 },
+    { label: '', value: 87.5 },
     { label: 'F', value: 100 }
   ];
+
+  // Formatear timestamp a hora HH:MM local
+  const formatTime = (ts) => {
+    if (!ts) return '--:--';
+    return new Date(ts).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // Sincronizar automáticamente con los tiempos del trabajo
+  useEffect(() => {
+    if (job?.timestamps?.arrivedPickupAt && !formData.clientArrivalTime) {
+      setF('clientArrivalTime', formatTime(job.timestamps.arrivedPickupAt));
+    }
+    if (job?.timestamps?.pickedUpAt && !formData.clientDepartureTime) {
+      setF('clientDepartureTime', formatTime(job.timestamps.pickedUpAt));
+    }
+  }, [job, formData.clientArrivalTime, formData.clientDepartureTime, setF]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -36,23 +57,27 @@ export const StepFuel = () => {
 
           <input 
             type="range" 
-            min="0" max="100" step="25" 
+            min="0" max="100" step="12.5" 
             value={formData.fuelLevel} 
-            onChange={(e) => setF('fuelLevel', parseInt(e.target.value, 10))} 
+            onChange={(e) => setF('fuelLevel', parseFloat(e.target.value))} 
             className="w-full accent-blue-600 cursor-pointer relative z-10 opacity-0 h-8"
           />
           
           <div className="flex justify-between w-full absolute top-1/2 -translate-y-1/2 pointer-events-none">
-            {fuelLevels.map(lvl => (
+            {fuelLevels.map((lvl, idx) => (
               <div 
-                key={lvl.value} 
-                className={`w-4 h-4 rounded-full border-2 transition-colors ${formData.fuelLevel >= lvl.value ? 'bg-white border-blue-600' : 'bg-slate-100 border-slate-300 dark:bg-slate-800 dark:border-slate-600'}`} 
+                key={idx} 
+                className={`w-3 h-3 rounded-full border-2 transition-colors ${formData.fuelLevel >= lvl.value ? 'bg-white border-blue-600 shadow-sm' : 'bg-slate-100 border-slate-300 dark:bg-slate-800 dark:border-slate-600'} ${lvl.label === '' ? 'scale-75' : 'scale-100'}`} 
               />
             ))}
           </div>
 
           <div className="flex justify-between text-[10px] font-black text-slate-400 mt-3 px-1">
-            {fuelLevels.map(lvl => <span key={lvl.value} className={formData.fuelLevel === lvl.value ? 'text-blue-600 dark:text-blue-400 scale-110 transition-transform' : ''}>{lvl.label}</span>)}
+            {fuelLevels.map((lvl, idx) => (
+              <span key={idx} className={`w-8 text-center ${formData.fuelLevel === lvl.value ? 'text-blue-600 dark:text-blue-400 scale-110 transition-transform' : ''}`}>
+                {lvl.label}
+              </span>
+            ))}
           </div>
         </div>
 
@@ -106,36 +131,31 @@ export const StepFuel = () => {
          </div>
       </div>
 
-      {/* Tiempos de Espera (Gastos extra) */}
-      <div className="bg-amber-50/50 dark:bg-amber-900/10 p-5 rounded-3xl border border-amber-200/50 dark:border-amber-800/30 shadow-sm space-y-4">
-        <h3 className="text-[11px] font-black text-amber-800 dark:text-amber-300 uppercase tracking-widest flex items-center justify-between">
+      {/* Tiempos de Espera (Automático) */}
+      <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+        <h3 className="text-[11px] font-black text-slate-800 dark:text-slate-300 uppercase tracking-widest flex items-center justify-between">
           Tiempos de Espera
-          <span className="text-[10px] bg-amber-200 text-amber-800 dark:bg-amber-800 dark:text-amber-200 px-2 py-0.5 rounded-md">OPCIONAL</span>
+          <span className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 px-2 py-0.5 rounded-md flex items-center gap-1">
+            <Clock className="w-3 h-3" /> Automático
+          </span>
         </h3>
-        <p className="text-[11px] font-bold text-amber-700/80 dark:text-amber-400/80 leading-tight">
-          Calcula el monto extra si hubo retrasos (1 UF x hora).
-        </p>
 
         <div className="grid grid-cols-2 gap-3">
-           <div className="space-y-1">
-             <label className="text-[10px] font-black text-amber-600/70 uppercase tracking-widest ml-1">Llegada Cliente</label>
-             <input type="time" value={formData.clientArrivalTime || ''} onChange={e => setF('clientArrivalTime', e.target.value)} className="w-full border-2 border-amber-200 dark:border-amber-800/50 p-3 rounded-2xl outline-none focus:border-amber-500 font-bold text-amber-900 dark:text-amber-300 bg-white dark:bg-slate-900" />
+           <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+             <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 text-center">Llegué a retirar</label>
+             <p className="font-bold text-slate-800 dark:text-slate-200 text-center text-lg">{formatTime(job?.timestamps?.arrivedPickupAt)}</p>
            </div>
-           <div className="space-y-1">
-             <label className="text-[10px] font-black text-amber-600/70 uppercase tracking-widest ml-1">Salida Cliente</label>
-             <input type="time" value={formData.clientDepartureTime || ''} onChange={e => setF('clientDepartureTime', e.target.value)} className="w-full border-2 border-amber-200 dark:border-amber-800/50 p-3 rounded-2xl outline-none focus:border-amber-500 font-bold text-amber-900 dark:text-amber-300 bg-white dark:bg-slate-900" />
+           <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+             <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 text-center">Vehículo en poder</label>
+             <p className="font-bold text-slate-800 dark:text-slate-200 text-center text-lg">{formatTime(job?.timestamps?.pickedUpAt)}</p>
            </div>
         </div>
 
-        {formData.clientArrivalTime && formData.clientDepartureTime && (
-          <div className="bg-amber-100 dark:bg-amber-900/40 p-3 rounded-xl border border-amber-300 dark:border-amber-700 flex justify-between items-center animate-in zoom-in-95">
-             <span className="text-[10px] font-black text-amber-800 dark:text-amber-400 uppercase tracking-widest">Total Calculado</span>
-             <span className="font-black text-amber-900 dark:text-amber-200">
-               {formatMoney(
-                 Math.max(0, 
-                   (new Date(`1970/01/01 ${formData.clientDepartureTime}`).getTime() - new Date(`1970/01/01 ${formData.clientArrivalTime}`).getTime()) / 3600000 - 1
-                 ) * 38000 // Aprox 1 UF
-               )}
+        {job?.timestamps?.arrivedPickupAt && job?.timestamps?.pickedUpAt && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-3.5 rounded-xl border border-blue-200 dark:border-blue-800/50 flex justify-between items-center mt-2 animate-in zoom-in-95">
+             <span className="text-[11px] font-black text-blue-800 dark:text-blue-400 uppercase tracking-widest">Tiempo Total</span>
+             <span className="font-black text-blue-900 dark:text-blue-300 text-lg">
+               {Math.max(0, Math.floor((job.timestamps.pickedUpAt - job.timestamps.arrivedPickupAt) / 60000))} min
              </span>
           </div>
         )}
