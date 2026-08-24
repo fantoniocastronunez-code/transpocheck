@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 // Importamos las herramientas modernas de caché offline
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
@@ -19,8 +19,15 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 export const auth = getAuth(app);
 
 // 🚀 LA MAGIA: Motor Offline (Subterráneo) activado con la sintaxis moderna a prueba de choques
-export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
-});
+let database;
+try {
+  database = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+  });
+} catch (error) {
+  // Si ya fue inicializado por otro módulo (ej. useFirebase.js), simplemente obtenemos la instancia
+  database = getFirestore(app);
+}
+export const db = database;
 
 export const storage = getStorage(app);
