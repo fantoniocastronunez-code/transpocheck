@@ -108,7 +108,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       };
 
       if (!isSkip && arrivalPhoto) {
-        updatedDraft.photos = { ...currentPhotos, mileage: arrivalPhoto };
+        updatedDraft.photos = { ...currentPhotos, odometer: arrivalPhoto };
       }
 
       await updateDoc(doc(db, 'transport_jobs', arrivalPromptJob.id), {

@@ -44,7 +44,13 @@ const ChecklistInner = ({ openCamera }) => {
       return showAlert("⚠️ Debes registrar un resultado final para la Revisión Técnica antes de cerrar.");
     }
 
-    setShowFinalModal(true);
+    const isGrandleasing = job?.client?.toLowerCase() === 'grandleasing' || formData.client?.toLowerCase() === 'grandleasing';
+    
+    if (isGrandleasing) {
+      setShowFinalModal(true);
+    } else {
+      handleSubmitFinal();
+    }
   };
 
   const handleSubmitFinal = async () => {
@@ -290,7 +296,7 @@ const ChecklistInner = ({ openCamera }) => {
         </div>
 
         <button 
-          onClick={handleSubmitFinal} 
+          onClick={handlePreSubmit} 
           disabled={isSubmitting} 
           className={`w-full font-black py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 uppercase tracking-widest text-xs sm:text-sm transition-all active:scale-95 ${
             isSubmitting 
@@ -330,14 +336,14 @@ const ChecklistInner = ({ openCamera }) => {
                   type="button" 
                   onClick={() => openCamera('Odómetro', f => {
                     const reader = new FileReader();
-                    reader.onload = () => setFormData(p => ({ ...p, photos: { ...p.photos, mileage: reader.result } }));
+                    reader.onload = () => setFormData(p => ({ ...p, photos: { ...p.photos, odometer: reader.result } }));
                     reader.readAsDataURL(f);
                   })}
-                  className={`w-full h-14 rounded-2xl border-2 flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden transition-all ${formData.photos?.mileage ? 'border-green-400 ring-2 ring-green-100 bg-white dark:bg-slate-900' : 'border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 bg-transparent'}`}
+                  className={`w-full h-14 rounded-2xl border-2 flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden transition-all ${formData.photos?.odometer ? 'border-green-400 ring-2 ring-green-100 bg-white dark:bg-slate-900' : 'border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 bg-transparent'}`}
                 >
-                  {formData.photos?.mileage ? (
+                  {formData.photos?.odometer ? (
                     <>
-                      <img src={formData.photos.mileage} className="absolute inset-0 w-full h-full object-cover opacity-30" />
+                      <img src={formData.photos.odometer} className="absolute inset-0 w-full h-full object-cover opacity-30" />
                       <span className="text-[10px] font-black text-green-800 dark:text-green-300 relative z-10">Foto OK</span>
                     </>
                   ) : (
