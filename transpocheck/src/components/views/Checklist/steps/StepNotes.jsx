@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, FileText } from 'lucide-react';
+import { AlertCircle, FileText, CheckCircle } from 'lucide-react';
 import { useChecklist } from '../ChecklistContext';
 import { db } from '../../../../firebase';
 
