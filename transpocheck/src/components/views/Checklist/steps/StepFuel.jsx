@@ -114,22 +114,7 @@ export const StepFuel = () => {
         </div>
       </div>
 
-      {/* Kilometraje Actual */}
-      <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 shadow-sm space-y-2">
-         <h3 className="text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">
-           Kilometraje Actual
-         </h3>
-         <div className="relative">
-           <input 
-             type="number" 
-             placeholder="Ej: 45000" 
-             value={formData.mileage || ''} 
-             onChange={e => setF('mileage', e.target.value)} 
-             className="w-full border-2 border-slate-200 dark:border-slate-700 p-3.5 rounded-2xl font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 outline-none focus:border-blue-500 transition-colors shadow-inner tracking-widest text-lg" 
-           />
-           <span className="absolute right-4 top-1/2 -translate-y-1/2 font-black text-[10px] text-slate-400 uppercase tracking-widest">KM</span>
-         </div>
-      </div>
+
 
       {/* Tiempos de Espera (Automático) */}
       <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
