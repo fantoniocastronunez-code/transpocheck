@@ -120,7 +120,6 @@ export default function SignaturePad({ initialData, onSave, onClear }) {
 
   const closeFullscreen = () => {
     if (isDrawing) setIsDrawing(false);
-    if (canvasRef.current) onSave(canvasRef.current.toDataURL('image/png'));
     setIsFullscreen(false);
   };
 
@@ -161,10 +160,7 @@ export default function SignaturePad({ initialData, onSave, onClear }) {
           {!isFullscreen && (
             <button 
               type="button" 
-              onClick={() => {
-                 if (canvasRef.current) onSave(canvasRef.current.toDataURL('image/png'));
-                 setIsFullscreen(true);
-              }}
+              onClick={() => setIsFullscreen(true)}
               className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 text-slate-600 p-1.5 rounded-lg shadow-sm transition-colors border border-slate-200"
               title="Pantalla Completa"
             >
