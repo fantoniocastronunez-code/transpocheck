@@ -32,6 +32,8 @@ const lazyWithRetry = (componentImport) =>
     } catch (error) {
       if (!pageHasAlreadyBeenForceRefreshed) {
         window.localStorage.setItem('page-has-been-force-refreshed', 'true');
+        // Mostrar alerta antes de recargar para que el usuario entienda qué pasa
+        alert('Se ha detectado una nueva versión de la aplicación o un problema de conexión. La página se recargará para solucionar el problema.');
         window.location.reload();
       }
       throw error;
