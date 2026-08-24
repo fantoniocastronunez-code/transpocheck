@@ -47,11 +47,30 @@ const lazyWithRetry = (componentImport) =>
             for (let name of names) caches.delete(name);
           });
         }
-        alert('Se ha detectado una nueva versión de la aplicación. Se borrará el caché y la página se recargará.');
-        setTimeout(() => {
-          window.location.reload(true);
-        }, 1000); // Esperar 1s para que los SW se aniquilen
-        return { default: () => <div className="p-10 text-center font-bold text-red-500">Recargando...</div> };
+        // Mostrar UI nativa y luego recargar
+        return { 
+          default: () => {
+            React.useEffect(() => {
+              const timer = setTimeout(() => {
+                window.location.reload(true);
+              }, 2500);
+              return () => clearTimeout(timer);
+            }, []);
+            
+            return (
+              <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex flex-col items-center justify-center z-[9999] p-4">
+                 <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl max-w-sm w-full text-center shadow-2xl animate-in zoom-in-95 border border-slate-200 dark:border-slate-800">
+                    <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-5 relative">
+                       <svg className="w-8 h-8 text-blue-600 dark:text-blue-400 absolute" fill="none" viewBox="0 0 24 24"><circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                       <svg className="w-8 h-8 text-blue-600 dark:text-blue-400 animate-spin absolute" fill="none" viewBox="0 0 24 24"><circle className="opacity-0" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-100" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    </div>
+                    <h3 className="text-lg font-black text-slate-800 dark:text-slate-100 mb-2 uppercase tracking-widest">¡Nueva Versión!</h3>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Actualizando la aplicación para mostrarte las últimas mejoras. Un momento...</p>
+                 </div>
+              </div>
+            );
+          }
+        };
       }
       console.error("El chunk de React sigue fallando tras recargar.");
       throw error;
