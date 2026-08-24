@@ -200,25 +200,28 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
     const ctx = canvas.getContext('2d');
     
     const needsRotation = (landscapeAngle !== 0) && (video.videoHeight > video.videoWidth);
+    const applyRotationNow = needsRotation && !enableAnnotation;
 
     const sx = (video.videoWidth - (video.videoWidth / digitalZoom)) / 2;
     const sy = (video.videoHeight - (video.videoHeight / digitalZoom)) / 2;
     const sWidth = video.videoWidth / digitalZoom;
     const sHeight = video.videoHeight / digitalZoom;
 
-    if (needsRotation) {
+    if (applyRotationNow) {
       canvas.width = sHeight;
       canvas.height = sWidth;
       ctx.translate(canvas.width / 2, canvas.height / 2);
       ctx.rotate(-landscapeAngle * Math.PI / 180); 
       ctx.drawImage(video, sx, sy, sWidth, sHeight, -sWidth / 2, -sHeight / 2, sWidth, sHeight);
     } else {
+      // Dibujamos sin rotar para que el usuario pueda hacer anotaciones de forma natural
       canvas.width = sWidth;
       canvas.height = sHeight;
       ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
     }
 
     if (enableAnnotation) {
+      // Guardamos la foto sin rotar para la vista de anotación
       setPreviewImage(canvas.toDataURL('image/jpeg', 0.95));
       if (stream) stream.getTracks().forEach(t => t.stop());
       return;
@@ -322,12 +325,35 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
   
   const confirmAnnotation = () => {
      if (!canvasRef.current) return;
-     canvasRef.current.toBlob((blob) => {
-        if (!blob) return;
-        onCapture(new File([blob], "photo_capture_annotated.jpg", { type: "image/jpeg" }));
-        setPreviewImage(null);
-        onClose();
-     }, 'image/jpeg', 0.95);
+     const canvas = canvasRef.current;
+     
+     // Si la cámara estaba en apaisado, rotamos la imagen *después* de haber dibujado
+     const needsRotation = (landscapeAngle !== 0) && (canvas.height > canvas.width);
+     
+     if (needsRotation) {
+        const finalCanvas = document.createElement('canvas');
+        finalCanvas.width = canvas.height;
+        finalCanvas.height = canvas.width;
+        const ctx = finalCanvas.getContext('2d');
+        
+        ctx.translate(finalCanvas.width / 2, finalCanvas.height / 2);
+        ctx.rotate(-landscapeAngle * Math.PI / 180);
+        ctx.drawImage(canvas, -canvas.width / 2, -canvas.height / 2);
+        
+        finalCanvas.toBlob((blob) => {
+           if (!blob) return;
+           onCapture(new File([blob], "photo_capture_annotated.jpg", { type: "image/jpeg" }));
+           setPreviewImage(null);
+           onClose();
+        }, 'image/jpeg', 0.95);
+     } else {
+        canvas.toBlob((blob) => {
+           if (!blob) return;
+           onCapture(new File([blob], "photo_capture_annotated.jpg", { type: "image/jpeg" }));
+           setPreviewImage(null);
+           onClose();
+        }, 'image/jpeg', 0.95);
+     }
   };
   
   const retryPhoto = () => {
