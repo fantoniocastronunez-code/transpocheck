@@ -131,7 +131,7 @@ export const StepFuel = () => {
           </label>
           
           {formData.hasFuelCharge && (
-            <div className="mt-3 animate-in fade-in slide-in-from-top-2">
+            <div className="mt-3 animate-in fade-in slide-in-from-top-2 space-y-4">
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-400">$</span>
                 <input 
@@ -141,6 +141,52 @@ export const StepFuel = () => {
                   onChange={e => setF('fuelChargeAmount', parseInt(e.target.value, 10))} 
                   className="w-full border-2 border-slate-200 dark:border-slate-700 pl-8 p-3 rounded-2xl font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 outline-none focus:border-blue-500 transition-colors shadow-inner" 
                 />
+              </div>
+
+              {/* Medidor posterior a la carga */}
+              <div className="bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-2xl border border-blue-100 dark:border-blue-900/30 shadow-sm mt-4">
+                <h3 className="text-[10px] font-black text-blue-800 dark:text-blue-300 uppercase tracking-widest flex items-center justify-between mb-4">
+                  Nivel después de carga
+                  <span className="text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40 px-2 py-1 rounded-md text-[10px]">
+                    {formData.fuelLevelAfter ?? formData.fuelLevel}%
+                  </span>
+                </h3>
+                
+                <div className="relative pt-4 pb-2">
+                  <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-200 dark:bg-slate-800 -translate-y-1/2 rounded-full pointer-events-none" />
+                  <div 
+                    className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-red-500 via-amber-500 to-green-500 -translate-y-1/2 rounded-full pointer-events-none transition-all duration-300" 
+                    style={{ width: `${formData.fuelLevelAfter ?? formData.fuelLevel}%` }}
+                  />
+
+                  <input 
+                    type="range" 
+                    min="0" max="100" step="12.5" 
+                    value={formData.fuelLevelAfter ?? formData.fuelLevel} 
+                    onChange={(e) => setF('fuelLevelAfter', parseFloat(e.target.value))} 
+                    className="w-full accent-blue-600 cursor-pointer relative z-10 opacity-0 h-8"
+                  />
+                  
+                  <div className="flex justify-between w-full absolute top-1/2 -translate-y-1/2 pointer-events-none">
+                    {fuelLevels.map((lvl, idx) => {
+                      const currentVal = formData.fuelLevelAfter ?? formData.fuelLevel;
+                      return (
+                        <div 
+                          key={idx} 
+                          className={`w-3 h-3 rounded-full border-2 transition-colors ${currentVal >= lvl.value ? 'bg-white border-blue-600 shadow-sm' : 'bg-slate-100 border-slate-300 dark:bg-slate-800 dark:border-slate-600'} ${lvl.label === '' ? 'scale-75' : 'scale-100'}`} 
+                        />
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex justify-between text-[10px] font-black text-slate-400 mt-3 px-1">
+                    {fuelLevels.map((lvl, idx) => (
+                      <span key={idx} className={`w-8 text-center ${(formData.fuelLevelAfter ?? formData.fuelLevel) === lvl.value ? 'text-blue-600 dark:text-blue-400 scale-110 transition-transform' : ''}`}>
+                        {lvl.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           )}

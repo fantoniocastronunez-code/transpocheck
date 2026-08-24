@@ -151,9 +151,31 @@ export const buildPDFDoc = async (job, drivers = []) => {
 
         currentY = drawSectionTitle(`${sectionNum}. Recepcion y Estado`, currentY);
         const getDocStatus = (docKey) => { const isOk = job.checklist?.docs?.[docKey]; const expDate = job.checklist?.docsExpiry?.[docKey]; if (!isOk) return 'FALTA'; if (expDate) { const [y, m, d] = expDate.split('-'); return `AL DIA (Vence: ${d}/${m}/${y})`; } return 'AL DIA'; };
-        let hFuel = drawKV("Combustible", `${job.checklist?.fuelLevel || '0'}%`, 15, currentY, 45);
+        const drawFuelMeter = (x, y, level, title) => {
+          docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
+          docPDF.text(title, x, y);
+          docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
+          docPDF.text(`${level}%`, x + 40, y, { align: 'right' });
+          const barW = 40; const barY = y + 2;
+          docPDF.setFillColor(226, 232, 240); docPDF.roundedRect(x, barY, barW, 3, 1.5, 1.5, 'F');
+          if (level > 0) {
+            if (level > 50) docPDF.setFillColor(34, 197, 94);
+            else if (level > 20) docPDF.setFillColor(245, 158, 11);
+            else docPDF.setFillColor(239, 68, 68);
+            docPDF.roundedRect(x, barY, (barW * level) / 100, 3, 1.5, 1.5, 'F');
+          }
+          return 8;
+        };
+
+        let hFuel = drawFuelMeter(15, currentY + 3, job.checklist?.fuelLevel || 0, "Combustible Inicio:");
         let hSoap = drawKV("Seguro SOAP", getDocStatus('soap'), 65, currentY, 45);
         currentY += Math.max(hFuel, hSoap) + 6;
+
+        if (job.checklist?.hasFuelCharge) {
+          let hFuelAfter = drawFuelMeter(15, currentY + 3, job.checklist?.fuelLevelAfter ?? job.checklist?.fuelLevel, "Combustible Final:");
+          let hChargeAmount = drawKV("Monto Cargado", `$${(job.checklist?.fuelChargeAmount || 0).toLocaleString('es-CL')}`, 65, currentY, 45);
+          currentY += Math.max(hFuelAfter, hChargeAmount) + 6;
+        }
         let hPerm = drawKV("Permiso Circ.", getDocStatus('permiso'), 15, currentY, 45);
         let hRev = drawKV("Rev. Tecnica", getDocStatus('revTecnica'), 65, currentY, 45);
         currentY += Math.max(hPerm, hRev) + 6;
