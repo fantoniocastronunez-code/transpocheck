@@ -43,20 +43,39 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
           
           setDevices(backCameras);
           
+          // --- FORZAR 0.5x (ULTRA WIDE) AL INICIAR ---
+          const findByKeyword = (keywords) => backCameras.find(d => keywords.some(k => d.label.toLowerCase().includes(k)));
+          let ultraDevice = findByKeyword(['ultra', 'gran angular', '0.5', '0,5']);
+          
+          // En muchos dispositivos móviles (ej. iOS), la backCamera[0] suele ser la ultra wide.
+          if (!ultraDevice && backCameras.length > 0) ultraDevice = backCameras[0];
+          
+          let currentTrackLabel = newStream.getVideoTracks().length > 0 ? newStream.getVideoTracks()[0].label : '';
+          
+          if (ultraDevice && ultraDevice.label !== currentTrackLabel && ultraDevice.deviceId) {
+              // La cámara por defecto no era la 0.5x, así que la cerramos y abrimos la correcta
+              newStream.getTracks().forEach(t => t.stop());
+              const ultraStream = await navigator.mediaDevices.getUserMedia({
+                  video: { deviceId: { exact: ultraDevice.deviceId }, ...baseConstraints }
+              });
+              setStream(ultraStream);
+              const ultraIdx = backCameras.findIndex(d => d.deviceId === ultraDevice.deviceId);
+              setCurrentIndex(ultraIdx !== -1 ? ultraIdx : 0);
+              setActiveZoomLabel(0.5);
+              setDigitalZoom(1);
+              return;
+          }
+          // ------------------------------------------
+          
           let activeIdx = 0;
-          if (newStream.getVideoTracks().length > 0) {
-             const trackLabel = newStream.getVideoTracks()[0].label;
-             const foundIdx = backCameras.findIndex(d => d.label === trackLabel);
+          if (currentTrackLabel) {
+             const foundIdx = backCameras.findIndex(d => d.label === currentTrackLabel);
              if (foundIdx !== -1) activeIdx = foundIdx;
           }
           setCurrentIndex(activeIdx);
           
-          // Si el celular arranca en la cámara 0 y hay más de una, asumimos que es la 0.5x para mantener la coherencia
-          if (activeIdx === 0 && backCameras.length > 1) {
-             setActiveZoomLabel(0.5); 
-          } else {
-             setActiveZoomLabel(1); 
-          }
+          // Si estamos aquí es porque la default ya era la 0.5x o no hay otra opción.
+          setActiveZoomLabel(0.5);
        }
        setStream(newStream);
     } catch (error) {
