@@ -105,8 +105,14 @@ export default function SignaturePad({ initialData, onSave, onClear }) {
   const stopDrawing = () => {
     if (isDrawing) {
       setIsDrawing(false);
+    }
+  };
+
+  const handleSave = () => {
+    if (canvasRef.current) {
       onSave(canvasRef.current.toDataURL('image/png'));
-      loadedRef.current = true; // Ya dibujamos manualmente, evita que se recargue solo
+      loadedRef.current = true;
+      if (isFullscreen) closeFullscreen();
     }
   };
 
@@ -130,12 +136,12 @@ export default function SignaturePad({ initialData, onSave, onClear }) {
 
       <div className={
         isFullscreen
-          ? "fixed inset-x-4 top-1/2 -translate-y-1/2 h-80 z-[9999] border-2 border-slate-300 rounded-3xl bg-white overflow-hidden shadow-2xl touch-none flex flex-col animate-in zoom-in-95"
+          ? "fixed inset-x-4 top-1/2 -translate-y-1/2 h-[75vh] z-[9999] border-2 border-slate-300 rounded-3xl bg-white overflow-hidden shadow-2xl touch-none flex flex-col animate-in zoom-in-95"
           : "relative border-2 border-dashed border-slate-300 rounded-2xl bg-white overflow-hidden shadow-sm touch-none h-32"
       }>
         
         {isFullscreen && (
-           <div className="bg-slate-100 border-b border-slate-200 p-3 flex justify-between items-center">
+           <div className="bg-slate-100 border-b border-slate-200 p-3 flex justify-between items-center shrink-0">
              <span className="text-xs font-black text-slate-500 uppercase tracking-widest pl-2">Dibuja tu firma</span>
              <button onClick={closeFullscreen} className="bg-white p-1.5 rounded-lg shadow-sm border border-slate-200 text-slate-600 hover:bg-blue-50 transition-colors">
                 <Minimize className="w-4 h-4"/>
@@ -154,10 +160,9 @@ export default function SignaturePad({ initialData, onSave, onClear }) {
           onPointerCancel={stopDrawing}
         />
 
-        {/* Controles Flotantes */}
-        <div className={`absolute flex gap-2 ${isFullscreen ? 'bottom-4 right-4' : 'top-2 right-2'}`}>
-          
-          {!isFullscreen && (
+        {/* Controles Flotantes (Solo en vista normal) */}
+        {!isFullscreen && (
+          <div className="absolute flex gap-2 top-2 right-2">
             <button 
               type="button" 
               onClick={() => setIsFullscreen(true)}
@@ -166,21 +171,34 @@ export default function SignaturePad({ initialData, onSave, onClear }) {
             >
               <Maximize className="w-4 h-4"/>
             </button>
-          )}
-
-          <button 
-            type="button" 
-            onClick={clearPad} 
-            className="bg-red-50 hover:bg-red-100 text-red-500 p-1.5 rounded-lg shadow-sm transition-colors border border-red-200"
-            title="Borrar Firma"
-          >
-            <Eraser className="w-4 h-4"/>
-          </button>
-        </div>
+            <button 
+              type="button" 
+              onClick={clearPad} 
+              className="bg-red-50 hover:bg-red-100 text-red-500 p-1.5 rounded-lg shadow-sm transition-colors border border-red-200"
+              title="Borrar Firma"
+            >
+              <Eraser className="w-4 h-4"/>
+            </button>
+            <button 
+              type="button" 
+              onClick={handleSave} 
+              className="bg-green-50 hover:bg-green-100 text-green-600 p-1.5 rounded-lg shadow-sm transition-colors border border-green-200"
+              title="Guardar Firma"
+            >
+              <CheckCircle className="w-4 h-4"/>
+            </button>
+          </div>
+        )}
         
+        {/* Controles Inferiores (Solo en pantalla completa) */}
         {isFullscreen && (
-           <div className="bg-blue-50 p-2 text-center border-t border-blue-100">
-              <p className="text-[10px] font-bold text-blue-600 flex justify-center items-center gap-1"><CheckCircle className="w-3 h-3"/> La firma se guarda al levantar el dedo.</p>
+           <div className="bg-white p-4 border-t border-slate-200 flex justify-between items-center gap-3 shrink-0">
+              <button type="button" onClick={clearPad} className="flex-1 bg-red-50 text-red-600 py-3 rounded-xl font-bold text-sm flex justify-center items-center gap-2 border border-red-200 active:scale-95 transition-all">
+                <Eraser className="w-5 h-5"/> Borrar
+              </button>
+              <button type="button" onClick={handleSave} className="flex-1 bg-green-500 text-white py-3 rounded-xl font-bold text-sm flex justify-center items-center gap-2 shadow-md shadow-green-500/30 active:scale-95 transition-all">
+                <CheckCircle className="w-5 h-5"/> Guardar
+              </button>
            </div>
         )}
 
