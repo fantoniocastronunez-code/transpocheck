@@ -32,9 +32,27 @@ const lazyWithRetry = (componentImport) =>
     } catch (error) {
       if (!pageHasAlreadyBeenForceRefreshed) {
         window.localStorage.setItem('page-has-been-force-refreshed', 'true');
-        // Mostrar alerta antes de recargar para que el usuario entienda qué pasa
-        alert('Se ha detectado una nueva versión de la aplicación o un problema de conexión. La página se recargará para solucionar el problema.');
-        window.location.reload();
+        // Destruir el Service Worker (PWA Caché) para obligar a descargar la nueva versión
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for(let registration of registrations) {
+              registration.unregister();
+            }
+          });
+        }
+        // Limpiar cachés de Workbox agresivos
+        if ('caches' in window) {
+          caches.keys().then((names) => {
+            names.forEach(name => {
+              caches.delete(name);
+            });
+          });
+        }
+        alert('Se ha detectado una nueva versión de la aplicación. Se borrará el caché y la página se recargará.');
+        setTimeout(() => {
+          window.location.reload(true);
+        }, 1000); // Esperar 1s para que los SW se aniquilen
+        return;
       }
       throw error;
     }
