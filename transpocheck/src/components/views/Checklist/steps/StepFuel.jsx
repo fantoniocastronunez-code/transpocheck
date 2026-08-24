@@ -108,8 +108,6 @@ export const StepFuel = ({ openCamera }) => {
     return () => window.removeEventListener('deleteImage', handleDelete);
   }, [setF]);
 
-  }, [setF]);
-
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       
