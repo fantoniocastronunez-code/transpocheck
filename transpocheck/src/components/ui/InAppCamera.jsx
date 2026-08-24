@@ -23,11 +23,22 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
     try {
        // Solicitar máxima resolución posible (ideal 4K, el navegador ajustará al máximo de la cámara)
        const baseConstraints = { width: { ideal: 4096 }, height: { ideal: 2160 } };
-       const constraints = deviceId 
-         ? { video: { deviceId: { exact: deviceId }, ...baseConstraints } } 
+       
+       let targetDeviceId = deviceId;
+       
+       // Si es la primera vez y no hay deviceId, intentar recuperar el último guardado (evita la doble carga)
+       if (isFirst && !deviceId) {
+           const savedUltraId = localStorage.getItem('ultraCameraId');
+           if (savedUltraId) {
+               targetDeviceId = savedUltraId;
+           }
+       }
+
+       const constraints = targetDeviceId 
+         ? { video: { deviceId: { exact: targetDeviceId }, ...baseConstraints } } 
          : { video: { facingMode: 'environment', ...baseConstraints } };
        
-       const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+       let newStream = await navigator.mediaDevices.getUserMedia(constraints);
        
        if (isFirst) {
           const devs = await navigator.mediaDevices.enumerateDevices();
@@ -43,7 +54,7 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
           
           setDevices(backCameras);
           
-          // --- FORZAR 0.5x (ULTRA WIDE) AL INICIAR ---
+          // --- BÚSQUEDA DE CÁMARA 0.5x ---
           const findByKeyword = (keywords) => backCameras.find(d => keywords.some(k => d.label.toLowerCase().includes(k)));
           let ultraDevice = findByKeyword(['ultra', 'gran angular', '0.5', '0,5']);
           
@@ -53,33 +64,41 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
           let currentTrackLabel = newStream.getVideoTracks().length > 0 ? newStream.getVideoTracks()[0].label : '';
           
           if (ultraDevice && ultraDevice.label !== currentTrackLabel && ultraDevice.deviceId) {
-              // La cámara por defecto no era la 0.5x, así que la cerramos y abrimos la correcta
-              newStream.getTracks().forEach(t => t.stop());
-              const ultraStream = await navigator.mediaDevices.getUserMedia({
-                  video: { deviceId: { exact: ultraDevice.deviceId }, ...baseConstraints }
-              });
-              setStream(ultraStream);
-              const ultraIdx = backCameras.findIndex(d => d.deviceId === ultraDevice.deviceId);
-              setCurrentIndex(ultraIdx !== -1 ? ultraIdx : 0);
-              setActiveZoomLabel(0.5);
-              setDigitalZoom(1);
-              return;
+              localStorage.setItem('ultraCameraId', ultraDevice.deviceId);
+
+              // Si abrimos la por defecto y no era la ultra, cerramos y volvemos a abrir
+              if (!targetDeviceId || targetDeviceId !== ultraDevice.deviceId) {
+                  newStream.getTracks().forEach(t => t.stop());
+                  const ultraStream = await navigator.mediaDevices.getUserMedia({
+                      video: { deviceId: { exact: ultraDevice.deviceId }, ...baseConstraints }
+                  });
+                  newStream = ultraStream;
+              }
+          } else if (ultraDevice && ultraDevice.deviceId) {
+              // Si ya era la ultra, la guardamos
+              localStorage.setItem('ultraCameraId', ultraDevice.deviceId);
           }
           // ------------------------------------------
           
           let activeIdx = 0;
+          currentTrackLabel = newStream.getVideoTracks().length > 0 ? newStream.getVideoTracks()[0].label : '';
           if (currentTrackLabel) {
              const foundIdx = backCameras.findIndex(d => d.label === currentTrackLabel);
              if (foundIdx !== -1) activeIdx = foundIdx;
           }
           setCurrentIndex(activeIdx);
           
-          // Si estamos aquí es porque la default ya era la 0.5x o no hay otra opción.
           setActiveZoomLabel(0.5);
+          setDigitalZoom(1);
        }
        setStream(newStream);
     } catch (error) {
        console.warn("Error de hardware:", error);
+       // Fallback por si el ID guardado de localStorage ya no es válido (suele pasar en Safari iOS al recargar)
+       if (isFirst && !deviceId && localStorage.getItem('ultraCameraId')) {
+           localStorage.removeItem('ultraCameraId');
+           return startCamera(null, true);
+       }
        if (isFirst) {
            alert("No se pudo iniciar la cámara. Verifica que los permisos estén habilitados.");
            onClose();
@@ -209,22 +228,32 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
     const sWidth = video.videoWidth / digitalZoom;
     const sHeight = video.videoHeight / digitalZoom;
 
+    // LIMITAR LA RESOLUCIÓN PARA EVITAR QUE toDataURL CONGELE LA PANTALLA
+    const MAX_DIMENSION = 1920; 
+    let scale = 1;
+    if (sWidth > MAX_DIMENSION || sHeight > MAX_DIMENSION) {
+        scale = MAX_DIMENSION / Math.max(sWidth, sHeight);
+    }
+
+    const drawWidth = sWidth * scale;
+    const drawHeight = sHeight * scale;
+
     if (applyRotationNow) {
-      canvas.width = sHeight;
-      canvas.height = sWidth;
+      canvas.width = drawHeight;
+      canvas.height = drawWidth;
       ctx.translate(canvas.width / 2, canvas.height / 2);
       ctx.rotate(-landscapeAngle * Math.PI / 180); 
-      ctx.drawImage(video, sx, sy, sWidth, sHeight, -sWidth / 2, -sHeight / 2, sWidth, sHeight);
+      ctx.drawImage(video, sx, sy, sWidth, sHeight, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
     } else {
       // Dibujamos sin rotar para que el usuario pueda hacer anotaciones de forma natural
-      canvas.width = sWidth;
-      canvas.height = sHeight;
-      ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
+      canvas.width = drawWidth;
+      canvas.height = drawHeight;
+      ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, drawWidth, drawHeight);
     }
 
     if (enableAnnotation) {
       // Guardamos la foto sin rotar para la vista de anotación
-      setPreviewImage(canvas.toDataURL('image/jpeg', 0.95));
+      setPreviewImage(canvas.toDataURL('image/jpeg', 0.85));
       if (stream) stream.getTracks().forEach(t => t.stop());
       return;
     }
