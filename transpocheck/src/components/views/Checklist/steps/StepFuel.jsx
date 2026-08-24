@@ -8,17 +8,18 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 const CurrencyInput = ({ value, onChange, placeholder, label }) => (
   <div className="flex flex-col gap-1">
     {label && <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-2">{label}</label>}
-    <div className="relative">
+    <div className="relative flex items-center">
+      <span className="absolute left-4 font-bold text-slate-400 select-none pointer-events-none">$</span>
       <input 
         type="text" 
         inputMode="numeric"
         placeholder={placeholder} 
-        value={value ? `$ ${Number(value).toLocaleString('es-CL')}` : ''} 
+        value={value ? Number(value).toLocaleString('es-CL') : ''} 
         onChange={e => {
           const raw = parseInt(e.target.value.replace(/\D/g, ''), 10);
           onChange(isNaN(raw) ? 0 : raw);
         }} 
-        className="w-full border-2 border-slate-200 dark:border-slate-700 pl-4 pr-4 p-3 rounded-2xl font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 outline-none focus:border-blue-500 transition-colors shadow-inner" 
+        className="w-full border-2 border-slate-200 dark:border-slate-700 pl-8 pr-4 p-3 rounded-2xl font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 outline-none focus:border-blue-500 transition-colors shadow-inner" 
       />
     </div>
   </div>
