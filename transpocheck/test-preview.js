@@ -6,10 +6,20 @@ import puppeteer from 'puppeteer';
     const page = await browser.newPage();
     page.on('console', msg => console.log('PAGE LOG:', msg.text()));
     page.on('pageerror', error => console.log('PAGE ERROR:', error.message));
-    page.on('requestfailed', request => console.log('REQUEST FAILED:', request.url(), request.failure().errorText));
+    page.on('requestfailed', request => console.log('REQUEST FAILED:', request.url(), request.failure()?.errorText));
     
     await page.goto('http://localhost:4173/', { waitUntil: 'networkidle2' });
     console.log('Page loaded');
+    
+    // Evaluate in page to simulate navigation to checklist
+    await page.evaluate(() => {
+       // Mock the route change to /checklist since we can't easily click login
+       window.history.pushState({}, '', '/checklist');
+       window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    
+    await new Promise(r => setTimeout(r, 2000));
+    console.log('Done waiting');
     await browser.close();
   } catch (err) {
     console.error('Puppeteer Error:', err);
