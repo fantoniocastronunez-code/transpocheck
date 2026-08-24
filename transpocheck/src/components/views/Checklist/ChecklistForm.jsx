@@ -250,7 +250,7 @@ const ChecklistInner = ({ openCamera }) => {
       <TabsHeader />
 
       {/* CONTENIDO DESLIZABLE */}
-      <div className="flex-1 overflow-y-auto pb-24 scroll-smooth">
+      <div className="flex-1 overflow-y-auto pb-40 scroll-smooth">
         {isSimple ? (
           <FastTrackView openCamera={openCamera} />
         ) : (
@@ -265,8 +265,35 @@ const ChecklistInner = ({ openCamera }) => {
         )}
       </div>
 
-      {/* BARRA INFERIOR (GUARDAR) */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200/50 dark:border-slate-800/50 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)] z-50">
+      {/* BARRA INFERIOR (NAVEGACIÓN Y GUARDAR) */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200/50 dark:border-slate-800/50 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)] z-50 flex flex-col gap-3">
+        
+        {/* BOTONES DE NAVEGACIÓN */}
+        <div className="flex gap-3">
+          <button
+            onClick={() => setStep(Math.max(1, step - 1))}
+            disabled={step === 1 || isSubmitting}
+            className={`flex-1 font-black py-3 rounded-2xl border-2 flex items-center justify-center gap-2 uppercase tracking-widest text-xs sm:text-sm transition-all active:scale-95 ${
+              step === 1 || isSubmitting
+                ? 'border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'
+                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+            }`}
+          >
+            <ArrowLeft className="w-4 h-4" /> Atrás
+          </button>
+          <button
+            onClick={() => setStep(Math.min(isSimple ? 3 : 6, step + 1))}
+            disabled={step === (isSimple ? 3 : 6) || isSubmitting}
+            className={`flex-1 font-black py-3 rounded-2xl border-2 flex items-center justify-center gap-2 uppercase tracking-widest text-xs sm:text-sm transition-all active:scale-95 ${
+              step === (isSimple ? 3 : 6) || isSubmitting
+                ? 'border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'
+                : 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40'
+            }`}
+          >
+            Siguiente <ArrowLeft className="w-4 h-4 rotate-180" />
+          </button>
+        </div>
+
         <button 
           onClick={handleSubmitFinal} 
           disabled={isSubmitting} 

@@ -95,7 +95,7 @@ export const FastTrackView = ({ openCamera }) => {
   }, [setF, setFormData, formData.photos]);
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 pb-24">
+    <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 pb-40">
       {step === 1 && (
         <div className="space-y-4 px-4">
           <div className="bg-purple-50/50 dark:bg-purple-900/10 p-5 rounded-3xl border border-purple-200/50 dark:border-purple-800/30 shadow-sm space-y-3">
