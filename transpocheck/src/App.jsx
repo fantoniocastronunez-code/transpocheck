@@ -44,9 +44,7 @@ const lazyWithRetry = (componentImport) =>
         // Limpiar cachés de Workbox agresivos
         if ('caches' in window) {
           caches.keys().then((names) => {
-            names.forEach(name => {
-              caches.delete(name);
-            });
+            for (let name of names) caches.delete(name);
           });
         }
         alert('Se ha detectado una nueva versión de la aplicación. Se borrará el caché y la página se recargará.');
