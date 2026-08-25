@@ -20,7 +20,7 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
           </div>
         )}
       </div>
-      <div className="relative w-[160px] sm:w-[200px] h-[260px] mx-auto my-14">
+      <div className="relative w-[160px] sm:w-[200px] h-[260px] mx-auto my-20">
         <div
           className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 cursor-crosshair transition-all duration-300 ease-out drop-shadow-xl ${!formData.zoomZone ? 'scale-100 z-10 hover:opacity-90' :
             formData.zoomZone === 'tl' ? 'scale-[1.8] origin-top-left z-50' :
@@ -232,7 +232,7 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
             <>
               {/* Botón FRENTE (Arriba al centro) */}
               <button type="button" onClick={(e) => { e.stopPropagation(); handlePhotoClick('front', 'FRENTE'); }} 
-                className={`absolute -top-14 sm:-top-16 left-1/2 -translate-x-1/2 w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 flex flex-col items-center justify-center cursor-pointer shadow-lg overflow-hidden bg-white dark:bg-slate-900 transition-all z-20 hover:scale-105 active:scale-95 ${formData.photos.front ? 'border-green-400 ring-4 ring-green-100/50' : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                className={`absolute -top-20 sm:-top-24 left-1/2 -translate-x-1/2 w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 flex flex-col items-center justify-center cursor-pointer shadow-lg overflow-hidden bg-white dark:bg-slate-900 transition-all z-20 hover:scale-105 active:scale-95 ${formData.photos.front ? 'border-green-400 ring-4 ring-green-100/50' : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                 {formData.photos.front ? (
                   <><img src={formData.photos.front} className="absolute inset-0 w-full h-full object-cover opacity-70" /><CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 relative z-10 bg-white/80 dark:bg-slate-900/80 rounded-full drop-shadow-md" /></>
                 ) : (
@@ -242,7 +242,7 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
 
               {/* Botón ATRÁS (Abajo al centro) */}
               <button type="button" onClick={(e) => { e.stopPropagation(); handlePhotoClick('back', 'ATRÁS'); }} 
-                className={`absolute -bottom-14 sm:-bottom-16 left-1/2 -translate-x-1/2 w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 flex flex-col items-center justify-center cursor-pointer shadow-lg overflow-hidden bg-white dark:bg-slate-900 transition-all z-20 hover:scale-105 active:scale-95 ${formData.photos.back ? 'border-green-400 ring-4 ring-green-100/50' : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                className={`absolute -bottom-20 sm:-bottom-24 left-1/2 -translate-x-1/2 w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 flex flex-col items-center justify-center cursor-pointer shadow-lg overflow-hidden bg-white dark:bg-slate-900 transition-all z-20 hover:scale-105 active:scale-95 ${formData.photos.back ? 'border-green-400 ring-4 ring-green-100/50' : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                 {formData.photos.back ? (
                   <><img src={formData.photos.back} className="absolute inset-0 w-full h-full object-cover opacity-70" /><CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 relative z-10 bg-white/80 dark:bg-slate-900/80 rounded-full drop-shadow-md" /></>
                 ) : (
@@ -252,7 +252,7 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
 
               {/* Botón LATERAL PILOTO (Izquierda) */}
               <button type="button" onClick={(e) => { e.stopPropagation(); handlePhotoClick('left', 'LATERAL PILOTO'); }} 
-                className={`absolute top-1/2 -left-12 sm:-left-16 -translate-y-1/2 w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 flex flex-col items-center justify-center cursor-pointer shadow-lg overflow-hidden bg-white dark:bg-slate-900 transition-all z-20 hover:scale-105 active:scale-95 ${formData.photos.left ? 'border-green-400 ring-4 ring-green-100/50' : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                className={`absolute top-1/2 -left-20 sm:-left-24 -translate-y-1/2 w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 flex flex-col items-center justify-center cursor-pointer shadow-lg overflow-hidden bg-white dark:bg-slate-900 transition-all z-20 hover:scale-105 active:scale-95 ${formData.photos.left ? 'border-green-400 ring-4 ring-green-100/50' : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                 {formData.photos.left ? (
                   <><img src={formData.photos.left} className="absolute inset-0 w-full h-full object-cover opacity-70" /><CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 relative z-10 bg-white/80 dark:bg-slate-900/80 rounded-full drop-shadow-md" /></>
                 ) : (
@@ -262,7 +262,7 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
 
               {/* Botón LATERAL COPILOTO (Derecha) */}
               <button type="button" onClick={(e) => { e.stopPropagation(); handlePhotoClick('right', 'LATERAL COPILOTO'); }} 
-                className={`absolute top-1/2 -right-12 sm:-right-16 -translate-y-1/2 w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 flex flex-col items-center justify-center cursor-pointer shadow-lg overflow-hidden bg-white dark:bg-slate-900 transition-all z-20 hover:scale-105 active:scale-95 ${formData.photos.right ? 'border-green-400 ring-4 ring-green-100/50' : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                className={`absolute top-1/2 -right-20 sm:-right-24 -translate-y-1/2 w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 flex flex-col items-center justify-center cursor-pointer shadow-lg overflow-hidden bg-white dark:bg-slate-900 transition-all z-20 hover:scale-105 active:scale-95 ${formData.photos.right ? 'border-green-400 ring-4 ring-green-100/50' : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                 {formData.photos.right ? (
                   <><img src={formData.photos.right} className="absolute inset-0 w-full h-full object-cover opacity-70" /><CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 relative z-10 bg-white/80 dark:bg-slate-900/80 rounded-full drop-shadow-md" /></>
                 ) : (
