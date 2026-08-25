@@ -92,14 +92,14 @@ export const StepPhotos = ({ openCamera }) => {
     <div className="space-y-5 animate-in fade-in duration-300">
       
       {/* Header y Selector de Vehículo */}
-      <div className="flex justify-between items-end border-b border-slate-100 dark:border-slate-800 pb-3 mb-2">
+      <div className="flex flex-col gap-2 border-b border-slate-100 dark:border-slate-800 pb-3 mb-2">
         <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
           Croquis Pericial de Daños
         </h3>
         <select 
           value={formData.vehicleType || 'auto'} 
           onChange={e => setF('vehicleType', e.target.value)} 
-          className="bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-[10px] font-bold p-2 rounded-xl outline-none text-slate-700 dark:text-slate-300 cursor-pointer max-w-[140px] focus:border-blue-500 transition-colors shadow-sm"
+          className="bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-[10px] font-bold p-2 rounded-xl outline-none text-slate-700 dark:text-slate-300 cursor-pointer w-full focus:border-blue-500 transition-colors shadow-sm"
         >
           <option value="auto">🚙 Auto/SUV</option>
           <option value="camioneta">🛻 Camioneta</option>
