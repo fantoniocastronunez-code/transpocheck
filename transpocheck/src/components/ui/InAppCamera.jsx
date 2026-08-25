@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Camera, X, CheckCircle, RefreshCw, Edit3 } from 'lucide-react';
+import { Camera, X, CheckCircle, RefreshCw, RefreshCcw, Edit3 } from 'lucide-react';
 
 export default function InAppCamera({ isOpen, onClose, onCapture, title, enableAnnotation = false }) {
   const [stream, setStream] = useState(null);
@@ -9,6 +9,7 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
   const [landscapeAngle, setLandscapeAngle] = useState(0);
   const [digitalZoom, setDigitalZoom] = useState(1);
   const [activeZoomLabel, setActiveZoomLabel] = useState(1);
+  const [isManualOverride, setIsManualOverride] = useState(false);
   const videoRef = useRef(null);
 
   // States for Photo Annotation
@@ -60,25 +61,23 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
           
           // En muchos dispositivos móviles (ej. iOS), la backCamera[0] suele ser la ultra wide.
           if (!ultraDevice && backCameras.length > 0) ultraDevice = backCameras[0];
-          
-          let currentTrackLabel = newStream.getVideoTracks().length > 0 ? newStream.getVideoTracks()[0].label : '';
-          
-          if (ultraDevice && ultraDevice.label !== currentTrackLabel && ultraDevice.deviceId) {
-              localStorage.setItem('ultraCameraId', ultraDevice.deviceId);
+            let currentTrackLabel = newStream.getVideoTracks().length > 0 ? newStream.getVideoTracks()[0].label : '';
+           
+           if (ultraDevice && ultraDevice.label !== currentTrackLabel && ultraDevice.deviceId) {
+               localStorage.setItem('ultraCameraId', ultraDevice.deviceId);
 
-              // Si abrimos la por defecto y no era la ultra, cerramos y volvemos a abrir
-              if (!targetDeviceId || targetDeviceId !== ultraDevice.deviceId) {
-                  newStream.getTracks().forEach(t => t.stop());
-                  const ultraStream = await navigator.mediaDevices.getUserMedia({
-                      video: { deviceId: { exact: ultraDevice.deviceId }, ...baseConstraints }
-                  });
-                  newStream = ultraStream;
-              }
-          } else if (ultraDevice && ultraDevice.deviceId) {
-              // Si ya era la ultra, la guardamos
-              localStorage.setItem('ultraCameraId', ultraDevice.deviceId);
-          }
-          // ------------------------------------------
+               // Si abrimos la por defecto y no era la ultra, cerramos y volvemos a abrir
+               if (!targetDeviceId || targetDeviceId !== ultraDevice.deviceId) {
+                   newStream.getTracks().forEach(t => t.stop());
+                   const ultraStream = await navigator.mediaDevices.getUserMedia({
+                       video: { deviceId: { exact: ultraDevice.deviceId }, ...baseConstraints }
+                   });
+                   newStream = ultraStream;
+               }
+           } else if (ultraDevice && ultraDevice.deviceId) {
+               // Si ya era la ultra, la guardamos
+               localStorage.setItem('ultraCameraId', ultraDevice.deviceId);
+           }
           
           let activeIdx = 0;
           currentTrackLabel = newStream.getVideoTracks().length > 0 ? newStream.getVideoTracks()[0].label : '';
@@ -106,12 +105,12 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
     }
   };
 
-  // Encender o apagar la cámara al abrir/cerrar el modal
   useEffect(() => {
     if (isOpen) {
         setPreviewImage(null);
         setHasDrawing(false);
         setIsDrawing(false);
+        setIsManualOverride(false);
         startCamera(null, true);
     } else {
         if (stream) stream.getTracks().forEach(t => t.stop());
@@ -119,6 +118,7 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
         setDevices([]);
         setCurrentIndex(0);
         setLandscapeAngle(0);
+        setIsManualOverride(false);
         setActiveZoomLabel(1);
         setPreviewImage(null);
         setHasDrawing(false);
@@ -130,6 +130,11 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
     // eslint-disable-next-line
   }, [isOpen]);
 
+  const toggleOrientation = () => {
+    setIsManualOverride(true);
+    setLandscapeAngle(prev => prev === 0 ? -90 : 0);
+  };
+
   // Conectar el video al reproductor web
   useEffect(() => {
     if (isOpen && stream && videoRef.current) {
@@ -140,20 +145,20 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
   // Oído biónico para el giroscopio
   useEffect(() => {
     const handleOrientation = (event) => {
+      if (isManualOverride) return;
+
       const gamma = event.gamma;
       const beta = event.beta;  
 
       if (gamma === null || beta === null) return;
       
-      // Filtro de planitud estricto (Gimbal lock):
-      // Si el teléfono está apuntando muy hacia abajo o arriba, ignorar cambios
-      // porque gamma se vuelve errático. Mantenemos el último estado.
-      if (Math.abs(beta) < 35 || Math.abs(beta) > 145) return;
+      // Si el teléfono está plano sobre la mesa, ignorar cambios bruscos
+      if (Math.abs(beta) < 25 && Math.abs(gamma) < 25) return;
 
       // Histéresis: ángulos más amplios para activar, más cerrados para desactivar
-      if (gamma > 55) setLandscapeAngle(-90);
-      else if (gamma < -55) setLandscapeAngle(90); 
-      else if (gamma > -35 && gamma < 35) setLandscapeAngle(0);  
+      if (gamma > 50) setLandscapeAngle(-90);
+      else if (gamma < -50) setLandscapeAngle(90); 
+      else if (Math.abs(gamma) < 35) setLandscapeAngle(0);  
     };
 
     if (isOpen) window.addEventListener('deviceorientation', handleOrientation);
@@ -445,6 +450,7 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
       <div className="bg-black text-white p-4 flex justify-between items-center z-10 shadow-md border-b border-slate-800">
         <h3 className="font-black text-sm uppercase tracking-widest flex items-center gap-2 truncate max-w-[40%]"><Camera className="w-5 h-5 text-blue-400 shrink-0"/> {title}</h3>
         <div className="flex items-center gap-3">
+          <button onClick={toggleOrientation} className="bg-slate-800 p-2 rounded-full text-white hover:bg-slate-700 transition-colors shadow-sm"><RefreshCw className="w-5 h-5"/></button>
           <button onClick={onClose} className="bg-white/10 p-2 rounded-full text-white hover:bg-white/20 transition-colors"><X className="w-5 h-5"/></button>
         </div>
       </div>
@@ -467,11 +473,11 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
            </div>
          )}
          
-         <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex bg-black/60 backdrop-blur-md p-1 rounded-full border border-white/20 z-20 shadow-xl">
-           <button onClick={() => setZoomLevel(0.5)} className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${activeZoomLabel === 0.5 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>0.5x</button>
-           <button onClick={() => setZoomLevel(1)} className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${activeZoomLabel === 1 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>1x</button>
-           <button onClick={() => setZoomLevel(2)} className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${activeZoomLabel === 2 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>2x</button>
-         </div>
+           <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex bg-black/60 backdrop-blur-md p-1 rounded-full border border-white/20 z-20 shadow-xl">
+             <button onClick={() => setZoomLevel(0.5)} className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${activeZoomLabel === 0.5 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>0.5x</button>
+             <button onClick={() => setZoomLevel(1)} className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${activeZoomLabel === 1 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>1x</button>
+             <button onClick={() => setZoomLevel(2)} className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${activeZoomLabel === 2 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>2x</button>
+           </div>
       </div>
       
       <div className="bg-slate-900 pb-8 pt-5 px-6 flex flex-col gap-4 z-10 rounded-t-3xl shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
