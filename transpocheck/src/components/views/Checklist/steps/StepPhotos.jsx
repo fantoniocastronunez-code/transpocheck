@@ -115,7 +115,7 @@ export const StepPhotos = ({ openCamera }) => {
       </div>
 
       {/* Contenedor Interactivo Principal */}
-      <div className="relative w-full max-w-[360px] mx-auto mt-8 mb-12 flex justify-center items-center">
+      <div className="relative w-full max-w-[360px] mx-auto mt-4 mb-0 flex justify-center items-center">
         
         {/* El Croquis Extraído */}
         <VehicleCroquis handlePhotoClick={handlePhotoClick} />
@@ -123,7 +123,7 @@ export const StepPhotos = ({ openCamera }) => {
       </div>
 
       {/* Otras Fotos (Extras) */}
-      <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+      <div className="grid grid-cols-2 gap-3 mt-0 pt-4 border-t border-slate-100 dark:border-slate-800">
         {(() => {
           const extraPhotos = [
             { id: 'dashboard', l: 'Tablero' }, 

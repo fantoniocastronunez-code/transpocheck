@@ -6,7 +6,7 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
   const { formData, setF, showAlert } = useChecklist();
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-3xl border-2 border-slate-100 dark:border-slate-800 mb-4 select-none relative shadow-sm">
+    <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-3xl border-2 border-slate-100 dark:border-slate-800 mb-1 select-none relative shadow-sm">
       <div className="flex justify-between items-center mb-4 min-h-[40px]">
         {!formData.zoomZone ? (
           <p className="text-[10px] font-black text-slate-400 uppercase leading-relaxed w-full text-center">
