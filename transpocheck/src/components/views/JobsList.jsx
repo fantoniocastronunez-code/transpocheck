@@ -918,7 +918,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       const { buildPDFDoc: masterPDFBuilder } = await import('../../utils/pdfGenerator');
       return await masterPDFBuilder(job, drivers);
     } catch (error) {
-      if (error.message && error.message.toLowerCase().includes('failed to fetch dynamically imported module')) {
+      if (
+        error.message && (
+          error.message.toLowerCase().includes('failed to fetch dynamically imported module') ||
+          error.message.toLowerCase().includes('text/html') ||
+          error.message.toLowerCase().includes('mime type')
+        )
+      ) {
         window.location.reload();
         return new Promise(() => {});
       }
