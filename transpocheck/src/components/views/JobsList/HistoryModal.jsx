@@ -84,6 +84,14 @@ export default function HistoryModal({
                   <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Distancia GPS (Maps)</p>
                   <p className="text-sm font-black text-blue-600 dark:text-blue-400">{selectedHistoryJob.drivenDistance || 'No calculado'}</p>
                 </div>
+                {selectedHistoryJob.checklist?.location && (
+                <div className="col-span-2 mt-1">
+                  <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Punto de Entrega (GPS)</p>
+                  <a href={`https://maps.google.com/?q=${selectedHistoryJob.checklist.location.lat},${selectedHistoryJob.checklist.location.lng}`} target="_blank" rel="noreferrer" className="text-sm font-black text-blue-600 dark:text-blue-400 underline inline-flex items-center gap-1 mt-0.5 hover:text-blue-700">
+                    Ver en Google Maps
+                  </a>
+                </div>
+                )}
               </div>
             </div>
           </div>

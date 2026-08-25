@@ -66,12 +66,34 @@ const ChecklistInner = ({ openCamera }) => {
     }
 
     setIsSubmitting(true);
+    setProcessingAction('Obteniendo GPS de entrega...');
+
+    let finalLocation = null;
+    try {
+      if (navigator.geolocation) {
+        finalLocation = await new Promise((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, timestamp: Date.now() }),
+            () => resolve(null),
+            { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
+          );
+        });
+      }
+    } catch (e) {
+      console.warn("GPS Falló al finalizar:", e);
+    }
+    
+    if (finalLocation) {
+      setFormData(prev => ({ ...prev, location: finalLocation }));
+    }
+
     setProcessingAction('Guardando e iniciando sincronización...');
 
     try {
       if (isQuick) {
         // Ejecución Rápida
-        const finalData = await syncFilesToStorage(formData, setUploadProgress);
+        const formDataWithLocation = { ...formData, location: finalLocation || formData.location };
+        const finalData = await syncFilesToStorage(formDataWithLocation, setUploadProgress);
         setProcessingAction('Enviando datos al servidor...');
         
         const driverObj = drivers?.find(d => d.email === currentUserEmail) || { name: currentUserEmail };
@@ -106,6 +128,8 @@ const ChecklistInner = ({ openCamera }) => {
       }
 
       const draftData = JSON.parse(JSON.stringify(formData));
+      if (finalLocation) draftData.location = finalLocation;
+      
       updates['draft.formData'] = draftData;
       
       await updateDoc(doc(db, 'transport_jobs', job.id), updates);
