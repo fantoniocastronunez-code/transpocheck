@@ -110,7 +110,7 @@ export const StepPhotos = ({ openCamera }) => {
           <option value="camion_2ejes">🚛 Camión (2 Ejes)</option>
           <option value="camion_3ejes">🚛 Camión (3 Ejes)</option>
           <option value="camion_8x4">🚚 Camión Rigid (8x4)</option>
-          <option value="carro_arrastre">🛒 Carro Arrastre</option>
+          <option value="carro_arrastre">🔗 Carro Arrastre</option>
         </select>
       </div>
 
