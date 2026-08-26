@@ -78,6 +78,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   const [multiVehicles, setMultiVehicles] = useState(draft?.multiVehicles || []); // NUEVO: Lista para traslados masivos
   const [tripType, setTripType] = useState(jobToEdit?.tripType || (draft?.tripType || 'traslado'));
   const [vehicleType, setVehicleType] = useState(jobToEdit?.vehicleType || (draft?.vehicleType || 'auto'));
+  const [historicalVehicleType, setHistoricalVehicleType] = useState(null);
   const [isUrgent, setIsUrgent] = useState(jobToEdit?.isUrgent ?? (draft?.isUrgent || false));
   
   const [revType, setRevType] = useState(jobToEdit?.rtData?.type || (draft?.revType || 'A'));
@@ -123,6 +124,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
         
         if (localMatch) {
           setVehicleType(localMatch.vehicleType);
+          setHistoricalVehicleType(localMatch.vehicleType);
           return;
         }
 
@@ -140,6 +142,9 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
           if (docMatch) {
             const foundType = docMatch.data().vehicleType || docMatch.data().checklist?.vehicleType;
             setVehicleType(foundType);
+            setHistoricalVehicleType(foundType);
+          } else {
+            setHistoricalVehicleType(null);
           }
         } catch(e) {
           console.warn("Búsqueda profunda de modelo omitida:", e);
@@ -183,7 +188,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
         setBrand(v.brand || ''); setModel(v.model || '');
         if (v.plate && type === 'vin') setPlate(v.plate);
         if (v.vin && type === 'plate') setVin(v.vin);
-        if (v.vehicleType) setVehicleType(v.vehicleType);
+        if (v.vehicleType) { setVehicleType(v.vehicleType); setHistoricalVehicleType(v.vehicleType); }
         if (allClientsList.includes(v.client)) setSelectedClient(v.client); else { setSelectedClient('OTRO'); setManualClient(v.client); }
         
         setVehicleFoundStatus('found');
@@ -321,6 +326,14 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   const handleCreateOrUpdateJob = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
+
+    if (operationMode === 'traslado' && historicalVehicleType && historicalVehicleType !== vehicleType) {
+        const confirmMsg = `⚠️ ALERTA DE TIPO DE VEHÍCULO\n\nEstás guardando este traslado como '${vehicleType}', pero históricamente este modelo (${model}) se ha registrado como '${historicalVehicleType}'.\n\n¿Estás seguro que deseas guardarlo como '${vehicleType}'?`;
+        if (!window.confirm(confirmMsg)) {
+            return;
+        }
+    }
+
     setIsSubmitting(true);
     const formData = new FormData(e.target);
     const selectedDriverIds = formData.getAll('assignedDriverId');
