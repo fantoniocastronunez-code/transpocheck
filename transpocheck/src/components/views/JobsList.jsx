@@ -1426,8 +1426,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         {requestedJobsList.length > 0 && (
           <div className="w-full lg:flex-1 flex flex-col overflow-hidden border-2 border-pink-100 dark:border-pink-800/50 bg-pink-50 dark:bg-pink-900/30 rounded-3xl shadow-sm">
             <button onClick={() => setIsRequestedOpen(!isRequestedOpen)} className="w-full flex justify-between items-center p-4">
-              <h3 className="font-extrabold text-pink-600 dark:text-pink-400 flex items-center gap-2"><CheckCircle className="w-5 h-5" /> Por Aprobar ({requestedJobsList.length})</h3>
-              {isRequestedOpen ? <ChevronUp className="w-5 h-5 text-pink-600 dark:text-pink-400" /> : <ChevronDown className="w-5 h-5 text-pink-600 dark:text-pink-400" />}
+              <div className="flex flex-col items-start">
+                <h3 className="font-extrabold text-pink-600 dark:text-pink-400 flex items-center gap-2"><CheckCircle className="w-5 h-5" /> Por Aprobar ({requestedJobsList.length})</h3>
+                {isRequestedOpen && requestedJobsList.length > 1 && <span className="text-[11px] font-bold text-pink-500/80 dark:text-pink-400/80 flex items-center gap-1 mt-1 lg:hidden animate-pulse">👉 Desliza para ver más</span>}
+              </div>
+              {isRequestedOpen ? <ChevronUp className="w-5 h-5 text-pink-600 dark:text-pink-400 shrink-0" /> : <ChevronDown className="w-5 h-5 text-pink-600 dark:text-pink-400 shrink-0" />}
             </button>
             {isRequestedOpen && (
               <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 px-4 pb-8 pt-2 -mx-4 lg:mx-0 lg:px-4 lg:flex-col lg:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -1444,8 +1447,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         {/* COLUMNA EN CURSO */}
         <div className="w-full lg:flex-1 flex flex-col overflow-hidden">
           <button onClick={() => setIsInProgressOpen(!isInProgressOpen)} className="w-full flex justify-between items-center p-4">
-            <h3 className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-2"><Navigation className="w-5 h-5 text-blue-600 dark:text-blue-400" /> En Curso ({inProgressJobsList.length})</h3>
-            {isInProgressOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+            <div className="flex flex-col items-start">
+              <h3 className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-2"><Navigation className="w-5 h-5 text-blue-600 dark:text-blue-400" /> En Curso ({inProgressJobsList.length})</h3>
+              {isInProgressOpen && inProgressJobsList.length > 1 && <span className="text-[11px] font-bold text-blue-500/80 dark:text-blue-400/80 flex items-center gap-1 mt-1 lg:hidden animate-pulse">👉 Desliza para ver más</span>}
+            </div>
+            {isInProgressOpen ? <ChevronUp className="w-5 h-5 shrink-0" /> : <ChevronDown className="w-5 h-5 shrink-0" />}
           </button>
           {isInProgressOpen && (
             <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 px-4 pb-8 pt-2 -mx-4 lg:mx-0 lg:px-4 lg:flex-col lg:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -1461,8 +1467,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         {/* COLUMNA PENDIENTES */}
         <div className="w-full lg:flex-1 flex flex-col overflow-hidden">
           <button onClick={() => setIsPendingOpen(!isPendingOpen)} className="w-full flex justify-between items-center p-4">
-            <h3 className="font-extrabold text-slate-700 dark:text-slate-300 flex items-center gap-2"><Clock className="w-5 h-5 text-amber-500" /> Pendientes ({pendingJobsList.length})</h3>
-            {isPendingOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+            <div className="flex flex-col items-start">
+              <h3 className="font-extrabold text-slate-700 dark:text-slate-300 flex items-center gap-2"><Clock className="w-5 h-5 text-amber-500" /> Pendientes ({pendingJobsList.length})</h3>
+              {isPendingOpen && pendingJobsList.length > 1 && <span className="text-[11px] font-bold text-amber-500/80 flex items-center gap-1 mt-1 lg:hidden animate-pulse">👉 Desliza para ver más</span>}
+            </div>
+            {isPendingOpen ? <ChevronUp className="w-5 h-5 shrink-0" /> : <ChevronDown className="w-5 h-5 shrink-0" />}
           </button>
           {isPendingOpen && (
             <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 px-4 pb-8 pt-2 -mx-4 lg:mx-0 lg:px-4 lg:flex-col lg:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
