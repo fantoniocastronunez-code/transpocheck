@@ -137,11 +137,11 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
     const assocJobId = e.target.jobId?.value || '';
     let detailString = detail || (type === 'assignment' ? 'Asignación de fondos' : 'Gasto registrado por Admin');
 
-    const isToll = detailString.toLowerCase().includes('peaje');
+    const isFuel = detailString.toLowerCase().includes('combustible') || detailString.toLowerCase().includes('bencina');
 
-    if (!isAdminView && type === 'expense' && !receiptImage && !isToll) {
+    if (!isAdminView && type === 'expense' && !receiptImage && isFuel) {
         setIsSubmitting(false);
-        return showAlert(`Debes adjuntar la foto de la boleta o comprobante del gasto.`);
+        return showAlert(`Debes adjuntar la foto de la boleta o comprobante de combustible.`);
     }
 
     if (assocJobId) {
@@ -679,7 +679,9 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
             ) : (
                <div className="flex flex-col items-center justify-center gap-2 py-1">
                  <Camera className="w-6 h-6 text-slate-400"/>
-                 <p className="text-sm font-extrabold text-slate-600 dark:text-slate-400">Adjuntar Boleta o Comprobante</p>
+                 <p className="text-sm font-extrabold text-slate-600 dark:text-slate-400">
+                    Adjuntar Boleta {expenseCategory === 'combustible' ? '(Obligatorio)' : '(Opcional)'}
+                 </p>
                </div>
             )}
           </button>
