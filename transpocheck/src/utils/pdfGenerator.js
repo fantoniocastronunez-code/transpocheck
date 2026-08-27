@@ -150,7 +150,7 @@ export const buildPDFDoc = async (job, isPublic = false, drivers = []) => {
         sectionNum++;
 
         currentY = drawSectionTitle(`${sectionNum}. Recepcion y Estado`, currentY);
-        const getDocStatus = (docKey) => { const isOk = job.checklist?.docs?.[docKey]; const expDate = job.checklist?.docsExpiry?.[docKey]; if (!isOk) return 'FALTA'; if (expDate) { const [y, m, d] = expDate.split('-'); return `AL DIA (Vence: ${d}/${m}/${y})`; } return 'AL DIA'; };
+        const getDocStatus = (docKey) => { const isOk = job.checklist?.docs?.[docKey]; const expDate = job.checklist?.docsExpiry?.[docKey]; if (!isOk) return 'FALTA'; if (expDate) { const [y, m] = expDate.split('-'); return `AL DIA (Vence: ${m}/${y})`; } return 'AL DIA'; };
         const drawFuelMeter = (x, y, level, title) => {
           docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
           docPDF.text(title, x, y);
