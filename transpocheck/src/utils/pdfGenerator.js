@@ -280,7 +280,7 @@ export const buildPDFDoc = async (job, isPublic = false, drivers = []) => {
     if (preloadedOtherPhotos.length > 0) {
       const labels = job.tripType === 'simple' 
          ? { det1: 'Evidencia 1', det2: 'Evidencia 2', det3: 'Evidencia 3', det4: 'Evidencia 4', det5: 'Evidencia 5', det6: 'Evidencia 6', det7: 'Evidencia 7', det8: 'Evidencia 8', det9: 'Evidencia 9', det10: 'Evidencia 10' }
-         : { left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', interior_front: 'Int. Adelante', interior_back: 'Int. Atras', odometer: 'Odómetro', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4', det5: 'Detalle 5', det6: 'Detalle 6', det7: 'Detalle 7', det8: 'Detalle 8' };
+         : { left: 'Lat. Piloto', right: 'Lat. Copiloto', left_cab: 'Lat. Cabina Piloto', left_body: 'Lat. Carroc. Piloto', right_cab: 'Lat. Cabina Copiloto', right_body: 'Lat. Carroc. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', interior_front: 'Int. Adelante', interior_back: 'Int. Atras', odometer: 'Odómetro', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4', det5: 'Detalle 5', det6: 'Detalle 6', det7: 'Detalle 7', det8: 'Detalle 8' };
       
       let photoY = 46; let currentCol = 1; let addedPage = false; 
       const detailPins = job.checklist?.detailPins || [];

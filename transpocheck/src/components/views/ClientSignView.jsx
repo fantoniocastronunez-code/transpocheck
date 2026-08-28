@@ -192,7 +192,7 @@ export default function ClientSignView({ jobId, db }) {
         const addFooter = () => { const pageCount = docPDF.internal.getNumberOfPages(); for(let i = 1; i <= pageCount; i++) { docPDF.setPage(i); docPDF.setFontSize(8); docPDF.setTextColor(148, 163, 184); docPDF.text(`Generado por LogisticAPP el ${new Date().toLocaleString('es-CL')} - Pagina ${i} de ${pageCount}`, 105, 290, null, null, "center"); } }
 
         if (preloadedOtherPhotos.length > 0) {
-          const labels = { left: 'Lat. Piloto', right: 'Lat. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', interior_front: 'Int. Adelante', interior_back: 'Int. Atras', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4', det5: 'Detalle 5', det6: 'Detalle 6', det7: 'Detalle 7', det8: 'Detalle 8' };
+          const labels = { left: 'Lat. Piloto', right: 'Lat. Copiloto', left_cab: 'Lat. Cabina Piloto', left_body: 'Lat. Carroc. Piloto', right_cab: 'Lat. Cabina Copiloto', right_body: 'Lat. Carroc. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', interior_front: 'Int. Adelante', interior_back: 'Int. Atras', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4', det5: 'Detalle 5', det6: 'Detalle 6', det7: 'Detalle 7', det8: 'Detalle 8' };
           let photoY = 46; let currentCol = 1; let addedPage = false;
           for (const item of preloadedOtherPhotos) { 
             if (!item) continue;

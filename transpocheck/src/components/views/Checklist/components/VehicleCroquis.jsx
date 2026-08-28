@@ -250,25 +250,65 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
                 )}
               </button>
 
-              {/* Botón LATERAL PILOTO (Izquierda) */}
-              <button type="button" onClick={(e) => { e.stopPropagation(); handlePhotoClick('left', 'LATERAL PILOTO'); }} 
-                className={`absolute top-1/2 -left-20 sm:-left-24 -translate-y-1/2 w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 flex flex-col items-center justify-center cursor-pointer shadow-lg overflow-hidden bg-white dark:bg-slate-900 transition-all z-20 hover:scale-105 active:scale-95 ${formData.photos.left ? 'border-green-400 ring-4 ring-green-100/50' : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
-                {formData.photos.left ? (
-                  <><img src={formData.photos.left} className="absolute inset-0 w-full h-full object-cover opacity-70" /><CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 relative z-10 bg-white/80 dark:bg-slate-900/80 rounded-full drop-shadow-md" /></>
-                ) : (
-                  <><Camera className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400 mb-0.5" /><span className="text-[7px] sm:text-[8px] font-black text-slate-500 dark:text-slate-400 tracking-wider text-center leading-tight">LAT.<br/>PILOTO</span></>
-                )}
-              </button>
+              {formData.vehicleType?.includes('camion') ? (
+                <>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); handlePhotoClick('left_cab', 'LAT. CABINA (PILOTO)'); }} 
+                    className={`absolute top-[20%] -left-20 sm:-left-24 -translate-y-1/2 w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 flex flex-col items-center justify-center cursor-pointer shadow-lg overflow-hidden bg-white dark:bg-slate-900 transition-all z-20 hover:scale-105 active:scale-95 ${formData.photos.left_cab ? 'border-green-400 ring-4 ring-green-100/50' : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                    {formData.photos.left_cab ? (
+                      <><img src={formData.photos.left_cab} className="absolute inset-0 w-full h-full object-cover opacity-70" /><CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 relative z-10 bg-white/80 dark:bg-slate-900/80 rounded-full drop-shadow-md" /></>
+                    ) : (
+                      <><Camera className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400 mb-0.5" /><span className="text-[6px] sm:text-[7px] font-black text-slate-500 dark:text-slate-400 tracking-wider text-center leading-tight">LAT. CABINA<br/>(PILOTO)</span></>
+                    )}
+                  </button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); handlePhotoClick('left_body', 'LAT. CARROC. (PILOTO)'); }} 
+                    className={`absolute top-[80%] -left-20 sm:-left-24 -translate-y-1/2 w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 flex flex-col items-center justify-center cursor-pointer shadow-lg overflow-hidden bg-white dark:bg-slate-900 transition-all z-20 hover:scale-105 active:scale-95 ${formData.photos.left_body ? 'border-green-400 ring-4 ring-green-100/50' : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                    {formData.photos.left_body ? (
+                      <><img src={formData.photos.left_body} className="absolute inset-0 w-full h-full object-cover opacity-70" /><CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 relative z-10 bg-white/80 dark:bg-slate-900/80 rounded-full drop-shadow-md" /></>
+                    ) : (
+                      <><Camera className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400 mb-0.5" /><span className="text-[6px] sm:text-[7px] font-black text-slate-500 dark:text-slate-400 tracking-wider text-center leading-tight">LAT. CARROC.<br/>(PILOTO)</span></>
+                    )}
+                  </button>
 
-              {/* Botón LATERAL COPILOTO (Derecha) */}
-              <button type="button" onClick={(e) => { e.stopPropagation(); handlePhotoClick('right', 'LATERAL COPILOTO'); }} 
-                className={`absolute top-1/2 -right-20 sm:-right-24 -translate-y-1/2 w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 flex flex-col items-center justify-center cursor-pointer shadow-lg overflow-hidden bg-white dark:bg-slate-900 transition-all z-20 hover:scale-105 active:scale-95 ${formData.photos.right ? 'border-green-400 ring-4 ring-green-100/50' : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
-                {formData.photos.right ? (
-                  <><img src={formData.photos.right} className="absolute inset-0 w-full h-full object-cover opacity-70" /><CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 relative z-10 bg-white/80 dark:bg-slate-900/80 rounded-full drop-shadow-md" /></>
-                ) : (
-                  <><Camera className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400 mb-0.5" /><span className="text-[7px] sm:text-[8px] font-black text-slate-500 dark:text-slate-400 tracking-wider text-center leading-tight">LAT.<br/>COPILOTO</span></>
-                )}
-              </button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); handlePhotoClick('right_cab', 'LAT. CABINA (COPILOTO)'); }} 
+                    className={`absolute top-[20%] -right-20 sm:-right-24 -translate-y-1/2 w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 flex flex-col items-center justify-center cursor-pointer shadow-lg overflow-hidden bg-white dark:bg-slate-900 transition-all z-20 hover:scale-105 active:scale-95 ${formData.photos.right_cab ? 'border-green-400 ring-4 ring-green-100/50' : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                    {formData.photos.right_cab ? (
+                      <><img src={formData.photos.right_cab} className="absolute inset-0 w-full h-full object-cover opacity-70" /><CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 relative z-10 bg-white/80 dark:bg-slate-900/80 rounded-full drop-shadow-md" /></>
+                    ) : (
+                      <><Camera className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400 mb-0.5" /><span className="text-[6px] sm:text-[7px] font-black text-slate-500 dark:text-slate-400 tracking-wider text-center leading-tight">LAT. CABINA<br/>(COPILOTO)</span></>
+                    )}
+                  </button>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); handlePhotoClick('right_body', 'LAT. CARROC. (COPILOTO)'); }} 
+                    className={`absolute top-[80%] -right-20 sm:-right-24 -translate-y-1/2 w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 flex flex-col items-center justify-center cursor-pointer shadow-lg overflow-hidden bg-white dark:bg-slate-900 transition-all z-20 hover:scale-105 active:scale-95 ${formData.photos.right_body ? 'border-green-400 ring-4 ring-green-100/50' : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                    {formData.photos.right_body ? (
+                      <><img src={formData.photos.right_body} className="absolute inset-0 w-full h-full object-cover opacity-70" /><CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 relative z-10 bg-white/80 dark:bg-slate-900/80 rounded-full drop-shadow-md" /></>
+                    ) : (
+                      <><Camera className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400 mb-0.5" /><span className="text-[6px] sm:text-[7px] font-black text-slate-500 dark:text-slate-400 tracking-wider text-center leading-tight">LAT. CARROC.<br/>(COPILOTO)</span></>
+                    )}
+                  </button>
+                </>
+              ) : (
+                <>
+                  {/* Botón LATERAL PILOTO (Izquierda) */}
+                  <button type="button" onClick={(e) => { e.stopPropagation(); handlePhotoClick('left', 'LATERAL PILOTO'); }} 
+                    className={`absolute top-1/2 -left-20 sm:-left-24 -translate-y-1/2 w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 flex flex-col items-center justify-center cursor-pointer shadow-lg overflow-hidden bg-white dark:bg-slate-900 transition-all z-20 hover:scale-105 active:scale-95 ${formData.photos.left ? 'border-green-400 ring-4 ring-green-100/50' : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                    {formData.photos.left ? (
+                      <><img src={formData.photos.left} className="absolute inset-0 w-full h-full object-cover opacity-70" /><CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 relative z-10 bg-white/80 dark:bg-slate-900/80 rounded-full drop-shadow-md" /></>
+                    ) : (
+                      <><Camera className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400 mb-0.5" /><span className="text-[7px] sm:text-[8px] font-black text-slate-500 dark:text-slate-400 tracking-wider text-center leading-tight">LAT.<br/>PILOTO</span></>
+                    )}
+                  </button>
+
+                  {/* Botón LATERAL COPILOTO (Derecha) */}
+                  <button type="button" onClick={(e) => { e.stopPropagation(); handlePhotoClick('right', 'LATERAL COPILOTO'); }} 
+                    className={`absolute top-1/2 -right-20 sm:-right-24 -translate-y-1/2 w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 flex flex-col items-center justify-center cursor-pointer shadow-lg overflow-hidden bg-white dark:bg-slate-900 transition-all z-20 hover:scale-105 active:scale-95 ${formData.photos.right ? 'border-green-400 ring-4 ring-green-100/50' : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                    {formData.photos.right ? (
+                      <><img src={formData.photos.right} className="absolute inset-0 w-full h-full object-cover opacity-70" /><CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 relative z-10 bg-white/80 dark:bg-slate-900/80 rounded-full drop-shadow-md" /></>
+                    ) : (
+                      <><Camera className="w-5 h-5 sm:w-6 sm:h-6 text-slate-400 mb-0.5" /><span className="text-[7px] sm:text-[8px] font-black text-slate-500 dark:text-slate-400 tracking-wider text-center leading-tight">LAT.<br/>COPILOTO</span></>
+                    )}
+                  </button>
+                </>
+              )}
             </>
           )}
 

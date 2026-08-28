@@ -848,7 +848,7 @@ const handleDownloadPDF = async (job) => {
                   <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 dark:border-slate-800 pb-1">5. Galería Fotográfica</h4>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {Object.entries(selectedHistoryJob.checklist.photos).filter(([k,v]) => typeof v === 'string' && v.startsWith('http')).map(([k,v]) => {
-                      const photoLabels = { front: 'Frente', back: 'Atrás', left: 'Lat. Piloto', right: 'Lat. Copiloto', dashboard: 'Tablero', tire: 'Repuesto', interior_front: 'Int. Adelante', interior_back: 'Int. Atrás', odometer: 'Odómetro', vin: 'Nro Chasis', mileage: 'Kilometraje' };
+                      const photoLabels = { front: 'Frente', back: 'Atrás', left: 'Lat. Piloto', right: 'Lat. Copiloto', left_cab: 'Lat. Cabina Piloto', left_body: 'Lat. Carroc. Piloto', right_cab: 'Lat. Cabina Copiloto', right_body: 'Lat. Carroc. Copiloto', dashboard: 'Tablero', tire: 'Repuesto', interior_front: 'Int. Adelante', interior_back: 'Int. Atrás', odometer: 'Odómetro', vin: 'Nro Chasis', mileage: 'Kilometraje' };
                       return (
                         <div key={k} className="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 aspect-square cursor-pointer" onClick={() => setFullScreenPhoto(v)}>
                           <img src={v} alt={k} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
