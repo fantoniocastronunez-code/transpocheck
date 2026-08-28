@@ -164,7 +164,7 @@ export default function ClientSignView({ jobId, db }) {
         currentY += routeH + 8;
 
         currentY = drawSectionTitle("2. Recepcion y Estado", currentY);
-        const getDocStatus = (docKey) => { const isOk = job.checklist?.docs?.[docKey]; const expDate = job.checklist?.docsExpiry?.[docKey]; if (!isOk) return 'FALTA'; if (expDate) { const [y, m, d] = expDate.split('-'); return `AL DIA (Vence: ${d}/${m}/${y})`; } return 'AL DIA'; };
+        const getDocStatus = (docKey) => { const isOk = job.checklist?.docs?.[docKey]; const expDate = job.checklist?.docsExpiry?.[docKey]; if (!isOk) return 'FALTA'; if (expDate) { const [y, m] = expDate.split('-'); const monthNames = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"]; const monthStr = monthNames[parseInt(m, 10) - 1] || m; return `AL DIA (Vence: ${monthStr} ${y})`; } return 'AL DIA'; };
         let hFuel = drawKV("Combustible", `${job.checklist?.fuelLevel || '0'}%`, 15, currentY, 45);
         let hSoap = drawKV("Seguro SOAP", getDocStatus('soap'), 65, currentY, 45);
         currentY += Math.max(hFuel, hSoap) + 6;

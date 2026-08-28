@@ -108,11 +108,13 @@ export default function HistoryModal({
 
              const formatExp = (dateStr) => {
                 if (!dateStr) return <span className="text-slate-400 text-xs">No reg.</span>;
-                const [y,m,d] = dateStr.split('-');
-                const expDate = new Date(y, m-1, d);
-                const today = new Date(); today.setHours(0,0,0,0);
-                if (expDate < today) return <span className="text-red-600 dark:text-red-400 font-bold text-xs">{d}/{m}/{y} (Vencido)</span>;
-                return <span className="text-green-700 dark:text-green-400 font-bold text-xs">{d}/{m}/{y}</span>;
+                const [y,m] = dateStr.split('-');
+                const monthNames = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+                const monthStr = monthNames[parseInt(m, 10) - 1] || m;
+                const today = new Date();
+                const isExpired = parseInt(y, 10) < today.getFullYear() || (parseInt(y, 10) === today.getFullYear() && parseInt(m, 10) - 1 < today.getMonth());
+                if (isExpired) return <span className="text-red-600 dark:text-red-400 font-bold text-xs">{monthStr} {y} (Vencido)</span>;
+                return <span className="text-green-700 dark:text-green-400 font-bold text-xs">{monthStr} {y}</span>;
              };
 
              return (
