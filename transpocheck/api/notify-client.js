@@ -90,6 +90,11 @@ export default async function handler(req, res) {
     title = 'Traslado Finalizado';
     message = `Hola <strong>${clientName}</strong>.<br><br>El conductor <strong>${conductorName}</strong> ha concluido el traslado con éxito. En la parte inferior de este correo, puedes descargar el <strong>Acta de Recepción (PDF)</strong> oficial.`;
     buttonText = 'Ver Detalles y Descargar PDF';
+  } else if (type === 'revision_tecnica') {
+    accentColor = '#3b82f6'; // Azul
+    subject = `Tus documentos de RT están listos - ${vehiculoPatente}`;
+    title = 'Documentos de RT Listos';
+    message = `Hola <strong>${clientName}</strong>.<br><br>Tus documentos de RT están listos. A continuación puedes descargar y revisar el documento escaneado por el conductor.`;
   } else {
     // Escudo de seguridad (Fallback)
     accentColor = '#64748b'; // Gris
