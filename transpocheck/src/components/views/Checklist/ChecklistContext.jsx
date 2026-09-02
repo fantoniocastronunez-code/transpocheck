@@ -69,7 +69,8 @@ export const ChecklistProvider = ({ children, job, currentUserEmail, onCancel, o
     isSubmitting, setIsSubmitting,
     processingAction, setProcessingAction,
     isQuick,
-    defaultData
+    defaultData,
+    db
   };
 
   return (

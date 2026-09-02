@@ -189,8 +189,46 @@ export const StepDocs = () => {
                   if (job?.id === 'NEW_QUICK_JOB') return showAlert("⚠️ Debes 'Finalizar y Guardar' el acta abajo para poder notificar este link.");
 
                   showAlert("⏳ Guardando link y notificando al cliente...");
-                  // Lógica real de notificación...
-                  // (Se mantiene la lógica existente, en producción estaría en un hook o context)
+                  try {
+                    const { updateDoc, doc, query, collection, where, getDocs } = await import('firebase/firestore');
+                    const newChecklist = { ...(job.checklist || {}), scannerLink: formData.scannerLink };
+                    await updateDoc(doc(db, 'transport_jobs', job.id), { checklist: newChecklist });
+
+                    // Buscar cliente y notificar
+                    const qClient = query(collection(db, 'clients'), where('name', '==', job.client || ''));
+                    const snapClient = await getDocs(qClient);
+
+                    if (!snapClient.empty) {
+                      const clientRecord = snapClient.docs[0].data();
+                      const targetEmail = clientRecord.email?.split(',')[0]?.trim();
+
+                      if (targetEmail) {
+                        fetch('/api/notify-client', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            email: targetEmail,
+                            clientName: clientRecord.name,
+                            type: 'revision_tecnica',
+                            jobDetails: {
+                              id: job.id,
+                              driverName: drivers?.find(x => x.email === currentUserEmail)?.name || currentUserEmail,
+                              vehicle: `${job.brand || ''} ${job.model || ''}`.trim() || 'Vehículo',
+                              plate: job.plate || job.vin || job.associatedPlate || 'S/N',
+                              origin: job.origin || 'Origen',
+                              destination: job.destination || 'Destino',
+                              checklist: newChecklist
+                            }
+                          })
+                        }).catch((err) => console.error("Error enviando correo:", err));
+                      }
+                    }
+
+                    showAlert("✅ Link guardado y cliente notificado exitosamente.");
+                  } catch (error) {
+                    console.error(error);
+                    showAlert("❌ Error al guardar y notificar.");
+                  }
                 }} 
                 className="bg-indigo-600 text-white px-5 rounded-2xl font-black text-[10px] shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 active:scale-95 transition-all flex flex-col items-center justify-center leading-tight tracking-widest"
               >
