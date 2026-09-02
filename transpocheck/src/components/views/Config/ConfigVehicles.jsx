@@ -48,13 +48,14 @@ export default function ConfigVehicles({ allClientsList, vehicles, db, showAlert
         const fd = new FormData(e.target); 
         const client = fd.get('client') === 'OTRO' ? fd.get('manualClient') : fd.get('client'); 
         const vehicleType = fd.get('vehicleType'); 
+        const vin = fd.get('vin') ? fd.get('vin').toUpperCase() : '';
         try { 
             if(editingVehicle){ 
-                await updateDoc(doc(db, 'vehicles', editingVehicle.id), { client, vehicleType, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase() }); 
+                await updateDoc(doc(db, 'vehicles', editingVehicle.id), { client, vehicleType, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase(), vin }); 
                 setEditingVehicle(null); 
                 showAlert("Vehículo actualizado."); 
             } else { 
-                await addDoc(collection(db, 'vehicles'), { client, vehicleType, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase(), createdAt: Date.now() }); 
+                await addDoc(collection(db, 'vehicles'), { client, vehicleType, brand: fd.get('brand'), model: fd.get('model'), plate: fd.get('plate').toUpperCase(), vin, createdAt: Date.now() }); 
                 showAlert("Vehículo guardado."); 
             } 
             e.target.reset(); 
@@ -78,6 +79,7 @@ export default function ConfigVehicles({ allClientsList, vehicles, db, showAlert
           if (match && e.target.form.vehicleType) e.target.form.vehicleType.value = match.vehicleType;
         }}/>
         <input name="plate" defaultValue={editingVehicle?.plate} placeholder="Patente" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm uppercase outline-none focus:border-blue-500 font-bold text-slate-800 dark:text-slate-200 bg-transparent"/>
+        <input name="vin" defaultValue={editingVehicle?.vin} placeholder="VIN (Opcional)" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm uppercase outline-none focus:border-blue-500 font-bold text-slate-800 dark:text-slate-200 bg-transparent"/>
         <select name="vehicleType" defaultValue={editingVehicle?.vehicleType || 'auto'} className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900">
            <option value="auto">🚙 Auto / SUV</option>
            <option value="camioneta">🛻 Camioneta</option>
