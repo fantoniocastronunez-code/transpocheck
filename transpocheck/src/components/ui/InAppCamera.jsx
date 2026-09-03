@@ -5,7 +5,7 @@ import { Camera, X, CheckCircle, RefreshCw, RefreshCcw, Edit3 } from 'lucide-rea
 export default function InAppCamera({ isOpen, onClose, onCapture, title, enableAnnotation = false }) {
   const [stream, setStream] = useState(null);
   const [devices, setDevices] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentDeviceId, setCurrentDeviceId] = useState(null);
   const [landscapeAngle, setLandscapeAngle] = useState(0);
   const [digitalZoom, setDigitalZoom] = useState(1);
   const [activeZoomLabel, setActiveZoomLabel] = useState(1);
@@ -79,13 +79,8 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
                localStorage.setItem('ultraCameraId', ultraDevice.deviceId);
            }
           
-          let activeIdx = 0;
-          currentTrackLabel = newStream.getVideoTracks().length > 0 ? newStream.getVideoTracks()[0].label : '';
-          if (currentTrackLabel) {
-             const foundIdx = backCameras.findIndex(d => d.label === currentTrackLabel);
-             if (foundIdx !== -1) activeIdx = foundIdx;
-          }
-          setCurrentIndex(activeIdx);
+          let activeDeviceId = newStream.getVideoTracks().length > 0 ? newStream.getVideoTracks()[0].getSettings().deviceId : null;
+          if (activeDeviceId) setCurrentDeviceId(activeDeviceId);
           
           setActiveZoomLabel(0.5);
           setDigitalZoom(1);
@@ -101,6 +96,9 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
        if (isFirst) {
            alert("No se pudo iniciar la cámara. Verifica que los permisos estén habilitados.");
            onClose();
+       } else {
+           alert("No se pudo cambiar de lente.");
+           return startCamera(null, true);
        }
     }
   };
@@ -116,7 +114,7 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
         if (stream) stream.getTracks().forEach(t => t.stop());
         setStream(null);
         setDevices([]);
-        setCurrentIndex(0);
+        setCurrentDeviceId(null);
         setLandscapeAngle(0);
         setIsManualOverride(false);
         setActiveZoomLabel(1);
@@ -203,17 +201,16 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
        targetDevice = findByKeyword(['main', 'principal', 'estandar', 'standard', '1x']);
        if (!targetDevice) {
            // En iOS Safari, a menudo todas se llaman "Cámara trasera". 
-           // Si tenemos más de 1 lente, asumimos que el 0 es el gran angular (0.5x) y el 1 es el principal (1x).
-           const nonUltra = devices.find(d => !d.label.toLowerCase().includes('ultra') && !d.label.toLowerCase().includes('tele') && !d.label.toLowerCase().includes('angular') && d.deviceId !== devices[0]?.deviceId);
+           // Si tenemos más de 1 lente, excluimos ultra y tele explícitamente.
+           const nonUltra = devices.find(d => !d.label.toLowerCase().includes('ultra') && !d.label.toLowerCase().includes('tele') && !d.label.toLowerCase().includes('angular'));
            targetDevice = nonUltra || (devices.length > 1 ? devices[1] : devices[0]);
        }
        fallbackDigitalZoom = 1;
     }
 
-    if (targetDevice && devices[currentIndex] && targetDevice.deviceId !== devices[currentIndex].deviceId) {
+    if (targetDevice && targetDevice.deviceId !== currentDeviceId) {
        startCamera(targetDevice.deviceId, false);
-       const idx = devices.findIndex(d => d.deviceId === targetDevice.deviceId);
-       if (idx !== -1) setCurrentIndex(idx);
+       setCurrentDeviceId(targetDevice.deviceId);
     }
     setDigitalZoom(fallbackDigitalZoom);
   };
