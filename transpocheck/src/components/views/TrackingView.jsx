@@ -376,8 +376,8 @@ const handleDownloadPDF = async (job) => {
                       {/* ICONO CENTRAL O 1ra PARADA PRT */}
                       <div className="flex justify-center -my-2.5 z-20">
                         {job.tripType === 'revision' ? (
-                           <div className="bg-amber-100 dark:bg-amber-900/40 px-3 py-0.5 rounded-lg border border-amber-200 dark:border-amber-800/50 shadow-sm text-center">
-                             <p className="text-[10px] font-black text-amber-800 dark:text-amber-300 uppercase">1ra Parada: PRT</p>
+                           <div className="bg-amber-100 dark:bg-amber-900/40 px-3 py-0.5 rounded-lg border border-amber-200 dark:border-amber-800/50 shadow-sm text-center max-w-[80%]">
+                             <p className="text-[10px] font-black text-amber-800 dark:text-amber-300 uppercase truncate">1ra Parada: {job.destination ? job.destination.split(' -> ')[0] : 'PRT'}</p>
                            </div>
                         ) : job.waypoints && job.waypoints.length > 0 ? (
                            <div className="bg-amber-100 dark:bg-amber-900/40 px-3 py-0.5 rounded-lg border border-amber-200 dark:border-amber-800/50 shadow-sm text-center">

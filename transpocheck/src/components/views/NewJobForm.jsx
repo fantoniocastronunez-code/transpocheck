@@ -921,6 +921,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                          <div className="pl-9 pr-2 animate-in slide-in-from-top-1">
                              <div className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/30 p-2 rounded-xl border-2 border-purple-100 dark:border-purple-800/50">
                                 <span className="text-xs font-bold text-purple-800 dark:text-purple-300 flex-1">Cantidad:</span>
+                                <button type="button" onClick={() => setQtyPintura(2)} className={`px-3 py-1 rounded-lg text-sm font-black transition-colors ${Number(qtyPintura) === 2 ? 'bg-purple-600 text-white shadow-sm' : 'bg-purple-200/50 dark:bg-purple-800/40 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-700/50'}`}>2</button>
                                 <input type="number" min="1" max="10" value={qtyPintura} onChange={(e) => setQtyPintura(e.target.value)} className="w-16 text-center border-none p-1 text-sm rounded-lg outline-none font-black text-purple-900 dark:text-purple-300 bg-white dark:bg-slate-900 shadow-sm" />
                              </div>
                          </div>
@@ -935,6 +936,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                          <div className="pl-9 pr-2 animate-in slide-in-from-top-1">
                              <div className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/30 p-2 rounded-xl border-2 border-purple-100 dark:border-purple-800/50">
                                 <span className="text-xs font-bold text-purple-800 dark:text-purple-300 flex-1">Cantidad:</span>
+                                <button type="button" onClick={() => setQtyGrabado(3)} className={`px-3 py-1 rounded-lg text-sm font-black transition-colors ${Number(qtyGrabado) === 3 ? 'bg-purple-600 text-white shadow-sm' : 'bg-purple-200/50 dark:bg-purple-800/40 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-700/50'}`}>3</button>
                                 <input type="number" min="1" max="20" value={qtyGrabado} onChange={(e) => setQtyGrabado(e.target.value)} className="w-16 text-center border-none p-1 text-sm rounded-lg outline-none font-black text-purple-900 dark:text-purple-300 bg-white dark:bg-slate-900 shadow-sm" />
                              </div>
                          </div>
