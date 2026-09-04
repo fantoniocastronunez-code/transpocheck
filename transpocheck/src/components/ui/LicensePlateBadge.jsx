@@ -63,7 +63,7 @@ const LicensePlateBadge = ({ text, className = "" }) => {
        <div className="absolute right-[4px] top-1/2 -translate-y-1/2 w-[3.5px] h-[3.5px] rounded-full bg-slate-300 dark:bg-slate-600 border-[0.5px] border-slate-500 shadow-inner"></div>
 
        {/* Texto de la Patente */}
-       <div className="flex items-center justify-center w-full text-[32px] font-black tracking-tight leading-none mt-[2px] gap-[2px] px-2" style={{ fontFamily: "'FE-Font', 'Arial Narrow', Arial, sans-serif" }}>
+       <div className="flex items-center justify-center w-full text-[32px] font-medium tracking-tight leading-none mt-[2px] gap-[2px] px-2" style={{ fontFamily: "'FE-Font', 'Arial Narrow', Arial, sans-serif" }}>
          <span className="scale-y-[1.15] scale-x-[0.95] inline-block origin-bottom">{part1}</span>
          {separator1}
          <span className="scale-y-[1.15] scale-x-[0.95] inline-block origin-bottom">{part2}</span>
