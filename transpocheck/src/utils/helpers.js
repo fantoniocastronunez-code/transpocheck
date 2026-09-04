@@ -152,9 +152,18 @@ export const getExtraWappTxt = (j) => {
   }
   
   if (j.tripType === 'revision' && j.checklist) {
-    const prtTotal = Number(j.checklist?.prtCostRevision || 0) + Number(j.checklist?.prtCostInspeccion || 0) + Number(j.checklist?.prtCostFrenos || 0) + Number(j.checklist?.prtCostGases || 0);
+    const rev = Number(j.checklist?.prtCostRevision || 0);
+    const insp = Number(j.checklist?.prtCostInspeccion || 0);
+    const frenos = Number(j.checklist?.prtCostFrenos || 0);
+    const gases = Number(j.checklist?.prtCostGases || 0);
+    const prtTotal = rev + insp + frenos + gases;
+    
     if (prtTotal > 0) {
-      t += `\nVALOR PRT: ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(prtTotal)}`;
+      t += `\nVALOR PRT TOTAL: ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(prtTotal)}`;
+      if (rev > 0) t += `\n- Revisión: ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(rev)}`;
+      if (insp > 0) t += `\n- Inspección: ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(insp)}`;
+      if (frenos > 0) t += `\n- Frenos: ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(frenos)}`;
+      if (gases > 0) t += `\n- Gases: ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(gases)}`;
     }
   }
   return t;
