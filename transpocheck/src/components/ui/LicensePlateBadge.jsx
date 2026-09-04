@@ -21,14 +21,14 @@ const LicensePlateBadge = ({ text, className = "" }) => {
   let part1, part2, part3, separator1, separator2;
 
   const ShieldIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mx-[1px] shrink-0">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mx-[2px] shrink-0">
       <path d="M12 2L4 5V11C4 16.5 7.5 21.5 12 23C16.5 21.5 20 16.5 20 11V5L12 2Z" fill="#111"/>
       <path d="M12 16L9 18L10 14.5L7 12H10.5L12 8.5L13.5 12H17L14 14.5L15 18L12 16Z" fill="#fff"/>
     </svg>
   );
 
   const DotIcon = () => (
-    <div className="w-[7px] h-[7px] bg-[#111] rounded-full mx-[2px] shrink-0"></div>
+    <div className="w-[6px] h-[6px] bg-[#111] rounded-full mx-[3px] shrink-0"></div>
   );
 
   if (isOldFormat) {
@@ -49,8 +49,8 @@ const LicensePlateBadge = ({ text, className = "" }) => {
     <div 
       className={`inline-flex flex-col items-center justify-center relative shrink-0 select-none ${className}`}
       style={{
-        width: '170px',
-        height: '50px',
+        width: '150px',
+        height: '52px',
         borderRadius: '6px',
         border: '1.5px solid #111',
         backgroundColor: '#ffffff',
@@ -63,12 +63,12 @@ const LicensePlateBadge = ({ text, className = "" }) => {
        <div className="absolute right-[4px] top-1/2 -translate-y-1/2 w-[3.5px] h-[3.5px] rounded-full bg-slate-300 dark:bg-slate-600 border-[0.5px] border-slate-500 shadow-inner"></div>
 
        {/* Texto de la Patente */}
-       <div className="flex items-center justify-center w-full text-[36px] font-medium tracking-tight leading-none -mt-[2px] gap-[1px] px-3" style={{ fontFamily: "'FE-Font', 'Arial Narrow', Arial, sans-serif" }}>
-         <span className="scale-y-[1.05] scale-x-[0.9] inline-block">{part1}</span>
+       <div className="flex items-center justify-center w-full text-[36px] font-medium tracking-tight leading-none mb-[2px] gap-[1px] px-2" style={{ fontFamily: "'FE-Font', 'Arial Narrow', Arial, sans-serif" }}>
+         <span className="inline-block">{part1}</span>
          {separator1}
-         <span className="scale-y-[1.05] scale-x-[0.9] inline-block">{part2}</span>
+         <span className="inline-block">{part2}</span>
          {separator2}
-         <span className="scale-y-[1.05] scale-x-[0.9] inline-block">{part3}</span>
+         <span className="inline-block">{part3}</span>
        </div>
        
        {/* Letras de CHILE */}
