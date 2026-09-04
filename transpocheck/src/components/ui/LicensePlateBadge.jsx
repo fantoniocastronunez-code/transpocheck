@@ -21,14 +21,14 @@ const LicensePlateBadge = ({ text, className = "" }) => {
   let part1, part2, part3, separator1, separator2;
 
   const ShieldIcon = () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="mx-[2px] shrink-0">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0 -translate-y-[2px]">
       <path d="M12 2L4 5V11C4 16.5 7.5 21.5 12 23C16.5 21.5 20 16.5 20 11V5L12 2Z" fill="#111"/>
       <path d="M12 16L9 18L10 14.5L7 12H10.5L12 8.5L13.5 12H17L14 14.5L15 18L12 16Z" fill="#fff"/>
     </svg>
   );
 
   const DotIcon = () => (
-    <div className="w-[6px] h-[6px] bg-[#111] rounded-full mx-[3px] shrink-0"></div>
+    <div className="w-[8px] h-[8px] bg-[#111] rounded-full shrink-0 -translate-y-[2px]"></div>
   );
 
   if (isOldFormat) {
@@ -49,8 +49,8 @@ const LicensePlateBadge = ({ text, className = "" }) => {
     <div 
       className={`inline-flex flex-col items-center justify-center relative shrink-0 select-none ${className}`}
       style={{
-        width: '150px',
-        height: '52px',
+        width: '166px',
+        height: '60px',
         borderRadius: '6px',
         border: '1.5px solid #111',
         backgroundColor: '#ffffff',
@@ -59,32 +59,54 @@ const LicensePlateBadge = ({ text, className = "" }) => {
       }}
     >
        {/* Tornillos simulados */}
-       <div className="absolute left-[4px] top-1/2 -translate-y-1/2 w-[3.5px] h-[3.5px] rounded-full bg-slate-300 dark:bg-slate-600 border-[0.5px] border-slate-500 shadow-inner"></div>
-       <div className="absolute right-[4px] top-1/2 -translate-y-1/2 w-[3.5px] h-[3.5px] rounded-full bg-slate-300 dark:bg-slate-600 border-[0.5px] border-slate-500 shadow-inner"></div>
+       <div className="absolute left-[3px] top-1/2 -translate-y-1/2 w-[3.5px] h-[3.5px] rounded-full bg-slate-300 dark:bg-slate-600 border-[0.5px] border-slate-500 shadow-inner z-10"></div>
+       <div className="absolute right-[3px] top-1/2 -translate-y-1/2 w-[3.5px] h-[3.5px] rounded-full bg-slate-300 dark:bg-slate-600 border-[0.5px] border-slate-500 shadow-inner z-10"></div>
 
        {/* Texto de la Patente */}
-       <div className="flex items-center justify-center w-full text-[36px] font-medium tracking-tight leading-none mb-[2px] gap-[1px] px-2" style={{ fontFamily: "'FE-Font', 'Arial Narrow', Arial, sans-serif" }}>
-         <span className="inline-block">{part1}</span>
-         {separator1}
-         <span className="inline-block">{part2}</span>
-         {separator2}
-         <span className="inline-block">{part3}</span>
+       <div className="flex items-center justify-between w-full px-[14px] mb-[6px]" style={{ fontFamily: "'FE-Font', 'Arial Narrow', Arial, sans-serif" }}>
+         
+         <div className="flex items-center gap-[1px]">
+           <span className="text-[44px] font-black tracking-tight leading-none scale-y-[1.05] scale-x-[0.95] inline-block">{part1[0]}</span>
+           <span className="text-[44px] font-black tracking-tight leading-none scale-y-[1.05] scale-x-[0.95] inline-block">{part1[1]}</span>
+         </div>
+         
+         <div className="flex items-center justify-center shrink-0">
+           {separator1}
+         </div>
+         
+         <div className="flex items-center gap-[1px]">
+           <span className="text-[44px] font-black tracking-tight leading-none scale-y-[1.05] scale-x-[0.95] inline-block">{part2[0]}</span>
+           <span className="text-[44px] font-black tracking-tight leading-none scale-y-[1.05] scale-x-[0.95] inline-block">{part2[1]}</span>
+         </div>
+         
+         <div className="flex items-center justify-center shrink-0">
+           {separator2}
+         </div>
+         
+         <div className="flex items-center gap-[1px]">
+           <span className="text-[44px] font-black tracking-tight leading-none scale-y-[1.05] scale-x-[0.95] inline-block">{part3[0]}</span>
+           <span className="text-[44px] font-black tracking-tight leading-none scale-y-[1.05] scale-x-[0.95] inline-block">{part3[1]}</span>
+         </div>
+
        </div>
        
        {/* Letras de CHILE */}
-       <span className="font-bold uppercase absolute bottom-[3px] text-[7.5px] tracking-[0.55em] ml-[0.55em] text-[#111]" style={{ fontFamily: "Arial, sans-serif" }}>
+       <span className="font-bold uppercase absolute bottom-[4px] text-[8px] tracking-[0.55em] ml-[0.55em] text-[#111]" style={{ fontFamily: "Arial, sans-serif" }}>
          CHILE
        </span>
 
-       {/* Microtextos */}
-       <span className="absolute bottom-[3px] left-[7px] text-[4px] font-bold text-slate-400 opacity-70 tracking-widest">
-         DELANTERA
-       </span>
+       {/* Left Microtext */}
+       <div className="absolute bottom-[4px] left-[6px] flex items-center justify-center px-[3px] py-[1px] border-[1px] border-[#111] rounded-[6px]">
+         <span className="text-[4px] font-black text-[#111] leading-none tracking-wider">
+           DELANTERA
+         </span>
+       </div>
 
-       <div className="absolute bottom-[3px] right-[6px] text-[3.5px] font-bold text-slate-400 opacity-70 tracking-tighter flex items-center justify-center w-[12px] h-[12px]">
-         <div className="border-[0.5px] border-slate-400 rounded-full w-full h-full flex items-center justify-center">
-            <span className="scale-[0.6] text-center leading-[1.1]">REGISTRO<br/>CIVIL</span>
-         </div>
+       {/* Right Microtext */}
+       <div className="absolute bottom-[3.5px] right-[5px] flex items-center justify-center w-[16px] h-[9px] border-[1px] border-[#111] rounded-[40%]">
+         <span className="text-[2.5px] font-black text-[#111] leading-[3px] text-center scale-[0.85]">
+           REGISTROCIVIL<br/>E<br/>IDENTIFICACION
+         </span>
        </div>
     </div>
   );
