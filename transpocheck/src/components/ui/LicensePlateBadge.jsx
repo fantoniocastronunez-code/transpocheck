@@ -52,10 +52,9 @@ const LicensePlateBadge = ({ text, className = "" }) => {
         width: '166px',
         height: '60px',
         borderRadius: '6px',
-        border: '1.5px solid #111',
+        border: '3px solid #111',
         backgroundColor: '#ffffff',
         color: '#111',
-        boxShadow: 'inset 0 0 0 2px #ffffff, inset 0 0 0 3px #111',
       }}
     >
        {/* Tornillos simulados */}
@@ -63,11 +62,11 @@ const LicensePlateBadge = ({ text, className = "" }) => {
        <div className="absolute right-[3px] top-1/2 -translate-y-1/2 w-[3.5px] h-[3.5px] rounded-full bg-slate-300 dark:bg-slate-600 border-[0.5px] border-slate-500 shadow-inner z-10"></div>
 
        {/* Texto de la Patente */}
-       <div className="flex items-center justify-between w-full px-[10px] mb-[6px]" style={{ fontFamily: "'FE-Font', 'Arial Narrow', Arial, sans-serif" }}>
+       <div className="flex items-center justify-between w-full px-[6px] mb-[6px]" style={{ fontFamily: "'FE-Font', 'Arial Narrow', Arial, sans-serif" }}>
          
          <div className="flex items-center gap-[1px]">
-           <span className="text-[38px] font-black tracking-tight leading-none scale-y-[1.1] scale-x-[0.85] inline-block origin-bottom">{part1[0]}</span>
-           <span className="text-[38px] font-black tracking-tight leading-none scale-y-[1.1] scale-x-[0.85] inline-block origin-bottom">{part1[1]}</span>
+           <span className="text-[36px] font-black tracking-tight leading-none scale-y-[1.15] inline-block origin-bottom">{part1[0]}</span>
+           <span className="text-[36px] font-black tracking-tight leading-none scale-y-[1.15] inline-block origin-bottom">{part1[1]}</span>
          </div>
          
          <div className="flex items-center justify-center shrink-0">
@@ -75,8 +74,8 @@ const LicensePlateBadge = ({ text, className = "" }) => {
          </div>
          
          <div className="flex items-center gap-[1px]">
-           <span className="text-[38px] font-black tracking-tight leading-none scale-y-[1.1] scale-x-[0.85] inline-block origin-bottom">{part2[0]}</span>
-           <span className="text-[38px] font-black tracking-tight leading-none scale-y-[1.1] scale-x-[0.85] inline-block origin-bottom">{part2[1]}</span>
+           <span className="text-[36px] font-black tracking-tight leading-none scale-y-[1.15] inline-block origin-bottom">{part2[0]}</span>
+           <span className="text-[36px] font-black tracking-tight leading-none scale-y-[1.15] inline-block origin-bottom">{part2[1]}</span>
          </div>
          
          <div className="flex items-center justify-center shrink-0">
@@ -84,8 +83,8 @@ const LicensePlateBadge = ({ text, className = "" }) => {
          </div>
          
          <div className="flex items-center gap-[1px]">
-           <span className="text-[38px] font-black tracking-tight leading-none scale-y-[1.1] scale-x-[0.85] inline-block origin-bottom">{part3[0]}</span>
-           <span className="text-[38px] font-black tracking-tight leading-none scale-y-[1.1] scale-x-[0.85] inline-block origin-bottom">{part3[1]}</span>
+           <span className="text-[36px] font-black tracking-tight leading-none scale-y-[1.15] inline-block origin-bottom">{part3[0]}</span>
+           <span className="text-[36px] font-black tracking-tight leading-none scale-y-[1.15] inline-block origin-bottom">{part3[1]}</span>
          </div>
 
        </div>
