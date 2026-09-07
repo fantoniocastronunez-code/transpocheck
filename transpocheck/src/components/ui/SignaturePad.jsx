@@ -6,6 +6,13 @@ export default function SignaturePad({ initialData, onSave, onClear, onChange })
   const [isDrawing, setIsDrawing] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const loadedRef = useRef(false);
+  const drawingDataRef = useRef(initialData || null);
+
+  useEffect(() => {
+    if (initialData && !loadedRef.current) {
+      drawingDataRef.current = initialData;
+    }
+  }, [initialData]);
 
   // Algoritmo para dibujar la imagen sin achatarla (Mantiene la proporción original)
   const drawImageProportionally = (ctx, img, canvas) => {
@@ -17,13 +24,11 @@ export default function SignaturePad({ initialData, onSave, onClear, onChange })
     let drawW, drawH, drawX, drawY;
 
     if (imgAspect > targetAspect) {
-       // La imagen es más ancha proporcionalmente
        drawW = targetW;
        drawH = targetW / imgAspect;
        drawX = 0;
        drawY = (targetH - drawH) / 2;
     } else {
-       // La imagen es más alta proporcionalmente
        drawH = targetH;
        drawW = targetH * imgAspect;
        drawX = (targetW - drawW) / 2;
@@ -50,10 +55,10 @@ export default function SignaturePad({ initialData, onSave, onClear, onChange })
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
 
-      if (initialData) {
+      if (drawingDataRef.current) {
         const img = new Image();
         img.onload = () => drawImageProportionally(ctx, img, canvas);
-        img.src = initialData;
+        img.src = drawingDataRef.current;
       }
     }, 150); 
 
@@ -105,15 +110,19 @@ export default function SignaturePad({ initialData, onSave, onClear, onChange })
   const stopDrawing = () => {
     if (isDrawing) {
       setIsDrawing(false);
-      if (onChange && canvasRef.current) {
-        onChange(canvasRef.current.toDataURL('image/png'));
+      if (canvasRef.current) {
+        const data = canvasRef.current.toDataURL('image/png');
+        drawingDataRef.current = data;
+        if (onChange) onChange(data);
       }
     }
   };
 
   const handleSave = () => {
     if (canvasRef.current) {
-      onSave(canvasRef.current.toDataURL('image/png'));
+      const data = canvasRef.current.toDataURL('image/png');
+      drawingDataRef.current = data;
+      onSave(data);
       loadedRef.current = true;
       if (isFullscreen) closeFullscreen();
     }
@@ -124,6 +133,7 @@ export default function SignaturePad({ initialData, onSave, onClear, onChange })
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
     loadedRef.current = false;
+    drawingDataRef.current = null;
     onClear();
   };
 

@@ -807,7 +807,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
   const handleBulkSignSubmit = async () => {
     if (bulkSelectedIds.length === 0) return showAlert("Selecciona al menos un vehículo para entregar.");
-    if (!bulkReceiverName || !bulkReceiverRut || !bulkSignature) return showAlert("Faltan datos del receptor o la firma.");
+    if (!bulkReceiverName || !bulkSignature) return showAlert("Falta el nombre del receptor o la firma.");
 
     setProcessingId('bulk-sign');
     try {
