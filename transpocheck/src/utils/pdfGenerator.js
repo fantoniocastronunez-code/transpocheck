@@ -337,7 +337,10 @@ export const buildPDFDoc = async (job, isPublic = false, drivers = []) => {
           const slotCenter = currentCol === 1 ? 55 : 155; let finalX = slotCenter - (imgW / 2);
           if (photoY + imgH > 275) { docPDF.addPage(); photoY = 46; currentCol = 1; drawHeader("ANEXO FOTOGRAFICO (CONT.)"); finalX = 55 - (imgW / 2); }
           
-          docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S'); docPDF.setFillColor(...lightBg); docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F'); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor); docPDF.text((labels[key] || key).toUpperCase(), finalX + (imgW/2), photoY - 3, { align: "center" }); 
+          let fallbackLabel = key;
+          if (key.startsWith('det')) fallbackLabel = (job.tripType === 'simple' ? 'Evidencia ' : 'Detalle ') + key.replace('det', '');
+          
+          docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S'); docPDF.setFillColor(...lightBg); docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F'); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor); docPDF.text((labels[key] || fallbackLabel).toUpperCase(), finalX + (imgW/2), photoY - 3, { align: "center" });
           try { docPDF.addImage(base64Img, 'JPEG', finalX, photoY + 2, imgW, imgH); } catch(e) { docPDF.addImage(base64Img, 'PNG', finalX, photoY + 2, imgW, imgH); }
           if (typeof photos[key] === 'string' && photos[key].startsWith('http')) { docPDF.link(finalX, photoY + 2, imgW, imgH, { url: photos[key] }); }
           

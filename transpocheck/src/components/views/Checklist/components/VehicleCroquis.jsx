@@ -43,8 +43,11 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
               return;
             }
 
-            const availableDet = ['det1', 'det2', 'det3', 'det4', 'det5', 'det6', 'det7', 'det8'].find(d => !formData.photos[d]);
-            if (!availableDet) return showAlert("Máximo de 8 fotos de detalles/daños alcanzado.");
+            let nextId = 1;
+            while (formData.photos[`det${nextId}`]) {
+              nextId++;
+            }
+            const availableDet = `det${nextId}`;
 
             setF('pendingPin', { id: availableDet, x, y });
             setF('zoomZone', null);
