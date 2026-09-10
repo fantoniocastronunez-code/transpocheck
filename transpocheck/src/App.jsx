@@ -111,8 +111,14 @@ function LogisticApp() {
 
   // NUEVO: Memoria persistente para recordar la última pantalla y simulaciones activas
   const [adminTab, setAdminTab] = useState(() => localStorage.getItem('app_adminTab') || 'dashboard');
-  const [selectedJob, setSelectedJob] = useState(null);
-  const [editingJob, setEditingJob] = useState(null);
+  const [selectedJob, setSelectedJob] = useState(() => {
+    const saved = localStorage.getItem('app_selectedJob');
+    try { return saved ? JSON.parse(saved) : null; } catch(e) { return null; }
+  });
+  const [editingJob, setEditingJob] = useState(() => {
+    const saved = localStorage.getItem('app_editingJob');
+    try { return saved ? JSON.parse(saved) : null; } catch(e) { return null; }
+  });
   const [currentView, setCurrentView] = useState(() => localStorage.getItem('app_currentView') || 'main');
   const [mainTab, setMainTab] = useState(() => localStorage.getItem('app_mainTab') || 'jobs');
   const [activeRole, setActiveRole] = useState(() => localStorage.getItem('app_activeRole') || 'driver');
@@ -123,6 +129,20 @@ function LogisticApp() {
 
   // NUEVO: Sincronización automática de la memoria cada vez que cambias de vista
   useEffect(() => { localStorage.setItem('app_adminTab', adminTab); }, [adminTab]);
+  useEffect(() => { 
+    if (selectedJob) {
+      localStorage.setItem('app_selectedJob', JSON.stringify(selectedJob));
+    } else {
+      localStorage.removeItem('app_selectedJob');
+    }
+  }, [selectedJob]);
+  useEffect(() => { 
+    if (editingJob) {
+      localStorage.setItem('app_editingJob', JSON.stringify(editingJob));
+    } else {
+      localStorage.removeItem('app_editingJob');
+    }
+  }, [editingJob]);
   useEffect(() => { localStorage.setItem('app_currentView', currentView); }, [currentView]);
   useEffect(() => { localStorage.setItem('app_mainTab', mainTab); }, [mainTab]);
   useEffect(() => { localStorage.setItem('app_activeRole', activeRole); }, [activeRole]);
