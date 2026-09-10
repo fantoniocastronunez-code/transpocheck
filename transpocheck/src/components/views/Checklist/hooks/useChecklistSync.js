@@ -100,6 +100,14 @@ export const useChecklistSync = ({
         }
       }
 
+      // Limpiar otros campos base64 en el borrador
+      const base64Fields = ['signatureData', 'fuelReceipt', 'scandocPdf', 'guiaDespachoPdf'];
+      base64Fields.forEach(field => {
+          if (typeof draftData[field] === 'string' && !draftData[field].startsWith('http')) {
+              draftData[field] = false; 
+          }
+      });
+
       const updates = { draft: { step, formData: draftData } };
 
       if (job.tripType === 'revision') {

@@ -130,6 +130,19 @@ const ChecklistInner = ({ openCamera }) => {
       const draftData = JSON.parse(JSON.stringify(formData));
       if (finalLocation) draftData.location = finalLocation;
       
+      // Limpiar fotos e imágenes base64 para evitar límite de 1MB en Firestore para el draft
+      for (const key in draftData.photos) {
+        if (typeof draftData.photos[key] === 'string' && !draftData.photos[key].startsWith('http')) {
+          draftData.photos[key] = false;
+        }
+      }
+      const base64Fields = ['signatureData', 'fuelReceipt', 'scandocPdf', 'guiaDespachoPdf'];
+      base64Fields.forEach(field => {
+          if (typeof draftData[field] === 'string' && !draftData[field].startsWith('http')) {
+              draftData[field] = false;
+          }
+      });
+      
       updates['draft.formData'] = draftData;
       
       await updateDoc(doc(db, 'transport_jobs', job.id), updates);
