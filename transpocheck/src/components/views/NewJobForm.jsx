@@ -80,6 +80,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   const [vehicleType, setVehicleType] = useState(jobToEdit?.vehicleType || (draft?.vehicleType || 'auto'));
   const [historicalVehicleType, setHistoricalVehicleType] = useState(null);
   const [isUrgent, setIsUrgent] = useState(jobToEdit?.isUrgent ?? (draft?.isUrgent || false));
+  const [isChassisCab, setIsChassisCab] = useState(jobToEdit?.isChassisCab ?? (draft?.isChassisCab || false));
   
   const [revType, setRevType] = useState(jobToEdit?.rtData?.type || (draft?.revType || 'A'));
   const [revModalidad, setRevModalidad] = useState(jobToEdit?.rtData?.modalidad || (draft?.revModalidad || 'legal')); // NUEVO: Legal o Con Ayuda
@@ -103,7 +104,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     if (!jobToEdit) { // Solo guarda si estamos creando uno nuevo
       const currentDraft = {
         selectedClient, manualClient, isPintura, qtyPintura, isGrabado, qtyGrabado, associatedJobId,
-        brand, model, plate, vin, multiVehicles, tripType, vehicleType, isUrgent,
+        brand, model, plate, vin, multiVehicles, tripType, vehicleType, isUrgent, isChassisCab,
         revType, revModalidad, revA_gases, revA_revision, revA_inspeccion, revA_frenos, revB_tipo,
         selectedDriversUI, spotDriverEmail, operationMode, description, waypoints
       };
@@ -536,9 +537,9 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
         let vehiclesToProcess = [];
         if (operationMode === 'traslado' && !jobToEdit && multiVehicles.length > 0) {
             vehiclesToProcess = [...multiVehicles];
-            if (plate || vin) vehiclesToProcess.push({ plate, vin, brand, model, vehicleType });
+            if (plate || vin) vehiclesToProcess.push({ plate, vin, brand, model, vehicleType, isChassisCab });
         } else {
-            vehiclesToProcess = [{ plate, vin, brand, model, vehicleType }];
+            vehiclesToProcess = [{ plate, vin, brand, model, vehicleType, isChassisCab }];
         }
 
         // 1. GUARDADO EXPRÉS EN BASE DE DATOS (En Paralelo y con ID único)
@@ -556,6 +557,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                 currentJobData.vin = vVin;
                 currentJobData.plate = vPlate;
                 currentJobData.vehicleType = v.vehicleType;
+                currentJobData.isChassisCab = v.isChassisCab !== undefined ? v.isChassisCab : isChassisCab;
             }
 
             if (jobToEdit) {
@@ -815,6 +817,13 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                    <option value="carro_arrastre">🛒 Carro Arrastre</option>
                  </select>
                </div>
+               
+               {vehicleType.includes('camion') && vehicleType !== 'camioneta' && (
+                 <label className="flex items-center gap-3 mt-3 mb-1 cursor-pointer bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800">
+                   <input type="checkbox" checked={isChassisCab} onChange={e => setIsChassisCab(e.target.checked)} className="w-5 h-5 accent-blue-600 rounded cursor-pointer" />
+                   <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Es Chasis Cabina (sin caja/carrocería atrás)</span>
+                 </label>
+               )}
 
                {/* NUEVO: TRASLADO MASIVO DE VEHÍCULOS */}
                {!jobToEdit && (

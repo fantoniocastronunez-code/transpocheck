@@ -134,9 +134,16 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
               <div className="w-[105%] -ml-[2.5%] h-[20%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-300 dark:border-blue-700/50 p-1 flex flex-col justify-end shadow-inner z-10 relative">
                 <div className="w-full h-1/2 bg-slate-800/40 rounded-t-md rounded-b-sm mb-1"></div>
               </div>
-              <div className="w-full h-[78%] mx-auto bg-slate-200 dark:bg-slate-700 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
-                <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
-              </div>
+              {formData.isChassisCab ? (
+                <div className="w-[50%] h-[78%] mx-auto mt-2 border-x-4 border-b-4 border-slate-400 dark:border-slate-600 rounded-b-md relative flex justify-center space-x-4 bg-slate-300 dark:bg-slate-700/50 shadow-inner z-0">
+                  <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
+                  <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
+                </div>
+              ) : (
+                <div className="w-full h-[78%] mx-auto bg-slate-200 dark:bg-slate-700 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
+                  <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
+                </div>
+              )}
             </div>
           )}
 
@@ -146,9 +153,16 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
                 <div className="w-full h-[40%] bg-slate-800/40 rounded-t-md"></div>
                 <div className="w-full h-[35%] bg-slate-800/40 rounded-sm mb-0.5"></div>
               </div>
-              <div className="w-full h-[66%] mx-auto bg-slate-200 dark:bg-slate-700 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
-                <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
-              </div>
+              {formData.isChassisCab ? (
+                <div className="w-[50%] h-[66%] mx-auto mt-2 border-x-4 border-b-4 border-slate-400 dark:border-slate-600 rounded-b-md relative flex justify-center space-x-4 bg-slate-300 dark:bg-slate-700/50 shadow-inner z-0">
+                  <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
+                  <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
+                </div>
+              ) : (
+                <div className="w-full h-[66%] mx-auto bg-slate-200 dark:bg-slate-700 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
+                  <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
+                </div>
+              )}
             </div>
           )}
 
@@ -168,9 +182,16 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
                   <div className="w-[105%] h-[20%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-400 p-1 flex flex-col justify-end shadow-inner z-10 relative">
                     <div className="w-full h-1/2 bg-slate-800/50 rounded-t-md rounded-b-sm mb-1"></div>
                   </div>
-                  <div className="w-full h-[78%] mx-auto bg-slate-200 dark:bg-slate-700 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
-                    <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
-                  </div>
+                  {formData.isChassisCab ? (
+                    <div className="w-[50%] h-[78%] mx-auto mt-2 border-x-4 border-b-4 border-slate-400 dark:border-slate-600 rounded-b-md relative flex justify-center space-x-4 bg-slate-300 dark:bg-slate-700/50 shadow-inner z-0">
+                      <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
+                      <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
+                    </div>
+                  ) : (
+                    <div className="w-full h-[78%] mx-auto bg-slate-200 dark:bg-slate-700 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
+                      <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
+                    </div>
+                  )}
                 </>
               )}
               {formData.vehicleType === 'carro_arrastre' && (
@@ -214,9 +235,16 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
                   <div className="w-[105%] h-[20%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-400 p-1 flex flex-col justify-end shadow-inner z-10 relative">
                     <div className="w-full h-1/2 bg-slate-800/50 rounded-t-md rounded-b-sm mb-1"></div>
                   </div>
-                  <div className="w-full h-[78%] mx-auto bg-slate-200 dark:bg-slate-700 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
-                    <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
-                  </div>
+                  {formData.isChassisCab ? (
+                    <div className="w-[50%] h-[78%] mx-auto mt-2 border-x-4 border-b-4 border-slate-400 dark:border-slate-600 rounded-b-md relative flex justify-center space-x-4 bg-slate-300 dark:bg-slate-700/50 shadow-inner z-0">
+                      <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
+                      <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
+                    </div>
+                  ) : (
+                    <div className="w-full h-[78%] mx-auto bg-slate-200 dark:bg-slate-700 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
+                      <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_15px,#cbd5e1_15px,#cbd5e1_18px)] opacity-60"></div>
+                    </div>
+                  )}
                 </>
               )}
             </div>
