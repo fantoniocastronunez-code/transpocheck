@@ -305,6 +305,7 @@ export default function JobCard({ j, ...props }) {
                 </div>
               )}
             </div>
+            )}
           </div>
 
           {j.tripType === 'revision' && <div className="mb-3 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800/50 p-2 rounded-xl text-center shadow-sm"><span className="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase">REVISIÓN TÉCNICA (TIPO {j.rtData?.type})</span></div>}
