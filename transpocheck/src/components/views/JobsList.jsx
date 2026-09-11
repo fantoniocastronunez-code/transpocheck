@@ -1001,9 +1001,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
+          showAlert("Abriendo WhatsApp... Recuerda que el texto ya está copiado, solo debes pegarlo.");
           await navigator.share({
-            title: fileName,
-            text: textToShare,
             files: [file]
           });
         } catch (shareError) {

@@ -27,6 +27,7 @@ export const ChecklistProvider = ({ children, job, currentUserEmail, onCancel, o
   const defaultData = {
     client: job?.client || '', manualClient: '', brand: job?.brand || '', model: job?.model || '', plateOrVin: job?.plate || job?.vin || '', origin: job?.origin || '', destination: job?.destination || '',
     vehicleType: job?.checklist?.vehicleType || job?.vehicleType || matchedVehicle?.vehicleType || matchedVehicle?.type || 'auto',
+    isChassisCab: job?.checklist?.isChassisCab ?? job?.isChassisCab ?? matchedVehicle?.isChassisCab ?? false,
     fuelLevel: 50, mileage: job?.checklist?.mileage || '',
     photos: job?.checklist?.photos || { front: false, left: false, right: false, left_cab: false, left_body: false, right_cab: false, right_body: false, back: false, tire: false, dashboard: false, mileage: false, vin: false, ...Array.from({ length: 30 }).reduce((acc, _, i) => { acc[`det${i + 1}`] = false; return acc; }, {}) },
     detailPins: job?.checklist?.detailPins || [],
