@@ -590,22 +590,24 @@ export default function JobCard({ j, ...props }) {
                 statusSub = `En camino a: ${getRtFinalDestination(j)}`;
                 highlight = true;
                 animationType = j.prt_result === 'rechazado' ? 'prt_rejected' : 'prt_approved';
-             } else if (step3Done) {
-                statusTitle = j.tripType === 'simple' ? 'Trabajo Terminado' : (j.tripType === 'revision' ? 'En PRT' : 'Llegada a Destino');
+             } else if (step3Done || j.phase === 'arrived_destination') {
+                statusTitle = j.tripType === 'simple' ? 'Trabajo Terminado' : (j.tripType === 'revision' ? 'En PRT' : 'Llegué a destino');
                 statusSub = j.tripType === 'simple' ? (j.destination || '') : (j.tripType === 'revision' ? 'Planta' : j.destination);
                 highlight = true;
                 animationType = (j.tripType === 'simple' || j.phase === 'arrived_destination' || step4Done) ? 'completed' : 'arrived';
-             } else if (j.phase === 'picked_up') {
-                statusTitle = j.tripType === 'simple' ? 'Realizando Trabajo' : 'Vehículo en mi poder';
-                statusSub = '';
-                highlight = true;
-                animationType = 'picked_up';
-             } else if (step2Done) {
-                statusTitle = j.tripType === 'simple' ? 'Realizando Trabajo' : 'Vehículo en Tránsito';
+             } else if (j.phase === 'picked_up' || step2Done) {
+                statusTitle = j.tripType === 'simple' ? 'Realizando Trabajo' : 'Vehículo en ruta';
                 statusSub = '';
                 highlight = true;
                 animationType = 'transit';
+             } else if (j.phase === 'arrived_pickup') {
+                statusTitle = j.tripType === 'simple' ? 'En Lugar' : 'Vehículo en mi poder';
+                statusSub = '';
+                highlight = true;
+                animationType = 'picked_up';
              } else if (isAccepted) {
+                const driverName = j.assignedDrivers?.find(d => d.email === j.acceptedByEmail)?.name;
+                statusTitle = driverName ? `Conductor asignado: ${driverName}` : 'Conductor asignado';
                 animationType = 'assigned';
              }
              
