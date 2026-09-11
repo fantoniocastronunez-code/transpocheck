@@ -33,6 +33,30 @@ const StatusAnimation = ({ type }) => {
         <svg viewBox="0 0 300 60" className="w-full h-12 my-2">
           <defs>
             <style>{`
+              @keyframes walkInAnim {
+                0% { transform: translateX(-20px); opacity: 0; }
+                100% { transform: translateX(130px); opacity: 1; }
+              }
+              .personIn { animation: walkInAnim 1s ease-out forwards; }
+            `}</style>
+          </defs>
+          <g transform="translate(150, 0)" fill="currentColor" className="text-slate-300 dark:text-slate-600">
+            <path d="M10 40 L 15 25 L 35 25 L 45 40 Z" />
+            <rect x="5" y="40" width="45" height="10" rx="2" />
+            <circle cx="15" cy="50" r="4" className="text-slate-400 dark:text-slate-500" />
+            <circle cx="40" cy="50" r="4" className="text-slate-400 dark:text-slate-500" />
+          </g>
+          <g className="personIn" fill="#3B82F6">
+            <circle cx="10" cy="25" r="5" />
+            <path d="M 5 32 C 5 28, 15 28, 15 32 L 15 50 L 5 50 Z" />
+          </g>
+        </svg>
+      );
+    case 'picked_up':
+      return (
+        <svg viewBox="0 0 300 60" className="w-full h-12 my-2">
+          <defs>
+            <style>{`
               @keyframes realFlashAnim {
                 0% { opacity: 0; }
                 5% { opacity: 0; }
@@ -571,6 +595,11 @@ export default function JobCard({ j, ...props }) {
                 statusSub = j.tripType === 'simple' ? (j.destination || '') : (j.tripType === 'revision' ? 'Planta' : j.destination);
                 highlight = true;
                 animationType = (j.tripType === 'simple' || j.phase === 'arrived_destination' || step4Done) ? 'completed' : 'arrived';
+             } else if (j.phase === 'picked_up') {
+                statusTitle = j.tripType === 'simple' ? 'Realizando Trabajo' : 'Vehículo en mi poder';
+                statusSub = '';
+                highlight = true;
+                animationType = 'picked_up';
              } else if (step2Done) {
                 statusTitle = j.tripType === 'simple' ? 'Realizando Trabajo' : 'Vehículo en Tránsito';
                 statusSub = '';
