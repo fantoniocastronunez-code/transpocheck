@@ -33,12 +33,19 @@ const StatusAnimation = ({ type }) => {
         <svg viewBox="0 0 300 60" className="w-full h-12 my-2">
           <defs>
             <style>{`
-              @keyframes flashAnim {
-                0%, 100% { opacity: 0; transform: scale(0.5); }
-                50% { opacity: 1; transform: scale(1.5); }
+              @keyframes realFlashAnim {
+                0% { opacity: 0; }
+                5% { opacity: 0; }
+                10% { opacity: 1; }
+                20% { opacity: 0; }
+                100% { opacity: 0; }
               }
-              .flash { animation: flashAnim 2s infinite; transform-origin: center; }
+              .cameraFlash { animation: realFlashAnim 3s infinite; }
             `}</style>
+            <linearGradient id="flashGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="white" stopOpacity="0.9" />
+              <stop offset="100%" stopColor="white" stopOpacity="0" />
+            </linearGradient>
           </defs>
           <g transform="translate(150, 0)" fill="currentColor" className="text-slate-300 dark:text-slate-600">
             <path d="M10 40 L 15 25 L 35 25 L 45 40 Z" />
@@ -52,9 +59,7 @@ const StatusAnimation = ({ type }) => {
             <path d="M 5 32 L 15 32 L 20 28" stroke="#3B82F6" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
             <rect x="18" y="24" width="4" height="6" rx="1" fill="#1E293B" />
           </g>
-          <g className="flash" transform="translate(138, 26)">
-            <polygon points="0,-4 1,-1 4,0 1,1 0,4 -1,1 -4,0 -1,-1" fill="#FCD34D" />
-          </g>
+          <polygon className="cameraFlash" points="135,27 220,-10 220,60" fill="url(#flashGrad)" />
         </svg>
       );
     case 'transit':
