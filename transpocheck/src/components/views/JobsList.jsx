@@ -988,14 +988,20 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       const textToShare = generateWhatsAppText(job, dateShort, cleanPlate);
 
       // Copiamos el texto al portapapeles de inmediato, por si cualquier cosa falla después
-      const textArea = document.createElement("textarea");
-      textArea.value = textToShare;
-      textArea.style.position = "fixed";
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      try { document.execCommand('copy'); } catch (err) { }
-      document.body.removeChild(textArea);
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(textToShare);
+        } else {
+          const textArea = document.createElement("textarea");
+          textArea.value = textToShare.replace(/\n/g, '\r\n');
+          textArea.style.position = "fixed";
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+        }
+      } catch (err) { console.error("Error copiando al portapapeles:", err); }
 
       const docPDF = await buildPDFDoc(job);
       const pdfBlob = docPDF.output('blob');
