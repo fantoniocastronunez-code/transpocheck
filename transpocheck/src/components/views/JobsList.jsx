@@ -2613,17 +2613,4 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
     </div>
   );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+}
