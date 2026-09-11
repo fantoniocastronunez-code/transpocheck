@@ -675,9 +675,6 @@ export default function JobCard({ j, ...props }) {
 
               {isAccepted && (j.acceptedByEmail === currentUserEmail) && (
                 <>
-                  <button onClick={() => setTrackingJobId(j.id)} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3.5 rounded-xl text-sm shadow-md transition-all flex items-center justify-center gap-2 mb-3 shadow-blue-200">
-                    <Navigation className="w-5 h-5"/> ABRIR PANEL DE VIAJE
-                  </button>
                   {isPendingGuide ? (
                     <div className="flex flex-col gap-2">
                        <div className="bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800/50 text-orange-700 dark:text-orange-400 text-[11px] font-black text-center py-3 rounded-xl animate-pulse flex items-center justify-center gap-1.5 shadow-sm">
