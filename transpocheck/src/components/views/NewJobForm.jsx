@@ -334,6 +334,20 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
         }
     }
 
+    if (operationMode === 'traslado' && !jobToEdit) {
+        const vPlate = plate.toUpperCase().trim();
+        const vVin = vin.toUpperCase().trim();
+        const dup = activeJobsList.find(j => 
+            (vPlate && j.plate === vPlate) || (vVin && j.vin === vVin)
+        );
+        if (dup) {
+            const confirmMsg = `⚠️ ALERTA DE TRASLADO DUPLICADO\n\nYa existe un traslado ACTIVO para el vehículo ${dup.plate || dup.vin} (${dup.brand || ''} ${dup.model || ''}).\n\n¿Estás seguro de que deseas crear OTRO traslado para el mismo vehículo?`;
+            if (!window.confirm(confirmMsg)) {
+                return;
+            }
+        }
+    }
+
     setIsSubmitting(true);
     const formData = new FormData(e.target);
     const selectedDriverIds = formData.getAll('assignedDriverId');

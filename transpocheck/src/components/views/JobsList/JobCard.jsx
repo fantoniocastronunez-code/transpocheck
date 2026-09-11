@@ -33,11 +33,11 @@ const StatusAnimation = ({ type }) => {
         <svg viewBox="0 0 300 60" className="w-full h-12 my-2">
           <defs>
             <style>{`
-              @keyframes walkInAnim {
-                0% { transform: translateX(-20px); opacity: 0; }
-                100% { transform: translateX(130px); opacity: 1; }
+              @keyframes flashAnim {
+                0%, 100% { opacity: 0; transform: scale(0.5); }
+                50% { opacity: 1; transform: scale(1.5); }
               }
-              .personIn { animation: walkInAnim 1s ease-out forwards; }
+              .flash { animation: flashAnim 2s infinite; transform-origin: center; }
             `}</style>
           </defs>
           <g transform="translate(150, 0)" fill="currentColor" className="text-slate-300 dark:text-slate-600">
@@ -46,9 +46,14 @@ const StatusAnimation = ({ type }) => {
             <circle cx="15" cy="50" r="4" className="text-slate-400 dark:text-slate-500" />
             <circle cx="40" cy="50" r="4" className="text-slate-400 dark:text-slate-500" />
           </g>
-          <g className="personIn" fill="#3B82F6">
+          <g transform="translate(115, 0)" fill="#3B82F6">
             <circle cx="10" cy="25" r="5" />
             <path d="M 5 32 C 5 28, 15 28, 15 32 L 15 50 L 5 50 Z" />
+            <path d="M 5 32 L 15 32 L 20 28" stroke="#3B82F6" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            <rect x="18" y="24" width="4" height="6" rx="1" fill="#1E293B" />
+          </g>
+          <g className="flash" transform="translate(138, 26)">
+            <polygon points="0,-4 1,-1 4,0 1,1 0,4 -1,1 -4,0 -1,-1" fill="#FCD34D" />
           </g>
         </svg>
       );
