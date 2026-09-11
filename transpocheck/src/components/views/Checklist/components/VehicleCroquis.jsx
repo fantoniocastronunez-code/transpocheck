@@ -135,9 +135,14 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
                 <div className="w-full h-1/2 bg-slate-800/40 rounded-t-md rounded-b-sm mb-1"></div>
               </div>
               {formData.isChassisCab ? (
-                <div className="w-[50%] h-[78%] mx-auto mt-2 border-x-4 border-b-4 border-slate-400 dark:border-slate-600 rounded-b-md relative flex justify-center space-x-4 bg-slate-300 dark:bg-slate-700/50 shadow-inner z-0">
-                  <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
-                  <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
+                <div className="w-[50%] h-[78%] mx-auto mt-2 border-x-4 border-b-4 border-slate-400 dark:border-slate-600 rounded-b-md relative flex justify-center bg-slate-300 dark:bg-slate-700/50 shadow-inner z-0">
+                  <div className="absolute inset-0 flex justify-center space-x-4 py-2">
+                    <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
+                    <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
+                  </div>
+                  <div className="absolute bottom-[15%] w-[160%] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
+                  <div className="absolute bottom-[10%] -left-5 w-5 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                  <div className="absolute bottom-[10%] -right-5 w-5 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
                 </div>
               ) : (
                 <div className="w-full h-[78%] mx-auto bg-slate-200 dark:bg-slate-700 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
@@ -154,9 +159,14 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
                 <div className="w-full h-[35%] bg-slate-800/40 rounded-sm mb-0.5"></div>
               </div>
               {formData.isChassisCab ? (
-                <div className="w-[50%] h-[66%] mx-auto mt-2 border-x-4 border-b-4 border-slate-400 dark:border-slate-600 rounded-b-md relative flex justify-center space-x-4 bg-slate-300 dark:bg-slate-700/50 shadow-inner z-0">
-                  <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
-                  <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
+                <div className="w-[50%] h-[66%] mx-auto mt-2 border-x-4 border-b-4 border-slate-400 dark:border-slate-600 rounded-b-md relative flex justify-center bg-slate-300 dark:bg-slate-700/50 shadow-inner z-0">
+                  <div className="absolute inset-0 flex justify-center space-x-4 py-2">
+                    <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
+                    <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
+                  </div>
+                  <div className="absolute bottom-[15%] w-[160%] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
+                  <div className="absolute bottom-[10%] -left-5 w-5 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                  <div className="absolute bottom-[10%] -right-5 w-5 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
                 </div>
               ) : (
                 <div className="w-full h-[66%] mx-auto bg-slate-200 dark:bg-slate-700 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
@@ -174,18 +184,31 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
                   <div className="absolute top-[10%] -right-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
                   <div className="absolute top-[22%] -left-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
                   <div className="absolute top-[22%] -right-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
-                  <div className="absolute bottom-[20%] -left-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
-                  <div className="absolute bottom-[20%] -right-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
-                  <div className="absolute bottom-[7%] -left-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
-                  <div className="absolute bottom-[7%] -right-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                  {!formData.isChassisCab && (
+                    <>
+                      <div className="absolute bottom-[20%] -left-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                      <div className="absolute bottom-[20%] -right-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                      <div className="absolute bottom-[7%] -left-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                      <div className="absolute bottom-[7%] -right-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
+                    </>
+                  )}
 
                   <div className="w-[105%] h-[20%] bg-blue-200 rounded-t-xl rounded-b-sm border-4 border-blue-400 p-1 flex flex-col justify-end shadow-inner z-10 relative">
                     <div className="w-full h-1/2 bg-slate-800/50 rounded-t-md rounded-b-sm mb-1"></div>
                   </div>
                   {formData.isChassisCab ? (
-                    <div className="w-[50%] h-[78%] mx-auto mt-2 border-x-4 border-b-4 border-slate-400 dark:border-slate-600 rounded-b-md relative flex justify-center space-x-4 bg-slate-300 dark:bg-slate-700/50 shadow-inner z-0">
-                      <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
-                      <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
+                    <div className="w-[50%] h-[78%] mx-auto mt-2 border-x-4 border-b-4 border-slate-400 dark:border-slate-600 rounded-b-md relative flex justify-center bg-slate-300 dark:bg-slate-700/50 shadow-inner z-0">
+                      <div className="absolute inset-0 flex justify-center space-x-4 py-2">
+                        <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
+                        <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
+                      </div>
+                      <div className="absolute bottom-[20%] w-[160%] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
+                      <div className="absolute bottom-[17%] -left-5 w-5 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                      <div className="absolute bottom-[17%] -right-5 w-5 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                      
+                      <div className="absolute bottom-[7%] w-[160%] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
+                      <div className="absolute bottom-[4%] -left-5 w-5 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                      <div className="absolute bottom-[4%] -right-5 w-5 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
                     </div>
                   ) : (
                     <div className="w-full h-[78%] mx-auto bg-slate-200 dark:bg-slate-700 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
@@ -214,7 +237,7 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
                 <>
                   <div className="absolute top-[8%] -left-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
                   <div className="absolute top-[8%] -right-3 w-3.5 h-10 bg-slate-800 rounded-sm shadow-md"></div>
-                  {formData.vehicleType === 'camion_2ejes' && (
+                  {!formData.isChassisCab && formData.vehicleType === 'camion_2ejes' && (
                     <>
                       <div className="absolute bottom-[17%] -left-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
                       <div className="absolute bottom-[17%] -right-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
@@ -222,7 +245,7 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
                       <div className="absolute bottom-[5%] -right-3 w-4 h-11 bg-slate-800 rounded-sm shadow-md"></div>
                     </>
                   )}
-                  {formData.vehicleType === 'camion_3ejes' && (
+                  {!formData.isChassisCab && formData.vehicleType === 'camion_3ejes' && (
                     <>
                       <div className="absolute bottom-[27%] -left-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
                       <div className="absolute bottom-[27%] -right-3 w-4 h-10 bg-slate-800 rounded-sm shadow-md"></div>
@@ -236,9 +259,38 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
                     <div className="w-full h-1/2 bg-slate-800/50 rounded-t-md rounded-b-sm mb-1"></div>
                   </div>
                   {formData.isChassisCab ? (
-                    <div className="w-[50%] h-[78%] mx-auto mt-2 border-x-4 border-b-4 border-slate-400 dark:border-slate-600 rounded-b-md relative flex justify-center space-x-4 bg-slate-300 dark:bg-slate-700/50 shadow-inner z-0">
-                      <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
-                      <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
+                    <div className="w-[50%] h-[78%] mx-auto mt-2 border-x-4 border-b-4 border-slate-400 dark:border-slate-600 rounded-b-md relative flex justify-center bg-slate-300 dark:bg-slate-700/50 shadow-inner z-0">
+                      <div className="absolute inset-0 flex justify-center space-x-4 py-2">
+                        <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
+                        <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
+                      </div>
+                      
+                      {formData.vehicleType === 'camion_2ejes' && (
+                        <>
+                          <div className="absolute bottom-[17%] w-[160%] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
+                          <div className="absolute bottom-[14%] -left-5 w-5 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                          <div className="absolute bottom-[14%] -right-5 w-5 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                          <div className="absolute bottom-[5%] w-[160%] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
+                          <div className="absolute bottom-[2%] -left-5 w-5 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                          <div className="absolute bottom-[2%] -right-5 w-5 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                        </>
+                      )}
+
+                      {formData.vehicleType === 'camion_3ejes' && (
+                        <>
+                          <div className="absolute bottom-[27%] w-[160%] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
+                          <div className="absolute bottom-[25%] -left-5 w-5 h-10 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                          <div className="absolute bottom-[25%] -right-5 w-5 h-10 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                          
+                          <div className="absolute bottom-[16%] w-[160%] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
+                          <div className="absolute bottom-[14%] -left-5 w-5 h-10 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                          <div className="absolute bottom-[14%] -right-5 w-5 h-10 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                          
+                          <div className="absolute bottom-[5%] w-[160%] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
+                          <div className="absolute bottom-[3%] -left-5 w-5 h-10 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                          <div className="absolute bottom-[3%] -right-5 w-5 h-10 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                        </>
+                      )}
                     </div>
                   ) : (
                     <div className="w-full h-[78%] mx-auto bg-slate-200 dark:bg-slate-700 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
