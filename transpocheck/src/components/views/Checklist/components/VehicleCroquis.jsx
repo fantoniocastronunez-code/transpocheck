@@ -140,9 +140,9 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
                     <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
                     <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
                   </div>
-                  <div className="absolute bottom-[15%] w-[210%] -left-[55%] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
-                  <div className="absolute bottom-[10%] -left-[55%] w-6 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
-                  <div className="absolute bottom-[10%] -right-[55%] w-6 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                  <div className="absolute bottom-[15%] w-[calc(200%+1.5rem)] -left-[calc(50%+0.75rem)] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
+                  <div className="absolute bottom-[10%] -left-[calc(50%+0.75rem)] w-6 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                  <div className="absolute bottom-[10%] -right-[calc(50%+0.75rem)] w-6 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
                 </div>
               ) : (
                 <div className="w-full h-[78%] mx-auto bg-slate-200 dark:bg-slate-700 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
@@ -164,9 +164,9 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
                     <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
                     <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
                   </div>
-                  <div className="absolute bottom-[15%] w-[210%] -left-[55%] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
-                  <div className="absolute bottom-[10%] -left-[55%] w-6 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
-                  <div className="absolute bottom-[10%] -right-[55%] w-6 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                  <div className="absolute bottom-[15%] w-[calc(200%+1.5rem)] -left-[calc(50%+0.75rem)] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
+                  <div className="absolute bottom-[10%] -left-[calc(50%+0.75rem)] w-6 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                  <div className="absolute bottom-[10%] -right-[calc(50%+0.75rem)] w-6 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
                 </div>
               ) : (
                 <div className="w-full h-[66%] mx-auto bg-slate-200 dark:bg-slate-700 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
@@ -202,13 +202,13 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
                         <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
                         <div className="w-2 h-full bg-slate-500 dark:bg-slate-800"></div>
                       </div>
-                      <div className="absolute bottom-[20%] w-[210%] -left-[55%] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
-                      <div className="absolute bottom-[17%] -left-[55%] w-6 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
-                      <div className="absolute bottom-[17%] -right-[55%] w-6 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                      <div className="absolute bottom-[20%] w-[calc(200%+1.5rem)] -left-[calc(50%+0.75rem)] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
+                      <div className="absolute bottom-[17%] -left-[calc(50%+0.75rem)] w-6 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                      <div className="absolute bottom-[17%] -right-[calc(50%+0.75rem)] w-6 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
                       
-                      <div className="absolute bottom-[7%] w-[210%] -left-[55%] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
-                      <div className="absolute bottom-[4%] -left-[55%] w-6 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
-                      <div className="absolute bottom-[4%] -right-[55%] w-6 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                      <div className="absolute bottom-[7%] w-[calc(200%+1.5rem)] -left-[calc(50%+0.75rem)] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
+                      <div className="absolute bottom-[4%] -left-[calc(50%+0.75rem)] w-6 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                      <div className="absolute bottom-[4%] -right-[calc(50%+0.75rem)] w-6 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
                     </div>
                   ) : (
                     <div className="w-full h-[78%] mx-auto bg-slate-200 dark:bg-slate-700 border-4 border-slate-400 rounded-sm mt-2 relative overflow-hidden shadow-inner z-10">
@@ -267,28 +267,28 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
                       
                       {formData.vehicleType === 'camion_2ejes' && (
                         <>
-                          <div className="absolute bottom-[17%] w-[210%] -left-[55%] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
-                          <div className="absolute bottom-[14%] -left-[55%] w-6 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
-                          <div className="absolute bottom-[14%] -right-[55%] w-6 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
-                          <div className="absolute bottom-[5%] w-[210%] -left-[55%] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
-                          <div className="absolute bottom-[2%] -left-[55%] w-6 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
-                          <div className="absolute bottom-[2%] -right-[55%] w-6 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                          <div className="absolute bottom-[17%] w-[calc(200%+1.5rem)] -left-[calc(50%+0.75rem)] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
+                          <div className="absolute bottom-[14%] -left-[calc(50%+0.75rem)] w-6 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                          <div className="absolute bottom-[14%] -right-[calc(50%+0.75rem)] w-6 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                          <div className="absolute bottom-[5%] w-[calc(200%+1.5rem)] -left-[calc(50%+0.75rem)] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
+                          <div className="absolute bottom-[2%] -left-[calc(50%+0.75rem)] w-6 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                          <div className="absolute bottom-[2%] -right-[calc(50%+0.75rem)] w-6 h-11 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
                         </>
                       )}
 
                       {formData.vehicleType === 'camion_3ejes' && (
                         <>
-                          <div className="absolute bottom-[27%] w-[210%] -left-[55%] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
-                          <div className="absolute bottom-[25%] -left-[55%] w-6 h-10 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
-                          <div className="absolute bottom-[25%] -right-[55%] w-6 h-10 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                          <div className="absolute bottom-[27%] w-[calc(200%+1.5rem)] -left-[calc(50%+0.75rem)] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
+                          <div className="absolute bottom-[25%] -left-[calc(50%+0.75rem)] w-6 h-10 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                          <div className="absolute bottom-[25%] -right-[calc(50%+0.75rem)] w-6 h-10 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
                           
-                          <div className="absolute bottom-[16%] w-[210%] -left-[55%] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
-                          <div className="absolute bottom-[14%] -left-[55%] w-6 h-10 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
-                          <div className="absolute bottom-[14%] -right-[55%] w-6 h-10 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                          <div className="absolute bottom-[16%] w-[calc(200%+1.5rem)] -left-[calc(50%+0.75rem)] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
+                          <div className="absolute bottom-[14%] -left-[calc(50%+0.75rem)] w-6 h-10 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                          <div className="absolute bottom-[14%] -right-[calc(50%+0.75rem)] w-6 h-10 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
                           
-                          <div className="absolute bottom-[5%] w-[210%] -left-[55%] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
-                          <div className="absolute bottom-[3%] -left-[55%] w-6 h-10 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
-                          <div className="absolute bottom-[3%] -right-[55%] w-6 h-10 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                          <div className="absolute bottom-[5%] w-[calc(200%+1.5rem)] -left-[calc(50%+0.75rem)] h-2.5 bg-slate-600 dark:bg-slate-800 -z-10 rounded-full"></div>
+                          <div className="absolute bottom-[3%] -left-[calc(50%+0.75rem)] w-6 h-10 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
+                          <div className="absolute bottom-[3%] -right-[calc(50%+0.75rem)] w-6 h-10 bg-slate-800 rounded-sm border-x border-slate-900 shadow-md flex justify-center z-10"><div className="w-[1px] h-full bg-slate-950"></div></div>
                         </>
                       )}
                     </div>

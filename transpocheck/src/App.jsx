@@ -162,9 +162,16 @@ function LogisticApp() {
 
   // Carga el directorio en segundo plano de forma 100% segura
   useEffect(() => {
-     import('firebase/firestore').then(({ getDocs, collection }) => {
+     import('firebase/firestore').then(({ getDocs, collection, addDoc }) => {
         getDocs(collection(db, 'directory')).then(snap => setDirectoryList(snap.docs.map(d => d.data()))).catch(() => {});
-        getDocs(collection(db, 'prts')).then(snap => setPrtList(snap.docs.map(d => d.data()))).catch(() => {});
+        getDocs(collection(db, 'prts')).then(snap => {
+            const prts = snap.docs.map(d => d.data());
+            setPrtList(prts);
+            // Auto-agregar PRT Santa Margarita si no existe
+            if (!prts.find(p => p.name === 'PRT Santa Margarita' || p.name === 'Santa Margarita')) {
+                addDoc(collection(db, 'prts'), { name: 'PRT Santa Margarita' }).catch(console.error);
+            }
+        }).catch(() => {});
      });
   }, [db]);
   

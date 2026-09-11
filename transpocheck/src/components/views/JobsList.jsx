@@ -64,6 +64,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [isPendingOpen, setIsPendingOpen] = useState(true);
   const [isInProgressOpen, setIsInProgressOpen] = useState(true);
   const [processingId, setProcessingId] = useState(null);
+  
+  const [pdfReadyToShare, setPdfReadyToShare] = useState(null); // <-- NUEVO: Para resolver bloqueo de Safari en iOS
 
   const [isCalculatingKm, setIsCalculatingKm] = useState(false); // NUEVO: Estado para recálculo de KM
   const [calcProgress, setCalcProgress] = useState(''); // NUEVO: Progreso del recálculo
@@ -1007,8 +1009,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           });
         } catch (shareError) {
           if (shareError.name !== 'AbortError') {
-            showAlert("El dispositivo bloqueó compartir directamente. Descargando archivo...");
-            docPDF.save(fileName);
+             // Es muy probable que Safari lo haya bloqueado por falta de interacción síncrona.
+             setDialogConfig(null);
+             setPdfReadyToShare({ file, fileName, textToShare, docPDF });
           }
         }
       } else {
@@ -2563,11 +2566,53 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         handleKovacsZIP={handleKovacsZIP}
       />
 
+      {/* NUEVO: Modal de Confirmación para iOS/Safari al Compartir PDF */}
+      {pdfReadyToShare && (
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl w-full max-w-sm flex flex-col items-center text-center border border-slate-200 dark:border-slate-800 animate-in zoom-in-95">
+            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-4 shadow-inner">
+               <FileText className="w-8 h-8" />
+            </div>
+            <h3 className="font-black text-xl mb-2 text-slate-800 dark:text-slate-200">¡Documento Listo!</h3>
+            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-6">Por seguridad de tu dispositivo, debes hacer clic para abrir WhatsApp manualmente con el archivo adjunto.</p>
+            
+            <button 
+              onClick={() => {
+                if (navigator.canShare && navigator.canShare({ files: [pdfReadyToShare.file] })) {
+                  navigator.share({ files: [pdfReadyToShare.file] })
+                    .then(() => setPdfReadyToShare(null))
+                    .catch(e => {
+                       if(e.name !== 'AbortError') {
+                           showAlert("Tu dispositivo rechazó definitivamente compartir el archivo. Lo descargaremos en su lugar.");
+                           pdfReadyToShare.docPDF.save(pdfReadyToShare.fileName);
+                           setPdfReadyToShare(null);
+                       }
+                    });
+                } else {
+                  pdfReadyToShare.docPDF.save(pdfReadyToShare.fileName);
+                  setPdfReadyToShare(null);
+                }
+              }} 
+              className="w-full bg-[#25D366] text-white font-bold py-4 rounded-xl flex justify-center items-center gap-2 mb-3 hover:bg-[#128C7E] transition-colors shadow-md"
+            >
+               Compartir en WhatsApp
+            </button>
+            <button onClick={() => {
+                pdfReadyToShare.docPDF.save(pdfReadyToShare.fileName);
+                setPdfReadyToShare(null);
+            }} className="w-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold py-4 rounded-xl flex justify-center items-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+               Descargar al Dispositivo
+            </button>
+            
+            <button onClick={() => setPdfReadyToShare(null)} className="w-full text-slate-400 dark:text-slate-500 text-xs font-bold py-4 mt-2 uppercase tracking-widest hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+               Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
-}
-
-
 
 
 
