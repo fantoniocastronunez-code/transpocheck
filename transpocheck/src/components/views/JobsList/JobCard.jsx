@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 export default function JobCard({ j, ...props }) {
+  const [showDetails, setShowDetails] = useState(false);
   const { analyzeJobStatus, getJobIdentifier, vehicles, menuOpenId, setMenuOpenId, isAdminView, onEditJob, currentUserEmail, setRelayPromptJob, setForceCloseJob, db, updateDoc, deleteField, doc, showAlert, showConfirm, setJobToFail, latestVehiclePhotos, setFullScreenPhoto, role, processingId, setProcessingId, handleApproveRequest, handleRejectRequest, handleAcceptJob, setTrackingJobId, setGuideUploadJob, setGuideLink, setGuideFileBase64, updatePhase, setArrivalPromptJob, setArrivalMileage, setArrivalPhoto, setArrivalKeyLocation, setArrivalKeyHandedTo, setPrtApproveType, setPrtReturnOpt, setPrtReturnDest, setPrtApprovePromptJob, setPrtPromptJob, onStartChecklist, handleUndoPhase, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, WaitTimerBadge, SwipeButton, AlertCircle, Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, Truck, X, XCircle, Clock, Car, MapPin, FileText, RefreshCw } = props;
     const { isRequested, isPending, isAccepted, isPendingGuide, step2Done, step3Done, step4Done } = analyzeJobStatus(j);
     
@@ -223,7 +224,22 @@ export default function JobCard({ j, ...props }) {
             )}
 
             {/* CONTACTOS, DIRECCIONES Y NAVEGACIÓN INTELIGENTE */}
-            <div className="mt-3 space-y-2">
+            {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone || j.originAddress || j.originCommune || j.destContactName || j.destContactPhone || j.destAddress || j.destCommune) && (
+              <button 
+                onClick={() => setShowDetails(!showDetails)}
+                className="w-full flex items-center justify-between bg-white/40 dark:bg-black/20 hover:bg-white/60 dark:hover:bg-black/40 p-2.5 rounded-xl border border-white/20 dark:border-slate-800/60 transition-colors text-slate-600 dark:text-slate-300 font-bold text-xs mt-1 shadow-[0_2px_8px_rgba(0,0,0,0.05)] backdrop-blur-sm"
+              >
+                <span className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-slate-500" /> Contactos y Direcciones
+                </span>
+                <span className="text-slate-400 text-[10px] uppercase">
+                  {showDetails ? 'Ocultar' : 'Ver todo'}
+                </span>
+              </button>
+            )}
+            
+            {showDetails && (
+            <div className="mt-2 space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
               
               {/* BLOQUE ORIGEN */}
               {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone || j.originAddress || j.originCommune) && (
@@ -320,23 +336,39 @@ export default function JobCard({ j, ...props }) {
              return <div className="mb-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800/50 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-blue-700 dark:text-blue-400 uppercase tracking-widest">📅 HOY{timeStr}</span></div>;
           })()}
 
-        <div className="relative pl-7 space-y-5 before:absolute before:top-2 before:bottom-2 before:left-[10px] before:w-0.5 before:bg-slate-100 dark:bg-slate-800 dark:before:bg-slate-800 mb-5">
-          <div className="relative"><div className="absolute -left-7 bg-blue-500 w-5 h-5 rounded-full border-4 border-white dark:border-slate-900 shadow-sm flex items-center justify-center"><CheckCircle className="w-2.5 h-2.5 text-white"/></div><p className="font-extrabold text-slate-800 dark:text-slate-200 text-sm leading-tight break-words">{isAccepted ? (j.assignedDrivers?.find(d => d.email === j.acceptedByEmail)?.name || "Conductor") : "Buscando conductor"}</p><p className="text-xs font-bold text-slate-500 dark:text-slate-400 break-words whitespace-normal">{isAccepted ? (j.tripType === 'simple' ? `Asignado a ${j.origin}` : `Retira en ${j.origin}`) : `Para ${j.origin}`}</p></div>
-          <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white dark:border-slate-900 shadow-sm flex items-center justify-center transition-colors ${step2Done ? 'bg-blue-500' : 'bg-slate-200 dark:bg-slate-700'}`}>{step2Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step2Done ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400'}`}>{j.tripType === 'simple' ? 'Realizando Trabajo' : 'Vehículo en Tránsito'}</p></div>
-          <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white dark:border-slate-900 shadow-sm flex items-center justify-center transition-colors ${step3Done ? 'bg-blue-500' : 'bg-slate-200 dark:bg-slate-700'}`}>{step3Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step3Done ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400'}`}>{j.tripType === 'simple' ? 'Trabajo Terminado' : (j.tripType === 'revision' ? 'En PRT' : 'Llegada a Destino')}</p><p className={`text-xs font-bold whitespace-normal break-words pr-2 ${step3Done ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400'}`}>{j.tripType === 'simple' ? (j.destination || '') : (j.tripType === 'revision' ? 'Planta' : j.destination)}</p></div>
-          
-          {j.tripType === 'revision' && (
-            <>
-              <div className="relative"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white dark:border-slate-800 shadow-sm flex items-center justify-center transition-colors ${step4Done ? (j.prt_result === 'rechazado' ? 'bg-red-500' : 'bg-green-500') : 'bg-slate-200 dark:bg-slate-700'}`}>{step4Done && <CheckCircle className="w-2.5 h-2.5 text-white"/>}</div><p className={`font-extrabold text-sm leading-tight ${step4Done ? (j.prt_result === 'rechazado' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400') : 'text-slate-400'}`}>Resultado Revisión</p>{step4Done && <p className={`text-xs font-bold ${j.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-600 dark:text-green-400'}`}>{j.prt_result === 'rechazado' ? `Rechazado` : 'Aprobado'}</p>}</div>
-              {/* Mostrar a dónde se dirige después de PRT (sea aprobado o rechazado) */}
-              {step4Done && (
-                <div className="relative pt-2"><div className={`absolute -left-7 w-5 h-5 rounded-full border-4 border-white dark:border-slate-800 shadow-sm flex items-center justify-center bg-blue-500`}><Navigation className="w-2.5 h-2.5 text-white"/></div><p className="font-extrabold text-sm leading-tight text-slate-800 dark:text-slate-200">En camino a:</p><p className="text-xs font-bold text-blue-600 dark:text-blue-400 whitespace-normal break-words pr-2">
-                    {getRtFinalDestination(j)}
-                </p></div>
-              )}
-            </>
-          )}
-        </div>
+          {(() => {
+             let statusIcon = <CheckCircle className="w-4 h-4 text-blue-500"/>;
+             let statusTitle = isAccepted ? (j.assignedDrivers?.find(d => d.email === j.acceptedByEmail)?.name || "Conductor") : "Buscando conductor";
+             let statusSub = isAccepted ? (j.tripType === 'simple' ? `Asignado a ${j.origin}` : `Retira en ${j.origin}`) : `Para ${j.origin}`;
+             let highlight = false;
+
+             if (j.tripType === 'revision' && step4Done) {
+                statusTitle = j.prt_result === 'rechazado' ? 'Revisión Rechazada' : 'Revisión Aprobada';
+                statusIcon = <CheckCircle className={`w-4 h-4 ${j.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-500'}`}/>;
+                statusSub = `En camino a: ${getRtFinalDestination(j)}`;
+                highlight = true;
+             } else if (step3Done) {
+                statusTitle = j.tripType === 'simple' ? 'Trabajo Terminado' : (j.tripType === 'revision' ? 'En PRT' : 'Llegada a Destino');
+                statusSub = j.tripType === 'simple' ? (j.destination || '') : (j.tripType === 'revision' ? 'Planta' : j.destination);
+                highlight = true;
+             } else if (step2Done) {
+                statusTitle = j.tripType === 'simple' ? 'Realizando Trabajo' : 'Vehículo en Tránsito';
+                statusSub = '';
+                highlight = true;
+             }
+             
+             return (
+               <div className="mb-4 bg-white/40 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-slate-800 p-3 rounded-xl shadow-sm flex items-center gap-3">
+                 <div className={`p-2 rounded-full ${highlight ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-slate-100 dark:bg-slate-800'}`}>
+                   {statusIcon}
+                 </div>
+                 <div className="flex-1 min-w-0">
+                   <p className="font-extrabold text-sm text-slate-800 dark:text-slate-200 truncate">{statusTitle}</p>
+                   {statusSub && <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 truncate">{statusSub}</p>}
+                 </div>
+               </div>
+             );
+          })()}
 
         {j.phase === 'arrived_pickup' && j.arrivedPickupAt && (
           <div className="flex items-center gap-2 mb-3">
