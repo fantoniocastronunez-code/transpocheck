@@ -1,6 +1,40 @@
 import React, { useState } from 'react';
 
-const StatusAnimation = ({ type }) => {
+const renderVehicle = (vType, wheelClass, wheelFill) => {
+    const type = (vType || '').toLowerCase();
+    
+    if (type.includes('camioneta') || type.includes('pickup')) {
+        return (
+            <React.Fragment>
+                <path d="M 5 35 L 20 35 L 20 45 L 5 45 Z" />
+                <path d="M 20 25 L 35 25 L 45 35 L 45 45 L 20 45 Z" />
+                <circle cx="15" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+                <circle cx="40" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+            </React.Fragment>
+        );
+    } else if (type.includes('cami') || type.includes('truck') || type.includes('furg')) {
+        return (
+            <React.Fragment>
+                <rect x="2" y="20" width="30" height="25" rx="1" />
+                <path d="M 34 30 L 42 30 L 46 38 L 46 45 L 34 45 Z" />
+                <circle cx="10" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+                <circle cx="25" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+                <circle cx="40" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+            </React.Fragment>
+        );
+    }
+    
+    return (
+        <React.Fragment>
+            <path d="M10 40 L 15 25 L 35 25 L 45 40 Z" />
+            <rect x="5" y="40" width="45" height="10" rx="2" />
+            <circle cx="15" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+            <circle cx="40" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+        </React.Fragment>
+    );
+};
+
+const StatusAnimation = ({ type, vehicleType }) => {
   switch (type) {
     case 'searching':
       return (
@@ -34,17 +68,16 @@ const StatusAnimation = ({ type }) => {
           <defs>
             <style>{`
               @keyframes walkInAnim {
-                0% { transform: translateX(-20px); opacity: 0; }
-                100% { transform: translateX(130px); opacity: 1; }
+                0% { transform: translateX(-10px); opacity: 0; }
+                5% { opacity: 1; }
+                80% { transform: translateX(130px); opacity: 1; }
+                100% { transform: translateX(130px); opacity: 0; }
               }
-              .personIn { animation: walkInAnim 1s ease-out forwards; }
+              .personIn { animation: walkInAnim 3.5s linear infinite; }
             `}</style>
           </defs>
           <g transform="translate(150, 0)" fill="currentColor" className="text-slate-300 dark:text-slate-600">
-            <path d="M10 40 L 15 25 L 35 25 L 45 40 Z" />
-            <rect x="5" y="40" width="45" height="10" rx="2" />
-            <circle cx="15" cy="50" r="4" className="text-slate-400 dark:text-slate-500" />
-            <circle cx="40" cy="50" r="4" className="text-slate-400 dark:text-slate-500" />
+            {renderVehicle(vehicleType, "text-slate-400 dark:text-slate-500", undefined)}
           </g>
           <g className="personIn" fill="#3B82F6">
             <circle cx="10" cy="25" r="5" />
@@ -72,10 +105,7 @@ const StatusAnimation = ({ type }) => {
             </linearGradient>
           </defs>
           <g transform="translate(150, 0)" fill="currentColor" className="text-slate-300 dark:text-slate-600">
-            <path d="M10 40 L 15 25 L 35 25 L 45 40 Z" />
-            <rect x="5" y="40" width="45" height="10" rx="2" />
-            <circle cx="15" cy="50" r="4" className="text-slate-400 dark:text-slate-500" />
-            <circle cx="40" cy="50" r="4" className="text-slate-400 dark:text-slate-500" />
+            {renderVehicle(vehicleType, "text-slate-400 dark:text-slate-500", undefined)}
           </g>
           <g transform="translate(115, 0)" fill="#3B82F6">
             <circle cx="10" cy="25" r="5" />
@@ -107,10 +137,7 @@ const StatusAnimation = ({ type }) => {
             <line x1="0" y1="50" x2="320" y2="50" className="streetDash" />
           </g>
           <g className="carMov" fill="#3B82F6">
-            <path d="M10 40 L 15 25 L 35 25 L 45 40 Z" />
-            <rect x="5" y="40" width="45" height="10" rx="2" />
-            <circle cx="15" cy="50" r="4" fill="#1E293B" />
-            <circle cx="40" cy="50" r="4" fill="#1E293B" />
+            {renderVehicle(vehicleType, undefined, "#1E293B")}
           </g>
         </svg>
       );
@@ -135,10 +162,7 @@ const StatusAnimation = ({ type }) => {
             <path d="M -5 10 L 15 -5 L 35 10 Z" fill="currentColor" className="text-slate-500 dark:text-slate-400" />
           </g>
           <g className="carIn" fill="#3B82F6">
-            <path d="M10 40 L 15 25 L 35 25 L 45 40 Z" />
-            <rect x="5" y="40" width="45" height="10" rx="2" />
-            <circle cx="15" cy="50" r="4" fill="#1E293B" />
-            <circle cx="40" cy="50" r="4" fill="#1E293B" />
+            {renderVehicle(vehicleType, undefined, "#1E293B")}
           </g>
         </svg>
       );
@@ -613,7 +637,7 @@ export default function JobCard({ j, ...props }) {
              
              return (
                <div className="mb-4 bg-white/40 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-slate-800 pt-1 pb-3 px-3 rounded-xl shadow-sm flex flex-col">
-                 <StatusAnimation type={animationType} />
+                 <StatusAnimation type={animationType} vehicleType={j.vehicleType} />
                  <div className="flex items-center gap-3 w-full border-t border-white/20 dark:border-slate-800/60 pt-2">
                    <div className={`p-2 rounded-full shrink-0 ${highlight ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-slate-100 dark:bg-slate-800'}`}>
                      {statusIcon}
