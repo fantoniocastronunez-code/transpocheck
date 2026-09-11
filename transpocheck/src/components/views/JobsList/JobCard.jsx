@@ -619,8 +619,13 @@ export default function JobCard({ j, ...props }) {
                 statusSub = j.tripType === 'simple' ? (j.destination || '') : (j.tripType === 'revision' ? 'Planta' : j.destination);
                 highlight = true;
                 animationType = (j.tripType === 'simple' || j.phase === 'arrived_destination' || step4Done) ? 'completed' : 'arrived';
-             } else if (j.phase === 'picked_up' || step2Done) {
-                statusTitle = j.tripType === 'simple' ? 'Realizando Trabajo' : 'Vehículo en ruta';
+             } else if (j.phase === 'arrived_waypoint') {
+                statusTitle = 'En Parada Intermedia';
+                statusSub = (j.waypoints && j.waypoints[0]) || '';
+                highlight = true;
+                animationType = 'arrived';
+             } else if (j.phase === 'departed_waypoint' || j.phase === 'picked_up' || step2Done) {
+                statusTitle = j.phase === 'departed_waypoint' ? 'Camino a Destino Final' : (j.tripType === 'simple' ? 'Realizando Trabajo' : (j.waypoints?.length > 0 ? 'Camino a 1ra Parada' : 'Vehículo en ruta'));
                 statusSub = '';
                 highlight = true;
                 animationType = 'transit';
@@ -748,7 +753,7 @@ export default function JobCard({ j, ...props }) {
                         updatePhase(j, 'picked_up', { pickedUpAt: Date.now(), waitTimeMinutes: waitMins });
                       }} text={j.tripType === 'simple' ? "Desliza: Iniciar Trabajo" : "Desliza: Vehículo en mi poder"} icon={j.tripType === 'simple' ? <Clock className="w-4 h-4"/> : <Car className="w-4 h-4"/>} colorClass="bg-indigo-600" isProcessing={processingId === `${j.id}-picked_up`} />}
                       
-                      {j.phase === 'picked_up' && j.tripType !== 'revision' && <SwipeButton key={`btn-dest-${j.id}`} onConfirm={()=>{
+                      {j.phase === 'picked_up' && j.tripType !== 'revision' && (!j.waypoints || j.waypoints.length === 0) && <SwipeButton key={`btn-dest-${j.id}`} onConfirm={()=>{
                           setArrivalPromptJob(j); 
                           setArrivalMileage(''); 
                           setArrivalPhoto(null); 
@@ -756,6 +761,23 @@ export default function JobCard({ j, ...props }) {
                           setArrivalKeyHandedTo(''); 
                           setMenuOpenId(null);
                       }} text={j.tripType === 'simple' ? "Desliza: Finalizar Trabajo" : "Desliza: Llegué a Destino"} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />}
+
+                      {j.phase === 'picked_up' && j.tripType !== 'revision' && j.waypoints && j.waypoints.length > 0 && <SwipeButton key={`btn-wp1-${j.id}`} onConfirm={()=>{
+                          updatePhase(j, 'arrived_waypoint', { arrivedWaypointAt: Date.now() });
+                      }} text="Desliza: Llegué a 1ra Parada" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-indigo-600" isProcessing={processingId === `${j.id}-arrived_waypoint`} />}
+
+                      {j.phase === 'arrived_waypoint' && <SwipeButton key={`btn-wp2-${j.id}`} onConfirm={()=>{
+                          updatePhase(j, 'departed_waypoint', { departedWaypointAt: Date.now() });
+                      }} text="Desliza: Camino a Destino Final" icon={<Car className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-departed_waypoint`} />}
+
+                      {j.phase === 'departed_waypoint' && <SwipeButton key={`btn-dest-final-${j.id}`} onConfirm={()=>{
+                          setArrivalPromptJob(j); 
+                          setArrivalMileage(''); 
+                          setArrivalPhoto(null); 
+                          setArrivalKeyLocation(''); 
+                          setArrivalKeyHandedTo(''); 
+                          setMenuOpenId(null);
+                      }} text="Desliza: Llegué a Destino Final" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />}
                       
                       {j.phase === 'picked_up' && j.tripType === 'revision' && <SwipeButton key={`btn-prt-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_prt')} text="Desliza: Llegué a PRT" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_prt`} />}
                       
