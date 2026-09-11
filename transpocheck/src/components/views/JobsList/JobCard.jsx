@@ -3,22 +3,106 @@ import React, { useState } from 'react';
 const renderVehicle = (vType, wheelClass, wheelFill) => {
     const type = (vType || '').toLowerCase();
     
+    if (type.includes('arrastre')) {
+        return (
+            <React.Fragment>
+                <path d="M 20 35 L 32 35 L 32 45 L 20 45 Z" />
+                <path d="M 32 25 L 42 25 L 48 35 L 48 45 L 32 45 Z" />
+                <circle cx="26" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+                <circle cx="42" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+                <line x1="15" y1="42" x2="20" y2="42" stroke="currentColor" strokeWidth="2" />
+                <rect x="0" y="38" width="15" height="4" />
+                <circle cx="8" cy="48" r="3" className={wheelClass} fill={wheelFill} />
+            </React.Fragment>
+        );
+    }
+    
+    if (type.includes('8x4') || type.includes('rigid')) {
+        return (
+            <React.Fragment>
+                <rect x="-4" y="16" width="36" height="29" rx="1" />
+                <path d="M 34 26 L 46 26 L 50 36 L 50 45 L 34 45 Z" />
+                <circle cx="4" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+                <circle cx="14" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+                <circle cx="34" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+                <circle cx="44" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+            </React.Fragment>
+        );
+    }
+    
+    if (type.includes('3 ejes') || type.includes('tres ejes')) {
+        return (
+            <React.Fragment>
+                <rect x="-4" y="18" width="38" height="27" rx="1" />
+                <path d="M 36 28 L 44 28 L 48 38 L 48 45 L 36 45 Z" />
+                <circle cx="2" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+                <circle cx="12" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+                <circle cx="22" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+                <circle cx="42" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+            </React.Fragment>
+        );
+    }
+    
+    if (type.includes('2 ejes') || type.includes('dos ejes')) {
+        return (
+            <React.Fragment>
+                <rect x="0" y="18" width="34" height="27" rx="1" />
+                <path d="M 36 28 L 44 28 L 48 38 L 48 45 L 36 45 Z" />
+                <circle cx="8" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+                <circle cx="18" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+                <circle cx="40" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+            </React.Fragment>
+        );
+    }
+
+    if (type.includes('doble cabina')) {
+        return (
+            <React.Fragment>
+                <rect x="2" y="22" width="22" height="23" rx="1" />
+                <path d="M 26 25 L 42 25 L 46 38 L 46 45 L 26 45 Z" />
+                <circle cx="10" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+                <circle cx="38" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+            </React.Fragment>
+        );
+    }
+    
+    if (type.includes('cami')) {
+        return (
+            <React.Fragment>
+                <rect x="2" y="20" width="30" height="25" rx="1" />
+                <path d="M 34 30 L 42 30 L 46 38 L 46 45 L 34 45 Z" />
+                <circle cx="10" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+                <circle cx="38" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+            </React.Fragment>
+        );
+    }
+    
+    if (type.includes('furgón grande') || type.includes('furgon grande') || type.includes('sprinter')) {
+        return (
+            <React.Fragment>
+                <path d="M 2 18 L 38 18 L 46 30 L 46 45 L 2 45 Z" />
+                <circle cx="10" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+                <circle cx="38" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+            </React.Fragment>
+        );
+    }
+
+    if (type.includes('furg')) {
+        return (
+            <React.Fragment>
+                <path d="M 6 24 L 34 24 L 42 34 L 44 45 L 6 45 Z" />
+                <circle cx="14" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+                <circle cx="36" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+            </React.Fragment>
+        );
+    }
+    
     if (type.includes('camioneta') || type.includes('pickup')) {
         return (
             <React.Fragment>
                 <path d="M 5 35 L 20 35 L 20 45 L 5 45 Z" />
                 <path d="M 20 25 L 35 25 L 45 35 L 45 45 L 20 45 Z" />
                 <circle cx="15" cy="50" r="4" className={wheelClass} fill={wheelFill} />
-                <circle cx="40" cy="50" r="4" className={wheelClass} fill={wheelFill} />
-            </React.Fragment>
-        );
-    } else if (type.includes('cami') || type.includes('truck') || type.includes('furg')) {
-        return (
-            <React.Fragment>
-                <rect x="2" y="20" width="30" height="25" rx="1" />
-                <path d="M 34 30 L 42 30 L 46 38 L 46 45 L 34 45 Z" />
-                <circle cx="10" cy="50" r="4" className={wheelClass} fill={wheelFill} />
-                <circle cx="25" cy="50" r="4" className={wheelClass} fill={wheelFill} />
                 <circle cx="40" cy="50" r="4" className={wheelClass} fill={wheelFill} />
             </React.Fragment>
         );
