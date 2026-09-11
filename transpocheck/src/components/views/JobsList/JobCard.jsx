@@ -1,4 +1,210 @@
 import React, { useState } from 'react';
+
+const StatusAnimation = ({ type }) => {
+  switch (type) {
+    case 'searching':
+      return (
+        <svg viewBox="0 0 300 60" className="w-full h-12 my-2">
+          <defs>
+            <style>{`
+              @keyframes searchAnim {
+                0%, 100% { transform: translateX(0); }
+                50% { transform: translateX(200px); }
+              }
+              .lupa { animation: searchAnim 3s ease-in-out infinite; }
+            `}</style>
+          </defs>
+          <g fill="currentColor" className="text-slate-300 dark:text-slate-600">
+            <circle cx="50" cy="30" r="10" />
+            <path d="M40 55 C 40 40, 60 40, 60 55 Z" />
+            <circle cx="150" cy="30" r="10" />
+            <path d="M140 55 C 140 40, 160 40, 160 55 Z" />
+            <circle cx="250" cy="30" r="10" />
+            <path d="M240 55 C 240 40, 260 40, 260 55 Z" />
+          </g>
+          <g className="lupa" transform="translate(10, 10)">
+            <circle cx="20" cy="20" r="15" fill="none" stroke="#3B82F6" strokeWidth="4" />
+            <line x1="30" y1="30" x2="45" y2="45" stroke="#3B82F6" strokeWidth="6" strokeLinecap="round" />
+          </g>
+        </svg>
+      );
+    case 'assigned':
+      return (
+        <svg viewBox="0 0 300 60" className="w-full h-12 my-2">
+          <defs>
+            <style>{`
+              @keyframes walkInAnim {
+                0% { transform: translateX(-20px); opacity: 0; }
+                100% { transform: translateX(130px); opacity: 1; }
+              }
+              .personIn { animation: walkInAnim 1s ease-out forwards; }
+            `}</style>
+          </defs>
+          <g transform="translate(150, 0)" fill="currentColor" className="text-slate-300 dark:text-slate-600">
+            <path d="M10 40 L 15 25 L 35 25 L 45 40 Z" />
+            <rect x="5" y="40" width="45" height="10" rx="2" />
+            <circle cx="15" cy="50" r="4" className="text-slate-400 dark:text-slate-500" />
+            <circle cx="40" cy="50" r="4" className="text-slate-400 dark:text-slate-500" />
+          </g>
+          <g className="personIn" fill="#3B82F6">
+            <circle cx="10" cy="25" r="5" />
+            <path d="M 5 32 C 5 28, 15 28, 15 32 L 15 50 L 5 50 Z" />
+          </g>
+        </svg>
+      );
+    case 'transit':
+      return (
+        <svg viewBox="0 0 300 60" className="w-full h-12 my-2 overflow-hidden">
+          <defs>
+            <style>{`
+              @keyframes driveAnim {
+                0% { transform: translateX(-50px); }
+                100% { transform: translateX(350px); }
+              }
+              @keyframes dashAnim {
+                0% { transform: translateX(0); }
+                100% { transform: translateX(-20px); }
+              }
+              .carMov { animation: driveAnim 4s linear infinite; }
+              .streetDash { animation: dashAnim 0.5s linear infinite; }
+            `}</style>
+          </defs>
+          <g stroke="currentColor" className="text-slate-300 dark:text-slate-600" strokeWidth="2" strokeDasharray="10 10">
+            <line x1="0" y1="50" x2="320" y2="50" className="streetDash" />
+          </g>
+          <g className="carMov" fill="#3B82F6">
+            <path d="M10 40 L 15 25 L 35 25 L 45 40 Z" />
+            <rect x="5" y="40" width="45" height="10" rx="2" />
+            <circle cx="15" cy="50" r="4" fill="#1E293B" />
+            <circle cx="40" cy="50" r="4" fill="#1E293B" />
+          </g>
+        </svg>
+      );
+    case 'arrived':
+      return (
+        <svg viewBox="0 0 300 60" className="w-full h-12 my-2">
+          <defs>
+            <style>{`
+              @keyframes driveInAnim {
+                0% { transform: translateX(-100px); }
+                100% { transform: translateX(110px); }
+              }
+              .carIn { animation: driveInAnim 1s ease-out forwards; }
+            `}</style>
+          </defs>
+          <g transform="translate(170, 10)">
+            <rect x="0" y="10" width="30" height="40" fill="currentColor" className="text-slate-400 dark:text-slate-500" rx="2" />
+            <rect x="5" y="15" width="8" height="8" fill="currentColor" className="text-slate-200 dark:text-slate-700" />
+            <rect x="17" y="15" width="8" height="8" fill="currentColor" className="text-slate-200 dark:text-slate-700" />
+            <rect x="5" y="27" width="8" height="8" fill="currentColor" className="text-slate-200 dark:text-slate-700" />
+            <rect x="17" y="27" width="8" height="8" fill="currentColor" className="text-slate-200 dark:text-slate-700" />
+            <path d="M -5 10 L 15 -5 L 35 10 Z" fill="currentColor" className="text-slate-500 dark:text-slate-400" />
+          </g>
+          <g className="carIn" fill="#3B82F6">
+            <path d="M10 40 L 15 25 L 35 25 L 45 40 Z" />
+            <rect x="5" y="40" width="45" height="10" rx="2" />
+            <circle cx="15" cy="50" r="4" fill="#1E293B" />
+            <circle cx="40" cy="50" r="4" fill="#1E293B" />
+          </g>
+        </svg>
+      );
+    case 'prt_approved':
+      return (
+        <svg viewBox="0 0 300 60" className="w-full h-12 my-2 overflow-hidden">
+          <defs>
+            <style>{`
+              @keyframes popInAnim {
+                0% { transform: scale(0); opacity: 0; }
+                50% { transform: scale(1.2); opacity: 1; }
+                100% { transform: scale(1); opacity: 1; }
+              }
+              @keyframes slideUpAnim {
+                0% { transform: translateY(60px); }
+                100% { transform: translateY(0); }
+              }
+              .docUp { animation: slideUpAnim 0.6s ease-out forwards; }
+              .checkPop { animation: popInAnim 0.5s ease-out 0.4s forwards; opacity: 0; transform-origin: center; }
+            `}</style>
+          </defs>
+          <g className="docUp" transform="translate(130, 10)">
+            <rect x="0" y="0" width="40" height="50" fill="currentColor" className="text-slate-200 dark:text-slate-600" rx="4" />
+            <line x1="10" y1="15" x2="30" y2="15" stroke="currentColor" className="text-slate-300 dark:text-slate-500" strokeWidth="2" />
+            <line x1="10" y1="25" x2="25" y2="25" stroke="currentColor" className="text-slate-300 dark:text-slate-500" strokeWidth="2" />
+            <line x1="10" y1="35" x2="30" y2="35" stroke="currentColor" className="text-slate-300 dark:text-slate-500" strokeWidth="2" />
+          </g>
+          <g className="checkPop" transform="translate(140, 20)">
+            <circle cx="10" cy="10" r="16" fill="#22C55E" />
+            <path d="M 4 10 L 8 14 L 16 6" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+          </g>
+        </svg>
+      );
+    case 'prt_rejected':
+      return (
+        <svg viewBox="0 0 300 60" className="w-full h-12 my-2 overflow-hidden">
+          <defs>
+            <style>{`
+              @keyframes popInRejectAnim {
+                0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+                50% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+                100% { transform: scale(1) rotate(0deg); opacity: 1; }
+              }
+              @keyframes slideUpAnimR {
+                0% { transform: translateY(60px); }
+                100% { transform: translateY(0); }
+              }
+              .docUpR { animation: slideUpAnimR 0.6s ease-out forwards; }
+              .crossPop { animation: popInRejectAnim 0.5s ease-out 0.4s forwards; opacity: 0; transform-origin: center; }
+            `}</style>
+          </defs>
+          <g className="docUpR" transform="translate(130, 10)">
+            <rect x="0" y="0" width="40" height="50" fill="currentColor" className="text-slate-200 dark:text-slate-600" rx="4" />
+            <line x1="10" y1="15" x2="30" y2="15" stroke="currentColor" className="text-slate-300 dark:text-slate-500" strokeWidth="2" />
+            <line x1="10" y1="25" x2="25" y2="25" stroke="currentColor" className="text-slate-300 dark:text-slate-500" strokeWidth="2" />
+            <line x1="10" y1="35" x2="30" y2="35" stroke="currentColor" className="text-slate-300 dark:text-slate-500" strokeWidth="2" />
+          </g>
+          <g className="crossPop" transform="translate(140, 20)">
+            <circle cx="10" cy="10" r="16" fill="#EF4444" />
+            <line x1="4" y1="4" x2="16" y2="16" stroke="white" strokeWidth="3" strokeLinecap="round" />
+            <line x1="16" y1="4" x2="4" y2="16" stroke="white" strokeWidth="3" strokeLinecap="round" />
+          </g>
+        </svg>
+      );
+    case 'completed':
+      return (
+        <svg viewBox="0 0 300 60" className="w-full h-12 my-2">
+          <defs>
+            <style>{`
+              @keyframes bounceCompleteAnim {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-10px); }
+              }
+              @keyframes appearStarsAnim {
+                0% { opacity: 0; transform: scale(0.5); }
+                100% { opacity: 1; transform: scale(1); }
+              }
+              .starGroup { animation: appearStarsAnim 0.8s ease-out forwards; }
+              .flagBounce { animation: bounceCompleteAnim 2s ease-in-out infinite; transform-origin: bottom center; }
+            `}</style>
+          </defs>
+          <g transform="translate(135, 10)">
+            <g className="starGroup">
+              <circle cx="-20" cy="10" r="2" fill="#F59E0B" />
+              <circle cx="40" cy="5" r="3" fill="#F59E0B" />
+              <circle cx="30" cy="35" r="2" fill="#F59E0B" />
+              <circle cx="-10" cy="40" r="2.5" fill="#F59E0B" />
+            </g>
+            <g className="flagBounce">
+              <path d="M 5 45 L 5 5" stroke="currentColor" className="text-slate-700 dark:text-slate-300" strokeWidth="3" strokeLinecap="round" />
+              <path d="M 5 5 L 25 12 L 5 20 Z" fill="#22C55E" />
+            </g>
+          </g>
+        </svg>
+      );
+    default:
+      return null;
+  }
+};
+
 export default function JobCard({ j, ...props }) {
   const [showDetails, setShowDetails] = useState(false);
   const { analyzeJobStatus, getJobIdentifier, vehicles, menuOpenId, setMenuOpenId, isAdminView, onEditJob, currentUserEmail, setRelayPromptJob, setForceCloseJob, db, updateDoc, deleteField, doc, showAlert, showConfirm, setJobToFail, latestVehiclePhotos, setFullScreenPhoto, role, processingId, setProcessingId, handleApproveRequest, handleRejectRequest, handleAcceptJob, setTrackingJobId, setGuideUploadJob, setGuideLink, setGuideFileBase64, updatePhase, setArrivalPromptJob, setArrivalMileage, setArrivalPhoto, setArrivalKeyLocation, setArrivalKeyHandedTo, setPrtApproveType, setPrtReturnOpt, setPrtReturnDest, setPrtApprovePromptJob, setPrtPromptJob, onStartChecklist, handleUndoPhase, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, WaitTimerBadge, SwipeButton, AlertCircle, Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, Truck, X, XCircle, Clock, Car, MapPin, FileText, RefreshCw } = props;
@@ -342,30 +548,39 @@ export default function JobCard({ j, ...props }) {
              let statusTitle = isAccepted ? (j.assignedDrivers?.find(d => d.email === j.acceptedByEmail)?.name || "Conductor") : "Buscando conductor";
              let statusSub = isAccepted ? (j.tripType === 'simple' ? `Asignado a ${j.origin}` : `Retira en ${j.origin}`) : `Para ${j.origin}`;
              let highlight = false;
+             let animationType = 'searching';
 
              if (j.tripType === 'revision' && step4Done) {
                 statusTitle = j.prt_result === 'rechazado' ? 'Revisión Rechazada' : 'Revisión Aprobada';
                 statusIcon = <CheckCircle className={`w-4 h-4 ${j.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-500'}`}/>;
                 statusSub = `En camino a: ${getRtFinalDestination(j)}`;
                 highlight = true;
+                animationType = j.prt_result === 'rechazado' ? 'prt_rejected' : 'prt_approved';
              } else if (step3Done) {
                 statusTitle = j.tripType === 'simple' ? 'Trabajo Terminado' : (j.tripType === 'revision' ? 'En PRT' : 'Llegada a Destino');
                 statusSub = j.tripType === 'simple' ? (j.destination || '') : (j.tripType === 'revision' ? 'Planta' : j.destination);
                 highlight = true;
+                animationType = (j.tripType === 'simple' || j.phase === 'arrived_destination' || step4Done) ? 'completed' : 'arrived';
              } else if (step2Done) {
                 statusTitle = j.tripType === 'simple' ? 'Realizando Trabajo' : 'Vehículo en Tránsito';
                 statusSub = '';
                 highlight = true;
+                animationType = 'transit';
+             } else if (isAccepted) {
+                animationType = 'assigned';
              }
              
              return (
-               <div className="mb-4 bg-white/40 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-slate-800 p-3 rounded-xl shadow-sm flex items-center gap-3">
-                 <div className={`p-2 rounded-full ${highlight ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-slate-100 dark:bg-slate-800'}`}>
-                   {statusIcon}
-                 </div>
-                 <div className="flex-1 min-w-0">
-                   <p className="font-extrabold text-sm text-slate-800 dark:text-slate-200 truncate">{statusTitle}</p>
-                   {statusSub && <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 truncate">{statusSub}</p>}
+               <div className="mb-4 bg-white/40 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-slate-800 pt-1 pb-3 px-3 rounded-xl shadow-sm flex flex-col">
+                 <StatusAnimation type={animationType} />
+                 <div className="flex items-center gap-3 w-full border-t border-white/20 dark:border-slate-800/60 pt-2">
+                   <div className={`p-2 rounded-full shrink-0 ${highlight ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-slate-100 dark:bg-slate-800'}`}>
+                     {statusIcon}
+                   </div>
+                   <div className="flex-1 min-w-0">
+                     <p className="font-extrabold text-sm text-slate-800 dark:text-slate-200 truncate">{statusTitle}</p>
+                     {statusSub && <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 truncate">{statusSub}</p>}
+                   </div>
                  </div>
                </div>
              );
