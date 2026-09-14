@@ -160,27 +160,34 @@ export const getExtraWappTxt = (j) => {
     
     if (prtTotal > 0) {
       t += `\nVALOR PRT TOTAL: ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(prtTotal)}`;
-      if (rev > 0) t += `\n- Revisión: ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(rev)}`;
-      if (insp > 0) t += `\n- Inspección: ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(insp)}`;
-      if (frenos > 0) t += `\n- Frenos: ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(frenos)}`;
-      if (gases > 0) t += `\n- Gases: ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(gases)}`;
+      if (rev > 0) t += `\nRevisión: ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(rev)}`;
+      if (insp > 0) t += `\nInspección: ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(insp)}`;
+      if (frenos > 0) t += `\nFrenos: ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(frenos)}`;
+      if (gases > 0) t += `\nGases: ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(gases)}`;
     }
   }
   return t;
 };
 
 export const generateWhatsAppText = (job, dateShort, identifier) => {
+  let carInfo = '-';
+  if (job.brand || job.model) {
+    if (job.brand && !job.model) carInfo = `${job.brand} (falta modelo)`;
+    else if (!job.brand && job.model) carInfo = job.model;
+    else carInfo = `${job.brand} ${job.model}`;
+  }
+  
   let text = job.tripType === 'simple' 
     ? `${dateShort}\n${job.client || 'Sin Cliente'}\n📌 TAREA: ${job.description || 'Servicio en Terreno'}\n🚗 VEHÍCULO: ${identifier}\n📍 LUGAR: ${getRouteStr(job)}${getExtraWappTxt(job)}`
-    : `${dateShort}\n${job.client || 'Sin Cliente'}\n${job.brand || '-'} ${job.model || '-'}\n${identifier}\n${getRouteStr(job)}${getExtraWappTxt(job)}`; 
+    : `${dateShort}\n${job.client || 'Sin Cliente'}\n${carInfo}\n${identifier}\n${getRouteStr(job)}${getExtraWappTxt(job)}`; 
   
   if (job.status === 'failed') {
-    text = `❌ TRASLADO FALLIDO\nMotivo: ${job.failedReason || 'No especificada'}\n\n${text}`;
+    text = `❌ TRASLADO FALLIDO\nMotivo: ${job.failedReason || 'No especificada'}\n ${text}`;
   } else if (job.tripType === 'revision') {
     if (job.checklist?.rtStatus === 'aprobado') {
-       text = `✅ APROBADO (LEGAL)\n\n${text}`;
+       text = `✅ APROBADO (LEGAL)\n ${text}`;
     } else if (job.checklist?.rtStatus === 'aprobado_ayuda') {
-       text = `🤝 APROBADO (CON AYUDA)\n\n${text}`;
+       text = `🤝 APROBADO (CON AYUDA)\n ${text}`;
     }
   }
   return text;
