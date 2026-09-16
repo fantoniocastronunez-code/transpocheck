@@ -942,17 +942,37 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     const dateStr = getDStr(job);
     const dateShort = dateStr.substring(0, 5);
     const jobPlate = getJobIdentifier(job);
-    const text = generateWhatsAppText(job, dateShort, jobPlate);
+    
+    // FIX iOS Clipboard: Replace \n with \r\n globally before copying
+    const text = generateWhatsAppText(job, dateShort, jobPlate).replace(/\n/g, '\r\n');
 
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    textArea.style.position = "fixed";
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    try { document.execCommand('copy'); showAlert("✅ Formato copiado al portapapeles. Listo para pegar en WhatsApp."); } catch (err) { showAlert("Tu navegador bloqueó el copiado automático."); }
-    document.body.removeChild(textArea);
-    setMenuOpenId(null);
+    const copyToClipboard = async () => {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+          showAlert("✅ Formato copiado al portapapeles. Listo para pegar en WhatsApp.");
+        } else {
+          throw new Error("fallback");
+        }
+      } catch (err) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try { 
+          document.execCommand('copy'); 
+          showAlert("✅ Formato copiado al portapapeles. Listo para pegar en WhatsApp."); 
+        } catch (e) { 
+          showAlert("Tu navegador bloqueó el copiado automático."); 
+        }
+        document.body.removeChild(textArea);
+      }
+      setMenuOpenId(null);
+    };
+
+    copyToClipboard();
   };
   const cpyWapp = handleCopyWhatsApp;
 
@@ -985,7 +1005,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       const cleanPlate = getJobIdentifier(job);
 
       const fileName = generateStandardFileName(job, dateStrForFile, cleanPlate);
-      const textToShare = generateWhatsAppText(job, dateShort, cleanPlate);
+      let textToShare = generateWhatsAppText(job, dateShort, cleanPlate);
+
+      // FIX iOS Clipboard: Replace \n with \r\n globally before copying to clipboard
+      // Esto previene que iPhone/iOS quite los saltos de línea al pegar en WhatsApp.
+      textToShare = textToShare.replace(/\n/g, '\r\n');
 
       // Copiamos el texto al portapapeles de inmediato, por si cualquier cosa falla después
       try {
@@ -993,7 +1017,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           await navigator.clipboard.writeText(textToShare);
         } else {
           const textArea = document.createElement("textarea");
-          textArea.value = textToShare.replace(/\n/g, '\r\n');
+          textArea.value = textToShare;
           textArea.style.position = "fixed";
           document.body.appendChild(textArea);
           textArea.focus();
