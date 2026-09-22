@@ -166,6 +166,11 @@ export const getExtraWappTxt = (j) => {
       if (gases > 0) t += `\nGases: ${new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(gases)}`;
     }
   }
+
+  if (j.tripType === 'revision' && j.rtData?.tipoB === 'inspeccion' && j.rtData?.motivoInspeccion) {
+    t += `\nINSPECCIÓN VISUAL: ${j.rtData.motivoInspeccion}`;
+  }
+
   return t;
 };
 

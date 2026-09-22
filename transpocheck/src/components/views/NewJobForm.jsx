@@ -89,6 +89,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   const [revA_inspeccion, setRevA_inspeccion] = useState(jobToEdit?.rtData?.inspeccion ?? (draft?.revA_inspeccion || false));
   const [revA_frenos, setRevA_frenos] = useState(jobToEdit?.rtData?.frenos ?? (draft?.revA_frenos || false));
   const [revB_tipo, setRevB_tipo] = useState(jobToEdit?.rtData?.tipoB || (draft?.revB_tipo || 'completa'));
+  const [revB_motivo, setRevB_motivo] = useState(jobToEdit?.rtData?.motivoInspeccion || (draft?.revB_motivo || ''));
   const [selectedDriversUI, setSelectedDriversUI] = useState(() => jobToEdit?.assignedEmails ? drivers.filter(d => jobToEdit.assignedEmails.includes(d.email)).map(d => d.id) : (draft?.selectedDriversUI || []));
   const [spotDriverEmail, setSpotDriverEmail] = useState(jobToEdit?.spotDriverEmail || (draft?.spotDriverEmail || '')); // NUEVO: Correo conductor externo
   
@@ -105,12 +106,12 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
       const currentDraft = {
         selectedClient, manualClient, isPintura, qtyPintura, isGrabado, qtyGrabado, associatedJobId,
         brand, model, plate, vin, multiVehicles, tripType, vehicleType, isUrgent, isChassisCab,
-        revType, revModalidad, revA_gases, revA_revision, revA_inspeccion, revA_frenos, revB_tipo,
+        revType, revModalidad, revA_gases, revA_revision, revA_inspeccion, revA_frenos, revB_tipo, revB_motivo,
         selectedDriversUI, spotDriverEmail, operationMode, description, waypoints
       };
       localStorage.setItem('app_newJobDraft', JSON.stringify(currentDraft));
     }
-  }, [selectedClient, manualClient, isPintura, qtyPintura, isGrabado, qtyGrabado, associatedJobId, brand, model, plate, vin, multiVehicles, tripType, vehicleType, isUrgent, revType, revModalidad, revA_gases, revA_revision, revA_inspeccion, revA_frenos, revB_tipo, selectedDriversUI, spotDriverEmail, operationMode, description, waypoints, jobToEdit]);
+  }, [selectedClient, manualClient, isPintura, qtyPintura, isGrabado, qtyGrabado, associatedJobId, brand, model, plate, vin, multiVehicles, tripType, vehicleType, isUrgent, revType, revModalidad, revA_gases, revA_revision, revA_inspeccion, revA_frenos, revB_tipo, revB_motivo, selectedDriversUI, spotDriverEmail, operationMode, description, waypoints, jobToEdit]);
 
   // --- NUEVO: Memoria Muscular Profunda para Tipo de Vehículo ---
   useEffect(() => {
@@ -378,9 +379,10 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
       modalidad: revModalidad, // NUEVO
       gases: revType === 'A' ? revA_gases : (revB_tipo === 'gases'),
       revision: revType === 'A' ? revA_revision : (revB_tipo === 'completa'),
-      inspeccion: revType === 'A' ? revA_inspeccion : false,
+      inspeccion: revType === 'A' ? revA_inspeccion : (revB_tipo === 'inspeccion'),
       frenos: revType === 'A' ? revA_frenos : false,
-      tipoB: revType === 'B' ? revB_tipo : null
+      tipoB: revType === 'B' ? revB_tipo : null,
+      motivoInspeccion: revType === 'B' && revB_tipo === 'inspeccion' ? revB_motivo : null
     } : null;
 
     const finalTripType = operationMode === 'servicio' ? 'simple' : tripType;
@@ -518,6 +520,8 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                                     totalRev += basePriceB;
                                 } else if (revB_tipo === 'gases') {
                                     totalRev += (Number(prices.soloGasesB) || 0);
+                                } else if (revB_tipo === 'inspeccion') {
+                                    totalRev += (Number(prices.inspVisualB) || 0);
                                 }
                             }
                             companyPrice = totalRev;
@@ -738,10 +742,16 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                      </div>
                    )}
                    {revType === 'B' && (
-                     <select value={revB_tipo} onChange={e=>setRevB_tipo(e.target.value)} className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900">
-                       <option value="completa">Revisión Completa</option>
-                       <option value="gases">Sólo Gases</option>
-                     </select>
+                      <div className="space-y-3">
+                        <select value={revB_tipo} onChange={e=>setRevB_tipo(e.target.value)} className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900">
+                          <option value="completa">Revisión Completa</option>
+                          <option value="gases">Sólo Gases</option>
+                          <option value="inspeccion">Inspección Visual</option>
+                        </select>
+                        {revB_tipo === 'inspeccion' && (
+                           <input type="text" placeholder="Motivo de la Inspección Visual" value={revB_motivo} onChange={e=>setRevB_motivo(e.target.value)} className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900" />
+                        )}
+                      </div>
                    )}
                 </div>
               )}
