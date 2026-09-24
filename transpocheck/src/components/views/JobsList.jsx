@@ -21,7 +21,7 @@ import HistoryModal from './JobsList/HistoryModal';
 import KovacsModal from './JobsList/KovacsModal';
 import TrackingModal from './JobsList/TrackingModal';
 import ArrivalModal from './JobsList/ArrivalModal';
-import { formatDateDisplay, analyzeJobStatus, generateStandardFileName, generateWhatsAppText, getRouteStr, resizeImage } from '../../utils/helpers';
+import { formatDateDisplay, analyzeJobStatus, generateStandardFileName, generateWhatsAppText, getRouteStr, resizeImage, resizeAndWatermarkImage } from '../../utils/helpers';
 
 export default function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, onNewJob, db, currentUserEmail, showAlert, showConfirm, allClientsList, onLoadMore, vehicles }) {
   const [menuOpenId, setMenuOpenId] = useState(null);
@@ -91,27 +91,42 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [arrivalPromptJob, setArrivalPromptJob] = useState(null);
   const [arrivalMileage, setArrivalMileage] = useState('');
   const [arrivalPhoto, setArrivalPhoto] = useState(null);
+  const [arrivalFuelPhoto, setArrivalFuelPhoto] = useState(null);\n  const [arrivalFuelPhotoLocation, setArrivalFuelPhotoLocation] = useState(null);
   const [arrivalKeyLocation, setArrivalKeyLocation] = useState('');
   const [arrivalKeyHandedTo, setArrivalKeyHandedTo] = useState('');
   const [cameraConfig, setCameraConfig] = useState({ isOpen: false, title: '', target: null });
 
-  const submitArrival = async (isSkip = false) => {
-    if (typeof isSkip !== 'boolean') isSkip = false;
-    setProcessingId('general-arrival');
+  const submitArrival = async () => {
+    
     try {
+      if (!arrivalFuelPhoto) {
+        showAlert("Debe adjuntar la foto del medidor de combustible de forma obligatoria.");
+        setProcessingId(null);
+        return;
+      }
+      const clientName = arrivalPromptJob?.clientName?.toUpperCase() || '';
+      const isGrandleasingMileageRequired = clientName === 'GRANDLEASING LAS TORRES' || clientName === 'GRANDLEASING UMAÑA' || clientName === 'GRANDLEASING USADOS';
+      if (isGrandleasingMileageRequired && (!arrivalMileage || arrivalMileage.trim() === '')) {
+        showAlert("Debe ingresar el kilometraje de forma obligatoria para este cliente.");
+        setProcessingId(null);
+        return;
+      }
+    
       const currentDraft = arrivalPromptJob.draft?.formData || {};
       const currentPhotos = currentDraft.photos || {};
 
       const updatedDraft = {
         ...currentDraft,
-        mileage: isSkip ? '' : (arrivalMileage || ''),
-        keyLocation: isSkip ? '' : (arrivalKeyLocation || ''),
-        keyHandedTo: isSkip ? '' : ((arrivalKeyLocation === 'mano' ? arrivalKeyHandedTo : ''))
+        mileage: arrivalMileage || '',
+        keyLocation: arrivalKeyLocation || '',
+        keyHandedTo: arrivalKeyLocation === 'mano' ? arrivalKeyHandedTo : ''
       };
 
-      if (!isSkip && arrivalPhoto) {
+      if (arrivalPhoto) {
         updatedDraft.photos = { ...currentPhotos, odometer: arrivalPhoto };
       }
+      updatedDraft.photos = updatedDraft.photos || {};
+      updatedDraft.photos.fuelGauge = arrivalFuelPhoto;\n      if (arrivalFuelPhotoLocation) updatedDraft.photos.fuelGaugeLocation = arrivalFuelPhotoLocation;
 
       await updateDoc(doc(db, 'transport_jobs', arrivalPromptJob.id), {
         'draft.formData': updatedDraft
@@ -125,6 +140,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       setArrivalPromptJob(null);
       setArrivalMileage('');
       setArrivalPhoto(null);
+      setArrivalFuelPhoto(null);\n      setArrivalFuelPhotoLocation(null);
       setArrivalKeyLocation('');
       setArrivalKeyHandedTo('');
     } catch (e) {
@@ -943,8 +959,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     const dateShort = dateStr.substring(0, 5);
     const jobPlate = getJobIdentifier(job);
     
-    // FIX iOS Clipboard: Replace \n with \r\n globally before copying
-    const text = generateWhatsAppText(job, dateShort, jobPlate).replace(/\n/g, '\r\n');
+    // FIX iOS Clipboard: Replace 
+ with \r
+ globally before copying
+    const text = generateWhatsAppText(job, dateShort, jobPlate).replace(/
+/g, '\r
+');
 
     const copyToClipboard = async () => {
       try {
@@ -1007,9 +1027,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       const fileName = generateStandardFileName(job, dateStrForFile, cleanPlate);
       let textToShare = generateWhatsAppText(job, dateShort, cleanPlate);
 
-      // FIX iOS Clipboard: Replace \n with \r\n globally before copying to clipboard
+      // FIX iOS Clipboard: Replace 
+ with \r
+ globally before copying to clipboard
       // Esto previene que iPhone/iOS quite los saltos de línea al pegar en WhatsApp.
-      textToShare = textToShare.replace(/\n/g, '\r\n');
+      textToShare = textToShare.replace(/
+/g, '\r
+');
 
       // Copiamos el texto al portapapeles de inmediato, por si cualquier cosa falla después
       try {
@@ -2561,6 +2585,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         setArrivalMileage={setArrivalMileage}
         arrivalPhoto={arrivalPhoto}
         setArrivalPhoto={setArrivalPhoto}
+        arrivalFuelPhoto={arrivalFuelPhoto}
+        setArrivalFuelPhoto={setArrivalFuelPhoto}
         arrivalKeyLocation={arrivalKeyLocation}
         setArrivalKeyLocation={setArrivalKeyLocation}
         arrivalKeyHandedTo={arrivalKeyHandedTo}
@@ -2580,6 +2606,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             try {
               const compressed = await resizeImage(file, 1200, 0.6);
               setArrivalPhoto(compressed);
+            } catch (e) { showAlert("Error procesando foto."); }
+          } else if (cameraConfig.target === 'arrivalFuelPhoto') {
+            try {
+              const compressed = await resizeAndWatermarkImage(file, 1200, 0.6);
+              setArrivalFuelPhoto(compressed);
             } catch (e) { showAlert("Error procesando foto."); }
           }
         }}

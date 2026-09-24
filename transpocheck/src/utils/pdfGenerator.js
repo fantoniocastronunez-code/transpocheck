@@ -280,7 +280,7 @@ export const buildPDFDoc = async (job, isPublic = false, drivers = []) => {
     if (preloadedOtherPhotos.length > 0) {
       const labels = job.tripType === 'simple' 
          ? { det1: 'Evidencia 1', det2: 'Evidencia 2', det3: 'Evidencia 3', det4: 'Evidencia 4', det5: 'Evidencia 5', det6: 'Evidencia 6', det7: 'Evidencia 7', det8: 'Evidencia 8', det9: 'Evidencia 9', det10: 'Evidencia 10' }
-         : { left: 'Lat. Piloto', right: 'Lat. Copiloto', left_cab: 'Lat. Cabina Piloto', left_body: 'Lat. Carroc. Piloto', right_cab: 'Lat. Cabina Copiloto', right_body: 'Lat. Carroc. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', interior_front: 'Int. Adelante', interior_back: 'Int. Atras', odometer: 'Odómetro', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4', det5: 'Detalle 5', det6: 'Detalle 6', det7: 'Detalle 7', det8: 'Detalle 8' };
+         : { left: 'Lat. Piloto', right: 'Lat. Copiloto', left_cab: 'Lat. Cabina Piloto', left_body: 'Lat. Carroc. Piloto', right_cab: 'Lat. Cabina Copiloto', right_body: 'Lat. Carroc. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', interior_front: 'Int. Adelante', interior_back: 'Int. Atras', odometer: 'Odómetro', fuelGauge: 'Med. Combustible', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4', det5: 'Detalle 5', det6: 'Detalle 6', det7: 'Detalle 7', det8: 'Detalle 8' };
       
       let photoY = 46; let currentCol = 1; let addedPage = false; 
       const detailPins = job.checklist?.detailPins || [];
@@ -342,7 +342,7 @@ export const buildPDFDoc = async (job, isPublic = false, drivers = []) => {
           
           docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S'); docPDF.setFillColor(...lightBg); docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F'); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor); docPDF.text((labels[key] || fallbackLabel).toUpperCase(), finalX + (imgW/2), photoY - 3, { align: "center" });
           try { docPDF.addImage(base64Img, 'JPEG', finalX, photoY + 2, imgW, imgH); } catch(e) { docPDF.addImage(base64Img, 'PNG', finalX, photoY + 2, imgW, imgH); }
-          if (typeof photos[key] === 'string' && photos[key].startsWith('http')) { docPDF.link(finalX, photoY + 2, imgW, imgH, { url: photos[key] }); }
+          if (key === 'fuelGauge' && photos.fuelGaugeLocation) { docPDF.setTextColor(0, 102, 204); docPDF.setFontSize(8); docPDF.text('Ver Mapa', finalX + (imgW/2), photoY + imgH + 5, { align: 'center' }); docPDF.link(finalX, photoY + 2, imgW, imgH + 5, { url: `https://maps.google.com/?q=${photos.fuelGaugeLocation.lat},${photos.fuelGaugeLocation.lng}` }); } else if (typeof photos[key] === 'string' && photos[key].startsWith('http')) { docPDF.link(finalX, photoY + 2, imgW, imgH, { url: photos[key] }); }
           
           if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 20; } 
         } catch (err) { console.error("Error al incrustar la foto:", key, err); } 

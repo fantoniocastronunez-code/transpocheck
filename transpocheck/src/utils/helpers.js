@@ -18,7 +18,65 @@ export const getVehicleIdentifierLabel = (val) => {
   return `Patente: ${cleanVal || 'S/N'}`;
 };
 
-export const resizeImage = (file, maxWidth = 1920, quality = 0.85) => {
+
+export const resizeAndWatermarkImage = (file, maxWidth = 1920, quality = 0.85) => {
+  return new Promise((resolve, reject) => {
+    const applyWatermark = (lat, lng) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const dateStr = new Date().toLocaleString('es-CL');
+          const locStr = lat ? `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}` : 'Ubicación no disponible';
+          
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+          const padding = 20;
+          const fontSize = Math.max(16, Math.floor(width / 35));
+          ctx.fillRect(0, height - (fontSize * 3 + padding), width, fontSize * 3 + padding);
+
+          ctx.fillStyle = '#FFD700';
+          ctx.font = `bold ${fontSize}px sans-serif`;
+          ctx.textAlign = 'left';
+          ctx.fillText(`FECHA: ${dateStr}`, padding, height - padding - fontSize * 1.5);
+          ctx.fillText(`GPS: ${locStr}`, padding, height - padding);
+
+          resolve({ base64: canvas.toDataURL('image/jpeg', quality), lat, lng });
+        };
+        img.onerror = (err) => reject(err);
+      };
+      reader.onerror = (err) => reject(err);
+    };
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          applyWatermark(position.coords.latitude, position.coords.longitude);
+        },
+        (error) => {
+          applyWatermark(null, null);
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      );
+    } else {
+      applyWatermark(null, null);
+    }
+  });
+};
+\nexport const resizeImage = (file, maxWidth = 1920, quality = 0.85) => {
   return new Promise((resolve, reject) => {
     // 1. Método de Respaldo Clásico (Por si es un iPhone/Safari muy antiguo)
     const runFallback = () => {
