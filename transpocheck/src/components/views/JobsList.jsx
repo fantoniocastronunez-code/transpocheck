@@ -91,7 +91,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [arrivalPromptJob, setArrivalPromptJob] = useState(null);
   const [arrivalMileage, setArrivalMileage] = useState('');
   const [arrivalPhoto, setArrivalPhoto] = useState(null);
-  const [arrivalFuelPhoto, setArrivalFuelPhoto] = useState(null);\n  const [arrivalFuelPhotoLocation, setArrivalFuelPhotoLocation] = useState(null);
+  const [arrivalFuelPhoto, setArrivalFuelPhoto] = useState(null);
+  const [arrivalFuelPhotoLocation, setArrivalFuelPhotoLocation] = useState(null);
   const [arrivalKeyLocation, setArrivalKeyLocation] = useState('');
   const [arrivalKeyHandedTo, setArrivalKeyHandedTo] = useState('');
   const [cameraConfig, setCameraConfig] = useState({ isOpen: false, title: '', target: null });
@@ -126,7 +127,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         updatedDraft.photos = { ...currentPhotos, odometer: arrivalPhoto };
       }
       updatedDraft.photos = updatedDraft.photos || {};
-      updatedDraft.photos.fuelGauge = arrivalFuelPhoto;\n      if (arrivalFuelPhotoLocation) updatedDraft.photos.fuelGaugeLocation = arrivalFuelPhotoLocation;
+      updatedDraft.photos.fuelGauge = arrivalFuelPhoto;
+      if (arrivalFuelPhotoLocation) updatedDraft.photos.fuelGaugeLocation = arrivalFuelPhotoLocation;
 
       await updateDoc(doc(db, 'transport_jobs', arrivalPromptJob.id), {
         'draft.formData': updatedDraft
@@ -140,7 +142,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       setArrivalPromptJob(null);
       setArrivalMileage('');
       setArrivalPhoto(null);
-      setArrivalFuelPhoto(null);\n      setArrivalFuelPhotoLocation(null);
+      setArrivalFuelPhoto(null);
+      setArrivalFuelPhotoLocation(null);
       setArrivalKeyLocation('');
       setArrivalKeyHandedTo('');
     } catch (e) {
@@ -959,12 +962,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     const dateShort = dateStr.substring(0, 5);
     const jobPlate = getJobIdentifier(job);
     
-    // FIX iOS Clipboard: Replace 
- with \r
- globally before copying
-    const text = generateWhatsAppText(job, dateShort, jobPlate).replace(/
-/g, '\r
-');
+    // FIX iOS Clipboard: Replace \n with \r\n globally before copying
+    const text = generateWhatsAppText(job, dateShort, jobPlate).replace(/\n/g, '\r\n');
 
     const copyToClipboard = async () => {
       try {
@@ -1027,13 +1026,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       const fileName = generateStandardFileName(job, dateStrForFile, cleanPlate);
       let textToShare = generateWhatsAppText(job, dateShort, cleanPlate);
 
-      // FIX iOS Clipboard: Replace 
- with \r
- globally before copying to clipboard
+      // FIX iOS Clipboard: Replace \n with \r\n globally before copying to clipboard
       // Esto previene que iPhone/iOS quite los saltos de línea al pegar en WhatsApp.
-      textToShare = textToShare.replace(/
-/g, '\r
-');
+      textToShare = textToShare.replace(/\n/g, '\r\n');
 
       // Copiamos el texto al portapapeles de inmediato, por si cualquier cosa falla después
       try {
