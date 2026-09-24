@@ -1,2 +1,109 @@
 @import "tailwindcss";
 @variant dark (&:where(.dark, .dark *));
+
+/* === TRANSPOCHECK PREMIUM DARK MODE & GLASSMORPHISM === */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --neon-green: #22c55e;
+  --neon-green-glow: rgba(34, 197, 94, 0.4);
+  --neon-blue: #0ea5e9;
+  --neon-blue-glow: rgba(14, 165, 233, 0.4);
+  --dark-slate: #0f172a;
+  --glass-bg: rgba(30, 41, 59, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif !important;
+  background-color: var(--dark-slate) !important;
+  background-image: radial-gradient(circle at top right, rgba(14, 165, 233, 0.1), transparent 400px), 
+                    radial-gradient(circle at bottom left, rgba(34, 197, 94, 0.05), transparent 400px);
+  color: #f8fafc !important;
+  min-height: 100vh;
+}
+
+/* 1. Glassmorphism para Tarjetas y Contenedores */
+/* Sobrescribimos fondos blancos o claros por defecto para forzar el modo oscuro en componentes de Tailwind */
+.bg-white, .bg-slate-50, .bg-gray-50, .bg-slate-100 {
+  background-color: var(--glass-bg) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3) !important;
+  color: #f1f5f9 !important;
+}
+
+/* Bordes más redondeados y suaves */
+.rounded-lg, .rounded-xl, .rounded-md, .rounded-2xl {
+  border-radius: 1.25rem !important;
+}
+
+/* 2. Sobrescribir los textos oscuros */
+.text-gray-900, .text-gray-800, .text-slate-900, .text-slate-800 {
+  color: #ffffff !important;
+}
+.text-gray-700, .text-gray-600, .text-gray-500, .text-slate-700, .text-slate-600, .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+/* 3. Acentos de Neón (Verde y Azul) */
+/* Botones primarios (azules) */
+.bg-blue-600, .bg-blue-500, .bg-indigo-600, .bg-indigo-500 {
+  background-color: var(--neon-blue) !important;
+  box-shadow: 0 0 15px var(--neon-blue-glow) !important;
+  border: none !important;
+  color: white !important;
+  transition: all 0.3s ease;
+}
+.bg-blue-600:hover, .bg-blue-500:hover {
+  box-shadow: 0 0 25px var(--neon-blue-glow) !important;
+  transform: translateY(-1px);
+}
+.text-blue-600, .text-blue-500 {
+  color: var(--neon-blue) !important;
+  text-shadow: 0 0 8px var(--neon-blue-glow);
+}
+
+/* Botones de éxito (verdes) */
+.bg-green-600, .bg-green-500 {
+  background-color: var(--neon-green) !important;
+  box-shadow: 0 0 15px var(--neon-green-glow) !important;
+  border: none !important;
+  color: white !important;
+  transition: all 0.3s ease;
+}
+.bg-green-600:hover, .bg-green-500:hover {
+  box-shadow: 0 0 25px var(--neon-green-glow) !important;
+  transform: translateY(-1px);
+}
+.text-green-600, .text-green-500 {
+  color: var(--neon-green) !important;
+  text-shadow: 0 0 8px var(--neon-green-glow);
+}
+
+/* 4. Inputs y Formularios */
+input, select, textarea {
+  background-color: rgba(15, 23, 42, 0.6) !important;
+  color: white !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 0.75rem !important;
+  padding: 0.5rem 1rem !important;
+  transition: all 0.3s ease;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--neon-blue) !important;
+  box-shadow: 0 0 10px var(--neon-blue-glow) !important;
+  outline: none !important;
+}
+
+/* 5. Ajustes de bordes (Bottom Navs, Headers, Dividers) */
+.border-gray-200, .border-slate-200, .border-t, .border-b, hr {
+  border-color: var(--glass-border) !important;
+}
+
+/* 6. Modales oscuros */
+.fixed.inset-0.bg-black\/50, .bg-slate-900\/80 {
+  background-color: rgba(2, 6, 23, 0.8) !important;
+  backdrop-filter: blur(8px) !important;
+}
