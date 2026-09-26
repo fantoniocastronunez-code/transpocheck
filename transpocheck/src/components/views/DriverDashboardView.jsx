@@ -23,7 +23,7 @@ export default function DriverDashboardView({ myDriver, jobs, expenses, drivers,
   const currentMonthName = MONTH_NAMES[now.getMonth()];
   const currentYear = now.getFullYear();
 
-  const checklistScore = useMemo(() => calculateDriverChecklistScore(jobs, currentUserEmail), [jobs, currentUserEmail]);
+  const checklistScore = useMemo(() => calculateDriverChecklistScore(jobs, currentUserEmail, drivers), [jobs, currentUserEmail, drivers]);
 
   const stats = useMemo(() => {
     const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();

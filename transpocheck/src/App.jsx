@@ -983,7 +983,7 @@ function LogisticApp() {
                 ) : (
                   <div className="space-y-6">
                     {(() => {
-                       const sc = calculateDriverChecklistScore(jobs, currentUserEmail);
+                       const sc = calculateDriverChecklistScore(jobs, currentUserEmail, drivers);
                        if (sc.totalJobs > 0) {
                           return (
                              <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-4 rounded-2xl shadow-lg flex items-center justify-between border border-slate-700">

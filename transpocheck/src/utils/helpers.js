@@ -256,16 +256,21 @@ export const generateWhatsAppText = (job, dateShort, identifier) => {
   return text;
 };
 
-export const calculateDriverChecklistScore = (jobs, driverEmail) => {
+export const calculateDriverChecklistScore = (jobs, driverEmail, drivers = []) => {
   const completedJobs = jobs.filter(j => (j.status === 'completed' || j.phase === 'completed') && j.acceptedByEmail === driverEmail);
   
-  if (completedJobs.length === 0) return { score: 0, grade: '1.0', tips: ['No hay suficientes trabajos para evaluar.'], totalJobs: 0 };
+  if (completedJobs.length === 0) return { score: 0, grade: '1.0/10', tips: ['No hay suficientes trabajos para evaluar.'], totalJobs: 0 };
+  
+  const driverName = drivers.find(d => d.email === driverEmail)?.name || driverEmail;
   
   let totalFields = 0;
   let fieldsFilled = 0;
   
   let missingPhotos = 0;
   let missingSignatures = 0;
+  
+  let selfSignaturesCount = 0;
+  let fastTransfersCount = 0;
   
   completedJobs.forEach(job => {
     const cl = job.checklist || {};
@@ -291,15 +296,55 @@ export const calculateDriverChecklistScore = (jobs, driverEmail) => {
        totalFields++;
        if (cl.receiverName && cl.receiverName.trim().length > 2) fieldsFilled++;
        else missingSignatures++;
+       
+       // Penalización 1: Firmar con su propio nombre
+       if (cl.receiverName && driverName) {
+          const rName = cl.receiverName.toLowerCase().trim();
+          const dName = driverName.toLowerCase().trim();
+          const isSelf = rName.length > 3 && dName.length > 3 && (rName.includes(dName.split(' ')[0]) || dName.includes(rName.split(' ')[0]));
+          if (isSelf) selfSignaturesCount++;
+       }
+    }
+    
+    // Penalización 2: Traslados extremadamente cortos (< 5 minutos)
+    const startMs = job.arrivedPickupAt || (job.timestamps && job.timestamps.arrivedPickupAt) || job.acceptedAt;
+    const endMs = job.completedAt || (job.timestamps && job.timestamps.completedAt) || job.lastUpdatedAt;
+    
+    if (startMs && endMs) {
+       const diffMins = (endMs - startMs) / (1000 * 60);
+       if (diffMins > 0 && diffMins < 5) {
+          fastTransfersCount++;
+       }
     }
   });
   
   const completionPercentage = totalFields > 0 ? (fieldsFilled / totalFields) : 0;
-  // Escala X/10
-  const scoreValue = completionPercentage * 10;
+  
+  // Escala inicial X/10 (basada puramente en completitud)
+  let scoreValue = completionPercentage * 10;
+  
+  // Aplicar penalizaciones
+  // Resta hasta 3.0 puntos en total si siempre firman ellos mismos
+  if (completedJobs.length > 0) {
+      scoreValue -= (selfSignaturesCount / completedJobs.length) * 3;
+      // Resta hasta 4.0 puntos en total si siempre hacen trabajos irrealmente rápidos
+      scoreValue -= (fastTransfersCount / completedJobs.length) * 4;
+  }
+  
+  // Limitar entre 1.0 y 10.0
+  scoreValue = Math.max(1.0, Math.min(10.0, scoreValue));
   const grade = `${scoreValue.toFixed(1)}/10`;
   
   const tips = [];
+  
+  // Priorizar tips de malas prácticas primero
+  if (selfSignaturesCount > 0) {
+      tips.push('PENALIZACIÓN: No debes firmar con tu propio nombre en la recepción.');
+  }
+  if (fastTransfersCount > 0) {
+      tips.push('PENALIZACIÓN: Se detectaron tiempos de traslado irreales (< 5 min).');
+  }
+  
   if (completionPercentage < 0.95) {
      if (missingPhotos >= missingSignatures) {
         tips.push('Toma más fotos del vehículo (frente, interior, daños).');
