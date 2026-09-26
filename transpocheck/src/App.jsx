@@ -17,6 +17,7 @@ import LicensePlateBadge from './components/ui/LicensePlateBadge';
 import VehicleShapeIcon from './components/ui/VehicleShapeIcon';
 import SwipeButton from './components/ui/SwipeButton';
 import WaitTimerBadge from './components/ui/WaitTimerBadge';
+import { DevMenu } from './components/ui/DevMenu';
 import { DEFAULT_CLIENTES, LICENCIAS, formatMoney, formatDateDisplay, resizeImage } from './utils/helpers';
 
 // MAGIA ANTI-CHUNK ERROR: Función que intercepta los fallos de carga en Vercel y recarga la página limpiamente
@@ -1504,6 +1505,7 @@ function LogisticApp() {
         </div>
       )}
 
+      <DevMenu />
     </div>
   );
 }
