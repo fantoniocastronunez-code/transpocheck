@@ -3,6 +3,7 @@ import {
   CheckCircle, AlertTriangle, Clock, FileText, Calendar, 
   UserX, Trophy, ShieldAlert, Navigation, Car, AlertCircle
 } from 'lucide-react';
+import { calculateDriverChecklistScore } from '../../utils/helpers';
 
 export default function ChecklistAnalyticsView({ jobs, drivers, currentUserEmail, activeRole }) {
   const analytics = useMemo(() => {
@@ -141,6 +142,16 @@ export default function ChecklistAnalyticsView({ jobs, drivers, currentUserEmail
       driverArr,
       suspiciousJobs: driverArr.flatMap(d => d.fastTransferDetails.map(j => ({ ...j, driverName: d.name })))
     };
+  }, [jobs, drivers]);
+  
+  const allDriversNotes = useMemo(() => {
+     return drivers.filter(d => !d.isHidden).map(d => {
+        const result = calculateDriverChecklistScore(jobs, d.email, drivers);
+        return {
+           name: d.name || d.email,
+           ...result
+        };
+     }).filter(d => d.totalJobs > 0).sort((a, b) => b.score - a.score);
   }, [jobs, drivers]);
 
   if (activeRole !== 'admin') {
@@ -305,6 +316,37 @@ export default function ChecklistAnalyticsView({ jobs, drivers, currentUserEmail
                      </div>
                   ) : (
                      <p className="text-xs font-bold text-emerald-600">No se detectaron traslados sospechosamente rápidos.</p>
+                  )}
+               </div>
+            </div>
+
+            <h3 className="text-lg font-black text-slate-800 dark:text-slate-200 pt-6 border-b border-slate-100 dark:border-slate-800 pb-2">Tabla de Calificaciones</h3>
+            
+            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
+               <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {allDriversNotes.map((d, i) => (
+                     <div key={i} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <div>
+                           <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-black text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">#{i + 1}</span>
+                              <h4 className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-200">{d.name}</h4>
+                           </div>
+                           <p className="text-[10px] sm:text-xs font-bold text-slate-500 mt-1">{d.totalJobs} {d.totalJobs === 1 ? 'trabajo evaluado' : 'trabajos evaluados'}</p>
+                        </div>
+                        <div className="flex items-center gap-4 shrink-0">
+                           <div className="hidden sm:block text-right">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{d.score === 100 ? 'Perfecto' : Math.round(d.score) + '%'}</p>
+                           </div>
+                           <div className={`text-xl sm:text-2xl font-black bg-slate-50 dark:bg-slate-800/50 px-3 py-1 rounded-xl border border-slate-100 dark:border-slate-800 ${parseFloat(d.grade) >= 8.5 ? 'text-emerald-500' : parseFloat(d.grade) >= 6.0 ? 'text-amber-500' : 'text-red-500'}`}>
+                              {d.grade}
+                           </div>
+                        </div>
+                     </div>
+                  ))}
+                  {allDriversNotes.length === 0 && (
+                     <div className="p-8 text-center">
+                        <p className="text-sm font-bold text-slate-500">No hay conductores evaluados aún.</p>
+                     </div>
                   )}
                </div>
             </div>

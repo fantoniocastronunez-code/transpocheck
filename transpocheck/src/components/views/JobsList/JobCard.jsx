@@ -118,11 +118,13 @@ const renderVehicle = (vType, wheelClass, wheelFill, isChassisCab) => {
     );
 };
 
-const StatusAnimation = ({ type, vehicleType, isChassisCab, origin, destination }) => {
+const StatusAnimation = ({ type, vehicleType, isChassisCab, origin, destination, assignedDrivers = [] }) => {
   switch (type) {
     case 'searching':
+      const driversToDisplay = assignedDrivers && assignedDrivers.length > 0 ? assignedDrivers.slice(0, 3) : [{}, {}, {}];
+      
       return (
-        <svg viewBox="0 0 300 60" className="w-full h-12 my-2">
+        <svg viewBox="0 0 300 70" className="w-full h-14 my-2">
           <defs>
             <style>{`
               @keyframes searchAnim {
@@ -133,14 +135,24 @@ const StatusAnimation = ({ type, vehicleType, isChassisCab, origin, destination 
             `}</style>
           </defs>
           <g fill="currentColor" className="text-slate-300 dark:text-slate-600">
-            <circle cx="50" cy="30" r="10" />
-            <path d="M40 55 C 40 40, 60 40, 60 55 Z" />
-            <circle cx="150" cy="30" r="10" />
-            <path d="M140 55 C 140 40, 160 40, 160 55 Z" />
-            <circle cx="250" cy="30" r="10" />
-            <path d="M240 55 C 240 40, 260 40, 260 55 Z" />
+             {driversToDisplay.map((d, idx) => {
+                const cx = 50 + (idx * 100);
+                return (
+                   <React.Fragment key={idx}>
+                      <circle cx={cx} cy="25" r="10" />
+                      <path d={`M${cx-10} 50 C ${cx-10} 35, ${cx+10} 35, ${cx+10} 50 Z`} />
+                      {d.name && (
+                         <foreignObject x={cx - 45} y="52" width="90" height="18">
+                           <div xmlns="http://www.w3.org/1999/xhtml" className="w-full text-center">
+                             <span className="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase truncate block px-1 leading-tight">{d.name.split(' ')[0]}</span>
+                           </div>
+                         </foreignObject>
+                      )}
+                   </React.Fragment>
+                );
+             })}
           </g>
-          <g className="lupa" transform="translate(10, 10)">
+          <g className="lupa" transform="translate(10, 5)">
             <circle cx="20" cy="20" r="15" fill="none" stroke="#3B82F6" strokeWidth="4" />
             <line x1="30" y1="30" x2="45" y2="45" stroke="#3B82F6" strokeWidth="6" strokeLinecap="round" />
           </g>
@@ -217,21 +229,21 @@ const StatusAnimation = ({ type, vehicleType, isChassisCab, origin, destination 
               .streetDash { animation: dashAnim 0.5s linear infinite; }
             `}</style>
           </defs>
-          <foreignObject x="0" y="12" width="75" height="38">
+          <foreignObject x="0" y="8" width="90" height="42">
              <div xmlns="http://www.w3.org/1999/xhtml" className="flex flex-col items-center w-full h-full">
-               <div className="bg-slate-700 dark:bg-slate-600 w-full rounded-md px-1 py-1 border-b-[3px] border-slate-900 dark:border-slate-800 shadow-sm flex items-center justify-center shrink-0">
-                 <span className="text-[8px] text-white font-black uppercase truncate leading-tight w-full text-center">{origin ? origin.split(',')[0] : 'Origen'}</span>
+               <div className="bg-slate-700 dark:bg-slate-600 w-full rounded-md px-1.5 py-1.5 border-b-[3px] border-slate-900 dark:border-slate-800 shadow-sm flex items-center justify-center shrink-0">
+                 <span className="text-[10px] text-white font-black uppercase truncate leading-tight w-full text-center">{origin ? origin.split(',')[0] : 'Origen'}</span>
                </div>
-               <div className="w-2 flex-1 bg-slate-400 dark:bg-slate-500 rounded-b-sm"></div>
+               <div className="w-2.5 flex-1 bg-slate-400 dark:bg-slate-500 rounded-b-sm"></div>
              </div>
           </foreignObject>
 
-          <foreignObject x="225" y="12" width="75" height="38">
+          <foreignObject x="210" y="8" width="90" height="42">
              <div xmlns="http://www.w3.org/1999/xhtml" className="flex flex-col items-center w-full h-full">
-               <div className="bg-blue-600 dark:bg-blue-700 w-full rounded-md px-1 py-1 border-b-[3px] border-blue-900 dark:border-blue-900 shadow-sm flex items-center justify-center shrink-0">
-                 <span className="text-[8px] text-white font-black uppercase truncate leading-tight w-full text-center">{destination ? destination.split(',')[0] : 'Destino'}</span>
+               <div className="bg-blue-600 dark:bg-blue-700 w-full rounded-md px-1.5 py-1.5 border-b-[3px] border-blue-900 dark:border-blue-900 shadow-sm flex items-center justify-center shrink-0">
+                 <span className="text-[10px] text-white font-black uppercase truncate leading-tight w-full text-center">{destination ? destination.split(',')[0] : 'Destino'}</span>
                </div>
-               <div className="w-2 flex-1 bg-slate-400 dark:bg-slate-500 rounded-b-sm"></div>
+               <div className="w-2.5 flex-1 bg-slate-400 dark:bg-slate-500 rounded-b-sm"></div>
              </div>
           </foreignObject>
 
@@ -746,7 +758,7 @@ export default function JobCard({ j, ...props }) {
              
              return (
                <div className="mb-4 bg-white/40 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-slate-800 pt-1 pb-3 px-3 rounded-xl shadow-sm flex flex-col">
-                 <StatusAnimation type={animationType} vehicleType={j.vehicleType} isChassisCab={j.isChassisCab} origin={j.origin} destination={j.tripType === 'revision' ? getRtFinalDestination(j) : j.destination} />
+                 <StatusAnimation type={animationType} vehicleType={j.vehicleType} isChassisCab={j.isChassisCab} origin={j.origin} destination={j.tripType === 'revision' ? getRtFinalDestination(j) : j.destination} assignedDrivers={j.assignedDrivers} />
                  <div className="flex items-center gap-3 w-full border-t border-white/20 dark:border-slate-800/60 pt-2">
                    <div className={`p-2 rounded-full shrink-0 ${highlight ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-slate-100 dark:bg-slate-800'}`}>
                      {statusIcon}
