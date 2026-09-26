@@ -127,23 +127,25 @@ const ChecklistInner = ({ openCamera }) => {
         updates.prt_reason = formData.rtRejectReason || '';
       }
 
-      const draftData = JSON.parse(JSON.stringify(formData));
-      if (finalLocation) draftData.location = finalLocation;
+      const fullDataForUpload = JSON.parse(JSON.stringify(formData));
+      if (finalLocation) fullDataForUpload.location = finalLocation;
+
+      const draftDataForFirestore = JSON.parse(JSON.stringify(fullDataForUpload));
       
       // Limpiar fotos e imágenes base64 para evitar límite de 1MB en Firestore para el draft
-      for (const key in draftData.photos) {
-        if (typeof draftData.photos[key] === 'string' && !draftData.photos[key].startsWith('http')) {
-          draftData.photos[key] = false;
+      for (const key in draftDataForFirestore.photos) {
+        if (typeof draftDataForFirestore.photos[key] === 'string' && !draftDataForFirestore.photos[key].startsWith('http')) {
+          draftDataForFirestore.photos[key] = false;
         }
       }
       const base64Fields = ['signatureData', 'fuelReceipt', 'scandocPdf', 'guiaDespachoPdf'];
       base64Fields.forEach(field => {
-          if (typeof draftData[field] === 'string' && !draftData[field].startsWith('http')) {
-              draftData[field] = false;
+          if (typeof draftDataForFirestore[field] === 'string' && !draftDataForFirestore[field].startsWith('http')) {
+              draftDataForFirestore[field] = false;
           }
       });
       
-      updates['draft.formData'] = draftData;
+      updates['draft.formData'] = draftDataForFirestore;
       
       await updateDoc(doc(db, 'transport_jobs', job.id), updates);
       
@@ -206,7 +208,7 @@ const ChecklistInner = ({ openCamera }) => {
         // Ejecutar en segundo plano sin await
         (async () => {
           try {
-            const finalData = await syncFilesToStorage(draftData, () => {});
+            const finalData = await syncFilesToStorage(fullDataForUpload, () => {});
             await updateDoc(doc(db, 'transport_jobs', job.id), {
               checklist: finalData,
               status: 'completed',
@@ -223,7 +225,7 @@ const ChecklistInner = ({ openCamera }) => {
         })();
       } else {
         // Fallback sincrónico si no existe el hook de background
-        const finalData = await syncFilesToStorage(draftData, setUploadProgress);
+        const finalData = await syncFilesToStorage(fullDataForUpload, setUploadProgress);
         await updateDoc(doc(db, 'transport_jobs', job.id), {
           checklist: finalData,
           status: 'completed',
