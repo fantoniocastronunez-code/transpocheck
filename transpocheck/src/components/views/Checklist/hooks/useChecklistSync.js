@@ -10,46 +10,72 @@ export const useChecklistSync = ({
   useEffect(() => {
     if (isQuick || !job?.id) return;
     let isFirstLoad = true;
+
+    const handleInitialLoad = async (data) => {
+      let draftData = { ...defaultData };
+      let initialStep = 1;
+      let hasDraft = false;
+
+      // 1. Firebase Draft
+      if (data?.draft) {
+        draftData = { ...draftData, ...data.draft.formData };
+        initialStep = data.draft.step || 1;
+        hasDraft = true;
+      } else if (data?.checklist) {
+        draftData = { ...draftData, ...data.checklist };
+      }
+
+      // 2. Local Draft (para recuperar fotos y firmas no subidas)
+      try {
+        const { getLocalDraft } = await import('../../../../utils/localDrafts.js');
+        const localData = await getLocalDraft(job.id);
+        if (localData && localData.formData) {
+          hasDraft = true;
+          if (localData.step) initialStep = localData.step;
+          for (const key in localData.formData.photos || {}) {
+            if (localData.formData.photos[key]) draftData.photos[key] = localData.formData.photos[key];
+          }
+          const base64Fields = ['signatureData', 'fuelReceipt', 'scandocPdf', 'guiaDespachoPdf'];
+          base64Fields.forEach(field => {
+              if (localData.formData[field]) draftData[field] = localData.formData[field];
+          });
+          
+          const nonBase64Fields = Object.keys(localData.formData).filter(k => k !== 'photos' && !base64Fields.includes(k));
+          nonBase64Fields.forEach(field => {
+            if (localData.formData[field] !== undefined) draftData[field] = localData.formData[field];
+          });
+        }
+      } catch (e) {
+        console.error("Error loading local draft", e);
+      }
+
+      // 3. Overrides from job data
+      if (data?.prt_result) draftData.rtStatus = data.prt_result;
+      if (data?.prt_reason) draftData.rtRejectReason = data.prt_reason;
+      if (data?.checklist?.rtReturnOption) {
+        draftData.rtReturnOption = data.checklist.rtReturnOption;
+        draftData.rtReturnDestination = data.checklist.rtReturnDestination || '';
+      }
+      draftData.vehicleType = data?.checklist?.vehicleType || data?.vehicleType || matchedVehicle?.vehicleType || matchedVehicle?.type || draftData.vehicleType || 'auto';
+
+      if (data?.checklist?.photos) {
+        for (const key in data.checklist.photos) {
+          if (data.checklist.photos[key] && !draftData.photos[key]) {
+            draftData.photos[key] = data.checklist.photos[key];
+          }
+        }
+      }
+
+      setFormData(draftData);
+      if (hasDraft) setStep(initialStep);
+      setIsDraftLoaded(true);
+    };
+
     const unsub = onSnapshot(doc(db, 'transport_jobs', job.id), (docSnap) => {
       const data = docSnap.data();
 
       if (isFirstLoad) {
-        if (data?.draft) {
-          const draftData = { ...defaultData, ...data.draft.formData };
-          if (data.prt_result) draftData.rtStatus = data.prt_result;
-          if (data.prt_reason) draftData.rtRejectReason = data.prt_reason;
-          if (data.checklist?.rtReturnOption) {
-            draftData.rtReturnOption = data.checklist.rtReturnOption;
-            draftData.rtReturnDestination = data.checklist.rtReturnDestination || '';
-          }
-
-          draftData.vehicleType = data.checklist?.vehicleType || data.vehicleType || matchedVehicle?.vehicleType || matchedVehicle?.type || draftData.vehicleType || 'auto';
-
-          if (data.checklist?.photos) {
-            for (const key in data.checklist.photos) {
-              if (data.checklist.photos[key] && !draftData.photos[key]) {
-                draftData.photos[key] = data.checklist.photos[key];
-              }
-            }
-          }
-
-          setFormData(draftData);
-          setStep(data.draft.step || 1);
-          setIsDraftLoaded(true);
-        } else if (data?.checklist) {
-          setFormData(prev => ({
-            ...prev,
-            ...data.checklist,
-            rtStatus: data.prt_result || data.checklist.rtStatus || prev.rtStatus,
-            rtRejectReason: data.prt_reason || data.checklist.rtRejectReason || prev.rtRejectReason
-          }));
-        } else if (data?.prt_result) {
-          setFormData(prev => ({
-            ...prev,
-            rtStatus: data.prt_result,
-            rtRejectReason: data.prt_reason || prev.rtRejectReason
-          }));
-        }
+        handleInitialLoad(data);
         isFirstLoad = false;
       } else {
         if (data?.prt_result) {
@@ -91,30 +117,41 @@ export const useChecklistSync = ({
   // 2. Guardado Automático de Borradores (Drafts)
   useEffect(() => {
     if (isQuick || !job?.id) return;
-    const timer = setTimeout(() => {
-      const draftData = JSON.parse(JSON.stringify(formData));
+    const timer = setTimeout(async () => {
+      const fullDraftData = JSON.parse(JSON.stringify(formData));
+      
+      // Save local draft first with all base64 photos
+      try {
+        const { saveLocalDraft } = await import('../../../../utils/localDrafts.js');
+        await saveLocalDraft(job.id, { step, formData: fullDraftData });
+      } catch (e) {
+        console.error("Error saving local draft", e);
+      }
 
-      for (const key in draftData.photos) {
-        if (typeof draftData.photos[key] === 'string' && !draftData.photos[key].startsWith('http')) {
-          draftData.photos[key] = false;
+      // Prepare for Firebase (strip base64)
+      const fbDraftData = JSON.parse(JSON.stringify(formData));
+
+      for (const key in fbDraftData.photos) {
+        if (typeof fbDraftData.photos[key] === 'string' && !fbDraftData.photos[key].startsWith('http')) {
+          fbDraftData.photos[key] = false;
         }
       }
 
-      // Limpiar otros campos base64 en el borrador
+      // Limpiar otros campos base64 en el borrador de Firestore
       const base64Fields = ['signatureData', 'fuelReceipt', 'scandocPdf', 'guiaDespachoPdf'];
       base64Fields.forEach(field => {
-          if (typeof draftData[field] === 'string' && !draftData[field].startsWith('http')) {
-              draftData[field] = false; 
+          if (typeof fbDraftData[field] === 'string' && !fbDraftData[field].startsWith('http')) {
+              fbDraftData[field] = false; 
           }
       });
 
-      const updates = { draft: { step, formData: draftData } };
+      const updates = { draft: { step, formData: fbDraftData } };
 
       if (job.tripType === 'revision') {
-        updates.prt_result = draftData.rtStatus;
-        updates.prt_reason = draftData.rtRejectReason || '';
+        updates.prt_result = fbDraftData.rtStatus;
+        updates.prt_reason = fbDraftData.rtRejectReason || '';
 
-        if (draftData.rtStatus !== 'pendiente' && job.phase === 'arrived_prt') {
+        if (fbDraftData.rtStatus !== 'pendiente' && job.phase === 'arrived_prt') {
           updates.phase = 'prt_done';
         }
       }
@@ -219,5 +256,12 @@ export const useChecklistSync = ({
     }
   };
 
-  return { syncFilesToStorage, checkIsExpired };
+  const clearLocalDraft = async () => {
+    try {
+      const { deleteLocalDraft } = await import('../../../../utils/localDrafts.js');
+      await deleteLocalDraft(job.id);
+    } catch(e){}
+  };
+
+  return { syncFilesToStorage, checkIsExpired, clearLocalDraft };
 };

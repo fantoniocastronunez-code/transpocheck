@@ -26,9 +26,9 @@ export default function HistoryJobCard({ j, ...props }) {
                  );
              })()}
              {j.tripType === 'simple' ? (
-                <p className="text-sm font-black text-purple-800 dark:text-purple-300 leading-tight break-words mt-1 pr-2">{j.description || 'Servicio en Terreno'}</p>
+                <p className="text-[16px] font-black uppercase text-purple-800 dark:text-purple-200 leading-tight break-words mt-1 pr-2">{j.description || 'Servicio en Terreno'}</p>
              ) : (
-                <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-tight break-words mt-1 pr-2">{j.brand} {j.model}</p>
+                <p className="text-[16px] font-black uppercase text-slate-800 dark:text-slate-100 leading-tight break-words mt-1 pr-2">{j.brand} {j.model}</p>
              )}
           </div>
           <div className="flex flex-col items-end shrink-0 gap-1">
@@ -108,7 +108,7 @@ export default function HistoryJobCard({ j, ...props }) {
         </div>
 
         <div className="mb-3">
-           <p className="text-blue-600 dark:text-blue-400 font-extrabold text-[10px] uppercase tracking-wide truncate">Conductor: <span className="text-slate-700 dark:text-slate-300">{driverName}</span></p>
+           <p className="text-blue-600 dark:text-blue-400 font-extrabold text-[12px] uppercase tracking-wide truncate">Conductor: <span className="text-slate-800 dark:text-white font-black text-[14px]">{driverName}</span></p>
            {isFailed && <p className="text-red-600 dark:text-red-400 text-[10px] mt-0.5 font-bold line-clamp-1">Razón: {j.failedReason}</p>}
         </div>
         

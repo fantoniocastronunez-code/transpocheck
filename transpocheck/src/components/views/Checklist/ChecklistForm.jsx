@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Mic, Loader2, Save } from 'lucide-react';
+import { ArrowLeft, Mic, Loader2, Save, CheckCircle } from 'lucide-react';
 import { ChecklistProvider, useChecklist } from './ChecklistContext';
 import { useChecklistSync } from './hooks/useChecklistSync';
 import { useVoiceAssistant } from './hooks/useVoiceAssistant';
@@ -32,7 +32,7 @@ const ChecklistInner = ({ openCamera }) => {
   const [showFinalModal, setShowFinalModal] = useState(false);
 
   // Instanciar Hooks
-  const { syncFilesToStorage } = useChecklistSync({
+  const { syncFilesToStorage, clearLocalDraft } = useChecklistSync({
     job, isQuick, formData, setFormData, step, setStep, setIsDraftLoaded, 
     defaultData, matchedVehicle, drivers, currentUserEmail, uploadImageToStorage, pushSyncTask, showAlert
   });
@@ -214,6 +214,7 @@ const ChecklistInner = ({ openCamera }) => {
               draft: null // Borrar draft
             });
             await processChecklistExpenses(finalData);
+            if (clearLocalDraft) await clearLocalDraft();
             syncTask.finish();
           } catch (e) {
             console.error("Error en background sync:", e);
@@ -230,6 +231,7 @@ const ChecklistInner = ({ openCamera }) => {
           draft: null // Borrar draft
         });
         await processChecklistExpenses(finalData);
+        if (clearLocalDraft) await clearLocalDraft();
         showAlert("✅ Checklist Guardado Correctamente.");
         onComplete();
       }
@@ -352,75 +354,110 @@ const ChecklistInner = ({ openCamera }) => {
       {/* Overlay de Carga Principal */}
       {showFinalModal && !uploadProgress.active && (
         <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md z-[90] flex flex-col items-center justify-center p-4 sm:p-8 animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-2xl w-full max-w-sm flex flex-col gap-5 relative overflow-hidden">
-            <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest text-center border-b border-slate-100 dark:border-slate-800 pb-3">Datos Finales</h3>
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-2xl w-full max-w-xs flex flex-col gap-4 relative overflow-hidden">
+            <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest text-center border-b border-slate-100 dark:border-slate-800 pb-3">
+              Datos de Entrega
+            </h3>
             
             <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Kilometraje / Odómetro</label>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">
+                  Kilometraje (Obligatorio)
+                </label>
                 <input 
                   type="number" 
                   placeholder="Ej: 154000" 
                   value={formData.mileage || ''} 
                   onChange={e => setFormData(p => ({ ...p, mileage: e.target.value }))}
-                  className="w-full border-2 border-slate-200 dark:border-slate-700 p-3.5 rounded-2xl font-bold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 outline-none focus:border-blue-500 transition-colors"
+                  className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-2xl text-center text-lg font-black text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Foto Odómetro (Opcional)</label>
-                <button 
-                  type="button" 
-                  onClick={() => openCamera('Odómetro', f => {
-                    const reader = new FileReader();
-                    reader.onload = () => setFormData(p => ({ ...p, photos: { ...p.photos, odometer: reader.result } }));
-                    reader.readAsDataURL(f);
-                  })}
-                  className={`w-full h-14 rounded-2xl border-2 flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden transition-all ${formData.photos?.odometer ? 'border-green-400 ring-2 ring-green-100 bg-white dark:bg-slate-900' : 'border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 bg-transparent'}`}
-                >
-                  {formData.photos?.odometer ? (
-                    <>
-                      <img src={formData.photos.odometer} className="absolute inset-0 w-full h-full object-cover opacity-30" />
-                      <span className="text-[10px] font-black text-green-800 dark:text-green-300 relative z-10">Foto OK</span>
-                    </>
-                  ) : (
-                    <span className="text-[10px] font-black text-slate-500 uppercase">Tomar Foto</span>
-                  )}
-                </button>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Ubicación de Llaves</label>
-                <select 
-                  value={formData.keyLocation || ''} 
-                  onChange={e => setFormData(p => ({ ...p, keyLocation: e.target.value }))}
-                  className="w-full border-2 border-slate-200 dark:border-slate-700 p-3.5 rounded-2xl font-bold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 outline-none focus:border-blue-500 transition-colors cursor-pointer"
-                >
-                  <option value="">Seleccione...</option>
-                  <option value="puestas">Puestas en vehículo</option>
-                  <option value="puerta">En la puerta/guantera</option>
-                  <option value="mano">Entregadas en mano</option>
-                  <option value="buzon">Dejadas en buzón</option>
-                </select>
-              </div>
-
-              {formData.keyLocation === 'mano' && (
-                <div className="space-y-2 animate-in slide-in-from-top-1">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">¿A quién?</label>
-                  <input 
-                    type="text" 
-                    placeholder="Nombre de la persona" 
-                    value={formData.keyHandedTo || ''} 
-                    onChange={e => setFormData(p => ({ ...p, keyHandedTo: e.target.value }))}
-                    className="w-full border-2 border-slate-200 dark:border-slate-700 p-3.5 rounded-2xl font-bold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 outline-none focus:border-blue-500 transition-colors"
-                  />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest text-center block">
+                    Foto Kilometraje
+                  </label>
+                  <button 
+                    type="button" 
+                    onClick={() => openCamera('Kilometraje', f => {
+                      const reader = new FileReader();
+                      reader.onload = () => setFormData(p => ({ ...p, photos: { ...p.photos, odometer: reader.result } }));
+                      reader.readAsDataURL(f);
+                    })}
+                    className={`w-full h-16 rounded-2xl border-2 flex items-center justify-center gap-1 cursor-pointer relative overflow-hidden transition-all ${
+                      formData.photos?.odometer 
+                        ? 'border-green-400 ring-2 ring-green-100 bg-white dark:bg-slate-900' 
+                        : 'border-dashed border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 bg-red-50/50 dark:bg-red-900/10'
+                    }`}
+                  >
+                    {formData.photos?.odometer ? (
+                      <>
+                        <img src={formData.photos.odometer} className="absolute inset-0 w-full h-full object-cover opacity-40" />
+                        <span className="text-[10px] font-black text-green-800 dark:text-green-300 relative z-10 flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3" /> OK
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-[9px] font-black text-red-600 dark:text-red-400 uppercase text-center leading-tight">
+                        TOMAR<br/>FOTO
+                      </span>
+                    )}
+                  </button>
                 </div>
-              )}
+
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest text-center block">
+                    Foto Combustible
+                  </label>
+                  <button 
+                    type="button" 
+                    onClick={() => openCamera('Combustible', f => {
+                      const reader = new FileReader();
+                      reader.onload = () => setFormData(p => ({ ...p, photos: { ...p.photos, fuelGauge: reader.result } }));
+                      reader.readAsDataURL(f);
+                    })}
+                    className={`w-full h-16 rounded-2xl border-2 flex items-center justify-center gap-1 cursor-pointer relative overflow-hidden transition-all ${
+                      formData.photos?.fuelGauge 
+                        ? 'border-green-400 ring-2 ring-green-100 bg-white dark:bg-slate-900' 
+                        : 'border-dashed border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 bg-red-50/50 dark:bg-red-900/10'
+                    }`}
+                  >
+                    {formData.photos?.fuelGauge ? (
+                      <>
+                        <img src={formData.photos.fuelGauge} className="absolute inset-0 w-full h-full object-cover opacity-40" />
+                        <span className="text-[10px] font-black text-green-800 dark:text-green-300 relative z-10 flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3" /> OK
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-[9px] font-black text-red-600 dark:text-red-400 uppercase text-center leading-tight">
+                        TOMAR<br/>FOTO
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <div className="flex gap-3 mt-2">
-              <button onClick={() => setShowFinalModal(false)} className="flex-1 py-3.5 rounded-2xl font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Volver</button>
-              <button onClick={handleSubmitFinal} className="flex-[2] py-3.5 rounded-2xl font-black text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-all active:scale-95 flex items-center justify-center gap-2">Confirmar <Save className="w-4 h-4" /></button>
+            <div className="flex gap-2 mt-2">
+              <button 
+                onClick={() => setShowFinalModal(false)} 
+                className="flex-1 py-3.5 rounded-xl font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-xs uppercase tracking-wider"
+              >
+                Volver
+              </button>
+              <button 
+                onClick={() => {
+                  if (!formData.mileage) return showAlert("⚠️ Ingresa el kilometraje final.");
+                  if (!formData.photos?.odometer) return showAlert("⚠️ Toma la foto del kilometraje.");
+                  if (!formData.photos?.fuelGauge) return showAlert("⚠️ Toma la foto del medidor de combustible.");
+                  handleSubmitFinal();
+                }} 
+                className="flex-[2] py-3.5 rounded-xl font-black text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-all active:scale-95 flex items-center justify-center gap-2 text-xs uppercase tracking-wider"
+              >
+                Finalizar
+              </button>
             </div>
           </div>
         </div>
