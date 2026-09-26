@@ -33,12 +33,7 @@ export const DevMenu = () => {
 
   return (
     <>
-      <button 
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-24 right-4 z-[990] bg-slate-900 text-white p-3 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.4)] flex items-center justify-center border-2 border-emerald-500 hover:scale-110 transition-transform active:scale-95"
-      >
-        <Bug className="w-6 h-6 text-emerald-400 animate-pulse" />
-      </button>
+
 
       {isOpen && (
         <div className="fixed inset-0 bg-black/60 z-[991] flex items-end sm:items-center justify-center p-4 backdrop-blur-sm animate-in fade-in">

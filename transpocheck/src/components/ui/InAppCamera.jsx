@@ -454,8 +454,9 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
       
       <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
          <video ref={videoRef} playsInline autoPlay className="w-full h-full object-cover transition-transform duration-300" style={{ transform: `scale(${digitalZoom})` }} />
-         <div className="absolute inset-0 pointer-events-none border-[40px] border-black/40 flex items-center justify-center">
-           <div className={`w-full h-full border-2 border-dashed rounded-xl transition-all duration-500 ${landscapeAngle !== 0 ? 'border-green-400 bg-green-500/10 shadow-[0_0_50px_rgba(34,197,94,0.3)_inset]' : 'border-white/50'}`}></div>
+         
+         <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur-md px-5 py-2.5 rounded-full text-white text-center font-bold text-[13px] shadow-xl border border-white/20 z-40 w-[85%] max-w-xs flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-4">
+           📸 Fotografiar: <span className="text-blue-400 truncate">{title}</span>
          </div>
          
          {landscapeAngle !== 0 && (

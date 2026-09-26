@@ -118,7 +118,22 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
       if (permission === "granted") {
         showAlert("⏳ Generando token seguro...");
         if (messaging && user) {
-          const token = await getToken(messaging, { vapidKey: 'BK8z3mxtN3JApx1nw-9cVLzsjp78ufh0qimwqsxJOTnRuMIbQ4HQgYWGkKJ8h9MWPpZYFC3WxbX9Y-jskpIaOHY' });
+          let registration;
+          try {
+            // Utilizamos un scope específico para no interferir con el Service Worker de Vite PWA
+            registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/firebase-cloud-messaging-push-scope' });
+            await navigator.serviceWorker.ready;
+          } catch (err) {
+            console.error('Error registrando Service Worker:', err);
+            showAlert("❌ Error al registrar el Service Worker.");
+            return;
+          }
+          
+          const token = await getToken(messaging, { 
+            vapidKey: 'BK8z3mxtN3JApx1nw-9cVLzsjp78ufh0qimwqsxJOTnRuMIbQ4HQgYWGkKJ8h9MWPpZYFC3WxbX9Y-jskpIaOHY',
+            serviceWorkerRegistration: registration
+          });
+          
           if (token) {
             const driverSnap = driversRef.current.find(d => d.email === user.email);
             if (driverSnap) {
