@@ -4,7 +4,7 @@ import {
   CheckCircle, Star, Navigation, TrendingUp, Shield, 
   AlertTriangle, MapPin, Zap, Award, Route, Fuel, User
 } from 'lucide-react';
-import { formatMoney } from '../../utils/helpers';
+import { formatMoney, calculateDriverChecklistScore } from '../../utils/helpers';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 
 const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -22,6 +22,8 @@ export default function DriverDashboardView({ myDriver, jobs, expenses, drivers,
   const now = new Date();
   const currentMonthName = MONTH_NAMES[now.getMonth()];
   const currentYear = now.getFullYear();
+
+  const checklistScore = useMemo(() => calculateDriverChecklistScore(jobs, currentUserEmail), [jobs, currentUserEmail]);
 
   const stats = useMemo(() => {
     const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
@@ -209,6 +211,51 @@ export default function DriverDashboardView({ myDriver, jobs, expenses, drivers,
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════ */}
+      {/* SECCIÓN 1.5: NOTA DE CALIDAD DE CHECKLIST              */}
+      {/* ═══════════════════════════════════════════════════════ */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-100 dark:border-slate-800 mb-6 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 dark:bg-purple-500/10 rounded-full blur-2xl -translate-y-16 translate-x-16" />
+        
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
+           <div>
+              <div className="flex items-center gap-2 mb-2">
+                 <Shield className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                 <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">Calidad de Trabajo</h3>
+              </div>
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 max-w-sm">Evaluación basada en qué tan completos dejas tus reportes fotográficos y firmas en la app.</p>
+           </div>
+           
+           <div className="flex items-center gap-4 shrink-0 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 w-full sm:w-auto">
+              <div className="flex-1 sm:flex-none">
+                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Tu Nota</span>
+                 <p className={`text-4xl font-black ${parseFloat(checklistScore.grade) >= 6.0 ? 'text-emerald-500' : parseFloat(checklistScore.grade) >= 4.0 ? 'text-amber-500' : 'text-red-500'}`}>
+                    {checklistScore.grade}
+                 </p>
+              </div>
+              <div className="w-px h-12 bg-slate-200 dark:bg-slate-700 mx-2"></div>
+              <div className="flex-1 sm:flex-none">
+                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Completitud</span>
+                 <p className="text-xl font-black text-slate-700 dark:text-slate-300">
+                    {Math.round(checklistScore.score)}%
+                 </p>
+              </div>
+           </div>
+        </div>
+        
+        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 relative z-10">
+           <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1"><Zap className="w-3 h-3 text-amber-500"/> ¿Qué te falta para mejorar?</h4>
+           <ul className="space-y-1.5">
+             {checklistScore.tips.map((tip, idx) => (
+                <li key={idx} className="flex items-start gap-2">
+                   <div className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 shrink-0"></div>
+                   <p className="text-xs font-bold text-slate-600 dark:text-slate-300 leading-snug">{tip}</p>
+                </li>
+             ))}
+           </ul>
         </div>
       </div>
 

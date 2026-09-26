@@ -118,7 +118,7 @@ const renderVehicle = (vType, wheelClass, wheelFill, isChassisCab) => {
     );
 };
 
-const StatusAnimation = ({ type, vehicleType, isChassisCab }) => {
+const StatusAnimation = ({ type, vehicleType, isChassisCab, origin, destination }) => {
   switch (type) {
     case 'searching':
       return (
@@ -217,6 +217,24 @@ const StatusAnimation = ({ type, vehicleType, isChassisCab }) => {
               .streetDash { animation: dashAnim 0.5s linear infinite; }
             `}</style>
           </defs>
+          <foreignObject x="10" y="12" width="80" height="38">
+             <div xmlns="http://www.w3.org/1999/xhtml" className="flex flex-col items-center w-full h-full">
+               <div className="bg-slate-700 dark:bg-slate-600 w-full rounded-md px-1 py-1 border-b-[3px] border-slate-900 dark:border-slate-800 shadow-sm flex items-center justify-center shrink-0">
+                 <span className="text-[8px] text-white font-black uppercase truncate leading-tight w-full text-center">{origin ? origin.split(',')[0] : 'Origen'}</span>
+               </div>
+               <div className="w-2 flex-1 bg-slate-400 dark:bg-slate-500 rounded-b-sm"></div>
+             </div>
+          </foreignObject>
+
+          <foreignObject x="210" y="12" width="80" height="38">
+             <div xmlns="http://www.w3.org/1999/xhtml" className="flex flex-col items-center w-full h-full">
+               <div className="bg-blue-600 dark:bg-blue-700 w-full rounded-md px-1 py-1 border-b-[3px] border-blue-900 dark:border-blue-900 shadow-sm flex items-center justify-center shrink-0">
+                 <span className="text-[8px] text-white font-black uppercase truncate leading-tight w-full text-center">{destination ? destination.split(',')[0] : 'Destino'}</span>
+               </div>
+               <div className="w-2 flex-1 bg-slate-400 dark:bg-slate-500 rounded-b-sm"></div>
+             </div>
+          </foreignObject>
+
           <g stroke="currentColor" className="text-slate-300 dark:text-slate-600" strokeWidth="2" strokeDasharray="10 10">
             <line x1="0" y1="50" x2="320" y2="50" className="streetDash" />
           </g>
@@ -728,7 +746,7 @@ export default function JobCard({ j, ...props }) {
              
              return (
                <div className="mb-4 bg-white/40 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-slate-800 pt-1 pb-3 px-3 rounded-xl shadow-sm flex flex-col">
-                 <StatusAnimation type={animationType} vehicleType={j.vehicleType} isChassisCab={j.isChassisCab} />
+                 <StatusAnimation type={animationType} vehicleType={j.vehicleType} isChassisCab={j.isChassisCab} origin={j.origin} destination={j.tripType === 'revision' ? getRtFinalDestination(j) : j.destination} />
                  <div className="flex items-center gap-3 w-full border-t border-white/20 dark:border-slate-800/60 pt-2">
                    <div className={`p-2 rounded-full shrink-0 ${highlight ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-slate-100 dark:bg-slate-800'}`}>
                      {statusIcon}

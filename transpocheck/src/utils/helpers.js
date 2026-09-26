@@ -255,3 +255,81 @@ export const generateWhatsAppText = (job, dateShort, identifier) => {
   }
   return text;
 };
+
+export const calculateDriverChecklistScore = (jobs, driverEmail) => {
+  const completedJobs = jobs.filter(j => (j.status === 'completed' || j.phase === 'completed') && j.acceptedByEmail === driverEmail);
+  
+  if (completedJobs.length === 0) return { score: 0, grade: '1.0', tips: ['No hay suficientes trabajos para evaluar.'], totalJobs: 0 };
+  
+  let totalFields = 0;
+  let fieldsFilled = 0;
+  
+  let missingPhotos = 0;
+  let missingDocs = 0;
+  let missingSignatures = 0;
+  let missingExpiry = 0;
+  
+  completedJobs.forEach(job => {
+    const cl = job.checklist || {};
+    
+    // Check photos
+    if (cl.photos) {
+       Object.values(cl.photos).forEach(photo => {
+          totalFields++;
+          if (typeof photo === 'string' && photo.length > 50) fieldsFilled++;
+          else missingPhotos++;
+       });
+    }
+    
+    // docsPhotos
+    if (cl.docsPhotos) {
+       Object.values(cl.docsPhotos).forEach(photo => {
+          totalFields++;
+          if (typeof photo === 'string' && photo.length > 50) fieldsFilled++;
+          else missingDocs++;
+       });
+    }
+    
+    // signature
+    totalFields++;
+    if (cl.signature) fieldsFilled++;
+    else missingSignatures++;
+    
+    totalFields++;
+    if (cl.receiverName) fieldsFilled++;
+    else missingSignatures++;
+    
+    // Expiry dates
+    if (cl.docsExpiry) {
+       Object.values(cl.docsExpiry).forEach(date => {
+          totalFields++;
+          if (date) fieldsFilled++;
+          else missingExpiry++;
+       });
+    }
+  });
+  
+  const completionPercentage = totalFields > 0 ? (fieldsFilled / totalFields) : 0;
+  // Convertir porcentaje a nota de 1.0 a 7.0 (Escala chilena)
+  const scoreValue = (completionPercentage * 6) + 1;
+  const grade = scoreValue.toFixed(1);
+  
+  const tips = [];
+  if (completionPercentage < 0.95) {
+     if (missingPhotos >= missingDocs && missingPhotos >= missingSignatures) {
+        tips.push('Toma más fotos del vehículo (frente, interior, daños).');
+     } else if (missingDocs >= missingPhotos && missingDocs >= missingSignatures) {
+        tips.push('Sube fotos nítidas de los documentos (padrón, revisión).');
+     } else if (missingSignatures > 0) {
+        tips.push('Asegúrate de pedir siempre la firma y nombre de quien recibe.');
+     } else if (missingExpiry > 0) {
+        tips.push('Ingresa siempre las fechas de vencimiento de documentos.');
+     } else {
+        tips.push('Completa todos los campos del formulario antes de cerrar.');
+     }
+  } else {
+     tips.push('¡Excelente trabajo! Sigue así.');
+  }
+  
+  return { score: completionPercentage * 100, grade, tips, totalJobs: completedJobs.length };
+};

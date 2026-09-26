@@ -18,7 +18,7 @@ import VehicleShapeIcon from './components/ui/VehicleShapeIcon';
 import SwipeButton from './components/ui/SwipeButton';
 import WaitTimerBadge from './components/ui/WaitTimerBadge';
 import { DevMenu } from './components/ui/DevMenu';
-import { DEFAULT_CLIENTES, LICENCIAS, formatMoney, formatDateDisplay, resizeImage } from './utils/helpers';
+import { DEFAULT_CLIENTES, LICENCIAS, formatMoney, formatDateDisplay, resizeImage, calculateDriverChecklistScore } from './utils/helpers';
 
 // MAGIA ANTI-CHUNK ERROR: Función que intercepta los fallos de carga en Vercel y recarga la página limpiamente
 const lazyWithRetry = (componentImport) =>
@@ -91,6 +91,7 @@ const VehicleHistoryView = lazyWithRetry(() => import('./components/views/Vehicl
 const StatsView = lazyWithRetry(() => import('./components/views/StatsView'));
 const DriverDashboardView = lazyWithRetry(() => import('./components/views/DriverDashboardView'));
 const ActivityView = lazyWithRetry(() => import('./components/views/ActivityView'));
+const ChecklistAnalyticsView = lazyWithRetry(() => import('./components/views/ChecklistAnalyticsView'));
 
 // EL NUEVO MOTOR (Hook)
 import { auth, db, googleProvider, uploadImageToStorage, useFirebase } from './hooks/useFirebase';
@@ -981,6 +982,26 @@ function LogisticApp() {
                   </>
                 ) : (
                   <div className="space-y-6">
+                    {(() => {
+                       const sc = calculateDriverChecklistScore(jobs, currentUserEmail);
+                       if (sc.totalJobs > 0) {
+                          return (
+                             <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-4 rounded-2xl shadow-lg flex items-center justify-between border border-slate-700">
+                                <div className="flex items-center gap-3">
+                                   <div className={`w-12 h-12 shrink-0 rounded-xl flex items-center justify-center text-xl font-black border ${parseFloat(sc.grade) >= 6.0 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : parseFloat(sc.grade) >= 4.0 ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}`}>
+                                      {sc.grade}
+                                   </div>
+                                   <div className="min-w-0">
+                                      <p className="text-sm font-black text-white">Calidad de Trabajo</p>
+                                      <p className="text-[10px] font-bold text-slate-400 leading-snug truncate sm:whitespace-normal">{sc.tips[0]}</p>
+                                   </div>
+                                </div>
+                                <ShieldCheck className="w-8 h-8 shrink-0 text-slate-600 opacity-50 hidden sm:block" />
+                             </div>
+                          );
+                       }
+                       return null;
+                    })()}
                     <h2 className="text-2xl font-extrabold text-slate-800 dark:text-slate-200">Mis Trabajos Asignados</h2>
                     <JobsList 
                        jobs={jobs} drivers={drivers} vehicles={vehicles} role="driver" 
@@ -997,7 +1018,7 @@ function LogisticApp() {
             {mainTab === 'ranking' && <LeaderboardView jobs={jobs} drivers={drivers} isAdminView={activeRole === 'admin'} db={db} />}
             {mainTab === 'expenses' && <ExpensesView role={activeRole} drivers={drivers} jobs={jobs} expenses={expenses} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />}
             {mainTab === 'profile' && <DriverDashboardView myDriver={myDriver} jobs={jobs} expenses={expenses} drivers={drivers} currentUserEmail={currentUserEmail} />}
-            {mainTab === 'quotes' && <ActivityView jobs={jobs} drivers={drivers} expenses={expenses} currentUserEmail={currentUserEmail} activeRole={activeRole} />}
+            {mainTab === 'quotes' && <ChecklistAnalyticsView jobs={jobs} drivers={drivers} currentUserEmail={currentUserEmail} activeRole={activeRole} />}
             
             {mainTab === 'inbox' && (
                <main className="max-w-2xl mx-auto p-4 pt-20 sm:pt-24 pb-32 animate-in fade-in duration-300">
@@ -1143,15 +1164,15 @@ function LogisticApp() {
             <nav className="fixed bottom-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-around items-center pt-2 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
               {activeRole === 'quoter' ? (
                 <button onClick={() => setMainTab('quotes')} className="flex flex-col items-center text-purple-600 dark:text-purple-400 transition-colors flex-1">
-                   <div className="bg-purple-100 dark:bg-purple-900/40 p-2 rounded-xl mb-1"><Activity className="w-5 h-5"/></div>
-                   <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Bitácora</span>
+                   <div className="bg-purple-100 dark:bg-purple-900/40 p-2 rounded-xl mb-1"><ShieldCheck className="w-5 h-5"/></div>
+                   <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Análisis</span>
                 </button>
               ) : (
                 <>
                   {activeRole === 'admin' ? (
                     <button onClick={() => setMainTab('quotes')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='quotes' ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:text-purple-400 dark:hover:text-purple-400'}`}>
-                       <div className={`${mainTab==='quotes' ? 'bg-purple-100 dark:bg-purple-900/40' : 'bg-slate-100 dark:bg-slate-800'} p-2 rounded-xl mb-1`}><Activity className="w-5 h-5"/></div>
-                       <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Bitácora</span>
+                       <div className={`${mainTab==='quotes' ? 'bg-purple-100 dark:bg-purple-900/40' : 'bg-slate-100 dark:bg-slate-800'} p-2 rounded-xl mb-1`}><ShieldCheck className="w-5 h-5"/></div>
+                       <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Análisis</span>
                     </button>
                   ) : (
                     <button onClick={() => setShowRequestJob('traslado')} className="flex flex-col items-center text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-400 transition-colors flex-1">
