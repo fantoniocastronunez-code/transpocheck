@@ -217,7 +217,7 @@ const StatusAnimation = ({ type, vehicleType, isChassisCab, origin, destination 
               .streetDash { animation: dashAnim 0.5s linear infinite; }
             `}</style>
           </defs>
-          <foreignObject x="10" y="12" width="80" height="38">
+          <foreignObject x="0" y="12" width="75" height="38">
              <div xmlns="http://www.w3.org/1999/xhtml" className="flex flex-col items-center w-full h-full">
                <div className="bg-slate-700 dark:bg-slate-600 w-full rounded-md px-1 py-1 border-b-[3px] border-slate-900 dark:border-slate-800 shadow-sm flex items-center justify-center shrink-0">
                  <span className="text-[8px] text-white font-black uppercase truncate leading-tight w-full text-center">{origin ? origin.split(',')[0] : 'Origen'}</span>
@@ -226,7 +226,7 @@ const StatusAnimation = ({ type, vehicleType, isChassisCab, origin, destination 
              </div>
           </foreignObject>
 
-          <foreignObject x="210" y="12" width="80" height="38">
+          <foreignObject x="225" y="12" width="75" height="38">
              <div xmlns="http://www.w3.org/1999/xhtml" className="flex flex-col items-center w-full h-full">
                <div className="bg-blue-600 dark:bg-blue-700 w-full rounded-md px-1 py-1 border-b-[3px] border-blue-900 dark:border-blue-900 shadow-sm flex items-center justify-center shrink-0">
                  <span className="text-[8px] text-white font-black uppercase truncate leading-tight w-full text-center">{destination ? destination.split(',')[0] : 'Destino'}</span>

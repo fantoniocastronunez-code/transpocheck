@@ -272,23 +272,27 @@ export const calculateDriverChecklistScore = (jobs, driverEmail) => {
   completedJobs.forEach(job => {
     const cl = job.checklist || {};
     
-    // Check photos
+    // Check photos - Flexible: Maximo 4 fotos necesarias para tener puntaje perfecto
+    let vehiclePhotos = 0;
     if (cl.photos) {
        Object.values(cl.photos).forEach(photo => {
-          totalFields++;
-          if (typeof photo === 'string' && photo.length > 50) fieldsFilled++;
-          else missingPhotos++;
+          if (typeof photo === 'string' && photo.length > 50) vehiclePhotos++;
        });
     }
+    totalFields += 4;
+    fieldsFilled += Math.min(4, vehiclePhotos);
+    if (vehiclePhotos < 4) missingPhotos += (4 - vehiclePhotos);
     
-    // docsPhotos
+    // docsPhotos - Flexible: Maximo 2 documentos necesarios
+    let docPhotos = 0;
     if (cl.docsPhotos) {
        Object.values(cl.docsPhotos).forEach(photo => {
-          totalFields++;
-          if (typeof photo === 'string' && photo.length > 50) fieldsFilled++;
-          else missingDocs++;
+          if (typeof photo === 'string' && photo.length > 50) docPhotos++;
        });
     }
+    totalFields += 2;
+    fieldsFilled += Math.min(2, docPhotos);
+    if (docPhotos < 2) missingDocs += (2 - docPhotos);
     
     // signature
     totalFields++;
@@ -296,23 +300,28 @@ export const calculateDriverChecklistScore = (jobs, driverEmail) => {
     else missingSignatures++;
     
     totalFields++;
-    if (cl.receiverName) fieldsFilled++;
+    if (cl.receiverName && cl.receiverName.trim().length > 2) fieldsFilled++;
     else missingSignatures++;
     
-    // Expiry dates
+    // Expiry dates - Flexible: Maximo 1 fecha de vencimiento requerida para puntaje
     if (cl.docsExpiry) {
+       let filledDates = 0;
+       const dateKeys = Object.keys(cl.docsExpiry);
        Object.values(cl.docsExpiry).forEach(date => {
-          totalFields++;
-          if (date) fieldsFilled++;
-          else missingExpiry++;
+          if (date) filledDates++;
        });
+       if (dateKeys.length > 0) {
+          totalFields += 1;
+          fieldsFilled += Math.min(1, filledDates);
+          if (filledDates === 0) missingExpiry++;
+       }
     }
   });
   
   const completionPercentage = totalFields > 0 ? (fieldsFilled / totalFields) : 0;
-  // Convertir porcentaje a nota de 1.0 a 7.0 (Escala chilena)
-  const scoreValue = (completionPercentage * 6) + 1;
-  const grade = scoreValue.toFixed(1);
+  // Escala X/10
+  const scoreValue = completionPercentage * 10;
+  const grade = `${scoreValue.toFixed(1)}/10`;
   
   const tips = [];
   if (completionPercentage < 0.95) {

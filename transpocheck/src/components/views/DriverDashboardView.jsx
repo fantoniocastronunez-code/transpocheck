@@ -232,7 +232,7 @@ export default function DriverDashboardView({ myDriver, jobs, expenses, drivers,
            <div className="flex items-center gap-4 shrink-0 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 w-full sm:w-auto">
               <div className="flex-1 sm:flex-none">
                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Tu Nota</span>
-                 <p className={`text-4xl font-black ${parseFloat(checklistScore.grade) >= 6.0 ? 'text-emerald-500' : parseFloat(checklistScore.grade) >= 4.0 ? 'text-amber-500' : 'text-red-500'}`}>
+                 <p className={`text-4xl font-black ${parseFloat(checklistScore.grade) >= 8.5 ? 'text-emerald-500' : parseFloat(checklistScore.grade) >= 6.0 ? 'text-amber-500' : 'text-red-500'}`}>
                     {checklistScore.grade}
                  </p>
               </div>

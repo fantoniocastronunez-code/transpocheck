@@ -988,7 +988,7 @@ function LogisticApp() {
                           return (
                              <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-4 rounded-2xl shadow-lg flex items-center justify-between border border-slate-700">
                                 <div className="flex items-center gap-3">
-                                   <div className={`w-12 h-12 shrink-0 rounded-xl flex items-center justify-center text-xl font-black border ${parseFloat(sc.grade) >= 6.0 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : parseFloat(sc.grade) >= 4.0 ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}`}>
+                                   <div className={`w-14 h-14 shrink-0 rounded-xl flex items-center justify-center text-[18px] sm:text-xl font-black border ${parseFloat(sc.grade) >= 8.5 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : parseFloat(sc.grade) >= 6.0 ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}`}>
                                       {sc.grade}
                                    </div>
                                    <div className="min-w-0">
