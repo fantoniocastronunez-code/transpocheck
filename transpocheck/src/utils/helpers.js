@@ -265,9 +265,7 @@ export const calculateDriverChecklistScore = (jobs, driverEmail) => {
   let fieldsFilled = 0;
   
   let missingPhotos = 0;
-  let missingDocs = 0;
   let missingSignatures = 0;
-  let missingExpiry = 0;
   
   completedJobs.forEach(job => {
     const cl = job.checklist || {};
@@ -283,38 +281,16 @@ export const calculateDriverChecklistScore = (jobs, driverEmail) => {
     fieldsFilled += Math.min(4, vehiclePhotos);
     if (vehiclePhotos < 4) missingPhotos += (4 - vehiclePhotos);
     
-    // docsPhotos - Flexible: Maximo 2 documentos necesarios
-    let docPhotos = 0;
-    if (cl.docsPhotos) {
-       Object.values(cl.docsPhotos).forEach(photo => {
-          if (typeof photo === 'string' && photo.length > 50) docPhotos++;
-       });
-    }
-    totalFields += 2;
-    fieldsFilled += Math.min(2, docPhotos);
-    if (docPhotos < 2) missingDocs += (2 - docPhotos);
-    
     // signature
-    totalFields++;
-    if (cl.signature) fieldsFilled++;
-    else missingSignatures++;
-    
-    totalFields++;
-    if (cl.receiverName && cl.receiverName.trim().length > 2) fieldsFilled++;
-    else missingSignatures++;
-    
-    // Expiry dates - Flexible: Maximo 1 fecha de vencimiento requerida para puntaje
-    if (cl.docsExpiry) {
-       let filledDates = 0;
-       const dateKeys = Object.keys(cl.docsExpiry);
-       Object.values(cl.docsExpiry).forEach(date => {
-          if (date) filledDates++;
-       });
-       if (dateKeys.length > 0) {
-          totalFields += 1;
-          fieldsFilled += Math.min(1, filledDates);
-          if (filledDates === 0) missingExpiry++;
-       }
+    // Require signature unless the job is a failed revision
+    if (job.status !== 'failed') {
+       totalFields++;
+       if (cl.signature) fieldsFilled++;
+       else missingSignatures++;
+       
+       totalFields++;
+       if (cl.receiverName && cl.receiverName.trim().length > 2) fieldsFilled++;
+       else missingSignatures++;
     }
   });
   
@@ -325,16 +301,12 @@ export const calculateDriverChecklistScore = (jobs, driverEmail) => {
   
   const tips = [];
   if (completionPercentage < 0.95) {
-     if (missingPhotos >= missingDocs && missingPhotos >= missingSignatures) {
+     if (missingPhotos >= missingSignatures) {
         tips.push('Toma más fotos del vehículo (frente, interior, daños).');
-     } else if (missingDocs >= missingPhotos && missingDocs >= missingSignatures) {
-        tips.push('Sube fotos nítidas de los documentos (padrón, revisión).');
      } else if (missingSignatures > 0) {
         tips.push('Asegúrate de pedir siempre la firma y nombre de quien recibe.');
-     } else if (missingExpiry > 0) {
-        tips.push('Ingresa siempre las fechas de vencimiento de documentos.');
      } else {
-        tips.push('Completa todos los campos del formulario antes de cerrar.');
+        tips.push('Completa todos los datos requeridos antes de finalizar el trabajo.');
      }
   } else {
      tips.push('¡Excelente trabajo! Sigue así.');
