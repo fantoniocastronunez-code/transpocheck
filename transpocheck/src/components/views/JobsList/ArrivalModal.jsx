@@ -20,10 +20,7 @@ export default function ArrivalModal({
 }) {
   if (!arrivalPromptJob) return null;
 
-  const clientName = arrivalPromptJob?.clientName?.toUpperCase() || '';
-  const isGrandleasingMileageRequired = clientName === 'GRANDLEASING LAS TORRES' || clientName === 'GRANDLEASING UMAÑA' || clientName === 'GRANDLEASING USADOS';
-
-
+  const isServiceJob = arrivalPromptJob?.tripType === 'simple';
   return (
     <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4 overflow-y-auto">
       <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-xl flex flex-col animate-in zoom-in-95 border-t-8 my-auto border-purple-500">
@@ -34,9 +31,10 @@ export default function ArrivalModal({
           <button onClick={() => setArrivalPromptJob(null)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"><X className="w-4 h-4" /></button>
         </div>
 
-        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">Por favor, registra el nivel de combustible (Obligatorio){isGrandleasingMileageRequired ? ' y el kilometraje final (Obligatorio)' : ''} y la ubicación de las llaves del vehículo (opcional).</p>
+        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">Por favor, registra {!isServiceJob ? 'el nivel de combustible y el kilometraje (Obligatorios), y ' : ''}la ubicación de las llaves del vehículo (opcional).</p>
 
         <div className="space-y-4 mb-6">
+          {!isServiceJob && (
           <div>
             <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-slate-400">Medidor de Combustible (Obligatorio)</label>
             <div className="flex items-center gap-2 mt-1 mb-4">
@@ -61,9 +59,7 @@ export default function ArrivalModal({
               </div>
             )}
 
-            {isGrandleasingMileageRequired && (
-              <>
-                <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-slate-400">Kilometraje de Término (Obligatorio)</label>
+                <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-slate-400 mt-4 block">Kilometraje de Término (Obligatorio)</label>
                 <div className="flex items-center gap-2 mt-1">
                   <input type="number" value={arrivalMileage} onChange={e => setArrivalMileage(e.target.value)} placeholder="Ej: 45250" className="w-[130px] shrink-0 border-2 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl font-bold text-slate-700 dark:text-slate-300 outline-none shadow-sm border-slate-200 dark:border-slate-700 focus:border-purple-400" />
                   <button
@@ -86,9 +82,8 @@ export default function ArrivalModal({
                     </button>
                   </div>
                 )}
-              </>
-            )}
           </div>
+          )}
 
           <div>
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">¿Dónde dejaste las llaves?</label>

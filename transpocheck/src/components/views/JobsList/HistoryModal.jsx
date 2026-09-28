@@ -70,6 +70,10 @@ export default function HistoryModal({
                   <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Odómetro Reportado</p>
                   <p className="text-sm font-black text-slate-800 dark:text-slate-200">{selectedHistoryJob.checklist?.mileage || 'No registrado'}</p>
                 </div>
+                <div>
+                  <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Combustible</p>
+                  <p className="text-sm font-black text-slate-800 dark:text-slate-200">{selectedHistoryJob.checklist?.fuelLevel !== undefined ? `${selectedHistoryJob.checklist.fuelLevel}%` : 'No registrado'}</p>
+                </div>
                 {selectedHistoryJob.checklist?.keyLocation && (
                 <div className="col-span-2">
                   <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Ubicación de Llaves</p>

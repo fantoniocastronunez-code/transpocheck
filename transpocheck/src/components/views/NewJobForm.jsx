@@ -456,6 +456,8 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
           jobData.originContactPhone = matchedOrigin.contactPhone;
           jobData.originAddress = matchedOrigin.address || '';
           jobData.originCommune = matchedOrigin.commune || '';
+       } else {
+          try { addDoc(collection(db, 'directory'), { placeName: jobData.origin.trim().toUpperCase(), contactName: jobData.origin.trim().toUpperCase(), isAutoSaved: true }); } catch(e){}
        }
     }
 
@@ -468,6 +470,8 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
           jobData.destContactPhone = matchedDest.contactPhone;
           jobData.destAddress = matchedDest.address || '';
           jobData.destCommune = matchedDest.commune || '';
+       } else {
+          try { addDoc(collection(db, 'directory'), { placeName: jobData.destination.trim().toUpperCase(), contactName: jobData.destination.trim().toUpperCase(), isAutoSaved: true }); } catch(e){}
        }
     }
 

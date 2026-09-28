@@ -101,20 +101,23 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const submitArrival = async () => {
     
     try {
-      if (!arrivalFuelPhoto) {
-        showAlert("Debe adjuntar la foto del medidor de combustible de forma obligatoria.");
-        setProcessingId(null);
-        return;
-      }
-      if (!arrivalMileage || arrivalMileage.trim() === '') {
-        showAlert("Debe ingresar el kilometraje de forma obligatoria.");
-        setProcessingId(null);
-        return;
-      }
-      if (!arrivalPhoto) {
-        showAlert("Debe adjuntar la foto del odómetro de forma obligatoria.");
-        setProcessingId(null);
-        return;
+      const isServiceJob = arrivalPromptJob?.tripType === 'simple';
+      if (!isServiceJob) {
+        if (!arrivalFuelPhoto) {
+          showAlert("Debe adjuntar la foto del medidor de combustible de forma obligatoria.");
+          setProcessingId(null);
+          return;
+        }
+        if (!arrivalMileage || arrivalMileage.trim() === '') {
+          showAlert("Debe ingresar el kilometraje de forma obligatoria.");
+          setProcessingId(null);
+          return;
+        }
+        if (!arrivalPhoto) {
+          showAlert("Debe adjuntar la foto del odómetro de forma obligatoria.");
+          setProcessingId(null);
+          return;
+        }
       }
     
       setProcessingId('general-arrival');
@@ -177,6 +180,18 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     };
     if (db) loadDirectory();
   }, [db]);
+
+  const saveNewDestinationToMemory = async (dest) => {
+    if (!dest || !dest.trim()) return;
+    const cleanDest = dest.trim().toUpperCase();
+    const exists = directoryMemory.some(d => d.placeName && d.placeName.trim().toUpperCase() === cleanDest);
+    if (!exists) {
+      try {
+        await addDoc(collection(db, 'directory'), { placeName: cleanDest, contactName: cleanDest, isAutoSaved: true });
+        setDirectoryMemory(prev => [...prev, { placeName: cleanDest, contactName: cleanDest }]);
+      } catch (e) { console.error("Error auto-guardando destino:", e); }
+    }
+  };
   // ------------------------------------------------------------
 
   // --- NUEVO: Motor Anti-Lag (Debounce) para el Buscador ---
@@ -763,6 +778,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       } else if (dupMode === 'continue') {
         origin = dupPromptJob.tripType === 'revision' ? 'Planta PRT' : (dupPromptJob.destination || dupPromptJob.origin);
         destination = dupDestination.trim();
+        saveNewDestinationToMemory(destination);
       }
 
       let assignedDrivers = [];
@@ -1800,6 +1816,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               finalReturnOpt = 'other';
               finalReturnDest = 'PRT (Reintento con Ayuda)';
             }
+            if (finalReturnOpt === 'other' && finalReturnDest) {
+              saveNewDestinationToMemory(finalReturnDest);
+            }
 
             const reasonText = e.target.reason.value;
             const mergedChecklist = {
@@ -1870,7 +1889,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     <p className={`font-extrabold text-sm ${prtReturnOpt === 'other' ? 'text-red-800 dark:text-red-300' : 'text-slate-700 dark:text-slate-300'}`}>Ir a Otro Destino</p>
                     {prtReturnOpt === 'other' ? (
                       <div className="mt-2 w-full animate-in fade-in slide-in-from-top-1">
-                        <input type="text" list="directory-destinations-prt-rej" autoFocus required placeholder="Escribe el destino..." value={prtReturnDest} onChange={e => setPrtReturnDest(e.target.value.toUpperCase())} autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full bg-white dark:bg-slate-900 border border-red-300 dark:border-red-700/50 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-red-500 font-bold" onClick={(e) => e.stopPropagation()} />
+                        <input type="text" list="directory-destinations" autoFocus required placeholder="Escribe el destino..." value={prtReturnDest} onChange={e => setPrtReturnDest(e.target.value.toUpperCase())} autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full bg-white dark:bg-slate-900 border border-red-300 dark:border-red-700/50 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-red-500 font-bold" onClick={(e) => e.stopPropagation()} />
 
                         <datalist id="directory-destinations-prt-rej">
                           {directoryMemory.map((dir, idx) => (
@@ -1902,6 +1921,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           <form onSubmit={(e) => {
             e.preventDefault();
             if (prtReturnOpt === 'other' && !prtReturnDest.trim()) return showAlert("Debes ingresar el nuevo destino para continuar.");
+
+            if (prtReturnOpt === 'other' && prtReturnDest) {
+              saveNewDestinationToMemory(prtReturnDest);
+            }
 
             const mergedChecklist = {
               ...(prtApprovePromptJob.checklist || {}),
@@ -1959,7 +1982,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     <p className={`font-extrabold text-sm ${prtReturnOpt === 'other' ? 'text-green-800 dark:text-green-300' : 'text-slate-700 dark:text-slate-300'}`}>Ir a Otro Destino</p>
                     {prtReturnOpt === 'other' ? (
                       <div className="mt-2 w-full animate-in fade-in slide-in-from-top-1">
-                        <input type="text" list="directory-destinations-prt" autoFocus required placeholder="Escribe el destino..." value={prtReturnDest} onChange={e => setPrtReturnDest(e.target.value.toUpperCase())} autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full bg-white dark:bg-slate-900 border border-green-300 dark:border-green-700/50 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-green-500 font-bold" onClick={(e) => e.stopPropagation()} />
+                        <input type="text" list="directory-destinations" autoFocus required placeholder="Escribe el destino..." value={prtReturnDest} onChange={e => setPrtReturnDest(e.target.value.toUpperCase())} autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full bg-white dark:bg-slate-900 border border-green-300 dark:border-green-700/50 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-green-500 font-bold" onClick={(e) => e.stopPropagation()} />
 
 
                         <datalist id="directory-destinations-prt">
@@ -2256,15 +2279,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     {dupMode === 'continue' ? (
                       <div className="mt-2 animate-in fade-in slide-in-from-top-1 w-full">
                         <input type="text" list="directory-destinations" autoFocus placeholder="Escribe el nuevo destino..." value={dupDestination} onChange={e => setDupDestination(e.target.value.toUpperCase())} autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-800/50 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-400 font-bold" />
-                        <datalist id="directory-destinations">
-                          {directoryMemory.map((dir, idx) => (
-                            <option key={`dir-${idx}`} value={dir.name || dir.address} />
-                          ))}
-                          {/* También incluimos los nombres de clientes como destinos sugeridos para mayor rapidez */}
-                          {allClientsList && allClientsList.map((client, idx) => (
-                            <option key={`cli-${idx}`} value={client} />
-                          ))}
-                        </datalist>
                       </div>
                     ) : (
                       <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">{dupPromptJob.tripType === 'revision' ? 'PRT' : (dupPromptJob.destination || dupPromptJob.origin)} ➔ ???</p>
@@ -2749,6 +2763,15 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
       )}
 
+      {/* NUEVO: Datalist global para sugerencias de destinos (Memoria) */}
+      <datalist id="directory-destinations">
+        {directoryMemory.map((dir, idx) => (
+          <option key={`dir-${idx}`} value={dir.placeName} />
+        ))}
+        {allClientsList && allClientsList.map((client, idx) => (
+          <option key={`cli-${idx}`} value={client} />
+        ))}
+      </datalist>
     </div>
   );
 }
