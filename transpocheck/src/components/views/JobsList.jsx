@@ -106,10 +106,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         setProcessingId(null);
         return;
       }
-      const clientName = arrivalPromptJob?.clientName?.toUpperCase() || '';
-      const isGrandleasingMileageRequired = clientName === 'GRANDLEASING LAS TORRES' || clientName === 'GRANDLEASING UMAÑA' || clientName === 'GRANDLEASING USADOS';
-      if (isGrandleasingMileageRequired && (!arrivalMileage || arrivalMileage.trim() === '')) {
-        showAlert("Debe ingresar el kilometraje de forma obligatoria para este cliente.");
+      if (!arrivalMileage || arrivalMileage.trim() === '') {
+        showAlert("Debe ingresar el kilometraje de forma obligatoria.");
+        setProcessingId(null);
+        return;
+      }
+      if (!arrivalPhoto) {
+        showAlert("Debe adjuntar la foto del odómetro de forma obligatoria.");
         setProcessingId(null);
         return;
       }

@@ -388,13 +388,9 @@ const ChecklistInner = ({ openCamera }) => {
                       try {
                         const { resizeImage } = await import('../../../utils/helpers');
                         const compressed = await resizeImage(f, 1200, 0.6);
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                          setFormData(p => ({ ...p, photos: { ...p.photos, odometer: reader.result } }));
-                          setIsSubmitting(false);
-                          setProcessingAction(null);
-                        };
-                        reader.readAsDataURL(compressed);
+                        setFormData(p => ({ ...p, photos: { ...p.photos, odometer: compressed } }));
+                        setIsSubmitting(false);
+                        setProcessingAction(null);
                       } catch (e) {
                         setIsSubmitting(false);
                         setProcessingAction(null);
@@ -437,13 +433,9 @@ const ChecklistInner = ({ openCamera }) => {
                       try {
                         const { resizeImage } = await import('../../../utils/helpers');
                         const compressed = await resizeImage(f, 1200, 0.6);
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                          setFormData(p => ({ ...p, photos: { ...p.photos, fuelGauge: reader.result } }));
-                          setIsSubmitting(false);
-                          setProcessingAction(null);
-                        };
-                        reader.readAsDataURL(compressed);
+                        setFormData(p => ({ ...p, photos: { ...p.photos, fuelGauge: compressed } }));
+                        setIsSubmitting(false);
+                        setProcessingAction(null);
                       } catch (e) {
                         setIsSubmitting(false);
                         setProcessingAction(null);
