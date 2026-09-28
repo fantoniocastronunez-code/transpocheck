@@ -168,10 +168,10 @@ export const useChecklistSync = ({
     const jobIdFolder = isQuick ? `quick_${Date.now()}` : job.id;
 
     let totalFiles = 0;
-    for (const val of Object.values(d.photos)) { if (val && val.startsWith('data:image')) totalFiles++; }
-    if (d.signatureData && d.signatureData.startsWith('data:image')) totalFiles++;
-    if (d.scandocPdf && d.scandocPdf.startsWith('data:')) totalFiles++;
-    if (d.guiaDespachoPdf && d.guiaDespachoPdf.startsWith('data:')) totalFiles++;
+    for (const val of Object.values(d.photos)) { if (typeof val === 'string' && val.startsWith('data:image')) totalFiles++; }
+    if (typeof d.signatureData === 'string' && d.signatureData.startsWith('data:image')) totalFiles++;
+    if (typeof d.scandocPdf === 'string' && d.scandocPdf.startsWith('data:')) totalFiles++;
+    if (typeof d.guiaDespachoPdf === 'string' && d.guiaDespachoPdf.startsWith('data:')) totalFiles++;
 
     if (totalFiles > 0 && setUploadProgress) {
       setUploadProgress({ active: true, current: 0, total: totalFiles, text: 'Conectando...' });
@@ -184,7 +184,7 @@ export const useChecklistSync = ({
     };
 
     for (const [key, val] of Object.entries(d.photos)) {
-      if (val && val.startsWith('data:image')) {
+      if (typeof val === 'string' && val.startsWith('data:image')) {
         try {
           const url = await uploadImageToStorage(val, `checklists/${jobIdFolder}`, `photo_${key}_${Date.now()}.jpg`);
           uploadedPhotos[key] = url;
@@ -195,7 +195,7 @@ export const useChecklistSync = ({
       }
     }
 
-    if (d.signatureData && d.signatureData.startsWith('data:image')) {
+    if (typeof d.signatureData === 'string' && d.signatureData.startsWith('data:image')) {
       try {
         const url = await uploadImageToStorage(d.signatureData, `checklists/${jobIdFolder}`, `signature_${Date.now()}.jpg`);
         d.signatureData = url;
@@ -203,7 +203,7 @@ export const useChecklistSync = ({
       } catch (err) { console.error("Error subiendo firma:", err); }
     }
 
-    if (d.fuelReceipt && d.fuelReceipt.startsWith('data:image')) {
+    if (typeof d.fuelReceipt === 'string' && d.fuelReceipt.startsWith('data:image')) {
       try {
         const url = await uploadImageToStorage(d.fuelReceipt, `checklists/${jobIdFolder}`, `fuel_receipt_${Date.now()}.jpg`);
         d.fuelReceipt = url;
@@ -211,7 +211,7 @@ export const useChecklistSync = ({
       } catch (err) { console.error("Error subiendo boleta de combustible:", err); }
     }
 
-    if (d.scandocPdf && d.scandocPdf.startsWith('data:')) {
+    if (typeof d.scandocPdf === 'string' && d.scandocPdf.startsWith('data:')) {
       try {
         const ext = d.scandocPdf.includes('application/pdf') ? 'pdf' : 'jpg';
         const url = await uploadImageToStorage(d.scandocPdf, `checklists/${jobIdFolder}`, `doc_${Date.now()}.${ext}`);
@@ -220,7 +220,7 @@ export const useChecklistSync = ({
       } catch (err) { console.error("Error subiendo PDF:", err); }
     }
 
-    if (d.guiaDespachoPdf && d.guiaDespachoPdf.startsWith('data:')) {
+    if (typeof d.guiaDespachoPdf === 'string' && d.guiaDespachoPdf.startsWith('data:')) {
       try {
         const ext = d.guiaDespachoPdf.includes('application/pdf') ? 'pdf' : 'jpg';
         const url = await uploadImageToStorage(d.guiaDespachoPdf, `checklists/${jobIdFolder}`, `guia_${Date.now()}.${ext}`);

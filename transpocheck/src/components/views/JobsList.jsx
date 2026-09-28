@@ -2683,7 +2683,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           } else if (cameraConfig.target === 'arrivalFuelPhoto') {
             try {
               const compressed = await resizeAndWatermarkImage(file, 1200, 0.6);
-              setArrivalFuelPhoto(compressed);
+              setArrivalFuelPhoto(compressed.base64);
+              if (compressed.lat !== null && compressed.lng !== null) {
+                setArrivalFuelPhotoLocation({ lat: compressed.lat, lng: compressed.lng });
+              }
             } catch (e) { showAlert("Error procesando foto."); }
           }
           setProcessingId(null);

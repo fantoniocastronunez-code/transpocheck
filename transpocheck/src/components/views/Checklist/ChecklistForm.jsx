@@ -21,10 +21,10 @@ import { db } from '../../../firebase'; // Ajustar si es necesario
 
 // Este es el componente que realmente usa el contexto
 const ChecklistInner = ({ openCamera }) => {
-  const { 
+  const {
     job, isQuick, formData, setFormData, step, setStep, isDraftLoaded, setIsDraftLoaded,
-    isSubmitting, setIsSubmitting, processingAction, setProcessingAction, 
-    defaultData, matchedVehicle, drivers, currentUserEmail, uploadImageToStorage, pushSyncTask, 
+    isSubmitting, setIsSubmitting, processingAction, setProcessingAction,
+    defaultData, matchedVehicle, drivers, currentUserEmail, uploadImageToStorage, pushSyncTask,
     showAlert, showConfirm, onCancel, onComplete
   } = useChecklist();
 
@@ -33,7 +33,7 @@ const ChecklistInner = ({ openCamera }) => {
 
   // Instanciar Hooks
   const { syncFilesToStorage, clearLocalDraft } = useChecklistSync({
-    job, isQuick, formData, setFormData, step, setStep, setIsDraftLoaded, 
+    job, isQuick, formData, setFormData, step, setStep, setIsDraftLoaded,
     defaultData, matchedVehicle, drivers, currentUserEmail, uploadImageToStorage, pushSyncTask, showAlert
   });
 
@@ -45,7 +45,7 @@ const ChecklistInner = ({ openCamera }) => {
     }
 
     const isGrandleasing = job?.client?.toLowerCase() === 'grandleasing' || formData.client?.toLowerCase() === 'grandleasing';
-    
+
     if (isGrandleasing) {
       setShowFinalModal(true);
     } else {
@@ -55,7 +55,7 @@ const ChecklistInner = ({ openCamera }) => {
 
   const handleSubmitFinal = async () => {
     setShowFinalModal(false);
-    
+
     // Si no está firmado, preguntar.
     if (!formData.signatureData && !formData.noReception && job?.tripType !== 'simple') {
       const resp = await new Promise(resolve => {
@@ -82,7 +82,7 @@ const ChecklistInner = ({ openCamera }) => {
     } catch (e) {
       console.warn("GPS Falló al finalizar:", e);
     }
-    
+
     if (finalLocation) {
       setFormData(prev => ({ ...prev, location: finalLocation }));
     }
@@ -95,9 +95,9 @@ const ChecklistInner = ({ openCamera }) => {
         const formDataWithLocation = { ...formData, location: finalLocation || formData.location };
         const finalData = await syncFilesToStorage(formDataWithLocation, setUploadProgress);
         setProcessingAction('Enviando datos al servidor...');
-        
+
         const driverObj = drivers?.find(d => d.email === currentUserEmail) || { name: currentUserEmail };
-        
+
         await setDoc(doc(db, 'transport_jobs', `quick_${Date.now()}`), {
           status: 'completed',
           client: finalData.client === 'OTRO' ? finalData.manualClient : finalData.client,
@@ -121,7 +121,7 @@ const ChecklistInner = ({ openCamera }) => {
 
       // Proceso Normal / Segundo Plano
       const updates = { phase: 'returning', 'draft.step': step };
-      
+
       if (job.tripType === 'revision') {
         updates.prt_result = formData.rtStatus;
         updates.prt_reason = formData.rtRejectReason || '';
@@ -131,7 +131,7 @@ const ChecklistInner = ({ openCamera }) => {
       if (finalLocation) fullDataForUpload.location = finalLocation;
 
       const draftDataForFirestore = JSON.parse(JSON.stringify(fullDataForUpload));
-      
+
       // Limpiar fotos e imágenes base64 para evitar límite de 1MB en Firestore para el draft
       for (const key in draftDataForFirestore.photos) {
         if (typeof draftDataForFirestore.photos[key] === 'string' && !draftDataForFirestore.photos[key].startsWith('http')) {
@@ -140,22 +140,22 @@ const ChecklistInner = ({ openCamera }) => {
       }
       const base64Fields = ['signatureData', 'fuelReceipt', 'scandocPdf', 'guiaDespachoPdf'];
       base64Fields.forEach(field => {
-          if (typeof draftDataForFirestore[field] === 'string' && !draftDataForFirestore[field].startsWith('http')) {
-              draftDataForFirestore[field] = false;
-          }
+        if (typeof draftDataForFirestore[field] === 'string' && !draftDataForFirestore[field].startsWith('http')) {
+          draftDataForFirestore[field] = false;
+        }
       });
-      
+
       updates['draft.formData'] = draftDataForFirestore;
-      
+
       await updateDoc(doc(db, 'transport_jobs', job.id), updates);
-      
+
       // Función para procesar y descontar gastos automáticamente
       const processChecklistExpenses = async (finalData) => {
         const driverObj = drivers?.find(d => d.email === currentUserEmail);
         if (!driverObj || !driverObj.id) return;
-        
+
         let newBalance = driverObj.balance || 0;
-        
+
         // Gasto de Combustible
         if (finalData.hasFuelCharge && finalData.fuelChargeAmount > 0) {
           await addDoc(collection(db, 'expenses'), {
@@ -175,7 +175,7 @@ const ChecklistInner = ({ openCamera }) => {
 
         // Gastos PRT
         if (job.tripType === 'revision') {
-          const prtTotal = (Number(finalData.prtCostRevision)||0) + (Number(finalData.prtCostInspeccion)||0) + (Number(finalData.prtCostFrenos)||0) + (Number(finalData.prtCostGases)||0);
+          const prtTotal = (Number(finalData.prtCostRevision) || 0) + (Number(finalData.prtCostInspeccion) || 0) + (Number(finalData.prtCostFrenos) || 0) + (Number(finalData.prtCostGases) || 0);
           if (prtTotal > 0) {
             await addDoc(collection(db, 'expenses'), {
               driverId: driverObj.id,
@@ -204,11 +204,11 @@ const ChecklistInner = ({ openCamera }) => {
         const syncTask = pushSyncTask(`Sync ${job.plate || job.vin || 'Vehículo'}`);
         showAlert("✅ Subida iniciada en segundo plano. Puedes continuar usando la app.");
         onComplete();
-        
+
         // Ejecutar en segundo plano sin await
         (async () => {
           try {
-            const finalData = await syncFilesToStorage(fullDataForUpload, () => {});
+            const finalData = await syncFilesToStorage(fullDataForUpload, () => { });
             await updateDoc(doc(db, 'transport_jobs', job.id), {
               checklist: finalData,
               status: 'completed',
@@ -250,16 +250,16 @@ const ChecklistInner = ({ openCamera }) => {
 
   return (
     <div className="fixed inset-0 bg-slate-50 dark:bg-slate-950 z-50 flex flex-col h-[100dvh] overflow-hidden animate-in slide-in-from-bottom-full duration-300">
-      
+
       {/* HEADER PRINCIPAL */}
       <div className="flex justify-between items-center bg-white dark:bg-slate-900 px-4 py-3 sm:py-4 shadow-sm relative z-50 border-b border-slate-200 dark:border-slate-800 shrink-0">
-        <button 
-          onClick={onCancel} 
+        <button
+          onClick={onCancel}
           className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 bg-slate-100 dark:bg-slate-800 p-2 sm:p-2.5 rounded-xl transition-all active:scale-95 border border-slate-200 dark:border-slate-700"
         >
           <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
-        
+
         <div className="text-center flex-1 mx-2 overflow-hidden">
           <h2 className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 truncate">
             {isQuick ? 'Checklist Rápido' : 'Checklist Digital'}
@@ -270,19 +270,18 @@ const ChecklistInner = ({ openCamera }) => {
             </p>
           )}
         </div>
-        
+
         {/* BOTÓN ASISTENTE DE VOZ */}
         {!isSimple && (
-          <button 
-            type="button" 
-            onClick={toggleVoiceAssistant} 
-            className={`p-2 sm:p-2.5 rounded-xl flex items-center justify-center transition-all shadow-sm border ${
-              isListening 
-                ? 'bg-red-500 hover:bg-red-600 text-white border-red-500 shadow-red-500/30 animate-pulse' 
-                : isInterpreting 
-                  ? 'bg-amber-500 text-white border-amber-500 animate-pulse' 
+          <button
+            type="button"
+            onClick={toggleVoiceAssistant}
+            className={`p-2 sm:p-2.5 rounded-xl flex items-center justify-center transition-all shadow-sm border ${isListening
+                ? 'bg-red-500 hover:bg-red-600 text-white border-red-500 shadow-red-500/30 animate-pulse'
+                : isInterpreting
+                  ? 'bg-amber-500 text-white border-amber-500 animate-pulse'
                   : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-200 dark:hover:bg-indigo-800/50'
-            }`}
+              }`}
           >
             {isInterpreting ? <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" /> : <Mic className="w-5 h-5 sm:w-6 sm:h-6" />}
           </button>
@@ -309,50 +308,47 @@ const ChecklistInner = ({ openCamera }) => {
 
       {/* BARRA INFERIOR (NAVEGACIÓN Y GUARDAR) */}
       <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200/50 dark:border-slate-800/50 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)] z-50 flex flex-col gap-3">
-        
+
         {/* BOTONES DE NAVEGACIÓN */}
         <div className="flex gap-3">
           <button
             onClick={() => setStep(Math.max(1, step - 1))}
             disabled={step === 1 || isSubmitting}
-            className={`flex-1 font-black py-3 rounded-2xl border-2 flex items-center justify-center gap-2 uppercase tracking-widest text-xs sm:text-sm transition-all active:scale-95 ${
-              step === 1 || isSubmitting
+            className={`flex-1 font-black py-3 rounded-2xl border-2 flex items-center justify-center gap-2 uppercase tracking-widest text-xs sm:text-sm transition-all active:scale-95 ${step === 1 || isSubmitting
                 ? 'border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'
                 : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
-            }`}
+              }`}
           >
             <ArrowLeft className="w-4 h-4" /> Atrás
           </button>
           <button
             onClick={() => setStep(Math.min(isSimple ? 3 : 6, step + 1))}
             disabled={step === (isSimple ? 3 : 6) || isSubmitting}
-            className={`flex-1 font-black py-3 rounded-2xl border-2 flex items-center justify-center gap-2 uppercase tracking-widest text-xs sm:text-sm transition-all active:scale-95 ${
-              step === (isSimple ? 3 : 6) || isSubmitting
+            className={`flex-1 font-black py-3 rounded-2xl border-2 flex items-center justify-center gap-2 uppercase tracking-widest text-xs sm:text-sm transition-all active:scale-95 ${step === (isSimple ? 3 : 6) || isSubmitting
                 ? 'border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'
                 : 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40'
-            }`}
+              }`}
           >
             Siguiente <ArrowLeft className="w-4 h-4 rotate-180" />
           </button>
         </div>
 
-        <button 
-          onClick={handlePreSubmit} 
-          disabled={isSubmitting} 
-          className={`w-full font-black py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 uppercase tracking-widest text-xs sm:text-sm transition-all active:scale-95 ${
-            isSubmitting 
-              ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed shadow-none' 
+        <button
+          onClick={handlePreSubmit}
+          disabled={isSubmitting}
+          className={`w-full font-black py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 uppercase tracking-widest text-xs sm:text-sm transition-all active:scale-95 ${isSubmitting
+              ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed shadow-none'
               : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white shadow-blue-500/30'
-          }`}
+            }`}
         >
           {isSubmitting ? (
-             <><Loader2 className="w-5 h-5 animate-spin" /> {processingAction || 'Guardando...'}</>
+            <><Loader2 className="w-5 h-5 animate-spin" /> {processingAction || 'Guardando...'}</>
           ) : (
-             <><Save className="w-5 h-5" /> Finalizar y Guardar Acta</>
+            <><Save className="w-5 h-5" /> Finalizar y Guardar Acta</>
           )}
         </button>
       </div>
-      
+
       {/* Overlay de Carga Principal */}
       {showFinalModal && !uploadProgress.active && (
         <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md z-[90] flex flex-col items-center justify-center p-4 sm:p-8 animate-in fade-in">
@@ -360,16 +356,16 @@ const ChecklistInner = ({ openCamera }) => {
             <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest text-center border-b border-slate-100 dark:border-slate-800 pb-3">
               Datos de Entrega
             </h3>
-            
+
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">
                   Kilometraje (Obligatorio)
                 </label>
-                <input 
-                  type="number" 
-                  placeholder="Ej: 154000" 
-                  value={formData.mileage || ''} 
+                <input
+                  type="number"
+                  placeholder="Ej: 154000"
+                  value={formData.mileage || ''}
                   onChange={e => setFormData(p => ({ ...p, mileage: e.target.value }))}
                   className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-2xl text-center text-lg font-black text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 outline-none focus:border-blue-500 transition-colors"
                 />
@@ -380,27 +376,30 @@ const ChecklistInner = ({ openCamera }) => {
                   <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest text-center block">
                     Foto Kilometraje
                   </label>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => openCamera('Kilometraje', async f => {
                       setProcessingAction('Procesando Foto...');
                       setIsSubmitting(true);
                       try {
                         const { resizeImage } = await import('../../../utils/helpers');
                         const compressed = await resizeImage(f, 1200, 0.6);
-                        setFormData(p => ({ ...p, photos: { ...p.photos, odometer: compressed } }));
-                        setIsSubmitting(false);
-                        setProcessingAction(null);
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          setFormData(p => ({ ...p, photos: { ...p.photos, odometer: reader.result } }));
+                          setIsSubmitting(false);
+                          setProcessingAction(null);
+                        };
+                        reader.readAsDataURL(compressed);
                       } catch (e) {
                         setIsSubmitting(false);
                         setProcessingAction(null);
                       }
                     })}
-                    className={`w-full h-16 rounded-2xl border-2 flex items-center justify-center gap-1 cursor-pointer relative overflow-hidden transition-all ${
-                      formData.photos?.odometer 
-                        ? 'border-green-400 ring-2 ring-green-100 bg-white dark:bg-slate-900' 
+                    className={`w-full h-16 rounded-2xl border-2 flex items-center justify-center gap-1 cursor-pointer relative overflow-hidden transition-all ${formData.photos?.odometer
+                        ? 'border-green-400 ring-2 ring-green-100 bg-white dark:bg-slate-900'
                         : 'border-dashed border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 bg-red-50/50 dark:bg-red-900/10'
-                    }`}
+                      }`}
                   >
                     {isSubmitting && processingAction === 'Procesando Foto...' ? (
                       <span className="text-[9px] font-black text-slate-500 uppercase text-center leading-tight flex flex-col items-center gap-1">
@@ -415,7 +414,7 @@ const ChecklistInner = ({ openCamera }) => {
                       </>
                     ) : (
                       <span className="text-[9px] font-black text-red-600 dark:text-red-400 uppercase text-center leading-tight">
-                        TOMAR<br/>FOTO
+                        TOMAR<br />FOTO
                       </span>
                     )}
                   </button>
@@ -425,27 +424,30 @@ const ChecklistInner = ({ openCamera }) => {
                   <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest text-center block">
                     Foto Combustible
                   </label>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => openCamera('Combustible', async f => {
                       setProcessingAction('Procesando Foto Combustible...');
                       setIsSubmitting(true);
                       try {
                         const { resizeImage } = await import('../../../utils/helpers');
                         const compressed = await resizeImage(f, 1200, 0.6);
-                        setFormData(p => ({ ...p, photos: { ...p.photos, fuelGauge: compressed } }));
-                        setIsSubmitting(false);
-                        setProcessingAction(null);
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          setFormData(p => ({ ...p, photos: { ...p.photos, fuelGauge: reader.result } }));
+                          setIsSubmitting(false);
+                          setProcessingAction(null);
+                        };
+                        reader.readAsDataURL(compressed);
                       } catch (e) {
                         setIsSubmitting(false);
                         setProcessingAction(null);
                       }
                     })}
-                    className={`w-full h-16 rounded-2xl border-2 flex items-center justify-center gap-1 cursor-pointer relative overflow-hidden transition-all ${
-                      formData.photos?.fuelGauge 
-                        ? 'border-green-400 ring-2 ring-green-100 bg-white dark:bg-slate-900' 
+                    className={`w-full h-16 rounded-2xl border-2 flex items-center justify-center gap-1 cursor-pointer relative overflow-hidden transition-all ${formData.photos?.fuelGauge
+                        ? 'border-green-400 ring-2 ring-green-100 bg-white dark:bg-slate-900'
                         : 'border-dashed border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 bg-red-50/50 dark:bg-red-900/10'
-                    }`}
+                      }`}
                   >
                     {isSubmitting && processingAction === 'Procesando Foto Combustible...' ? (
                       <span className="text-[9px] font-black text-slate-500 uppercase text-center leading-tight flex flex-col items-center gap-1">
@@ -460,7 +462,7 @@ const ChecklistInner = ({ openCamera }) => {
                       </>
                     ) : (
                       <span className="text-[9px] font-black text-red-600 dark:text-red-400 uppercase text-center leading-tight">
-                        TOMAR<br/>FOTO
+                        TOMAR<br />FOTO
                       </span>
                     )}
                   </button>
@@ -469,19 +471,19 @@ const ChecklistInner = ({ openCamera }) => {
             </div>
 
             <div className="flex gap-2 mt-2">
-              <button 
-                onClick={() => setShowFinalModal(false)} 
+              <button
+                onClick={() => setShowFinalModal(false)}
                 className="flex-1 py-3.5 rounded-xl font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-xs uppercase tracking-wider"
               >
                 Volver
               </button>
-              <button 
+              <button
                 onClick={() => {
                   if (!formData.mileage) return showAlert("⚠️ Ingresa el kilometraje final.");
                   if (!formData.photos?.odometer) return showAlert("⚠️ Toma la foto del kilometraje.");
                   if (!formData.photos?.fuelGauge) return showAlert("⚠️ Toma la foto del medidor de combustible.");
                   handleSubmitFinal();
-                }} 
+                }}
                 className="flex-[2] py-3.5 rounded-xl font-black text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-all active:scale-95 flex items-center justify-center gap-2 text-xs uppercase tracking-wider"
               >
                 Finalizar
@@ -521,8 +523,8 @@ export const ChecklistForm = (props) => {
   return (
     <ChecklistProvider {...props}>
       <ChecklistInner openCamera={openCamera} />
-      
-      <InAppCamera 
+
+      <InAppCamera
         isOpen={cameraConfig.isOpen}
         title={cameraConfig.title}
         enableAnnotation={cameraConfig.enableAnnotation}
@@ -534,7 +536,7 @@ export const ChecklistForm = (props) => {
           setCameraConfig({ isOpen: false, title: '', onCapture: null, enableAnnotation: false });
         }}
       />
-      
+
       <ImageViewer />
     </ChecklistProvider>
   );
