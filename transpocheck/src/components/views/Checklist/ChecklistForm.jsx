@@ -382,10 +382,23 @@ const ChecklistInner = ({ openCamera }) => {
                   </label>
                   <button 
                     type="button" 
-                    onClick={() => openCamera('Kilometraje', f => {
-                      const reader = new FileReader();
-                      reader.onload = () => setFormData(p => ({ ...p, photos: { ...p.photos, odometer: reader.result } }));
-                      reader.readAsDataURL(f);
+                    onClick={() => openCamera('Kilometraje', async f => {
+                      setProcessingAction('Procesando Foto...');
+                      setIsSubmitting(true);
+                      try {
+                        const { resizeImage } = await import('../../../utils/helpers');
+                        const compressed = await resizeImage(f, 1200, 0.6);
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          setFormData(p => ({ ...p, photos: { ...p.photos, odometer: reader.result } }));
+                          setIsSubmitting(false);
+                          setProcessingAction(null);
+                        };
+                        reader.readAsDataURL(compressed);
+                      } catch (e) {
+                        setIsSubmitting(false);
+                        setProcessingAction(null);
+                      }
                     })}
                     className={`w-full h-16 rounded-2xl border-2 flex items-center justify-center gap-1 cursor-pointer relative overflow-hidden transition-all ${
                       formData.photos?.odometer 
@@ -393,7 +406,11 @@ const ChecklistInner = ({ openCamera }) => {
                         : 'border-dashed border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 bg-red-50/50 dark:bg-red-900/10'
                     }`}
                   >
-                    {formData.photos?.odometer ? (
+                    {isSubmitting && processingAction === 'Procesando Foto...' ? (
+                      <span className="text-[9px] font-black text-slate-500 uppercase text-center leading-tight flex flex-col items-center gap-1">
+                        <Loader2 className="w-4 h-4 animate-spin" /> PROCESANDO
+                      </span>
+                    ) : formData.photos?.odometer ? (
                       <>
                         <img src={formData.photos.odometer} className="absolute inset-0 w-full h-full object-cover opacity-40" />
                         <span className="text-[10px] font-black text-green-800 dark:text-green-300 relative z-10 flex items-center gap-1">
@@ -414,10 +431,23 @@ const ChecklistInner = ({ openCamera }) => {
                   </label>
                   <button 
                     type="button" 
-                    onClick={() => openCamera('Combustible', f => {
-                      const reader = new FileReader();
-                      reader.onload = () => setFormData(p => ({ ...p, photos: { ...p.photos, fuelGauge: reader.result } }));
-                      reader.readAsDataURL(f);
+                    onClick={() => openCamera('Combustible', async f => {
+                      setProcessingAction('Procesando Foto Combustible...');
+                      setIsSubmitting(true);
+                      try {
+                        const { resizeImage } = await import('../../../utils/helpers');
+                        const compressed = await resizeImage(f, 1200, 0.6);
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          setFormData(p => ({ ...p, photos: { ...p.photos, fuelGauge: reader.result } }));
+                          setIsSubmitting(false);
+                          setProcessingAction(null);
+                        };
+                        reader.readAsDataURL(compressed);
+                      } catch (e) {
+                        setIsSubmitting(false);
+                        setProcessingAction(null);
+                      }
                     })}
                     className={`w-full h-16 rounded-2xl border-2 flex items-center justify-center gap-1 cursor-pointer relative overflow-hidden transition-all ${
                       formData.photos?.fuelGauge 
@@ -425,7 +455,11 @@ const ChecklistInner = ({ openCamera }) => {
                         : 'border-dashed border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 bg-red-50/50 dark:bg-red-900/10'
                     }`}
                   >
-                    {formData.photos?.fuelGauge ? (
+                    {isSubmitting && processingAction === 'Procesando Foto Combustible...' ? (
+                      <span className="text-[9px] font-black text-slate-500 uppercase text-center leading-tight flex flex-col items-center gap-1">
+                        <Loader2 className="w-4 h-4 animate-spin" /> PROCESANDO
+                      </span>
+                    ) : formData.photos?.fuelGauge ? (
                       <>
                         <img src={formData.photos.fuelGauge} className="absolute inset-0 w-full h-full object-cover opacity-40" />
                         <span className="text-[10px] font-black text-green-800 dark:text-green-300 relative z-10 flex items-center gap-1">
