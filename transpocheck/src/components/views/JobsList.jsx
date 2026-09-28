@@ -1064,7 +1064,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         } catch (shareError) {
           if (shareError.name !== 'AbortError') {
              // Es muy probable que Safari lo haya bloqueado por falta de interacción síncrona.
-             setDialogConfig(null);
+             showAlert(null);
              setPdfReadyToShare({ file, fileName, textToShare, docPDF });
           }
         }
