@@ -45,7 +45,7 @@ export default function ArrivalModal({
                   onClick={() => openCamera('Foto del Medidor de Combustible', 'arrivalFuelPhoto')}
                   className={`h-[48px] px-4 rounded-xl font-black flex items-center justify-center gap-2 transition-all w-full ${arrivalFuelPhoto ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 border-2 border-green-400 shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-700'}`}
                 >
-                  {arrivalFuelPhoto ? <><CheckCircle className="w-5 h-5" /> Foto Capturada</> : <><Camera className="w-5 h-5" /> Tomar Foto del Medidor</>}
+                  {processingId === 'processing-image' ? <><Clock className="w-5 h-5 animate-spin" /> Procesando...</> : arrivalFuelPhoto ? <><CheckCircle className="w-5 h-5" /> Foto Capturada</> : <><Camera className="w-5 h-5" /> Tomar Foto del Medidor</>}
                 </button>
               </div>
               {arrivalFuelPhoto && (
@@ -71,7 +71,7 @@ export default function ArrivalModal({
                       onClick={() => openCamera('Foto del Odómetro', 'arrivalPhoto')}
                       className={`h-[48px] px-4 rounded-xl font-black flex items-center justify-center gap-2 transition-all flex-1 ${arrivalPhoto ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 border-2 border-green-400 shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-700'}`}
                     >
-                      {arrivalPhoto ? <><CheckCircle className="w-5 h-5" /> Foto Odómetro</> : <><Camera className="w-5 h-5" /> Foto Odómetro</>}
+                      {processingId === 'processing-image' ? <><Clock className="w-5 h-5 animate-spin" /> Procesando...</> : arrivalPhoto ? <><CheckCircle className="w-5 h-5" /> Foto Odómetro</> : <><Camera className="w-5 h-5" /> Foto Odómetro</>}
                     </button>
                   </div>
                   {arrivalPhoto && (

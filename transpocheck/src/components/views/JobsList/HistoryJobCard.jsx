@@ -1,6 +1,6 @@
 import React from 'react';
 export default function HistoryJobCard({ j, ...props }) {
-  const { drivers, getJobIdentifier, setSelectedHistoryJob, latestVehiclePhotos, setFullScreenPhoto, auditMode, isAdminView, setEditDateJob, setEditKmJob, handleSingleRecalculate, processingId, onEditJob, handleDuplicateJob, generatePDF, handleShareWhatsAppPDF, handleDeleteJob, updateDoc, doc, deleteField, db, showConfirm, showAlert, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, AlertCircle, Navigation, Edit2, MapPin, FileText, Clock, MapIcon, CheckCircle, Repeat, FileDown, Trash2, Share2 } = props;
+  const { drivers, getJobIdentifier, setSelectedHistoryJob, latestVehiclePhotos, setFullScreenPhoto, auditMode, isAdminView, setEditDateJob, setEditKmJob, setEditDriverJob, handleSingleRecalculate, processingId, onEditJob, handleDuplicateJob, generatePDF, handleShareWhatsAppPDF, handleDeleteJob, updateDoc, doc, deleteField, db, showConfirm, showAlert, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, AlertCircle, Navigation, Edit2, MapPin, FileText, Clock, MapIcon, CheckCircle, Repeat, FileDown, Trash2, Share2 } = props;
     const drv = drivers?.find(d => d.email === j.acceptedByEmail);
     const driverName = drv ? drv.name : (j.checklist?.assignedDriverName || j.acceptedByEmail || 'No registrado');
     const isFailed = j.status === 'failed';
@@ -108,7 +108,16 @@ export default function HistoryJobCard({ j, ...props }) {
         </div>
 
         <div className="mb-3">
-           <p className="text-blue-600 dark:text-blue-400 font-extrabold text-[12px] uppercase tracking-wide truncate">Conductor: <span className="text-slate-800 dark:text-white font-black text-[14px]">{driverName}</span></p>
+           <div className="flex justify-between items-start gap-2">
+             <div className="min-w-0 flex-1">
+               <p className="text-blue-600 dark:text-blue-400 font-extrabold text-[12px] uppercase tracking-wide truncate">Conductor: <span className="text-slate-800 dark:text-white font-black text-[14px]">{driverName}</span></p>
+             </div>
+             {isAdminView && auditMode && (
+                <button onClick={(e) => { e.stopPropagation(); setEditDriverJob(j); }} className="text-blue-500 hover:bg-blue-50 dark:bg-blue-900/30 p-1 rounded transition-colors shrink-0" title="Cambiar Conductor">
+                  <Edit2 className="w-3.5 h-3.5"/>
+                </button>
+             )}
+           </div>
            {isFailed && <p className="text-red-600 dark:text-red-400 text-[10px] mt-0.5 font-bold line-clamp-1">Razón: {j.failedReason}</p>}
         </div>
         

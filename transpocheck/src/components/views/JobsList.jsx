@@ -37,6 +37,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [forceCloseJob, setForceCloseJob] = useState(null);
   const [editPriceJob, setEditPriceJob] = useState(null); // <-- NUEVO: Estado para editar cobro
   const [editDateJob, setEditDateJob] = useState(null); // <-- NUEVO: Estado para editar fecha de término
+  const [editDriverJob, setEditDriverJob] = useState(null); // <-- NUEVO: Estado para editar conductor
   const [editKmJob, setEditKmJob] = useState(null); // <-- NUEVO: Estado para editar kilometraje manual
 
   const [dupPromptJob, setDupPromptJob] = useState(null);
@@ -113,6 +114,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         return;
       }
     
+      setProcessingId('general-arrival');
       const currentDraft = arrivalPromptJob.draft?.formData || {};
       const currentPhotos = currentDraft.photos || {};
 
@@ -1107,7 +1109,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const renderActiveJobCard = (j) => <JobCard key={j.id} j={j} {...jobCardProps} />;
 
   const historyJobCardProps = {
-    drivers, getJobIdentifier, setSelectedHistoryJob, latestVehiclePhotos, setFullScreenPhoto, auditMode, isAdminView, setEditDateJob, setEditKmJob, handleSingleRecalculate, processingId, onEditJob, handleDuplicateJob, generatePDF, handleShareWhatsAppPDF, handleDeleteJob, updateDoc, doc, deleteField, db, showConfirm, showAlert, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, AlertCircle, Navigation, Edit2, MapPin, FileText, Clock, MapIcon, CheckCircle, Repeat, FileDown, Trash2, Share2,
+    drivers, getJobIdentifier, setSelectedHistoryJob, latestVehiclePhotos, setFullScreenPhoto, auditMode, isAdminView, setEditDateJob, setEditKmJob, setEditDriverJob, handleSingleRecalculate, processingId, onEditJob, handleDuplicateJob, generatePDF, handleShareWhatsAppPDF, handleDeleteJob, updateDoc, doc, deleteField, db, showConfirm, showAlert, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, AlertCircle, Navigation, Edit2, MapPin, FileText, Clock, MapIcon, CheckCircle, Repeat, FileDown, Trash2, Share2,
     // FALTANTES DE SEGURIDAD EN EL HISTORIAL:
     Copy, MoreVertical, cpyWapp
   };
@@ -2315,6 +2317,78 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
       )}
 
+      {/* NUEVO MODAL: EDITAR CONDUCTOR DEL TRASLADO */}
+      {editDriverJob && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            const newDriverEmail = e.target.newDriver.value;
+            if (!newDriverEmail) return showAlert("Selecciona un conductor válido");
+            const newDriver = drivers.find(d => d.email === newDriverEmail);
+            if (!newDriver) return showAlert("Conductor no encontrado");
+
+            setProcessingId(`${editDriverJob.id}-driver`);
+            try {
+              const updateData = {
+                acceptedByEmail: newDriver.email,
+                assignedDrivers: [{
+                   email: newDriver.email,
+                   name: newDriver.name,
+                   role: 'driver',
+                   addedAt: Date.now()
+                }]
+              };
+              
+              if (editDriverJob.checklist) {
+                updateData.checklist = {
+                   ...editDriverJob.checklist,
+                   assignedDriverName: newDriver.name
+                };
+              }
+
+              await updateDoc(doc(db, 'transport_jobs', editDriverJob.id), updateData);
+              showAlert("✅ Conductor actualizado correctamente.");
+              setEditDriverJob(null);
+            } catch (err) {
+              console.error(err);
+              showAlert("❌ Error al actualizar el conductor.");
+            } finally {
+              setProcessingId(null);
+            }
+          }} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm space-y-5 shadow-2xl border-t-8 border-blue-500 animate-in zoom-in-95">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" /> Cambiar Conductor
+              </h3>
+              <button type="button" onClick={() => setEditDriverJob(null)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors">
+                <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+              </button>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Trabajo a editar</p>
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-300 truncate">
+                {editDriverJob.tripType === 'simple' ? editDriverJob.description : `${editDriverJob.brand} ${editDriverJob.model}`}
+              </p>
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400">{getJobIdentifier(editDriverJob)}</p>
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-2">Conductor Actual: {editDriverJob.acceptedByEmail}</p>
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest ml-1">Nuevo Conductor</label>
+              <select name="newDriver" required defaultValue={editDriverJob.acceptedByEmail || ""} className="w-full border-2 border-blue-200 dark:border-blue-800/50 bg-blue-50 dark:bg-blue-900/30 p-3.5 rounded-xl font-black text-sm text-blue-900 dark:text-blue-300 outline-none focus:border-blue-500 mt-1 shadow-sm">
+                 <option value="" disabled>Selecciona un conductor...</option>
+                 {drivers.map(d => (
+                    <option key={d.email} value={d.email}>{d.name} ({d.email})</option>
+                 ))}
+              </select>
+            </div>
+            <button type="submit" disabled={processingId === `${editDriverJob.id}-driver`} className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-sm shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+              {processingId === `${editDriverJob.id}-driver` ? <Clock className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+              {processingId === `${editDriverJob.id}-driver` ? 'Guardando...' : 'Actualizar Conductor'}
+            </button>
+          </form>
+        </div>
+      )}
+
       {/* NUEVO MODAL: EDITAR FECHA DEL TRASLADO */}
       {editDateJob && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
@@ -2597,6 +2671,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         title={cameraConfig.title}
         onClose={() => setCameraConfig({ isOpen: false, title: '', target: null })}
         onCapture={async (file) => {
+          setProcessingId('processing-image');
           if (cameraConfig.target === 'arrivalPhoto') {
             try {
               const compressed = await resizeImage(file, 1200, 0.6);
@@ -2608,6 +2683,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               setArrivalFuelPhoto(compressed);
             } catch (e) { showAlert("Error procesando foto."); }
           }
+          setProcessingId(null);
         }}
       />
 
