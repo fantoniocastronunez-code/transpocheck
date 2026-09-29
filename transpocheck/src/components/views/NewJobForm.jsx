@@ -28,6 +28,18 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   // NUEVO: Estado para cargar el directorio de destinos
   const [directoryList, setDirectoryList] = useState([]);
   const [activeJobsList, setActiveJobsList] = useState([]); // NUEVO: Memoria de trabajos activos
+  const [confirmModal, setConfirmModal] = useState(null); // NUEVO: Modal de confirmación nativo
+
+  const showConfirmDialog = (message, title) => {
+    return new Promise((resolve) => {
+      setConfirmModal({
+        message,
+        title,
+        onConfirm: () => { setConfirmModal(null); resolve(true); },
+        onCancel: () => { setConfirmModal(null); resolve(false); }
+      });
+    });
+  };
   const [prtList, setPrtList] = useState([]); // <-- NUEVO ESTADO PARA PLANTAS PRT
 
   useEffect(() => {
@@ -329,11 +341,12 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     e.preventDefault();
     if (isSubmitting) return;
 
+    const formData = new FormData(e.target);
+
     if (operationMode === 'traslado' && historicalVehicleType && historicalVehicleType !== vehicleType) {
-        const confirmMsg = `⚠️ ALERTA DE TIPO DE VEHÍCULO\n\nEstás guardando este traslado como '${vehicleType}', pero históricamente este modelo (${model}) se ha registrado como '${historicalVehicleType}'.\n\n¿Estás seguro que deseas guardarlo como '${vehicleType}'?`;
-        if (!window.confirm(confirmMsg)) {
-            return;
-        }
+        const confirmMsg = `Estás guardando este traslado como '${vehicleType}', pero históricamente este modelo (${model}) se ha registrado como '${historicalVehicleType}'.\n\n¿Estás seguro que deseas guardarlo como '${vehicleType}'?`;
+        const isConfirmed = await showConfirmDialog(confirmMsg, "ALERTA DE TIPO DE VEHÍCULO");
+        if (!isConfirmed) return;
     }
 
     if (operationMode === 'traslado' && !jobToEdit) {
@@ -343,15 +356,13 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
             (vPlate && j.plate === vPlate) || (vVin && j.vin === vVin)
         );
         if (dup) {
-            const confirmMsg = `⚠️ ALERTA DE TRASLADO DUPLICADO\n\nYa existe un traslado ACTIVO para el vehículo ${dup.plate || dup.vin} (${dup.brand || ''} ${dup.model || ''}).\n\n¿Estás seguro de que deseas crear OTRO traslado para el mismo vehículo?`;
-            if (!window.confirm(confirmMsg)) {
-                return;
-            }
+            const confirmMsg = `Ya existe un traslado ACTIVO para el vehículo ${dup.plate || dup.vin} (${dup.brand || ''} ${dup.model || ''}).\n\n¿Estás seguro de que deseas crear OTRO traslado para el mismo vehículo?`;
+            const isConfirmed = await showConfirmDialog(confirmMsg, "ALERTA DE TRASLADO DUPLICADO");
+            if (!isConfirmed) return;
         }
     }
 
     setIsSubmitting(true);
-    const formData = new FormData(e.target);
     const selectedDriverIds = formData.getAll('assignedDriverId');
     
     const cleanSpotEmail = spotDriverEmail.trim().toLowerCase();
@@ -1101,6 +1112,24 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
         onClose={() => setCameraConfig({ isOpen: false })}
         onCapture={handleOcrUpload}
       />
+
+      {/* NUEVO: Modal de Confirmación Nativo */}
+      {confirmModal && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[500] p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl flex flex-col animate-in zoom-in-95 border-t-8 border-orange-500">
+            <h3 className="text-lg font-black text-slate-800 dark:text-slate-200 flex items-center gap-2 mb-3 leading-tight">
+              <AlertCircle className="w-5 h-5 text-orange-500 shrink-0" /> {confirmModal.title}
+            </h3>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-6 whitespace-pre-wrap">
+              {confirmModal.message}
+            </p>
+            <div className="flex gap-3">
+              <button onClick={confirmModal.onCancel} className="flex-1 py-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>
+              <button onClick={confirmModal.onConfirm} className="flex-1 py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-extrabold text-sm shadow-md transition-colors">Aceptar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
