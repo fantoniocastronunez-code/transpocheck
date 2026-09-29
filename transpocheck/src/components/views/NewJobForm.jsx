@@ -5,6 +5,7 @@ import CustomClientSelector from '../ui/CustomClientSelector';
 import Tesseract from 'tesseract.js';
 import * as pdfjsLib from 'pdfjs-dist';
 import InAppCamera from '../ui/InAppCamera';
+import AutocompleteInput from '../ui/AutocompleteInput';
 
 // ✨ Solución 100% Nativa VITE: Importamos el motor interno. Cero bloqueos de CORS.
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
@@ -657,15 +658,13 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     })();
   };
 
+  const destinationOptions = [
+    ...directoryList.map(dir => dir.placeName),
+    ...(allClientsList || [])
+  ].filter(Boolean);
+
   return (
     <div className="max-w-2xl mx-auto bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 mb-28">
-      
-      {/* NUEVO: Datalist invisible para autocompletar destinos */}
-      <datalist id="directory-destinations">
-        {directoryList.map((dir, idx) => (
-          <option key={idx} value={dir.placeName}>{dir.contactName}</option>
-        ))}
-      </datalist>
 
       <div className="flex justify-between items-center mb-6 border-b pb-4">
         <h2 className="text-xl sm:text-2xl font-extrabold text-slate-800 dark:text-slate-200">{jobToEdit ? 'Editar Trabajo' : 'Crear Nuevo Trabajo'}</h2>
@@ -898,7 +897,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <div className="space-y-1">
                    <label className="text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">Lugar de Retiro (Origen)</label>
-                   <input name="origin" list="directory-destinations" defaultValue={jobToEdit?.origin || ''} required type="text" placeholder="Desde (Origen)" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white dark:bg-slate-900" />
+                  <AutocompleteInput name="origin" options={destinationOptions} defaultValue={jobToEdit?.origin || ''} required placeholder="Desde (Origen)" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white dark:bg-slate-900" />
                 </div>
                 
                 {tripType === 'revision' ? (
@@ -912,13 +911,13 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                      </div>
                      <div className="space-y-1 relative z-10">
                         <label className="text-xs font-extrabold text-blue-600 dark:text-blue-400 uppercase tracking-wider ml-1">Destino Final (Post-PRT)</label>
-                        <input name="destFinal" list="directory-destinations" defaultValue={jobToEdit?.destination?.split('->')[1]?.trim() || ''} type="text" placeholder="Ej: Av. San José (Opcional)" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-blue-200 dark:border-blue-800/50 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white dark:bg-slate-900" />
+                        <AutocompleteInput name="destFinal" options={destinationOptions} defaultValue={jobToEdit?.destination?.split('->')[1]?.trim() || ''} placeholder="Ej: Av. San José (Opcional)" className="w-full border-2 border-blue-200 dark:border-blue-800/50 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white dark:bg-slate-900" />
                      </div>
                   </div>
                 ) : (
                   <div className="space-y-1">
                      <label className="text-xs font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">Destino Final</label>
-                     <input name="destination" list="directory-destinations" defaultValue={jobToEdit?.destination || ''} required type="text" placeholder="Hasta (Destino)" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white dark:bg-slate-900" />
+                     <AutocompleteInput name="destination" options={destinationOptions} defaultValue={jobToEdit?.destination || ''} required placeholder="Hasta (Destino)" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-semibold bg-white dark:bg-slate-900" />
                   </div>
                 )}
               </div>
@@ -1050,11 +1049,11 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-[10px] font-extrabold text-purple-600 dark:text-purple-400 uppercase tracking-wider ml-1">Lugar de Trabajo</label>
-                <input name="origin" list="directory-destinations" defaultValue={jobToEdit?.origin || ''} required type="text" placeholder="¿Dónde se realizará?" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-purple-200 dark:border-purple-800/50 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white dark:bg-slate-900 shadow-sm" />
+                <AutocompleteInput name="origin" options={destinationOptions} defaultValue={jobToEdit?.origin || ''} required placeholder="¿Dónde se realizará?" className="w-full border-2 border-purple-200 dark:border-purple-800/50 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white dark:bg-slate-900 shadow-sm" />
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-extrabold text-purple-600 dark:text-purple-400 uppercase tracking-wider ml-1">Hasta / Destino (Opcional)</label>
-                <input name="destination" list="directory-destinations" defaultValue={jobToEdit?.destination || ''} type="text" placeholder="Si requiere moverse a otro lugar" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-purple-200 dark:border-purple-800/50 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white dark:bg-slate-900 shadow-sm" />
+                <AutocompleteInput name="destination" options={destinationOptions} defaultValue={jobToEdit?.destination || ''} placeholder="Si requiere moverse a otro lugar" className="w-full border-2 border-purple-200 dark:border-purple-800/50 p-3 text-sm rounded-xl outline-none focus:border-purple-500 font-bold bg-white dark:bg-slate-900 shadow-sm" />
               </div>
             </div>
           </div>

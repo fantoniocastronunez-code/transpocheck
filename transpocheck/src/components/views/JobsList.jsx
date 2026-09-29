@@ -12,6 +12,7 @@ import WaitTimerBadge from '../ui/WaitTimerBadge';
 import SwipeButton from '../ui/SwipeButton';
 import SignaturePad from '../ui/SignaturePad';
 import InAppCamera from '../ui/InAppCamera';
+import AutocompleteInput from '../ui/AutocompleteInput';
 import JobCard from './JobsList/JobCard';
 import HistoryJobCard from './JobsList/HistoryJobCard';
 import BulkReplaceModal from './JobsList/BulkReplaceModal';
@@ -45,6 +46,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [dupDestination, setDupDestination] = useState('');
   const [dupDriverEmails, setDupDriverEmails] = useState([]); // AHORA ES UN ARREGLO
   const [directoryMemory, setDirectoryMemory] = useState([]); // <-- NUEVO: Memoria de directorio para sugerencias
+
+  const destinationOptions = [
+    ...(directoryMemory || []).map(dir => dir.placeName || dir.name || dir.address),
+    ...(allClientsList || [])
+  ].filter(Boolean);
 
   const [showBulkSign, setShowBulkSign] = useState(false);
   const [bulkSelectedIds, setBulkSelectedIds] = useState([]);
@@ -1915,16 +1921,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     <p className={`font-extrabold text-sm ${prtReturnOpt === 'other' ? 'text-red-800 dark:text-red-300' : 'text-slate-700 dark:text-slate-300'}`}>Ir a Otro Destino</p>
                     {prtReturnOpt === 'other' ? (
                       <div className="mt-2 w-full animate-in fade-in slide-in-from-top-1">
-                        <input type="text" list="directory-destinations" autoFocus required placeholder="Escribe el destino..." value={prtReturnDest} onChange={e => setPrtReturnDest(e.target.value.toUpperCase())} autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full bg-white dark:bg-slate-900 border border-red-300 dark:border-red-700/50 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-red-500 font-bold" onClick={(e) => e.stopPropagation()} />
-
-                        <datalist id="directory-destinations-prt-rej">
-                          {directoryMemory.map((dir, idx) => (
-                            <option key={`dir-prt-rej-${idx}`} value={dir.name || dir.address} />
-                          ))}
-                          {allClientsList && allClientsList.map((client, idx) => (
-                            <option key={`cli-prt-rej-${idx}`} value={client} />
-                          ))}
-                        </datalist>
+                        <AutocompleteInput name="prtReturnDest" options={destinationOptions} value={prtReturnDest} onChange={e => setPrtReturnDest(e.target.value.toUpperCase())} required placeholder="Escribe el destino..." className="w-full bg-white dark:bg-slate-900 border border-red-300 dark:border-red-700/50 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-red-500 font-bold" />
                       </div>
                     ) : (
                       <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">Elige un nuevo lugar</p>
@@ -2008,17 +2005,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     <p className={`font-extrabold text-sm ${prtReturnOpt === 'other' ? 'text-green-800 dark:text-green-300' : 'text-slate-700 dark:text-slate-300'}`}>Ir a Otro Destino</p>
                     {prtReturnOpt === 'other' ? (
                       <div className="mt-2 w-full animate-in fade-in slide-in-from-top-1">
-                        <input type="text" list="directory-destinations" autoFocus required placeholder="Escribe el destino..." value={prtReturnDest} onChange={e => setPrtReturnDest(e.target.value.toUpperCase())} autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full bg-white dark:bg-slate-900 border border-green-300 dark:border-green-700/50 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-green-500 font-bold" onClick={(e) => e.stopPropagation()} />
-
-
-                        <datalist id="directory-destinations-prt">
-                          {directoryMemory.map((dir, idx) => (
-                            <option key={`dir-prt-${idx}`} value={dir.name || dir.address} />
-                          ))}
-                          {allClientsList && allClientsList.map((client, idx) => (
-                            <option key={`cli-prt-${idx}`} value={client} />
-                          ))}
-                        </datalist>
+                        <AutocompleteInput name="prtReturnDest" options={destinationOptions} value={prtReturnDest} onChange={e => setPrtReturnDest(e.target.value.toUpperCase())} required placeholder="Escribe el destino..." className="w-full bg-white dark:bg-slate-900 border border-green-300 dark:border-green-700/50 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-green-500 font-bold" />
                       </div>
                     ) : (
                       <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">Elige un nuevo lugar</p>
@@ -2304,7 +2291,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     <p className={`font-extrabold text-sm ${dupMode === 'continue' ? 'text-purple-800 dark:text-purple-300' : 'text-slate-700 dark:text-slate-300'}`}>Continuar a Otro Destino</p>
                     {dupMode === 'continue' ? (
                       <div className="mt-2 animate-in fade-in slide-in-from-top-1 w-full">
-                        <input type="text" list="directory-destinations" autoFocus placeholder="Escribe el nuevo destino..." value={dupDestination} onChange={e => setDupDestination(e.target.value.toUpperCase())} autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-800/50 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-400 font-bold" />
+                        <AutocompleteInput name="dupDestination" options={destinationOptions} value={dupDestination} onChange={e => setDupDestination(e.target.value.toUpperCase())} placeholder="Escribe el nuevo destino..." className="w-full bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-800/50 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-400 font-bold" />
                       </div>
                     ) : (
                       <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">{dupPromptJob.tripType === 'revision' ? 'PRT' : (dupPromptJob.destination || dupPromptJob.origin)} ➔ ???</p>
@@ -2784,15 +2771,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
       )}
 
-      {/* NUEVO: Datalist global para sugerencias de destinos (Memoria) */}
-      <datalist id="directory-destinations">
-        {directoryMemory.map((dir, idx) => (
-          <option key={`dir-${idx}`} value={dir.placeName} />
-        ))}
-        {allClientsList && allClientsList.map((client, idx) => (
-          <option key={`cli-${idx}`} value={client} />
-        ))}
-      </datalist>
     </div>
   );
 }
