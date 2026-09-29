@@ -114,7 +114,7 @@ export const StepSignature = () => {
           </div>
           <div>
             <p className="font-black text-slate-800 dark:text-slate-200 text-xs tracking-widest uppercase">SIN RECEPCIÓN</p>
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-tight mt-0.5">Se cerrará el acta sin firma de cliente (dejar fuera de horario, llaves en buzón, etc).</p>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-tight mt-0.5">Se cerrará el acta sin firma de cliente (dejar fuera de horario, etc).</p>
           </div>
         </label>
       )}

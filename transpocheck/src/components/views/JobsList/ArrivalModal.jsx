@@ -12,6 +12,7 @@ export default function ArrivalModal({
   setArrivalFuelPhoto,
   processingId,
   submitArrival,
+  handleRequestPhotoOverride,
   openCamera
 }) {
   if (!arrivalPromptJob) return null;
@@ -28,6 +29,14 @@ export default function ArrivalModal({
         </div>
 
         <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">Por favor, registra {!isServiceJob ? 'el nivel de combustible y el kilometraje (Obligatorios).' : 'la finalización del servicio.'}</p>
+
+        {arrivalPromptJob?.photoOverrideApproved && (
+          <div className="mb-4 bg-green-100 dark:bg-green-900/30 p-3 rounded-xl border border-green-200 dark:border-green-800">
+            <p className="text-xs font-bold text-green-700 dark:text-green-400 flex items-center gap-2">
+              <CheckCircle className="w-4 h-4" /> Excepción de fotos aprobada. Puedes finalizar.
+            </p>
+          </div>
+        )}
 
         <div className="space-y-4 mb-6">
           {!isServiceJob && (
@@ -83,6 +92,16 @@ export default function ArrivalModal({
 
 
         </div>
+
+        {!isServiceJob && (!arrivalFuelPhoto || !arrivalPhoto) && !arrivalPromptJob.photoOverrideApproved && (
+          <button 
+            onClick={() => handleRequestPhotoOverride(arrivalPromptJob)} 
+            disabled={processingId === 'photo-override'}
+            className="w-full mb-3 py-3 bg-orange-100 dark:bg-orange-900/40 hover:bg-orange-200 dark:hover:bg-orange-800/60 text-orange-700 dark:text-orange-400 rounded-xl font-bold text-xs shadow-sm transition-colors"
+          >
+            {processingId === 'photo-override' ? 'Solicitando...' : arrivalPromptJob.photoOverrideRequested ? 'Permiso Solicitado (Avisa al admin)' : 'Solicitar permiso al admin para finalizar sin fotos'}
+          </button>
+        )}
 
         <div className="flex gap-2">
           <button onClick={() => setArrivalPromptJob(null)} className="flex-1 py-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-xl font-extrabold text-sm transition-colors">

@@ -840,6 +840,14 @@ export default function JobCard({ j, ...props }) {
               )}
             </>
           )}
+          {isAdminView && j.photoOverrideRequested && !j.photoOverrideApproved && (
+            <div className="mb-2 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl">
+              <p className="text-xs font-bold text-orange-700 dark:text-orange-400 mb-2">📸 Conductor solicita omitir fotos de llegada</p>
+              <button onClick={() => handleApprovePhotoOverride(j)} disabled={processingId === `${j.id}-approve-photo`} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded-lg text-xs shadow-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                 {processingId === `${j.id}-approve-photo` ? <Clock className="w-4 h-4 animate-spin"/> : <CheckCircle className="w-4 h-4" />} Aprobar Omisión
+              </button>
+            </div>
+          )}
 
           {(!isRequested && (j.status === 'accepted' || j.status === 'pending_guide') && j.acceptedByEmail !== currentUserEmail) ? (
              <div className="bg-white/10 dark:bg-black/30 backdrop-blur-sm border border-white/20 text-slate-600 dark:text-slate-300 text-xs font-bold text-center py-3 rounded-xl">Vehículo a cargo de un compañero.</div>

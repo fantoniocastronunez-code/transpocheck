@@ -102,18 +102,20 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     try {
       const isServiceJob = arrivalPromptJob?.tripType === 'simple';
       if (!isServiceJob) {
-        if (!arrivalFuelPhoto) {
-          showAlert("Debe adjuntar la foto del medidor de combustible de forma obligatoria.");
-          setProcessingId(null);
-          return;
+        if (!arrivalPromptJob.photoOverrideApproved) {
+          if (!arrivalFuelPhoto) {
+            showAlert("Debe adjuntar la foto del medidor de combustible de forma obligatoria.");
+            setProcessingId(null);
+            return;
+          }
+          if (!arrivalPhoto) {
+            showAlert("Debe adjuntar la foto del odómetro de forma obligatoria.");
+            setProcessingId(null);
+            return;
+          }
         }
         if (!arrivalMileage || arrivalMileage.trim() === '') {
           showAlert("Debe ingresar el kilometraje de forma obligatoria.");
-          setProcessingId(null);
-          return;
-        }
-        if (!arrivalPhoto) {
-          showAlert("Debe adjuntar la foto del odómetro de forma obligatoria.");
           setProcessingId(null);
           return;
         }
@@ -156,6 +158,33 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     } catch (e) {
       console.error(e);
       showAlert("❌ Error al guardar datos de llegada.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleRequestPhotoOverride = async (job) => {
+    try {
+      setProcessingId('photo-override');
+      await updateDoc(doc(db, 'transport_jobs', job.id), { photoOverrideRequested: true });
+      showAlert("✅ Permiso solicitado. Avisa al administrador.");
+      setArrivalPromptJob(prev => ({ ...prev, photoOverrideRequested: true }));
+    } catch (e) {
+      console.error(e);
+      showAlert("❌ Error al solicitar permiso.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleApprovePhotoOverride = async (job) => {
+    try {
+      setProcessingId(`${job.id}-approve-photo`);
+      await updateDoc(doc(db, 'transport_jobs', job.id), { photoOverrideApproved: true, photoOverrideRequested: false });
+      showAlert("✅ Excepción de fotos aprobada.");
+    } catch (e) {
+      console.error(e);
+      showAlert("❌ Error al aprobar la excepción.");
     } finally {
       setProcessingId(null);
     }
@@ -1120,7 +1149,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   };
 
   const jobCardProps = {
-    analyzeJobStatus, getJobIdentifier, vehicles, menuOpenId, setMenuOpenId, isAdminView, onEditJob, currentUserEmail, setRelayPromptJob, setForceCloseJob, db, updateDoc, deleteField, doc, showAlert, showConfirm, setJobToFail, latestVehiclePhotos, setFullScreenPhoto, role, processingId, setProcessingId, handleApproveRequest, handleRejectRequest, handleAcceptJob, setTrackingJobId, setGuideUploadJob, setGuideLink, setGuideFileBase64, updatePhase, setArrivalPromptJob, setArrivalMileage, setArrivalPhoto, setArrivalKeyLocation, setArrivalKeyHandedTo, setPrtApproveType, setPrtReturnOpt, setPrtReturnDest, setPrtApprovePromptJob, setPrtPromptJob, onStartChecklist, handleUndoPhase, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, WaitTimerBadge, SwipeButton, AlertCircle, Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, Truck, X, XCircle, Clock, Car, MapPin, FileText, RefreshCw,
+    analyzeJobStatus, getJobIdentifier, vehicles, menuOpenId, setMenuOpenId, isAdminView, onEditJob, currentUserEmail, setRelayPromptJob, setForceCloseJob, db, updateDoc, deleteField, doc, showAlert, showConfirm, setJobToFail, latestVehiclePhotos, setFullScreenPhoto, role, processingId, setProcessingId, handleApproveRequest, handleRejectRequest, handleApprovePhotoOverride, handleAcceptJob, setTrackingJobId, setGuideUploadJob, setGuideLink, setGuideFileBase64, updatePhase, setArrivalPromptJob, setArrivalMileage, setArrivalPhoto, setArrivalKeyLocation, setArrivalKeyHandedTo, setPrtApproveType, setPrtReturnOpt, setPrtReturnDest, setPrtApprovePromptJob, setPrtPromptJob, onStartChecklist, handleUndoPhase, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, WaitTimerBadge, SwipeButton, AlertCircle, Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, Truck, X, XCircle, Clock, Car, MapPin, FileText, RefreshCw,
     // FALTANTES QUE CAUSABAN LA PANTALLA BLANCA AL ABRIR EL MENÚ:
     Copy, Trash2, Repeat, FileDown, cpyWapp, handleDuplicateJob, handleDeleteJob, generatePDF, handleShareWhatsAppPDF
   };
@@ -2671,6 +2700,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         setArrivalFuelPhoto={setArrivalFuelPhoto}
         processingId={processingId}
         submitArrival={submitArrival}
+        handleRequestPhotoOverride={handleRequestPhotoOverride}
         openCamera={(title, target) => setCameraConfig({ isOpen: true, title, target })}
       />
 
