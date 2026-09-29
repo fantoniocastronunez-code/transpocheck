@@ -52,8 +52,13 @@ export default function ClientSignView({ jobId, db }) {
     if (!formData.signature) return setAlertMessage("Por favor, firme en el recuadro blanco."); 
     
     try {
+      const draftData = job.draft?.formData || {};
+      const existingPhotos = { ...(job.checklist?.photos || {}), ...(draftData.photos || {}) };
+
       const updatedChecklist = {
         ...job.checklist,
+        ...draftData,
+        photos: existingPhotos,
         clientSigned: true,
         receiverName: formData.name || '',
         receiverRut: formData.rut || '',

@@ -127,7 +127,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       const updatedDraft = {
         ...currentDraft,
-        mileage: arrivalMileage || '',
+        arrivalMileage: arrivalMileage || '',
         keyLocation: arrivalKeyLocation || '',
         keyHandedTo: arrivalKeyLocation === 'mano' ? arrivalKeyHandedTo : ''
       };

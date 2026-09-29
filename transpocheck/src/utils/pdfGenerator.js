@@ -180,7 +180,7 @@ export const buildPDFDoc = async (job, isPublic = false, drivers = []) => {
         let hRev = drawKV("Rev. Tecnica", getDocStatus('revTecnica'), 65, currentY, 45);
         currentY += Math.max(hPerm, hRev) + 6;
         let hGas = drawKV("Gases", getDocStatus('gases'), 15, currentY, 45);
-        let hKm = drawKV("Kilometraje", `${job.checklist?.mileage || 'No reg.'}`, 65, currentY, 45);
+        let hKm = drawKV("Kilometraje (Inicio/Final)", `${job.checklist?.mileage || 'No reg.'} ${job.checklist?.arrivalMileage ? `/ ${job.checklist.arrivalMileage}` : ''}`, 65, currentY, 45);
         currentY += Math.max(hGas, hKm) + 8;
 
         if (job.checklist?.keyLocation) {

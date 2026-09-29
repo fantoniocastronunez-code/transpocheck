@@ -70,7 +70,10 @@ export default function GuideUploadModal({
                        finalUrl = await getDownloadURL(fileRef);
                    }
 
-                   const newChecklist = { ...(guideUploadJob.checklist || {}) };
+                   const draftData = guideUploadJob.draft?.formData || {};
+                   const existingPhotos = { ...(guideUploadJob.checklist?.photos || {}), ...(draftData.photos || {}) };
+
+                   const newChecklist = { ...draftData, ...(guideUploadJob.checklist || {}), photos: existingPhotos };
                    if (guideLink) newChecklist.guiaDespachoLink = guideLink;
                    if (finalUrl && finalUrl !== guideLink) newChecklist.guiaDespachoPdf = finalUrl;
 
