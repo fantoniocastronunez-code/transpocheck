@@ -92,6 +92,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [arrivalPromptJob, setArrivalPromptJob] = useState(null);
   const [arrivalMileage, setArrivalMileage] = useState('');
   const [arrivalPhoto, setArrivalPhoto] = useState(null);
+  const [arrivalPhotoLocation, setArrivalPhotoLocation] = useState(null);
   const [arrivalFuelPhoto, setArrivalFuelPhoto] = useState(null);
   const [arrivalFuelPhotoLocation, setArrivalFuelPhotoLocation] = useState(null);
   const [arrivalKeyLocation, setArrivalKeyLocation] = useState('');
@@ -133,6 +134,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       if (arrivalPhoto) {
         updatedDraft.photos = { ...currentPhotos, odometer: arrivalPhoto };
+        if (arrivalPhotoLocation) updatedDraft.photos.odometerLocation = arrivalPhotoLocation;
       }
       updatedDraft.photos = updatedDraft.photos || {};
       updatedDraft.photos.fuelGauge = arrivalFuelPhoto;
@@ -150,6 +152,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       setArrivalPromptJob(null);
       setArrivalMileage('');
       setArrivalPhoto(null);
+      setArrivalPhotoLocation(null);
       setArrivalFuelPhoto(null);
       setArrivalFuelPhotoLocation(null);
       setArrivalKeyLocation('');
@@ -2691,9 +2694,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           setProcessingId('processing-image');
           if (cameraConfig.target === 'arrivalPhoto') {
             try {
-              const compressed = await resizeImage(file, 1200, 0.6);
-              setArrivalPhoto(compressed);
-            } catch (e) { showAlert("Error procesando foto."); }
+              const compressed = await resizeAndWatermarkImage(file, 1200, 0.6);
+              setArrivalPhoto(compressed.base64);
+              if (compressed.lat !== null && compressed.lng !== null) {
+                setArrivalPhotoLocation({ lat: compressed.lat, lng: compressed.lng });
+              }
+            } catch (e) { showAlert("❌ Error procesando foto del odómetro. Código: [ERR-PHOTO-ODOMETER]"); }
           } else if (cameraConfig.target === 'arrivalFuelPhoto') {
             try {
               const compressed = await resizeAndWatermarkImage(file, 1200, 0.6);
@@ -2701,7 +2707,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               if (compressed.lat !== null && compressed.lng !== null) {
                 setArrivalFuelPhotoLocation({ lat: compressed.lat, lng: compressed.lng });
               }
-            } catch (e) { showAlert("Error procesando foto."); }
+            } catch (e) { showAlert("❌ Error procesando foto de combustible. Código: [ERR-PHOTO-FUEL]"); }
           }
           setProcessingId(null);
         }}

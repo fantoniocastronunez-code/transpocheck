@@ -68,11 +68,22 @@ export default function HistoryModal({
               <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
                 <div>
                   <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Odómetro Reportado</p>
-                  <p className="text-sm font-black text-slate-800 dark:text-slate-200">{selectedHistoryJob.checklist?.mileage || 'No registrado'}</p>
+                  <div className="flex flex-col gap-1.5 mt-0.5">
+                    <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">{selectedHistoryJob.checklist?.mileage || 'No registrado'}</p>
+                    {selectedHistoryJob.checklist?.photos?.odometer && (
+                        <img src={selectedHistoryJob.checklist.photos.odometer} alt="Odómetro" className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(selectedHistoryJob.checklist.photos.odometer, '_blank')} />
+                    )}
+                  </div>
                 </div>
                 <div>
                   <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Combustible</p>
-                  <p className="text-sm font-black text-slate-800 dark:text-slate-200">{selectedHistoryJob.checklist?.fuelLevel !== undefined ? `${selectedHistoryJob.checklist.fuelLevel}%` : 'No registrado'}</p>
+                  <div className="flex flex-col gap-1.5 mt-0.5">
+                    {selectedHistoryJob.checklist?.photos?.fuelGauge ? (
+                        <img src={selectedHistoryJob.checklist.photos.fuelGauge} alt="Combustible" className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(selectedHistoryJob.checklist.photos.fuelGauge, '_blank')} />
+                    ) : (
+                        <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">{selectedHistoryJob.checklist?.fuelLevel !== undefined ? `${selectedHistoryJob.checklist.fuelLevel}%` : 'No registrado'}</p>
+                    )}
+                  </div>
                 </div>
                 {selectedHistoryJob.checklist?.keyLocation && (
                 <div className="col-span-2">
@@ -88,11 +99,16 @@ export default function HistoryModal({
                   <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Distancia GPS (Maps)</p>
                   <p className="text-sm font-black text-blue-600 dark:text-blue-400">{selectedHistoryJob.drivenDistance || 'No calculado'}</p>
                 </div>
-                {selectedHistoryJob.checklist?.location && (
-                <div className="col-span-2 mt-1">
-                  <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Punto de Entrega (GPS)</p>
-                  <a href={`https://maps.google.com/?q=${selectedHistoryJob.checklist.location.lat},${selectedHistoryJob.checklist.location.lng}`} target="_blank" rel="noreferrer" className="text-sm font-black text-blue-600 dark:text-blue-400 underline inline-flex items-center gap-1 mt-0.5 hover:text-blue-700">
-                    Ver en Google Maps
+                {(selectedHistoryJob.checklist?.photos?.fuelGaugeLocation || selectedHistoryJob.checklist?.photos?.odometerLocation || selectedHistoryJob.checklist?.location) && (
+                <div className="col-span-2 mt-2">
+                  <a 
+                    href={`https://maps.google.com/?q=${(selectedHistoryJob.checklist?.photos?.fuelGaugeLocation || selectedHistoryJob.checklist?.photos?.odometerLocation || selectedHistoryJob.checklist?.location).lat},${(selectedHistoryJob.checklist?.photos?.fuelGaugeLocation || selectedHistoryJob.checklist?.photos?.odometerLocation || selectedHistoryJob.checklist?.location).lng}`} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-3 rounded-xl font-extrabold text-xs transition-colors border border-slate-200 dark:border-slate-700 shadow-sm w-full"
+                  >
+                    <MapPin className="w-4 h-4 text-red-500" />
+                    Reporte de kilometraje y combustible tomado acá
                   </a>
                 </div>
                 )}
