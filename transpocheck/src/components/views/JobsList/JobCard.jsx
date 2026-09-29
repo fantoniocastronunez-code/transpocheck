@@ -550,14 +550,14 @@ export default function JobCard({ j, ...props }) {
             </div>
           </div>
 
-                    <div className="mt-4 relative z-10 flex flex-col">
+                    <div className="mt-5 relative z-10 flex flex-col bg-slate-900/40 p-4 rounded-2xl border border-white/5 backdrop-blur-md shadow-2xl">
             {/* TIMELINE SECTION */}
-            <div className="relative pl-[26px] flex flex-col gap-5">
+            <div className="relative pl-[26px] flex flex-col gap-6">
               
               {/* Floating Date Badge (Right Side) */}
               {j.scheduledDate && (
-                <div className="absolute right-0 -top-2 bg-blue-500/10 border border-blue-400/30 rounded-xl px-3 py-2 flex flex-col items-center justify-center shadow-sm backdrop-blur-sm z-30">
-                  <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest leading-none">
+                <div className="absolute right-0 -top-2 bg-blue-600 rounded-xl px-3 py-2 flex flex-col items-center justify-center shadow-lg z-30">
+                  <span className="text-[10px] font-black text-blue-100 uppercase tracking-widest leading-none">
                     {(() => {
                        const today = new Date(); today.setHours(0,0,0,0);
                        const [y, m, d] = j.scheduledDate.split('-');
@@ -568,42 +568,44 @@ export default function JobCard({ j, ...props }) {
                        return `${d}/${m}`;
                     })()}
                   </span>
-                  <span className="text-sm font-bold text-blue-100 mt-1 leading-none">{j.scheduledTime || '--:--'}</span>
+                  <span className="text-sm font-bold text-white mt-1 leading-none">{j.scheduledTime || '--:--'}</span>
                 </div>
               )}
 
               {/* Origin */}
               <div className="relative">
-                <div className="absolute -left-[26px] top-1.5 w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-500 ring-4 ring-[#1a1e27] dark:ring-[#1a1e27] ring-white z-20"></div>
+                <div className="absolute -left-[26px] top-1 w-3.5 h-3.5 rounded-full bg-slate-400 border-[3px] border-[#1a1e27] z-20 shadow-sm"></div>
                 {/* Line connecting to destination, if destination exists */}
                 {(j.destination || j.tripType !== 'simple') && (
-                  <div className="absolute -left-[21px] top-4 w-[2px] h-[calc(100%+20px)] bg-slate-200 dark:bg-slate-700 z-10"></div>
+                  <div className="absolute -left-[20px] top-4 w-[2px] h-[calc(100%+30px)] bg-slate-700/80 z-10"></div>
                 )}
                 
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-0.5">{j.tripType === 'simple' ? 'Lugar' : 'Desde'}</p>
-                <p className="text-sm font-extrabold text-slate-800 dark:text-slate-100 pr-20 leading-snug">{j.origin || 'Por definir'}</p>
+                <div className="flex items-center gap-1.5 mb-0.5">
+                   <p className="text-[12px] text-slate-400 font-medium">{j.tripType === 'simple' ? 'Lugar:' : 'Desde:'}</p>
+                   <p className="text-[15px] font-bold text-white pr-20 leading-snug">{j.origin || 'Por definir'}</p>
+                </div>
               </div>
 
               {/* Intermediate Tags (PRT, Regiones, Waypoints) */}
               {(j.tripType !== 'simple' || j.waypoints?.length > 0) && (
-                <div className="relative z-20 -ml-1 py-1 flex flex-col items-start gap-1">
+                <div className="relative z-20 py-1 flex flex-col items-start gap-1">
                    {j.tripType === 'revision' && (
-                     <div className="inline-block bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-full backdrop-blur-sm">
-                       <p className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest">
+                     <div className="inline-block bg-[#2a261c] border border-amber-600/30 px-3 py-1 rounded-full">
+                       <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest shadow-sm">
                          1RA PARADA: {j.destination ? j.destination.split(' -> ')[0] : 'PRT'}
                        </p>
                      </div>
                    )}
                    {j.tripType === 'viaje' && (
-                     <div className="inline-block bg-indigo-500/10 border border-indigo-500/30 px-3 py-1 rounded-full backdrop-blur-sm">
-                       <p className="text-[9px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">
+                     <div className="inline-block bg-[#1c2235] border border-indigo-500/30 px-3 py-1 rounded-full">
+                       <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest shadow-sm">
                          A REGIONES
                        </p>
                      </div>
                    )}
                    {j.waypoints && j.waypoints.length > 0 && (
-                     <div className="inline-block bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-full backdrop-blur-sm">
-                       <p className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest">
+                     <div className="inline-block bg-[#2a261c] border border-amber-600/30 px-3 py-1 rounded-full">
+                       <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest shadow-sm">
                          {j.waypoints.length} PARADA{j.waypoints.length > 1 ? 'S' : ''} INTERMEDIA{j.waypoints.length > 1 ? 'S' : ''}
                        </p>
                      </div>
@@ -614,56 +616,58 @@ export default function JobCard({ j, ...props }) {
               {/* Destination */}
               {(j.destination || j.tripType !== 'simple') && (
                 <div className="relative">
-                  <div className="absolute -left-[26px] top-1.5 w-3 h-3 rounded-full bg-blue-500 dark:bg-blue-400 ring-4 ring-[#1a1e27] dark:ring-[#1a1e27] ring-white z-20"></div>
-                  <p className="text-[10px] text-blue-600 dark:text-blue-400 uppercase tracking-wider font-bold mb-0.5">Hasta</p>
-                  <p className="text-sm font-extrabold text-blue-700 dark:text-blue-100 pr-20 leading-snug">{j.tripType === 'revision' ? getRtFinalDestination(j) : (j.destination || 'Por definir')}</p>
+                  <div className="absolute -left-[26px] top-1 w-3.5 h-3.5 rounded-full bg-blue-500 border-[3px] border-[#1a1e27] z-20 shadow-sm"></div>
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                     <p className="text-[12px] text-blue-400 font-medium">Hasta:</p>
+                     <p className="text-[15px] font-bold text-blue-200 pr-20 leading-snug">{j.tripType === 'revision' ? getRtFinalDestination(j) : (j.destination || 'Por definir')}</p>
+                  </div>
                 </div>
               )}
             </div>
 
             {/* Contacts & Info Pill Button */}
             {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone || j.originAddress || j.originCommune || j.destContactName || j.destContactPhone || j.destAddress || j.destCommune || (j.waypoints && j.waypoints.length > 0)) && (
-              <div className="mt-5 mb-2 flex">
+              <div className="mt-6 mb-2 flex">
                 <button 
                   onClick={() => setShowDetails(!showDetails)}
-                  className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-700/50 border border-slate-200 dark:border-slate-700 rounded-full px-4 py-1.5 transition-colors shadow-[0_2px_8px_rgba(0,0,0,0.05)]"
+                  className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-600/50 rounded-full px-4 py-1.5 transition-colors shadow-md"
                 >
-                  <MapPin className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                  <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">
-                    {showDetails ? 'Ocultar Detalles' : 'Contactos y Direcciones'}
+                  <MapPin className="w-3.5 h-3.5 text-slate-300" />
+                  <span className="text-[11px] font-bold text-white tracking-wide">
+                    {showDetails ? 'Ocultar Detalles' : 'Contactos y Waze'}
                   </span>
                 </button>
               </div>
             )}
             
             {showDetails && (
-              <div className="mt-2 mb-4 space-y-2 animate-in fade-in slide-in-from-top-2 duration-300 relative z-20">
+              <div className="mt-3 mb-4 space-y-2 animate-in fade-in slide-in-from-top-2 duration-300 relative z-20">
                 {/* BLOQUE ORIGEN */}
                 {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone || j.originAddress || j.originCommune) && (
-                  <div className="pt-3 border-t border-slate-200 dark:border-slate-700/60 dark:border-slate-800/60 flex flex-col gap-2">
+                  <div className="pt-3 border-t border-slate-700/50 flex flex-col gap-2">
                      {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone) && (
-                     <div className="flex items-center justify-between gap-2 bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                     <div className="flex items-center justify-between gap-2 bg-slate-800/50 p-2.5 rounded-xl border border-slate-700/50">
                        <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                          <div className="bg-emerald-50 dark:bg-emerald-900/30 p-2 rounded-lg shrink-0 border border-emerald-100 dark:border-emerald-800/50"><Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400"/></div>
+                          <div className="bg-emerald-900/40 p-2 rounded-lg shrink-0 border border-emerald-800/50"><Users className="w-4 h-4 text-emerald-400"/></div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-0.5 truncate">Encargado Origen</p>
-                            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{j.originContactName || j.contactName || 'No especificado'}</p>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 truncate">Encargado Origen</p>
+                            <p className="text-xs font-bold text-slate-200 truncate">{j.originContactName || j.contactName || 'No especificado'}</p>
                           </div>
                        </div>
                        {(j.originContactPhone || j.contactPhone) && (
                        <div className="flex gap-1.5 shrink-0">
-                         <a href={`https://wa.me/${(j.originContactPhone || j.contactPhone).replace(/[^\d]/g, '')}?text=${encodeURIComponent('Hola ' + (j.originContactName || j.contactName || '') + ', soy de LogisticAPP y voy a retirar el vehículo.')}`} target="_blank" rel="noopener noreferrer" className="bg-emerald-500 hover:bg-emerald-600 text-white w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm active:scale-95 text-sm">💬</a>
-                         <a href={`tel:${(j.originContactPhone || j.contactPhone).replace(/[^\d+]/g, '')}`} className="bg-slate-800 hover:bg-slate-900 text-white w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm active:scale-95 text-sm">📞</a>
+                         <a href={`https://wa.me/${(j.originContactPhone || j.contactPhone).replace(/[^\d]/g, '')}?text=${encodeURIComponent('Hola ' + (j.originContactName || j.contactName || '') + ', soy de LogisticAPP y voy a retirar el vehículo.')}`} target="_blank" rel="noopener noreferrer" className="bg-emerald-600 hover:bg-emerald-500 text-white w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm active:scale-95 text-sm">💬</a>
+                         <a href={`tel:${(j.originContactPhone || j.contactPhone).replace(/[^\d+]/g, '')}`} className="bg-slate-700 hover:bg-slate-600 text-white w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm active:scale-95 text-sm">📞</a>
                        </div>
                        )}
                      </div>
                      )}
                      
                      {(j.originAddress || j.originCommune) && (
-                        <div className="flex justify-between items-center bg-white/20 dark:bg-black/40 backdrop-blur-sm p-2.5 rounded-xl border border-white/20 shadow-sm mt-1">
-                          <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-slate-400 dark:text-slate-500"/>{j.originAddress}{j.originAddress && j.originCommune ? ', ' : ''}{j.originCommune}</p>
+                        <div className="flex justify-between items-center bg-slate-800/30 p-2.5 rounded-xl border border-slate-700/50 mt-1">
+                          <p className="text-[11px] font-medium text-slate-300 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-slate-500"/>{j.originAddress}{j.originAddress && j.originCommune ? ', ' : ''}{j.originCommune}</p>
                           {isAccepted && (
-                            <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.originAddress || ''} ${j.originCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition-colors border border-blue-200 dark:border-blue-800/50"><Navigation className="w-3 h-3"/> Waze</a>
+                            <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.originAddress || ''} ${j.originCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-900/40 hover:bg-blue-800/50 text-blue-300 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition-colors border border-blue-800/50"><Navigation className="w-3 h-3"/> Waze</a>
                           )}
                         </div>
                      )}
@@ -672,30 +676,30 @@ export default function JobCard({ j, ...props }) {
 
                 {/* BLOQUE DESTINO */}
                 {(j.destContactName || j.destContactPhone || j.destAddress || j.destCommune) && (
-                  <div className="pt-2 border-t border-slate-200 dark:border-slate-700/60 flex flex-col gap-2">
+                  <div className="pt-2 border-t border-slate-700/50 flex flex-col gap-2">
                      {(j.destContactName || j.destContactPhone) && (
-                     <div className="flex items-center justify-between gap-2 bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                     <div className="flex items-center justify-between gap-2 bg-slate-800/50 p-2.5 rounded-xl border border-slate-700/50">
                        <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                          <div className="bg-blue-50 dark:bg-blue-900/30 p-2 rounded-lg shrink-0 border border-blue-100 dark:border-blue-800/50"><Users className="w-4 h-4 text-blue-600 dark:text-blue-400"/></div>
+                          <div className="bg-blue-900/40 p-2 rounded-lg shrink-0 border border-blue-800/50"><Users className="w-4 h-4 text-blue-400"/></div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-0.5 truncate">Encargado Destino</p>
-                            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{j.destContactName || 'No especificado'}</p>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 truncate">Encargado Destino</p>
+                            <p className="text-xs font-bold text-slate-200 truncate">{j.destContactName || 'No especificado'}</p>
                           </div>
                        </div>
                        {j.destContactPhone && (
                        <div className="flex gap-1.5 shrink-0">
-                         <a href={`https://wa.me/${j.destContactPhone.replace(/[^\d]/g, '')}?text=${encodeURIComponent('Hola ' + (j.destContactName || '') + ', soy de LogisticAPP y voy en camino al destino con el vehículo.')}`} target="_blank" rel="noopener noreferrer" className="bg-emerald-500 hover:bg-emerald-600 text-white w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm active:scale-95 text-sm">💬</a>
-                         <a href={`tel:${j.destContactPhone.replace(/[^\d+]/g, '')}`} className="bg-slate-800 hover:bg-slate-900 text-white w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm active:scale-95 text-sm">📞</a>
+                         <a href={`https://wa.me/${j.destContactPhone.replace(/[^\d]/g, '')}?text=${encodeURIComponent('Hola ' + (j.destContactName || '') + ', soy de LogisticAPP y voy en camino al destino con el vehículo.')}`} target="_blank" rel="noopener noreferrer" className="bg-emerald-600 hover:bg-emerald-500 text-white w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm active:scale-95 text-sm">💬</a>
+                         <a href={`tel:${j.destContactPhone.replace(/[^\d+]/g, '')}`} className="bg-slate-700 hover:bg-slate-600 text-white w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm active:scale-95 text-sm">📞</a>
                        </div>
                        )}
                      </div>
                      )}
 
                      {(j.destAddress || j.destCommune) && (
-                        <div className="flex justify-between items-center bg-blue-50 dark:bg-blue-900/10 p-2.5 rounded-xl border border-blue-200 dark:border-blue-800/50 shadow-sm animate-in fade-in slide-in-from-top-1 mt-1">
-                          <p className="text-[10px] font-bold text-blue-800 dark:text-blue-300 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-blue-500 dark:text-blue-400"/>{j.destAddress}{j.destAddress && j.destCommune ? ', ' : ''}{j.destCommune}</p>
+                        <div className="flex justify-between items-center bg-blue-900/20 p-2.5 rounded-xl border border-blue-800/40 mt-1">
+                          <p className="text-[11px] font-medium text-blue-300 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-blue-500"/>{j.destAddress}{j.destAddress && j.destCommune ? ', ' : ''}{j.destCommune}</p>
                           {isAccepted && (
-                            <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.destAddress || ''} ${j.destCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 shadow-md transition-colors"><Navigation className="w-3 h-3"/> Waze</a>
+                            <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.destAddress || ''} ${j.destCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shrink-0 shadow-md transition-colors"><Navigation className="w-3 h-3"/> Waze</a>
                           )}
                         </div>
                      )}
@@ -705,11 +709,11 @@ export default function JobCard({ j, ...props }) {
             )}
 
             {j.waypoints && j.waypoints.length > 0 && showDetails && (
-              <div className="mb-4 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <p className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><MapPin className="w-3 h-3"/> Ruta intermedia:</p>
+              <div className="mb-4 pt-2 border-t border-slate-700/50">
+                <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest mb-1.5 flex items-center gap-1"><MapPin className="w-3 h-3"/> Ruta intermedia:</p>
                 <div className="flex flex-col gap-1">
                   {j.waypoints.map((wp, i) => (
-                     <span key={i} className="text-[11px] font-bold text-slate-600 dark:text-slate-400 leading-snug break-words"><span className="font-black mr-1 text-slate-400">{i + 1}.</span> {wp}</span>
+                     <span key={i} className="text-[11px] font-bold text-slate-300 leading-snug break-words"><span className="font-black mr-1 text-slate-500">{i + 1}.</span> {wp}</span>
                   ))}
                 </div>
               </div>
@@ -755,22 +759,30 @@ export default function JobCard({ j, ...props }) {
                   animationType = 'assigned';
                }
                
+               // NUEVO DISEÑO PARA LA SECCIÓN DE ANIMACIÓN:
                return (
-                 <div className="mb-4 mt-2 pt-3 flex flex-col border-t border-white/5 dark:border-slate-800">
-                   <StatusAnimation type={animationType} vehicleType={j.vehicleType} isChassisCab={j.isChassisCab} origin={j.origin} destination={j.tripType === 'revision' ? getRtFinalDestination(j) : j.destination} assignedDrivers={j.assignedDrivers} />
-                   <div className="flex items-center gap-3 w-full pt-1">
-                     <div className="p-1 shrink-0">
-                       {animationType === 'searching' ? <div className="w-5 h-5 opacity-70"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-full h-full text-slate-400"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></div> : statusIcon}
+                 <div className="mt-2 pt-4 flex flex-col border-t border-slate-700/50">
+                   {/* Si el usuario NO quiere ver la lupa gigante todo el tiempo, la achicamos radicalmente o la estilizamos */}
+                   <div className="flex items-center gap-3 w-full bg-[#1c2235] p-3 rounded-xl border border-[#2a3441] shadow-inner mb-3">
+                     <div className="p-1 shrink-0 bg-[#0f172a] rounded-lg border border-[#1e293b]">
+                        <Search className="w-5 h-5 text-blue-400" />
                      </div>
                      <div className="flex-1 min-w-0">
-                       <p className="font-extrabold text-sm text-slate-800 dark:text-slate-200 truncate">{statusTitle}</p>
-                       {statusSub && <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 truncate">{statusSub}</p>}
+                       <p className="font-bold text-sm text-white truncate">{statusTitle}</p>
+                       {statusSub && <p className="text-[11px] font-medium text-slate-400 truncate">{statusSub}</p>}
                      </div>
                    </div>
+                   
+                   {/* Solo mostramos la animación gigante si NO estamos en "Buscando conductor" */}
+                   {animationType !== 'searching' && (
+                     <div className="scale-75 origin-top mb-[-2rem]">
+                        <StatusAnimation type={animationType} vehicleType={j.vehicleType} isChassisCab={j.isChassisCab} origin={j.origin} destination={j.tripType === 'revision' ? getRtFinalDestination(j) : j.destination} assignedDrivers={j.assignedDrivers} />
+                     </div>
+                   )}
                  </div>
                );
             })()}
-          </div>
+          </div>         </div>
 
         {j.phase === 'arrived_pickup' && j.arrivedPickupAt && (
           <div className="flex items-center gap-2 mb-3">
