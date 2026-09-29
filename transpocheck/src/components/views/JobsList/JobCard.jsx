@@ -379,7 +379,7 @@ const StatusAnimation = ({ type, vehicleType, isChassisCab, origin, destination,
 
 export default function JobCard({ j, ...props }) {
   const [showDetails, setShowDetails] = useState(false);
-  const { analyzeJobStatus, getJobIdentifier, vehicles, menuOpenId, setMenuOpenId, isAdminView, onEditJob, currentUserEmail, setRelayPromptJob, setForceCloseJob, db, updateDoc, deleteField, doc, showAlert, showConfirm, setJobToFail, latestVehiclePhotos, setFullScreenPhoto, role, processingId, setProcessingId, handleApproveRequest, handleRejectRequest, handleAcceptJob, setTrackingJobId, setGuideUploadJob, setGuideLink, setGuideFileBase64, updatePhase, setArrivalPromptJob, setArrivalMileage, setArrivalPhoto, setArrivalKeyLocation, setArrivalKeyHandedTo, setPrtApproveType, setPrtReturnOpt, setPrtReturnDest, setPrtApprovePromptJob, setPrtPromptJob, onStartChecklist, handleUndoPhase, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, WaitTimerBadge, SwipeButton, AlertCircle, Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, Truck, X, XCircle, Clock, Car, MapPin, FileText, RefreshCw } = props;
+  const { analyzeJobStatus, getJobIdentifier, vehicles, menuOpenId, setMenuOpenId, isAdminView, onEditJob, currentUserEmail, setRelayPromptJob, setForceCloseJob, db, updateDoc, deleteField, doc, showAlert, showConfirm, setJobToFail, latestVehiclePhotos, setFullScreenPhoto, role, processingId, setProcessingId, handleApproveRequest, handleRejectRequest, handleApprovePhotoOverride, handleAcceptJob, setTrackingJobId, setGuideUploadJob, setGuideLink, setGuideFileBase64, updatePhase, setArrivalPromptJob, setArrivalMileage, setArrivalPhoto, setPrtApproveType, setPrtReturnOpt, setPrtReturnDest, setPrtApprovePromptJob, setPrtPromptJob, onStartChecklist, handleUndoPhase, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, WaitTimerBadge, SwipeButton, AlertCircle, Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, Truck, X, XCircle, Clock, Car, MapPin, FileText, RefreshCw } = props;
     const { isRequested, isPending, isAccepted, isPendingGuide, step2Done, step3Done, step4Done } = analyzeJobStatus(j);
     
     const ident = getJobIdentifier(j);
@@ -881,8 +881,6 @@ export default function JobCard({ j, ...props }) {
                           setArrivalPromptJob(j); 
                           setArrivalMileage(''); 
                           setArrivalPhoto(null); 
-                          setArrivalKeyLocation(''); 
-                          setArrivalKeyHandedTo(''); 
                           setMenuOpenId(null);
                       }} text={j.tripType === 'simple' ? "Desliza: Finalizar Trabajo" : "Desliza: Llegué a Destino"} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />}
 
@@ -898,8 +896,6 @@ export default function JobCard({ j, ...props }) {
                           setArrivalPromptJob(j); 
                           setArrivalMileage(''); 
                           setArrivalPhoto(null); 
-                          setArrivalKeyLocation(''); 
-                          setArrivalKeyHandedTo(''); 
                           setMenuOpenId(null);
                       }} text="Desliza: Llegué a Destino Final" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />}
                       
@@ -921,8 +917,6 @@ export default function JobCard({ j, ...props }) {
                             setArrivalPromptJob(j); 
                             setArrivalMileage(''); 
                             setArrivalPhoto(null); 
-                            setArrivalKeyLocation(''); 
-                            setArrivalKeyHandedTo(''); 
                             setMenuOpenId(null);
                         }} text={`Desliza: Llegué a ${j.checklist?.rtReturnOption === 'other' ? (j.checklist?.rtReturnDestination?.substring(0,10) + '...') : 'Origen'}`} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />
                       )}

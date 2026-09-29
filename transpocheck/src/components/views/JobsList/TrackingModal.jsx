@@ -12,8 +12,6 @@ export default function TrackingModal({
   setArrivalPromptJob,
   setArrivalMileage,
   setArrivalPhoto,
-  setArrivalKeyLocation,
-  setArrivalKeyHandedTo,
   onStartChecklist,
   setPrtApproveType,
   setPrtReturnOpt,
@@ -81,8 +79,6 @@ export default function TrackingModal({
                 setArrivalPromptJob(tj); 
                 setArrivalMileage(''); 
                 setArrivalPhoto(null); 
-                setArrivalKeyLocation(''); 
-                setArrivalKeyHandedTo(''); 
                 setTrackingJobId(null);
             }} text={tj.tripType === 'simple' ? "Desliza: Finalizar Trabajo" : "Desliza: Llegué a Destino"} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${tj.id}-arrived_destination`} />}
 
@@ -104,8 +100,6 @@ export default function TrackingModal({
                   setArrivalPromptJob(tj); 
                   setArrivalMileage(''); 
                   setArrivalPhoto(null); 
-                  setArrivalKeyLocation(''); 
-                  setArrivalKeyHandedTo(''); 
                   setTrackingJobId(null);
               }} text={`Desliza: Llegué a ${tj.checklist?.rtReturnOption === 'other' ? (tj.checklist?.rtReturnDestination?.substring(0,10) + '...') : 'Origen'}`} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${tj.id}-arrived_destination`} />
             )}
