@@ -595,8 +595,13 @@ const handleDownloadPDF = async (job) => {
                     await Promise.all(batchFormData.selectedIds.map(async (id) => {
                        const jobToUpdate = jobs.find(x => x.id === id);
                        if (!jobToUpdate) return;
+                       const draftData = jobToUpdate.draft?.formData || {};
+                       const existingPhotos = { ...(jobToUpdate.checklist?.photos || {}), ...(draftData.photos || {}) };
+
                        const updatedChecklist = {
                           ...jobToUpdate.checklist,
+                          ...draftData,
+                          photos: existingPhotos,
                           clientSigned: true,
                           receiverName: batchFormData.name,
                           receiverRut: batchFormData.rut,
