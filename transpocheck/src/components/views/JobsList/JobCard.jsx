@@ -782,7 +782,7 @@ export default function JobCard({ j, ...props }) {
                  </div>
                );
             })()}
-          </div>         </div>
+          </div>
 
         {j.phase === 'arrived_pickup' && j.arrivedPickupAt && (
           <div className="flex items-center gap-2 mb-3">
