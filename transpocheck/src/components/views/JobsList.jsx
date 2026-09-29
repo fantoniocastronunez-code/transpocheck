@@ -95,8 +95,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [arrivalPhotoLocation, setArrivalPhotoLocation] = useState(null);
   const [arrivalFuelPhoto, setArrivalFuelPhoto] = useState(null);
   const [arrivalFuelPhotoLocation, setArrivalFuelPhotoLocation] = useState(null);
-  const [arrivalKeyLocation, setArrivalKeyLocation] = useState('');
-  const [arrivalKeyHandedTo, setArrivalKeyHandedTo] = useState('');
   const [cameraConfig, setCameraConfig] = useState({ isOpen: false, title: '', target: null });
 
   const submitArrival = async () => {
@@ -127,9 +125,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       const updatedDraft = {
         ...currentDraft,
-        arrivalMileage: arrivalMileage || '',
-        keyLocation: arrivalKeyLocation || '',
-        keyHandedTo: arrivalKeyLocation === 'mano' ? arrivalKeyHandedTo : ''
+        arrivalMileage: arrivalMileage || ''
       };
 
       if (arrivalPhoto) {
@@ -2353,17 +2349,14 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                 acceptedByEmail: newDriver.email,
                 assignedDrivers: [{
                    email: newDriver.email,
-                   name: newDriver.name,
+                   name: newDriver.name || "Conductor",
                    role: 'driver',
                    addedAt: Date.now()
                 }]
               };
               
               if (editDriverJob.checklist) {
-                updateData.checklist = {
-                   ...editDriverJob.checklist,
-                   assignedDriverName: newDriver.name
-                };
+                updateData['checklist.assignedDriverName'] = newDriver.name || "Conductor";
               }
 
               await updateDoc(doc(db, 'transport_jobs', editDriverJob.id), updateData);
@@ -2371,7 +2364,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               setEditDriverJob(null);
             } catch (err) {
               console.error(err);
-              showAlert("❌ Error al actualizar el conductor.");
+              showAlert("❌ Error al actualizar el conductor. [ERR-DB-DRIVER]");
             } finally {
               setProcessingId(null);
             }
@@ -2432,7 +2425,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               setEditDateJob(null);
             } catch (err) {
               console.error(err);
-              showAlert("❌ Error al actualizar la fecha.");
+              showAlert("❌ Error al actualizar la fecha. [ERR-DB-DATE]");
             } finally {
               setProcessingId(null);
             }
@@ -2477,7 +2470,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               setEditPriceJob(null);
             } catch (err) {
               console.error(err);
-              showAlert("❌ Error al actualizar el cobro.");
+              showAlert("❌ Error al actualizar el cobro. [ERR-DB-PRICE]");
             } finally {
               setProcessingId(null);
             }
@@ -2532,7 +2525,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               setEditKmJob(null);
             } catch (err) {
               console.error(err);
-              showAlert("❌ Error al actualizar el kilometraje.");
+              showAlert("❌ Error al actualizar el kilometraje. [ERR-DB-KM]");
             } finally {
               setProcessingId(null);
             }
@@ -2676,10 +2669,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         setArrivalPhoto={setArrivalPhoto}
         arrivalFuelPhoto={arrivalFuelPhoto}
         setArrivalFuelPhoto={setArrivalFuelPhoto}
-        arrivalKeyLocation={arrivalKeyLocation}
-        setArrivalKeyLocation={setArrivalKeyLocation}
-        arrivalKeyHandedTo={arrivalKeyHandedTo}
-        setArrivalKeyHandedTo={setArrivalKeyHandedTo}
         processingId={processingId}
         submitArrival={submitArrival}
         openCamera={(title, target) => setCameraConfig({ isOpen: true, title, target })}

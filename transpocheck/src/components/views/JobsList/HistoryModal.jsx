@@ -87,16 +87,7 @@ export default function HistoryModal({
                     )}
                   </div>
                 </div>
-                {selectedHistoryJob.checklist?.keyLocation && (
-                <div className="col-span-2">
-                  <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Ubicación de Llaves</p>
-                  <p className="text-sm font-black text-orange-600 dark:text-orange-400">
-                     {selectedHistoryJob.checklist.keyLocation === 'puestas' ? 'Puestas' : 
-                      selectedHistoryJob.checklist.keyLocation === 'puerta' ? 'En la puerta' :
-                      selectedHistoryJob.checklist.keyLocation === 'mano' ? `Entregadas por mano a: ${selectedHistoryJob.checklist.keyHandedTo || ''}` : selectedHistoryJob.checklist.keyLocation}
-                  </p>
-                </div>
-                )}
+
                 <div className="col-span-2 mt-2">
                   <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Distancia GPS (Maps)</p>
                   <p className="text-sm font-black text-blue-600 dark:text-blue-400">{selectedHistoryJob.drivenDistance || 'No calculado'}</p>

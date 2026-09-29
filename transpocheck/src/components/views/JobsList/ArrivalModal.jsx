@@ -10,10 +10,6 @@ export default function ArrivalModal({
   setArrivalPhoto,
   arrivalFuelPhoto,
   setArrivalFuelPhoto,
-  arrivalKeyLocation,
-  setArrivalKeyLocation,
-  arrivalKeyHandedTo,
-  setArrivalKeyHandedTo,
   processingId,
   submitArrival,
   openCamera
@@ -31,7 +27,7 @@ export default function ArrivalModal({
           <button onClick={() => setArrivalPromptJob(null)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"><X className="w-4 h-4" /></button>
         </div>
 
-        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">Por favor, registra {!isServiceJob ? 'el nivel de combustible y el kilometraje (Obligatorios), y ' : ''}la ubicación de las llaves del vehículo (opcional).</p>
+        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">Por favor, registra {!isServiceJob ? 'el nivel de combustible y el kilometraje (Obligatorios).' : 'la finalización del servicio.'}</p>
 
         <div className="space-y-4 mb-6">
           {!isServiceJob && (
@@ -85,23 +81,7 @@ export default function ArrivalModal({
           </div>
           )}
 
-          <div>
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">¿Dónde dejaste las llaves?</label>
-            <div className="grid grid-cols-1 gap-2">
-              <button onClick={() => setArrivalKeyLocation('puestas')} className={`p-3 rounded-xl border-2 text-sm font-bold transition-colors text-left flex items-center justify-between ${arrivalKeyLocation === 'puestas' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'}`}>
-                Puestas {arrivalKeyLocation === 'puestas' && <CheckCircle className="w-4 h-4" />}
-              </button>
-              <button onClick={() => setArrivalKeyLocation('puerta')} className={`p-3 rounded-xl border-2 text-sm font-bold transition-colors text-left flex items-center justify-between ${arrivalKeyLocation === 'puerta' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'}`}>
-                En la puerta {arrivalKeyLocation === 'puerta' && <CheckCircle className="w-4 h-4" />}
-              </button>
-              <button onClick={() => setArrivalKeyLocation('mano')} className={`p-3 rounded-xl border-2 text-sm font-bold transition-colors text-left flex items-center justify-between ${arrivalKeyLocation === 'mano' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'}`}>
-                Entregadas por mano {arrivalKeyLocation === 'mano' && <CheckCircle className="w-4 h-4" />}
-              </button>
-            </div>
-            {arrivalKeyLocation === 'mano' && (
-              <input type="text" value={arrivalKeyHandedTo} onChange={e => setArrivalKeyHandedTo(e.target.value)} placeholder="Nombre de quien recibe" className="w-full border-2 border-purple-200 dark:border-purple-800/50 bg-purple-50 dark:bg-purple-900/30 p-3 rounded-xl font-bold text-purple-900 dark:text-purple-300 outline-none focus:border-purple-400 mt-2 shadow-sm animate-in fade-in slide-in-from-top-2" />
-            )}
-          </div>
+
         </div>
 
         <div className="flex gap-2">
