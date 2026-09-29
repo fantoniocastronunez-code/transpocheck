@@ -550,50 +550,162 @@ export default function JobCard({ j, ...props }) {
             </div>
           </div>
 
-          <div className="mb-4 mt-3 relative z-10 flex flex-col gap-1.5">
-            {/* ORIGEN */}
-            <div className="bg-white/20 dark:bg-black/40 backdrop-blur-sm p-2.5 rounded-xl border border-white/20 shadow-[0_2px_8px_rgba(0,0,0,0.05)] z-10">
-              <span className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-0.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500"></div>
-                {j.tripType === 'simple' ? 'Lugar' : 'Desde'}
-              </span>
-              <p className="text-sm font-extrabold text-slate-800 dark:text-slate-200 leading-snug break-words">{j.origin || 'Por definir'}</p>
+                    <div className="mt-4 relative z-10 flex flex-col">
+            {/* TIMELINE SECTION */}
+            <div className="relative pl-[26px] flex flex-col gap-5">
+              
+              {/* Floating Date Badge (Right Side) */}
+              {j.scheduledDate && (
+                <div className="absolute right-0 -top-2 bg-blue-500/10 border border-blue-400/30 rounded-xl px-3 py-2 flex flex-col items-center justify-center shadow-sm backdrop-blur-sm z-30">
+                  <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest leading-none">
+                    {(() => {
+                       const today = new Date(); today.setHours(0,0,0,0);
+                       const [y, m, d] = j.scheduledDate.split('-');
+                       const schedDate = new Date(y, m - 1, d); schedDate.setHours(0,0,0,0);
+                       const diffDays = Math.round((schedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                       if (diffDays === 0) return 'HOY';
+                       if (diffDays === 1) return 'MAÑANA';
+                       return `${d}/${m}`;
+                    })()}
+                  </span>
+                  <span className="text-sm font-bold text-blue-100 mt-1 leading-none">{j.scheduledTime || '--:--'}</span>
+                </div>
+              )}
+
+              {/* Origin */}
+              <div className="relative">
+                <div className="absolute -left-[26px] top-1.5 w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-500 ring-4 ring-[#1a1e27] dark:ring-[#1a1e27] ring-white z-20"></div>
+                {/* Line connecting to destination, if destination exists */}
+                {(j.destination || j.tripType !== 'simple') && (
+                  <div className="absolute -left-[21px] top-4 w-[2px] h-[calc(100%+20px)] bg-slate-200 dark:bg-slate-700 z-10"></div>
+                )}
+                
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold mb-0.5">{j.tripType === 'simple' ? 'Lugar' : 'Desde'}</p>
+                <p className="text-sm font-extrabold text-slate-800 dark:text-slate-100 pr-20 leading-snug">{j.origin || 'Por definir'}</p>
+              </div>
+
+              {/* Intermediate Tags (PRT, Regiones, Waypoints) */}
+              {(j.tripType !== 'simple' || j.waypoints?.length > 0) && (
+                <div className="relative z-20 -ml-1 py-1 flex flex-col items-start gap-1">
+                   {j.tripType === 'revision' && (
+                     <div className="inline-block bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-full backdrop-blur-sm">
+                       <p className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest">
+                         1RA PARADA: {j.destination ? j.destination.split(' -> ')[0] : 'PRT'}
+                       </p>
+                     </div>
+                   )}
+                   {j.tripType === 'viaje' && (
+                     <div className="inline-block bg-indigo-500/10 border border-indigo-500/30 px-3 py-1 rounded-full backdrop-blur-sm">
+                       <p className="text-[9px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">
+                         A REGIONES
+                       </p>
+                     </div>
+                   )}
+                   {j.waypoints && j.waypoints.length > 0 && (
+                     <div className="inline-block bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-full backdrop-blur-sm">
+                       <p className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest">
+                         {j.waypoints.length} PARADA{j.waypoints.length > 1 ? 'S' : ''} INTERMEDIA{j.waypoints.length > 1 ? 'S' : ''}
+                       </p>
+                     </div>
+                   )}
+                </div>
+              )}
+
+              {/* Destination */}
+              {(j.destination || j.tripType !== 'simple') && (
+                <div className="relative">
+                  <div className="absolute -left-[26px] top-1.5 w-3 h-3 rounded-full bg-blue-500 dark:bg-blue-400 ring-4 ring-[#1a1e27] dark:ring-[#1a1e27] ring-white z-20"></div>
+                  <p className="text-[10px] text-blue-600 dark:text-blue-400 uppercase tracking-wider font-bold mb-0.5">Hasta</p>
+                  <p className="text-sm font-extrabold text-blue-700 dark:text-blue-100 pr-20 leading-snug">{j.tripType === 'revision' ? getRtFinalDestination(j) : (j.destination || 'Por definir')}</p>
+                </div>
+              )}
             </div>
 
-            {(j.destination || j.tripType !== 'simple') && (
-              <>
-                {/* ICONO CENTRAL O 1ra PARADA PRT */}
-                <div className="flex justify-center -my-2.5 z-20">
-                  {j.tripType === 'revision' ? (
-                     <div className="bg-amber-100 dark:bg-amber-900/40 px-3 py-0.5 rounded-lg border border-amber-200 dark:border-amber-800/50 shadow-sm text-center max-w-[80%]">
-                       <p className="text-[10px] font-black text-amber-800 dark:text-amber-300 uppercase truncate">1ra Parada: {j.destination ? j.destination.split(' -> ')[0] : 'PRT'}</p>
-                     </div>
-                  ) : j.waypoints && j.waypoints.length > 0 ? (
-                     <div className="bg-amber-100 dark:bg-amber-900/40 px-3 py-0.5 rounded-lg border border-amber-200 dark:border-amber-800/50 shadow-sm text-center">
-                       <p className="text-[10px] font-black text-amber-700 dark:text-amber-400">{j.waypoints.length} paradas</p>
-                     </div>
-                  ) : (
-                    <div className="bg-white dark:bg-slate-800 p-1 rounded-full border border-slate-200 dark:border-slate-700 text-slate-300 dark:text-slate-500 dark:text-slate-400 shadow-sm">
-                      <Navigation className="w-3 h-3 rotate-180" />
-                    </div>
-                  )}
-                </div>
-
-                {/* DESTINO */}
-                <div className="bg-white/20 dark:bg-black/40 backdrop-blur-md p-3 rounded-2xl border border-white/20 shadow-[0_4px_16px_rgba(0,0,0,0.1)] z-10">
-                  <span className="flex items-center gap-1.5 text-[9px] font-black text-blue-500 uppercase tracking-widest mb-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                    Hasta
+            {/* Contacts & Info Pill Button */}
+            {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone || j.originAddress || j.originCommune || j.destContactName || j.destContactPhone || j.destAddress || j.destCommune || (j.waypoints && j.waypoints.length > 0)) && (
+              <div className="mt-5 mb-2 flex">
+                <button 
+                  onClick={() => setShowDetails(!showDetails)}
+                  className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-700/50 border border-slate-200 dark:border-slate-700 rounded-full px-4 py-1.5 transition-colors shadow-[0_2px_8px_rgba(0,0,0,0.05)]"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                  <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest">
+                    {showDetails ? 'Ocultar Detalles' : 'Contactos y Direcciones'}
                   </span>
-                  <p className="text-sm font-extrabold text-blue-700 dark:text-blue-400 leading-snug break-words whitespace-normal">
-                    {j.tripType === 'revision' ? getRtFinalDestination(j) : (j.destination || 'Por definir')}
-                  </p>
-                </div>
-              </>
+                </button>
+              </div>
             )}
             
-            {j.waypoints && j.waypoints.length > 0 && (
-              <div className="mt-1 pt-2 border-t border-slate-100 dark:border-slate-800">
+            {showDetails && (
+              <div className="mt-2 mb-4 space-y-2 animate-in fade-in slide-in-from-top-2 duration-300 relative z-20">
+                {/* BLOQUE ORIGEN */}
+                {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone || j.originAddress || j.originCommune) && (
+                  <div className="pt-3 border-t border-slate-200 dark:border-slate-700/60 dark:border-slate-800/60 flex flex-col gap-2">
+                     {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone) && (
+                     <div className="flex items-center justify-between gap-2 bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                       <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                          <div className="bg-emerald-50 dark:bg-emerald-900/30 p-2 rounded-lg shrink-0 border border-emerald-100 dark:border-emerald-800/50"><Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400"/></div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-0.5 truncate">Encargado Origen</p>
+                            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{j.originContactName || j.contactName || 'No especificado'}</p>
+                          </div>
+                       </div>
+                       {(j.originContactPhone || j.contactPhone) && (
+                       <div className="flex gap-1.5 shrink-0">
+                         <a href={`https://wa.me/${(j.originContactPhone || j.contactPhone).replace(/[^\d]/g, '')}?text=${encodeURIComponent('Hola ' + (j.originContactName || j.contactName || '') + ', soy de LogisticAPP y voy a retirar el vehículo.')}`} target="_blank" rel="noopener noreferrer" className="bg-emerald-500 hover:bg-emerald-600 text-white w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm active:scale-95 text-sm">💬</a>
+                         <a href={`tel:${(j.originContactPhone || j.contactPhone).replace(/[^\d+]/g, '')}`} className="bg-slate-800 hover:bg-slate-900 text-white w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm active:scale-95 text-sm">📞</a>
+                       </div>
+                       )}
+                     </div>
+                     )}
+                     
+                     {(j.originAddress || j.originCommune) && (
+                        <div className="flex justify-between items-center bg-white/20 dark:bg-black/40 backdrop-blur-sm p-2.5 rounded-xl border border-white/20 shadow-sm mt-1">
+                          <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-slate-400 dark:text-slate-500"/>{j.originAddress}{j.originAddress && j.originCommune ? ', ' : ''}{j.originCommune}</p>
+                          {isAccepted && (
+                            <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.originAddress || ''} ${j.originCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition-colors border border-blue-200 dark:border-blue-800/50"><Navigation className="w-3 h-3"/> Waze</a>
+                          )}
+                        </div>
+                     )}
+                  </div>
+                )}
+
+                {/* BLOQUE DESTINO */}
+                {(j.destContactName || j.destContactPhone || j.destAddress || j.destCommune) && (
+                  <div className="pt-2 border-t border-slate-200 dark:border-slate-700/60 flex flex-col gap-2">
+                     {(j.destContactName || j.destContactPhone) && (
+                     <div className="flex items-center justify-between gap-2 bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+                       <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                          <div className="bg-blue-50 dark:bg-blue-900/30 p-2 rounded-lg shrink-0 border border-blue-100 dark:border-blue-800/50"><Users className="w-4 h-4 text-blue-600 dark:text-blue-400"/></div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-0.5 truncate">Encargado Destino</p>
+                            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{j.destContactName || 'No especificado'}</p>
+                          </div>
+                       </div>
+                       {j.destContactPhone && (
+                       <div className="flex gap-1.5 shrink-0">
+                         <a href={`https://wa.me/${j.destContactPhone.replace(/[^\d]/g, '')}?text=${encodeURIComponent('Hola ' + (j.destContactName || '') + ', soy de LogisticAPP y voy en camino al destino con el vehículo.')}`} target="_blank" rel="noopener noreferrer" className="bg-emerald-500 hover:bg-emerald-600 text-white w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm active:scale-95 text-sm">💬</a>
+                         <a href={`tel:${j.destContactPhone.replace(/[^\d+]/g, '')}`} className="bg-slate-800 hover:bg-slate-900 text-white w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm active:scale-95 text-sm">📞</a>
+                       </div>
+                       )}
+                     </div>
+                     )}
+
+                     {(j.destAddress || j.destCommune) && (
+                        <div className="flex justify-between items-center bg-blue-50 dark:bg-blue-900/10 p-2.5 rounded-xl border border-blue-200 dark:border-blue-800/50 shadow-sm animate-in fade-in slide-in-from-top-1 mt-1">
+                          <p className="text-[10px] font-bold text-blue-800 dark:text-blue-300 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-blue-500 dark:text-blue-400"/>{j.destAddress}{j.destAddress && j.destCommune ? ', ' : ''}{j.destCommune}</p>
+                          {isAccepted && (
+                            <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.destAddress || ''} ${j.destCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 shadow-md transition-colors"><Navigation className="w-3 h-3"/> Waze</a>
+                          )}
+                        </div>
+                     )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {j.waypoints && j.waypoints.length > 0 && showDetails && (
+              <div className="mb-4 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <p className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><MapPin className="w-3 h-3"/> Ruta intermedia:</p>
                 <div className="flex flex-col gap-1">
                   {j.waypoints.map((wp, i) => (
@@ -602,175 +714,63 @@ export default function JobCard({ j, ...props }) {
                 </div>
               </div>
             )}
-
-            {/* CONTACTOS, DIRECCIONES Y NAVEGACIÓN INTELIGENTE */}
-            {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone || j.originAddress || j.originCommune || j.destContactName || j.destContactPhone || j.destAddress || j.destCommune) && (
-              <button 
-                onClick={() => setShowDetails(!showDetails)}
-                className="w-full flex items-center justify-between bg-white/40 dark:bg-black/20 hover:bg-white/60 dark:hover:bg-black/40 p-2.5 rounded-xl border border-white/20 dark:border-slate-800/60 transition-colors text-slate-600 dark:text-slate-300 font-bold text-xs mt-1 shadow-[0_2px_8px_rgba(0,0,0,0.05)] backdrop-blur-sm"
-              >
-                <span className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-slate-500" /> Contactos y Direcciones
-                </span>
-                <span className="text-slate-400 text-[10px] uppercase">
-                  {showDetails ? 'Ocultar' : 'Ver todo'}
-                </span>
-              </button>
-            )}
             
-            {showDetails && (
-            <div className="mt-2 space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-              
-              {/* BLOQUE ORIGEN */}
-              {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone || j.originAddress || j.originCommune) && (
-                <div className="pt-3 border-t border-slate-200 dark:border-slate-700/60 dark:border-slate-800/60 flex flex-col gap-2">
-                   {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone) && (
-                   <div className="flex items-center justify-between gap-2 bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-                     <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                        <div className="bg-emerald-50 dark:bg-emerald-900/30 p-2 rounded-lg shrink-0 border border-emerald-100 dark:border-emerald-800/50"><Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400"/></div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-0.5 truncate">Encargado Origen</p>
-                          <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{j.originContactName || j.contactName || 'No especificado'}</p>
-                        </div>
+            {/* STATUS AND ANIMATION */}
+            {(() => {
+               let statusIcon = <CheckCircle className="w-4 h-4 text-blue-500"/>;
+               let statusTitle = isAccepted ? (j.assignedDrivers?.find(d => d.email === j.acceptedByEmail)?.name || "Conductor") : "Buscando conductor";
+               let statusSub = isAccepted ? (j.tripType === 'simple' ? `Asignado a ${j.origin}` : `Retira en ${j.origin}`) : `Para ${j.origin}`;
+               let highlight = false;
+               let animationType = 'searching';
+
+               if (j.tripType === 'revision' && step4Done) {
+                  statusTitle = j.prt_result === 'rechazado' ? 'Revisión Rechazada' : 'Revisión Aprobada';
+                  statusIcon = <CheckCircle className={`w-4 h-4 ${j.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-500'}`}/>;
+                  statusSub = `En camino a: ${getRtFinalDestination(j)}`;
+                  highlight = true;
+                  animationType = j.prt_result === 'rechazado' ? 'prt_rejected' : 'prt_approved';
+               } else if (step3Done || j.phase === 'arrived_destination') {
+                  statusTitle = j.tripType === 'simple' ? 'Trabajo Terminado' : (j.tripType === 'revision' ? 'En PRT' : 'Llegué a destino');
+                  statusSub = j.tripType === 'simple' ? (j.destination || '') : (j.tripType === 'revision' ? 'Planta' : j.destination);
+                  highlight = true;
+                  animationType = (j.tripType === 'simple' || j.phase === 'arrived_destination' || step4Done) ? 'completed' : 'arrived';
+               } else if (j.phase === 'arrived_waypoint') {
+                  statusTitle = 'En Parada Intermedia';
+                  statusSub = (j.waypoints && j.waypoints[0]) || '';
+                  highlight = true;
+                  animationType = 'arrived';
+               } else if (j.phase === 'departed_waypoint' || j.phase === 'picked_up' || step2Done) {
+                  statusTitle = j.phase === 'departed_waypoint' ? 'Camino a Destino Final' : (j.tripType === 'simple' ? 'Realizando Trabajo' : (j.waypoints?.length > 0 ? 'Camino a 1ra Parada' : 'Vehículo en ruta'));
+                  statusSub = '';
+                  highlight = true;
+                  animationType = 'transit';
+               } else if (j.phase === 'arrived_pickup') {
+                  statusTitle = j.tripType === 'simple' ? 'En Lugar' : 'Vehículo en mi poder';
+                  statusSub = '';
+                  highlight = true;
+                  animationType = 'picked_up';
+               } else if (isAccepted) {
+                  const driverName = j.assignedDrivers?.find(d => d.email === j.acceptedByEmail)?.name;
+                  statusTitle = driverName ? `Conductor asignado: ${driverName}` : 'Conductor asignado';
+                  animationType = 'assigned';
+               }
+               
+               return (
+                 <div className="mb-4 mt-2 pt-3 flex flex-col border-t border-white/5 dark:border-slate-800">
+                   <StatusAnimation type={animationType} vehicleType={j.vehicleType} isChassisCab={j.isChassisCab} origin={j.origin} destination={j.tripType === 'revision' ? getRtFinalDestination(j) : j.destination} assignedDrivers={j.assignedDrivers} />
+                   <div className="flex items-center gap-3 w-full pt-1">
+                     <div className="p-1 shrink-0">
+                       {animationType === 'searching' ? <div className="w-5 h-5 opacity-70"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-full h-full text-slate-400"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></div> : statusIcon}
                      </div>
-                     {(j.originContactPhone || j.contactPhone) && (
-                     <div className="flex gap-1.5 shrink-0">
-                       <a href={`https://wa.me/${(j.originContactPhone || j.contactPhone).replace(/[^\d]/g, '')}?text=${encodeURIComponent('Hola ' + (j.originContactName || j.contactName || '') + ', soy de LogisticAPP y voy a retirar el vehículo.')}`} target="_blank" rel="noopener noreferrer" className="bg-emerald-500 hover:bg-emerald-600 text-white w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm active:scale-95 text-sm">💬</a>
-                       <a href={`tel:${(j.originContactPhone || j.contactPhone).replace(/[^\d+]/g, '')}`} className="bg-slate-800 hover:bg-slate-900 text-white w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm active:scale-95 text-sm">📞</a>
+                     <div className="flex-1 min-w-0">
+                       <p className="font-extrabold text-sm text-slate-800 dark:text-slate-200 truncate">{statusTitle}</p>
+                       {statusSub && <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 truncate">{statusSub}</p>}
                      </div>
-                     )}
-                   </div>
-                   )}
-                   
-                   {(j.originAddress || j.originCommune) && (
-                      <div className="flex justify-between items-center bg-white/20 dark:bg-black/40 backdrop-blur-sm p-2.5 rounded-xl border border-white/20 shadow-sm mt-1">
-                        <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-slate-400 dark:text-slate-500 dark:text-slate-400"/>{j.originAddress}{j.originAddress && j.originCommune ? ', ' : ''}{j.originCommune}</p>
-                        {isAccepted && (
-                          <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.originAddress || ''} ${j.originCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition-colors border border-blue-200 dark:border-blue-800/50"><Navigation className="w-3 h-3"/> Waze</a>
-                        )}
-                      </div>
-                   )}
-                </div>
-              )}
-
-              {/* BLOQUE DESTINO */}
-              {(j.destContactName || j.destContactPhone || j.destAddress || j.destCommune) && (
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-700/60 flex flex-col gap-2">
-                   {(j.destContactName || j.destContactPhone) && (
-                   <div className="flex items-center justify-between gap-2 bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-100 dark:border-slate-800 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-                     <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                        <div className="bg-blue-50 dark:bg-blue-900/30 p-2 rounded-lg shrink-0 border border-blue-100 dark:border-blue-800/50"><Users className="w-4 h-4 text-blue-600 dark:text-blue-400"/></div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-0.5 truncate">Encargado Destino</p>
-                          <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{j.destContactName || 'No especificado'}</p>
-                        </div>
-                     </div>
-                     {j.destContactPhone && (
-                     <div className="flex gap-1.5 shrink-0">
-                       <a href={`https://wa.me/${j.destContactPhone.replace(/[^\d]/g, '')}?text=${encodeURIComponent('Hola ' + (j.destContactName || '') + ', soy de LogisticAPP y voy en camino al destino con el vehículo.')}`} target="_blank" rel="noopener noreferrer" className="bg-emerald-500 hover:bg-emerald-600 text-white w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm active:scale-95 text-sm">💬</a>
-                       <a href={`tel:${j.destContactPhone.replace(/[^\d+]/g, '')}`} className="bg-slate-800 hover:bg-slate-900 text-white w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm active:scale-95 text-sm">📞</a>
-                     </div>
-                     )}
-                   </div>
-                   )}
-
-                   {(j.destAddress || j.destCommune) && (
-                      <div className="flex justify-between items-center bg-blue-50 dark:bg-blue-900/30 dark:bg-blue-900/10 p-2.5 rounded-xl border border-blue-200 dark:border-blue-800/50 shadow-sm animate-in fade-in slide-in-from-top-1 mt-1">
-                        <p className="text-[10px] font-bold text-blue-800 dark:text-blue-300 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-blue-500 dark:text-blue-400"/>{j.destAddress}{j.destAddress && j.destCommune ? ', ' : ''}{j.destCommune}</p>
-                        {isAccepted && (
-                          <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.destAddress || ''} ${j.destCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 shadow-md transition-colors"><Navigation className="w-3 h-3"/> Waze</a>
-                        )}
-                      </div>
-                   )}
-                </div>
-              )}
-            </div>
-            )}
-          </div>
-
-          {j.tripType === 'revision' && <div className="mb-3 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800/50 p-2 rounded-xl text-center shadow-sm"><span className="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase">REVISIÓN TÉCNICA (TIPO {j.rtData?.type})</span></div>}
-          {j.tripType === 'viaje' && <div className="mb-3 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800/50 rounded-xl p-2 mb-3 text-center shadow-sm"><span className="text-[10px] font-black text-indigo-700 dark:text-indigo-400 uppercase">A Regiones</span></div>}
-          
-          {(() => {
-             if (!j.scheduledDate) return null;
-             const today = new Date(); today.setHours(0,0,0,0);
-             const [y, m, d] = j.scheduledDate.split('-');
-             const schedDate = new Date(y, m - 1, d); schedDate.setHours(0,0,0,0);
-             const diffDays = Math.round((schedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-             const timeStr = j.scheduledTime ? ` a las ${j.scheduledTime}` : '';
-             
-             // Detectamos si el traslado ya fue iniciado por el conductor
-             const isStarted = ['picked_up', 'arrived_destination', 'arrived_prt', 'prt_done'].includes(j.phase);
-
-             if (diffDays === 0) {
-                 if (!j.scheduledTime) return null;
-                 return <div className="mb-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800/50 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-blue-700 dark:text-blue-400 uppercase tracking-widest">📅 HOY{timeStr}</span></div>;
-             }
-             if (diffDays === 1) return <div className="mb-3 bg-cyan-50 dark:bg-cyan-900/30 border border-cyan-200 dark:border-cyan-800/50 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-cyan-700 dark:text-cyan-400 uppercase tracking-widest">📅 Mañana{timeStr}</span></div>;
-             if (diffDays > 1) return <div className="mb-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">📅 Para el {d}/{m}/{y}{timeStr}</span></div>;
-             
-             // Si ya pasó la fecha planificada pero el viaje ESTÁ EN PROCESO, evitamos el rojo
-             if (isStarted) return <div className="mb-3 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800/50 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">🚀 EN RUTA ({d}/{m}/{y})</span></div>;
-
-             // Si se pasó la fecha, no ha iniciado y sigue activo, se trata visualmente como HOY (Reprogramación automática)
-             if (!j.scheduledTime) return null;
-             return <div className="mb-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800/50 p-3 rounded-xl text-center shadow-sm"><span className="text-sm font-black text-blue-700 dark:text-blue-400 uppercase tracking-widest">📅 HOY{timeStr}</span></div>;
-          })()}
-
-          {(() => {
-             let statusIcon = <CheckCircle className="w-4 h-4 text-blue-500"/>;
-             let statusTitle = isAccepted ? (j.assignedDrivers?.find(d => d.email === j.acceptedByEmail)?.name || "Conductor") : "Buscando conductor";
-             let statusSub = isAccepted ? (j.tripType === 'simple' ? `Asignado a ${j.origin}` : `Retira en ${j.origin}`) : `Para ${j.origin}`;
-             let highlight = false;
-             let animationType = 'searching';
-
-             if (j.tripType === 'revision' && step4Done) {
-                statusTitle = j.prt_result === 'rechazado' ? 'Revisión Rechazada' : 'Revisión Aprobada';
-                statusIcon = <CheckCircle className={`w-4 h-4 ${j.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-500'}`}/>;
-                statusSub = `En camino a: ${getRtFinalDestination(j)}`;
-                highlight = true;
-                animationType = j.prt_result === 'rechazado' ? 'prt_rejected' : 'prt_approved';
-             } else if (step3Done || j.phase === 'arrived_destination') {
-                statusTitle = j.tripType === 'simple' ? 'Trabajo Terminado' : (j.tripType === 'revision' ? 'En PRT' : 'Llegué a destino');
-                statusSub = j.tripType === 'simple' ? (j.destination || '') : (j.tripType === 'revision' ? 'Planta' : j.destination);
-                highlight = true;
-                animationType = (j.tripType === 'simple' || j.phase === 'arrived_destination' || step4Done) ? 'completed' : 'arrived';
-             } else if (j.phase === 'arrived_waypoint') {
-                statusTitle = 'En Parada Intermedia';
-                statusSub = (j.waypoints && j.waypoints[0]) || '';
-                highlight = true;
-                animationType = 'arrived';
-             } else if (j.phase === 'departed_waypoint' || j.phase === 'picked_up' || step2Done) {
-                statusTitle = j.phase === 'departed_waypoint' ? 'Camino a Destino Final' : (j.tripType === 'simple' ? 'Realizando Trabajo' : (j.waypoints?.length > 0 ? 'Camino a 1ra Parada' : 'Vehículo en ruta'));
-                statusSub = '';
-                highlight = true;
-                animationType = 'transit';
-             } else if (j.phase === 'arrived_pickup') {
-                statusTitle = j.tripType === 'simple' ? 'En Lugar' : 'Vehículo en mi poder';
-                statusSub = '';
-                highlight = true;
-                animationType = 'picked_up';
-             } else if (isAccepted) {
-                const driverName = j.assignedDrivers?.find(d => d.email === j.acceptedByEmail)?.name;
-                statusTitle = driverName ? `Conductor asignado: ${driverName}` : 'Conductor asignado';
-                animationType = 'assigned';
-             }
-             
-             return (
-               <div className="mb-4 bg-white/40 dark:bg-black/20 backdrop-blur-sm border border-white/30 dark:border-slate-800 pt-1 pb-3 px-3 rounded-xl shadow-sm flex flex-col">
-                 <StatusAnimation type={animationType} vehicleType={j.vehicleType} isChassisCab={j.isChassisCab} origin={j.origin} destination={j.tripType === 'revision' ? getRtFinalDestination(j) : j.destination} assignedDrivers={j.assignedDrivers} />
-                 <div className="flex items-center gap-3 w-full border-t border-white/20 dark:border-slate-800/60 pt-2">
-                   <div className={`p-2 rounded-full shrink-0 ${highlight ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-slate-100 dark:bg-slate-800'}`}>
-                     {statusIcon}
-                   </div>
-                   <div className="flex-1 min-w-0">
-                     <p className="font-extrabold text-sm text-slate-800 dark:text-slate-200 truncate">{statusTitle}</p>
-                     {statusSub && <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 truncate">{statusSub}</p>}
                    </div>
                  </div>
-               </div>
-             );
-          })()}
+               );
+            })()}
+          </div>
 
         {j.phase === 'arrived_pickup' && j.arrivedPickupAt && (
           <div className="flex items-center gap-2 mb-3">
