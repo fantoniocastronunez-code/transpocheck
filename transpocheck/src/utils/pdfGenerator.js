@@ -180,7 +180,7 @@ export const buildPDFDoc = async (job, isPublic = false, drivers = []) => {
         let hRev = drawKV("Rev. Tecnica", getDocStatus('revTecnica'), 65, currentY, 45);
         currentY += Math.max(hPerm, hRev) + 6;
         let hGas = drawKV("Gases", getDocStatus('gases'), 15, currentY, 45);
-        let hKm = drawKV("Kilometraje (Inicio/Final)", `${job.checklist?.mileage || 'No reg.'} ${job.checklist?.arrivalMileage ? `/ ${job.checklist.arrivalMileage}` : ''}`, 65, currentY, 45);
+        let hKm = drawKV("Kilometraje", `${job.checklist?.arrivalMileage || job.checklist?.mileage || 'No reg.'}`, 65, currentY, 45);
         currentY += Math.max(hGas, hKm) + 8;
 
         if (job.checklist?.keyLocation) {
@@ -211,6 +211,17 @@ export const buildPDFDoc = async (job, isPublic = false, drivers = []) => {
             const detStr = docPDF.splitTextToSize(cleanStr(job.checklist.equipmentDetails), leftColWidth);
             docPDF.text(detStr, 15, currentY); currentY += (detStr.length * 4) + 4;
           }
+        }
+
+        if (job.checklist?.isDirtyVehicle) {
+            currentY += 2;
+            docPDF.setFillColor(254, 240, 138);
+            docPDF.roundedRect(15, currentY, leftColWidth, 12, 1.5, 1.5, 'F');
+            docPDF.setTextColor(161, 98, 7);
+            docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold");
+            const dirtyText = docPDF.splitTextToSize("VEHICULO SUCIO: Puede incluir rayas, piquetes o daños que no se muestren en las fotos.", leftColWidth - 4);
+            docPDF.text(dirtyText, 17, currentY + 5);
+            currentY += 16;
         }
 
         if (job.waitTimeMinutes && job.waitTimeMinutes > 20) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38); const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA EN ORIGEN: ${job.waitTimeMinutes} minutos`, leftColWidth); docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2; } else if (job.checklist?.hasWaitTime) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38);  const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth);  docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2;  }

@@ -166,6 +166,25 @@ export const StepPhotos = ({ openCamera }) => {
         })()}
       </div>
 
+      {/* Vehiculo Sucio Checkbox */}
+      <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+        <label className="flex items-start gap-3 cursor-pointer group bg-orange-50 dark:bg-orange-900/20 p-3 rounded-xl border border-orange-100 dark:border-orange-800/30 hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors">
+          <div className="relative flex items-center justify-center mt-0.5">
+            <input 
+              type="checkbox" 
+              checked={formData.isDirtyVehicle || false}
+              onChange={e => setF('isDirtyVehicle', e.target.checked)}
+              className="appearance-none w-5 h-5 border-2 border-orange-300 dark:border-orange-700 rounded-md checked:bg-orange-500 checked:border-orange-500 transition-colors cursor-pointer"
+            />
+            {formData.isDirtyVehicle && <CheckCircle className="w-3.5 h-3.5 text-white absolute pointer-events-none" />}
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-bold text-orange-800 dark:text-orange-300">Vehículo sucio</span>
+            <span className="text-[10px] font-medium text-orange-600 dark:text-orange-400/80 mt-0.5 leading-tight">Al marcar esto aceptas que puede incluir rayas, piquetes o daños que no se muestren en las fotos.</span>
+          </div>
+        </label>
+      </div>
+
     </div>
   );
 };

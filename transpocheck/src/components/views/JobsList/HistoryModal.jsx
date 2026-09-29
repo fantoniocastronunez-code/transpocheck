@@ -67,10 +67,10 @@ export default function HistoryModal({
               </div>
               <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
                 <div>
-                  <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Odómetro (Inicio / Final)</p>
+                  <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Odómetro al finalizar</p>
                   <div className="flex flex-col gap-1.5 mt-0.5">
                     <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">
-                       {selectedHistoryJob.checklist?.mileage || 'No registrado'} {selectedHistoryJob.checklist?.arrivalMileage ? ` / ${selectedHistoryJob.checklist.arrivalMileage}` : ''}
+                       {selectedHistoryJob.checklist?.arrivalMileage || selectedHistoryJob.checklist?.mileage || 'No registrado'}
                     </p>
                     {selectedHistoryJob.checklist?.photos?.odometer && (
                         <img src={selectedHistoryJob.checklist.photos.odometer} alt="Odómetro Final" className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(selectedHistoryJob.checklist.photos.odometer, '_blank')} />
