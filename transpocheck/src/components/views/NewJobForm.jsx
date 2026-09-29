@@ -464,8 +464,8 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     if (originValue) {
        const matchedOrigin = directoryList.find(d => d.placeName.trim().toLowerCase() === originValue);
        if (matchedOrigin) {
-          jobData.originContactName = matchedOrigin.contactName;
-          jobData.originContactPhone = matchedOrigin.contactPhone;
+          jobData.originContactName = matchedOrigin.contactName || '';
+          jobData.originContactPhone = matchedOrigin.contactPhone || '';
           jobData.originAddress = matchedOrigin.address || '';
           jobData.originCommune = matchedOrigin.commune || '';
        } else {
@@ -478,8 +478,8 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     if (destinationValue) {
        const matchedDest = directoryList.find(d => d.placeName.trim().toLowerCase() === destinationValue);
        if (matchedDest) {
-          jobData.destContactName = matchedDest.contactName;
-          jobData.destContactPhone = matchedDest.contactPhone;
+          jobData.destContactName = matchedDest.contactName || '';
+          jobData.destContactPhone = matchedDest.contactPhone || '';
           jobData.destAddress = matchedDest.address || '';
           jobData.destCommune = matchedDest.commune || '';
        } else {
