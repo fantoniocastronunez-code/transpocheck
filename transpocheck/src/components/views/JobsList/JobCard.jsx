@@ -534,9 +534,9 @@ export default function JobCard({ j, ...props }) {
                 })()}
                 <div>
                     {j.tripType === 'simple' ? (
-                       <p className="text-lg font-black text-purple-300 leading-tight mt-1 break-words pr-2">{j.description || 'Servicio en Terreno'}</p>
+                       <p className="text-lg font-bold text-purple-300 leading-tight mt-1 break-words pr-2">{j.description || 'Servicio en Terreno'}</p>
                     ) : (
-                       <p className="text-xl font-black text-white leading-tight mt-1 break-words pr-2 tracking-tight">{j.brand} {j.model}</p>
+                       <p className="text-lg font-bold text-white leading-tight mt-1 break-words pr-2 tracking-tight">{j.brand} {j.model}</p>
                     )}
                     <p className="text-[12px] font-medium text-slate-400 mt-0.5 uppercase tracking-wider flex items-center flex-wrap gap-2">
                        {j.client}
@@ -585,7 +585,7 @@ export default function JobCard({ j, ...props }) {
                 
                 <div className="flex items-center gap-1.5 mb-0.5">
                    <p className="text-[12px] text-slate-400 font-medium">{j.tripType === 'simple' ? 'Lugar:' : 'Desde:'}</p>
-                   <p className="text-[15px] font-bold text-white pr-20 leading-snug">{j.origin || 'Por definir'}</p>
+                   <p className="text-[15px] font-bold text-white pr-20 leading-snug uppercase">{j.origin || 'Por definir'}</p>
                 </div>
               </div>
 
@@ -625,7 +625,7 @@ export default function JobCard({ j, ...props }) {
                   <div className="absolute -left-[24px] top-1.5 w-3 h-3 rounded-full bg-[#60a5fa] z-20 shadow-sm"></div>
                   <div className="flex items-center gap-1.5 mb-0.5">
                      <p className="text-[12px] text-blue-400 font-medium">Hasta:</p>
-                     <p className="text-[15px] font-bold text-blue-200 pr-20 leading-snug">{j.tripType === 'revision' ? getRtFinalDestination(j) : (j.destination || 'Por definir')}</p>
+                     <p className="text-[15px] font-bold text-blue-200 pr-20 leading-snug uppercase">{j.tripType === 'revision' ? getRtFinalDestination(j) : (j.destination || 'Por definir')}</p>
                   </div>
                 </div>
               )}
