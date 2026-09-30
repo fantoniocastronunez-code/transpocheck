@@ -168,7 +168,7 @@ export const buildPDFDoc = async (job, isPublic = false, drivers = []) => {
         };
 
         let hFuel = drawFuelMeter(15, currentY + 3, job.checklist?.fuelLevel || 0, "Combustible Inicio:");
-        let hFuelAfter = drawFuelMeter(65, currentY + 3, job.checklist?.arrivalFuelLevel ?? job.checklist?.fuelLevelAfter ?? job.checklist?.fuelLevel || 0, "Combustible Final:");
+        let hFuelAfter = drawFuelMeter(65, currentY + 3, (job.checklist?.arrivalFuelLevel ?? job.checklist?.fuelLevelAfter ?? job.checklist?.fuelLevel) || 0, "Combustible Final:");
         currentY += Math.max(hFuel, hFuelAfter) + 6;
 
         let hKm = drawKV("Odómetro Inicio", `${job.checklist?.mileage || 'No reg.'}`, 15, currentY, 45);
