@@ -2,7 +2,7 @@
 @variant dark (&:where(.dark, .dark *));
 
 /* === TRANSPOCHECK MODERN FLAT DESIGN (DARK MODE) === */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
   --flat-blue: #3b82f6; /* Indigo/Blue */
@@ -18,7 +18,7 @@
 }
 
 body {
-  font-family: 'Roboto', system-ui, sans-serif !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
   background-color: var(--bg-color) !important;
   color: var(--text-primary) !important;
   min-height: 100vh;

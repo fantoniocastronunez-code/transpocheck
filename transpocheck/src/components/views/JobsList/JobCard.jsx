@@ -411,7 +411,7 @@ export default function JobCard({ j, ...props }) {
     return (
       // --- OPTIMIZACIÓN: Quitamos el overflow-hidden del padre para que el menú no se corte ---
       // Además, si la tarjeta tiene el menú abierto, elevamos su z-index
-      <div key={j.id} className={`bg-white/10 dark:bg-black/30 backdrop-blur-md rounded-[2rem] border p-4 sm:p-5 flex flex-col shadow-[0_8px_32px_rgba(0,0,0,0.15)] relative hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-default group ${j.isUrgent ? 'border-red-400/50 ring-2 ring-red-400/30' : (j.fleetGroup ? 'border-indigo-400/50' : 'border-white/20')} ${menuOpenId === j.id ? 'z-50' : 'z-10'}`}>
+      <div key={j.id} className={`bg-[#1e293b]/60 backdrop-blur-2xl rounded-[1.5rem] border p-4 sm:p-5 flex flex-col shadow-2xl relative hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-default group ${j.isUrgent ? 'border-red-400/50 ring-2 ring-red-400/30' : (j.fleetGroup ? 'border-indigo-400/50' : 'border-slate-700/50')} ${menuOpenId === j.id ? 'z-50' : 'z-10'}`}>
         
         {/* --- OPTIMIZACIÓN: Los fondos decorativos ahora viven en un contenedor con overflow-hidden para no salirse de los bordes redondeados --- */}
         <div className="absolute inset-0 rounded-[2rem] overflow-hidden pointer-events-none">
@@ -534,30 +534,32 @@ export default function JobCard({ j, ...props }) {
                 })()}
                 <div>
                     {j.tripType === 'simple' ? (
-                       <p className="text-lg font-black text-purple-800 dark:text-purple-300 leading-tight mt-1 break-words pr-2">{j.description || 'Servicio en Terreno'}</p>
+                       <p className="text-xl font-black text-purple-300 leading-tight mt-1 break-words pr-2">{j.description || 'Servicio en Terreno'}</p>
                     ) : (
-                       <p className="text-xl font-black text-slate-800 dark:text-slate-200 leading-tight mt-1 break-words pr-2">{j.brand} {j.model}</p>
+                       <p className="text-2xl font-black text-white leading-tight mt-1 break-words pr-2 tracking-tight">{j.brand} {j.model}</p>
                     )}
-                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-0.5 uppercase tracking-wide flex items-center flex-wrap gap-2">
+                    <p className="text-sm font-medium text-slate-400 mt-0.5 uppercase tracking-wider flex items-center flex-wrap gap-2">
                        {j.client}
                        {j.fleetGroup && <span className="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 px-1.5 py-0.5 rounded text-[9px] font-black border border-indigo-200 dark:border-indigo-800/50">EN FLOTA (CONVOY)</span>}
                     </p>
                     {j.createdBy && (
-                       <p className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 mt-0.5">Creado por: {j.createdBy}</p>
+                       <p className="text-[11px] font-medium text-slate-500 mt-0.5">Creado por: {j.createdBy}</p>
                     )}
                 </div>
               </div>
             </div>
           </div>
 
-                    <div className="mt-5 relative z-10 flex flex-col bg-slate-900/40 p-4 rounded-2xl border border-white/5 backdrop-blur-md shadow-2xl">
+          <div className="mt-5 relative z-10 flex flex-col pt-2 pb-1">
             {/* TIMELINE SECTION */}
             <div className="relative pl-[26px] flex flex-col gap-6">
               
               {/* Floating Date Badge (Right Side) */}
               {j.scheduledDate && (
-                <div className="absolute right-0 -top-2 bg-blue-600 rounded-xl px-3 py-2 flex flex-col items-center justify-center shadow-lg z-30">
-                  <span className="text-[10px] font-black text-blue-100 uppercase tracking-widest leading-none">
+                <div className="absolute right-0 -top-4 bg-[#3b82f6] rounded-xl w-[70px] h-[60px] flex flex-col items-center justify-center shadow-[0_8px_16px_rgba(59,130,246,0.3)] z-30 border border-blue-400/30">
+                  <div className="absolute -top-2 left-[12px] w-2 h-4 bg-slate-200 rounded-full shadow-sm"></div>
+                  <div className="absolute -top-2 right-[12px] w-2 h-4 bg-slate-200 rounded-full shadow-sm"></div>
+                  <span className="text-[9px] font-black text-blue-100 uppercase tracking-widest leading-none mt-1">
                     {(() => {
                        const today = new Date(); today.setHours(0,0,0,0);
                        const [y, m, d] = j.scheduledDate.split('-');
@@ -568,16 +570,16 @@ export default function JobCard({ j, ...props }) {
                        return `${d}/${m}`;
                     })()}
                   </span>
-                  <span className="text-sm font-bold text-white mt-1 leading-none">{j.scheduledTime || '--:--'}</span>
+                  <span className="text-[17px] font-black text-white mt-1 leading-none">{j.scheduledTime || '--:--'}</span>
                 </div>
               )}
 
               {/* Origin */}
               <div className="relative">
-                <div className="absolute -left-[26px] top-1 w-3.5 h-3.5 rounded-full bg-slate-400 border-[3px] border-[#1a1e27] z-20 shadow-sm"></div>
+                <div className="absolute -left-[24px] top-1.5 w-3 h-3 rounded-full bg-slate-300 z-20 shadow-sm"></div>
                 {/* Line connecting to destination, if destination exists */}
                 {(j.destination || j.tripType !== 'simple') && (
-                  <div className="absolute -left-[20px] top-4 w-[2px] h-[calc(100%+30px)] bg-slate-700/80 z-10"></div>
+                  <div className="absolute -left-[19px] top-4 w-[1px] h-[calc(100%+30px)] bg-slate-500/50 z-10"></div>
                 )}
                 
                 <div className="flex items-center gap-1.5 mb-0.5">
@@ -616,7 +618,7 @@ export default function JobCard({ j, ...props }) {
               {/* Destination */}
               {(j.destination || j.tripType !== 'simple') && (
                 <div className="relative">
-                  <div className="absolute -left-[26px] top-1 w-3.5 h-3.5 rounded-full bg-blue-500 border-[3px] border-[#1a1e27] z-20 shadow-sm"></div>
+                  <div className="absolute -left-[25px] top-1.5 w-3 h-3 rounded-full bg-[#60a5fa] z-20 shadow-sm"></div>
                   <div className="flex items-center gap-1.5 mb-0.5">
                      <p className="text-[12px] text-blue-400 font-medium">Hasta:</p>
                      <p className="text-[15px] font-bold text-blue-200 pr-20 leading-snug">{j.tripType === 'revision' ? getRtFinalDestination(j) : (j.destination || 'Por definir')}</p>
@@ -630,7 +632,7 @@ export default function JobCard({ j, ...props }) {
               <div className="mt-6 mb-2 flex">
                 <button 
                   onClick={() => setShowDetails(!showDetails)}
-                  className="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-600/50 rounded-full px-4 py-1.5 transition-colors shadow-md"
+                  className="flex items-center gap-2 bg-transparent hover:bg-slate-800/50 border border-slate-500/50 rounded-full px-4 py-1.5 transition-colors mt-2"
                 >
                   <MapPin className="w-3.5 h-3.5 text-slate-300" />
                   <span className="text-[11px] font-bold text-white tracking-wide">
@@ -762,16 +764,22 @@ export default function JobCard({ j, ...props }) {
                // NUEVO DISEÑO PARA LA SECCIÓN DE ANIMACIÓN:
                return (
                  <div className="mt-2 pt-4 flex flex-col border-t border-slate-700/50">
-                   {/* Si el usuario NO quiere ver la lupa gigante todo el tiempo, la achicamos radicalmente o la estilizamos */}
-                   <div className="flex items-center gap-3 w-full bg-[#1c2235] p-3 rounded-xl border border-[#2a3441] shadow-inner mb-3">
-                     <div className="p-1 shrink-0 bg-[#0f172a] rounded-lg border border-[#1e293b]">
-                        <Search className="w-5 h-5 text-blue-400" />
-                     </div>
-                     <div className="flex-1 min-w-0">
-                       <p className="font-bold text-sm text-white truncate">{statusTitle}</p>
-                       {statusSub && <p className="text-[11px] font-medium text-slate-400 truncate">{statusSub}</p>}
-                     </div>
-                   </div>
+                   {animationType === 'searching' ? (
+                      <div className="flex items-center justify-center gap-2 mb-3 mt-1">
+                         <Search className="w-4 h-4 text-slate-400" />
+                         <p className="text-[15px] font-medium text-white tracking-wide">{statusTitle}</p>
+                      </div>
+                   ) : (
+                      <div className="flex items-center gap-3 w-full bg-slate-800/50 p-3 rounded-xl border border-slate-700/50 shadow-inner mb-3">
+                        <div className="p-1 shrink-0 bg-slate-900 rounded-lg border border-slate-800">
+                           {statusIcon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm text-white truncate">{statusTitle}</p>
+                          {statusSub && <p className="text-[11px] font-medium text-slate-400 truncate">{statusSub}</p>}
+                        </div>
+                      </div>
+                   )}
                    
                    {/* Solo mostramos la animación gigante si NO estamos en "Buscando conductor" */}
                    {animationType !== 'searching' && (

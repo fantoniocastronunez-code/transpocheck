@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Clock, CheckCircle, ChevronRight } from 'lucide-react';
+import { Clock, CheckCircle, ArrowRight } from 'lucide-react';
 
 const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600", isProcessing = false }) => {
   const [isConfirmed, setIsConfirmed] = useState(false);
@@ -98,11 +98,11 @@ const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600", isProc
   };
 
   return (
-    <div ref={containerRef} className="relative w-full h-12 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 select-none" style={{ touchAction: 'none' }}>
+    <div ref={containerRef} className="relative w-full h-12 bg-white rounded-[1.5rem] overflow-hidden shadow-sm select-none" style={{ touchAction: 'none' }}>
       
       {/* Texto de fondo */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-         <span className={`text-xs font-extrabold transition-colors duration-300 ${isConfirmed ? 'text-white z-10' : 'text-slate-500'}`}>
+         <span className={`text-[13px] font-extrabold transition-colors duration-300 ${isConfirmed ? 'text-white z-10' : 'text-slate-800'}`}>
             {isConfirmed ? '¡Confirmado!' : text}
          </span>
       </div>
@@ -111,13 +111,13 @@ const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600", isProc
       <div 
         ref={fillRef}
         className={`absolute top-0 left-0 h-full ${colorClass}`} 
-        style={{ width: '24px', opacity: isConfirmed ? 1 : 0.3 }} 
+        style={{ width: '24px', opacity: isConfirmed ? 1 : 0 }} 
       />
 
       {/* Botón arrastrable */}
       <div 
         ref={buttonRef}
-        className={`absolute top-1 bottom-1 left-1 w-10 rounded-lg flex items-center justify-center cursor-grab active:cursor-grabbing shadow-sm z-10 ${isConfirmed ? 'bg-white text-green-600' : `${colorClass} text-white`}`}
+        className={`absolute top-1 bottom-1 left-1 w-10 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing shadow-sm z-10 ${isConfirmed ? 'bg-white text-green-600' : `${colorClass} text-white`}`}
         style={{ transform: 'translateX(0px)' }}
         onTouchStart={e => { e.stopPropagation(); handleStart(e.touches[0].clientX); }}
         onTouchMove={e => { e.stopPropagation(); handleMove(e.touches[0].clientX); }}
@@ -128,7 +128,7 @@ const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600", isProc
         onMouseUp={handleEnd}
         onMouseLeave={handleEnd}
       >
-        {isConfirmed ? <CheckCircle className="w-4 h-4 animate-in zoom-in"/> : (icon || <ChevronRight className="w-4 h-4"/>)}
+        {isConfirmed ? <CheckCircle className="w-5 h-5 animate-in zoom-in"/> : (icon || <ArrowRight className="w-5 h-5"/>)}
       </div>
     </div>
   );
