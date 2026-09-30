@@ -55,10 +55,10 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
   // Variables de identidad derivadas
-  const actualUserEmail = user?.email?.toLowerCase();
+  const actualUserEmail = user?.email?.trim().toLowerCase();
   
   // MAGIA: Buscamos el perfil del usuario logueado en la base de datos en tiempo real
-  const currentUserProfile = drivers.find(d => d.email?.toLowerCase() === actualUserEmail);
+  const currentUserProfile = drivers.find(d => d.email?.trim().toLowerCase() === actualUserEmail);
 
   // Super Admin estricto (Felipe Castro o rol explícito de super_admin en base de datos)
   const isSuperAdmin = actualUserEmail === 'fcastro@logisticats.cl' || currentUserProfile?.role === 'super_admin';
@@ -180,9 +180,9 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
   useEffect(() => {
     if (!user || !dataLoaded || activeRole !== 'driver' || !navigator.onLine || registeringRef.current) return;
     
-    // Todo en minúsculas estrictas para evitar duplicados fantasma
-    const safeEmail = currentUserEmail?.toLowerCase() || '';
-    const myDriver = drivers.find(d => d.email?.toLowerCase() === safeEmail);
+    // Todo en minúsculas y sin espacios para evitar duplicados fantasma
+    const safeEmail = currentUserEmail?.trim().toLowerCase() || '';
+    const myDriver = drivers.find(d => d.email?.trim().toLowerCase() === safeEmail);
     const isClientAccount = customClients.some(c => c.email && c.email.toLowerCase().includes(safeEmail));
     
     // Agregamos !isQuoter para que a tu equipo de ventas no les pida licencia ni los anote como choferes

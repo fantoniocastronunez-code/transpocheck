@@ -114,6 +114,17 @@ const ChecklistInner = ({ openCamera }) => {
           tripType: 'simple'
         });
 
+        if (matchedVehicle && matchedVehicle.id) {
+          try {
+            await updateDoc(doc(db, 'vehicles', matchedVehicle.id), {
+              docs: finalData.docs || {},
+              docsExpiry: finalData.docsExpiry || {}
+            });
+          } catch (e) {
+            console.error("[ERR-VEHICLE-MEM-01] Error updating vehicle memory:", e);
+          }
+        }
+
         showAlert("✅ Checklist Quick Guardado y Completado.");
         onComplete();
         return;
@@ -216,10 +227,22 @@ const ChecklistInner = ({ openCamera }) => {
               draft: null // Borrar draft
             });
             await processChecklistExpenses(finalData);
+            
+            if (matchedVehicle && matchedVehicle.id) {
+              try {
+                await updateDoc(doc(db, 'vehicles', matchedVehicle.id), {
+                  docs: finalData.docs || {},
+                  docsExpiry: finalData.docsExpiry || {}
+                });
+              } catch (e) {
+                console.error("[ERR-VEHICLE-MEM-02] Error updating vehicle memory:", e);
+              }
+            }
+
             if (clearLocalDraft) await clearLocalDraft();
             syncTask.finish();
           } catch (e) {
-            console.error("Error en background sync:", e);
+            console.error("[ERR-BG-SYNC-01] Error en background sync:", e);
             syncTask.error(e);
           }
         })();
@@ -233,13 +256,25 @@ const ChecklistInner = ({ openCamera }) => {
           draft: null // Borrar draft
         });
         await processChecklistExpenses(finalData);
+
+        if (matchedVehicle && matchedVehicle.id) {
+          try {
+            await updateDoc(doc(db, 'vehicles', matchedVehicle.id), {
+              docs: finalData.docs || {},
+              docsExpiry: finalData.docsExpiry || {}
+            });
+          } catch (e) {
+            console.error("[ERR-VEHICLE-MEM-03] Error updating vehicle memory:", e);
+          }
+        }
+
         if (clearLocalDraft) await clearLocalDraft();
         showAlert("✅ Checklist Guardado Correctamente.");
         onComplete();
       }
     } catch (err) {
-      console.error(err);
-      showAlert("❌ Error al guardar: " + err.message);
+      console.error("[ERR-SAVE-02] Error global al guardar checklist:", err);
+      showAlert(`❌ Error al guardar [ERR-SAVE-02]: ${err.message}`);
     } finally {
       setIsSubmitting(false);
       setProcessingAction(null);
