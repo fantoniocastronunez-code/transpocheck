@@ -173,7 +173,498 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
       autoSelectVehicleType();
     }, 600);
 
-    return (
+    return () => clearTimeout(delayDebounceFn);
+  }, [brand, model, vehicles, db]);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSearchingVehicle, setIsSearchingVehicle] = useState(false);
+  const [vehicleFoundStatus, setVehicleFoundStatus] = useState(null); // 'found', 'not_found', null
+  const [vehiclePhoto, setVehiclePhoto] = useState(jobToEdit?.checklist?.photos?.front || null);
+
+  const handleVehicleSearch = async (searchValue, type) => {
+    const val = searchValue.toUpperCase().trim();
+    if (type === 'plate') setPlate(val);
+    if (type === 'vin') setVin(val);
+
+    // Reseteamos estados visuales
+    setVehicleFoundStatus(null);
+    setVehiclePhoto(null);
+
+    // Disparamos la búsqueda solo si la patente parece estar completa (mínimo 5 letras) o el VIN
+    if ((type === 'plate' && val.length >= 5) || (type === 'vin' && val.length >= 6)) {
+      setIsSearchingVehicle(true);
+
+      // Simulamos un retraso de red para dar retroalimentación visual
+      await new Promise(resolve => setTimeout(resolve, 600));
+      
+      // Buscamos en nuestra base de datos local de vehículos:
+      const v = vehicles.find(x => (val && x.plate === val) || (val && x.vin === val));
+
+      if (v) {
+        setBrand(v.brand || ''); setModel(v.model || '');
+        if (v.plate && type === 'vin') setPlate(v.plate);
+        if (v.vin && type === 'plate') setVin(v.vin);
+        if (v.vehicleType) { setVehicleType(v.vehicleType); setHistoricalVehicleType(v.vehicleType); }
+        if (allClientsList.includes(v.client)) setSelectedClient(v.client); else { setSelectedClient('OTRO'); setManualClient(v.client); }
+        
+        setVehicleFoundStatus('found');
+        setTimeout(() => setVehicleFoundStatus(null), 3000);
+      } else {
+        setVehicleFoundStatus('not_found');
+      }
+
+      // Buscar foto histórica en la BD para mostrarla de perfil
+      try {
+         const searchField = type === 'plate' ? 'plate' : 'vin';
+         const qPhoto = query(collection(db, 'transport_jobs'), where(searchField, '==', val));
+         const snapPhoto = await getDocs(qPhoto);
+         if (!snapPhoto.empty) {
+             const sorted = snapPhoto.docs.map(d => d.data()).sort((a,b) => (b.completedAt || b.createdAt || 0) - (a.completedAt || a.createdAt || 0));
+             const foundPhotoJob = sorted.find(j => j.checklist?.photos?.front);
+             if (foundPhotoJob) {
+                 setVehiclePhoto(foundPhotoJob.checklist.photos.front);
+             }
+         }
+      } catch (e) { console.error("Error buscando foto histórica:", e); }
+      
+      setIsSearchingVehicle(false);
+    }
+  };
+
+  const handleAddMultiVehicle = () => {
+    if (!plate && !vin) return showAlert("⚠️ Ingresa al menos la patente o el VIN para agregarlo a la lista masiva.");
+    setMultiVehicles([...multiVehicles, { plate, vin, brand, model, vehicleType }]);
+    setPlate(''); setVin(''); setBrand(''); setModel(''); setVehicleFoundStatus(null);
+  };
+
+  const handleRemoveMultiVehicle = (index) => {
+    const newList = [...multiVehicles]; newList.splice(index, 1); setMultiVehicles(newList);
+  };
+
+  const handleAddWaypoint = () => setWaypoints([...waypoints, '']);
+  const handleWaypointChange = (index, val) => { const nw = [...waypoints]; nw[index] = val; setWaypoints(nw); };
+  const handleRemoveWaypoint = (index) => { const nw = [...waypoints]; nw.splice(index, 1); setWaypoints(nw); };
+
+  const [cameraConfig, setCameraConfig] = useState({ isOpen: false });
+
+  // --- NUEVO MOTOR OCR/PDF PARA GUÍAS DE DESPACHO ---
+  const handleOcrUpload = async (fileOrEvent) => {
+    // SOPORTA TANTO EL EVENTO DEL INPUT NATIVO COMO EL ARCHIVO DIRECTO DE LA CÁMARA
+    const file = fileOrEvent.target ? fileOrEvent.target.files[0] : fileOrEvent;
+    if (!file) return;
+
+    setIsOcrProcessing(true);
+    showAlert("⏳ Analizando documento... Esto puede tomar unos segundos.");
+
+    try {
+      let text = "";
+
+      if (file.type === 'application/pdf') {
+        // ✨ SOLUCIÓN AL ERROR: Alimentamos a la librería con los bytes crudos
+        const arrayBuffer = await file.arrayBuffer();
+        // Convertimos explícitamente a Uint8Array (el formato estricto que exige data)
+        const uint8Array = new Uint8Array(arrayBuffer);
+        const pdf = await pdfjsLib.getDocument({ data: uint8Array }).promise;
+        
+        // 1. Intentar lectura de texto digital nativo (Velocidad rayo)
+        let nativeText = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            nativeText += content.items.map(item => item.str).join(" ") + " ";
+        }
+
+        if (nativeText.trim().length > 50) {
+            text = nativeText.toUpperCase();
+        } else {
+            // 2. Es un PDF escaneado (Foto pegada adentro). Renderizamos y pasamos a Tesseract
+            showAlert("📸 Detectado PDF escaneado. Aplicando motor OCR visual...");
+            const page = await pdf.getPage(1);
+            const viewport = page.getViewport({ scale: 2.0 }); // Escala alta para mejor resolución
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            await page.render({ canvasContext: context, viewport: viewport }).promise;
+            
+            const result = await Tesseract.recognize(canvas, 'spa');
+            text = result.data.text.toUpperCase();
+        }
+      } else {
+        // Es una imagen (JPG, PNG) va directo a Tesseract
+        const result = await Tesseract.recognize(file, 'spa');
+        text = result.data.text.toUpperCase();
+      }
+
+      // === APLICACIÓN DE REGLAS DE NEGOCIO AL TEXTO ENCONTRADO ===
+      
+      // 1. Buscar Patente Chilena (4 Letras 2 Números, o 2 Letras 4 Números)
+      const plateMatch = text.match(/[A-Z]{4}[0-9]{2}|[A-Z]{2}[0-9]{4}/);
+      if (plateMatch) setPlate(plateMatch[0]);
+
+      // 2. Buscar VIN (17 caracteres alfanuméricos)
+      const vinMatch = text.match(/[A-HJ-NPR-Z0-9]{17}/);
+      if (vinMatch) setVin(vinMatch[0]);
+
+      // 3. Deducir Marca buscando coincidencias de tu propia base de datos
+      const allBrands = [...new Set(vehicles.map(v => v.brand?.toUpperCase().trim()).filter(Boolean))];
+      let foundBrand = '';
+      for (const b of allBrands) {
+        if (b.length > 2 && text.includes(b)) {
+          foundBrand = b;
+          setBrand(b);
+          break;
+        }
+      }
+
+      // 4. Si encontramos la marca, deducimos el Modelo de esa marca específica
+      if (foundBrand) {
+        const modelsOfBrand = [...new Set(vehicles.filter(v => v.brand?.toUpperCase().trim() === foundBrand).map(v => v.model?.toUpperCase().trim()).filter(Boolean))];
+        for (const m of modelsOfBrand) {
+          if (m.length > 1 && text.includes(m)) {
+            setModel(m);
+            break;
+          }
+        }
+      }
+
+      showAlert("✅ ¡Documento analizado! Datos autocompletados.");
+    } catch (err) {
+      console.error("Error Leyendo Documento:", err);
+      showAlert(`❌ Hubo un error procesando el archivo: ${err.message || 'Intente nuevamente'}`);
+    } finally {
+      setIsOcrProcessing(false);
+      if (fileOrEvent && fileOrEvent.target) fileOrEvent.target.value = null; // Limpiar el input
+    }
+  };
+
+  const handleCreateOrUpdateJob = async (e) => {
+    e.preventDefault();
+    if (isSubmitting) return;
+
+    const formData = new FormData(e.target);
+
+    if (operationMode === 'traslado' && historicalVehicleType && historicalVehicleType !== vehicleType) {
+        const confirmMsg = `Estás guardando este traslado como '${vehicleType}', pero históricamente este modelo (${model}) se ha registrado como '${historicalVehicleType}'.\n\n¿Estás seguro que deseas guardarlo como '${vehicleType}'?`;
+        const isConfirmed = await showConfirmDialog(confirmMsg, "ALERTA DE TIPO DE VEHÍCULO");
+        if (!isConfirmed) return;
+    }
+
+    if (operationMode === 'traslado' && !jobToEdit) {
+        const vPlate = plate.toUpperCase().trim();
+        const vVin = vin.toUpperCase().trim();
+        const dup = activeJobsList.find(j => 
+            (vPlate && j.plate === vPlate) || (vVin && j.vin === vVin)
+        );
+        if (dup) {
+            const confirmMsg = `Ya existe un traslado ACTIVO para el vehículo ${dup.plate || dup.vin} (${dup.brand || ''} ${dup.model || ''}).\n\n¿Estás seguro de que deseas crear OTRO traslado para el mismo vehículo?`;
+            const isConfirmed = await showConfirmDialog(confirmMsg, "ALERTA DE TRASLADO DUPLICADO");
+            if (!isConfirmed) return;
+        }
+    }
+
+    setIsSubmitting(true);
+    const selectedDriverIds = formData.getAll('assignedDriverId');
+    
+    const cleanSpotEmail = spotDriverEmail.trim().toLowerCase();
+    
+    if (selectedDriverIds.length === 0 && !cleanSpotEmail) {
+        setIsSubmitting(false);
+        return showAlert("❌ Debes seleccionar al menos un conductor de tu plantilla o ingresar un correo externo.");
+    }
+
+    const assignedDriversList = drivers.filter(d => selectedDriverIds.includes(d.id));
+    
+    // Si hay correo externo, creamos un conductor temporal simulado en la memoria de este trabajo
+    if (cleanSpotEmail) {
+        assignedDriversList.push({
+            id: `spot_${Date.now()}`,
+            name: `Conductor Externo (${cleanSpotEmail.split('@')[0]})`,
+            email: cleanSpotEmail
+        });
+    }
+
+    const finalClient = selectedClient === 'OTRO' ? manualClient : selectedClient;
+    
+    const rtData = (operationMode === 'traslado' && tripType === 'revision') ? {
+      type: revType,
+      modalidad: revModalidad, // NUEVO
+      gases: revType === 'A' ? revA_gases : (revB_tipo === 'gases'),
+      revision: revType === 'A' ? revA_revision : (revB_tipo === 'completa'),
+      inspeccion: revType === 'A' ? revA_inspeccion : (revB_tipo === 'inspeccion'),
+      frenos: revType === 'A' ? revA_frenos : false,
+      tipoB: revType === 'B' ? revB_tipo : null,
+      motivoInspeccion: revType === 'B' && revB_tipo === 'inspeccion' ? revB_motivo : null
+    } : null;
+
+    const finalTripType = operationMode === 'servicio' ? 'simple' : tripType;
+
+    // MAGIA: Si es Revisión Técnica y anotaron Destino Final, lo estructuramos
+    let finalDestination = formData.get('destination') || '';
+    if (finalTripType === 'revision') {
+      const prtSelected = formData.get('prtSelect') || '';
+      const destFinal = formData.get('destFinal') || '';
+      if (prtSelected && destFinal) {
+        finalDestination = `${prtSelected} -> ${destFinal}`;
+      } else if (prtSelected) {
+        finalDestination = prtSelected;
+      }
+    }
+
+    const jobData = {
+      scheduledDate: formData.get('scheduledDate'), 
+      scheduledTime: formData.get('scheduledTime') || '', // <-- NUEVO CAMPO
+      client: finalClient, 
+      origin: formData.get('origin'), destination: finalDestination,
+      tripType: finalTripType,
+      isUrgent: isUrgent,
+      assignedDrivers: assignedDriversList.map(d => ({id: d.id, name: d.name, email: d.email})), assignedEmails: assignedDriversList.map(d => d.email)
+    };
+
+    // Si es traslado agregamos los datos del auto, si es servicio agregamos la descripción
+    if (operationMode === 'traslado') {
+       jobData.brand = brand; jobData.model = model; jobData.vin = vin.toUpperCase(); jobData.plate = plate.toUpperCase();
+       jobData.vehicleType = vehicleType; jobData.rtData = rtData;
+       jobData.waypoints = waypoints.filter(w => w.trim() !== ''); // Filtra paradas vacías
+    } else {
+       jobData.isPintura = isPintura;
+       jobData.qtyPintura = isPintura ? Number(qtyPintura) : 0;
+       jobData.isGrabado = isGrabado;
+       jobData.qtyGrabado = isGrabado ? Number(qtyGrabado) : 0;
+       jobData.associatedJobId = (isPintura || isGrabado) ? associatedJobId : null;
+       
+       let finalDesc = description;
+       
+       if ((isPintura || isGrabado) && associatedJobId) {
+          const asocJob = activeJobsList.find(j => j.id === associatedJobId);
+          if (asocJob) {
+             jobData.associatedPlate = asocJob.plate || asocJob.vin || 'S/N';
+             jobData.associatedVehicle = `${asocJob.brand || ''} ${asocJob.model || ''}`.trim();
+             
+             // Generación automática del texto con cantidades exactas
+             const acciones = [];
+             if (isPintura) acciones.push(`PINTURA DE ${qtyPintura} PATENTE${qtyPintura > 1 ? 'S' : ''}`);
+             if (isGrabado) acciones.push(`GRABADO DE ${qtyGrabado} VIDRIO${qtyGrabado > 1 ? 'S' : ''}`);
+             
+             // Adaptamos el texto y priorizamos mostrar la PATENTE en lugar del VIN
+             const tipoVeh = asocJob.vehicleType?.includes('camion') ? 'CAMIÓN' : 'VEHÍCULO';
+             const identificador = asocJob.plate ? `PATENTE ${asocJob.plate}` : `VIN ${asocJob.vin || 'S/N'}`;
+             const autoText = `${acciones.join(" Y ")} DE ${tipoVeh} ${asocJob.brand?.toUpperCase() || ''} MODELO ${asocJob.model?.toUpperCase() || ''} ${identificador}`.trim();
+             
+             // Si escribiste algo extra lo suma, si no, usa solo el texto automático
+             finalDesc = description.trim() ? `${autoText} - Notas adicionales: ${description}` : autoText;
+          }
+       }
+       
+       jobData.description = finalDesc || 'Servicio en Terreno';
+    }
+
+    // NUEVO: BUSCAR ORIGEN EN EL DIRECTORIO
+    const originValue = jobData.origin?.trim().toLowerCase();
+    if (originValue) {
+       const matchedOrigin = directoryList.find(d => d.placeName.trim().toLowerCase() === originValue);
+       if (matchedOrigin) {
+          jobData.originContactName = matchedOrigin.contactName || '';
+          jobData.originContactPhone = matchedOrigin.contactPhone || '';
+          jobData.originAddress = matchedOrigin.address || '';
+          jobData.originCommune = matchedOrigin.commune || '';
+       } else {
+          try { addDoc(collection(db, 'directory'), { placeName: jobData.origin.trim().toUpperCase(), contactName: jobData.origin.trim().toUpperCase(), isAutoSaved: true }); } catch(e){}
+       }
+    }
+
+    // NUEVO: BUSCAR DESTINO EN EL DIRECTORIO
+    const destinationValue = jobData.destination?.trim().toLowerCase();
+    if (destinationValue) {
+       const matchedDest = directoryList.find(d => d.placeName.trim().toLowerCase() === destinationValue);
+       if (matchedDest) {
+          jobData.destContactName = matchedDest.contactName || '';
+          jobData.destContactPhone = matchedDest.contactPhone || '';
+          jobData.destAddress = matchedDest.address || '';
+          jobData.destCommune = matchedDest.commune || '';
+       } else {
+          try { addDoc(collection(db, 'directory'), { placeName: jobData.destination.trim().toUpperCase(), contactName: jobData.destination.trim().toUpperCase(), isAutoSaved: true }); } catch(e){}
+       }
+    }
+
+    // MAGIA UX: CIERRE INMEDIATO
+    showAlert("⏳ Creando y asignando traslado...");
+    
+    // NUEVO: Si estamos creando uno nuevo y fue exitoso, destruimos el borrador
+    if (!jobToEdit) {
+      localStorage.removeItem('app_newJobDraft');
+    }
+
+    if (jobToEdit && onCancelEdit) onCancelEdit();
+    else onSuccess();
+    
+    // Abrimos el registro en la cola global
+    const taskName = jobToEdit ? `Actualizando ${plate || brand || 'Traslado'}` : `Creando ${plate || brand || 'Traslado'}`;
+    const syncTask = pushSyncTask ? pushSyncTask(taskName) : { finish:()=>{}, error:()=>{} };
+
+    // BURBUJA ASÍNCRONA (Segundo Plano)
+    (async () => {
+      try {
+        // --- 1. DETERMINAR PRECIO PREDEFINIDO DEL CLIENTE ---
+        let companyPrice = jobToEdit?.companyPrice || 0;
+        let clientRecord = null;
+        
+        if (jobData.client && jobData.client !== 'Sin Cliente' && jobData.client !== 'OTRO') {
+            try {
+                const qClient = query(collection(db, 'clients'), where('name', '==', jobData.client));
+                const snapClient = await getDocs(qClient);
+                if (!snapClient.empty) {
+                    clientRecord = snapClient.docs[0].data();
+                    
+                    if (!jobToEdit || !jobToEdit.companyPrice) {
+                        const prices = clientRecord.prices || {};
+                        if (operationMode === 'servicio') {
+                            companyPrice = Number(prices.servicio) || 0;
+                        } else if (tripType === 'revision') {
+                            let totalRev = 0;
+                            
+                            // Determinamos el valor base dependiendo si es Legal o Con Ayuda
+                            const basePriceA = revModalidad === 'ayuda' ? (Number(prices.prtAyuda) || 0) : (Number(prices.prt) || 0);
+                            const basePriceB = revModalidad === 'ayuda' ? (Number(prices.prtAyuda) || 0) : (Number(prices.prtB) || 0);
+
+                            if (revType === 'A') {
+                                if (revA_gases || revA_revision) totalRev += basePriceA;
+                                if (revA_inspeccion) totalRev += (Number(prices.inspVisualA) || 0);
+                                if (revA_frenos) totalRev += (Number(prices.frenosA) || 0); // Ocupa el nuevo cajón de Frenos
+                            } else if (revType === 'B') {
+                                if (revB_tipo === 'completa') {
+                                    totalRev += basePriceB;
+                                } else if (revB_tipo === 'gases') {
+                                    totalRev += (Number(prices.soloGasesB) || 0);
+                                } else if (revB_tipo === 'inspeccion') {
+                                    totalRev += (Number(prices.inspVisualB) || 0);
+                                }
+                            }
+                            companyPrice = totalRev;
+                        } else if (tripType === 'viaje') {
+                            companyPrice = Number(prices.region) || 0;
+                        } else {
+                            companyPrice = Number(prices.local) || 0;
+                        }
+                    }
+                }
+            } catch (e) { console.error("Error buscando cliente:", e); }
+        }
+        
+        jobData.companyPrice = companyPrice;
+
+        // --- NUEVO: DETERMINAR LISTA DE VEHÍCULOS PARA CREACIÓN MASIVA ---
+        let vehiclesToProcess = [];
+        if (operationMode === 'traslado' && !jobToEdit && multiVehicles.length > 0) {
+            vehiclesToProcess = [...multiVehicles];
+            if (plate || vin) vehiclesToProcess.push({ plate, vin, brand, model, vehicleType, isChassisCab });
+        } else {
+            vehiclesToProcess = [{ plate, vin, brand, model, vehicleType, isChassisCab }];
+        }
+
+        // 1. GUARDADO EXPRÉS EN BASE DE DATOS (En Paralelo y con ID único)
+        const savePromises = vehiclesToProcess.map(async (v, index) => {
+            const currentJobData = { ...jobData };
+
+            const vPlate = (v.plate || '').toUpperCase();
+            const vVin = (v.vin || '').toUpperCase();
+            const vBrand = v.brand || '';
+            const vModel = v.model || '';
+
+            if (operationMode === 'traslado') {
+                currentJobData.brand = vBrand;
+                currentJobData.model = vModel;
+                currentJobData.vin = vVin;
+                currentJobData.plate = vPlate;
+                currentJobData.vehicleType = v.vehicleType;
+                currentJobData.isChassisCab = v.isChassisCab !== undefined ? v.isChassisCab : isChassisCab;
+            }
+
+            if (jobToEdit) {
+               await updateDoc(doc(db, 'transport_jobs', jobToEdit.id), currentJobData);
+            } else {
+               currentJobData.status = 'pending';
+               currentJobData.createdAt = Date.now() + index; // ID de tiempo único
+               currentJobData.checklist = null;
+               currentJobData.createdBy = myDriver?.name || user?.displayName || user?.email || 'Admin';
+               await addDoc(collection(db, 'transport_jobs'), currentJobData);
+            }
+            
+            if (operationMode === 'traslado' && (vPlate || vVin) && !jobToEdit) {
+                const existingVehicle = vehicles.find(veh => (vPlate && veh.plate === vPlate) || (vVin && veh.vin === vVin));
+                if (existingVehicle) {
+                    await updateDoc(doc(db, 'vehicles', existingVehicle.id), {
+                        tripsCount: (existingVehicle.tripsCount || 0) + 1,
+                        lastTripDate: Date.now()
+                    });
+                } else {
+                    await addDoc(collection(db, 'vehicles'), { 
+                        plate: vPlate, 
+                        vin: vVin, 
+                        vehicleType: v.vehicleType, 
+                        brand: vBrand, 
+                        model: vModel, 
+                        client: finalClient, 
+                        createdAt: Date.now() + index,
+                        tripsCount: 1,
+                        lastTripDate: Date.now()
+                    });
+                }
+            }
+            
+            return { currentJobData, vPlate, vVin, vBrand, vModel };
+        });
+
+        // Esperamos a que TODOS se guarden en Firebase en paralelo
+        const processedJobs = await Promise.all(savePromises);
+
+        // 2. DISPARAR NOTIFICACIONES EN SEGUNDO PLANO
+        processedJobs.forEach(({ currentJobData, vPlate, vVin, vBrand, vModel }) => {
+            const driverTokens = assignedDriversList.map(d => d.fcmToken).filter(token => token);
+            if (driverTokens.length > 0) {
+              const pushTitle = jobToEdit ? (isUrgent ? "🚨 URGENTE: Trabajo Actualizado" : "🔄 Trabajo Actualizado") : (operationMode === 'servicio' ? (isUrgent ? "🚨 URGENTE: Nuevo Servicio" : "🛠️ ¡Nuevo Servicio Asignado!") : (isUrgent ? "🚨 URGENTE: Nuevo Traslado" : "📍 ¡Nuevo Traslado Asignado!"));
+              const pushBody = operationMode === 'servicio' ? `Tarea: ${description}\nLugar: ${currentJobData.origin}` : `Vehículo: ${vBrand} ${vModel} (${vPlate || 'S/N'})\nDesde: ${currentJobData.origin}`;
+              fetch('/api/send-notification', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tokens: driverTokens, title: pushTitle, body: pushBody }) }).catch(()=>{});
+            }
+
+            const driverEmails = assignedDriversList.map(d => d.email).filter(e => e);
+            if (driverEmails.length > 0) {
+               fetch('/api/notify-driver', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ emails: driverEmails, isEdit: !!jobToEdit, isService: operationMode === 'servicio', jobDetails: { client: currentJobData.client || 'Sin cliente', origin: currentJobData.origin, destination: currentJobData.destination || '', date: currentJobData.scheduledDate, plate: vPlate || vVin || currentJobData.associatedPlate || 'S/N', vehicle: operationMode === 'servicio' ? (currentJobData.description || 'Servicio en Terreno') : (`${vBrand} ${vModel}`.trim() || 'N/A'), description: description || '' } }) }).catch(()=>{});
+            }
+            
+            if (!jobToEdit && clientRecord) {
+                const notifs = clientRecord.notifications || { creado: false };
+                if (notifs.creado && clientRecord.email) {
+                   fetch('/api/notify-client', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: clientRecord.email, clientName: clientRecord.name, type: 'creado', jobDetails: { id: 'N/A', driverName: 'Buscando conductor...', vehicle: operationMode === 'servicio' ? (currentJobData.description || 'Servicio en Terreno') : (`${vBrand} ${vModel}`.trim() || 'Vehículo'), plate: vPlate || vVin || currentJobData.associatedPlate || 'S/N', origin: currentJobData.origin || 'Origen', destination: currentJobData.destination || 'Destino' } }) }).catch(()=>{});
+                }
+            }
+        });
+
+        syncTask.finish(); // Marca en verde en el Ojo
+        
+        // Dispara el mensaje de éxito
+        showAlert("✅ ¡Listo! Traslado procesado.");
+        setTimeout(() => {
+           showAlert(null);
+        }, 500);
+        
+      } catch (error) { 
+        console.error(error); 
+        syncTask.error("Error de conexión");
+        showAlert("❌ Hubo un error al guardar el traslado.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    })();
+  };
+
+  const destinationOptions = [
+    ...directoryList.map(dir => dir.placeName),
+    ...(allClientsList || [])
+  ].filter(Boolean);
+
+  return (
     <div className="max-w-4xl mx-auto p-4 sm:p-8 rounded-3xl mb-28">
 
       {/* HEADER: Title & Urgency */}
@@ -616,18 +1107,22 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
         </div>
       </form>
 
+      {/* --- CÁMARA INTERNA CENTRALIZADA --- */}
       <InAppCamera isOpen={cameraConfig.isOpen} title="Escáner Inteligente" onClose={() => setCameraConfig({ isOpen: false })} onCapture={handleOcrUpload} />
 
+      {/* NUEVO: Modal de Confirmación Nativo */}
       {confirmModal && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[500] p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl flex flex-col animate-in zoom-in border-t-8 border-orange-500">
-            <h3 className="text-lg font-black text-slate-800 dark:text-slate-200 flex items-center gap-2 mb-3">
-              <AlertCircle className="w-5 h-5 text-orange-500" /> {confirmModal.title}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl flex flex-col animate-in zoom-in-95 border-t-8 border-orange-500">
+            <h3 className="text-lg font-black text-slate-800 dark:text-slate-200 flex items-center gap-2 mb-3 leading-tight">
+              <AlertCircle className="w-5 h-5 text-orange-500 shrink-0" /> {confirmModal.title}
             </h3>
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-6">{confirmModal.message}</p>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-6 whitespace-pre-wrap">
+              {confirmModal.message}
+            </p>
             <div className="flex gap-3">
-              <button type="button" onClick={confirmModal.onCancel} className="flex-1 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold py-3 rounded-xl">Cancelar</button>
-              <button type="button" onClick={confirmModal.onConfirm} className="flex-1 bg-orange-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-orange-500/30">Confirmar</button>
+              <button onClick={confirmModal.onCancel} className="flex-1 py-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>
+              <button onClick={confirmModal.onConfirm} className="flex-1 py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-extrabold text-sm shadow-md transition-colors">Aceptar</button>
             </div>
           </div>
         </div>
