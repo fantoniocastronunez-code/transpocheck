@@ -20,14 +20,12 @@ import GuideUploadModal from './JobsList/GuideUploadModal';
 import FullScreenPhotoModal from './JobsList/FullScreenPhotoModal';
 import HistoryModal from './JobsList/HistoryModal';
 import KovacsModal from './JobsList/KovacsModal';
-import TrackingModal from './JobsList/TrackingModal';
 import ArrivalModal from './JobsList/ArrivalModal';
 import { formatDateDisplay, analyzeJobStatus, generateStandardFileName, generateWhatsAppText, getRouteStr, resizeImage, resizeAndWatermarkImage } from '../../utils/helpers';
 
 export default function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, onNewJob, db, currentUserEmail, showAlert, showConfirm, allClientsList, onLoadMore, vehicles }) {
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [auditMode, setAuditMode] = useState(false); // <-- NUEVO: Estado del switch de auditoría
-  const [trackingJobId, setTrackingJobId] = useState(null); // <-- NUEVO: Estado para Panel de Seguimiento
   const [jobToFail, setJobToFail] = useState(null);
   const [prtPromptJob, setPrtPromptJob] = useState(null);
   const [prtApprovePromptJob, setPrtApprovePromptJob] = useState(null);
@@ -637,7 +635,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
       // NUEVO: Abrir automáticamente el Panel de Viaje al aceptar
-      setTrackingJobId(job.id);
     }
     finally {
       setTimeout(() => setProcessingId(null), 300);
@@ -1153,7 +1150,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   };
 
   const jobCardProps = {
-    analyzeJobStatus, getJobIdentifier, vehicles, menuOpenId, setMenuOpenId, isAdminView, onEditJob, currentUserEmail, setRelayPromptJob, setForceCloseJob, db, updateDoc, deleteField, doc, showAlert, showConfirm, setJobToFail, latestVehiclePhotos, setFullScreenPhoto, role, processingId, setProcessingId, handleApproveRequest, handleRejectRequest, handleApprovePhotoOverride, handleAcceptJob, setTrackingJobId, setGuideUploadJob, setGuideLink, setGuideFileBase64, updatePhase, setArrivalPromptJob, setArrivalMileage, setArrivalPhoto, setPrtApproveType, setPrtReturnOpt, setPrtReturnDest, setPrtApprovePromptJob, setPrtPromptJob, onStartChecklist, handleUndoPhase, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, WaitTimerBadge, SwipeButton, AlertCircle, Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, Truck, X, XCircle, Clock, Car, MapPin, FileText, RefreshCw, Search,
+    analyzeJobStatus, getJobIdentifier, vehicles, menuOpenId, setMenuOpenId, isAdminView, onEditJob, currentUserEmail, setRelayPromptJob, setForceCloseJob, db, updateDoc, deleteField, doc, showAlert, showConfirm, setJobToFail, latestVehiclePhotos, setFullScreenPhoto, role, processingId, setProcessingId, handleApproveRequest, handleRejectRequest, handleApprovePhotoOverride, handleAcceptJob, setGuideUploadJob, setGuideLink, setGuideFileBase64, updatePhase, setArrivalPromptJob, setArrivalMileage, setArrivalPhoto, setPrtApproveType, setPrtReturnOpt, setPrtReturnDest, setPrtApprovePromptJob, setPrtPromptJob, onStartChecklist, handleUndoPhase, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, WaitTimerBadge, SwipeButton, AlertCircle, Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, Truck, X, XCircle, Clock, Car, MapPin, FileText, RefreshCw, Search,
     // FALTANTES QUE CAUSABAN LA PANTALLA BLANCA AL ABRIR EL MENÚ:
     Copy, Trash2, Repeat, FileDown, cpyWapp, handleDuplicateJob, handleDeleteJob, generatePDF, handleShareWhatsAppPDF
   };
@@ -2652,24 +2649,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         setFullScreenPhoto={setFullScreenPhoto}
       />
 
-      {/* NUEVO MODAL: PANEL DE SEGUIMIENTO EN VIVO */}
-      <TrackingModal
-        jobs={jobs}
-        trackingJobId={trackingJobId}
-        setTrackingJobId={setTrackingJobId}
-        getJobIdentifier={getJobIdentifier}
-        updatePhase={updatePhase}
-        processingId={processingId}
-        setArrivalPromptJob={setArrivalPromptJob}
-        setArrivalMileage={setArrivalMileage}
-        setArrivalPhoto={setArrivalPhoto}
-        onStartChecklist={onStartChecklist}
-        setPrtApproveType={setPrtApproveType}
-        setPrtReturnOpt={setPrtReturnOpt}
-        setPrtReturnDest={setPrtReturnDest}
-        setPrtApprovePromptJob={setPrtApprovePromptJob}
-        setPrtPromptJob={setPrtPromptJob}
-      />
+      
 
       {/* NUEVO MODAL: REQUISITO LLEGADA (GENERAL / GRANDLEASING) */}
       <ArrivalModal
