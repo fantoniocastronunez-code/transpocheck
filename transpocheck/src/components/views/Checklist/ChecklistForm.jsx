@@ -30,6 +30,27 @@ const ChecklistInner = ({ openCamera }) => {
 
   const [uploadProgress, setUploadProgress] = useState({ active: false, current: 0, total: 0, text: '' });
   const [showFinalModal, setShowFinalModal] = useState(false);
+  const [isDraggingFuel, setIsDraggingFuel] = useState(false);
+  const svgFuelRef = React.useRef(null);
+
+  const updateFuelFromEvent = (e) => {
+    if (!svgFuelRef.current) return;
+    const rect = svgFuelRef.current.getBoundingClientRect();
+    const clientX = e.clientX ?? (e.touches && e.touches[0]?.clientX);
+    const clientY = e.clientY ?? (e.touches && e.touches[0]?.clientY);
+    if (clientX == null || clientY == null) return;
+    
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height * (100 / 110);
+    const dx = clientX - centerX;
+    const dy = centerY - clientY;
+    let angle = Math.atan2(dx, dy) * (180 / Math.PI);
+    if (angle < -90) angle = -90;
+    if (angle > 90) angle = 90;
+    
+    let fuel = (angle + 90) / 180;
+    setFormData(prev => ({ ...prev, fuelLevel: fuel }));
+  };
 
   // Instanciar Hooks
   const { syncFilesToStorage, clearLocalDraft } = useChecklistSync({
@@ -329,7 +350,15 @@ const ChecklistInner = ({ openCamera }) => {
 
               {/* Medidor Combustible Visual */}
               <div className="relative w-full aspect-[2/1] mt-4 flex items-end justify-center">
-                 <svg viewBox="0 0 200 110" className="w-[90%] overflow-visible">
+                 <svg 
+                    ref={svgFuelRef}
+                    viewBox="0 0 200 110" 
+                    className="w-[90%] overflow-visible touch-none cursor-pointer"
+                    onPointerDown={(e) => { setIsDraggingFuel(true); updateFuelFromEvent(e); e.currentTarget.setPointerCapture(e.pointerId); }}
+                    onPointerMove={(e) => { if(isDraggingFuel) updateFuelFromEvent(e); }}
+                    onPointerUp={(e) => { setIsDraggingFuel(false); e.currentTarget.releasePointerCapture(e.pointerId); }}
+                    onPointerCancel={(e) => { setIsDraggingFuel(false); }}
+                 >
                     {/* Fondo del arco */}
                     <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#1e293b" strokeWidth="12" strokeLinecap="round" />
                     
@@ -341,7 +370,7 @@ const ChecklistInner = ({ openCamera }) => {
                       strokeWidth="12" 
                       strokeLinecap="round" 
                       strokeDasharray={`${Math.PI * 80 * (formData.fuelLevel ?? 0)} ${Math.PI * 80}`}
-                      style={{ transition: 'stroke-dasharray 0.5s ease-in-out' }}
+                      style={{ transition: isDraggingFuel ? 'none' : 'stroke-dasharray 0.3s ease-out' }}
                     />
                     <defs>
                       <linearGradient id="fuelGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -352,7 +381,7 @@ const ChecklistInner = ({ openCamera }) => {
                     </defs>
 
                     {/* Aguja */}
-                    <g transform={`translate(100, 100) rotate(${-90 + ((formData.fuelLevel ?? 0) * 180)})`} style={{ transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+                    <g transform={`translate(100, 100) rotate(${-90 + ((formData.fuelLevel ?? 0) * 180)})`} style={{ transition: isDraggingFuel ? 'none' : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
                       <circle cx="0" cy="0" r="8" fill="#3b82f6" className="shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
                       <circle cx="0" cy="0" r="4" fill="#0f172a" />
                       <path d="M -3 -8 L 0 -65 L 3 -8 Z" fill="#3b82f6" />
@@ -367,25 +396,6 @@ const ChecklistInner = ({ openCamera }) => {
                     <text x="15" y="115" textAnchor="middle" fill="#ec4899" fontSize="12" fontWeight="bold">E</text>
                     <text x="185" y="115" textAnchor="middle" fill="#06b6d4" fontSize="12" fontWeight="bold">F</text>
                  </svg>
-              </div>
-
-              {/* Botones de nivel */}
-              <div className="flex justify-between w-full px-2 mt-2 relative z-20">
-                {['E', '1/4', '1/2', '3/4', 'F'].map((label, idx) => {
-                  const val = idx * 0.25;
-                  const isSelected = formData.fuelLevel === val;
-                  return (
-                     <button
-                       key={label}
-                       onClick={() => setFormData(p => ({ ...p, fuelLevel: val }))}
-                       className={`w-9 h-9 rounded-full font-bold text-[10px] flex items-center justify-center transition-all ${
-                         isSelected ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.6)] border border-blue-400' : 'bg-[#131b2e] text-slate-400 border border-slate-700/50 hover:border-slate-500'
-                       }`}
-                     >
-                       {label}
-                     </button>
-                  );
-                })}
               </div>
 
               {/* Botones de fotos */}
