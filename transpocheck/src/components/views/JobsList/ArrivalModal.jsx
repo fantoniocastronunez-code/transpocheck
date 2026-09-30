@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { X, Key, CheckCircle, Clock, Camera, Trash2, ArrowLeft } from 'lucide-react';
 
 export default function ArrivalModal({
@@ -19,10 +19,30 @@ export default function ArrivalModal({
 }) {
   if (!arrivalPromptJob) return null;
 
+  const [isDragging, setIsDragging] = useState(false);
+  const svgRef = useRef(null);
+
+  const updateFuelFromEvent = (e) => {
+    if (!svgRef.current) return;
+    const rect = svgRef.current.getBoundingClientRect();
+    const clientX = e.clientX ?? (e.touches && e.touches[0]?.clientX);
+    const clientY = e.clientY ?? (e.touches && e.touches[0]?.clientY);
+    if (clientX == null || clientY == null) return;
+    
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height * (100 / 110);
+    const dx = clientX - centerX;
+    const dy = centerY - clientY;
+    let angle = Math.atan2(dx, dy) * (180 / Math.PI);
+    if (angle < -90) angle = -90;
+    if (angle > 90) angle = 90;
+    setArrivalFuelLevel((angle + 90) / 180);
+  };
+
   const isServiceJob = arrivalPromptJob?.tripType === 'simple';
 
   return (
-    <div className="fixed inset-0 bg-[#060b19]/90 backdrop-blur-xl flex items-center justify-center z-[200] p-4 overflow-y-auto animate-in fade-in">
+    <div className="fixed inset-0 bg-[#060b19]/90 backdrop-blur-xl flex items-center justify-center z-[200] p-4 overflow-hidden animate-in fade-in">
       <div className="bg-slate-900/60 p-6 rounded-[2.5rem] shadow-[0_0_50px_rgba(59,130,246,0.15)] w-full max-w-sm flex flex-col relative overflow-hidden border border-slate-700/50 backdrop-blur-3xl pb-8 my-auto">
         {/* Glows */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-8 bg-blue-500/50 rounded-full blur-[40px] pointer-events-none" />
@@ -63,7 +83,15 @@ export default function ArrivalModal({
 
               {/* Medidor Combustible Visual */}
               <div className="relative w-full aspect-[2/1] mt-4 flex items-end justify-center">
-                 <svg viewBox="0 0 200 110" className="w-[90%] overflow-visible">
+                 <svg 
+                    ref={svgRef}
+                    viewBox="0 0 200 110" 
+                    className="w-[90%] overflow-visible touch-none cursor-pointer"
+                    onPointerDown={(e) => { setIsDragging(true); updateFuelFromEvent(e); e.currentTarget.setPointerCapture(e.pointerId); }}
+                    onPointerMove={(e) => { if(isDragging) updateFuelFromEvent(e); }}
+                    onPointerUp={(e) => { setIsDragging(false); e.currentTarget.releasePointerCapture(e.pointerId); }}
+                    onPointerCancel={(e) => { setIsDragging(false); }}
+                 >
                     <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#1e293b" strokeWidth="12" strokeLinecap="round" />
                     <path 
                       d="M 20 100 A 80 80 0 0 1 180 100" 
@@ -72,7 +100,7 @@ export default function ArrivalModal({
                       strokeWidth="12" 
                       strokeLinecap="round" 
                       strokeDasharray={`${Math.PI * 80 * (arrivalFuelLevel ?? 0)} ${Math.PI * 80}`}
-                      style={{ transition: 'stroke-dasharray 0.5s ease-in-out' }}
+                      style={{ transition: isDragging ? 'none' : 'stroke-dasharray 0.3s ease-out' }}
                     />
                     <defs>
                       <linearGradient id="fuelGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -82,7 +110,7 @@ export default function ArrivalModal({
                       </linearGradient>
                     </defs>
 
-                    <g transform={`translate(100, 100) rotate(${-90 + ((arrivalFuelLevel ?? 0) * 180)})`} style={{ transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+                    <g transform={`translate(100, 100) rotate(${-90 + ((arrivalFuelLevel ?? 0) * 180)})`} style={{ transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
                       <circle cx="0" cy="0" r="8" fill="#3b82f6" className="shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
                       <circle cx="0" cy="0" r="4" fill="#0f172a" />
                       <path d="M -3 -8 L 0 -65 L 3 -8 Z" fill="#3b82f6" />
@@ -96,25 +124,6 @@ export default function ArrivalModal({
                     <text x="15" y="115" textAnchor="middle" fill="#ec4899" fontSize="12" fontWeight="bold">E</text>
                     <text x="185" y="115" textAnchor="middle" fill="#06b6d4" fontSize="12" fontWeight="bold">F</text>
                  </svg>
-              </div>
-
-              {/* Botones de nivel */}
-              <div className="flex justify-between w-full px-2 mt-2 relative z-20">
-                {['E', '1/4', '1/2', '3/4', 'F'].map((label, idx) => {
-                  const val = idx * 0.25;
-                  const isSelected = arrivalFuelLevel === val;
-                  return (
-                     <button
-                       key={label}
-                       onClick={() => setArrivalFuelLevel(val)}
-                       className={`w-9 h-9 rounded-full font-bold text-[10px] flex items-center justify-center transition-all ${
-                         isSelected ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.6)] border border-blue-400' : 'bg-[#131b2e] text-slate-400 border border-slate-700/50 hover:border-slate-500'
-                       }`}
-                     >
-                       {label}
-                     </button>
-                  );
-                })}
               </div>
 
               {/* Botones de fotos */}
