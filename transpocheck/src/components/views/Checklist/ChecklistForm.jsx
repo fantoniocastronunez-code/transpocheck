@@ -298,82 +298,129 @@ const ChecklistInner = ({ openCamera }) => {
 
       {/* Overlay de Carga Principal */}
       {showFinalModal && !uploadProgress.active && (
-        <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md z-[90] flex flex-col items-center justify-center p-4 sm:p-8 animate-in fade-in">
-          <div className="bg-white dark:bg-[#0f172a] p-6 rounded-3xl shadow-2xl w-full max-w-sm flex flex-col gap-5 relative overflow-hidden border border-slate-200 dark:border-slate-800">
-            <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest text-center">
-              Datos Finales de Entrega
+        <div className="absolute inset-0 bg-[#060b19]/90 backdrop-blur-xl z-[90] flex flex-col items-center justify-center p-4 sm:p-8 animate-in fade-in">
+          <div className="bg-slate-900/60 p-6 rounded-[2.5rem] shadow-[0_0_50px_rgba(59,130,246,0.15)] w-full max-w-sm flex flex-col relative overflow-hidden border border-slate-700/50 backdrop-blur-3xl pb-8">
+            {/* Glows */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-8 bg-blue-500/50 rounded-full blur-[40px] pointer-events-none" />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-64 h-12 bg-blue-500/30 rounded-full blur-[40px] pointer-events-none" />
+
+            <h3 className="text-lg font-bold text-white mb-6 mt-2 tracking-wide text-center">
+              Combustible y Kilometraje
             </h3>
 
-            <div className="space-y-5">
-              {/* Kilometraje */}
-              <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/50">
-                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">
-                   Kilometraje (Obligatorio)
-                 </label>
-                 <div className="flex gap-2">
-                    <input
-                      type="number"
-                      placeholder="Ej: 154000"
-                      value={formData.mileage || ''}
-                      onChange={e => setFormData(p => ({ ...p, mileage: e.target.value }))}
-                      className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-center text-lg font-black text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 outline-none focus:border-blue-500 transition-colors"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => openCamera('Kilometraje', async f => {
-                        setProcessingAction('Procesando Foto...');
-                        setIsSubmitting(true);
-                        try {
-                          const { resizeImage } = await import('../../../utils/helpers');
-                          const compressed = await resizeImage(f, 1200, 0.6);
-                          const reader = new FileReader();
-                          reader.onload = () => {
-                            setFormData(p => ({ ...p, photos: { ...p.photos, odometer: reader.result } }));
-                            setIsSubmitting(false);
-                            setProcessingAction(null);
-                          };
-                          reader.readAsDataURL(compressed);
-                        } catch (e) {
-                          setIsSubmitting(false);
-                          setProcessingAction(null);
-                        }
-                      })}
-                      className={`w-14 shrink-0 rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition-all ${formData.photos?.odometer ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-500 hover:border-blue-400'}`}
-                    >
-                       <Camera className="w-5 h-5" />
-                    </button>
-                 </div>
-                 {formData.photos?.odometer && (
-                   <p className="text-[9px] font-black text-blue-500 uppercase mt-2 text-center">✅ Foto Odométro OK</p>
-                 )}
+            <div className="space-y-6 relative z-10 flex-1">
+              {/* Odómetro */}
+              <div className="flex flex-col gap-1">
+                <div className="flex justify-between items-end mb-1 px-4">
+                   <label className="text-xs text-slate-300 font-medium tracking-wide">Odómetro Actual</label>
+                   <span className="text-xs text-slate-500 font-medium">Km</span>
+                </div>
+                <div className="relative">
+                  <input
+                    type="number"
+                    placeholder="0"
+                    value={formData.mileage || ''}
+                    onChange={e => setFormData(p => ({ ...p, mileage: e.target.value }))}
+                    className="w-full bg-[#131b2e] border border-slate-700/50 p-4 rounded-[1.5rem] text-center text-3xl font-black text-white outline-none focus:border-blue-500/50 focus:shadow-[0_0_20px_rgba(59,130,246,0.2)] transition-all shadow-inner"
+                  />
+                </div>
+                <p className="text-center text-[10px] text-slate-500 mt-2 font-medium tracking-wide uppercase">Ingresa el Kilometraje</p>
               </div>
 
-              {/* Combustible */}
-              <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 text-center">
-                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-4">
-                   Nivel de Combustible
-                 </label>
-                 
-                 <div className="flex justify-center gap-2 mb-4">
-                    {['E', '1/4', '1/2', '3/4', 'F'].map(level => {
-                       const fractionMap = { 'E': 0, '1/4': 0.25, '1/2': 0.5, '3/4': 0.75, 'F': 1 };
-                       const val = fractionMap[level];
-                       const isActive = formData.fuelLevel === val;
-                       return (
-                          <button 
-                             key={level}
-                             onClick={() => setFormData(p => ({ ...p, fuelLevel: val }))}
-                             className={`w-10 h-10 rounded-full font-black text-xs border-2 transition-all ${isActive ? 'bg-purple-500 border-purple-500 text-white shadow-[0_0_10px_rgba(168,85,247,0.4)]' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-purple-300'}`}
-                          >
-                             {level}
-                          </button>
-                       )
-                    })}
-                 </div>
+              {/* Medidor Combustible Visual */}
+              <div className="relative w-full aspect-[2/1] mt-4 flex items-end justify-center">
+                 <svg viewBox="0 0 200 110" className="w-[90%] overflow-visible">
+                    {/* Fondo del arco */}
+                    <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#1e293b" strokeWidth="12" strokeLinecap="round" />
+                    
+                    {/* Arco con gradiente */}
+                    <path 
+                      d="M 20 100 A 80 80 0 0 1 180 100" 
+                      fill="none" 
+                      stroke="url(#fuelGradient)" 
+                      strokeWidth="12" 
+                      strokeLinecap="round" 
+                      strokeDasharray={`${Math.PI * 80 * (formData.fuelLevel ?? 0)} ${Math.PI * 80}`}
+                      style={{ transition: 'stroke-dasharray 0.5s ease-in-out' }}
+                    />
+                    <defs>
+                      <linearGradient id="fuelGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#ec4899" />
+                        <stop offset="50%" stopColor="#8b5cf6" />
+                        <stop offset="100%" stopColor="#06b6d4" />
+                      </linearGradient>
+                    </defs>
 
-                 <button
-                    type="button"
-                    onClick={() => openCamera('Combustible', async f => {
+                    {/* Aguja */}
+                    <g transform={`translate(100, 100) rotate(${-90 + ((formData.fuelLevel ?? 0) * 180)})`} style={{ transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+                      <circle cx="0" cy="0" r="8" fill="#3b82f6" className="shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+                      <circle cx="0" cy="0" r="4" fill="#0f172a" />
+                      <path d="M -3 -8 L 0 -65 L 3 -8 Z" fill="#3b82f6" />
+                    </g>
+
+                    {/* Textos centrales */}
+                    <text x="100" y="65" textAnchor="middle" fill="white" fontSize="18" fontWeight="bold">
+                      {formData.fuelLevel === 0 ? 'Vacío' : formData.fuelLevel === 1 ? 'Full' : `${Math.round((formData.fuelLevel ?? 0) * 100)}%`}
+                    </text>
+                    <text x="100" y="80" textAnchor="middle" fill="#64748b" fontSize="10">remaining</text>
+                    
+                    <text x="15" y="115" textAnchor="middle" fill="#ec4899" fontSize="12" fontWeight="bold">E</text>
+                    <text x="185" y="115" textAnchor="middle" fill="#06b6d4" fontSize="12" fontWeight="bold">F</text>
+                 </svg>
+              </div>
+
+              {/* Botones de nivel */}
+              <div className="flex justify-between w-full px-2 mt-2 relative z-20">
+                {['E', '1/4', '1/2', '3/4', 'F'].map((label, idx) => {
+                  const val = idx * 0.25;
+                  const isSelected = formData.fuelLevel === val;
+                  return (
+                     <button
+                       key={label}
+                       onClick={() => setFormData(p => ({ ...p, fuelLevel: val }))}
+                       className={`w-9 h-9 rounded-full font-bold text-[10px] flex items-center justify-center transition-all ${
+                         isSelected ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.6)] border border-blue-400' : 'bg-[#131b2e] text-slate-400 border border-slate-700/50 hover:border-slate-500'
+                       }`}
+                     >
+                       {label}
+                     </button>
+                  );
+                })}
+              </div>
+
+              {/* Botones de fotos */}
+              <div className="flex flex-col gap-3 mt-4">
+                <button
+                   type="button"
+                   onClick={() => openCamera('Kilometraje', async f => {
+                      setProcessingAction('Procesando Foto...');
+                      setIsSubmitting(true);
+                      try {
+                        const { resizeImage } = await import('../../../utils/helpers');
+                        const compressed = await resizeImage(f, 1200, 0.6);
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          setFormData(p => ({ ...p, photos: { ...p.photos, odometer: reader.result } }));
+                          setIsSubmitting(false);
+                          setProcessingAction(null);
+                        };
+                        reader.readAsDataURL(compressed);
+                      } catch (e) {
+                        setIsSubmitting(false);
+                        setProcessingAction(null);
+                      }
+                   })}
+                   className={`relative overflow-hidden w-full py-3.5 rounded-[1.25rem] flex items-center justify-center gap-2 border transition-all ${formData.photos?.odometer ? 'border-green-500/50 bg-green-900/30 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'border-blue-500/30 bg-gradient-to-b from-blue-600/20 to-blue-900/40 text-blue-300 hover:from-blue-500/30 hover:to-blue-800/50 shadow-[0_0_15px_rgba(59,130,246,0.15)]'}`}
+                >
+                   <Camera className="w-5 h-5" />
+                   <span className="text-xs font-bold tracking-wider uppercase">
+                      {formData.photos?.odometer ? 'Foto Odómetro (OK)' : 'Subir Foto Odómetro'}
+                   </span>
+                </button>
+
+                <button
+                   type="button"
+                   onClick={() => openCamera('Combustible', async f => {
                       setProcessingAction('Procesando Foto Combustible...');
                       setIsSubmitting(true);
                       try {
@@ -390,25 +437,32 @@ const ChecklistInner = ({ openCamera }) => {
                         setIsSubmitting(false);
                         setProcessingAction(null);
                       }
-                    })}
-                    className={`w-full py-3 rounded-xl border-2 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${formData.photos?.fuelGauge
-                        ? 'border-green-400 bg-green-500/10 text-green-500'
-                        : 'border-dashed border-slate-300 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/50'
-                      }`}
-                  >
-                    <Camera className="w-4 h-4" />
-                    {formData.photos?.fuelGauge ? '✅ Foto Tablero/Combustible OK (Cambiar)' : 'Tomar Foto Tablero/Combustible'}
-                  </button>
+                   })}
+                   className={`relative overflow-hidden w-full py-3.5 rounded-[1.25rem] flex items-center justify-center gap-2 border transition-all ${formData.photos?.fuelGauge ? 'border-green-500/50 bg-green-900/30 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'border-blue-500/30 bg-gradient-to-b from-blue-600/20 to-blue-900/40 text-blue-300 hover:from-blue-500/30 hover:to-blue-800/50 shadow-[0_0_15px_rgba(59,130,246,0.15)]'}`}
+                >
+                   <Camera className="w-5 h-5" />
+                   <span className="text-xs font-bold tracking-wider uppercase">
+                      {formData.photos?.fuelGauge ? 'Foto Recibo/Tablero (OK)' : 'Subir Foto Recibo'}
+                   </span>
+                </button>
               </div>
+
             </div>
 
-            <div className="flex gap-2 mt-2">
+            {/* Navegación inferior tipo mockup */}
+            <div className="flex justify-between items-center mt-8 relative z-10 px-2">
               <button
                 onClick={() => setShowFinalModal(false)}
-                className="flex-1 py-3.5 rounded-xl font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-xs uppercase tracking-wider"
+                className="w-12 h-12 rounded-full bg-[#131b2e] border border-slate-700/50 text-slate-400 flex items-center justify-center hover:bg-slate-800 transition-colors shadow-[0_0_15px_rgba(0,0,0,0.5)]"
               >
-                Volver
+                <ArrowLeft className="w-5 h-5" />
               </button>
+              
+              <div className="flex gap-2">
+                 <div className="w-2 h-2 rounded-full bg-slate-600"></div>
+                 <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
+              </div>
+
               <button
                 onClick={() => {
                   if (!formData.mileage) return showAlert("⚠️ Ingresa el kilometraje final.");
@@ -417,11 +471,12 @@ const ChecklistInner = ({ openCamera }) => {
                   if (!formData.photos?.fuelGauge) return showAlert("⚠️ Toma la foto del medidor de combustible.");
                   handleSubmitFinal();
                 }}
-                className="flex-[2] py-3.5 rounded-xl font-black text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-all active:scale-95 flex items-center justify-center gap-2 text-xs uppercase tracking-wider"
+                className="w-12 h-12 rounded-full bg-[#131b2e] border border-blue-500/30 text-blue-400 flex items-center justify-center hover:bg-slate-800 transition-colors shadow-[0_0_15px_rgba(59,130,246,0.2)]"
               >
-                Finalizar
+                <ArrowLeft className="w-5 h-5 rotate-180" />
               </button>
             </div>
+
           </div>
         </div>
       )}
