@@ -411,7 +411,7 @@ export default function JobCard({ j, ...props }) {
     return (
       // --- OPTIMIZACIÓN: Quitamos el overflow-hidden del padre para que el menú no se corte ---
       // Además, si la tarjeta tiene el menú abierto, elevamos su z-index
-      <div key={j.id} className={`bg-[#1e293b]/60 backdrop-blur-2xl rounded-[1.5rem] border p-4 sm:p-5 flex flex-col shadow-2xl relative hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-default group ${j.isUrgent ? 'border-red-400/50 ring-2 ring-red-400/30' : (j.fleetGroup ? 'border-indigo-400/50' : 'border-slate-700/50')} ${menuOpenId === j.id ? 'z-50' : 'z-10'}`}>
+      <div key={j.id} className={`bg-[#1e293b]/60 backdrop-blur-2xl rounded-[1.5rem] border p-3 sm:p-4 flex flex-col shadow-2xl relative hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-default group ${j.isUrgent ? 'border-red-400/50 ring-2 ring-red-400/30' : (j.fleetGroup ? 'border-indigo-400/50' : 'border-slate-700/50')} ${menuOpenId === j.id ? 'z-50' : 'z-10'}`}>
         
         {/* --- OPTIMIZACIÓN: Los fondos decorativos ahora viven en un contenedor con overflow-hidden para no salirse de los bordes redondeados --- */}
         <div className="absolute inset-0 rounded-[2rem] overflow-hidden pointer-events-none">
@@ -421,8 +421,8 @@ export default function JobCard({ j, ...props }) {
             <div className={`absolute top-0 left-0 bottom-0 w-1.5 transition-all ${isRequested ? 'bg-gradient-to-b from-pink-400 to-pink-600' : (isPending ? 'bg-gradient-to-b from-amber-300 to-amber-500' : 'bg-gradient-to-b from-blue-400 to-blue-600 shadow-[0_0_8px_rgba(59,130,246,0.5)]')}`}></div>
         </div>
         
-        <div className="flex justify-between items-start mb-5 border-b border-white/10 pb-4 pl-2 relative z-20">
-          <div className="flex flex-col gap-3 w-full">
+        <div className="flex justify-between items-start mb-3 border-b border-white/10 pb-3 pl-1 relative z-20">
+          <div className="flex flex-col gap-2 w-full">
             <div className="flex justify-between items-start w-full gap-2">
               <div className="shrink-0 relative z-10 flex flex-col items-end gap-1">
                 {j.isUrgent && (
@@ -434,12 +434,12 @@ export default function JobCard({ j, ...props }) {
                    <span className="bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800/50 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm max-w-[150px] text-center leading-tight mb-1">SERVICIO</span>
                 )}
                 {ident !== 'S/N' && (
-                   <>
+                   <div className="transform scale-[0.80] origin-top-left mb-0.5">
                      <LicensePlateBadge text={ident} />
                      {j.vin && ident !== j.vin && (
                        <div className="mr-1 mt-1"><VinPlateBadge vin={j.vin} /></div>
                      )}
-                   </>
+                   </div>
                 )}
                 {(j.checklist?.transitNotes || j.draft?.formData?.transitNotes) && (
                    <span className="bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800/50 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm max-w-[150px] text-center leading-tight mb-1 flex items-center gap-1 animate-pulse">
@@ -518,7 +518,7 @@ export default function JobCard({ j, ...props }) {
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
                 {/* NUEVO: Miniatura con inteligencia histórica (Busca la foto actual o la última registrada) */}
                 {(() => {
                    const displayPhoto = j.checklist?.photos?.front || j.draft?.formData?.photos?.front || latestVehiclePhotos[ident];
@@ -528,17 +528,17 @@ export default function JobCard({ j, ...props }) {
                          src={displayPhoto} 
                          alt="Frente" 
                          onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(displayPhoto); }}
-                         className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer hover:opacity-80 transition-opacity shrink-0"
+                         className="w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer hover:opacity-80 transition-opacity shrink-0"
                       />
                    );
                 })()}
                 <div>
                     {j.tripType === 'simple' ? (
-                       <p className="text-xl font-black text-purple-300 leading-tight mt-1 break-words pr-2">{j.description || 'Servicio en Terreno'}</p>
+                       <p className="text-lg font-black text-purple-300 leading-tight mt-1 break-words pr-2">{j.description || 'Servicio en Terreno'}</p>
                     ) : (
-                       <p className="text-2xl font-black text-white leading-tight mt-1 break-words pr-2 tracking-tight">{j.brand} {j.model}</p>
+                       <p className="text-xl font-black text-white leading-tight mt-1 break-words pr-2 tracking-tight">{j.brand} {j.model}</p>
                     )}
-                    <p className="text-sm font-medium text-slate-400 mt-0.5 uppercase tracking-wider flex items-center flex-wrap gap-2">
+                    <p className="text-[12px] font-medium text-slate-400 mt-0.5 uppercase tracking-wider flex items-center flex-wrap gap-2">
                        {j.client}
                        {j.fleetGroup && <span className="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 px-1.5 py-0.5 rounded text-[9px] font-black border border-indigo-200 dark:border-indigo-800/50">EN FLOTA (CONVOY)</span>}
                     </p>
@@ -550,9 +550,9 @@ export default function JobCard({ j, ...props }) {
             </div>
           </div>
 
-          <div className="mt-5 relative z-10 flex flex-col pt-2 pb-1">
+          <div className="mt-2 relative z-10 flex flex-col pt-1 pb-1">
             {/* TIMELINE SECTION */}
-            <div className="relative pl-[26px] flex flex-col gap-6">
+            <div className="relative pl-[26px] flex flex-col gap-4">
               
               {/* Continuous Timeline Line */}
               {(j.destination || j.tripType !== 'simple') && (
@@ -561,10 +561,10 @@ export default function JobCard({ j, ...props }) {
               
               {/* Floating Date Badge (Right Side) */}
               {j.scheduledDate && (
-                <div className="absolute right-0 -top-4 bg-[#3b82f6] rounded-xl w-[70px] h-[60px] flex flex-col items-center justify-center shadow-[0_8px_16px_rgba(59,130,246,0.3)] z-30 border border-blue-400/30">
-                  <div className="absolute -top-2 left-[12px] w-2 h-4 bg-slate-200 rounded-full shadow-sm"></div>
-                  <div className="absolute -top-2 right-[12px] w-2 h-4 bg-slate-200 rounded-full shadow-sm"></div>
-                  <span className="text-[9px] font-black text-blue-100 uppercase tracking-widest leading-none mt-1">
+                <div className="absolute right-0 -top-2 bg-[#3b82f6] rounded-xl w-[55px] h-[50px] flex flex-col items-center justify-center shadow-[0_4px_10px_rgba(59,130,246,0.3)] z-30 border border-blue-400/30">
+                  <div className="absolute -top-1.5 left-[10px] w-1.5 h-3 bg-slate-200 rounded-full shadow-sm"></div>
+                  <div className="absolute -top-1.5 right-[10px] w-1.5 h-3 bg-slate-200 rounded-full shadow-sm"></div>
+                  <span className="text-[8px] font-black text-blue-100 uppercase tracking-widest leading-none mt-1">
                     {(() => {
                        const today = new Date(); today.setHours(0,0,0,0);
                        const [y, m, d] = j.scheduledDate.split('-');
@@ -575,7 +575,7 @@ export default function JobCard({ j, ...props }) {
                        return `${d}/${m}`;
                     })()}
                   </span>
-                  <span className="text-[17px] font-black text-white mt-1 leading-none">{j.scheduledTime || '--:--'}</span>
+                  <span className="text-[13px] font-black text-white mt-1 leading-none">{j.scheduledTime || '--:--'}</span>
                 </div>
               )}
 
@@ -633,10 +633,10 @@ export default function JobCard({ j, ...props }) {
 
             {/* Contacts & Info Pill Button */}
             {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone || j.originAddress || j.originCommune || j.destContactName || j.destContactPhone || j.destAddress || j.destCommune || (j.waypoints && j.waypoints.length > 0)) && (
-              <div className="mt-6 mb-2 flex">
+              <div className="mt-4 mb-1 flex">
                 <button 
                   onClick={() => setShowDetails(!showDetails)}
-                  className="flex items-center gap-2 bg-transparent hover:bg-slate-800/50 border border-slate-500/50 rounded-full px-4 py-1.5 transition-colors mt-2"
+                  className="flex items-center gap-1.5 bg-transparent hover:bg-slate-800/50 border border-slate-500/50 rounded-full px-3 py-1.5 transition-colors"
                 >
                   <MapPin className="w-3.5 h-3.5 text-slate-300" />
                   <span className="text-[11px] font-bold text-white tracking-wide">
