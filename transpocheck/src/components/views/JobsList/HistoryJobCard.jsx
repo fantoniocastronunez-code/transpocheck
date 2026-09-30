@@ -12,50 +12,48 @@ export default function HistoryJobCard({ j, ...props }) {
       {/* Side Status Bar */}
       <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
 
-      {/* Header: Photo & Title & Plate */}
-      <div className="flex justify-between items-start mb-4 pl-2 gap-3 relative">
-        <div className="flex gap-3 items-center flex-1 min-w-0">
-          {/* Photo Thumbnail */}
-          {(() => {
-            const displayPhoto = j.checklist?.photos?.front || latestVehiclePhotos[ident];
-            if (!displayPhoto) return null;
-            return (
-              <img
-                src={displayPhoto}
-                alt="Frente"
-                onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(displayPhoto); }}
-                className="w-12 h-12 rounded-xl object-cover border border-slate-700/50 shadow-md cursor-pointer hover:opacity-80 transition-opacity shrink-0"
-              />
-            );
-          })()}
-          <div className="flex-1 min-w-0 flex flex-col justify-center">
-             {ident !== 'S/N' && (
-                <div className="mb-0.5 max-w-[120px] transform scale-75 origin-left">
-                  <LicensePlateBadge text={ident} />
-                </div>
-             )}
-             {j.tripType === 'simple' ? (
-                <p className="text-[13px] font-black uppercase text-purple-300 leading-tight truncate pr-2 mt-0.5">{j.description || 'Servicio en Terreno'}</p>
-             ) : (
-                <p className="text-[13px] font-black uppercase text-white leading-tight truncate pr-2 mt-0.5">{j.brand} {j.model}</p>
-             )}
-             <p className="text-[10px] font-bold text-slate-400 truncate mt-0.5">Cond: <span className="text-slate-200">{driverName}</span></p>
-          </div>
-        </div>
+      {/* Top Bar: Status & Date */}
+      <div className="flex justify-between items-center mb-3 pl-2 relative z-10">
+         <div className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm ${isFailed ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}`}>
+           {isFailed ? 'RECHAZADO' : 'ENTREGADO'}
+         </div>
+         <div className="flex items-center gap-1">
+           <p className="text-slate-400 font-bold text-[10px]">{new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL')}</p>
+           {isAdminView && auditMode && (
+             <button onClick={(e) => { e.stopPropagation(); setEditDateJob(j); }} className="text-blue-400 hover:bg-blue-900/30 p-1 rounded transition-colors" title="Corregir Fecha">
+               <Edit2 className="w-3 h-3" />
+             </button>
+           )}
+         </div>
+      </div>
 
-        {/* Date / Status */}
-        <div className="flex flex-col items-end shrink-0 gap-1.5 ml-2 z-10 relative">
-           <div className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm ${isFailed ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}`}>
-             {isFailed ? 'RECHAZADO' : 'ENTREGADO'}
-           </div>
-           <div className="flex items-center gap-1">
-             <p className="text-slate-400 font-bold text-[10px]">{new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL')}</p>
-             {isAdminView && auditMode && (
-               <button onClick={(e) => { e.stopPropagation(); setEditDateJob(j); }} className="text-blue-400 hover:bg-blue-900/30 p-1 rounded transition-colors" title="Corregir Fecha">
-                 <Edit2 className="w-3 h-3" />
-               </button>
-             )}
-           </div>
+      {/* Main Info: Photo & Title & Plate */}
+      <div className="flex items-start mb-4 pl-2 gap-3 relative">
+        {/* Photo Thumbnail */}
+        {(() => {
+          const displayPhoto = j.checklist?.photos?.front || latestVehiclePhotos[ident];
+          if (!displayPhoto) return null;
+          return (
+            <img
+              src={displayPhoto}
+              alt="Frente"
+              onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(displayPhoto); }}
+              className="w-12 h-12 rounded-xl object-cover border border-slate-700/50 shadow-md cursor-pointer hover:opacity-80 transition-opacity shrink-0"
+            />
+          );
+        })()}
+        <div className="flex-1 min-w-0 flex flex-col justify-center">
+           {ident !== 'S/N' && (
+              <div className="mb-0.5 max-w-[120px] transform scale-85 origin-left">
+                <LicensePlateBadge text={ident} />
+              </div>
+           )}
+           {j.tripType === 'simple' ? (
+              <p className="text-[13px] font-bold uppercase text-purple-300 leading-tight truncate pr-2 mt-0.5">{j.description || 'Servicio en Terreno'}</p>
+           ) : (
+              <p className="text-[13px] font-bold uppercase text-white leading-tight truncate pr-2 mt-0.5">{j.brand} {j.model}</p>
+           )}
+           <p className="text-[10px] font-bold text-slate-400 truncate mt-0.5">Cond: <span className="text-slate-200">{driverName}</span></p>
         </div>
       </div>
 
