@@ -71,6 +71,7 @@ export const ChecklistProvider = ({ children, job, currentUserEmail, onCancel, o
     processingAction, setProcessingAction,
     isQuick,
     defaultData,
+    matchedVehicle,
     db
   };
 
