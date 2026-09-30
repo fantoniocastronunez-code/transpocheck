@@ -93,43 +93,117 @@ export const StepNotes = ({ openCamera }) => {
               </div>
 
               <div className="flex flex-col gap-2">
+                 {/* OK Button - always present */}
                  <button 
                    onClick={() => { updateDamage(activeZone, { ...damages[activeZone], status: 'ok' }); setActiveZone(null); }}
                    className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/30 hover:border-green-500 rounded-2xl transition-all"
                  >
                    <div className="bg-green-500 text-white rounded-full p-1"><CheckCircle className="w-4 h-4" /></div>
-                   <div className="text-left">
+                   <div className="text-left flex-1">
                      <span className="block text-sm font-black text-green-700 dark:text-green-400 uppercase tracking-wider">OK</span>
-                     <span className="block text-[10px] text-green-600/70 dark:text-green-400/70">Buen Estado</span>
                    </div>
                  </button>
 
-                 <button 
-                   onClick={() => updateDamage(activeZone, { ...damages[activeZone], status: 'rayado' })}
-                   className={`flex items-center gap-3 p-4 ${damages[activeZone]?.status === 'rayado' ? 'bg-yellow-500/20 border-yellow-500 ring-2 ring-yellow-500/20' : 'bg-yellow-500/5 border-yellow-500/30 hover:border-yellow-500'} border rounded-2xl transition-all`}
-                 >
-                   <div className="bg-yellow-500 text-white rounded-full p-1"><AlertTriangle className="w-4 h-4" /></div>
-                   <div className="text-left flex-1">
-                     <span className="block text-sm font-black text-yellow-700 dark:text-yellow-400 uppercase tracking-wider">Rayado</span>
-                     <span className="block text-[10px] text-yellow-600/70 dark:text-yellow-400/70">Daño Leve</span>
-                   </div>
-                 </button>
+                 {/* Dynamic Options based on zone */}
+                 {activeZone === 'luces' && (
+                   <button 
+                     onClick={() => updateDamage(activeZone, { ...damages[activeZone], status: 'quemada' })}
+                     className={`flex items-center gap-3 p-4 ${damages[activeZone]?.status === 'quemada' ? 'bg-red-500/20 border-red-500 ring-2 ring-red-500/20' : 'bg-red-500/5 border-red-500/30 hover:border-red-500'} border rounded-2xl transition-all`}
+                   >
+                     <div className="bg-red-500 text-white rounded-full p-1"><AlertTriangle className="w-4 h-4" /></div>
+                     <div className="text-left flex-1">
+                       <span className="block text-sm font-black text-red-700 dark:text-red-400 uppercase tracking-wider">Alguna Quemada</span>
+                     </div>
+                   </button>
+                 )}
 
-                 <button 
-                   onClick={() => updateDamage(activeZone, { ...damages[activeZone], status: 'abollado' })}
-                   className={`flex items-center gap-3 p-4 ${damages[activeZone]?.status === 'abollado' ? 'bg-red-500/20 border-red-500 ring-2 ring-red-500/20' : 'bg-red-500/5 border-red-500/30 hover:border-red-500'} border rounded-2xl transition-all`}
-                 >
-                   <div className="bg-red-500 text-white rounded-full p-1"><X className="w-4 h-4" /></div>
-                   <div className="text-left flex-1">
-                     <span className="block text-sm font-black text-red-700 dark:text-red-400 uppercase tracking-wider">Abollado</span>
-                     <span className="block text-[10px] text-red-600/70 dark:text-red-400/70">Daño Grave</span>
-                   </div>
-                 </button>
+                 {activeZone === 'neumaticos' && (
+                   <>
+                     <button 
+                       onClick={() => updateDamage(activeZone, { ...damages[activeZone], status: 'pinchado' })}
+                       className={`flex items-center gap-3 p-4 ${damages[activeZone]?.status === 'pinchado' ? 'bg-yellow-500/20 border-yellow-500 ring-2 ring-yellow-500/20' : 'bg-yellow-500/5 border-yellow-500/30 hover:border-yellow-500'} border rounded-2xl transition-all`}
+                     >
+                       <div className="bg-yellow-500 text-white rounded-full p-1"><AlertTriangle className="w-4 h-4" /></div>
+                       <div className="text-left flex-1">
+                         <span className="block text-sm font-black text-yellow-700 dark:text-yellow-400 uppercase tracking-wider">Pinchado</span>
+                       </div>
+                     </button>
+                     <button 
+                       onClick={() => updateDamage(activeZone, { ...damages[activeZone], status: 'roto' })}
+                       className={`flex items-center gap-3 p-4 ${damages[activeZone]?.status === 'roto' ? 'bg-red-500/20 border-red-500 ring-2 ring-red-500/20' : 'bg-red-500/5 border-red-500/30 hover:border-red-500'} border rounded-2xl transition-all`}
+                     >
+                       <div className="bg-red-500 text-white rounded-full p-1"><X className="w-4 h-4" /></div>
+                       <div className="text-left flex-1">
+                         <span className="block text-sm font-black text-red-700 dark:text-red-400 uppercase tracking-wider">Roto</span>
+                       </div>
+                     </button>
+                   </>
+                 )}
+
+                 {activeZone === 'carroceria' && (
+                   <>
+                     <button 
+                       onClick={() => updateDamage(activeZone, { ...damages[activeZone], status: 'rayado' })}
+                       className={`flex items-center gap-3 p-4 ${damages[activeZone]?.status === 'rayado' ? 'bg-yellow-500/20 border-yellow-500 ring-2 ring-yellow-500/20' : 'bg-yellow-500/5 border-yellow-500/30 hover:border-yellow-500'} border rounded-2xl transition-all`}
+                     >
+                       <div className="bg-yellow-500 text-white rounded-full p-1"><AlertTriangle className="w-4 h-4" /></div>
+                       <div className="text-left flex-1">
+                         <span className="block text-sm font-black text-yellow-700 dark:text-yellow-400 uppercase tracking-wider">Rayado</span>
+                       </div>
+                     </button>
+                     <button 
+                       onClick={() => updateDamage(activeZone, { ...damages[activeZone], status: 'abollado' })}
+                       className={`flex items-center gap-3 p-4 ${damages[activeZone]?.status === 'abollado' ? 'bg-red-500/20 border-red-500 ring-2 ring-red-500/20' : 'bg-red-500/5 border-red-500/30 hover:border-red-500'} border rounded-2xl transition-all`}
+                     >
+                       <div className="bg-red-500 text-white rounded-full p-1"><X className="w-4 h-4" /></div>
+                       <div className="text-left flex-1">
+                         <span className="block text-sm font-black text-red-700 dark:text-red-400 uppercase tracking-wider">Abollado</span>
+                       </div>
+                     </button>
+                   </>
+                 )}
+
+                 {activeZone === 'parabrisas' && (
+                   <>
+                     <button 
+                       onClick={() => updateDamage(activeZone, { ...damages[activeZone], status: 'rayado' })}
+                       className={`flex items-center gap-3 p-4 ${damages[activeZone]?.status === 'rayado' ? 'bg-yellow-500/20 border-yellow-500 ring-2 ring-yellow-500/20' : 'bg-yellow-500/5 border-yellow-500/30 hover:border-yellow-500'} border rounded-2xl transition-all`}
+                     >
+                       <div className="bg-yellow-500 text-white rounded-full p-1"><AlertTriangle className="w-4 h-4" /></div>
+                       <div className="text-left flex-1">
+                         <span className="block text-sm font-black text-yellow-700 dark:text-yellow-400 uppercase tracking-wider">Rayado</span>
+                       </div>
+                     </button>
+                     <button 
+                       onClick={() => updateDamage(activeZone, { ...damages[activeZone], status: 'roto' })}
+                       className={`flex items-center gap-3 p-4 ${damages[activeZone]?.status === 'roto' ? 'bg-red-500/20 border-red-500 ring-2 ring-red-500/20' : 'bg-red-500/5 border-red-500/30 hover:border-red-500'} border rounded-2xl transition-all`}
+                     >
+                       <div className="bg-red-500 text-white rounded-full p-1"><X className="w-4 h-4" /></div>
+                       <div className="text-left flex-1">
+                         <span className="block text-sm font-black text-red-700 dark:text-red-400 uppercase tracking-wider">Roto</span>
+                       </div>
+                     </button>
+                   </>
+                 )}
               </div>
 
-              {/* Photo Upload for Damage */}
+              {/* Photo Upload and Notes for Damage */}
               {damages[activeZone]?.status && damages[activeZone]?.status !== 'ok' && (
-                 <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 animate-in fade-in">
+                 <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 animate-in fade-in space-y-4">
+                    
+                    <div>
+                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
+                          Indicar cuál(es) y observaciones:
+                       </label>
+                       <input 
+                          type="text"
+                          placeholder="Ej: Foco delantero izquierdo quemado..."
+                          value={damages[activeZone]?.notes || ''}
+                          onChange={(e) => updateDamage(activeZone, { ...damages[activeZone], notes: e.target.value })}
+                          className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 outline-none focus:border-purple-500 transition-colors"
+                       />
+                    </div>
+
                     <button 
                        onClick={() => handleCapturePhoto(activeZone)}
                        className={`w-full py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2 flex items-center justify-center gap-2 transition-all ${damages[activeZone]?.photo ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'border-dashed border-slate-300 dark:border-slate-700 text-slate-500 hover:border-blue-400 hover:text-blue-500'}`}
@@ -138,7 +212,7 @@ export const StepNotes = ({ openCamera }) => {
                       {damages[activeZone]?.photo ? 'Reemplazar Foto del Daño' : 'Tomar Foto del Daño (Obligatorio)'}
                     </button>
                     {damages[activeZone]?.photo && (
-                      <div className="mt-2 w-full h-32 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
+                      <div className="mt-2 w-full h-32 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 relative group">
                          <img src={damages[activeZone].photo} className="w-full h-full object-cover" />
                       </div>
                     )}

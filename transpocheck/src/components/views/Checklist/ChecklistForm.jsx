@@ -129,7 +129,7 @@ const ChecklistInner = ({ openCamera }) => {
           });
           
           if (matchedVehicle && matchedVehicle.id) {
-            try { await updateDoc(doc(db, 'vehicles', matchedVehicle.id), { docs: finalData.docs || {}, docsExpiry: finalData.docsExpiry || {} }); } catch (e) {}
+            try { await updateDoc(doc(db, 'vehicles', matchedVehicle.id), { docs: finalData.docs || {}, docsExpiry: finalData.docsExpiry || {}, docsPhotos: finalData.docsPhotos || {} }); } catch (e) {}
           }
         } else {
           // Normal Job
@@ -160,7 +160,7 @@ const ChecklistInner = ({ openCamera }) => {
           await processChecklistExpenses(finalData);
 
           if (matchedVehicle && matchedVehicle.id) {
-            try { await updateDoc(doc(db, 'vehicles', matchedVehicle.id), { docs: finalData.docs || {}, docsExpiry: finalData.docsExpiry || {} }); } catch (e) {}
+            try { await updateDoc(doc(db, 'vehicles', matchedVehicle.id), { docs: finalData.docs || {}, docsExpiry: finalData.docsExpiry || {}, docsPhotos: finalData.docsPhotos || {} }); } catch (e) {}
           }
         }
 
