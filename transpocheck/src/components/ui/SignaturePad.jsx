@@ -35,7 +35,8 @@ export default function SignaturePad({ initialData, onSave, onClear, onChange })
        drawY = 0;
     }
     
-    ctx.clearRect(0, 0, targetW, targetH);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, targetW, targetH);
     ctx.drawImage(img, drawX, drawY, drawW, drawH);
   };
 
@@ -54,6 +55,9 @@ export default function SignaturePad({ initialData, onSave, onClear, onChange })
       ctx.scale(ratio, ratio);
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
+      ctx.strokeStyle = '#000000'; // Trazo negro
+      ctx.fillStyle = '#ffffff'; // Fondo blanco
+      ctx.fillRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
 
       if (drawingDataRef.current) {
         const img = new Image();
@@ -65,17 +69,34 @@ export default function SignaturePad({ initialData, onSave, onClear, onChange })
     return () => clearTimeout(timer);
   }, [isFullscreen]);
 
-  // 2. Cargar la firma que viene de la base de datos (solo la primera vez)
+  // 2. Cargar la firma que viene de la base de datos (o inicializar blanco)
   useEffect(() => {
-    if (initialData && !loadedRef.current && canvasRef.current) {
+    if (canvasRef.current) {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
-      const img = new Image();
-      img.onload = () => {
-         drawImageProportionally(ctx, img, canvas);
-         loadedRef.current = true;
-      };
-      img.src = initialData;
+      const ratio = Math.max(window.devicePixelRatio || 1, 1);
+      
+      // Initialize sizing if not set
+      if (canvas.width === 0 || canvas.width === 300) { // 300 is default canvas width
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        ctx.scale(ratio, ratio);
+      }
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+      ctx.strokeStyle = '#000000';
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      if (initialData && !loadedRef.current) {
+        const img = new Image();
+        img.onload = () => {
+           drawImageProportionally(ctx, img, canvas);
+           loadedRef.current = true;
+        };
+        img.src = initialData;
+      }
     }
   }, [initialData]);
 
@@ -88,6 +109,9 @@ export default function SignaturePad({ initialData, onSave, onClear, onChange })
     const pressure = e.pressure && e.pointerType === 'pen' ? e.pressure * 5 : 2.5;
     
     ctx.lineWidth = pressure;
+    ctx.strokeStyle = '#000000';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
     ctx.beginPath();
     ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
     setIsDrawing(true);
@@ -131,7 +155,8 @@ export default function SignaturePad({ initialData, onSave, onClear, onChange })
   const clearPad = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
     loadedRef.current = false;
     drawingDataRef.current = null;
     onClear();
