@@ -554,6 +554,11 @@ export default function JobCard({ j, ...props }) {
             {/* TIMELINE SECTION */}
             <div className="relative pl-[26px] flex flex-col gap-6">
               
+              {/* Continuous Timeline Line */}
+              {(j.destination || j.tripType !== 'simple') && (
+                <div className="absolute left-[7.5px] top-[14px] bottom-[14px] w-[1px] bg-slate-500/50 z-10"></div>
+              )}
+              
               {/* Floating Date Badge (Right Side) */}
               {j.scheduledDate && (
                 <div className="absolute right-0 -top-4 bg-[#3b82f6] rounded-xl w-[70px] h-[60px] flex flex-col items-center justify-center shadow-[0_8px_16px_rgba(59,130,246,0.3)] z-30 border border-blue-400/30">
@@ -577,10 +582,6 @@ export default function JobCard({ j, ...props }) {
               {/* Origin */}
               <div className="relative">
                 <div className="absolute -left-[24px] top-1.5 w-3 h-3 rounded-full bg-slate-300 z-20 shadow-sm"></div>
-                {/* Line connecting to destination, if destination exists */}
-                {(j.destination || j.tripType !== 'simple') && (
-                  <div className="absolute -left-[19px] top-4 w-[1px] h-[calc(100%+30px)] bg-slate-500/50 z-10"></div>
-                )}
                 
                 <div className="flex items-center gap-1.5 mb-0.5">
                    <p className="text-[12px] text-slate-400 font-medium">{j.tripType === 'simple' ? 'Lugar:' : 'Desde:'}</p>
@@ -590,24 +591,27 @@ export default function JobCard({ j, ...props }) {
 
               {/* Intermediate Tags (PRT, Regiones, Waypoints) */}
               {(j.tripType !== 'simple' || j.waypoints?.length > 0) && (
-                <div className="relative z-20 py-1 flex flex-col items-start gap-1">
+                <div className="relative z-20 py-1 flex flex-col items-start gap-3">
                    {j.tripType === 'revision' && (
-                     <div className="inline-block bg-[#2a261c] border border-amber-600/30 px-3 py-1 rounded-full">
-                       <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest shadow-sm">
+                     <div className="relative inline-block bg-[#2a261c] border border-amber-600/30 px-3 py-1 rounded-full">
+                       <div className="absolute -left-[18.5px] top-1/2 w-[18px] h-[1px] bg-slate-500/50 -translate-y-1/2 z-0"></div>
+                       <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest shadow-sm relative z-10">
                          1RA PARADA: {j.destination ? j.destination.split(' -> ')[0] : 'PRT'}
                        </p>
                      </div>
                    )}
                    {j.tripType === 'viaje' && (
-                     <div className="inline-block bg-[#1c2235] border border-indigo-500/30 px-3 py-1 rounded-full">
-                       <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest shadow-sm">
+                     <div className="relative inline-block bg-[#1c2235] border border-indigo-500/30 px-3 py-1 rounded-full">
+                       <div className="absolute -left-[18.5px] top-1/2 w-[18px] h-[1px] bg-slate-500/50 -translate-y-1/2 z-0"></div>
+                       <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest shadow-sm relative z-10">
                          A REGIONES
                        </p>
                      </div>
                    )}
                    {j.waypoints && j.waypoints.length > 0 && (
-                     <div className="inline-block bg-[#2a261c] border border-amber-600/30 px-3 py-1 rounded-full">
-                       <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest shadow-sm">
+                     <div className="relative inline-block bg-[#2a261c] border border-amber-600/30 px-3 py-1 rounded-full">
+                       <div className="absolute -left-[18.5px] top-1/2 w-[18px] h-[1px] bg-slate-500/50 -translate-y-1/2 z-0"></div>
+                       <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest shadow-sm relative z-10">
                          {j.waypoints.length} PARADA{j.waypoints.length > 1 ? 'S' : ''} INTERMEDIA{j.waypoints.length > 1 ? 'S' : ''}
                        </p>
                      </div>
@@ -618,7 +622,7 @@ export default function JobCard({ j, ...props }) {
               {/* Destination */}
               {(j.destination || j.tripType !== 'simple') && (
                 <div className="relative">
-                  <div className="absolute -left-[25px] top-1.5 w-3 h-3 rounded-full bg-[#60a5fa] z-20 shadow-sm"></div>
+                  <div className="absolute -left-[24px] top-1.5 w-3 h-3 rounded-full bg-[#60a5fa] z-20 shadow-sm"></div>
                   <div className="flex items-center gap-1.5 mb-0.5">
                      <p className="text-[12px] text-blue-400 font-medium">Hasta:</p>
                      <p className="text-[15px] font-bold text-blue-200 pr-20 leading-snug">{j.tripType === 'revision' ? getRtFinalDestination(j) : (j.destination || 'Por definir')}</p>
