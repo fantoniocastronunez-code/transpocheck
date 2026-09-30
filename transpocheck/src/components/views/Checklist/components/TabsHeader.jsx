@@ -16,10 +16,9 @@ export const TabsHeader = () => {
     : [
         { id: 1, label: 'Datos' }, 
         { id: 2, label: 'Docs' }, 
-        { id: 3, label: 'Estado' }, 
+        { id: 3, label: 'Inspección' }, 
         { id: 4, label: 'Fotos' }, 
-        { id: 5, label: 'Combustible' }, 
-        { id: 6, label: 'Firma' }
+        { id: 5, label: 'Firma' }
       ];
 
   const totalSteps = tabs.length;

@@ -246,11 +246,10 @@ const ChecklistInner = ({ openCamera }) => {
         ) : (
           <div className="px-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             {step === 1 && <StepData />}
-            {step === 2 && <StepDocs />}
+            {step === 2 && <StepDocs openCamera={openCamera} />}
             {step === 3 && <StepNotes openCamera={openCamera} />}
             {step === 4 && <StepPhotos openCamera={openCamera} />}
-            {step === 5 && <StepFuel openCamera={openCamera} />}
-            {step === 6 && <StepSignature />}
+            {step === 5 && <StepSignature />}
           </div>
         )}
       </div>
@@ -258,7 +257,6 @@ const ChecklistInner = ({ openCamera }) => {
       {/* BARRA INFERIOR (NAVEGACIÓN Y GUARDAR) */}
       <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200/50 dark:border-slate-800/50 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)] z-50 flex flex-col gap-3">
 
-        {/* BOTONES DE NAVEGACIÓN */}
         <div className="flex gap-3">
           <button
             onClick={() => setStep(Math.max(1, step - 1))}
@@ -271,9 +269,9 @@ const ChecklistInner = ({ openCamera }) => {
             <ArrowLeft className="w-4 h-4" /> Atrás
           </button>
           <button
-            onClick={() => setStep(Math.min(isSimple ? 3 : 6, step + 1))}
-            disabled={step === (isSimple ? 3 : 6) || isSubmitting}
-            className={`flex-1 font-black py-3 rounded-2xl border-2 flex items-center justify-center gap-2 uppercase tracking-widest text-xs sm:text-sm transition-all active:scale-95 ${step === (isSimple ? 3 : 6) || isSubmitting
+            onClick={() => setStep(Math.min(isSimple ? 3 : 5, step + 1))}
+            disabled={step === (isSimple ? 3 : 5) || isSubmitting}
+            className={`flex-1 font-black py-3 rounded-2xl border-2 flex items-center justify-center gap-2 uppercase tracking-widest text-xs sm:text-sm transition-all active:scale-95 ${step === (isSimple ? 3 : 5) || isSubmitting
                 ? 'border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'
                 : 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40'
               }`}
@@ -301,79 +299,79 @@ const ChecklistInner = ({ openCamera }) => {
       {/* Overlay de Carga Principal */}
       {showFinalModal && !uploadProgress.active && (
         <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md z-[90] flex flex-col items-center justify-center p-4 sm:p-8 animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-2xl w-full max-w-xs flex flex-col gap-4 relative overflow-hidden">
-            <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest text-center border-b border-slate-100 dark:border-slate-800 pb-3">
-              Datos de Entrega
+          <div className="bg-white dark:bg-[#0f172a] p-6 rounded-3xl shadow-2xl w-full max-w-sm flex flex-col gap-5 relative overflow-hidden border border-slate-200 dark:border-slate-800">
+            <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest text-center">
+              Datos Finales de Entrega
             </h3>
 
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">
-                  Kilometraje (Obligatorio)
-                </label>
-                <input
-                  type="number"
-                  placeholder="Ej: 154000"
-                  value={formData.mileage || ''}
-                  onChange={e => setFormData(p => ({ ...p, mileage: e.target.value }))}
-                  className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-2xl text-center text-lg font-black text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 outline-none focus:border-blue-500 transition-colors"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest text-center block">
-                    Foto Kilometraje
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => openCamera('Kilometraje', async f => {
-                      setProcessingAction('Procesando Foto...');
-                      setIsSubmitting(true);
-                      try {
-                        const { resizeImage } = await import('../../../utils/helpers');
-                        const compressed = await resizeImage(f, 1200, 0.6);
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                          setFormData(p => ({ ...p, photos: { ...p.photos, odometer: reader.result } }));
+            <div className="space-y-5">
+              {/* Kilometraje */}
+              <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/50">
+                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">
+                   Kilometraje (Obligatorio)
+                 </label>
+                 <div className="flex gap-2">
+                    <input
+                      type="number"
+                      placeholder="Ej: 154000"
+                      value={formData.mileage || ''}
+                      onChange={e => setFormData(p => ({ ...p, mileage: e.target.value }))}
+                      className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-center text-lg font-black text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 outline-none focus:border-blue-500 transition-colors"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => openCamera('Kilometraje', async f => {
+                        setProcessingAction('Procesando Foto...');
+                        setIsSubmitting(true);
+                        try {
+                          const { resizeImage } = await import('../../../utils/helpers');
+                          const compressed = await resizeImage(f, 1200, 0.6);
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            setFormData(p => ({ ...p, photos: { ...p.photos, odometer: reader.result } }));
+                            setIsSubmitting(false);
+                            setProcessingAction(null);
+                          };
+                          reader.readAsDataURL(compressed);
+                        } catch (e) {
                           setIsSubmitting(false);
                           setProcessingAction(null);
-                        };
-                        reader.readAsDataURL(compressed);
-                      } catch (e) {
-                        setIsSubmitting(false);
-                        setProcessingAction(null);
-                      }
-                    })}
-                    className={`w-full h-16 rounded-2xl border-2 flex items-center justify-center gap-1 cursor-pointer relative overflow-hidden transition-all ${formData.photos?.odometer
-                        ? 'border-green-400 ring-2 ring-green-100 bg-white dark:bg-slate-900'
-                        : 'border-dashed border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 bg-red-50/50 dark:bg-red-900/10'
-                      }`}
-                  >
-                    {isSubmitting && processingAction === 'Procesando Foto...' ? (
-                      <span className="text-[9px] font-black text-slate-500 uppercase text-center leading-tight flex flex-col items-center gap-1">
-                        <Loader2 className="w-4 h-4 animate-spin" /> PROCESANDO
-                      </span>
-                    ) : formData.photos?.odometer ? (
-                      <>
-                        <img src={formData.photos.odometer} className="absolute inset-0 w-full h-full object-cover opacity-40" />
-                        <span className="text-[10px] font-black text-green-800 dark:text-green-300 relative z-10 flex items-center gap-1">
-                          <CheckCircle className="w-3 h-3" /> OK
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-[9px] font-black text-red-600 dark:text-red-400 uppercase text-center leading-tight">
-                        TOMAR<br />FOTO
-                      </span>
-                    )}
-                  </button>
-                </div>
+                        }
+                      })}
+                      className={`w-14 shrink-0 rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition-all ${formData.photos?.odometer ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-500 hover:border-blue-400'}`}
+                    >
+                       <Camera className="w-5 h-5" />
+                    </button>
+                 </div>
+                 {formData.photos?.odometer && (
+                   <p className="text-[9px] font-black text-blue-500 uppercase mt-2 text-center">✅ Foto Odométro OK</p>
+                 )}
+              </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest text-center block">
-                    Foto Combustible
-                  </label>
-                  <button
+              {/* Combustible */}
+              <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/50 text-center">
+                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-4">
+                   Nivel de Combustible
+                 </label>
+                 
+                 <div className="flex justify-center gap-2 mb-4">
+                    {['E', '1/4', '1/2', '3/4', 'F'].map(level => {
+                       const fractionMap = { 'E': 0, '1/4': 0.25, '1/2': 0.5, '3/4': 0.75, 'F': 1 };
+                       const val = fractionMap[level];
+                       const isActive = formData.fuelLevel === val;
+                       return (
+                          <button 
+                             key={level}
+                             onClick={() => setFormData(p => ({ ...p, fuelLevel: val }))}
+                             className={`w-10 h-10 rounded-full font-black text-xs border-2 transition-all ${isActive ? 'bg-purple-500 border-purple-500 text-white shadow-[0_0_10px_rgba(168,85,247,0.4)]' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-purple-300'}`}
+                          >
+                             {level}
+                          </button>
+                       )
+                    })}
+                 </div>
+
+                 <button
                     type="button"
                     onClick={() => openCamera('Combustible', async f => {
                       setProcessingAction('Procesando Foto Combustible...');
@@ -393,29 +391,14 @@ const ChecklistInner = ({ openCamera }) => {
                         setProcessingAction(null);
                       }
                     })}
-                    className={`w-full h-16 rounded-2xl border-2 flex items-center justify-center gap-1 cursor-pointer relative overflow-hidden transition-all ${formData.photos?.fuelGauge
-                        ? 'border-green-400 ring-2 ring-green-100 bg-white dark:bg-slate-900'
-                        : 'border-dashed border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 bg-red-50/50 dark:bg-red-900/10'
+                    className={`w-full py-3 rounded-xl border-2 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all ${formData.photos?.fuelGauge
+                        ? 'border-green-400 bg-green-500/10 text-green-500'
+                        : 'border-dashed border-slate-300 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/50'
                       }`}
                   >
-                    {isSubmitting && processingAction === 'Procesando Foto Combustible...' ? (
-                      <span className="text-[9px] font-black text-slate-500 uppercase text-center leading-tight flex flex-col items-center gap-1">
-                        <Loader2 className="w-4 h-4 animate-spin" /> PROCESANDO
-                      </span>
-                    ) : formData.photos?.fuelGauge ? (
-                      <>
-                        <img src={formData.photos.fuelGauge} className="absolute inset-0 w-full h-full object-cover opacity-40" />
-                        <span className="text-[10px] font-black text-green-800 dark:text-green-300 relative z-10 flex items-center gap-1">
-                          <CheckCircle className="w-3 h-3" /> OK
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-[9px] font-black text-red-600 dark:text-red-400 uppercase text-center leading-tight">
-                        TOMAR<br />FOTO
-                      </span>
-                    )}
+                    <Camera className="w-4 h-4" />
+                    {formData.photos?.fuelGauge ? '✅ Foto Tablero/Combustible OK (Cambiar)' : 'Tomar Foto Tablero/Combustible'}
                   </button>
-                </div>
               </div>
             </div>
 
@@ -430,6 +413,7 @@ const ChecklistInner = ({ openCamera }) => {
                 onClick={() => {
                   if (!formData.mileage) return showAlert("⚠️ Ingresa el kilometraje final.");
                   if (!formData.photos?.odometer) return showAlert("⚠️ Toma la foto del kilometraje.");
+                  if (formData.fuelLevel === undefined) return showAlert("⚠️ Selecciona el nivel de combustible.");
                   if (!formData.photos?.fuelGauge) return showAlert("⚠️ Toma la foto del medidor de combustible.");
                   handleSubmitFinal();
                 }}
