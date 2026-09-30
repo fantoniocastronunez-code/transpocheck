@@ -221,10 +221,11 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
     // NUEVO: AUTO-CONGELAR MESES PASADOS (Background Global y Retroactivo)
     useEffect(() => {
         if (!db || !jobs || jobs.length === 0) return;
+        
+        const now = new Date();
 
         // Función para congelar automáticamente el mes pasado si nadie lo ha hecho
         const autoFreezePreviousMonthGlobal = async () => {
-            const now = new Date();
             const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
             const prevKey = `${prev.getFullYear()}-${(prev.getMonth() + 1).toString().padStart(2, '0')}`;
             
