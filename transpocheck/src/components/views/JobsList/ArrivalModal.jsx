@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Key, CheckCircle, Clock, Camera, Trash2 } from 'lucide-react';
+import { X, Key, CheckCircle, Clock, Camera, Trash2, ArrowLeft } from 'lucide-react';
 
 export default function ArrivalModal({
   arrivalPromptJob,
@@ -10,6 +10,8 @@ export default function ArrivalModal({
   setArrivalPhoto,
   arrivalFuelPhoto,
   setArrivalFuelPhoto,
+  arrivalFuelLevel,
+  setArrivalFuelLevel,
   processingId,
   submitArrival,
   handleRequestPhotoOverride,
@@ -18,99 +20,188 @@ export default function ArrivalModal({
   if (!arrivalPromptJob) return null;
 
   const isServiceJob = arrivalPromptJob?.tripType === 'simple';
-  return (
-    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-xl flex flex-col animate-in zoom-in-95 border-t-8 my-auto border-purple-500">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-            <Key className="w-5 h-5 text-purple-500" /> Registro de Llegada
-          </h3>
-          <button onClick={() => setArrivalPromptJob(null)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"><X className="w-4 h-4" /></button>
-        </div>
 
-        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">Por favor, registra {!isServiceJob ? 'el nivel de combustible y el kilometraje (Obligatorios).' : 'la finalización del servicio.'}</p>
+  return (
+    <div className="fixed inset-0 bg-[#060b19]/90 backdrop-blur-xl flex items-center justify-center z-[200] p-4 overflow-y-auto animate-in fade-in">
+      <div className="bg-slate-900/60 p-6 rounded-[2.5rem] shadow-[0_0_50px_rgba(59,130,246,0.15)] w-full max-w-sm flex flex-col relative overflow-hidden border border-slate-700/50 backdrop-blur-3xl pb-8 my-auto">
+        {/* Glows */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-8 bg-blue-500/50 rounded-full blur-[40px] pointer-events-none" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-64 h-12 bg-blue-500/30 rounded-full blur-[40px] pointer-events-none" />
+
+        <h3 className="text-lg font-bold text-white mb-6 mt-2 tracking-wide text-center">
+          {isServiceJob ? 'Registro de Llegada' : 'Combustible y Kilometraje'}
+        </h3>
 
         {arrivalPromptJob?.photoOverrideApproved && (
-          <div className="mb-4 bg-green-100 dark:bg-green-900/30 p-3 rounded-xl border border-green-200 dark:border-green-800">
-            <p className="text-xs font-bold text-green-700 dark:text-green-400 flex items-center gap-2">
-              <CheckCircle className="w-4 h-4" /> Excepción de fotos aprobada. Puedes finalizar.
+          <div className="mb-4 bg-green-500/10 p-3 rounded-2xl border border-green-500/30 relative z-10">
+            <p className="text-[10px] font-bold text-green-400 flex items-center justify-center gap-2 uppercase tracking-widest text-center">
+              <CheckCircle className="w-4 h-4" /> Excepción de fotos aprobada
             </p>
           </div>
         )}
 
-        <div className="space-y-4 mb-6">
-          {!isServiceJob && (
-          <div>
-            <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-slate-400">Medidor de Combustible (Obligatorio)</label>
-            <div className="flex items-center gap-2 mt-1 mb-4">
-              <button
-                type="button"
-                onClick={() => openCamera('Foto del Medidor de Combustible', 'arrivalFuelPhoto')}
-                className={`h-[48px] px-4 rounded-xl font-black flex items-center justify-center gap-2 transition-all w-full ${arrivalFuelPhoto ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 border-2 border-green-400 shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-700'}`}
-              >
-                {processingId === 'processing-image' ? <><Clock className="w-5 h-5 animate-spin" /> Procesando...</> : arrivalFuelPhoto ? <><CheckCircle className="w-5 h-5" /> Foto Capturada</> : <><Camera className="w-5 h-5" /> Tomar Foto del Medidor</>}
-              </button>
-            </div>
-            {arrivalFuelPhoto && (
-              <div className="mt-2 mb-4 relative animate-in fade-in slide-in-from-top-2">
-                <img src={arrivalFuelPhoto} alt="Combustible" className="w-full h-28 object-cover rounded-xl border-2 border-green-300 dark:border-green-700/50 shadow-sm" />
-                <button
-                  type="button"
-                  onClick={() => setArrivalFuelPhoto(null)}
-                  className="absolute top-1.5 right-1.5 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full shadow-md transition-colors"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
-
-                <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-slate-400 mt-4 block">Kilometraje de Término (Obligatorio)</label>
-                <div className="flex items-center gap-2 mt-1">
-                  <input type="number" value={arrivalMileage} onChange={e => setArrivalMileage(e.target.value)} placeholder="Ej: 45250" className="w-[130px] shrink-0 border-2 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl font-bold text-slate-700 dark:text-slate-300 outline-none shadow-sm border-slate-200 dark:border-slate-700 focus:border-purple-400" />
-                  <button
-                    type="button"
-                    onClick={() => openCamera('Foto del Odómetro', 'arrivalPhoto')}
-                    className={`h-[48px] px-4 rounded-xl font-black flex items-center justify-center gap-2 transition-all flex-1 ${arrivalPhoto ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 border-2 border-green-400 shadow-sm' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-700'}`}
-                  >
-                    {processingId === 'processing-image' ? <><Clock className="w-5 h-5 animate-spin" /> Procesando...</> : arrivalPhoto ? <><CheckCircle className="w-5 h-5" /> Foto Odómetro</> : <><Camera className="w-5 h-5" /> Foto Odómetro</>}
-                  </button>
+        <div className="space-y-6 relative z-10 flex-1">
+          {!isServiceJob ? (
+            <>
+              {/* Odómetro */}
+              <div className="flex flex-col gap-1">
+                <div className="flex justify-between items-end mb-1 px-4">
+                   <label className="text-xs text-slate-300 font-medium tracking-wide">Odómetro Final</label>
+                   <span className="text-xs text-slate-500 font-medium">Km</span>
                 </div>
+                <div className="relative">
+                  <input
+                    type="number"
+                    placeholder="0"
+                    value={arrivalMileage || ''}
+                    onChange={e => setArrivalMileage(e.target.value)}
+                    className="w-full bg-[#131b2e] border border-slate-700/50 p-4 rounded-[1.5rem] text-center text-3xl font-black text-white outline-none focus:border-blue-500/50 focus:shadow-[0_0_20px_rgba(59,130,246,0.2)] transition-all shadow-inner"
+                  />
+                </div>
+                <p className="text-center text-[10px] text-slate-500 mt-2 font-medium tracking-wide uppercase">Ingresa el Kilometraje de Término</p>
+              </div>
+
+              {/* Medidor Combustible Visual */}
+              <div className="relative w-full aspect-[2/1] mt-4 flex items-end justify-center">
+                 <svg viewBox="0 0 200 110" className="w-[90%] overflow-visible">
+                    <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#1e293b" strokeWidth="12" strokeLinecap="round" />
+                    <path 
+                      d="M 20 100 A 80 80 0 0 1 180 100" 
+                      fill="none" 
+                      stroke="url(#fuelGradient)" 
+                      strokeWidth="12" 
+                      strokeLinecap="round" 
+                      strokeDasharray={`${Math.PI * 80 * (arrivalFuelLevel ?? 0)} ${Math.PI * 80}`}
+                      style={{ transition: 'stroke-dasharray 0.5s ease-in-out' }}
+                    />
+                    <defs>
+                      <linearGradient id="fuelGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#ec4899" />
+                        <stop offset="50%" stopColor="#8b5cf6" />
+                        <stop offset="100%" stopColor="#06b6d4" />
+                      </linearGradient>
+                    </defs>
+
+                    <g transform={`translate(100, 100) rotate(${-90 + ((arrivalFuelLevel ?? 0) * 180)})`} style={{ transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+                      <circle cx="0" cy="0" r="8" fill="#3b82f6" className="shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+                      <circle cx="0" cy="0" r="4" fill="#0f172a" />
+                      <path d="M -3 -8 L 0 -65 L 3 -8 Z" fill="#3b82f6" />
+                    </g>
+
+                    <text x="100" y="65" textAnchor="middle" fill="white" fontSize="18" fontWeight="bold">
+                      {arrivalFuelLevel === 0 ? 'Vacío' : arrivalFuelLevel === 1 ? 'Full' : `${Math.round((arrivalFuelLevel ?? 0) * 100)}%`}
+                    </text>
+                    <text x="100" y="80" textAnchor="middle" fill="#64748b" fontSize="10">nivel final</text>
+                    
+                    <text x="15" y="115" textAnchor="middle" fill="#ec4899" fontSize="12" fontWeight="bold">E</text>
+                    <text x="185" y="115" textAnchor="middle" fill="#06b6d4" fontSize="12" fontWeight="bold">F</text>
+                 </svg>
+              </div>
+
+              {/* Botones de nivel */}
+              <div className="flex justify-between w-full px-2 mt-2 relative z-20">
+                {['E', '1/4', '1/2', '3/4', 'F'].map((label, idx) => {
+                  const val = idx * 0.25;
+                  const isSelected = arrivalFuelLevel === val;
+                  return (
+                     <button
+                       key={label}
+                       onClick={() => setArrivalFuelLevel(val)}
+                       className={`w-9 h-9 rounded-full font-bold text-[10px] flex items-center justify-center transition-all ${
+                         isSelected ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.6)] border border-blue-400' : 'bg-[#131b2e] text-slate-400 border border-slate-700/50 hover:border-slate-500'
+                       }`}
+                     >
+                       {label}
+                     </button>
+                  );
+                })}
+              </div>
+
+              {/* Botones de fotos */}
+              <div className="flex flex-col gap-3 mt-4">
+                <button
+                   type="button"
+                   onClick={() => openCamera('Foto del Odómetro', 'arrivalPhoto')}
+                   className={`relative overflow-hidden w-full py-3.5 rounded-[1.25rem] flex items-center justify-center gap-2 border transition-all ${arrivalPhoto ? 'border-green-500/50 bg-green-900/30 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'border-blue-500/30 bg-gradient-to-b from-blue-600/20 to-blue-900/40 text-blue-300 hover:from-blue-500/30 hover:to-blue-800/50 shadow-[0_0_15px_rgba(59,130,246,0.15)]'}`}
+                >
+                   {processingId === 'processing-image' ? <Clock className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
+                   <span className="text-xs font-bold tracking-wider uppercase">
+                      {arrivalPhoto ? 'Foto Odómetro (OK)' : 'Subir Foto Odómetro'}
+                   </span>
+                </button>
                 {arrivalPhoto && (
-                  <div className="mt-2 relative animate-in fade-in slide-in-from-top-2">
-                    <img src={arrivalPhoto} alt="Odómetro" className="w-full h-28 object-cover rounded-xl border-2 border-green-300 dark:border-green-700/50 shadow-sm" />
-                    <button
-                      type="button"
-                      onClick={() => setArrivalPhoto(null)}
-                      className="absolute top-1.5 right-1.5 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full shadow-md transition-colors"
-                    >
+                  <div className="relative animate-in fade-in slide-in-from-top-2">
+                    <img src={arrivalPhoto} alt="Odómetro" className="w-full h-20 object-cover rounded-2xl border border-green-500/30 opacity-70" />
+                    <button type="button" onClick={() => setArrivalPhoto(null)} className="absolute top-1.5 right-1.5 bg-red-500/80 hover:bg-red-500 text-white p-1.5 rounded-full shadow-md backdrop-blur-sm">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 )}
-          </div>
+
+                <button
+                   type="button"
+                   onClick={() => openCamera('Foto del Medidor de Combustible', 'arrivalFuelPhoto')}
+                   className={`relative overflow-hidden w-full py-3.5 rounded-[1.25rem] flex items-center justify-center gap-2 border transition-all ${arrivalFuelPhoto ? 'border-green-500/50 bg-green-900/30 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'border-blue-500/30 bg-gradient-to-b from-blue-600/20 to-blue-900/40 text-blue-300 hover:from-blue-500/30 hover:to-blue-800/50 shadow-[0_0_15px_rgba(59,130,246,0.15)]'}`}
+                >
+                   {processingId === 'processing-image' ? <Clock className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
+                   <span className="text-xs font-bold tracking-wider uppercase">
+                      {arrivalFuelPhoto ? 'Foto Recibo/Tablero (OK)' : 'Subir Foto Recibo'}
+                   </span>
+                </button>
+                {arrivalFuelPhoto && (
+                  <div className="relative animate-in fade-in slide-in-from-top-2">
+                    <img src={arrivalFuelPhoto} alt="Combustible" className="w-full h-20 object-cover rounded-2xl border border-green-500/30 opacity-70" />
+                    <button type="button" onClick={() => setArrivalFuelPhoto(null)} className="absolute top-1.5 right-1.5 bg-red-500/80 hover:bg-red-500 text-white p-1.5 rounded-full shadow-md backdrop-blur-sm">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+             <div className="text-center py-10">
+               <div className="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/30 shadow-[0_0_30px_rgba(59,130,246,0.2)]">
+                 <CheckCircle className="w-10 h-10 text-blue-400" />
+               </div>
+               <p className="text-sm font-medium text-slate-300">Confirma la finalización del servicio simple.</p>
+             </div>
           )}
 
+          {!isServiceJob && (!arrivalFuelPhoto || !arrivalPhoto) && !arrivalPromptJob.photoOverrideApproved && (
+            <button 
+              onClick={() => handleRequestPhotoOverride(arrivalPromptJob)} 
+              disabled={processingId === 'photo-override'}
+              className="w-full mt-4 py-3 bg-orange-900/30 hover:bg-orange-800/50 border border-orange-500/30 text-orange-400 rounded-xl font-bold text-[10px] uppercase tracking-wider shadow-sm transition-colors"
+            >
+              {processingId === 'photo-override' ? 'Solicitando...' : arrivalPromptJob.photoOverrideRequested ? 'Permiso Solicitado (Avisa al admin)' : 'Solicitar Excepción de Fotos'}
+            </button>
+          )}
 
         </div>
 
-        {!isServiceJob && (!arrivalFuelPhoto || !arrivalPhoto) && !arrivalPromptJob.photoOverrideApproved && (
-          <button 
-            onClick={() => handleRequestPhotoOverride(arrivalPromptJob)} 
-            disabled={processingId === 'photo-override'}
-            className="w-full mb-3 py-3 bg-orange-100 dark:bg-orange-900/40 hover:bg-orange-200 dark:hover:bg-orange-800/60 text-orange-700 dark:text-orange-400 rounded-xl font-bold text-xs shadow-sm transition-colors"
+        {/* Navegación inferior tipo mockup */}
+        <div className="flex justify-between items-center mt-8 relative z-10 px-2">
+          <button
+            onClick={() => setArrivalPromptJob(null)}
+            className="w-12 h-12 rounded-full bg-[#131b2e] border border-slate-700/50 text-slate-400 flex items-center justify-center hover:bg-slate-800 transition-colors shadow-[0_0_15px_rgba(0,0,0,0.5)]"
           >
-            {processingId === 'photo-override' ? 'Solicitando...' : arrivalPromptJob.photoOverrideRequested ? 'Permiso Solicitado (Avisa al admin)' : 'Solicitar permiso al admin para finalizar sin fotos'}
+            <ArrowLeft className="w-5 h-5" />
           </button>
-        )}
+          
+          <div className="flex gap-2">
+             <div className="w-2 h-2 rounded-full bg-slate-600"></div>
+             <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
+          </div>
 
-        <div className="flex gap-2">
-          <button onClick={() => setArrivalPromptJob(null)} className="flex-1 py-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-xl font-extrabold text-sm transition-colors">
-            Cancelar
-          </button>
-          <button onClick={() => submitArrival()} disabled={processingId === 'general-arrival'} className="flex-[2] py-3.5 text-white bg-purple-600 hover:bg-purple-700 rounded-xl font-black text-sm shadow-md transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-            {processingId === 'general-arrival' ? <Clock className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />} Finalizar Traslado
+          <button
+            onClick={() => submitArrival()}
+            disabled={processingId === 'general-arrival'}
+            className="w-12 h-12 rounded-full bg-[#131b2e] border border-blue-500/30 text-blue-400 flex items-center justify-center hover:bg-slate-800 transition-colors shadow-[0_0_15px_rgba(59,130,246,0.2)] disabled:opacity-50"
+          >
+            {processingId === 'general-arrival' ? <Clock className="w-5 h-5 animate-spin" /> : <ArrowLeft className="w-5 h-5 rotate-180" />}
           </button>
         </div>
+
       </div>
     </div>
   );

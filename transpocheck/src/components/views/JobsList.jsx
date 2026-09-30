@@ -99,6 +99,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [arrivalPhotoLocation, setArrivalPhotoLocation] = useState(null);
   const [arrivalFuelPhoto, setArrivalFuelPhoto] = useState(null);
   const [arrivalFuelPhotoLocation, setArrivalFuelPhotoLocation] = useState(null);
+  const [arrivalFuelLevel, setArrivalFuelLevel] = useState(undefined);
   const [cameraConfig, setCameraConfig] = useState({ isOpen: false, title: '', target: null });
 
   const submitArrival = async () => {
@@ -109,6 +110,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         if (!arrivalPromptJob.photoOverrideApproved) {
           if (!arrivalFuelPhoto) {
             showAlert("Debe adjuntar la foto del medidor de combustible de forma obligatoria.");
+            setProcessingId(null);
+            return;
+          }
+          if (arrivalFuelLevel === undefined) {
+            showAlert("Debe indicar el nivel de combustible de forma obligatoria.");
             setProcessingId(null);
             return;
           }
@@ -131,7 +137,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       const updatedDraft = {
         ...currentDraft,
-        arrivalMileage: arrivalMileage || ''
+        arrivalMileage: arrivalMileage || '',
+        arrivalFuelLevel: arrivalFuelLevel !== undefined ? arrivalFuelLevel : (currentDraft.arrivalFuelLevel ?? null)
       };
 
       if (arrivalPhoto) {
@@ -2661,6 +2668,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         setArrivalPhoto={setArrivalPhoto}
         arrivalFuelPhoto={arrivalFuelPhoto}
         setArrivalFuelPhoto={setArrivalFuelPhoto}
+        arrivalFuelLevel={arrivalFuelLevel}
+        setArrivalFuelLevel={setArrivalFuelLevel}
         processingId={processingId}
         submitArrival={submitArrival}
         handleRequestPhotoOverride={handleRequestPhotoOverride}
