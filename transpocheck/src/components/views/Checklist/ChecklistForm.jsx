@@ -247,7 +247,7 @@ const ChecklistInner = ({ openCamera }) => {
           <div className="px-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             {step === 1 && <StepData />}
             {step === 2 && <StepDocs />}
-            {step === 3 && <StepNotes />}
+            {step === 3 && <StepNotes openCamera={openCamera} />}
             {step === 4 && <StepPhotos openCamera={openCamera} />}
             {step === 5 && <StepFuel openCamera={openCamera} />}
             {step === 6 && <StepSignature />}
