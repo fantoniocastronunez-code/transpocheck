@@ -66,218 +66,132 @@ const ChecklistInner = ({ openCamera }) => {
     }
 
     setIsSubmitting(true);
-    setProcessingAction('Obteniendo GPS de entrega...');
+    setProcessingAction('Iniciando subida...');
 
-    let finalLocation = null;
-    try {
-      if (navigator.geolocation) {
-        finalLocation = await new Promise((resolve) => {
-          navigator.geolocation.getCurrentPosition(
-            (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, timestamp: Date.now() }),
-            () => resolve(null),
-            { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
-          );
-        });
-      }
-    } catch (e) {
-      console.warn("GPS Falló al finalizar:", e);
-    }
-
-    if (finalLocation) {
-      setFormData(prev => ({ ...prev, location: finalLocation }));
-    }
-
-    setProcessingAction('Guardando e iniciando sincronización...');
-
-    try {
-      if (isQuick) {
-        // Ejecución Rápida
-        const formDataWithLocation = { ...formData, location: finalLocation || formData.location };
-        const finalData = await syncFilesToStorage(formDataWithLocation, setUploadProgress);
-        setProcessingAction('Enviando datos al servidor...');
-
-        const driverObj = drivers?.find(d => d.email === currentUserEmail) || { name: currentUserEmail };
-
-        await setDoc(doc(db, 'transport_jobs', `quick_${Date.now()}`), {
-          status: 'completed',
-          client: finalData.client === 'OTRO' ? finalData.manualClient : finalData.client,
-          brand: finalData.brand || 'S/N',
-          model: finalData.model || 'S/N',
-          plate: finalData.plateOrVin || 'S/N',
-          origin: finalData.origin || 'Origen Desconocido',
-          destination: finalData.destination || 'Destino Desconocido',
-          driverEmail: currentUserEmail,
-          driverName: driverObj.name,
-          createdAt: Date.now(),
-          completedAt: Date.now(),
-          checklist: finalData,
-          tripType: 'simple'
-        });
-
-        if (matchedVehicle && matchedVehicle.id) {
-          try {
-            await updateDoc(doc(db, 'vehicles', matchedVehicle.id), {
-              docs: finalData.docs || {},
-              docsExpiry: finalData.docsExpiry || {}
+    const runBackgroundProcess = async (syncTask = null, setProgress = () => {}) => {
+      try {
+        let finalLocation = null;
+        try {
+          if (navigator.geolocation) {
+            finalLocation = await new Promise((resolve) => {
+              navigator.geolocation.getCurrentPosition(
+                (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, timestamp: Date.now() }),
+                () => resolve(null),
+                { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
+              );
             });
-          } catch (e) {
-            console.error("[ERR-VEHICLE-MEM-01] Error updating vehicle memory:", e);
           }
+        } catch (e) {
+          console.warn("GPS Falló al finalizar:", e);
         }
 
-        showAlert("✅ Checklist Quick Guardado y Completado.");
-        onComplete();
-        return;
-      }
-
-      // Proceso Normal / Segundo Plano
-      const updates = { phase: 'returning', 'draft.step': step };
-
-      if (job.tripType === 'revision') {
-        updates.prt_result = formData.rtStatus;
-        updates.prt_reason = formData.rtRejectReason || '';
-      }
-
-      const fullDataForUpload = JSON.parse(JSON.stringify(formData));
-      if (finalLocation) fullDataForUpload.location = finalLocation;
-
-      const draftDataForFirestore = JSON.parse(JSON.stringify(fullDataForUpload));
-
-      // Limpiar fotos e imágenes base64 para evitar límite de 1MB en Firestore para el draft
-      for (const key in draftDataForFirestore.photos) {
-        if (typeof draftDataForFirestore.photos[key] === 'string' && !draftDataForFirestore.photos[key].startsWith('http')) {
-          draftDataForFirestore.photos[key] = false;
-        }
-      }
-      const base64Fields = ['signatureData', 'fuelReceipt', 'scandocPdf', 'guiaDespachoPdf'];
-      base64Fields.forEach(field => {
-        if (typeof draftDataForFirestore[field] === 'string' && !draftDataForFirestore[field].startsWith('http')) {
-          draftDataForFirestore[field] = false;
-        }
-      });
-
-      updates['draft.formData'] = draftDataForFirestore;
-
-      await updateDoc(doc(db, 'transport_jobs', job.id), updates);
-
-      // Función para procesar y descontar gastos automáticamente
-      const processChecklistExpenses = async (finalData) => {
-        const driverObj = drivers?.find(d => d.email === currentUserEmail);
-        if (!driverObj || !driverObj.id) return;
-
-        let newBalance = driverObj.balance || 0;
-
-        // Gasto de Combustible
-        if (finalData.hasFuelCharge && finalData.fuelChargeAmount > 0) {
-          await addDoc(collection(db, 'expenses'), {
-            driverId: driverObj.id,
-            driverEmail: driverObj.email,
-            driverName: driverObj.name,
-            type: 'expense',
-            amount: Number(finalData.fuelChargeAmount),
-            detail: 'Carga de combustible (Auto-generado desde Checklist)',
-            jobId: job.id,
-            deductedAmount: Number(finalData.fuelChargeAmount),
-            receiptImage: finalData.fuelReceipt || null,
-            createdAt: Date.now()
-          });
-          newBalance -= Number(finalData.fuelChargeAmount);
-        }
-
-        // Gastos PRT
-        if (job.tripType === 'revision') {
-          const prtTotal = (Number(finalData.prtCostRevision) || 0) + (Number(finalData.prtCostInspeccion) || 0) + (Number(finalData.prtCostFrenos) || 0) + (Number(finalData.prtCostGases) || 0);
-          if (prtTotal > 0) {
+        const formDataWithLocation = { ...formData, location: finalLocation || formData.location };
+        
+        // Función para procesar y descontar gastos automáticamente
+        const processChecklistExpenses = async (finalData) => {
+          const driverObj = drivers?.find(d => d.email === currentUserEmail);
+          if (!driverObj || !driverObj.id) return;
+          let newBalance = driverObj.balance || 0;
+          if (finalData.hasFuelCharge && finalData.fuelChargeAmount > 0) {
             await addDoc(collection(db, 'expenses'), {
-              driverId: driverObj.id,
-              driverEmail: driverObj.email,
-              driverName: driverObj.name,
-              type: 'expense',
-              amount: prtTotal,
-              detail: 'Trámite PRT (Auto-generado desde Checklist)',
-              jobId: job.id,
-              deductedAmount: prtTotal,
-              receiptImage: null, // PRT no requiere boleta según cliente
+              driverId: driverObj.id, driverEmail: driverObj.email, driverName: driverObj.name,
+              type: 'expense', amount: Number(finalData.fuelChargeAmount), detail: 'Carga de combustible (Auto-generado desde Checklist)',
+              jobId: job.id, deductedAmount: Number(finalData.fuelChargeAmount), receiptImage: finalData.fuelReceipt || null,
               createdAt: Date.now()
             });
-            newBalance -= prtTotal;
+            newBalance -= Number(finalData.fuelChargeAmount);
           }
-        }
-
-        // Si el balance cambió, actualizar al conductor
-        if (newBalance !== (driverObj.balance || 0)) {
-          await updateDoc(doc(db, 'drivers', driverObj.id), { balance: newBalance });
-        }
-      };
-
-      // Lanzar Sync en Background
-      if (pushSyncTask) {
-        const syncTask = pushSyncTask(`Sync ${job.plate || job.vin || 'Vehículo'}`);
-        showAlert("✅ Subida iniciada en segundo plano. Puedes continuar usando la app.");
-        onComplete();
-
-        // Ejecutar en segundo plano sin await
-        (async () => {
-          try {
-            const finalData = await syncFilesToStorage(fullDataForUpload, () => { });
-            await updateDoc(doc(db, 'transport_jobs', job.id), {
-              checklist: finalData,
-              status: 'completed',
-              completedAt: Date.now(),
-              draft: null // Borrar draft
-            });
-            await processChecklistExpenses(finalData);
-            
-            if (matchedVehicle && matchedVehicle.id) {
-              try {
-                await updateDoc(doc(db, 'vehicles', matchedVehicle.id), {
-                  docs: finalData.docs || {},
-                  docsExpiry: finalData.docsExpiry || {}
-                });
-              } catch (e) {
-                console.error("[ERR-VEHICLE-MEM-02] Error updating vehicle memory:", e);
-              }
+          if (job.tripType === 'revision') {
+            const prtTotal = (Number(finalData.prtCostRevision) || 0) + (Number(finalData.prtCostInspeccion) || 0) + (Number(finalData.prtCostFrenos) || 0) + (Number(finalData.prtCostGases) || 0);
+            if (prtTotal > 0) {
+              await addDoc(collection(db, 'expenses'), {
+                driverId: driverObj.id, driverEmail: driverObj.email, driverName: driverObj.name,
+                type: 'expense', amount: prtTotal, detail: 'Trámite PRT (Auto-generado desde Checklist)',
+                jobId: job.id, deductedAmount: prtTotal, receiptImage: null, createdAt: Date.now()
+              });
+              newBalance -= prtTotal;
             }
-
-            if (clearLocalDraft) await clearLocalDraft();
-            syncTask.finish();
-          } catch (e) {
-            console.error("[ERR-BG-SYNC-01] Error en background sync:", e);
-            syncTask.error(e);
           }
-        })();
-      } else {
-        // Fallback sincrónico si no existe el hook de background
-        const finalData = await syncFilesToStorage(fullDataForUpload, setUploadProgress);
-        await updateDoc(doc(db, 'transport_jobs', job.id), {
-          checklist: finalData,
-          status: 'completed',
-          completedAt: Date.now(),
-          draft: null // Borrar draft
-        });
-        await processChecklistExpenses(finalData);
+          if (newBalance !== (driverObj.balance || 0)) {
+            await updateDoc(doc(db, 'drivers', driverObj.id), { balance: newBalance });
+          }
+        };
 
-        if (matchedVehicle && matchedVehicle.id) {
-          try {
-            await updateDoc(doc(db, 'vehicles', matchedVehicle.id), {
-              docs: finalData.docs || {},
-              docsExpiry: finalData.docsExpiry || {}
-            });
-          } catch (e) {
-            console.error("[ERR-VEHICLE-MEM-03] Error updating vehicle memory:", e);
+        if (isQuick) {
+          const finalData = await syncFilesToStorage(formDataWithLocation, setProgress);
+          const driverObj = drivers?.find(d => d.email === currentUserEmail) || { name: currentUserEmail };
+          await setDoc(doc(db, 'transport_jobs', `quick_${Date.now()}`), {
+            status: 'completed', client: finalData.client === 'OTRO' ? finalData.manualClient : finalData.client,
+            brand: finalData.brand || 'S/N', model: finalData.model || 'S/N', plate: finalData.plateOrVin || 'S/N',
+            origin: finalData.origin || 'Origen Desconocido', destination: finalData.destination || 'Destino Desconocido',
+            driverEmail: currentUserEmail, driverName: driverObj.name, createdAt: Date.now(), completedAt: Date.now(),
+            checklist: finalData, tripType: 'simple'
+          });
+          
+          if (matchedVehicle && matchedVehicle.id) {
+            try { await updateDoc(doc(db, 'vehicles', matchedVehicle.id), { docs: finalData.docs || {}, docsExpiry: finalData.docsExpiry || {} }); } catch (e) {}
+          }
+        } else {
+          // Normal Job
+          const updates = { phase: 'returning', 'draft.step': step };
+          if (job.tripType === 'revision') {
+            updates.prt_result = formDataWithLocation.rtStatus;
+            updates.prt_reason = formDataWithLocation.rtRejectReason || '';
+          }
+          
+          // Guardar draft rápido
+          const draftDataForFirestore = JSON.parse(JSON.stringify(formDataWithLocation));
+          for (const key in draftDataForFirestore.photos) {
+            if (typeof draftDataForFirestore.photos[key] === 'string' && !draftDataForFirestore.photos[key].startsWith('http')) draftDataForFirestore.photos[key] = false;
+          }
+          const base64Fields = ['signatureData', 'fuelReceipt', 'scandocPdf', 'guiaDespachoPdf'];
+          base64Fields.forEach(field => {
+            if (typeof draftDataForFirestore[field] === 'string' && !draftDataForFirestore[field].startsWith('http')) draftDataForFirestore[field] = false;
+          });
+          updates['draft.formData'] = draftDataForFirestore;
+          try { await updateDoc(doc(db, 'transport_jobs', job.id), updates); } catch(e){}
+
+          // Subir fotos
+          const finalData = await syncFilesToStorage(formDataWithLocation, setProgress);
+          
+          await updateDoc(doc(db, 'transport_jobs', job.id), {
+            checklist: finalData, status: 'completed', completedAt: Date.now(), draft: null
+          });
+          await processChecklistExpenses(finalData);
+
+          if (matchedVehicle && matchedVehicle.id) {
+            try { await updateDoc(doc(db, 'vehicles', matchedVehicle.id), { docs: finalData.docs || {}, docsExpiry: finalData.docsExpiry || {} }); } catch (e) {}
           }
         }
 
         if (clearLocalDraft) await clearLocalDraft();
+        if (syncTask) syncTask.finish();
+      } catch(err) {
+        console.error("[ERR-BG-SYNC-01] Error en background sync:", err);
+        if (syncTask) syncTask.error(err);
+        else throw err;
+      }
+    };
+
+    if (pushSyncTask) {
+      const syncTask = pushSyncTask(`Sync ${job?.plate || job?.vin || 'Vehículo'}`);
+      showAlert("✅ Subida iniciada en segundo plano. Puedes continuar usando la app.");
+      onComplete();
+      
+      // Iniciar proceso sin await
+      runBackgroundProcess(syncTask);
+    } else {
+      try {
+        await runBackgroundProcess(null, setUploadProgress);
         showAlert("✅ Checklist Guardado Correctamente.");
         onComplete();
+      } catch(err) {
+        console.error("[ERR-SAVE-02] Error global al guardar checklist:", err);
+        showAlert(`❌ Error al guardar [ERR-SAVE-02]: ${err.message}`);
+      } finally {
+        setIsSubmitting(false);
+        setProcessingAction(null);
       }
-    } catch (err) {
-      console.error("[ERR-SAVE-02] Error global al guardar checklist:", err);
-      showAlert(`❌ Error al guardar [ERR-SAVE-02]: ${err.message}`);
-    } finally {
-      setIsSubmitting(false);
-      setProcessingAction(null);
     }
   };
 

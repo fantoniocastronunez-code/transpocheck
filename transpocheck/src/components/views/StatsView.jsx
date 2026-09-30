@@ -27,7 +27,52 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                 if (docSnap.exists()) {
                     setFrozenStats(docSnap.data().stats);
                 } else {
-                    setFrozenStats(null);
+                    // SI NO HAY MONTHLY STATS, BUSCAR EN HISTORICAL STATS (de Limpiar BD)
+                    const histRef = doc(db, 'historical_stats', currentMonthKey);
+                    const histSnap = await getDoc(histRef);
+                    if (histSnap.exists()) {
+                        const hData = histSnap.data();
+                        
+                        // Convertir de formato historical a formato monthly
+                        const topClients = Object.entries(hData.clientCounts || {}).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, count]) => ({ name, count }));
+                        const topClientsByRevenue = Object.entries(hData.clientRevenues || {}).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({ name, value }));
+                        const topDriversKm = Object.entries(hData.driverKms || {}).sort((a, b) => b[1] - a[1]).map(([name, km]) => ({ name, km }));
+                        const topPlates = Object.entries(hData.plateCounts || {}).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([plate, count]) => ({ plate, count }));
+                        
+                        const topDriversByCategory = {};
+                        for (const [cat, counts] of Object.entries(hData.categoryCounts || {})) {
+                            let topDriver = null, maxCount = 0;
+                            for (const [drv, count] of Object.entries(counts)) {
+                                if (count > maxCount) { maxCount = count; topDriver = drv; }
+                            }
+                            if (topDriver) topDriversByCategory[cat] = { name: topDriver, count: maxCount };
+                        }
+
+                        const convertedStats = {
+                            monthlyJobs: [],
+                            totalJobs: hData.totalJobs || 0,
+                            topClients,
+                            topClientsByRevenue,
+                            totalRevenue: hData.totalRevenue || 0,
+                            prtStats: hData.prtStats || { total: 0, approved: 0, help: 0, rejected: 0 },
+                            totalKm: Math.round(hData.totalKm || 0),
+                            todayKm: 0,
+                            topDriversKm,
+                            topDriversByCategory,
+                            topPlates
+                        };
+                        
+                        // Guardar en monthly_stats para que ya quede nativo!
+                        await setDoc(docRef, {
+                            monthKey: currentMonthKey,
+                            timestamp: Date.now(),
+                            stats: convertedStats,
+                            autoFrozenFromHistory: true
+                        });
+                        setFrozenStats(convertedStats);
+                    } else {
+                        setFrozenStats(null);
+                    }
                 }
             } catch (e) {
                 console.error("Error fetching frozen stats:", e);
@@ -36,38 +81,27 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
         fetchFrozenStats();
     }, [currentMonthKey, db]);
 
-    // 1. CÁLCULO DE MÉTRICAS
-    const stats = useMemo(() => {
-        if (frozenStats) return frozenStats;
-
-        if (!Array.isArray(jobs)) {
-            return { monthlyJobs: [], totalJobs: 0, topClients: [], prtStats: { total: 0, approved: 0, help: 0, rejected: 0 }, totalKm: 0, todayKm: 0, topDriversKm: [], topDriversByCategory: {}, topPlates: [] };
+    // FUNCIÓN EXTRACTADA PARA CALCULAR ESTADÍSTICAS (Reusable)
+    const calculateMonthStats = (targetDate, allJobs, allDrivers) => {
+        if (!Array.isArray(allJobs)) {
+            return { monthlyJobs: [], totalJobs: 0, topClients: [], topClientsByRevenue: [], totalRevenue: 0, prtStats: { total: 0, approved: 0, help: 0, rejected: 0 }, totalKm: 0, todayKm: 0, topDriversKm: [], topDriversByCategory: {}, topPlates: [] };
         }
 
         const now = new Date();
-        const currentMonth = viewDate.getMonth();
-        const currentYear = viewDate.getFullYear();
+        const currentMonth = targetDate.getMonth();
+        const currentYear = targetDate.getFullYear();
 
-        // Rango exacto: Desde el día 1 (00:00:00) hasta el último día (23:59:59) del mes
         const startOfMonth = new Date(currentYear, currentMonth, 1, 0, 0, 0, 0).getTime();
         const endOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999).getTime();
 
-        const monthlyJobs = jobs.filter(j => {
-            // Helper para garantizar que extraemos un timestamp válido (milisegundos) sin importar cómo se guardó
+        const monthlyJobs = allJobs.filter(j => {
             let jobTime = null;
-            if (j.completedAt) {
-                jobTime = new Date(j.completedAt).getTime();
-            } else if (j.createdAt) {
-                jobTime = new Date(j.createdAt).getTime();
-            }
-            
-            // Verificamos si es un timestamp válido y no NaN
+            if (j.completedAt) jobTime = new Date(j.completedAt).getTime();
+            else if (j.createdAt) jobTime = new Date(j.createdAt).getTime();
             if (!jobTime || isNaN(jobTime)) return false;
-
             return jobTime >= startOfMonth && jobTime <= endOfMonth && (j.status === 'completed' || j.status === 'failed');
         });
 
-        // --- Top Clientes e Ingresos Financieros ---
         const clientCounts = {};
         const clientRevenues = {};
         let totalRevenue = 0;
@@ -75,8 +109,6 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
         monthlyJobs.forEach(j => {
             const cName = j.client || 'Sin Cliente';
             clientCounts[cName] = (clientCounts[cName] || 0) + 1;
-            
-            // Cálculos de Ingresos
             const price = Number(j.companyPrice) || 0;
             clientRevenues[cName] = (clientRevenues[cName] || 0) + price;
             totalRevenue += price;
@@ -84,7 +116,6 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
         const topClients = Object.entries(clientCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, count]) => ({ name, count }));
         const topClientsByRevenue = Object.entries(clientRevenues).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({ name, value }));
 
-        // --- PRT ---
         const prtJobs = monthlyJobs.filter(j => j.tripType === 'revision');
         let prtApproved = 0, prtApprovedHelp = 0, prtRejected = 0;
         prtJobs.forEach(j => {
@@ -93,23 +124,14 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
             else prtApproved++; 
         });
 
-        // --- Helper Inteligente para Analizar KM (Puntos y Comas) ---
         const parseDist = (str) => {
             if (!str) return 0;
             let s = str.toLowerCase().replace(/[^\d.,]/g, '');
-            // Si trae coma (ej: 1.628,5), la coma es el decimal y quitamos los puntos.
-            if (s.includes(',')) {
-                s = s.replace(/\./g, '').replace(',', '.');
-            } 
-            // Si no trae coma, pero tiene un punto seguido de 3 dígitos (ej: 1.628), es separador de miles.
-            else if (s.includes('.') && s.split('.').pop().length === 3) {
-                s = s.replace(/\./g, '');
-            }
-            // Si no cumple lo anterior (ej: 1.5), se asume formato gringo normal.
+            if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+            else if (s.includes('.') && s.split('.').pop().length === 3) s = s.replace(/\./g, '');
             return parseFloat(s) || 0;
         };
 
-        // --- Kilometraje Global ---
         let totalKm = 0;
         let todayKm = 0;
         const todayStr = now.toISOString().split('T')[0];
@@ -127,21 +149,19 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
             }
         });
 
-        // --- Kilometraje por Conductor ---
         const driverKms = {};
         monthlyJobs.forEach(j => {
             if (j.status !== 'completed' || !j.acceptedByEmail) return;
             if (j.drivenDistance && j.drivenDistance.includes('km')) {
                 const km = parseDist(j.drivenDistance);
                 if (km > 0) {
-                    const drvName = (Array.isArray(drivers) ? drivers.find(d => d.email === j.acceptedByEmail)?.name : null) || 'Desconocido';
+                    const drvName = (Array.isArray(allDrivers) ? allDrivers.find(d => d.email === j.acceptedByEmail)?.name : null) || 'Desconocido';
                     driverKms[drvName] = (driverKms[drvName] || 0) + km;
                 }
             }
         });
         const topDriversKm = Object.entries(driverKms).sort((a, b) => b[1] - a[1]).map(([name, km]) => ({ name, km }));
 
-        // --- Especialización por Tipo ---
         const categoryCounts = {
             'auto': {}, 'camioneta': {}, 'furgon_pequeno': {}, 'furgon_grande': {},
             'camion_simple': {}, 'camion_doble': {}, 'camion_2ejes': {},
@@ -149,13 +169,9 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
         };
         monthlyJobs.forEach(j => {
             if (j.status !== 'completed' || !j.acceptedByEmail) return;
-            const drvName = (Array.isArray(drivers) ? drivers.find(d => d.email === j.acceptedByEmail)?.name : null) || 'Desconocido';
-            
-            // Lógica corregida: Si el tipo de viaje es 'simple' (Servicio), lo enviamos a su propia categoría
+            const drvName = (Array.isArray(allDrivers) ? allDrivers.find(d => d.email === j.acceptedByEmail)?.name : null) || 'Desconocido';
             let vType = (j.checklist?.vehicleType || 'auto').toLowerCase();
-            if (j.tripType === 'simple') {
-                vType = 'servicio';
-            }
+            if (j.tripType === 'simple') vType = 'servicio';
 
             if (categoryCounts[vType] !== undefined) {
                 categoryCounts[vType][drvName] = (categoryCounts[vType][drvName] || 0) + 1;
@@ -171,7 +187,6 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
             if (topDriver) topDriversByCategory[cat] = { name: topDriver, count: maxCount };
         }
 
-        // --- Patentes Frecuentes ---
         const plateCounts = {};
         monthlyJobs.forEach(j => {
             const plate = (j.plate && j.plate !== 'S/N') ? j.plate : ((j.vin && j.vin !== 'S/N') ? j.vin : null);
@@ -195,17 +210,50 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
             topDriversByCategory,
             topPlates
         };
+    };
 
-    // Al agregar viewDate a este arreglo, React recalculará las métricas cada vez que cambies de mes
+    // 1. CÁLCULO DE MÉTRICAS (MEMOIZADO)
+    const stats = useMemo(() => {
+        if (frozenStats) return frozenStats;
+        return calculateMonthStats(viewDate, jobs, drivers);
     }, [jobs, drivers, viewDate, frozenStats]);
 
-    // NUEVO: AUTO-CONGELAR MESES PASADOS (Retroactivo al visualizar)
+    // NUEVO: AUTO-CONGELAR MESES PASADOS (Background Global y Retroactivo)
     useEffect(() => {
-        const now = new Date();
+        if (!db || !jobs || jobs.length === 0) return;
+
+        // Función para congelar automáticamente el mes pasado si nadie lo ha hecho
+        const autoFreezePreviousMonthGlobal = async () => {
+            const now = new Date();
+            const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const prevKey = `${prev.getFullYear()}-${(prev.getMonth() + 1).toString().padStart(2, '0')}`;
+            
+            try {
+                const docRef = doc(db, 'monthly_stats', prevKey);
+                const snap = await getDoc(docRef);
+                if (!snap.exists()) {
+                    const prevStats = calculateMonthStats(prev, jobs, drivers);
+                    if (prevStats.totalJobs > 0) {
+                        await setDoc(docRef, {
+                            monthKey: prevKey,
+                            timestamp: Date.now(),
+                            stats: { ...prevStats, monthlyJobs: [] },
+                            autoFrozenGlobal: true
+                        });
+                    }
+                }
+            } catch (e) {
+                console.error("Error auto-congelando mes pasado global:", e);
+            }
+        };
+
+        autoFreezePreviousMonthGlobal();
+        
+        // También congelamos el mes que estamos viendo si es pasado (retroactivo inmediato)
         const isPastMonth = viewDate.getFullYear() < now.getFullYear() || 
                            (viewDate.getFullYear() === now.getFullYear() && viewDate.getMonth() < now.getMonth());
 
-        if (isPastMonth && !frozenStats && !isFreezing && db && stats?.totalJobs > 0) {
+        if (isPastMonth && !frozenStats && !isFreezing && stats?.totalJobs > 0) {
             setIsFreezing(true);
             const autoFreezePast = async () => {
                 try {
@@ -217,50 +265,14 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                     });
                     setFrozenStats({ ...stats, monthlyJobs: [] });
                 } catch (e) {
-                    console.error("Error auto-congelando mes pasado", e);
+                    console.error("Error auto-congelando mes pasado visualizado", e);
                 } finally {
                     setIsFreezing(false);
                 }
             };
             autoFreezePast();
         }
-    }, [viewDate, frozenStats, isFreezing, db, stats, currentMonthKey]);
-
-    // NUEVO: AUTO-CONGELAR ÚLTIMO DÍA DEL MES A LAS 23:59
-    useEffect(() => {
-        const interval = setInterval(() => {
-            const now = new Date();
-            const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-            
-            // Si mañana es día 1, entonces hoy es el último día del mes. Y revisamos si son las 23:59
-            if (tomorrow.getDate() === 1 && now.getHours() === 23 && now.getMinutes() >= 59) {
-                const isCurrentMonthView = viewDate.getMonth() === now.getMonth() && viewDate.getFullYear() === now.getFullYear();
-                
-                if (isCurrentMonthView && !frozenStats && !isFreezing && db && stats?.totalJobs > 0) {
-                     setIsFreezing(true);
-                     const autoFreezeCurrent = async () => {
-                        try {
-                            await setDoc(doc(db, 'monthly_stats', currentMonthKey), {
-                                monthKey: currentMonthKey,
-                                timestamp: Date.now(),
-                                stats: { ...stats, monthlyJobs: [] },
-                                autoFrozenEndDay: true
-                            });
-                            setFrozenStats({ ...stats, monthlyJobs: [] });
-                            if (showAlert) showAlert("Cierre de mes automático completado.", "success");
-                        } catch (e) {
-                            console.error(e);
-                        } finally {
-                            setIsFreezing(false);
-                        }
-                     };
-                     autoFreezeCurrent();
-                }
-            }
-        }, 60000); // 1 minuto
-        
-        return () => clearInterval(interval);
-    }, [viewDate, frozenStats, isFreezing, db, stats, currentMonthKey, showAlert]);
+    }, [viewDate, frozenStats, isFreezing, db, stats, currentMonthKey, jobs, drivers]);
 
     const handleFreezeMonth = () => {
         if (!db) {
