@@ -168,20 +168,25 @@ export const buildPDFDoc = async (job, isPublic = false, drivers = []) => {
         };
 
         let hFuel = drawFuelMeter(15, currentY + 3, job.checklist?.fuelLevel || 0, "Combustible Inicio:");
-        let hSoap = drawKV("Seguro SOAP", getDocStatus('soap'), 65, currentY, 45);
-        currentY += Math.max(hFuel, hSoap) + 6;
+        let hFuelAfter = drawFuelMeter(65, currentY + 3, job.checklist?.arrivalFuelLevel ?? job.checklist?.fuelLevelAfter ?? job.checklist?.fuelLevel || 0, "Combustible Final:");
+        currentY += Math.max(hFuel, hFuelAfter) + 6;
 
-        if (job.checklist?.hasFuelCharge) {
-          let hFuelAfter = drawFuelMeter(15, currentY + 3, job.checklist?.fuelLevelAfter ?? job.checklist?.fuelLevel, "Combustible Final:");
-          let hChargeAmount = !isPublic ? drawKV("Monto Cargado", `$${(job.checklist?.fuelChargeAmount || 0).toLocaleString('es-CL')}`, 65, currentY, 45) : 0;
-          currentY += Math.max(hFuelAfter, hChargeAmount) + 6;
+        let hKm = drawKV("Odómetro Inicio", `${job.checklist?.mileage || 'No reg.'}`, 15, currentY, 45);
+        let hKmFin = drawKV("Odómetro Final", `${job.checklist?.arrivalMileage || 'No reg.'}`, 65, currentY, 45);
+        currentY += Math.max(hKm, hKmFin) + 6;
+
+        let hSoap = drawKV("Seguro SOAP", getDocStatus('soap'), 15, currentY, 45);
+        let hPerm = drawKV("Permiso Circ.", getDocStatus('permiso'), 65, currentY, 45);
+        currentY += Math.max(hSoap, hPerm) + 6;
+        
+        let hRev = drawKV("Rev. Tecnica", getDocStatus('revTecnica'), 15, currentY, 45);
+        let hGas = drawKV("Gases", getDocStatus('gases'), 65, currentY, 45);
+        currentY += Math.max(hRev, hGas) + 8;
+
+        if (job.checklist?.hasFuelCharge && !isPublic) {
+            let hChargeAmount = drawKV("Monto Cargado (Extra)", `$${(job.checklist?.fuelChargeAmount || 0).toLocaleString('es-CL')}`, 15, currentY, 45);
+            currentY += hChargeAmount + 6;
         }
-        let hPerm = drawKV("Permiso Circ.", getDocStatus('permiso'), 15, currentY, 45);
-        let hRev = drawKV("Rev. Tecnica", getDocStatus('revTecnica'), 65, currentY, 45);
-        currentY += Math.max(hPerm, hRev) + 6;
-        let hGas = drawKV("Gases", getDocStatus('gases'), 15, currentY, 45);
-        let hKm = drawKV("Kilometraje", `${job.checklist?.arrivalMileage || job.checklist?.mileage || 'No reg.'}`, 65, currentY, 45);
-        currentY += Math.max(hGas, hKm) + 8;
 
 
 

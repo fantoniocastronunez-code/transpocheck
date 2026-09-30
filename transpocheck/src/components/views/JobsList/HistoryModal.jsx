@@ -65,26 +65,47 @@ export default function HistoryModal({
                   <p className="text-xs font-bold text-slate-700 dark:text-slate-300 break-words">{getRouteStr(selectedHistoryJob)}</p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+                {/* Odómetro Inicio */}
                 <div>
-                  <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Odómetro al finalizar</p>
+                  <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Odómetro Inicio</p>
                   <div className="flex flex-col gap-1.5 mt-0.5">
                     <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">
-                       {selectedHistoryJob.checklist?.arrivalMileage || selectedHistoryJob.checklist?.mileage || 'No registrado'}
+                       {selectedHistoryJob.checklist?.mileage || 'No registrado'}
                     </p>
-                    {selectedHistoryJob.checklist?.photos?.odometer && (
-                        <img src={selectedHistoryJob.checklist.photos.odometer} alt="Odómetro Final" className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(selectedHistoryJob.checklist.photos.odometer, '_blank')} />
+                    {selectedHistoryJob.checklist?.photos?.odometer && !selectedHistoryJob.checklist?.photos?.arrivalPhoto && (
+                        <img src={selectedHistoryJob.checklist.photos.odometer} alt="Odómetro Inicio" className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(selectedHistoryJob.checklist.photos.odometer, '_blank')} />
                     )}
                   </div>
                 </div>
+
+                {/* Odómetro Fin */}
                 <div>
-                  <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Combustible</p>
+                  <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Odómetro Fin</p>
                   <div className="flex flex-col gap-1.5 mt-0.5">
-                    {selectedHistoryJob.checklist?.photos?.fuelGauge ? (
-                        <img src={selectedHistoryJob.checklist.photos.fuelGauge} alt="Combustible" className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(selectedHistoryJob.checklist.photos.fuelGauge, '_blank')} />
-                    ) : (
-                        <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">{selectedHistoryJob.checklist?.fuelLevel !== undefined ? `${selectedHistoryJob.checklist.fuelLevel}%` : 'No registrado'}</p>
-                    )}
+                    <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">
+                       {selectedHistoryJob.checklist?.arrivalMileage || 'No registrado'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Combustible Inicio */}
+                <div>
+                  <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Comb. Inicio</p>
+                  <div className="flex flex-col gap-1.5 mt-0.5">
+                    <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">
+                       {selectedHistoryJob.checklist?.fuelLevel !== undefined ? `${Math.round(selectedHistoryJob.checklist.fuelLevel * 100)}%` : 'No registrado'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Combustible Fin */}
+                <div>
+                  <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Comb. Fin</p>
+                  <div className="flex flex-col gap-1.5 mt-0.5">
+                    <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">
+                       {selectedHistoryJob.checklist?.arrivalFuelLevel !== undefined ? `${Math.round(selectedHistoryJob.checklist.arrivalFuelLevel * 100)}%` : 'No registrado'}
+                    </p>
                   </div>
                 </div>
 
