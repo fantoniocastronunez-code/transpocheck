@@ -2758,7 +2758,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         processingId={processingId}
         submitPickup={submitPickup}
         handleRequestPhotoOverride={handleRequestPhotoOverride}
-        openCamera={openCamera}
+        openCamera={(title, target) => setCameraConfig({ isOpen: true, title, target })}
       />
 
       <ArrivalModal
