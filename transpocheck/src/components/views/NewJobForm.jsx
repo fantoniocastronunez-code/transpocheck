@@ -202,8 +202,10 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
 
       if (v) {
         setBrand(v.brand || ''); setModel(v.model || '');
-        if (v.plate && v.plate !== val && type === 'vin') setPlate(v.plate);
-        if (v.vin && v.vin !== val && type === 'plate') setVin(v.vin);
+        const cleanPlate = v.plate ? v.plate.toUpperCase().trim() : '';
+        const cleanVin = v.vin ? v.vin.toUpperCase().trim() : '';
+        if (cleanPlate && cleanPlate !== val && type === 'vin') setPlate(cleanPlate);
+        if (cleanVin && cleanVin !== val && type === 'plate') setVin(cleanVin);
         if (v.vehicleType) { setVehicleType(v.vehicleType); setHistoricalVehicleType(v.vehicleType); }
         if (allClientsList.includes(v.client)) setSelectedClient(v.client); else { setSelectedClient('OTRO'); setManualClient(v.client); }
         
