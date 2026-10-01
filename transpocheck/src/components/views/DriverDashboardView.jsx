@@ -55,28 +55,6 @@ export default function DriverDashboardView({ myDriver, jobs, expenses, drivers,
       }
     });
 
-    // --- RANKING (Misma lógica exacta que LeaderboardView) ---
-    const monthlyCompletedAll = jobs.filter(j => {
-      const jobDate = j.completedAt || j.createdAt || 0;
-      return jobDate >= firstOfMonth && j.status === 'completed';
-    });
-
-    const ranking = drivers.filter(d => !d.isHidden).map(d => {
-      const dj = monthlyCompletedAll.filter(j => 
-        j.acceptedByEmail === d.email || (!j.acceptedByEmail && j.assignedEmails?.includes(d.email))
-      );
-      const validScoreJobs = dj.filter(j => {
-        const isService = j.tripType === 'simple' || j.isPintura;
-        return isService ? !!j.forceRanking : !j.excludeFromRanking;
-      });
-      return { email: d.email, score: validScoreJobs.length };
-    }).sort((a, b) => b.score - a.score);
-
-    const uniqueScores = [...new Set(ranking.map(d => d.score))].sort((a, b) => b - a);
-    const myRankEntry = ranking.find(r => r.email === currentUserEmail);
-    const myRankPosition = myRankEntry ? uniqueScores.indexOf(myRankEntry.score) + 1 : null;
-    const myScore = myRankEntry?.score || 0;
-
     // --- DESGLOSE POR TIPO ---
     const traslados = monthlyCompleted.filter(j => j.tripType === 'traslado' || (!j.tripType && j.tripType !== 'simple' && j.tripType !== 'revision' && j.tripType !== 'viaje')).length;
     const prt = monthlyCompleted.filter(j => j.tripType === 'revision').length;
@@ -177,12 +155,7 @@ export default function DriverDashboardView({ myDriver, jobs, expenses, drivers,
                 </div>
               )}
             </div>
-            {/* Badge de ranking sobre el avatar */}
-            {stats.rankPosition && stats.rankPosition <= 3 && (
-              <div className="absolute -bottom-2 -right-2 bg-yellow-400 text-slate-900 w-10 h-10 rounded-xl flex items-center justify-center text-lg font-black shadow-lg shadow-yellow-400/30 border-2 border-yellow-300">
-                {getRankIcon(stats.rankPosition)}
-              </div>
-            )}
+
           </div>
 
           {/* Info */}
@@ -219,20 +192,6 @@ export default function DriverDashboardView({ myDriver, jobs, expenses, drivers,
       {/* ═══════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-2 gap-3 mb-6">
         
-        {/* Ranking */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group hover:shadow-md transition-shadow">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-yellow-400/5 dark:bg-yellow-400/10 rounded-full -translate-y-6 translate-x-6 group-hover:scale-125 transition-transform" />
-          <div className="relative">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="bg-yellow-100 dark:bg-yellow-900/40 p-2 rounded-xl"><Trophy className="w-4 h-4 text-yellow-600 dark:text-yellow-400" /></div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ranking</span>
-            </div>
-            <p className="text-3xl font-black text-slate-800 dark:text-slate-100">
-              {stats.rankPosition ? getRankIcon(stats.rankPosition) : '-'}
-            </p>
-            <p className="text-[10px] font-bold text-slate-400 mt-1">de {stats.totalDrivers} conductores</p>
-          </div>
-        </div>
 
         {/* Trabajos del Mes */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group hover:shadow-md transition-shadow">
@@ -261,7 +220,7 @@ export default function DriverDashboardView({ myDriver, jobs, expenses, drivers,
         </div>
 
         {/* Balance */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group hover:shadow-md transition-shadow">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group hover:shadow-md transition-shadow col-span-2">
           <div className="absolute top-0 right-0 w-20 h-20 bg-violet-400/5 dark:bg-violet-400/10 rounded-full -translate-y-6 translate-x-6 group-hover:scale-125 transition-transform" />
           <div className="relative">
             <div className="flex items-center gap-2 mb-2">

@@ -72,6 +72,8 @@ export default function SignaturePad({ initialData, onSave, onClear, onChange })
   // 2. Cargar la firma que viene de la base de datos (o inicializar blanco)
   useEffect(() => {
     if (canvasRef.current) {
+      if (loadedRef.current && initialData === drawingDataRef.current) return;
+
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
       const ratio = Math.max(window.devicePixelRatio || 1, 1);
@@ -96,6 +98,8 @@ export default function SignaturePad({ initialData, onSave, onClear, onChange })
            loadedRef.current = true;
         };
         img.src = initialData;
+      } else if (!initialData) {
+        loadedRef.current = true;
       }
     }
   }, [initialData]);

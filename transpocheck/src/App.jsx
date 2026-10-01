@@ -1015,7 +1015,7 @@ function LogisticApp() {
               </main>
             )}
 
-            {mainTab === 'ranking' && <LeaderboardView jobs={jobs} drivers={drivers} isAdminView={activeRole === 'admin'} db={db} />}
+
             {mainTab === 'expenses' && <ExpensesView role={activeRole} drivers={drivers} jobs={jobs} expenses={expenses} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />}
             {mainTab === 'profile' && <DriverDashboardView myDriver={myDriver} jobs={jobs} expenses={expenses} drivers={drivers} currentUserEmail={currentUserEmail} />}
             {mainTab === 'quotes' && <ChecklistAnalyticsView jobs={jobs} drivers={drivers} currentUserEmail={currentUserEmail} activeRole={activeRole} />}
@@ -1184,10 +1184,7 @@ function LogisticApp() {
                      <div className={`${mainTab==='jobs' ? 'bg-blue-100 dark:bg-blue-900/40' : 'bg-transparent'} p-2 rounded-xl mb-1`}><ClipboardList className="w-5 h-5"/></div>
                      <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Trabajos</span>
                   </button>
-                  <button onClick={() => setMainTab('ranking')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='ranking' ? 'text-yellow-600 dark:text-yellow-500' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-yellow-600 dark:text-yellow-400 dark:hover:text-yellow-500'}`}>
-                     <div className={`${mainTab==='ranking' ? 'bg-yellow-100 dark:bg-yellow-900/40' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Trophy className="w-5 h-5"/></div>
-                     <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Ranking</span>
-                  </button>
+
                   {(activeRole !== 'admin' || adminPermissions?.manage_expenses !== false) && (
                     <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab==='expenses' ? 'text-emerald-600 dark:text-emerald-500' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:text-emerald-400 dark:hover:text-emerald-500'}`}>
                        <div className={`${mainTab==='expenses' ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Wallet className="w-5 h-5"/></div>
