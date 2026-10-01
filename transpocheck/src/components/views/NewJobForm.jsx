@@ -708,39 +708,11 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
 
       <form onSubmit={handleCreateOrUpdateJob} className="space-y-6">
         
-        {/* WIZARD PROGRESS TRACKER */}
-        <div className="relative mb-10 overflow-x-auto pb-4 hide-scrollbar">
-           <div className="flex items-center justify-between min-w-[600px] relative">
-              {/* Line connecting steps */}
-              <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-slate-200 dark:bg-slate-800 -z-10 transform -translate-y-1/2"></div>
-              
-              {/* Step 1 */}
-              <button type="button" onClick={() => setCurrentStep(1)} className={`relative flex items-center gap-2 px-5 py-2.5 rounded-full border-2 transition-all duration-300 bg-slate-50 dark:bg-[#0f172a] ${currentStep === 1 ? 'border-blue-500 text-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)] scale-105' : currentStep > 1 ? 'border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 cursor-pointer' : 'border-slate-200 dark:border-slate-800 text-slate-400 opacity-50 cursor-not-allowed'}`}>
-                 <span className="text-sm font-black">1. Tipo de Servicio</span>
-              </button>
-              
-              {/* Step 2 */}
-              <button type="button" onClick={() => { if(currentStep > 2 || (currentStep === 1 && (operationMode === 'servicio' || tripType))) setCurrentStep(2); }} className={`relative flex items-center gap-2 px-5 py-2.5 rounded-full border-2 transition-all duration-300 bg-slate-50 dark:bg-[#0f172a] ${currentStep === 2 ? 'border-blue-500 text-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)] scale-105' : currentStep > 2 ? 'border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 cursor-pointer' : 'border-slate-200 dark:border-slate-800 text-slate-400 opacity-50 cursor-not-allowed'}`}>
-                 <span className="text-sm font-black">2. {operationMode === 'traslado' ? 'Vehículo' : 'Detalles'}</span>
-              </button>
-
-              {/* Step 3 */}
-              <button type="button" onClick={() => { if(currentStep > 3 || (currentStep === 2 && ((operationMode === 'traslado' && (plate || vin)) || operationMode === 'servicio'))) setCurrentStep(3); }} className={`relative flex items-center gap-2 px-5 py-2.5 rounded-full border-2 transition-all duration-300 bg-slate-50 dark:bg-[#0f172a] ${currentStep === 3 ? 'border-blue-500 text-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)] scale-105' : currentStep > 3 ? 'border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 cursor-pointer' : 'border-slate-200 dark:border-slate-800 text-slate-400 opacity-50 cursor-not-allowed'}`}>
-                 <span className="text-sm font-black">3. Ruta</span>
-              </button>
-
-              {/* Step 4 */}
-              <button type="button" onClick={() => { if(currentStep > 4 || (currentStep === 3 && document.getElementsByName('origin')[0]?.value)) setCurrentStep(4); }} className={`relative flex items-center gap-2 px-5 py-2.5 rounded-full border-2 transition-all duration-300 bg-slate-50 dark:bg-[#0f172a] ${currentStep === 4 ? 'border-blue-500 text-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)] scale-105' : 'border-slate-200 dark:border-slate-800 text-slate-400 opacity-50 cursor-not-allowed'}`}>
-                 <span className="text-sm font-black">4. Conductores</span>
-              </button>
-           </div>
-        </div>
-
         {/* GLASSMORPHISM MAIN CARD */}
-        <div className="bg-slate-50/50 dark:bg-[#131b2f]/80 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 p-6 sm:p-10 rounded-3xl shadow-2xl relative min-h-[400px]">
+        <div className="bg-slate-50/50 dark:bg-[#131b2f]/80 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 p-6 sm:p-10 rounded-3xl shadow-2xl relative space-y-12">
            
            {/* STEP 1: TIPO DE SERVICIO */}
-           <div className={currentStep === 1 ? "animate-in fade-in slide-in-from-right-8 duration-500" : "hidden"}>
+           <div className="animate-in fade-in slide-in-from-right-8 duration-500 space-y-6">
                 <div className="flex justify-center mb-8 bg-slate-200/50 dark:bg-slate-800/50 p-1.5 rounded-2xl max-w-md mx-auto">
                   <button type="button" onClick={() => setOperationMode('traslado')} className={`flex-1 py-3 text-xs sm:text-sm font-black rounded-xl transition-all duration-300 ${operationMode === 'traslado' ? 'bg-white dark:bg-slate-900 text-blue-500 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'}`}>🚚 Traslado de Vehículo</button>
                   <button type="button" onClick={() => setOperationMode('servicio')} className={`flex-1 py-3 text-xs sm:text-sm font-black rounded-xl transition-all duration-300 ${operationMode === 'servicio' ? 'bg-white dark:bg-slate-900 text-purple-500 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'}`}>🛠️ Servicio en Terreno</button>
@@ -812,13 +784,13 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                         <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                       </div>
                       <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 mb-2">Servicio en Terreno seleccionado</h3>
-                      <p className="text-sm max-w-sm">Pulsa "Siguiente" para ingresar los detalles y ruta del servicio.</p>
+                      <p className="text-sm max-w-sm">Completa los detalles y la ruta del servicio a continuación.</p>
                    </div>
                 )}
            </div>
 
            {/* STEP 2: VEHICULO / SERVICIO */}
-           <div className={currentStep === 2 ? "animate-in fade-in slide-in-from-right-8 duration-500" : "hidden"}>
+           <div className="animate-in fade-in slide-in-from-right-8 duration-500 border-t border-slate-200/50 dark:border-slate-700/50 pt-8">
                {operationMode === 'traslado' ? (
                  <div className="space-y-6">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200/50 dark:border-slate-700/50 pb-4">
@@ -981,7 +953,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
              </div>
 
            {/* STEP 3: RUTA Y PROGRAMACION */}
-           <div className={currentStep === 3 ? "animate-in fade-in slide-in-from-right-8 duration-500 space-y-6" : "hidden"}>
+           <div className="animate-in fade-in slide-in-from-right-8 duration-500 space-y-6 border-t border-slate-200/50 dark:border-slate-700/50 pt-8">
                 <h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-100 border-b border-slate-200/50 dark:border-slate-700/50 pb-4">Programación y Ruta</h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1047,7 +1019,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
              </div>
 
            {/* STEP 4: CONDUCTORES */}
-           <div className={currentStep === 4 ? "animate-in fade-in slide-in-from-right-8 duration-500 flex flex-col h-full min-h-[350px]" : "hidden"}>
+           <div className="animate-in fade-in slide-in-from-right-8 duration-500 flex flex-col h-full border-t border-slate-200/50 dark:border-slate-700/50 pt-8">
                 <h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-100 mb-6">Asignar Conductores</h3>
                 
                 <div className="flex-1">
@@ -1080,41 +1052,12 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                 </div>
              </div>
 
-           {/* WIZARD NAVIGATION CONTROLS */}
-           <div className="mt-10 pt-6 border-t border-slate-200/50 dark:border-slate-700/50 flex justify-between items-center relative z-20">
-              <div className="flex-1">
-                 {currentStep > 1 && (
-                    <button type="button" onClick={() => setCurrentStep(s => s - 1)} className="flex items-center gap-2 px-6 py-3 rounded-2xl font-extrabold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
-                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                       Atrás
-                    </button>
-                 )}
-              </div>
-              
-              <div className="flex gap-4">
-                 {currentStep < (operationMode === 'traslado' ? 4 : 4) && (
-                    <button type="button" onClick={() => {
-                       // Validaciones por paso
-                       if (currentStep === 2 && operationMode === 'traslado') {
-                          if (!plate && !vin) return showAlert("⚠️ Ingresa la Patente o VIN.");
-                       }
-                       if (currentStep === 3) {
-                          const origin = document.getElementsByName('origin')[0]?.value;
-                          if (!origin) return showAlert("⚠️ Ingresa el lugar de retiro (Origen).");
-                       }
-                       setCurrentStep(s => s + 1);
-                    }} className="flex items-center gap-2 px-8 py-3 rounded-2xl font-extrabold text-white bg-blue-500 hover:bg-blue-600 shadow-[0_0_15px_rgba(59,130,246,0.3)] transition-all transform hover:scale-105">
-                       Siguiente
-                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                    </button>
-                 )}
-                 {currentStep === 4 && (
-                    <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 px-8 py-3 rounded-2xl font-extrabold text-white bg-green-500 hover:bg-green-600 shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all transform hover:scale-105 disabled:opacity-50 disabled:hover:scale-100">
-                       {isSubmitting ? 'Procesando...' : (jobToEdit ? 'Actualizar Trabajo' : 'Guardar y Asignar')}
-                       {!isSubmitting && <CheckCircle className="w-5 h-5"/>}
-                    </button>
-                 )}
-              </div>
+           {/* SUBMIT BUTTON */}
+           <div className="mt-10 pt-6 border-t border-slate-200/50 dark:border-slate-700/50 flex justify-end items-center relative z-20">
+               <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 px-8 py-3 rounded-2xl font-extrabold text-white bg-green-500 hover:bg-green-600 shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all transform hover:scale-105 disabled:opacity-50 disabled:hover:scale-100">
+                  {isSubmitting ? 'Procesando...' : (jobToEdit ? 'Actualizar Trabajo' : 'Guardar y Asignar')}
+                  {!isSubmitting && <CheckCircle className="w-5 h-5"/>}
+               </button>
            </div>
 
         </div>
