@@ -163,8 +163,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       await updateDoc(doc(db, 'transport_jobs', pickupPromptJob.id), {
         'checklist.mileage': pickupMileage || '',
         'checklist.fuelLevel': pickupFuelLevel !== undefined ? pickupFuelLevel : (currentDraft.fuelLevel ?? null),
-        'checklist.photos.mileage': pickupPhoto,
-        'checklist.photos.fuel': pickupFuelPhoto,
+        'checklist.photos.mileage': pickupPhoto || null,
+        'checklist.photos.fuel': pickupFuelPhoto || null,
         'draft.formData': updatedDraft
       });
 

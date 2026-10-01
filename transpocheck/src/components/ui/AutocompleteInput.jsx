@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search } from 'lucide-react';
 
+import { X } from 'lucide-react';
+
 export default function AutocompleteInput({ 
   value, 
   onChange, 
@@ -9,7 +11,8 @@ export default function AutocompleteInput({
   className, 
   required,
   name,
-  defaultValue
+  defaultValue,
+  onDeleteOption
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [internalValue, setInternalValue] = useState(defaultValue || value || '');
@@ -76,10 +79,22 @@ export default function AutocompleteInput({
               <div 
                 key={idx}
                 onMouseDown={(e) => { e.preventDefault(); handleSelect(opt); }}
-                className="px-4 py-3 hover:bg-purple-50 dark:hover:bg-purple-900/30 cursor-pointer border-b border-slate-100 dark:border-slate-700/50 last:border-0 font-bold text-sm text-slate-700 dark:text-slate-300 flex items-center gap-2"
+                className="px-4 py-3 hover:bg-purple-50 dark:hover:bg-purple-900/30 cursor-pointer border-b border-slate-100 dark:border-slate-700/50 last:border-0 font-bold text-sm text-slate-700 dark:text-slate-300 flex items-center justify-between gap-2 group"
               >
-                <Search className="w-3.5 h-3.5 text-slate-400" />
-                {opt}
+                <div className="flex items-center gap-2">
+                   <Search className="w-3.5 h-3.5 text-slate-400" />
+                   <span className="truncate">{opt}</span>
+                </div>
+                {onDeleteOption && (
+                   <button 
+                     type="button"
+                     onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onDeleteOption(opt); }}
+                     className="p-1.5 rounded-lg bg-red-500/10 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/20"
+                     title="Eliminar de la lista"
+                   >
+                     <X className="w-4 h-4" />
+                   </button>
+                )}
               </div>
             ))
           ) : (

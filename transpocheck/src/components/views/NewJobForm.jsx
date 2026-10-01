@@ -48,7 +48,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     const fetchDirectory = async () => {
       try {
         const snap = await getDocs(collection(db, 'directory'));
-        setDirectoryList(snap.docs.map(d => d.data()));
+        setDirectoryList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       } catch(e) { console.error("Error cargando directorio:", e); }
     };
     
@@ -202,8 +202,8 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
 
       if (v) {
         setBrand(v.brand || ''); setModel(v.model || '');
-        if (v.plate && type === 'vin') setPlate(v.plate);
-        if (v.vin && type === 'plate') setVin(v.vin);
+        if (v.plate && v.plate !== val && type === 'vin') setPlate(v.plate);
+        if (v.vin && v.vin !== val && type === 'plate') setVin(v.vin);
         if (v.vehicleType) { setVehicleType(v.vehicleType); setHistoricalVehicleType(v.vehicleType); }
         if (allClientsList.includes(v.client)) setSelectedClient(v.client); else { setSelectedClient('OTRO'); setManualClient(v.client); }
         
@@ -659,6 +659,25 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     })();
   };
 
+  const handleDeleteDestinationOption = async (optName) => {
+    const isConfirmed = await showConfirmDialog(`¿Estás seguro que deseas eliminar "${optName}" de la lista de sugerencias?`, "Eliminar Destino");
+    if (!isConfirmed) return;
+    
+    const dirItem = directoryList.find(d => d.placeName === optName);
+    if (dirItem && dirItem.id) {
+       try {
+          const { deleteDoc, doc } = await import('firebase/firestore');
+          await deleteDoc(doc(db, 'directory', dirItem.id));
+          setDirectoryList(prev => prev.filter(d => d.id !== dirItem.id));
+          showAlert(`✅ "${optName}" eliminado del directorio.`);
+       } catch (e) {
+          showAlert("❌ Error al eliminar el destino.");
+       }
+    } else {
+       showAlert(`❌ "${optName}" no se puede eliminar (es un cliente predefinido).`);
+    }
+  };
+
   const destinationOptions = [
     ...directoryList.map(dir => dir.placeName),
     ...(allClientsList || [])
@@ -982,7 +1001,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                   <div className="space-y-4">
                      <div className="space-y-1 relative z-[900]">
                         <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider ml-1">Origen / Retiro</label>
-                        <AutocompleteInput name="origin" options={destinationOptions} defaultValue={jobToEdit?.origin || ''} required placeholder="¿Desde dónde?" className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all" />
+                        <AutocompleteInput name="origin" options={destinationOptions} onDeleteOption={handleDeleteDestinationOption} defaultValue={jobToEdit?.origin || ''} required placeholder="¿Desde dónde?" className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all" />
                      </div>
                      
                      {operationMode === 'traslado' && tripType === 'revision' ? (
@@ -996,13 +1015,13 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                            </div>
                            <div className="space-y-1">
                               <label className="text-[10px] font-extrabold text-blue-500 uppercase tracking-wider ml-1">Destino Final (Post-PRT)</label>
-                              <AutocompleteInput name="destFinal" options={destinationOptions} defaultValue={jobToEdit?.destination?.split('->')[1]?.trim() || ''} placeholder="Opcional" className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all" />
+                              <AutocompleteInput name="destFinal" options={destinationOptions} onDeleteOption={handleDeleteDestinationOption} defaultValue={jobToEdit?.destination?.split('->')[1]?.trim() || ''} placeholder="Opcional" className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all" />
                            </div>
                         </div>
                      ) : (
                         <div className="space-y-1 relative z-[800]">
                            <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider ml-1">Destino Final</label>
-                           <AutocompleteInput name="destination" options={destinationOptions} defaultValue={jobToEdit?.destination || ''} required={operationMode === 'traslado'} placeholder="Hasta (Destino)" className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all" />
+                           <AutocompleteInput name="destination" options={destinationOptions} onDeleteOption={handleDeleteDestinationOption} defaultValue={jobToEdit?.destination || ''} required={operationMode === 'traslado'} placeholder="Hasta (Destino)" className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all" />
                         </div>
                      )}
                   </div>

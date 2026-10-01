@@ -11,11 +11,7 @@ export const StepDocs = ({ openCamera }) => {
       try {
         const { resizeImage } = await import('../../../../utils/helpers');
         const compressed = await resizeImage(file, 1200, 0.6);
-        const reader = new FileReader();
-        reader.onload = () => {
-          setF('docsPhotos', { ...(formData.docsPhotos || {}), [docId]: reader.result });
-        };
-        reader.readAsDataURL(compressed);
+        setF('docsPhotos', { ...(formData.docsPhotos || {}), [docId]: compressed });
       } catch (e) {
         showAlert("Error al procesar la foto.");
       }
