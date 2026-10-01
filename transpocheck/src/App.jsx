@@ -18,7 +18,7 @@ import VehicleShapeIcon from './components/ui/VehicleShapeIcon';
 import SwipeButton from './components/ui/SwipeButton';
 import WaitTimerBadge from './components/ui/WaitTimerBadge';
 import { DevMenu } from './components/ui/DevMenu';
-import { DEFAULT_CLIENTES, LICENCIAS, formatMoney, formatDateDisplay, resizeImage, calculateDriverChecklistScore } from './utils/helpers';
+import { DEFAULT_CLIENTES, LICENCIAS, formatMoney, formatDateDisplay, resizeImage } from './utils/helpers';
 
 // MAGIA ANTI-CHUNK ERROR: Función que intercepta los fallos de carga en Vercel y recarga la página limpiamente
 const lazyWithRetry = (componentImport) =>
@@ -982,26 +982,6 @@ function LogisticApp() {
                   </>
                 ) : (
                   <div className="space-y-6">
-                    {(() => {
-                       const sc = calculateDriverChecklistScore(jobs, currentUserEmail, drivers);
-                       if (sc.totalJobs > 0) {
-                          return (
-                             <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-4 rounded-2xl shadow-lg flex items-center justify-between border border-slate-700">
-                                <div className="flex items-center gap-3">
-                                   <div className={`w-14 h-14 shrink-0 rounded-xl flex items-center justify-center text-[18px] sm:text-xl font-black border ${parseFloat(sc.grade) >= 8.5 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : parseFloat(sc.grade) >= 6.0 ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30'}`}>
-                                      {sc.grade}
-                                   </div>
-                                   <div className="min-w-0">
-                                      <p className="text-sm font-black text-white">Calidad de Trabajo</p>
-                                      <p className="text-[10px] font-bold text-slate-400 leading-snug truncate sm:whitespace-normal">{sc.tips[0]}</p>
-                                   </div>
-                                </div>
-                                <ShieldCheck className="w-8 h-8 shrink-0 text-slate-600 opacity-50 hidden sm:block" />
-                             </div>
-                          );
-                       }
-                       return null;
-                    })()}
                     <h2 className="text-2xl font-extrabold text-slate-800 dark:text-slate-200">Mis Trabajos Asignados</h2>
                     <JobsList 
                        jobs={jobs} drivers={drivers} vehicles={vehicles} role="driver" 
