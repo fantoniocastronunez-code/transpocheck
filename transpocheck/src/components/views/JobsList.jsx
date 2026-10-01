@@ -161,11 +161,20 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       }
 
       await updateDoc(doc(db, 'transport_jobs', pickupPromptJob.id), {
-        'checklist.mileage': pickupMileage || '',
-        'checklist.fuelLevel': pickupFuelLevel !== undefined ? pickupFuelLevel : (currentDraft.fuelLevel ?? null),
-        'checklist.photos.mileage': pickupPhoto || null,
-        'checklist.photos.fuel': pickupFuelPhoto || null,
-        'draft.formData': updatedDraft
+        checklist: {
+          ...(pickupPromptJob.checklist || {}),
+          mileage: pickupMileage || '',
+          fuelLevel: pickupFuelLevel !== undefined ? pickupFuelLevel : (currentDraft.fuelLevel ?? null),
+          photos: {
+            ...(pickupPromptJob.checklist?.photos || {}),
+            mileage: pickupPhoto || null,
+            fuel: pickupFuelPhoto || null
+          }
+        },
+        draft: {
+          ...(pickupPromptJob.draft || {}),
+          formData: updatedDraft
+        }
       });
 
       const waitMins = pickupPromptJob.arrivedPickupAt ? Math.floor((Date.now() - pickupPromptJob.arrivedPickupAt) / 60000) : 0;
@@ -234,7 +243,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       if (arrivalFuelPhotoLocation) updatedDraft.photos.fuelGaugeLocation = arrivalFuelPhotoLocation;
 
       await updateDoc(doc(db, 'transport_jobs', arrivalPromptJob.id), {
-        'draft.formData': updatedDraft
+        draft: {
+          ...(arrivalPromptJob.draft || {}),
+          formData: updatedDraft
+        }
       });
 
       if (arrivalPromptJob.phase === 'prt_done') {
