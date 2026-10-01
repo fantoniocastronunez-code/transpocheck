@@ -2786,18 +2786,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         onCapture={async (file) => {
           setProcessingId('processing-image');
           if (cameraConfig.target === 'arrivalPhoto') {
-      setArrivalPhoto(photoUrl);
-      setArrivalPhotoLocation(location);
-    } else if (cameraConfig.target === 'arrivalFuelPhoto') {
-      setArrivalFuelPhoto(photoUrl);
-      setArrivalFuelPhotoLocation(location);
-    } else if (cameraConfig.target === 'pickupPhoto') {
-      setPickupPhoto(photoUrl);
-      setPickupPhotoLocation(location);
-    } else if (cameraConfig.target === 'pickupFuelPhoto') {
-      setPickupFuelPhoto(photoUrl);
-      setPickupFuelPhotoLocation(location);
-    });
+            try {
+              const compressed = await resizeAndWatermarkImage(file, 1200, 0.6);
+              setArrivalPhoto(compressed.base64);
+              if (compressed.lat !== null && compressed.lng !== null) {
+                setArrivalPhotoLocation({ lat: compressed.lat, lng: compressed.lng });
               }
             } catch (e) { showAlert("❌ Error procesando foto del odómetro. Código: [ERR-PHOTO-ODOMETER]"); }
           } else if (cameraConfig.target === 'arrivalFuelPhoto') {
@@ -2806,6 +2799,22 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               setArrivalFuelPhoto(compressed.base64);
               if (compressed.lat !== null && compressed.lng !== null) {
                 setArrivalFuelPhotoLocation({ lat: compressed.lat, lng: compressed.lng });
+              }
+            } catch (e) { showAlert("❌ Error procesando foto de combustible. Código: [ERR-PHOTO-FUEL]"); }
+          } else if (cameraConfig.target === 'pickupPhoto') {
+            try {
+              const compressed = await resizeAndWatermarkImage(file, 1200, 0.6);
+              setPickupPhoto(compressed.base64);
+              if (compressed.lat !== null && compressed.lng !== null) {
+                setPickupPhotoLocation({ lat: compressed.lat, lng: compressed.lng });
+              }
+            } catch (e) { showAlert("❌ Error procesando foto del odómetro. Código: [ERR-PHOTO-ODOMETER]"); }
+          } else if (cameraConfig.target === 'pickupFuelPhoto') {
+            try {
+              const compressed = await resizeAndWatermarkImage(file, 1200, 0.6);
+              setPickupFuelPhoto(compressed.base64);
+              if (compressed.lat !== null && compressed.lng !== null) {
+                setPickupFuelPhotoLocation({ lat: compressed.lat, lng: compressed.lng });
               }
             } catch (e) { showAlert("❌ Error procesando foto de combustible. Código: [ERR-PHOTO-FUEL]"); }
           }
