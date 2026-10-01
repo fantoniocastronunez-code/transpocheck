@@ -21,6 +21,7 @@ import FullScreenPhotoModal from './JobsList/FullScreenPhotoModal';
 import HistoryModal from './JobsList/HistoryModal';
 import KovacsModal from './JobsList/KovacsModal';
 import ArrivalModal from './JobsList/ArrivalModal';
+import PickupModal from './JobsList/PickupModal';
 import { formatDateDisplay, analyzeJobStatus, generateStandardFileName, generateWhatsAppText, getRouteStr, resizeImage, resizeAndWatermarkImage } from '../../utils/helpers';
 
 export default function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, onNewJob, db, currentUserEmail, showAlert, showConfirm, allClientsList, onLoadMore, vehicles }) {
@@ -100,7 +101,90 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [arrivalFuelPhoto, setArrivalFuelPhoto] = useState(null);
   const [arrivalFuelPhotoLocation, setArrivalFuelPhotoLocation] = useState(null);
   const [arrivalFuelLevel, setArrivalFuelLevel] = useState(undefined);
+  const [pickupPromptJob, setPickupPromptJob] = useState(null);
+  const [pickupMileage, setPickupMileage] = useState('');
+  const [pickupPhoto, setPickupPhoto] = useState(null);
+  const [pickupPhotoLocation, setPickupPhotoLocation] = useState(null);
+  const [pickupFuelPhoto, setPickupFuelPhoto] = useState(null);
+  const [pickupFuelPhotoLocation, setPickupFuelPhotoLocation] = useState(null);
+  const [pickupFuelLevel, setPickupFuelLevel] = useState(undefined);
+
   const [cameraConfig, setCameraConfig] = useState({ isOpen: false, title: '', target: null });
+
+  
+  const submitPickup = async () => {
+    try {
+      const isServiceJob = pickupPromptJob?.tripType === 'simple';
+      if (!isServiceJob) {
+        if (!pickupPromptJob.photoOverrideApproved) {
+          if (!pickupFuelPhoto) {
+            showAlert("Debe adjuntar la foto del medidor de combustible inicial.");
+            setProcessingId(null);
+            return;
+          }
+          if (pickupFuelLevel === undefined) {
+            showAlert("Debe indicar el nivel de combustible inicial.");
+            setProcessingId(null);
+            return;
+          }
+          if (!pickupPhoto) {
+            showAlert("Debe adjuntar la foto del odómetro inicial.");
+            setProcessingId(null);
+            return;
+          }
+        }
+        if (!pickupMileage || pickupMileage.trim() === '') {
+          showAlert("Debe ingresar el kilometraje inicial.");
+          setProcessingId(null);
+          return;
+        }
+      }
+    
+      setProcessingId('general-pickup');
+      const currentDraft = pickupPromptJob.draft?.formData || pickupPromptJob.checklist || {};
+      const currentPhotos = currentDraft.photos || {};
+
+      const updatedDraft = {
+        ...currentDraft,
+        mileage: pickupMileage || '',
+        fuelLevel: pickupFuelLevel !== undefined ? pickupFuelLevel : (currentDraft.fuelLevel ?? null)
+      };
+
+      if (pickupPhoto) {
+        updatedDraft.photos = { ...currentPhotos, mileage: pickupPhoto };
+        if (pickupPhotoLocation) updatedDraft.photos.mileageLocation = pickupPhotoLocation;
+      }
+      updatedDraft.photos = updatedDraft.photos || {};
+      if (pickupFuelPhoto) {
+         updatedDraft.photos.fuel = pickupFuelPhoto;
+         if (pickupFuelPhotoLocation) updatedDraft.photos.fuelLocation = pickupFuelPhotoLocation;
+      }
+
+      await updateDoc(doc(db, 'transport_jobs', pickupPromptJob.id), {
+        'checklist.mileage': pickupMileage || '',
+        'checklist.fuelLevel': pickupFuelLevel !== undefined ? pickupFuelLevel : (currentDraft.fuelLevel ?? null),
+        'checklist.photos.mileage': pickupPhoto,
+        'checklist.photos.fuel': pickupFuelPhoto,
+        'draft.formData': updatedDraft
+      });
+
+      const waitMins = pickupPromptJob.arrivedPickupAt ? Math.floor((Date.now() - pickupPromptJob.arrivedPickupAt) / 60000) : 0;
+      await updatePhase(pickupPromptJob, 'picked_up', { pickedUpAt: Date.now(), waitTimeMinutes: waitMins });
+
+      setPickupPromptJob(null);
+      setPickupMileage('');
+      setPickupPhoto(null);
+      setPickupFuelPhoto(null);
+      setPickupFuelLevel(undefined);
+      setPickupPhotoLocation(null);
+      setPickupFuelPhotoLocation(null);
+    } catch (error) {
+      console.error(error);
+      showAlert("Error al procesar el inicio. [ERR-PICKUP-M]");
+    } finally {
+      setProcessingId(null);
+    }
+  };
 
   const submitArrival = async () => {
     
@@ -1157,7 +1241,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   };
 
   const jobCardProps = {
-    analyzeJobStatus, getJobIdentifier, vehicles, menuOpenId, setMenuOpenId, isAdminView, onEditJob, currentUserEmail, setRelayPromptJob, setForceCloseJob, db, updateDoc, deleteField, doc, showAlert, showConfirm, setJobToFail, latestVehiclePhotos, setFullScreenPhoto, role, processingId, setProcessingId, handleApproveRequest, handleRejectRequest, handleApprovePhotoOverride, handleAcceptJob, setGuideUploadJob, setGuideLink, setGuideFileBase64, updatePhase, setArrivalPromptJob, setArrivalMileage, setArrivalPhoto, setPrtApproveType, setPrtReturnOpt, setPrtReturnDest, setPrtApprovePromptJob, setPrtPromptJob, onStartChecklist, handleUndoPhase, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, WaitTimerBadge, SwipeButton, AlertCircle, Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, Truck, X, XCircle, Clock, Car, MapPin, FileText, RefreshCw, Search,
+    analyzeJobStatus, getJobIdentifier, vehicles, menuOpenId, setMenuOpenId, isAdminView, onEditJob, currentUserEmail, setRelayPromptJob, setForceCloseJob, db, updateDoc, deleteField, doc, showAlert, showConfirm, setJobToFail, latestVehiclePhotos, setFullScreenPhoto, role, processingId, setProcessingId, handleApproveRequest, handleRejectRequest, handleApprovePhotoOverride, handleAcceptJob, setGuideUploadJob, setGuideLink, setGuideFileBase64, updatePhase, setPickupPromptJob, setArrivalPromptJob, setArrivalMileage, setArrivalPhoto, setPrtApproveType, setPrtReturnOpt, setPrtReturnDest, setPrtApprovePromptJob, setPrtPromptJob, onStartChecklist, handleUndoPhase, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, WaitTimerBadge, SwipeButton, AlertCircle, Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, Truck, X, XCircle, Clock, Car, MapPin, FileText, RefreshCw, Search,
     // FALTANTES QUE CAUSABAN LA PANTALLA BLANCA AL ABRIR EL MENÚ:
     Copy, Trash2, Repeat, FileDown, cpyWapp, handleDuplicateJob, handleDeleteJob, generatePDF, handleShareWhatsAppPDF
   };
@@ -2659,6 +2743,24 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       
 
       {/* NUEVO MODAL: REQUISITO LLEGADA (GENERAL / GRANDLEASING) */}
+      
+      <PickupModal
+        pickupPromptJob={pickupPromptJob}
+        setPickupPromptJob={setPickupPromptJob}
+        pickupMileage={pickupMileage}
+        setPickupMileage={setPickupMileage}
+        pickupPhoto={pickupPhoto}
+        setPickupPhoto={setPickupPhoto}
+        pickupFuelPhoto={pickupFuelPhoto}
+        setPickupFuelPhoto={setPickupFuelPhoto}
+        pickupFuelLevel={pickupFuelLevel}
+        setPickupFuelLevel={setPickupFuelLevel}
+        processingId={processingId}
+        submitPickup={submitPickup}
+        handleRequestPhotoOverride={handleRequestPhotoOverride}
+        openCamera={openCamera}
+      />
+
       <ArrivalModal
         arrivalPromptJob={arrivalPromptJob}
         setArrivalPromptJob={setArrivalPromptJob}
@@ -2684,11 +2786,18 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         onCapture={async (file) => {
           setProcessingId('processing-image');
           if (cameraConfig.target === 'arrivalPhoto') {
-            try {
-              const compressed = await resizeAndWatermarkImage(file, 1200, 0.6);
-              setArrivalPhoto(compressed.base64);
-              if (compressed.lat !== null && compressed.lng !== null) {
-                setArrivalPhotoLocation({ lat: compressed.lat, lng: compressed.lng });
+      setArrivalPhoto(photoUrl);
+      setArrivalPhotoLocation(location);
+    } else if (cameraConfig.target === 'arrivalFuelPhoto') {
+      setArrivalFuelPhoto(photoUrl);
+      setArrivalFuelPhotoLocation(location);
+    } else if (cameraConfig.target === 'pickupPhoto') {
+      setPickupPhoto(photoUrl);
+      setPickupPhotoLocation(location);
+    } else if (cameraConfig.target === 'pickupFuelPhoto') {
+      setPickupFuelPhoto(photoUrl);
+      setPickupFuelPhotoLocation(location);
+    });
               }
             } catch (e) { showAlert("❌ Error procesando foto del odómetro. Código: [ERR-PHOTO-ODOMETER]"); }
           } else if (cameraConfig.target === 'arrivalFuelPhoto') {
