@@ -231,15 +231,17 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       const updatedDraft = {
         ...currentDraft,
         arrivalMileage: arrivalMileage || '',
-        arrivalFuelLevel: arrivalFuelLevel !== undefined ? arrivalFuelLevel : (currentDraft.arrivalFuelLevel ?? null)
+        arrivalFuelLevel: arrivalFuelLevel !== undefined ? arrivalFuelLevel : (currentDraft.arrivalFuelLevel ?? null),
+        photos: {
+           ...(currentPhotos || {}),
+           fuelGauge: arrivalFuelPhoto || null
+        }
       };
 
       if (arrivalPhoto) {
-        updatedDraft.photos = { ...currentPhotos, odometer: arrivalPhoto };
+        updatedDraft.photos.odometer = arrivalPhoto;
         if (arrivalPhotoLocation) updatedDraft.photos.odometerLocation = arrivalPhotoLocation;
       }
-      updatedDraft.photos = updatedDraft.photos || {};
-      updatedDraft.photos.fuelGauge = arrivalFuelPhoto;
       if (arrivalFuelPhotoLocation) updatedDraft.photos.fuelGaugeLocation = arrivalFuelPhotoLocation;
 
       await updateDoc(doc(db, 'transport_jobs', arrivalPromptJob.id), {
