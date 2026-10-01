@@ -2809,7 +2809,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           setProcessingId('processing-image');
           if (cameraConfig.target === 'arrivalPhoto') {
             try {
-              const compressed = await resizeAndWatermarkImage(file, 1200, 0.6);
+              const compressed = await resizeAndWatermarkImage(file, 800, 0.5);
               setArrivalPhoto(compressed.base64);
               if (compressed.lat !== null && compressed.lng !== null) {
                 setArrivalPhotoLocation({ lat: compressed.lat, lng: compressed.lng });
@@ -2817,7 +2817,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             } catch (e) { showAlert("❌ Error procesando foto del odómetro. Código: [ERR-PHOTO-ODOMETER]"); }
           } else if (cameraConfig.target === 'arrivalFuelPhoto') {
             try {
-              const compressed = await resizeAndWatermarkImage(file, 1200, 0.6);
+              const compressed = await resizeAndWatermarkImage(file, 800, 0.5);
               setArrivalFuelPhoto(compressed.base64);
               if (compressed.lat !== null && compressed.lng !== null) {
                 setArrivalFuelPhotoLocation({ lat: compressed.lat, lng: compressed.lng });
@@ -2825,7 +2825,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             } catch (e) { showAlert("❌ Error procesando foto de combustible. Código: [ERR-PHOTO-FUEL]"); }
           } else if (cameraConfig.target === 'pickupPhoto') {
             try {
-              const compressed = await resizeAndWatermarkImage(file, 1200, 0.6);
+              const compressed = await resizeAndWatermarkImage(file, 800, 0.5);
               setPickupPhoto(compressed.base64);
               if (compressed.lat !== null && compressed.lng !== null) {
                 setPickupPhotoLocation({ lat: compressed.lat, lng: compressed.lng });
@@ -2833,7 +2833,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             } catch (e) { showAlert("❌ Error procesando foto del odómetro. Código: [ERR-PHOTO-ODOMETER]"); }
           } else if (cameraConfig.target === 'pickupFuelPhoto') {
             try {
-              const compressed = await resizeAndWatermarkImage(file, 1200, 0.6);
+              const compressed = await resizeAndWatermarkImage(file, 800, 0.5);
               setPickupFuelPhoto(compressed.base64);
               if (compressed.lat !== null && compressed.lng !== null) {
                 setPickupFuelPhotoLocation({ lat: compressed.lat, lng: compressed.lng });
