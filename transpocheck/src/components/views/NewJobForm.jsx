@@ -719,8 +719,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
         <div className="bg-slate-50/50 dark:bg-[#131b2f]/80 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 p-6 sm:p-10 rounded-3xl shadow-2xl relative min-h-[400px]">
            
            {/* STEP 1: TIPO DE SERVICIO */}
-           {currentStep === 1 && (
-             <div className="animate-in fade-in slide-in-from-right-8 duration-500">
+           <div className={currentStep === 1 ? "animate-in fade-in slide-in-from-right-8 duration-500" : "hidden"}>
                 <div className="flex justify-center mb-8 bg-slate-200/50 dark:bg-slate-800/50 p-1.5 rounded-2xl max-w-md mx-auto">
                   <button type="button" onClick={() => setOperationMode('traslado')} className={`flex-1 py-3 text-xs sm:text-sm font-black rounded-xl transition-all duration-300 ${operationMode === 'traslado' ? 'bg-white dark:bg-slate-900 text-blue-500 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'}`}>🚚 Traslado de Vehículo</button>
                   <button type="button" onClick={() => setOperationMode('servicio')} className={`flex-1 py-3 text-xs sm:text-sm font-black rounded-xl transition-all duration-300 ${operationMode === 'servicio' ? 'bg-white dark:bg-slate-900 text-purple-500 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'}`}>🛠️ Servicio en Terreno</button>
@@ -795,12 +794,10 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                       <p className="text-sm max-w-sm">Pulsa "Siguiente" para ingresar los detalles y ruta del servicio.</p>
                    </div>
                 )}
-             </div>
-           )}
+           </div>
 
            {/* STEP 2: VEHICULO / SERVICIO */}
-           {currentStep === 2 && (
-             <div className="animate-in fade-in slide-in-from-right-8 duration-500">
+           <div className={currentStep === 2 ? "animate-in fade-in slide-in-from-right-8 duration-500" : "hidden"}>
                {operationMode === 'traslado' ? (
                  <div className="space-y-6">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200/50 dark:border-slate-700/50 pb-4">
@@ -961,11 +958,9 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                  </div>
                )}
              </div>
-           )}
 
            {/* STEP 3: RUTA Y PROGRAMACION */}
-           {currentStep === 3 && (
-             <div className="animate-in fade-in slide-in-from-right-8 duration-500 space-y-6">
+           <div className={currentStep === 3 ? "animate-in fade-in slide-in-from-right-8 duration-500 space-y-6" : "hidden"}>
                 <h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-100 border-b border-slate-200/50 dark:border-slate-700/50 pb-4">Programación y Ruta</h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1029,11 +1024,9 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                   </div>
                 )}
              </div>
-           )}
 
            {/* STEP 4: CONDUCTORES */}
-           {currentStep === 4 && (
-             <div className="animate-in fade-in slide-in-from-right-8 duration-500 flex flex-col h-full min-h-[350px]">
+           <div className={currentStep === 4 ? "animate-in fade-in slide-in-from-right-8 duration-500 flex flex-col h-full min-h-[350px]" : "hidden"}>
                 <h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-100 mb-6">Asignar Conductores</h3>
                 
                 <div className="flex-1">
@@ -1065,7 +1058,6 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                   </div>
                 </div>
              </div>
-           )}
 
            {/* WIZARD NAVIGATION CONTROLS */}
            <div className="mt-10 pt-6 border-t border-slate-200/50 dark:border-slate-700/50 flex justify-between items-center relative z-20">
