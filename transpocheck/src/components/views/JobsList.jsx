@@ -160,7 +160,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
          if (pickupFuelPhotoLocation) updatedDraft.photos.fuelLocation = pickupFuelPhotoLocation;
       }
 
-      await updateDoc(doc(db, 'transport_jobs', pickupPromptJob.id), {
+      const payload = {
         checklist: {
           ...(pickupPromptJob.checklist || {}),
           mileage: pickupMileage || '',
@@ -175,9 +175,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           ...(pickupPromptJob.draft || {}),
           formData: updatedDraft
         }
-      });
+      };
+
+      await updateDoc(doc(db, 'transport_jobs', pickupPromptJob.id), JSON.parse(JSON.stringify(payload)));
 
       const waitMins = pickupPromptJob.arrivedPickupAt ? Math.floor((Date.now() - pickupPromptJob.arrivedPickupAt) / 60000) : 0;
+      
+      setProcessingId(null); // Unlock so updatePhase can run
       await updatePhase(pickupPromptJob, 'picked_up', { pickedUpAt: Date.now(), waitTimeMinutes: waitMins });
 
       setPickupPromptJob(null);
@@ -244,16 +248,20 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       }
       if (arrivalFuelPhotoLocation) updatedDraft.photos.fuelGaugeLocation = arrivalFuelPhotoLocation;
 
-      await updateDoc(doc(db, 'transport_jobs', arrivalPromptJob.id), {
+      const payload = {
         draft: {
           ...(arrivalPromptJob.draft || {}),
           formData: updatedDraft
         }
-      });
+      };
+
+      await updateDoc(doc(db, 'transport_jobs', arrivalPromptJob.id), JSON.parse(JSON.stringify(payload)));
 
       if (arrivalPromptJob.phase === 'prt_done') {
         notifyClient(arrivalPromptJob, 'en_ruta_destino');
       }
+      
+      setProcessingId(null); // Unlock so updatePhase can run
       await updatePhase(arrivalPromptJob, 'arrived_destination');
 
       setArrivalPromptJob(null);
