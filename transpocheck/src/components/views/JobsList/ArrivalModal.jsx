@@ -154,7 +154,7 @@ export default function ArrivalModal({
                 >
                    {processingId === 'processing-image' ? <Clock className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
                    <span className="text-xs font-bold tracking-wider uppercase">
-                      {arrivalFuelPhoto ? 'Foto Recibo/Tablero (OK)' : 'Subir Foto Recibo'}
+                      {arrivalFuelPhoto ? 'Foto Recibo/Tablero (OK)' : 'Medidor de Combustible'}
                    </span>
                 </button>
                 {arrivalFuelPhoto && (
