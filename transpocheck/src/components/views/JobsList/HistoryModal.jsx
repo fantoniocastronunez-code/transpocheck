@@ -73,9 +73,11 @@ export default function HistoryModal({
                     <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">
                        {selectedHistoryJob.checklist?.mileage || 'No registrado'}
                     </p>
-                    {selectedHistoryJob.checklist?.photos?.odometer && !selectedHistoryJob.checklist?.photos?.arrivalPhoto && (
-                        <img src={selectedHistoryJob.checklist.photos.odometer} alt="Odómetro Inicio" className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(selectedHistoryJob.checklist.photos.odometer, '_blank')} />
-                    )}
+                    {(() => {
+                       const imgUrl = selectedHistoryJob.checklist?.photos?.mileage || (selectedHistoryJob.status !== 'completed' ? selectedHistoryJob.checklist?.photos?.odometer : null);
+                       if (!imgUrl) return null;
+                       return <img src={imgUrl} alt="Odómetro Inicio" className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(imgUrl, '_blank')} />;
+                    })()}
                   </div>
                 </div>
 
@@ -86,6 +88,11 @@ export default function HistoryModal({
                     <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">
                        {selectedHistoryJob.checklist?.arrivalMileage || 'No registrado'}
                     </p>
+                    {(() => {
+                       const imgUrl = selectedHistoryJob.status === 'completed' ? selectedHistoryJob.checklist?.photos?.odometer : null;
+                       if (!imgUrl) return null;
+                       return <img src={imgUrl} alt="Odómetro Fin" className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(imgUrl, '_blank')} />;
+                    })()}
                   </div>
                 </div>
 
@@ -96,6 +103,11 @@ export default function HistoryModal({
                     <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">
                        {selectedHistoryJob.checklist?.fuelLevel !== undefined ? `${Math.round(selectedHistoryJob.checklist.fuelLevel <= 1 && selectedHistoryJob.checklist.fuelLevel !== 0 ? selectedHistoryJob.checklist.fuelLevel * 100 : selectedHistoryJob.checklist.fuelLevel)}%` : 'No registrado'}
                     </p>
+                    {(() => {
+                       const imgUrl = selectedHistoryJob.checklist?.photos?.fuel || (selectedHistoryJob.status !== 'completed' ? selectedHistoryJob.checklist?.photos?.fuelGauge : null);
+                       if (!imgUrl) return null;
+                       return <img src={imgUrl} alt="Combustible Inicio" className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(imgUrl, '_blank')} />;
+                    })()}
                   </div>
                 </div>
 
@@ -106,6 +118,11 @@ export default function HistoryModal({
                     <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">
                        {selectedHistoryJob.checklist?.arrivalFuelLevel !== undefined ? `${Math.round(selectedHistoryJob.checklist.arrivalFuelLevel <= 1 && selectedHistoryJob.checklist.arrivalFuelLevel !== 0 ? selectedHistoryJob.checklist.arrivalFuelLevel * 100 : selectedHistoryJob.checklist.arrivalFuelLevel)}%` : 'No registrado'}
                     </p>
+                    {(() => {
+                       const imgUrl = selectedHistoryJob.status === 'completed' ? selectedHistoryJob.checklist?.photos?.fuelGauge : null;
+                       if (!imgUrl) return null;
+                       return <img src={imgUrl} alt="Combustible Fin" className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(imgUrl, '_blank')} />;
+                    })()}
                   </div>
                 </div>
 
