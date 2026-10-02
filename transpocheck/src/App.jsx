@@ -106,7 +106,7 @@ function LogisticApp() {
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
   const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
-  const APP_VERSION = "v1.2.14"; // IMPORTANT: Update this version string when making changes.
+  const APP_VERSION = "v1.2.15"; // IMPORTANT: Update this version string when making changes.
   
   // VARIABLES MÁGICAS: Atrapan lo que Android nos comparte desde CamScanner o Adobe Scan
   const sharedText = searchParams.get('shared_text');
@@ -392,17 +392,24 @@ function LogisticApp() {
     return activeJob ? activeJob.id : null;
   }, [jobs, user, activeRole, currentUserEmail]);
 
+  const lastGpsTimeRef = useRef(0);
+
   useEffect(() => {
     if (!activeTrackingJobId || !("geolocation" in navigator)) return;
 
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
+        const now = Date.now();
+        // Limit updates to every 15 seconds to prevent Firestore 'resource-exhausted'
+        if (now - lastGpsTimeRef.current < 15000) return;
+        lastGpsTimeRef.current = now;
+
         const { latitude, longitude } = position.coords;
         updateDoc(doc(db, 'transport_jobs', activeTrackingJobId), {
-          liveLocation: { lat: latitude, lng: longitude, timestamp: Date.now() }
-        }).catch(e => console.warn("Error enviando GPS", e));
+          liveLocation: { lat: latitude, lng: longitude, timestamp: now }
+        }).catch(e => console.warn("Error enviando GPS [ERR-GPS-01]:", e));
       },
-      (error) => console.warn("Error GPS en vivo:", error),
+      (error) => console.warn("Error GPS en vivo [ERR-GPS-02]:", error),
       { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
     );
 
