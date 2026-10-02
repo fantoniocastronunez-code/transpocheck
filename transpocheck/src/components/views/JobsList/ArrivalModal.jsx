@@ -43,7 +43,7 @@ export default function ArrivalModal({
 
   return (
     <div className="fixed inset-0 bg-[#060b19]/90 backdrop-blur-xl flex items-center justify-center z-[200] p-4 overflow-hidden animate-in fade-in">
-      <div className="bg-slate-900/60 p-6 rounded-[2.5rem] shadow-[0_0_50px_rgba(59,130,246,0.15)] w-full max-w-sm flex flex-col relative overflow-hidden border border-slate-700/50 backdrop-blur-3xl pb-8 my-auto">
+      <div className="bg-slate-900/60 p-6 rounded-[2.5rem] shadow-[0_0_50px_rgba(59,130,246,0.15)] w-full max-w-sm flex flex-col relative overflow-y-auto max-h-[90vh] border border-slate-700/50 backdrop-blur-3xl pb-8 my-auto">
         {/* Glows */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-8 bg-blue-500/50 rounded-full blur-[40px] pointer-events-none" />
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-64 h-12 bg-blue-500/30 rounded-full blur-[40px] pointer-events-none" />
@@ -189,7 +189,7 @@ export default function ArrivalModal({
         </div>
 
         {/* Navegación inferior tipo mockup */}
-        <div className="flex justify-between items-center mt-8 relative z-10 px-2">
+        <div className="flex justify-between items-center mt-4 relative z-10 px-2">
           <button
             onClick={() => setArrivalPromptJob(null)}
             className="w-12 h-12 rounded-full bg-[#131b2e] border border-slate-700/50 text-slate-400 flex items-center justify-center hover:bg-slate-800 transition-colors shadow-[0_0_15px_rgba(0,0,0,0.5)]"
