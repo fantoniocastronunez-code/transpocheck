@@ -106,7 +106,7 @@ function LogisticApp() {
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
   const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
-  const APP_VERSION = "v1.2.12"; // IMPORTANT: Update this version string when making changes.
+  const APP_VERSION = "v1.2.13"; // IMPORTANT: Update this version string when making changes.
   
   // VARIABLES MÁGICAS: Atrapan lo que Android nos comparte desde CamScanner o Adobe Scan
   const sharedText = searchParams.get('shared_text');
@@ -153,6 +153,7 @@ function LogisticApp() {
   useEffect(() => { localStorage.setItem('app_simulatedDriver', simulatedDriverEmail); }, [simulatedDriverEmail]);
   
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [jobLimit, setJobLimit] = useState(300);
   const [showBroadcastAdmin, setShowBroadcastAdmin] = useState(false);
@@ -591,8 +592,25 @@ function LogisticApp() {
           {/* SECCIÓN 2: ACCESO EQUIPO INTERNO */}
           <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Equipo Interno</p>
-             <button onClick={() => signInWithPopup(auth, googleProvider).catch(e => alert("Error de Acceso: " + e.message))} className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold py-3.5 px-4 rounded-2xl shadow-sm hover:bg-slate-50 dark:bg-slate-900 flex items-center justify-center gap-3 transition-all text-sm">
-               <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" /> Ingresar con Google
+             <button 
+               disabled={isGoogleLoading}
+               onClick={async () => {
+                 if (isGoogleLoading) return;
+                 setIsGoogleLoading(true);
+                 try {
+                   await signInWithPopup(auth, googleProvider);
+                 } catch (e) {
+                   if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
+                     alert("Error de Acceso: " + e.message);
+                   }
+                 } finally {
+                   setIsGoogleLoading(false);
+                 }
+               }} 
+               className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold py-3.5 px-4 rounded-2xl shadow-sm hover:bg-slate-50 dark:bg-slate-900 flex items-center justify-center gap-3 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+             >
+               {isGoogleLoading ? <Clock className="w-5 h-5 animate-spin text-slate-500" /> : <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />}
+               {isGoogleLoading ? 'Conectando...' : 'Ingresar con Google'}
              </button>
           </div>
         </div>
