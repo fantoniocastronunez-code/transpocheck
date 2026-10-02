@@ -773,7 +773,7 @@ const handleDownloadPDF = async (job) => {
                         {selectedHistoryJob.checklist?.photos?.fuelGauge ? (
                             <img src={selectedHistoryJob.checklist.photos.fuelGauge} alt="Combustible" className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(selectedHistoryJob.checklist.photos.fuelGauge, '_blank')} />
                         ) : (
-                            <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">{selectedHistoryJob.checklist?.fuelLevel !== undefined ? `${selectedHistoryJob.checklist.fuelLevel}%` : 'No registrado'}</p>
+                            <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">{selectedHistoryJob.checklist?.fuelLevel !== undefined ? `${Math.round(selectedHistoryJob.checklist.fuelLevel <= 1 && selectedHistoryJob.checklist.fuelLevel !== 0 ? selectedHistoryJob.checklist.fuelLevel * 100 : selectedHistoryJob.checklist.fuelLevel)}%` : 'No registrado'}</p>
                         )}
                       </div>
                     </div>

@@ -350,6 +350,10 @@ const ChecklistInner = ({ openCamera }) => {
 
               {/* Medidor Combustible Visual */}
               <div className="relative w-full aspect-[2/1] mt-4 flex items-end justify-center">
+                {(() => {
+                   const fLevel = formData.fuelLevel ?? 0;
+                   const fuelDec = fLevel <= 1 && fLevel !== 0 ? fLevel : fLevel / 100;
+                   return (
                  <svg 
                     ref={svgFuelRef}
                     viewBox="0 0 200 110" 
@@ -369,7 +373,7 @@ const ChecklistInner = ({ openCamera }) => {
                       stroke="url(#fuelGradient)" 
                       strokeWidth="12" 
                       strokeLinecap="round" 
-                      strokeDasharray={`${Math.PI * 80 * (formData.fuelLevel ?? 0)} ${Math.PI * 80}`}
+                      strokeDasharray={`${Math.PI * 80 * fuelDec} ${Math.PI * 80}`}
                       style={{ transition: isDraggingFuel ? 'none' : 'stroke-dasharray 0.3s ease-out' }}
                     />
                     <defs>
@@ -381,7 +385,7 @@ const ChecklistInner = ({ openCamera }) => {
                     </defs>
 
                     {/* Aguja */}
-                    <g transform={`translate(100, 100) rotate(${-90 + ((formData.fuelLevel ?? 0) * 180)})`} style={{ transition: isDraggingFuel ? 'none' : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+                    <g transform={`translate(100, 100) rotate(${-90 + (fuelDec * 180)})`} style={{ transition: isDraggingFuel ? 'none' : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
                       <circle cx="0" cy="0" r="8" fill="#3b82f6" className="shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
                       <circle cx="0" cy="0" r="4" fill="#0f172a" />
                       <path d="M -3 -8 L 0 -65 L 3 -8 Z" fill="#3b82f6" />
@@ -389,13 +393,14 @@ const ChecklistInner = ({ openCamera }) => {
 
                     {/* Textos centrales */}
                     <text x="100" y="65" textAnchor="middle" fill="white" fontSize="18" fontWeight="bold">
-                      {formData.fuelLevel === 0 ? 'Vacío' : formData.fuelLevel === 1 ? 'Full' : `${Math.round((formData.fuelLevel ?? 0) * 100)}%`}
+                      {fuelDec === 0 ? 'Vacío' : fuelDec === 1 ? 'Full' : `${Math.round(fuelDec * 100)}%`}
                     </text>
                     <text x="100" y="80" textAnchor="middle" fill="#64748b" fontSize="10">remaining</text>
                     
                     <text x="15" y="115" textAnchor="middle" fill="#ec4899" fontSize="12" fontWeight="bold">E</text>
                     <text x="185" y="115" textAnchor="middle" fill="#06b6d4" fontSize="12" fontWeight="bold">F</text>
                  </svg>
+                 );})()}
               </div>
 
               {/* Botones de fotos */}

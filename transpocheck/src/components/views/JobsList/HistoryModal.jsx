@@ -94,7 +94,7 @@ export default function HistoryModal({
                   <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Comb. Inicio</p>
                   <div className="flex flex-col gap-1.5 mt-0.5">
                     <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">
-                       {selectedHistoryJob.checklist?.fuelLevel !== undefined ? `${Math.round(selectedHistoryJob.checklist.fuelLevel * 100)}%` : 'No registrado'}
+                       {selectedHistoryJob.checklist?.fuelLevel !== undefined ? `${Math.round(selectedHistoryJob.checklist.fuelLevel <= 1 && selectedHistoryJob.checklist.fuelLevel !== 0 ? selectedHistoryJob.checklist.fuelLevel * 100 : selectedHistoryJob.checklist.fuelLevel)}%` : 'No registrado'}
                     </p>
                   </div>
                 </div>
@@ -104,7 +104,7 @@ export default function HistoryModal({
                   <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Comb. Fin</p>
                   <div className="flex flex-col gap-1.5 mt-0.5">
                     <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">
-                       {selectedHistoryJob.checklist?.arrivalFuelLevel !== undefined ? `${Math.round(selectedHistoryJob.checklist.arrivalFuelLevel * 100)}%` : 'No registrado'}
+                       {selectedHistoryJob.checklist?.arrivalFuelLevel !== undefined ? `${Math.round(selectedHistoryJob.checklist.arrivalFuelLevel <= 1 && selectedHistoryJob.checklist.arrivalFuelLevel !== 0 ? selectedHistoryJob.checklist.arrivalFuelLevel * 100 : selectedHistoryJob.checklist.arrivalFuelLevel)}%` : 'No registrado'}
                     </p>
                   </div>
                 </div>

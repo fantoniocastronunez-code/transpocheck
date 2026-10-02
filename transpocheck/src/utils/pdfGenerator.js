@@ -151,7 +151,8 @@ export const buildPDFDoc = async (job, isPublic = false, drivers = []) => {
 
         currentY = drawSectionTitle(`${sectionNum}. Recepcion y Estado`, currentY);
         const getDocStatus = (docKey) => { const isOk = job.checklist?.docs?.[docKey]; const expDate = job.checklist?.docsExpiry?.[docKey]; if (!isOk) return 'FALTA'; if (expDate) { const [y, m] = expDate.split('-'); const monthNames = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"]; const monthStr = monthNames[parseInt(m, 10) - 1] || m; return `AL DIA (Vence: ${monthStr} ${y})`; } return 'AL DIA'; };
-        const drawFuelMeter = (x, y, level, title) => {
+        const drawFuelMeter = (x, y, rawLevel, title) => {
+          const level = rawLevel <= 1 && rawLevel !== 0 ? Math.round(rawLevel * 100) : Math.round(rawLevel);
           docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor);
           docPDF.text(title, x, y);
           docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
