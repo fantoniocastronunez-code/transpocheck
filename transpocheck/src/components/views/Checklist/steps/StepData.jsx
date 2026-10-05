@@ -3,7 +3,7 @@ import { Search, Clock, MapPin, CheckCircle, DollarSign } from 'lucide-react';
 import { useChecklist } from '../ChecklistContext';
 import { useDejaVu } from '../hooks/useDejaVu';
 import { db } from '../../../../firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import DejaVuModal from '../components/DejaVuModal';
 
 export const StepData = () => {
@@ -133,7 +133,16 @@ export const StepData = () => {
           {(!formData.prtArrivalTime && formData.rtStatus === 'pendiente') && (
             <button 
               type="button" 
-              onClick={() => setF('prtArrivalTime', Date.now())} 
+              onClick={async () => {
+                 setF('prtArrivalTime', Date.now());
+                 if (job?.phase === 'picked_up') {
+                   try {
+                     await updateDoc(doc(db, 'transport_jobs', job.id), { phase: 'arrived_prt' });
+                   } catch (e) {
+                     console.error("[ERR-PRT-01]", e);
+                   }
+                 }
+              }} 
               className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black py-4 rounded-2xl shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 transition-all active:scale-95"
             >
               <MapPin className="w-5 h-5" /> LLEGUÉ A LA PRT (Iniciar Tiempo)

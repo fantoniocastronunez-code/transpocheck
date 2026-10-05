@@ -652,6 +652,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         // eslint-disable-next-line react-hooks/purity
         if (!job.arrivedDestinationAt) finalExtra.arrivedDestinationAt = Date.now();
         finalExtra.drivenDistance = await calculateJobDistance(job);
+        
+        if (phase === 'arrived_prt' && (!job.checklist || !job.checklist.prtArrivalTime)) {
+            finalExtra['checklist.prtArrivalTime'] = Date.now();
+        }
       }
 
       await updateDoc(doc(db, 'transport_jobs', job.id), { phase, ...finalExtra });
