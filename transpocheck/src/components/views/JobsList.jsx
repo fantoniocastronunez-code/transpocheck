@@ -26,6 +26,7 @@ import { formatDateDisplay, analyzeJobStatus, generateStandardFileName, generate
 
 export default function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, onNewJob, db, currentUserEmail, showAlert, showConfirm, allClientsList, onLoadMore, vehicles }) {
   const [menuOpenId, setMenuOpenId] = useState(null);
+  const attemptedReschedules = React.useRef(new Set());
   const [auditMode, setAuditMode] = useState(false); // <-- NUEVO: Estado del switch de auditoría
   const [jobToFail, setJobToFail] = useState(null);
   const [prtPromptJob, setPrtPromptJob] = useState(null);
@@ -369,12 +370,22 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       const schedDate = new Date(y, m - 1, d);
       schedDate.setHours(0, 0, 0, 0);
 
+      // Si ya intentamos reprogramarlo y falló/pasó, no volvemos a intentarlo para evitar spam
+      if (attemptedReschedules.current.has(j.id)) return false;
+
       return schedDate.getTime() < todayTime.getTime();
     });
 
     lateJobs.forEach(job => {
+      attemptedReschedules.current.add(job.id);
       updateDoc(doc(db, 'transport_jobs', job.id), { scheduledDate: todayStr })
-        .catch(e => console.error("Error auto-reprogramando:", e));
+        .catch(e => {
+          if (e.code === 'not-found') {
+            console.warn(`[ERR-JOBS-01] Documento no encontrado al auto-reprogramar: ${job.id}`);
+          } else {
+            console.error("[ERR-JOBS-02] Error auto-reprogramando:", e);
+          }
+        });
     });
   }, [jobs, db, role]);
   // ----------------------------------------------------------
