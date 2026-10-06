@@ -471,10 +471,10 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
            </div>
          )}
          
-           <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex bg-black/60 backdrop-blur-md p-1 rounded-full border border-white/20 z-20 shadow-xl">
-             <button onClick={() => setZoomLevel(0.5)} className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${activeZoomLabel === 0.5 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>0.5x</button>
-             <button onClick={() => setZoomLevel(1)} className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${activeZoomLabel === 1 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>1x</button>
-             <button onClick={() => setZoomLevel(2)} className={`w-12 h-10 rounded-full text-sm font-black transition-all duration-300 ${activeZoomLabel === 2 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>2x</button>
+           <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-0.5 bg-black/60 backdrop-blur-md p-1.5 rounded-full border border-white/20 z-20 shadow-xl">
+             <button onClick={() => setZoomLevel(0.5)} className={`w-11 h-11 rounded-full text-sm font-black transition-all duration-300 ${activeZoomLabel === 0.5 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>0.5x</button>
+             <button onClick={() => setZoomLevel(1)} className={`w-11 h-11 rounded-full text-sm font-black transition-all duration-300 ${activeZoomLabel === 1 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>1x</button>
+             <button onClick={() => setZoomLevel(2)} className={`w-11 h-11 rounded-full text-sm font-black transition-all duration-300 ${activeZoomLabel === 2 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)]' : 'text-slate-300 hover:text-white'}`}>2x</button>
            </div>
       </div>
       
