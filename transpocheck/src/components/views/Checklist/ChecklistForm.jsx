@@ -105,9 +105,9 @@ const ChecklistInner = ({ openCamera }) => {
     }
 
     // 4. Signature (3 points)
-    if (formData.clientName && String(formData.clientName).trim() !== '') earned += 1;
-    if (formData.clientRut && String(formData.clientRut).trim() !== '') earned += 1;
-    if (formData.clientSignature) earned += 1;
+    if (formData.receiverName && String(formData.receiverName).trim() !== '') earned += 1;
+    if (formData.receiverRut && String(formData.receiverRut).trim() !== '') earned += 1;
+    if (formData.signatureData) earned += 1;
 
     return Math.min(100, Math.round((earned / total) * 100));
   };
