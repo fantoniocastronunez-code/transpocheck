@@ -32,6 +32,7 @@ const handleImageError = (e, name) => {
 
 const CustomClientSelector = ({ value, onChange, clients, placeholder }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -42,11 +43,13 @@ const CustomClientSelector = ({ value, onChange, clients, placeholder }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const filteredClients = clients.filter(c => c.toLowerCase().includes(searchTerm.toLowerCase()));
+
   return (
     <div className="relative w-full" ref={dropdownRef}>
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => { setIsOpen(!isOpen); setSearchTerm(''); }}
         className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 outline-none focus:border-blue-500 flex justify-between items-center transition-colors shadow-sm"
       >
         <div className="flex items-center gap-3 truncate">
@@ -70,22 +73,39 @@ const CustomClientSelector = ({ value, onChange, clients, placeholder }) => {
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden max-h-[40vh] overflow-y-auto animate-in fade-in slide-in-from-top-2">
-          <button type="button" onClick={() => { onChange(""); setIsOpen(false); }} className="w-full text-left p-3 hover:bg-slate-50 dark:hover:bg-slate-700 text-sm font-bold text-slate-400 dark:text-slate-500 transition-colors border-b border-slate-50 dark:border-slate-700">
+        <div className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden max-h-[40vh] overflow-y-auto animate-in fade-in slide-in-from-top-2 flex flex-col">
+          <div className="p-2 border-b border-slate-100 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-800 z-10">
+            <input 
+              type="text" 
+              placeholder="Buscar cliente..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-slate-100 dark:bg-slate-900 border-none p-2 rounded-lg text-sm font-bold text-slate-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500"
+              autoFocus
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+          <button type="button" onClick={() => { onChange(""); setIsOpen(false); }} className="w-full text-left p-3 hover:bg-slate-50 dark:hover:bg-slate-700 text-sm font-bold text-slate-400 dark:text-slate-500 transition-colors border-b border-slate-50 dark:border-slate-700 shrink-0">
             Ninguno / Limpiar selección
           </button>
           
-          {clients.map(c => (
-            <button key={c} type="button" onClick={() => { onChange(c); setIsOpen(false); }} className={`w-full flex items-center gap-3 p-3 hover:bg-blue-50 dark:hover:bg-slate-700/50 transition-colors text-left ${value === c ? 'bg-blue-50 dark:bg-slate-700/50' : ''}`}>
-              <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm">
-                <img src={getLogoPath(c)} alt={c} className="w-full h-full object-contain p-1 bg-white" onError={(e) => handleImageError(e, c)} />
-              </div>
-              <span className={`text-sm font-bold flex-1 truncate ${value === c ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'}`}>{c}</span>
-              {value === c && <CheckCircle className="w-4 h-4 text-blue-500 shrink-0" />}
-            </button>
-          ))}
+          <div className="overflow-y-auto">
+            {filteredClients.map(c => (
+              <button key={c} type="button" onClick={() => { onChange(c); setIsOpen(false); }} className={`w-full flex items-center gap-3 p-3 hover:bg-blue-50 dark:hover:bg-slate-700/50 transition-colors text-left ${value === c ? 'bg-blue-50 dark:bg-slate-700/50' : ''}`}>
+                <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm">
+                  <img src={getLogoPath(c)} alt={c} className="w-full h-full object-contain p-1 bg-white" onError={(e) => handleImageError(e, c)} />
+                </div>
+                <span className={`text-sm font-bold flex-1 truncate ${value === c ? 'text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-200'}`}>{c}</span>
+                {value === c && <CheckCircle className="w-4 h-4 text-blue-500 shrink-0" />}
+              </button>
+            ))}
 
-          <button type="button" onClick={() => { onChange("OTRO"); setIsOpen(false); }} className="w-full flex items-center gap-3 p-4 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left border-t border-slate-100 dark:border-slate-700">
+            {filteredClients.length === 0 && (
+              <div className="p-4 text-center text-sm font-bold text-slate-400">No se encontraron clientes</div>
+            )}
+          </div>
+
+          <button type="button" onClick={() => { onChange("OTRO"); setIsOpen(false); }} className="w-full flex items-center gap-3 p-4 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left border-t border-slate-100 dark:border-slate-700 shrink-0">
             <div className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-xs font-black shadow-sm ${getBadgeColor('OTRO')}`}>+</div>
             <span className="text-sm font-bold text-slate-700 dark:text-slate-200 flex-1">Otro (Ingreso manual)</span>
           </button>
