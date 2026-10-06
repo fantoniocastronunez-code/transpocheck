@@ -23,7 +23,7 @@ const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600", isProc
   const resetSlider = () => {
     currentLeft.current = 0;
     if (buttonRef.current) buttonRef.current.style.transform = `translateX(0px)`;
-    if (fillRef.current) fillRef.current.style.width = `24px`;
+    if (fillRef.current) fillRef.current.style.width = `48px`;
   };
 
   if (isProcessing) {
@@ -59,7 +59,7 @@ const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600", isProc
 
     // Actualización DIRECTA al DOM (¡60 FPS sin re-renderizar React!)
     if (buttonRef.current) buttonRef.current.style.transform = `translateX(${newLeft}px)`;
-    if (fillRef.current) fillRef.current.style.width = `${newLeft + 24}px`;
+    if (fillRef.current) fillRef.current.style.width = `${newLeft + 48}px`;
 
     // Disparo inmediato si llega al final
     if (newLeft >= maxLeft * 0.90) {
@@ -91,7 +91,7 @@ const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600", isProc
     setIsConfirmed(true);
     
     if (buttonRef.current) buttonRef.current.style.transform = `translateX(${maxLeft}px)`;
-    if (fillRef.current) fillRef.current.style.width = `${maxLeft + 24}px`;
+    if (fillRef.current) fillRef.current.style.width = `${maxLeft + 48}px`;
     
     if (navigator.vibrate) { try { navigator.vibrate([30, 40, 30]); } catch(e){} }
     onConfirm();
@@ -110,8 +110,8 @@ const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600", isProc
       {/* Relleno de color que crece */}
       <div 
         ref={fillRef}
-        className={`absolute top-0 left-0 h-full ${colorClass}`} 
-        style={{ width: '24px', opacity: isConfirmed ? 1 : 0 }} 
+        className={`absolute top-0 left-0 h-full rounded-full transition-opacity ${colorClass}`} 
+        style={{ width: '48px', opacity: isConfirmed ? 1 : 1 }} 
       />
 
       {/* Botón arrastrable */}
