@@ -151,15 +151,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         fuelLevel: pickupFuelLevel !== undefined ? pickupFuelLevel : (currentDraft.fuelLevel ?? null)
       };
 
-      if (pickupPhoto) {
-        updatedDraft.photos = { ...currentPhotos, mileage: pickupPhoto };
-        if (pickupPhotoLocation) updatedDraft.photos.mileageLocation = pickupPhotoLocation;
-      }
-      updatedDraft.photos = updatedDraft.photos || {};
-      if (pickupFuelPhoto) {
-         updatedDraft.photos.fuel = pickupFuelPhoto;
-         if (pickupFuelPhotoLocation) updatedDraft.photos.fuelLocation = pickupFuelPhotoLocation;
-      }
+      // Guardamos la ubicación en el draft, pero NO duplicamos el base64 pesado para evitar exceder 1MB
+      updatedDraft.photos = { ...currentPhotos };
+      if (pickupPhotoLocation) updatedDraft.photos.mileageLocation = pickupPhotoLocation;
+      if (pickupFuelPhotoLocation) updatedDraft.photos.fuelLocation = pickupFuelPhotoLocation;
+      // Borramos duplicados si existían previamente
+      delete updatedDraft.photos.mileage;
+      delete updatedDraft.photos.fuel;
 
       const payload = {
         checklist: {
