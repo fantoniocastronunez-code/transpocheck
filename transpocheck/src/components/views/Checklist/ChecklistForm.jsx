@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Mic, Loader2, Save, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, CheckCircle } from 'lucide-react';
 import { ChecklistProvider, useChecklist } from './ChecklistContext';
 import { useChecklistSync } from './hooks/useChecklistSync';
-import { useVoiceAssistant } from './hooks/useVoiceAssistant';
 import InAppCamera from '../../ui/InAppCamera';
 
 import { TabsHeader } from './components/TabsHeader';
@@ -57,8 +56,6 @@ const ChecklistInner = ({ openCamera }) => {
     job, isQuick, formData, setFormData, step, setStep, setIsDraftLoaded,
     defaultData, matchedVehicle, drivers, currentUserEmail, uploadImageToStorage, pushSyncTask, showAlert
   });
-
-  const { isListening, isInterpreting, toggleVoiceAssistant } = useVoiceAssistant(formData, (f, v) => setFormData(p => ({ ...p, [f]: v })), showAlert);
 
   const handlePreSubmit = () => {
     if (job?.tripType === 'revision' && formData.rtStatus === 'pendiente') {
@@ -241,21 +238,6 @@ const ChecklistInner = ({ openCamera }) => {
           )}
         </div>
 
-        {/* BOTÓN ASISTENTE DE VOZ */}
-        {!isSimple && (
-          <button
-            type="button"
-            onClick={toggleVoiceAssistant}
-            className={`p-2 sm:p-2.5 rounded-xl flex items-center justify-center transition-all shadow-sm border ${isListening
-                ? 'bg-red-500 hover:bg-red-600 text-white border-red-500 shadow-red-500/30 animate-pulse'
-                : isInterpreting
-                  ? 'bg-amber-500 text-white border-amber-500 animate-pulse'
-                  : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800 hover:bg-indigo-200 dark:hover:bg-indigo-800/50'
-              }`}
-          >
-            {isInterpreting ? <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin" /> : <Mic className="w-5 h-5 sm:w-6 sm:h-6" />}
-          </button>
-        )}
       </div>
 
       <TabsHeader />
