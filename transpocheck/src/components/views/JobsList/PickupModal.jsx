@@ -42,11 +42,11 @@ export default function PickupModal({
   const isServiceJob = pickupPromptJob?.tripType === 'simple';
 
   return (
-    <div className="fixed inset-0 bg-[#060b19]/90 backdrop-blur-xl flex items-center justify-center z-[200] p-4 overflow-hidden animate-in fade-in">
-      <div className="bg-slate-900/60 p-6 rounded-[2.5rem] shadow-[0_0_50px_rgba(59,130,246,0.15)] w-full max-w-sm flex flex-col relative overflow-y-auto max-h-[75vh] border border-slate-700/50 backdrop-blur-3xl pb-8 my-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+    <div className="fixed inset-0 bg-[#060b19]/95 backdrop-blur-sm flex items-center justify-center z-[200] p-4 overflow-hidden animate-in fade-in">
+      <div className="bg-slate-900/80 p-6 rounded-[2.5rem] shadow-[0_0_50px_rgba(59,130,246,0.15)] w-full max-w-sm flex flex-col relative overflow-y-auto max-h-[75vh] border border-slate-700/50 backdrop-blur-md pb-8 my-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Glows */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-8 bg-blue-500/50 rounded-full blur-[40px] pointer-events-none" />
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-64 h-12 bg-blue-500/30 rounded-full blur-[40px] pointer-events-none" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-8 bg-blue-500/40 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-64 h-12 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
 
         <h3 className="text-lg font-bold text-white mb-6 mt-2 tracking-wide text-center">
           {isServiceJob ? 'Inicio de Servicio' : 'Combustible y Kilometraje Inicial'}
