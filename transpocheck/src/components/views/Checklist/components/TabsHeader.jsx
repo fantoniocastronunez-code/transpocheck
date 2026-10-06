@@ -27,14 +27,14 @@ export const TabsHeader = () => {
     <div className="sticky top-[64px] sm:top-[80px] z-50 bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 py-5 transition-all w-full overflow-hidden">
        <div className="max-w-md mx-auto w-full px-4 sm:px-6 relative pb-6 sm:pb-4">
           
-          {/* Progress Line Background */}
-          <div className="absolute top-4 left-8 right-8 h-1 bg-slate-200 dark:bg-slate-800 rounded-full z-0"></div>
-          
-          {/* Active Progress Line */}
-          <div 
-             className="absolute top-4 left-8 h-1 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full z-0 transition-all duration-500 ease-in-out" 
-             style={{ width: `calc(${((step - 1) / (totalSteps - 1)) * 100}% - 2.5rem)` }}
-          ></div>
+          {/* Progress Track Container */}
+          <div className="absolute top-4 left-8 sm:left-10 right-8 sm:right-10 h-1 z-0">
+             <div className="absolute inset-0 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
+             <div 
+               className="absolute top-0 left-0 bottom-0 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full transition-all duration-500 ease-in-out" 
+               style={{ width: `${((step - 1) / (totalSteps - 1)) * 100}%` }}
+             ></div>
+          </div>
 
           <div className="relative z-10 flex justify-between items-center w-full">
             {tabs.map((t, idx) => {
