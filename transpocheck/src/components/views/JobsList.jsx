@@ -2423,21 +2423,21 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                   </div>
                 </button>
 
-                <button onClick={() => { setDupMode('continue'); setDupDestination(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'continue' ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/30' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-purple-200 dark:border-purple-800/50'}`}>
+                <div onClick={() => { if(dupMode !== 'continue') { setDupMode('continue'); setDupDestination(''); } }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 cursor-pointer ${dupMode === 'continue' ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/30' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-purple-200 dark:border-purple-800/50'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${dupMode === 'continue' ? 'border-purple-600' : 'border-slate-300 dark:border-slate-600'}`}>
                     {dupMode === 'continue' && <div className="w-2 h-2 bg-purple-600 rounded-full"></div>}
                   </div>
-                  <div className="w-full overflow-hidden">
+                  <div className="w-full min-w-0">
                     <p className={`font-extrabold text-sm ${dupMode === 'continue' ? 'text-purple-800 dark:text-purple-300' : 'text-slate-700 dark:text-slate-300'}`}>Continuar a Otro Destino</p>
                     {dupMode === 'continue' ? (
-                      <div className="mt-2 animate-in fade-in slide-in-from-top-1 w-full">
+                      <div className="mt-2 animate-in fade-in slide-in-from-top-1 w-full relative z-[100]">
                         <AutocompleteInput name="dupDestination" options={destinationOptions} value={dupDestination} onChange={e => setDupDestination(e.target.value.toUpperCase())} placeholder="Escribe el nuevo destino..." className="w-full bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-800/50 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-400 font-bold" />
                       </div>
                     ) : (
                       <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">{dupPromptJob.tripType === 'revision' ? 'PRT' : (dupPromptJob.destination || dupPromptJob.origin)} ➔ ???</p>
                     )}
                   </div>
-                </button>
+                </div>
 
                 <button onClick={() => setDupMode('scratch')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'scratch' ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/30' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-purple-200 dark:border-purple-800/50'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${dupMode === 'scratch' ? 'border-purple-600' : 'border-slate-300 dark:border-slate-600'}`}>
