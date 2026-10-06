@@ -478,7 +478,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
 
     // NUEVO: BUSCAR DESTINO EN EL DIRECTORIO
     const destinationValue = jobData.destination?.trim().toLowerCase();
-    if (destinationValue) {
+    if (destinationValue && !destinationValue.includes('->') && !destinationValue.includes('-')) {
        const matchedDest = directoryList.find(d => d.placeName.trim().toLowerCase() === destinationValue);
        if (matchedDest) {
           jobData.destContactName = matchedDest.contactName || '';
@@ -680,6 +680,39 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     }
   };
 
+  const handleDeleteBrandOption = async (optName) => {
+    const isConfirmed = await showConfirmDialog(`¿Estás seguro que deseas eliminar la marca "${optName}" de las sugerencias?`, "Eliminar Marca");
+    if (!isConfirmed) return;
+    try {
+       const { updateDoc, doc, deleteField } = await import('firebase/firestore');
+       const toUpdate = vehicles.filter(v => v.brand?.toUpperCase().trim() === optName.toUpperCase().trim());
+       for(let v of toUpdate) {
+          await updateDoc(doc(db, 'vehicles', v.id), { brand: deleteField() });
+       }
+       showAlert(`✅ Marca "${optName}" eliminada de las sugerencias.`);
+    } catch(e) {
+       showAlert("❌ Error al eliminar la marca.");
+    }
+  };
+
+  const handleDeleteModelOption = async (optName) => {
+    const isConfirmed = await showConfirmDialog(`¿Estás seguro que deseas eliminar el modelo "${optName}" de las sugerencias?`, "Eliminar Modelo");
+    if (!isConfirmed) return;
+    try {
+       const { updateDoc, doc, deleteField } = await import('firebase/firestore');
+       const toUpdate = vehicles.filter(v => v.model?.toUpperCase().trim() === optName.toUpperCase().trim());
+       for(let v of toUpdate) {
+          await updateDoc(doc(db, 'vehicles', v.id), { model: deleteField() });
+       }
+       showAlert(`✅ Modelo "${optName}" eliminado de las sugerencias.`);
+    } catch(e) {
+       showAlert("❌ Error al eliminar el modelo.");
+    }
+  };
+
+  const brandOptions = [...new Set(vehicles.map(v => v.brand?.toUpperCase().trim()).filter(Boolean))].sort();
+  const modelOptions = [...new Set(vehicles.filter(v => !brand || v.brand?.toUpperCase().trim() === brand?.toUpperCase().trim()).map(v => v.model?.toUpperCase().trim()).filter(Boolean))].sort();
+
   const destinationOptions = [
     ...directoryList.map(dir => dir.placeName),
     ...(allClientsList || [])
@@ -832,20 +865,13 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                           <input value={vin} onChange={e=>handleVehicleSearch(e.target.value.replace(/[^a-zA-Z0-9]/g, ''), 'vin')} maxLength="17" type="text" placeholder="17 CARACTERES" autoComplete="off" className={`w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl uppercase outline-none font-black transition-all ${isSearchingVehicle ? 'border-blue-400 ring-2 ring-blue-500/20' : vehicleFoundStatus === 'found' ? 'border-green-500/50 text-green-600 dark:text-green-400' : 'focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-slate-800 dark:text-slate-100'}`} />
                        </div>
 
-                       <datalist id="brands-list-2">
-                         {[...new Set(vehicles.map(v => v.brand?.toUpperCase().trim()).filter(Boolean))].sort().map((b, i) => <option key={i} value={b} />)}
-                       </datalist>
-                       <datalist id="models-list-2">
-                         {[...new Set(vehicles.filter(v => v.brand?.toUpperCase().trim() === brand?.toUpperCase().trim()).map(v => v.model?.toUpperCase().trim()).filter(Boolean))].sort().map((m, i) => <option key={i} value={m} />)}
-                       </datalist>
-
-                       <div className="space-y-1">
+                       <div className="space-y-1 z-[990] relative">
                           <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider ml-1">Marca</label>
-                          <input value={brand} onChange={e=>setBrand(e.target.value.toUpperCase())} list="brands-list-2" type="text" placeholder="Ej: TOYOTA" autoComplete="off" className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl uppercase outline-none font-black text-slate-800 dark:text-slate-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" />
+                          <AutocompleteInput name="brand" options={brandOptions} onDeleteOption={handleDeleteBrandOption} value={brand} onChange={e=>setBrand(e.target.value?.toUpperCase() || '')} placeholder="Ej: TOYOTA" className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl uppercase outline-none font-black text-slate-800 dark:text-slate-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" />
                        </div>
-                       <div className="space-y-1">
+                       <div className="space-y-1 z-[980] relative">
                           <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider ml-1">Modelo</label>
-                          <input value={model} onChange={e=>setModel(e.target.value.toUpperCase())} list="models-list-2" type="text" placeholder="Ej: HILUX" autoComplete="off" className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl uppercase outline-none font-black text-slate-800 dark:text-slate-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" />
+                          <AutocompleteInput name="model" options={modelOptions} onDeleteOption={handleDeleteModelOption} value={model} onChange={e=>setModel(e.target.value?.toUpperCase() || '')} placeholder="Ej: HILUX" className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl uppercase outline-none font-black text-slate-800 dark:text-slate-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" />
                        </div>
                        
                        <div className="space-y-1 sm:col-span-2">

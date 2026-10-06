@@ -926,6 +926,19 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     setProcessingId(`dup-${dupPromptJob.id}`);
 
     try {
+      if (dupMode === 'scratch') {
+         localStorage.setItem('app_newJobDraft', JSON.stringify({
+            brand: dupPromptJob.brand,
+            model: dupPromptJob.model,
+            plate: dupPromptJob.plate,
+            vin: dupPromptJob.vin,
+            vehicleType: dupPromptJob.vehicleType
+         }));
+         if (props.onNewJob) props.onNewJob('traslado');
+         setDupPromptJob(null);
+         return;
+      }
+
       let origin = dupPromptJob.origin || '';
       let destination = dupPromptJob.destination || '';
 
@@ -1018,16 +1031,18 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         const existingPhotos = draftData.photos || jobToClose.checklist?.photos || {};
 
         const mergedChecklist = {
-          client: jobToClose.client || '',
-          brand: jobToClose.brand || '',
-          model: jobToClose.model || '',
-          plateOrVin: jobToClose.plate || jobToClose.vin || jobToClose.associatedPlate || '',
-          origin: jobToClose.origin || '',
-          destination: jobToClose.destination || '',
-          fuelLevel: draftData.fuelLevel || 50,
+          ...(jobToClose.checklist || {}),
+          ...(jobToClose.draft?.formData || {}),
+          client: jobToClose.client || draftData.client || jobToClose.checklist?.client || '',
+          brand: jobToClose.brand || draftData.brand || jobToClose.checklist?.brand || '',
+          model: jobToClose.model || draftData.model || jobToClose.checklist?.model || '',
+          plateOrVin: jobToClose.plate || jobToClose.vin || jobToClose.associatedPlate || draftData.plateOrVin || jobToClose.checklist?.plateOrVin || '',
+          origin: jobToClose.origin || draftData.origin || jobToClose.checklist?.origin || '',
+          destination: jobToClose.destination || draftData.destination || jobToClose.checklist?.destination || '',
+          fuelLevel: draftData.fuelLevel || jobToClose.checklist?.fuelLevel || 50,
           photos: existingPhotos,
-          docs: draftData.docs || {},
-          observations: draftData.observations || 'Entrega masiva de flota.',
+          docs: draftData.docs || jobToClose.checklist?.docs || {},
+          observations: draftData.observations || jobToClose.checklist?.observations || 'Entrega masiva de flota.',
           receiverName: bulkReceiverName,
           receiverRut: bulkReceiverRut,
           noReception: false,
@@ -2423,9 +2438,20 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                     )}
                   </div>
                 </button>
+
+                <button onClick={() => setDupMode('scratch')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'scratch' ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/30' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-purple-200 dark:border-purple-800/50'}`}>
+                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${dupMode === 'scratch' ? 'border-purple-600' : 'border-slate-300 dark:border-slate-600'}`}>
+                    {dupMode === 'scratch' && <div className="w-2 h-2 bg-purple-600 rounded-full"></div>}
+                  </div>
+                  <div>
+                    <p className={`font-extrabold text-sm ${dupMode === 'scratch' ? 'text-purple-800 dark:text-purple-300' : 'text-slate-700 dark:text-slate-300'}`}>Crear desde 0 con datos de vehículo</p>
+                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">Abre el formulario con los datos pre-cargados</p>
+                  </div>
+                </button>
               </div>
 
               {/* ASIGNACIÓN DE CONDUCTORES (MÚLTIPLE) */}
+              {dupMode !== 'scratch' && (
               <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Asignar a Conductores</label>
                 <div className="bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden">
@@ -2459,6 +2485,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                   </div>
                 </div>
               </div>
+              )}
 
             </div>
 
