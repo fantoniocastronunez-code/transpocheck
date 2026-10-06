@@ -104,10 +104,10 @@ export const StepData = () => {
               type="checkbox" 
               checked={formData.isNewVehicle || false} 
               onChange={e => setF('isNewVehicle', e.target.checked)} 
-              className="peer sr-only"
+              className="sr-only"
             />
-            <div className="w-6 h-6 bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-600 rounded-lg peer-checked:bg-blue-500 peer-checked:border-blue-500 transition-all flex items-center justify-center shadow-inner">
-              <CheckCircle className={`w-4 h-4 text-white scale-0 peer-checked:scale-100 transition-transform`} />
+            <div className={`w-6 h-6 border-2 rounded-lg transition-all flex items-center justify-center shadow-inner ${formData.isNewVehicle ? 'bg-blue-500 border-blue-500' : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600'}`}>
+              <CheckCircle className={`w-4 h-4 text-white transition-transform ${formData.isNewVehicle ? 'scale-100' : 'scale-0'}`} />
             </div>
           </div>
           <div className="flex flex-col">
