@@ -57,6 +57,46 @@ const ChecklistInner = ({ openCamera }) => {
     defaultData, matchedVehicle, drivers, currentUserEmail, uploadImageToStorage, pushSyncTask, showAlert
   });
 
+  const calculateProgress = () => {
+    let earned = 0;
+    const total = 18;
+
+    const checkField = (val) => {
+      if (val && String(val).trim() !== '') earned += 1;
+    };
+
+    checkField(formData.plateOrVin);
+    checkField(formData.brand);
+    checkField(formData.model);
+    checkField(formData.kms);
+    
+    if (formData.fuelLevel !== undefined && formData.fuelLevel !== null) earned += 1;
+
+    const checkDoc = (id) => {
+       if (formData.docs?.[id] || formData.docsPhotos?.[id]) earned += 1;
+    };
+    checkDoc('permiso');
+    checkDoc('soap');
+    checkDoc('revTecnica');
+    checkDoc('gases');
+
+    const checkBasePhoto = (id) => {
+       if (formData.basePhotos?.[id]) earned += 1;
+    };
+    checkBasePhoto('frente');
+    checkBasePhoto('costado_izquierdo');
+    checkBasePhoto('parte_trasera');
+    checkBasePhoto('costado_derecho');
+    checkBasePhoto('techo');
+    checkBasePhoto('interior');
+
+    checkField(formData.clientName);
+    checkField(formData.clientRut);
+    checkField(formData.clientSignature);
+
+    return Math.min(100, Math.round((earned / total) * 100));
+  };
+
   const handlePreSubmit = () => {
     if (job?.tripType === 'revision' && formData.rtStatus === 'pendiente') {
       return showAlert("⚠️ Debes registrar un resultado final para la Revisión Técnica antes de cerrar.");
@@ -193,7 +233,7 @@ const ChecklistInner = ({ openCamera }) => {
 
     if (pushSyncTask) {
       const syncTask = pushSyncTask(`Sync ${job?.plate || job?.vin || 'Vehículo'}`);
-      showAlert("✅ Subida iniciada en segundo plano. Puedes continuar usando la app.");
+      showAlert(`✅ ¡Completaste el ${calculateProgress()}% del Checklist! Subida en 2do plano iniciada.`);
       onComplete();
       
       // Iniciar proceso sin await
@@ -201,7 +241,7 @@ const ChecklistInner = ({ openCamera }) => {
     } else {
       try {
         await runBackgroundProcess(null, setUploadProgress);
-        showAlert("✅ Checklist Guardado Correctamente.");
+        showAlert(`✅ ¡Completaste el ${calculateProgress()}% del Checklist! Guardado Correctamente.`);
         onComplete();
       } catch(err) {
         console.error("[ERR-SAVE-02] Error global al guardar checklist:", err);
@@ -239,6 +279,22 @@ const ChecklistInner = ({ openCamera }) => {
         </div>
 
       </div>
+
+      {/* BARRA DE PROGRESO */}
+      {!isSimple && (
+        <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200/50 dark:border-slate-800/50">
+          <div className="flex justify-between items-center mb-1.5">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Progreso del Checklist</span>
+            <span className="text-[10px] font-black text-blue-600 dark:text-blue-400">{calculateProgress()}% Completado</span>
+          </div>
+          <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden shadow-inner">
+            <div 
+              className="bg-blue-500 h-1.5 rounded-full transition-all duration-500 ease-out shadow-[0_0_10px_rgba(59,130,246,0.5)]" 
+              style={{ width: `${calculateProgress()}%` }}
+            ></div>
+          </div>
+        </div>
+      )}
 
       <TabsHeader />
 
