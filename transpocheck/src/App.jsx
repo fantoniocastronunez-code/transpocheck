@@ -33,12 +33,13 @@ const lazyWithRetry = (componentImport) =>
     }
     try {
       const component = await componentImport();
-      window.localStorage.setItem('page-has-been-force-refreshed', 'false');
+      try { window.localStorage.setItem('page-has-been-force-refreshed', 'false'); } catch(e) {}
       return component;
     } catch (error) {
       console.error("🔥 ERROR EN LAZY LOAD:", error);
       if (!pageHasAlreadyBeenForceRefreshed) {
-        window.sessionStorage.setItem('page-has-been-force-refreshed', 'true');
+        try { window.localStorage.setItem('page-has-been-force-refreshed', 'true'); } catch(e) {}
+        try { window.sessionStorage.setItem('page-has-been-force-refreshed', 'true'); } catch(e) {}
         // Destruir el Service Worker (PWA Caché) para obligar a descargar la nueva versión
         if ('serviceWorker' in navigator) {
           navigator.serviceWorker.getRegistrations().then(function(registrations) {
@@ -111,7 +112,7 @@ function LogisticApp() {
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
   const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
-  const APP_VERSION = "v1.2.32"; // IMPORTANT: Update this version string when making changes.
+  const APP_VERSION = "v1.2.33"; // IMPORTANT: Update this version string when making changes.
   
   // VARIABLES MÁGICAS: Atrapan lo que Android nos comparte desde CamScanner o Adobe Scan
   const sharedText = searchParams.get('shared_text');

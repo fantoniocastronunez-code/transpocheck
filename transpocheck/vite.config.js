@@ -20,6 +20,7 @@ export default defineConfig({
         theme_color: '#000000',
         background_color: '#000000',
         display: 'standalone',
+        start_url: '/',
         orientation: 'portrait',
         share_target: {
           action: "/",
@@ -65,7 +66,7 @@ export default defineConfig({
   
   // --- OPTIMIZACIÓN: ESTRATEGIA DE EMPAQUETADO (CHUNKING) PARA VERCEL ---
   build: {
-    target: 'esnext',
+    target: 'es2020',
     outDir: 'dist',
     chunkSizeWarningLimit: 1500, // Evita la advertencia amarilla de Vite
     rollupOptions: {
