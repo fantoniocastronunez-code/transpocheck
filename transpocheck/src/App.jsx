@@ -23,9 +23,14 @@ import { DEFAULT_CLIENTES, LICENCIAS, formatMoney, formatDateDisplay, resizeImag
 // MAGIA ANTI-CHUNK ERROR: Función que intercepta los fallos de carga en Vercel y recarga la página limpiamente
 const lazyWithRetry = (componentImport) =>
   React.lazy(async () => {
-    const pageHasAlreadyBeenForceRefreshed = JSON.parse(
-      window.localStorage.getItem('page-has-been-force-refreshed') || 'false'
-    );
+    let pageHasAlreadyBeenForceRefreshed = false;
+    try {
+      pageHasAlreadyBeenForceRefreshed = JSON.parse(
+        window.localStorage.getItem('page-has-been-force-refreshed') || 'false'
+      );
+    } catch (e) {
+      console.warn("localStorage not accessible");
+    }
     try {
       const component = await componentImport();
       window.localStorage.setItem('page-has-been-force-refreshed', 'false');
@@ -106,29 +111,36 @@ function LogisticApp() {
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
   const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
-  const APP_VERSION = "v1.2.31"; // IMPORTANT: Update this version string when making changes.
+  const APP_VERSION = "v1.2.32"; // IMPORTANT: Update this version string when making changes.
   
   // VARIABLES MÁGICAS: Atrapan lo que Android nos comparte desde CamScanner o Adobe Scan
   const sharedText = searchParams.get('shared_text');
   const sharedUrl = searchParams.get('shared_url');
 
   // NUEVO: Memoria persistente para recordar la última pantalla y simulaciones activas
-  const [adminTab, setAdminTab] = useState(() => localStorage.getItem('app_adminTab') || 'dashboard');
+  const [adminTab, setAdminTab] = useState(() => {
+    try { return localStorage.getItem('app_adminTab') || 'dashboard'; }
+    catch(e) { return 'dashboard'; }
+  });
   const [selectedJob, setSelectedJob] = useState(() => {
-    const saved = localStorage.getItem('app_selectedJob');
-    try { return saved ? JSON.parse(saved) : null; } catch(e) { return null; }
+    try { 
+      const saved = localStorage.getItem('app_selectedJob');
+      return saved ? JSON.parse(saved) : null; 
+    } catch(e) { return null; }
   });
   const [editingJob, setEditingJob] = useState(() => {
-    const saved = localStorage.getItem('app_editingJob');
-    try { return saved ? JSON.parse(saved) : null; } catch(e) { return null; }
+    try {
+      const saved = localStorage.getItem('app_editingJob');
+      return saved ? JSON.parse(saved) : null;
+    } catch(e) { return null; }
   });
-  const [currentView, setCurrentView] = useState(() => localStorage.getItem('app_currentView') || 'main');
-  const [mainTab, setMainTab] = useState(() => localStorage.getItem('app_mainTab') || 'jobs');
-  const [activeRole, setActiveRole] = useState(() => localStorage.getItem('app_activeRole') || 'driver');
+  const [currentView, setCurrentView] = useState(() => { try { return localStorage.getItem('app_currentView') || 'main'; } catch(e) { return 'main'; } });
+  const [mainTab, setMainTab] = useState(() => { try { return localStorage.getItem('app_mainTab') || 'jobs'; } catch(e) { return 'jobs'; } });
+  const [activeRole, setActiveRole] = useState(() => { try { return localStorage.getItem('app_activeRole') || 'driver'; } catch(e) { return 'driver'; } });
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
-  const [simulatedClient, setSimulatedClient] = useState(() => localStorage.getItem('app_simulatedClient') || '');
-  const [simulatedDriverEmail, setSimulatedDriverEmail] = useState(() => localStorage.getItem('app_simulatedDriver') || '');
-  const [favDriverEmail, setFavDriverEmail] = useState(() => localStorage.getItem('favDriverEmail') || '');
+  const [simulatedClient, setSimulatedClient] = useState(() => { try { return localStorage.getItem('app_simulatedClient') || ''; } catch(e) { return ''; } });
+  const [simulatedDriverEmail, setSimulatedDriverEmail] = useState(() => { try { return localStorage.getItem('app_simulatedDriver') || ''; } catch(e) { return ''; } });
+  const [favDriverEmail, setFavDriverEmail] = useState(() => { try { return localStorage.getItem('favDriverEmail') || ''; } catch(e) { return ''; } });
 
   // NUEVO: Sincronización automática de la memoria cada vez que cambias de vista
   useEffect(() => { localStorage.setItem('app_adminTab', adminTab); }, [adminTab]);
