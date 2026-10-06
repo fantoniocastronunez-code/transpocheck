@@ -24,6 +24,16 @@ export const useChecklistSync = ({
       } else if (data?.checklist) {
         draftData = { ...draftData, ...data.checklist };
       }
+      
+      // Normalizar niveles de combustible a 0-100% si vienen en formato 0-1 desde el PickupModal
+      if (draftData.fuelLevel !== undefined && draftData.fuelLevel <= 1 && draftData.fuelLevel > 0) {
+        draftData.fuelLevel = Math.round(draftData.fuelLevel * 100);
+      }
+      if (draftData.arrivalFuelLevel !== undefined && draftData.arrivalFuelLevel <= 1 && draftData.arrivalFuelLevel > 0) {
+        draftData.arrivalFuelLevel = Math.round(draftData.arrivalFuelLevel * 100);
+      }
+      // Si era 1 (Full) el math.round lo hizo 100. Si era 0 (Empty), lo dejamos en 0.
+
 
       // 2. Local Draft (para recuperar fotos y firmas no subidas)
       try {
@@ -42,7 +52,20 @@ export const useChecklistSync = ({
           
           const nonBase64Fields = Object.keys(localData.formData).filter(k => k !== 'photos' && !base64Fields.includes(k));
           nonBase64Fields.forEach(field => {
-            if (localData.formData[field] !== undefined) draftData[field] = localData.formData[field];
+            const localVal = localData.formData[field];
+            const isLocalEmptyStr = localVal === '';
+            const isLocalDefaultFuel = field === 'fuelLevel' && localVal === 50;
+            
+            // No sobrescribir datos reales de Firestore con datos vacíos o valores por defecto del localDraft
+            if (localVal !== undefined) {
+              if (isLocalEmptyStr && draftData[field] && draftData[field] !== '') {
+                // Conservar Firestore
+              } else if (isLocalDefaultFuel && draftData[field] !== undefined && draftData[field] !== 50) {
+                // Conservar Firestore (si el usuario ya había seteado un nivel distinto en Firebase)
+              } else {
+                draftData[field] = localVal;
+              }
+            }
           });
         }
       } catch (e) {
