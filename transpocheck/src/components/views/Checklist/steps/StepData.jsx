@@ -96,6 +96,25 @@ export const StepData = () => {
             className="w-full border-2 border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 p-3.5 rounded-2xl font-bold text-slate-800 dark:text-slate-200 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 outline-none transition-all shadow-inner"
           />
         </div>
+
+        {/* Checkbox Vehículo Nuevo */}
+        <label className="flex items-center gap-3 mt-4 relative z-10 cursor-pointer bg-slate-50 dark:bg-slate-800/50 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 transition-colors">
+          <div className="relative flex items-center">
+            <input 
+              type="checkbox" 
+              checked={formData.isNewVehicle || false} 
+              onChange={e => setF('isNewVehicle', e.target.checked)} 
+              className="peer sr-only"
+            />
+            <div className="w-6 h-6 bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-600 rounded-lg peer-checked:bg-blue-500 peer-checked:border-blue-500 transition-all flex items-center justify-center shadow-inner">
+              <CheckCircle className={`w-4 h-4 text-white scale-0 peer-checked:scale-100 transition-transform`} />
+            </div>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-bold text-slate-700 dark:text-slate-200 leading-tight">Vehículo Nuevo</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">No cuenta con documentación (no suma puntos)</span>
+          </div>
+        </label>
       </div>
 
       {/* ALERTA DÉJÀ VU PERICIAL */}

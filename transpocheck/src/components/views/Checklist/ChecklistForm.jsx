@@ -61,7 +61,7 @@ const ChecklistInner = ({ openCamera }) => {
     let earned = 0;
 
     const isAuto = !formData.vehicleType || formData.vehicleType === 'auto';
-    const total = isAuto ? 27 : 29;
+    let total = isAuto ? 27 : 29;
 
     // 1. Documents (4 docs * 3 points = 12 points)
     const checkDoc = (id) => {
@@ -69,10 +69,15 @@ const ChecklistInner = ({ openCamera }) => {
        if (formData.docsExpiry?.[id] && String(formData.docsExpiry[id]).trim() !== '') earned += 1;
        if (formData.docsPhotos?.[id]) earned += 1;
     };
-    checkDoc('permiso');
-    checkDoc('soap');
-    checkDoc('revTecnica');
-    checkDoc('gases');
+    
+    if (formData.isNewVehicle) {
+      total -= 12; // 4 documents * 3 points
+    } else {
+      checkDoc('permiso');
+      checkDoc('soap');
+      checkDoc('revTecnica');
+      checkDoc('gases');
+    }
 
     // 2. Revisión (4 points)
     const checkRevision = (id) => {
