@@ -2848,7 +2848,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         title={cameraConfig.title}
         onClose={() => setCameraConfig({ isOpen: false, title: '', target: null })}
         onCapture={async (file) => {
-          setProcessingId('processing-image');
+          setProcessingId('processing-' + cameraConfig.target);
           if (cameraConfig.target === 'arrivalPhoto') {
             try {
               const compressed = await resizeAndWatermarkImage(file, 800, 0.5);

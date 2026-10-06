@@ -82,7 +82,7 @@ export default function PickupModal({
               </div>
 
               {/* Medidor Combustible Visual (Línea Recta) */}
-              <div className="mt-4 mb-4">
+              <div className="mt-4 mb-8">
                 <div className="flex flex-col items-center justify-center mb-6">
                   <div className="text-3xl font-black text-white tracking-wider">
                     {pickupFuelLevel === 0 ? 'Vacío' : pickupFuelLevel === 1 ? 'Full' : `${Math.round((pickupFuelLevel ?? 0) * 100)}%`}
@@ -90,7 +90,7 @@ export default function PickupModal({
                   <div className="text-[10px] text-slate-500 font-medium uppercase tracking-widest mt-1">Nivel Inicial</div>
                 </div>
 
-                <div className="relative pt-2 pb-8 px-3">
+                <div className="relative pt-2 pb-10 px-3">
                   {/* Pista de fondo */}
                   <div className="absolute top-1/2 left-3 right-3 h-4 bg-slate-800 -translate-y-1/2 rounded-full border border-slate-700/50" />
                   
@@ -152,7 +152,7 @@ export default function PickupModal({
                    onClick={() => openCamera('Foto del Odómetro', 'pickupPhoto')}
                    className={`relative overflow-hidden w-full py-3.5 rounded-[1.25rem] flex items-center justify-center gap-2 border transition-all ${pickupPhoto ? 'border-green-500/50 bg-green-900/30 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'border-blue-500/30 bg-gradient-to-b from-blue-600/20 to-blue-900/40 text-blue-300 hover:from-blue-500/30 hover:to-blue-800/50 shadow-[0_0_15px_rgba(59,130,246,0.15)]'}`}
                 >
-                   {processingId === 'processing-image' ? <Clock className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
+                   {processingId === 'processing-pickupPhoto' ? <Clock className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
                    <span className="text-xs font-bold tracking-wider uppercase">
                       {pickupPhoto ? 'Foto Odómetro (OK)' : 'Subir Foto Odómetro'}
                    </span>
@@ -171,7 +171,7 @@ export default function PickupModal({
                    onClick={() => openCamera('Foto del Medidor de Combustible', 'pickupFuelPhoto')}
                    className={`relative overflow-hidden w-full py-3.5 rounded-[1.25rem] flex items-center justify-center gap-2 border transition-all ${pickupFuelPhoto ? 'border-green-500/50 bg-green-900/30 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'border-blue-500/30 bg-gradient-to-b from-blue-600/20 to-blue-900/40 text-blue-300 hover:from-blue-500/30 hover:to-blue-800/50 shadow-[0_0_15px_rgba(59,130,246,0.15)]'}`}
                 >
-                   {processingId === 'processing-image' ? <Clock className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
+                   {processingId === 'processing-pickupFuelPhoto' ? <Clock className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
                    <span className="text-xs font-bold tracking-wider uppercase">
                       {pickupFuelPhoto ? 'Foto Recibo/Tablero (OK)' : 'Medidor de Combustible'}
                    </span>

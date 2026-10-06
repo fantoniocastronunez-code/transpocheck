@@ -81,49 +81,68 @@ export default function ArrivalModal({
                 <p className="text-center text-[10px] text-slate-500 mt-2 font-medium tracking-wide uppercase">Ingresa el Kilometraje de Término</p>
               </div>
 
-              {/* Medidor Combustible Visual */}
-              <div className="relative w-full aspect-[2/1] mt-4 flex items-end justify-center">
-                 <svg 
-                    ref={svgRef}
-                    viewBox="0 0 200 110" 
-                    className="w-[90%] overflow-visible touch-none cursor-pointer"
-                    onPointerDown={(e) => { setIsDragging(true); updateFuelFromEvent(e); e.currentTarget.setPointerCapture(e.pointerId); }}
-                    onPointerMove={(e) => { if(isDragging) updateFuelFromEvent(e); }}
-                    onPointerUp={(e) => { setIsDragging(false); e.currentTarget.releasePointerCapture(e.pointerId); }}
-                    onPointerCancel={(e) => { setIsDragging(false); }}
-                 >
-                    <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#1e293b" strokeWidth="12" strokeLinecap="round" />
-                    <path 
-                      d="M 20 100 A 80 80 0 0 1 180 100" 
-                      fill="none" 
-                      stroke="url(#fuelGradient)" 
-                      strokeWidth="12" 
-                      strokeLinecap="round" 
-                      strokeDasharray={`${Math.PI * 80 * (arrivalFuelLevel ?? 0)} ${Math.PI * 80}`}
-                      style={{ transition: isDragging ? 'none' : 'stroke-dasharray 0.3s ease-out' }}
+              {/* Medidor Combustible Visual (Línea Recta) */}
+              <div className="mt-4 mb-8">
+                <div className="flex flex-col items-center justify-center mb-6">
+                  <div className="text-3xl font-black text-white tracking-wider">
+                    {arrivalFuelLevel === 0 ? 'Vacío' : arrivalFuelLevel === 1 ? 'Full' : `${Math.round((arrivalFuelLevel ?? 0) * 100)}%`}
+                  </div>
+                  <div className="text-[10px] text-slate-500 font-medium uppercase tracking-widest mt-1">Nivel Final</div>
+                </div>
+
+                <div className="relative pt-2 pb-10 px-3">
+                  {/* Pista de fondo */}
+                  <div className="absolute top-1/2 left-3 right-3 h-4 bg-slate-800 -translate-y-1/2 rounded-full border border-slate-700/50" />
+                  
+                  {/* Relleno Activo */}
+                  <div 
+                    className="absolute top-1/2 left-3 h-4 bg-gradient-to-r from-red-500 via-amber-500 to-green-500 -translate-y-1/2 rounded-full pointer-events-none transition-all duration-200 shadow-[0_0_15px_rgba(34,197,94,0.3)]" 
+                    style={{ width: `calc(${(arrivalFuelLevel ?? 0) * 100}% * (1 - 24px/100%) )`, width: `calc(${(arrivalFuelLevel ?? 0) * 100}% - ${(arrivalFuelLevel ?? 0) * 16}px)` }}
+                  />
+                  
+                  {/* Fix del ancho del relleno para que coincida con el rango */}
+                  <div className="absolute top-1/2 left-3 right-3 h-4 -translate-y-1/2 pointer-events-none rounded-full overflow-hidden">
+                    <div 
+                      className="absolute top-0 left-0 h-full bg-gradient-to-r from-red-500 via-amber-500 to-green-500 transition-all duration-200"
+                      style={{ width: `${(arrivalFuelLevel ?? 0) * 100}%` }}
                     />
-                    <defs>
-                      <linearGradient id="fuelGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#ec4899" />
-                        <stop offset="50%" stopColor="#8b5cf6" />
-                        <stop offset="100%" stopColor="#06b6d4" />
-                      </linearGradient>
-                    </defs>
+                  </div>
 
-                    <g transform={`translate(100, 100) rotate(${-90 + ((arrivalFuelLevel ?? 0) * 180)})`} style={{ transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
-                      <circle cx="0" cy="0" r="8" fill="#3b82f6" className="shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
-                      <circle cx="0" cy="0" r="4" fill="#0f172a" />
-                      <path d="M -3 -8 L 0 -65 L 3 -8 Z" fill="#3b82f6" />
-                    </g>
+                  {/* Marcas divisorias */}
+                  <div className="absolute top-1/2 left-3 right-3 h-4 -translate-y-1/2 pointer-events-none flex justify-between px-1 items-center">
+                     <div className="w-0.5 h-2 bg-slate-900/50 rounded-full"></div>
+                     <div className="w-0.5 h-2 bg-slate-900/50 rounded-full"></div>
+                     <div className="w-0.5 h-2 bg-slate-900/50 rounded-full"></div>
+                     <div className="w-0.5 h-2 bg-slate-900/50 rounded-full"></div>
+                     <div className="w-0.5 h-2 bg-slate-900/50 rounded-full"></div>
+                  </div>
 
-                    <text x="100" y="65" textAnchor="middle" fill="white" fontSize="18" fontWeight="bold">
-                      {arrivalFuelLevel === 0 ? 'Vacío' : arrivalFuelLevel === 1 ? 'Full' : `${Math.round((arrivalFuelLevel ?? 0) * 100)}%`}
-                    </text>
-                    <text x="100" y="80" textAnchor="middle" fill="#64748b" fontSize="10">nivel final</text>
-                    
-                    <text x="15" y="115" textAnchor="middle" fill="#ec4899" fontSize="12" fontWeight="bold">E</text>
-                    <text x="185" y="115" textAnchor="middle" fill="#06b6d4" fontSize="12" fontWeight="bold">F</text>
-                 </svg>
+                  {/* Input Rango Real */}
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="1" 
+                    step="0.05"
+                    value={arrivalFuelLevel ?? 0}
+                    onChange={(e) => setArrivalFuelLevel(parseFloat(e.target.value))}
+                    className="absolute top-1/2 left-3 w-[calc(100%-24px)] h-8 -translate-y-1/2 opacity-0 cursor-pointer z-10"
+                  />
+                  
+                  {/* Botón Pulgar Visual */}
+                  <div 
+                    className="absolute top-1/2 w-6 h-6 bg-white border-4 border-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.6)] -translate-y-1/2 pointer-events-none transition-all duration-200"
+                    style={{ left: `calc(12px + ${(arrivalFuelLevel ?? 0) * 100}% * ((100% - 24px) / 100%) - 12px)`, left: `calc(12px + (100% - 24px) * ${arrivalFuelLevel ?? 0} - 12px)` }}
+                  />
+                  
+                  {/* Etiquetas */}
+                  <div className="absolute top-full left-0 w-full flex justify-between mt-2 text-[10px] font-extrabold tracking-wider text-slate-400">
+                    <span className="text-red-400">0</span>
+                    <span>1/4</span>
+                    <span>1/2</span>
+                    <span>3/4</span>
+                    <span className="text-green-400">FULL</span>
+                  </div>
+                </div>
               </div>
 
               {/* Botones de fotos */}
@@ -133,7 +152,7 @@ export default function ArrivalModal({
                    onClick={() => openCamera('Foto del Odómetro', 'arrivalPhoto')}
                    className={`relative overflow-hidden w-full py-3.5 rounded-[1.25rem] flex items-center justify-center gap-2 border transition-all ${arrivalPhoto ? 'border-green-500/50 bg-green-900/30 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'border-blue-500/30 bg-gradient-to-b from-blue-600/20 to-blue-900/40 text-blue-300 hover:from-blue-500/30 hover:to-blue-800/50 shadow-[0_0_15px_rgba(59,130,246,0.15)]'}`}
                 >
-                   {processingId === 'processing-image' ? <Clock className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
+                   {processingId === 'processing-arrivalPhoto' ? <Clock className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
                    <span className="text-xs font-bold tracking-wider uppercase">
                       {arrivalPhoto ? 'Foto Odómetro (OK)' : 'Subir Foto Odómetro'}
                    </span>
@@ -152,7 +171,7 @@ export default function ArrivalModal({
                    onClick={() => openCamera('Foto del Medidor de Combustible', 'arrivalFuelPhoto')}
                    className={`relative overflow-hidden w-full py-3.5 rounded-[1.25rem] flex items-center justify-center gap-2 border transition-all ${arrivalFuelPhoto ? 'border-green-500/50 bg-green-900/30 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'border-blue-500/30 bg-gradient-to-b from-blue-600/20 to-blue-900/40 text-blue-300 hover:from-blue-500/30 hover:to-blue-800/50 shadow-[0_0_15px_rgba(59,130,246,0.15)]'}`}
                 >
-                   {processingId === 'processing-image' ? <Clock className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
+                   {processingId === 'processing-arrivalFuelPhoto' ? <Clock className="w-5 h-5 animate-spin" /> : <Camera className="w-5 h-5" />}
                    <span className="text-xs font-bold tracking-wider uppercase">
                       {arrivalFuelPhoto ? 'Foto Recibo/Tablero (OK)' : 'Medidor de Combustible'}
                    </span>
