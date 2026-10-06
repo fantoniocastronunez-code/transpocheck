@@ -59,40 +59,55 @@ const ChecklistInner = ({ openCamera }) => {
 
   const calculateProgress = () => {
     let earned = 0;
-    const total = 18;
 
-    const checkField = (val) => {
-      if (val && String(val).trim() !== '') earned += 1;
-    };
+    const isAuto = !formData.vehicleType || formData.vehicleType === 'auto';
+    const total = isAuto ? 27 : 29;
 
-    checkField(formData.plateOrVin);
-    checkField(formData.brand);
-    checkField(formData.model);
-    checkField(formData.kms);
-    
-    if (formData.fuelLevel !== undefined && formData.fuelLevel !== null) earned += 1;
-
+    // 1. Documents (4 docs * 3 points = 12 points)
     const checkDoc = (id) => {
-       if (formData.docs?.[id] || formData.docsPhotos?.[id]) earned += 1;
+       if (formData.docs?.[id]) earned += 1;
+       if (formData.docsExpiry?.[id] && String(formData.docsExpiry[id]).trim() !== '') earned += 1;
+       if (formData.docsPhotos?.[id]) earned += 1;
     };
     checkDoc('permiso');
     checkDoc('soap');
     checkDoc('revTecnica');
     checkDoc('gases');
 
-    const checkBasePhoto = (id) => {
-       if (formData.basePhotos?.[id]) earned += 1;
+    // 2. Revisión (4 points)
+    const checkRevision = (id) => {
+       if (formData.carDamages?.[id]?.status) earned += 1;
     };
-    checkBasePhoto('frente');
-    checkBasePhoto('costado_izquierdo');
-    checkBasePhoto('parte_trasera');
-    checkBasePhoto('costado_derecho');
-    checkBasePhoto('techo');
-    checkBasePhoto('interior');
+    checkRevision('luces');
+    checkRevision('neumaticos');
+    checkRevision('carroceria');
+    checkRevision('parabrisas');
 
-    checkField(formData.clientName);
-    checkField(formData.clientRut);
-    checkField(formData.clientSignature);
+    // 3. Photos (8 or 10 points)
+    const checkPhoto = (id) => {
+       if (formData.photos?.[id]) earned += 1;
+    };
+    checkPhoto('dashboard');
+    checkPhoto('tire');
+    checkPhoto('interior_front');
+    checkPhoto('interior_back');
+    checkPhoto('front');
+    checkPhoto('back');
+
+    if (isAuto) {
+      checkPhoto('left');
+      checkPhoto('right');
+    } else {
+      checkPhoto('left_cab');
+      checkPhoto('left_body');
+      checkPhoto('right_cab');
+      checkPhoto('right_body');
+    }
+
+    // 4. Signature (3 points)
+    if (formData.clientName && String(formData.clientName).trim() !== '') earned += 1;
+    if (formData.clientRut && String(formData.clientRut).trim() !== '') earned += 1;
+    if (formData.clientSignature) earned += 1;
 
     return Math.min(100, Math.round((earned / total) * 100));
   };
