@@ -6,6 +6,10 @@ import { FormattedMonthInput } from '../../../ui/FormattedMonthInput';
 export const StepDocs = ({ openCamera }) => {
   const { job, formData, setF, showAlert } = useChecklist();
 
+  const isRevisionTecnica = job?.tripType === 'revision' || 
+                            job?.destination?.toUpperCase()?.includes('REVISION TECNICA') ||
+                            job?.destination?.toUpperCase()?.includes('REVISIÓN TÉCNICA');
+
   const handleCapturePhoto = async (docId) => {
     openCamera(`Foto: ${docId}`, async (file) => {
       try {
@@ -100,6 +104,7 @@ export const StepDocs = ({ openCamera }) => {
       </div>
 
       {/* SECCIÓN DOCUMENTOS EXTERNOS Y BANDEJA */}
+      {isRevisionTecnica && (
       <div className="bg-indigo-50/30 dark:bg-indigo-900/10 p-5 rounded-3xl border border-indigo-100 dark:border-indigo-800/30 shadow-sm mt-6">
         <h3 className="text-[11px] font-black text-indigo-800 dark:text-indigo-300 uppercase tracking-widest mb-2 flex items-center gap-2">
           <FileText className="w-4 h-4" /> Escaneo y PDFs
@@ -205,6 +210,7 @@ export const StepDocs = ({ openCamera }) => {
           </div>
         )}
       </div>
+      )}
 
     </div>
   );
