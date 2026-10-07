@@ -11,7 +11,7 @@ export const StepPhotos = ({ openCamera }) => {
     const f = eOrFile.target ? eOrFile.target.files[0] : eOrFile;
     if (!f) return;
     try {
-      const dataUrl = await resizeImage(f, 1920, 0.85);
+      const dataUrl = await resizeImage(f, 1024, 0.6);
 
       setFormData(prev => {
         const newData = { ...prev, photos: { ...prev.photos, [id]: dataUrl } };

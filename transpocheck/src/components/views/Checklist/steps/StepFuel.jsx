@@ -74,7 +74,7 @@ export const StepFuel = ({ openCamera }) => {
     if (!f) return;
     try {
       const { resizeImage } = await import('../../../../utils/helpers');
-      const dataUrl = await resizeImage(f, 1920, 0.85);
+      const dataUrl = await resizeImage(f, 1024, 0.6);
       setF(id, dataUrl);
     } catch (err) {
       console.error(err);
