@@ -114,16 +114,20 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
   const [cameraConfig, setCameraConfig] = useState({ isOpen: false, title: '', target: null });
 
-  const uploadPopupPhotoWithTimeout = async (base64String, jobId, name) => {
-    if (!base64String || !base64String.startsWith('data:image')) return base64String;
+  const uploadPopupPhotoBackground = async (base64String, jobId, name) => {
+    if (!base64String || !base64String.startsWith('data:image')) return;
     try {
       const storageRef = ref(storage, `checklists/${jobId}/${name}_${Date.now()}.jpg`);
-      const uploadPromise = uploadString(storageRef, base64String, 'data_url').then(() => getDownloadURL(storageRef));
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Upload timeout')), 8000));
-      return await Promise.race([uploadPromise, timeoutPromise]);
+      await uploadString(storageRef, base64String, 'data_url');
+      const url = await getDownloadURL(storageRef);
+      
+      const keyMap = { 'pickup_odo': 'dashboard', 'pickup_fuel': 'fuelGauge', 'arrival_odo': 'dashboard', 'arrival_fuel': 'fuelGauge' };
+      const targetKey = keyMap[name];
+      if (targetKey) {
+        await updateDoc(doc(db, 'transport_jobs', jobId), { [`checklist.photos.${targetKey}`]: url });
+      }
     } catch (e) {
-      console.warn("Photo upload skipped/timed out, saving locally instead:", e);
-      return false; // Indica que falló y debe ir a IndexedDB
+      console.warn("Background photo upload failed:", e);
     }
   };
   
@@ -157,30 +161,24 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     
       setProcessingId('general-pickup');
 
-      let finalPickupPhoto = pickupPhoto;
-      let finalPickupFuelPhoto = pickupFuelPhoto;
-
-      if (pickupPhoto) {
-        finalPickupPhoto = await uploadPopupPhotoWithTimeout(pickupPhoto, pickupPromptJob.id, 'pickup_odo');
-      }
-      if (pickupFuelPhoto) {
-        finalPickupFuelPhoto = await uploadPopupPhotoWithTimeout(pickupFuelPhoto, pickupPromptJob.id, 'pickup_fuel');
-      }
-
-      // Si falló la subida (offline o lento), guardamos el Base64 pesadísimo en IndexedDB y no en Firestore
-      if (finalPickupPhoto === false || finalPickupFuelPhoto === false) {
+      // Guardamos SIEMPRE en IndexedDB de inmediato para seguridad offline
+      if (pickupPhoto || pickupFuelPhoto) {
          try {
            const { getLocalDraft, saveLocalDraft } = await import('../../../utils/localDrafts.js');
            const oldDraft = await getLocalDraft(pickupPromptJob.id) || { step: 1, formData: { photos: {} } };
            if (!oldDraft.formData) oldDraft.formData = { photos: {} };
            if (!oldDraft.formData.photos) oldDraft.formData.photos = {};
            
-           if (finalPickupPhoto === false) oldDraft.formData.photos.dashboard = pickupPhoto;
-           if (finalPickupFuelPhoto === false) oldDraft.formData.photos.fuelGauge = pickupFuelPhoto;
+           if (pickupPhoto) oldDraft.formData.photos.dashboard = pickupPhoto;
+           if (pickupFuelPhoto) oldDraft.formData.photos.fuelGauge = pickupFuelPhoto;
            
            await saveLocalDraft(pickupPromptJob.id, oldDraft);
          } catch(e) { console.error("Error guardando foto en draft local", e); }
       }
+
+      // Disparamos la subida en segundo plano (NO bloquea el popup)
+      if (pickupPhoto) uploadPopupPhotoBackground(pickupPhoto, pickupPromptJob.id, 'pickup_odo');
+      if (pickupFuelPhoto) uploadPopupPhotoBackground(pickupFuelPhoto, pickupPromptJob.id, 'pickup_fuel');
 
       const currentDraft = pickupPromptJob.draft?.formData || pickupPromptJob.checklist || {};
       const currentPhotos = currentDraft.photos || {};
@@ -195,9 +193,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       if (pickupPhotoLocation) updatedDraft.photos.mileageLocation = pickupPhotoLocation;
       if (pickupFuelPhotoLocation) updatedDraft.photos.fuelLocation = pickupFuelPhotoLocation;
       
-      // Mapeamos para que la ChecklistForm los encuentre (usamos false si se guardó localmente)
-      updatedDraft.photos.dashboard = finalPickupPhoto || false;
-      updatedDraft.photos.fuelGauge = finalPickupFuelPhoto || false;
+      // Mapeamos para que la ChecklistForm los encuentre (usamos false porque se subirán en 2do plano)
+      updatedDraft.photos.dashboard = false;
+      updatedDraft.photos.fuelGauge = false;
 
       const payload = {
         checklist: {
@@ -206,8 +204,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           fuelLevel: pickupFuelLevel !== undefined ? pickupFuelLevel : (currentDraft.fuelLevel ?? null),
           photos: {
             ...(pickupPromptJob.checklist?.photos || {}),
-            dashboard: finalPickupPhoto || false,
-            fuelGauge: finalPickupFuelPhoto || false
+            dashboard: false,
+            fuelGauge: false
           }
         },
         draft: {
@@ -269,30 +267,24 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     
       setProcessingId('general-arrival');
 
-      let finalArrivalPhoto = arrivalPhoto;
-      let finalArrivalFuelPhoto = arrivalFuelPhoto;
-
-      if (arrivalPhoto) {
-        finalArrivalPhoto = await uploadPopupPhotoWithTimeout(arrivalPhoto, arrivalPromptJob.id, 'arrival_odo');
-      }
-      if (arrivalFuelPhoto) {
-        finalArrivalFuelPhoto = await uploadPopupPhotoWithTimeout(arrivalFuelPhoto, arrivalPromptJob.id, 'arrival_fuel');
-      }
-
-      // Si falló la subida, lo guardamos en IndexedDB
-      if (finalArrivalPhoto === false || finalArrivalFuelPhoto === false) {
+      // Guardamos SIEMPRE en IndexedDB de inmediato
+      if (arrivalPhoto || arrivalFuelPhoto) {
          try {
            const { getLocalDraft, saveLocalDraft } = await import('../../../utils/localDrafts.js');
            const oldDraft = await getLocalDraft(arrivalPromptJob.id) || { step: 1, formData: { photos: {} } };
            if (!oldDraft.formData) oldDraft.formData = { photos: {} };
            if (!oldDraft.formData.photos) oldDraft.formData.photos = {};
            
-           if (finalArrivalPhoto === false) oldDraft.formData.photos.dashboard = arrivalPhoto;
-           if (finalArrivalFuelPhoto === false) oldDraft.formData.photos.fuelGauge = arrivalFuelPhoto;
+           if (arrivalPhoto) oldDraft.formData.photos.dashboard = arrivalPhoto;
+           if (arrivalFuelPhoto) oldDraft.formData.photos.fuelGauge = arrivalFuelPhoto;
            
            await saveLocalDraft(arrivalPromptJob.id, oldDraft);
          } catch(e) { console.error("Error guardando foto final en draft local", e); }
       }
+
+      // Disparamos la subida en segundo plano
+      if (arrivalPhoto) uploadPopupPhotoBackground(arrivalPhoto, arrivalPromptJob.id, 'arrival_odo');
+      if (arrivalFuelPhoto) uploadPopupPhotoBackground(arrivalFuelPhoto, arrivalPromptJob.id, 'arrival_fuel');
 
       const currentDraft = arrivalPromptJob.draft?.formData || {};
       const currentPhotos = currentDraft.photos || {};
@@ -303,13 +295,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         arrivalFuelLevel: arrivalFuelLevel !== undefined ? arrivalFuelLevel : (currentDraft.arrivalFuelLevel ?? null),
         photos: {
            ...(currentPhotos || {}),
-           fuelGauge: finalArrivalFuelPhoto || false,
-           dashboard: finalArrivalPhoto || false // Guardamos en dashboard para Checklist
+           fuelGauge: false,
+           dashboard: false
         }
       };
 
-      if (finalArrivalPhoto) {
-        updatedDraft.photos.odometer = finalArrivalPhoto; // También en odometer por si acaso
+      if (arrivalPhoto) {
+        updatedDraft.photos.odometer = false; // También en odometer por si acaso
         if (arrivalPhotoLocation) updatedDraft.photos.odometerLocation = arrivalPhotoLocation;
       }
       if (arrivalFuelPhotoLocation) updatedDraft.photos.fuelGaugeLocation = arrivalFuelPhotoLocation;
@@ -321,8 +313,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           arrivalFuelLevel: arrivalFuelLevel !== undefined ? arrivalFuelLevel : (currentDraft.arrivalFuelLevel ?? null),
           photos: {
             ...(arrivalPromptJob.checklist?.photos || {}),
-            dashboard: finalArrivalPhoto || false,
-            fuelGauge: finalArrivalFuelPhoto || false
+            dashboard: false,
+            fuelGauge: false
           }
         },
         draft: {
