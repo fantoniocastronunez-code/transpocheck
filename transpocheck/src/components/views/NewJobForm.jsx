@@ -753,18 +753,18 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
 
                 {operationMode === 'traslado' ? (
                    <>
-                     <div className="flex justify-center bg-slate-200/50 dark:bg-slate-800/50 p-1.5 rounded-2xl max-w-2xl mx-auto">
+                     <div className="flex flex-col sm:flex-row justify-center bg-slate-200/50 dark:bg-slate-800/50 p-1.5 rounded-2xl max-w-2xl mx-auto gap-1 sm:gap-0">
                         <button type="button" onClick={() => setTripType('traslado')} className={`flex-1 py-3 flex justify-center items-center gap-2 text-xs sm:text-sm font-black rounded-xl transition-all duration-300 ${tripType === 'traslado' ? 'bg-white dark:bg-slate-900 text-blue-500 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'}`}>
-                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
-                           Traslado Local
+                           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                           <span>Traslado Local</span>
                         </button>
                         <button type="button" onClick={() => setTripType('viaje')} className={`flex-1 py-3 flex justify-center items-center gap-2 text-xs sm:text-sm font-black rounded-xl transition-all duration-300 ${tripType === 'viaje' ? 'bg-white dark:bg-slate-900 text-blue-500 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'}`}>
-                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
-                           A Regiones
+                           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>
+                           <span>A Regiones</span>
                         </button>
                         <button type="button" onClick={() => setTripType('revision')} className={`flex-1 py-3 flex justify-center items-center gap-2 text-xs sm:text-sm font-black rounded-xl transition-all duration-300 ${tripType === 'revision' ? 'bg-white dark:bg-slate-900 text-blue-500 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'}`}>
-                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                           Revisión Técnica
+                           <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                           <span>Revisión Técnica</span>
                         </button>
                      </div>
                      {tripType === 'revision' && (

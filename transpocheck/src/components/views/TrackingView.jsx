@@ -788,10 +788,10 @@ const handleDownloadPDF = async (job) => {
                         href={`https://maps.google.com/?q=${(selectedHistoryJob.checklist?.photos?.fuelGaugeLocation || selectedHistoryJob.checklist?.photos?.odometerLocation || selectedHistoryJob.checklist?.location).lat},${(selectedHistoryJob.checklist?.photos?.fuelGaugeLocation || selectedHistoryJob.checklist?.photos?.odometerLocation || selectedHistoryJob.checklist?.location).lng}`} 
                         target="_blank" 
                         rel="noreferrer" 
-                        className="flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-3 rounded-xl font-extrabold text-xs transition-colors border border-slate-200 dark:border-slate-700 shadow-sm w-full"
+                        className="flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-3 px-4 rounded-xl font-extrabold text-xs transition-colors border border-slate-200 dark:border-slate-700 shadow-sm w-full text-center"
                       >
-                        <MapPin className="w-4 h-4 text-red-500" />
-                        Reporte de kilometraje y combustible tomado acá
+                        <MapPin className="w-4 h-4 text-red-500 shrink-0" />
+                        <span>Reporte de kilometraje y combustible tomado acá</span>
                       </a>
                     </div>
                     )}

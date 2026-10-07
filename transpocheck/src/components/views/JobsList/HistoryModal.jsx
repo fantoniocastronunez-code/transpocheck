@@ -136,10 +136,10 @@ export default function HistoryModal({
                     href={`https://maps.google.com/?q=${(selectedHistoryJob.checklist?.photos?.fuelGaugeLocation || selectedHistoryJob.checklist?.photos?.odometerLocation || selectedHistoryJob.checklist?.location).lat},${(selectedHistoryJob.checklist?.photos?.fuelGaugeLocation || selectedHistoryJob.checklist?.photos?.odometerLocation || selectedHistoryJob.checklist?.location).lng}`} 
                     target="_blank" 
                     rel="noreferrer" 
-                    className="flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-3 rounded-xl font-extrabold text-xs transition-colors border border-slate-200 dark:border-slate-700 shadow-sm w-full"
+                    className="flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-3 px-4 rounded-xl font-extrabold text-xs transition-colors border border-slate-200 dark:border-slate-700 shadow-sm w-full text-center"
                   >
-                    <MapPin className="w-4 h-4 text-red-500" />
-                    Reporte de kilometraje y combustible tomado acá
+                    <MapPin className="w-4 h-4 text-red-500 shrink-0" />
+                    <span>Reporte de kilometraje y combustible tomado acá</span>
                   </a>
                 </div>
                 )}
@@ -243,6 +243,26 @@ export default function HistoryModal({
                       {k === 'odometer' && selectedHistoryJob.checklist?.photos?.odometerLocation && (
                         <a href={`https://maps.google.com/?q=${selectedHistoryJob.checklist.photos.odometerLocation.lat},${selectedHistoryJob.checklist.photos.odometerLocation.lng}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="absolute top-1.5 right-1.5 bg-slate-900/80 hover:bg-blue-600 text-white px-2 py-1 rounded-md text-[9px] font-bold shadow-md transition-colors">📍 Mapa</a>
                       )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 6. DOCUMENTOS ADJUNTOS */}
+          {selectedHistoryJob.checklist?.docsPhotos && Object.values(selectedHistoryJob.checklist.docsPhotos).filter(p => typeof p === 'string' && p.startsWith('http')).length > 0 && (
+            <div>
+              <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 dark:border-slate-800 pb-1">6. Documentos Fotografiados</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {Object.entries(selectedHistoryJob.checklist.docsPhotos).filter(([k,v]) => typeof v === 'string' && v.startsWith('http')).map(([k,v]) => {
+                  const docLabels = { permiso: 'Permiso Circ.', soap: 'Seguro SOAP', revTecnica: 'Rev. Técnica', gases: 'Gases' };
+                  return (
+                    <div key={k} className="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 aspect-square cursor-pointer" onClick={() => setFullScreenPhoto(v)}>
+                      <img src={v} alt={k} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                        <p className="text-white text-[9px] font-black uppercase truncate">{docLabels[k] || k}</p>
+                      </div>
                     </div>
                   );
                 })}
