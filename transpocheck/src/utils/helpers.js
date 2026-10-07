@@ -38,19 +38,19 @@ export const resizeAndWatermarkImage = (file, maxWidth = 1920, quality = 0.85) =
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
 
-          const dateStr = new Date().toLocaleString('es-CL');
-          const locStr = lat ? `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}` : 'Ubicación no disponible';
+          // const dateStr = new Date().toLocaleString('es-CL');
+          // const locStr = lat ? `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}` : 'Ubicación no disponible';
           
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-          const padding = 20;
-          const fontSize = Math.max(16, Math.floor(width / 35));
-          ctx.fillRect(0, height - (fontSize * 3 + padding), width, fontSize * 3 + padding);
+          // ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+          // const padding = 20;
+          // const fontSize = Math.max(16, Math.floor(width / 35));
+          // ctx.fillRect(0, height - (fontSize * 3 + padding), width, fontSize * 3 + padding);
 
-          ctx.fillStyle = '#FFD700';
-          ctx.font = `bold ${fontSize}px sans-serif`;
-          ctx.textAlign = 'left';
-          ctx.fillText(`FECHA: ${dateStr}`, padding, height - padding - fontSize * 1.5);
-          ctx.fillText(`GPS: ${locStr}`, padding, height - padding);
+          // ctx.fillStyle = '#FFD700';
+          // ctx.font = `bold ${fontSize}px sans-serif`;
+          // ctx.textAlign = 'left';
+          // ctx.fillText(`FECHA: ${dateStr}`, padding, height - padding - fontSize * 1.5);
+          // ctx.fillText(`GPS: ${locStr}`, padding, height - padding);
 
           resolve({ base64: canvas.toDataURL('image/jpeg', quality), lat, lng });
         };

@@ -265,7 +265,23 @@ export const buildPDFDoc = async (job, isPublic = false, drivers = []) => {
       } 
     }
     
-    if (job.checklist?.location) { currentY += 2; const { lat, lng } = job.checklist.location; docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text(`UBICACION GPS:`, 15, currentY); docPDF.setFontSize(9); docPDF.setTextColor(...accentColor); docPDF.textWithLink('Clic aqui para ver mapa en Google', 15, currentY + 4, { url: `https://maps.google.com/?q=${lat},${lng}` }); }
+    let gpsY = currentY + 2;
+    if (job.checklist?.location) {
+      const { lat, lng } = job.checklist.location;
+      docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text(`UBICACION GPS (LLEGADA):`, 15, gpsY); docPDF.setFontSize(9); docPDF.setTextColor(...accentColor); docPDF.textWithLink('Clic aqui para ver mapa', 15, gpsY + 4, { url: `https://maps.google.com/?q=${lat},${lng}` });
+      gpsY += 10;
+    }
+    if (job.checklist?.photos?.mileageLocation) {
+      const { lat, lng } = job.checklist.photos.mileageLocation;
+      docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text(`REPORTE DE INICIO:`, 15, gpsY); docPDF.setFontSize(9); docPDF.setTextColor(...accentColor); docPDF.textWithLink('Reporte de inicio tomado acá', 15, gpsY + 4, { url: `https://maps.google.com/?q=${lat},${lng}` });
+      gpsY += 10;
+    }
+    if (job.checklist?.photos?.odometerLocation) {
+      const { lat, lng } = job.checklist.photos.odometerLocation;
+      docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text(`REPORTE FINAL:`, 15, gpsY); docPDF.setFontSize(9); docPDF.setTextColor(...accentColor); docPDF.textWithLink('Reporte final tomado acá', 15, gpsY + 4, { url: `https://maps.google.com/?q=${lat},${lng}` });
+      gpsY += 10;
+    }
+    currentY = gpsY;
 
     const attachedDocHref = job.guideLink || job.guideUrl || job.docLink || job.docUrl || job.rtLink || job.rtDoc || (job.rtData && job.rtData.link) || job.pdfUrl || job.fileUrl || job.checklist?.guiaDespachoPdf || job.checklist?.guiaDespachoLink;
     if (attachedDocHref) { 
