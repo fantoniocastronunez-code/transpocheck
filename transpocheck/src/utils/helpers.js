@@ -23,10 +23,8 @@ export const resizeAndWatermarkImage = (file, maxWidth = 1920, quality = 0.85) =
   return new Promise((resolve, reject) => {
     const applyWatermark = (lat, lng) => {
       const reader = new FileReader();
-      reader.readAsDataURL(file);
       reader.onload = (event) => {
         const img = new Image();
-        img.src = event.target.result;
         img.onload = () => {
           const canvas = document.createElement('canvas');
           let width = img.width;
@@ -57,8 +55,10 @@ export const resizeAndWatermarkImage = (file, maxWidth = 1920, quality = 0.85) =
           resolve({ base64: canvas.toDataURL('image/jpeg', quality), lat, lng });
         };
         img.onerror = (err) => reject(err);
+        img.src = event.target.result;
       };
       reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
     };
 
     if (navigator.geolocation) {
@@ -69,7 +69,8 @@ export const resizeAndWatermarkImage = (file, maxWidth = 1920, quality = 0.85) =
         (error) => {
           applyWatermark(null, null);
         },
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        // Optimizaciones para iOS: evitar bloqueos buscando GPS exacto. Usar caché de hasta 5 mins, timeout corto de 3s
+        { enableHighAccuracy: false, timeout: 3000, maximumAge: 300000 }
       );
     } else {
       applyWatermark(null, null);
