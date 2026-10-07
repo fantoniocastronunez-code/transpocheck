@@ -1,6 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { updateDoc, doc, deleteDoc, addDoc, collection, deleteField, getDocs, query, where } from 'firebase/firestore';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { storage } from '../../firebase';
 import {
   Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle,
   Copy, X, XCircle, MapPin, Clock, FileDown, Search, ChevronUp, ChevronDown,
@@ -112,6 +114,17 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
   const [cameraConfig, setCameraConfig] = useState({ isOpen: false, title: '', target: null });
 
+  const uploadPopupPhoto = async (base64String, jobId, name) => {
+    if (!base64String || !base64String.startsWith('data:image')) return base64String;
+    try {
+      const storageRef = ref(storage, `checklists/${jobId}/${name}_${Date.now()}.jpg`);
+      await uploadString(storageRef, base64String, 'data_url');
+      return await getDownloadURL(storageRef);
+    } catch (e) {
+      console.error("Error uploading photo to storage:", e);
+      return base64String;
+    }
+  };
   
   const submitPickup = async () => {
     try {
@@ -142,6 +155,17 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       }
     
       setProcessingId('general-pickup');
+
+      let finalPickupPhoto = pickupPhoto;
+      let finalPickupFuelPhoto = pickupFuelPhoto;
+
+      if (pickupPhoto) {
+        finalPickupPhoto = await uploadPopupPhoto(pickupPhoto, pickupPromptJob.id, 'pickup_odo');
+      }
+      if (pickupFuelPhoto) {
+        finalPickupFuelPhoto = await uploadPopupPhoto(pickupFuelPhoto, pickupPromptJob.id, 'pickup_fuel');
+      }
+
       const currentDraft = pickupPromptJob.draft?.formData || pickupPromptJob.checklist || {};
       const currentPhotos = currentDraft.photos || {};
 
@@ -151,13 +175,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         fuelLevel: pickupFuelLevel !== undefined ? pickupFuelLevel : (currentDraft.fuelLevel ?? null)
       };
 
-      // Guardamos la ubicación en el draft, pero NO duplicamos el base64 pesado para evitar exceder 1MB
       updatedDraft.photos = { ...currentPhotos };
       if (pickupPhotoLocation) updatedDraft.photos.mileageLocation = pickupPhotoLocation;
       if (pickupFuelPhotoLocation) updatedDraft.photos.fuelLocation = pickupFuelPhotoLocation;
-      // Borramos duplicados si existían previamente
-      delete updatedDraft.photos.mileage;
-      delete updatedDraft.photos.fuel;
+      
+      // Mapeamos para que la ChecklistForm los encuentre
+      updatedDraft.photos.dashboard = finalPickupPhoto || null;
+      updatedDraft.photos.fuelGauge = finalPickupFuelPhoto || null;
 
       const payload = {
         checklist: {
@@ -166,8 +190,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           fuelLevel: pickupFuelLevel !== undefined ? pickupFuelLevel : (currentDraft.fuelLevel ?? null),
           photos: {
             ...(pickupPromptJob.checklist?.photos || {}),
-            mileage: pickupPhoto || null,
-            fuel: pickupFuelPhoto || null
+            dashboard: finalPickupPhoto || null,
+            fuelGauge: finalPickupFuelPhoto || null
           }
         },
         draft: {
@@ -228,6 +252,17 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       }
     
       setProcessingId('general-arrival');
+
+      let finalArrivalPhoto = arrivalPhoto;
+      let finalArrivalFuelPhoto = arrivalFuelPhoto;
+
+      if (arrivalPhoto) {
+        finalArrivalPhoto = await uploadPopupPhoto(arrivalPhoto, arrivalPromptJob.id, 'arrival_odo');
+      }
+      if (arrivalFuelPhoto) {
+        finalArrivalFuelPhoto = await uploadPopupPhoto(arrivalFuelPhoto, arrivalPromptJob.id, 'arrival_fuel');
+      }
+
       const currentDraft = arrivalPromptJob.draft?.formData || {};
       const currentPhotos = currentDraft.photos || {};
 
@@ -237,17 +272,28 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         arrivalFuelLevel: arrivalFuelLevel !== undefined ? arrivalFuelLevel : (currentDraft.arrivalFuelLevel ?? null),
         photos: {
            ...(currentPhotos || {}),
-           fuelGauge: arrivalFuelPhoto || null
+           fuelGauge: finalArrivalFuelPhoto || null,
+           dashboard: finalArrivalPhoto || null // Guardamos en dashboard para Checklist
         }
       };
 
-      if (arrivalPhoto) {
-        updatedDraft.photos.odometer = arrivalPhoto;
+      if (finalArrivalPhoto) {
+        updatedDraft.photos.odometer = finalArrivalPhoto; // También en odometer por si acaso
         if (arrivalPhotoLocation) updatedDraft.photos.odometerLocation = arrivalPhotoLocation;
       }
       if (arrivalFuelPhotoLocation) updatedDraft.photos.fuelGaugeLocation = arrivalFuelPhotoLocation;
 
       const payload = {
+        checklist: {
+          ...(arrivalPromptJob.checklist || {}),
+          arrivalMileage: arrivalMileage || '',
+          arrivalFuelLevel: arrivalFuelLevel !== undefined ? arrivalFuelLevel : (currentDraft.arrivalFuelLevel ?? null),
+          photos: {
+            ...(arrivalPromptJob.checklist?.photos || {}),
+            dashboard: finalArrivalPhoto || null,
+            fuelGauge: finalArrivalFuelPhoto || null
+          }
+        },
         draft: {
           ...(arrivalPromptJob.draft || {}),
           formData: updatedDraft
