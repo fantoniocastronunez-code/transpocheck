@@ -164,7 +164,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       // Guardamos SIEMPRE en IndexedDB de inmediato para seguridad offline
       if (pickupPhoto || pickupFuelPhoto) {
          try {
-           const { getLocalDraft, saveLocalDraft } = await import('../../../utils/localDrafts.js');
+           const { getLocalDraft, saveLocalDraft } = await import('../../utils/localDrafts.js');
            const oldDraft = await getLocalDraft(pickupPromptJob.id) || { step: 1, formData: { photos: {} } };
            if (!oldDraft.formData) oldDraft.formData = { photos: {} };
            if (!oldDraft.formData.photos) oldDraft.formData.photos = {};
@@ -270,7 +270,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       // Guardamos SIEMPRE en IndexedDB de inmediato
       if (arrivalPhoto || arrivalFuelPhoto) {
          try {
-           const { getLocalDraft, saveLocalDraft } = await import('../../../utils/localDrafts.js');
+           const { getLocalDraft, saveLocalDraft } = await import('../../utils/localDrafts.js');
            const oldDraft = await getLocalDraft(arrivalPromptJob.id) || { step: 1, formData: { photos: {} } };
            if (!oldDraft.formData) oldDraft.formData = { photos: {} };
            if (!oldDraft.formData.photos) oldDraft.formData.photos = {};
