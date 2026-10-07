@@ -29,7 +29,7 @@ export const ImageViewer = () => {
   return (
     <div className="fixed inset-0 bg-black z-[100] flex flex-col animate-in fade-in zoom-in-95 duration-200">
       {/* HEADER */}
-      <div className="bg-gradient-to-b from-black/80 to-transparent p-4 flex justify-between items-center absolute top-0 left-0 right-0 z-10">
+      <div className="bg-gradient-to-b from-black/80 to-transparent px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] flex justify-between items-center absolute top-0 left-0 right-0 z-10">
         <button 
           onClick={() => setImgData(null)}
           className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center backdrop-blur-md text-white transition-colors"
@@ -52,7 +52,7 @@ export const ImageViewer = () => {
       </div>
 
       {/* FOOTER ACTIONS */}
-      <div className="bg-gradient-to-t from-black/90 via-black/50 to-transparent p-6 pb-10 flex justify-center gap-6 absolute bottom-0 left-0 right-0">
+      <div className="bg-gradient-to-t from-black/90 via-black/50 to-transparent p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] flex justify-center gap-6 absolute bottom-0 left-0 right-0">
         <button 
           onClick={handleDelete}
           className="flex-1 max-w-[140px] bg-red-500/20 hover:bg-red-500/40 border border-red-500/50 text-red-100 py-3 rounded-2xl flex flex-col items-center justify-center gap-1 backdrop-blur-md transition-all active:scale-95"

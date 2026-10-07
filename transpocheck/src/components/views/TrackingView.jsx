@@ -659,7 +659,7 @@ const handleDownloadPDF = async (job) => {
       {/* NUEVO MODAL: VISOR DE FOTO PANTALLA COMPLETA */}
       {fullScreenPhoto && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4 cursor-zoom-out" onClick={() => setFullScreenPhoto(null)}>
-           <div className="absolute top-4 right-4 flex gap-3 z-[1000]">
+           <div className="absolute top-[calc(1rem+env(safe-area-inset-top))] right-4 flex gap-3 z-[1000]">
              <button 
                onClick={async (e) => {
                  e.stopPropagation();

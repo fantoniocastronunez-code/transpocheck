@@ -11,7 +11,7 @@ export default function FullScreenPhotoModal({
   return (
     <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-[99999] flex flex-col p-2 sm:p-4" onClick={() => setFullScreenPhoto(null)}>
        {/* BARRA DE HERRAMIENTAS FLOTANTE SUPERIOR */}
-       <div className="absolute top-4 right-4 flex gap-3 z-[100000]" onClick={(e) => e.stopPropagation()}>
+       <div className="absolute top-[calc(1rem+env(safe-area-inset-top))] right-4 flex gap-3 z-[100000]" onClick={(e) => e.stopPropagation()}>
          <button 
            onClick={async (e) => {
              e.stopPropagation();

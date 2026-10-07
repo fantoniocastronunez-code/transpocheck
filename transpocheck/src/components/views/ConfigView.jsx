@@ -148,7 +148,7 @@ export default function ConfigView({ currentUserEmail, allClientsList, customCli
 
       {fullScreenDoc && (
         <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center z-[300] p-4 cursor-zoom-out animate-in fade-in" onClick={() => setFullScreenDoc(null)}>
-          <button className="absolute top-4 right-4 p-2 bg-white dark:bg-slate-900 hover:bg-white dark:bg-slate-900 rounded-full text-white transition-colors shadow-lg"><X className="w-6 h-6"/></button>
+          <button className="absolute top-[calc(1rem+env(safe-area-inset-top))] right-4 p-2 bg-white dark:bg-slate-900 hover:bg-white dark:bg-slate-900 rounded-full text-white transition-colors shadow-lg"><X className="w-6 h-6"/></button>
           <img src={fullScreenDoc} className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
