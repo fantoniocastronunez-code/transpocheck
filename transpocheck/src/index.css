@@ -103,3 +103,24 @@ input:focus, select:focus, textarea:focus {
   background-color: rgba(0, 0, 0, 0.8) !important;
   backdrop-filter: none !important; /* Sin desenfoque de cristal */
 }
+
+/* === FIX PARA IPHONE NOTCH (SAFE AREA) === */
+@supports (padding-top: env(safe-area-inset-top)) {
+  /* Header */
+  .fixed-nav-bar {
+    padding-top: calc(1rem + env(safe-area-inset-top)) !important;
+    height: calc(4rem + env(safe-area-inset-top)) !important;
+  }
+  /* Padding general para las vistas (etiqueta main) */
+  main {
+    padding-top: calc(5rem + env(safe-area-inset-top)) !important;
+  }
+  @media (min-width: 640px) {
+    .fixed-nav-bar {
+      height: calc(5rem + env(safe-area-inset-top)) !important;
+    }
+    main {
+      padding-top: calc(6rem + env(safe-area-inset-top)) !important;
+    }
+  }
+}
