@@ -1001,7 +1001,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             vin: dupPromptJob.vin,
             vehicleType: dupPromptJob.vehicleType
          }));
-         if (props.onNewJob) props.onNewJob('traslado');
+         if (onNewJob) onNewJob('traslado');
          setDupPromptJob(null);
          return;
       }
