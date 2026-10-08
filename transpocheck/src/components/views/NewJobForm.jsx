@@ -814,72 +814,6 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                 )}
            </div>
 
-           {/* STEP 3: RUTA Y PROGRAMACION */}
-           <div className="animate-in fade-in slide-in-from-right-8 duration-500 space-y-6 border-t border-slate-200/50 dark:border-slate-700/50 pt-8">
-                <h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-100 border-b border-slate-200/50 dark:border-slate-700/50 pb-4">Programación y Ruta</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                     <div className="space-y-1">
-                        <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider ml-1">Fecha y Hora</label>
-                        <div className="flex gap-2">
-                          <input name="scheduledDate" type="date" defaultValue={jobToEdit?.scheduledDate || todayStr} required className="w-3/5 bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all" />
-                          <input name="scheduledTime" type="time" defaultValue={jobToEdit?.scheduledTime || ''} className="w-2/5 bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all" />
-                        </div>
-                     </div>
-                     <div className="space-y-1 relative z-[999]">
-                        <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider ml-1">Cliente</label>
-                        <CustomClientSelector value={selectedClient} onChange={setSelectedClient} clients={allClientsList} placeholder="Seleccione Cliente" />
-                        {selectedClient === 'OTRO' && <input type="text" value={manualClient} onChange={e => setManualClient(e.target.value)} placeholder="Nombre del cliente" required className="w-full mt-2 bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all animate-in fade-in slide-in-from-top-2" />}
-                     </div>
-                  </div>
-                  
-                  <div className="space-y-4">
-                     <div className="space-y-1 relative z-[900]">
-                        <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider ml-1">Origen / Retiro</label>
-                        <AutocompleteInput name="origin" options={destinationOptions} onDeleteOption={handleDeleteDestinationOption} defaultValue={jobToEdit?.origin || ''} required placeholder="¿Desde dónde?" className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all" />
-                     </div>
-                     
-                     {operationMode === 'traslado' && tripType === 'revision' ? (
-                        <div className="bg-blue-500/5 p-4 rounded-2xl border border-blue-500/20 space-y-3 relative z-[800]">
-                           <div className="space-y-1">
-                              <label className="text-[10px] font-extrabold text-blue-500 uppercase tracking-wider ml-1">Planta de Revisión</label>
-                              <select name="prtSelect" defaultValue={jobToEdit?.destination?.split('->')[0]?.trim() || (prtList.length > 0 ? prtList[0].name : '')} required className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-blue-200 dark:border-blue-800/50 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all cursor-pointer">
-                                <option value="">Selecciona la Planta...</option>
-                                {prtList.map((p, idx) => <option key={idx} value={p.name}>{p.name}</option>)}
-                              </select>
-                           </div>
-                           <div className="space-y-1">
-                              <label className="text-[10px] font-extrabold text-blue-500 uppercase tracking-wider ml-1">Destino Final (Post-PRT)</label>
-                              <AutocompleteInput name="destFinal" options={destinationOptions} onDeleteOption={handleDeleteDestinationOption} defaultValue={jobToEdit?.destination?.split('->')[1]?.trim() || ''} placeholder="Opcional" className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all" />
-                           </div>
-                        </div>
-                     ) : (
-                        <div className="space-y-1 relative z-[800]">
-                           <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider ml-1">Destino Final</label>
-                           <AutocompleteInput name="destination" options={destinationOptions} onDeleteOption={handleDeleteDestinationOption} defaultValue={jobToEdit?.destination || ''} required={operationMode === 'traslado'} placeholder="Hasta (Destino)" className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all" />
-                        </div>
-                     )}
-                  </div>
-                </div>
-
-                {operationMode === 'traslado' && tripType !== 'revision' && (
-                  <div className="pt-4 border-t border-slate-200/50 dark:border-slate-700/50 space-y-3">
-                     <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider ml-1">Paradas Intermedias (Opcional)</label>
-                     {waypoints.map((wp, idx) => (
-                        <div key={idx} className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
-                           <div className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-800 flex items-center justify-center font-black text-slate-500 shrink-0">{idx + 1}</div>
-                           <input type="text" value={wp} onChange={(e) => handleWaypointChange(idx, e.target.value)} placeholder={`Ej: Pesaje, Notaría...`} className="flex-1 bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-800 dark:text-slate-100" />
-                           <button type="button" onClick={() => handleRemoveWaypoint(idx)} className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500/20 transition-colors"><X className="w-5 h-5"/></button>
-                        </div>
-                     ))}
-                     <button type="button" onClick={handleAddWaypoint} className="w-full py-3 px-4 rounded-xl font-extrabold text-sm border-2 border-dashed border-slate-300 dark:border-slate-600 text-slate-500 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-500/5 transition-all flex items-center justify-center gap-2">
-                        <Plus className="w-4 h-4"/> Añadir Parada
-                     </button>
-                  </div>
-                )}
-             </div>
-
            {/* STEP 2: VEHICULO / SERVICIO */}
            <div className="animate-in fade-in slide-in-from-right-8 duration-500 border-t border-slate-200/50 dark:border-slate-700/50 pt-8">
                {operationMode === 'traslado' ? (
@@ -1034,6 +968,72 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                     )}
                  </div>
                )}
+             </div>
+
+           {/* STEP 3: RUTA Y PROGRAMACION */}
+           <div className="animate-in fade-in slide-in-from-right-8 duration-500 space-y-6 border-t border-slate-200/50 dark:border-slate-700/50 pt-8">
+                <h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-100 border-b border-slate-200/50 dark:border-slate-700/50 pb-4">Programación y Ruta</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                     <div className="space-y-1">
+                        <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider ml-1">Fecha y Hora</label>
+                        <div className="flex gap-2">
+                          <input name="scheduledDate" type="date" defaultValue={jobToEdit?.scheduledDate || todayStr} required className="w-3/5 bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all" />
+                          <input name="scheduledTime" type="time" defaultValue={jobToEdit?.scheduledTime || ''} className="w-2/5 bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all" />
+                        </div>
+                     </div>
+                     <div className="space-y-1 relative z-[999]">
+                        <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider ml-1">Cliente</label>
+                        <CustomClientSelector value={selectedClient} onChange={setSelectedClient} clients={allClientsList} placeholder="Seleccione Cliente" />
+                        {selectedClient === 'OTRO' && <input type="text" value={manualClient} onChange={e => setManualClient(e.target.value)} placeholder="Nombre del cliente" required className="w-full mt-2 bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all animate-in fade-in slide-in-from-top-2" />}
+                     </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                     <div className="space-y-1 relative z-[900]">
+                        <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider ml-1">Origen / Retiro</label>
+                        <AutocompleteInput name="origin" options={destinationOptions} onDeleteOption={handleDeleteDestinationOption} defaultValue={jobToEdit?.origin || ''} required placeholder="¿Desde dónde?" className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all" />
+                     </div>
+                     
+                     {operationMode === 'traslado' && tripType === 'revision' ? (
+                        <div className="bg-blue-500/5 p-4 rounded-2xl border border-blue-500/20 space-y-3 relative z-[800]">
+                           <div className="space-y-1">
+                              <label className="text-[10px] font-extrabold text-blue-500 uppercase tracking-wider ml-1">Planta de Revisión</label>
+                              <select name="prtSelect" defaultValue={jobToEdit?.destination?.split('->')[0]?.trim() || (prtList.length > 0 ? prtList[0].name : '')} required className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-blue-200 dark:border-blue-800/50 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all cursor-pointer">
+                                <option value="">Selecciona la Planta...</option>
+                                {prtList.map((p, idx) => <option key={idx} value={p.name}>{p.name}</option>)}
+                              </select>
+                           </div>
+                           <div className="space-y-1">
+                              <label className="text-[10px] font-extrabold text-blue-500 uppercase tracking-wider ml-1">Destino Final (Post-PRT)</label>
+                              <AutocompleteInput name="destFinal" options={destinationOptions} onDeleteOption={handleDeleteDestinationOption} defaultValue={jobToEdit?.destination?.split('->')[1]?.trim() || ''} placeholder="Opcional" className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all" />
+                           </div>
+                        </div>
+                     ) : (
+                        <div className="space-y-1 relative z-[800]">
+                           <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider ml-1">Destino Final</label>
+                           <AutocompleteInput name="destination" options={destinationOptions} onDeleteOption={handleDeleteDestinationOption} defaultValue={jobToEdit?.destination || ''} required={operationMode === 'traslado'} placeholder="Hasta (Destino)" className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all" />
+                        </div>
+                     )}
+                  </div>
+                </div>
+
+                {operationMode === 'traslado' && tripType !== 'revision' && (
+                  <div className="pt-4 border-t border-slate-200/50 dark:border-slate-700/50 space-y-3">
+                     <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider ml-1">Paradas Intermedias (Opcional)</label>
+                     {waypoints.map((wp, idx) => (
+                        <div key={idx} className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
+                           <div className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-800 flex items-center justify-center font-black text-slate-500 shrink-0">{idx + 1}</div>
+                           <input type="text" value={wp} onChange={(e) => handleWaypointChange(idx, e.target.value)} placeholder={`Ej: Pesaje, Notaría...`} className="flex-1 bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-800 dark:text-slate-100" />
+                           <button type="button" onClick={() => handleRemoveWaypoint(idx)} className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500/20 transition-colors"><X className="w-5 h-5"/></button>
+                        </div>
+                     ))}
+                     <button type="button" onClick={handleAddWaypoint} className="w-full py-3 px-4 rounded-xl font-extrabold text-sm border-2 border-dashed border-slate-300 dark:border-slate-600 text-slate-500 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-500/5 transition-all flex items-center justify-center gap-2">
+                        <Plus className="w-4 h-4"/> Añadir Parada
+                     </button>
+                  </div>
+                )}
              </div>
 
            {/* STEP 4: CONDUCTORES */}
