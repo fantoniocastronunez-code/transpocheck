@@ -68,6 +68,7 @@ export default defineConfig({
   build: {
     target: 'es2020',
     outDir: 'dist',
+    sourcemap: false, // Oculta el código fuente original en producción
     chunkSizeWarningLimit: 1500, // Evita la advertencia amarilla de Vite
     rollupOptions: {
       output: {
