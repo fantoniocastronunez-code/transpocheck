@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { X, Key, CheckCircle, Clock, Camera, Trash2, ArrowLeft } from 'lucide-react';
+import PointerRange from '../../ui/PointerRange';
 
 export default function PickupModal({
   pickupPromptJob,
@@ -115,15 +116,15 @@ export default function PickupModal({
                      <div className="w-0.5 h-2 bg-slate-900/50 rounded-full"></div>
                   </div>
 
-                  {/* Input Rango Real */}
-                  <input 
-                    type="range" 
-                    min="0" 
-                    max="1" 
-                    step="0.05"
-                    value={pickupFuelLevel ?? 0}
-                    onChange={(e) => setPickupFuelLevel(parseFloat(e.target.value))}
-                    className="absolute top-1/2 left-3 w-[calc(100%-24px)] h-8 -translate-y-1/2 opacity-0 cursor-pointer z-10"
+                  {/* Control táctil (sin <input>, para no abrir el teclado numérico) */}
+                  <PointerRange
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={pickupFuelLevel}
+                    onChange={setPickupFuelLevel}
+                    ariaLabel="Nivel de combustible inicial"
+                    className="absolute top-1/2 left-3 w-[calc(100%-24px)] h-8 -translate-y-1/2 cursor-pointer z-10"
                   />
                   
                   {/* Botón Pulgar Visual */}

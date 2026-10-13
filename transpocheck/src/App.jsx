@@ -112,7 +112,7 @@ function LogisticApp() {
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
   const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
-  const APP_VERSION = "v1.2.51"; // IMPORTANT: Update this version string when making changes.
+  const APP_VERSION = "v1.2.52"; // IMPORTANT: Update this version string when making changes.
   
   // VARIABLES MÁGICAS: Atrapan lo que Android nos comparte desde CamScanner o Adobe Scan
   const sharedText = searchParams.get('shared_text');
@@ -184,8 +184,9 @@ function LogisticApp() {
         getDocs(collection(db, 'prts')).then(snap => {
             const prts = snap.docs.map(d => d.data());
             setPrtList(prts);
-            // Auto-agregar PRT Santa Margarita si no existe
-            if (!prts.find(p => p.name === 'PRT Santa Margarita' || p.name === 'Santa Margarita')) {
+            // Auto-agregar PRT Santa Margarita solo si no hay ninguna planta guardada
+            // (así no reaparece si el usuario la elimina desde el selector)
+            if (prts.length === 0) {
                 addDoc(collection(db, 'prts'), { name: 'PRT Santa Margarita' }).catch(console.error);
             }
         }).catch(() => {});

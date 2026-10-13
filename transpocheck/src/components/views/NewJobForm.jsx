@@ -6,6 +6,7 @@ import Tesseract from 'tesseract.js';
 import * as pdfjsLib from 'pdfjs-dist';
 import InAppCamera from '../ui/InAppCamera';
 import AutocompleteInput from '../ui/AutocompleteInput';
+import DeletableSelect from '../ui/DeletableSelect';
 
 // ✨ Solución 100% Nativa VITE: Importamos el motor interno. Cero bloqueos de CORS.
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
@@ -43,6 +44,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     });
   };
   const [prtList, setPrtList] = useState([]); // <-- NUEVO ESTADO PARA PLANTAS PRT
+  const [prtSelected, setPrtSelected] = useState(jobToEdit?.destination?.split('->')[0]?.trim() || '');
 
   useEffect(() => {
     const fetchDirectory = async () => {
@@ -64,7 +66,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     const fetchPRTs = async () => {
       try {
         const snap = await getDocs(collection(db, 'prts'));
-        setPrtList(snap.docs.map(d => d.data()));
+        setPrtList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       } catch(e) { console.error("Error cargando PRTs:", e); }
     };
 
@@ -346,6 +348,10 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     if (isSubmitting) return;
 
     const formData = new FormData(e.target);
+
+    if (operationMode === 'traslado' && tripType === 'revision' && !formData.get('prtSelect')) {
+        return showAlert("❌ [ERR-PRT-01] Debes seleccionar la Planta de Revisión.");
+    }
 
     if (operationMode === 'traslado' && historicalVehicleType && historicalVehicleType !== vehicleType) {
         const confirmMsg = `Estás guardando este traslado como '${vehicleType}', pero históricamente este modelo (${model}) se ha registrado como '${historicalVehicleType}'.\n\n¿Estás seguro que deseas guardarlo como '${vehicleType}'?`;
@@ -659,6 +665,24 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
         setIsSubmitting(false);
       }
     })();
+  };
+
+  const handleDeletePrtOption = async (prt) => {
+    const isConfirmed = await showConfirmDialog(`¿Estás seguro que deseas eliminar "${prt.name}" de las plantas de revisión guardadas?`, "Eliminar Planta PRT");
+    if (!isConfirmed) return;
+    if (!prt.id) {
+       return showAlert(`❌ [ERR-PRT-DEL-01] No se pudo identificar "${prt.name}" para eliminarla.`);
+    }
+    try {
+       const { deleteDoc, doc } = await import('firebase/firestore');
+       await deleteDoc(doc(db, 'prts', prt.id));
+       setPrtList(prev => prev.filter(p => p.id !== prt.id));
+       if (prtSelected === prt.name) setPrtSelected('');
+       showAlert(`✅ "${prt.name}" eliminada de la lista.`);
+    } catch (e) {
+       console.error("[ERR-PRT-DEL-02]", e);
+       showAlert(`❌ [ERR-PRT-DEL-02] Error al eliminar la planta: ${e.message || 'Intente nuevamente'}`);
+    }
   };
 
   const handleDeleteDestinationOption = async (optName) => {
@@ -1000,10 +1024,16 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                         <div className="bg-blue-500/5 p-4 rounded-2xl border border-blue-500/20 space-y-3 relative z-[800]">
                            <div className="space-y-1">
                               <label className="text-[10px] font-extrabold text-blue-500 uppercase tracking-wider ml-1">Planta de Revisión</label>
-                              <select name="prtSelect" defaultValue={jobToEdit?.destination?.split('->')[0]?.trim() || (prtList.length > 0 ? prtList[0].name : '')} required className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-blue-200 dark:border-blue-800/50 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all cursor-pointer">
-                                <option value="">Selecciona la Planta...</option>
-                                {prtList.map((p, idx) => <option key={idx} value={p.name}>{p.name}</option>)}
-                              </select>
+                              <DeletableSelect
+                                name="prtSelect"
+                                value={prtSelected}
+                                onChange={setPrtSelected}
+                                options={prtList}
+                                onDeleteOption={handleDeletePrtOption}
+                                placeholder="Selecciona la Planta..."
+                                emptyText="No hay plantas guardadas"
+                                className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-blue-200 dark:border-blue-800/50 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all cursor-pointer"
+                              />
                            </div>
                            <div className="space-y-1">
                               <label className="text-[10px] font-extrabold text-blue-500 uppercase tracking-wider ml-1">Destino Final (Post-PRT)</label>

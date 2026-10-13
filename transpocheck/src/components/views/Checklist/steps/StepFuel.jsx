@@ -4,6 +4,7 @@ import { formatMoney } from '../../../../utils/helpers';
 import { Clock, DollarSign } from 'lucide-react';
 import { db } from '../../../../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
+import PointerRange from '../../../ui/PointerRange';
 
 const CurrencyInput = ({ value, onChange, placeholder, label }) => (
   <div className="flex flex-col gap-1">
@@ -165,12 +166,12 @@ export const StepFuel = ({ openCamera }) => {
             style={{ width: `${formData.fuelLevel}%` }}
           />
 
-          <input 
-            type="range" 
-            min="0" max="100" step="12.5" 
-            value={formData.fuelLevel} 
-            onChange={(e) => setF('fuelLevel', parseFloat(e.target.value))} 
-            className="w-full accent-blue-600 cursor-pointer relative z-10 opacity-0 h-8"
+          <PointerRange
+            min={0} max={100} step={12.5}
+            value={formData.fuelLevel}
+            onChange={(v) => setF('fuelLevel', v)}
+            ariaLabel="Nivel de combustible"
+            className="w-full cursor-pointer relative z-10 h-8"
           />
           
           <div className="flex justify-between w-full absolute top-1/2 -translate-y-1/2 pointer-events-none">
@@ -252,12 +253,12 @@ export const StepFuel = ({ openCamera }) => {
                     style={{ width: `${formData.fuelLevelAfter ?? formData.fuelLevel}%` }}
                   />
 
-                  <input 
-                    type="range" 
-                    min="0" max="100" step="12.5" 
-                    value={formData.fuelLevelAfter ?? formData.fuelLevel} 
-                    onChange={(e) => setF('fuelLevelAfter', parseFloat(e.target.value))} 
-                    className="w-full accent-blue-600 cursor-pointer relative z-10 opacity-0 h-8"
+                  <PointerRange
+                    min={0} max={100} step={12.5}
+                    value={formData.fuelLevelAfter ?? formData.fuelLevel}
+                    onChange={(v) => setF('fuelLevelAfter', v)}
+                    ariaLabel="Nivel de combustible después de carga"
+                    className="w-full cursor-pointer relative z-10 h-8"
                   />
                   
                   <div className="flex justify-between w-full absolute top-1/2 -translate-y-1/2 pointer-events-none">
