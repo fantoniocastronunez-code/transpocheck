@@ -936,14 +936,18 @@ export default function JobCard({ j, ...props }) {
                         </div>
                       )}
 
-                      {j.phase === 'prt_done' && (
-                        <SwipeButton key={`btn-dest-prt-${j.id}`} onConfirm={()=>{
-                            setArrivalPromptJob(j); 
-                            setArrivalMileage(''); 
-                            setArrivalPhoto(null); 
-                            setMenuOpenId(null);
-                        }} text={`Desliza: Llegué a ${j.checklist?.rtReturnOption === 'other' ? (j.checklist?.rtReturnDestination?.substring(0,10) + '...') : 'Origen'}`} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />
-                      )}
+                      {j.phase === 'prt_done' && (() => {
+                        const targetDest = getRtFinalDestination(j);
+                        const displayDest = targetDest.length > 15 ? targetDest.substring(0, 15) + '...' : targetDest;
+                        return (
+                          <SwipeButton key={`btn-dest-prt-${j.id}`} onConfirm={()=>{
+                              setArrivalPromptJob(j); 
+                              setArrivalMileage(''); 
+                              setArrivalPhoto(null); 
+                              setMenuOpenId(null);
+                          }} text={`Desliza: Llegué a ${displayDest}`} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />
+                        );
+                      })()}
 
                       <button onClick={()=>onStartChecklist(j)} className={`w-full font-bold py-2 rounded-xl text-xs shadow-sm transition-colors ${(j.phase === 'arrived_destination') ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'}`}>
                         📸 {(j.phase === 'arrived_destination') ? (j.tripType === 'simple' ? 'Cerrar Acta de Servicio' : 'Cerrar Checklist') : (j.tripType === 'simple' ? 'Pre-llenar Acta' : 'Pre-llenar Checklist')}

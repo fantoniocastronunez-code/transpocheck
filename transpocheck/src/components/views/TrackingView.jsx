@@ -318,10 +318,16 @@ const handleDownloadPDF = async (job) => {
               const step4Done = isAccepted && phase === 'prt_done';
 
               const getRtFinalDestination = (j) => {
-                if (j.checklist?.rtReturnOption === 'other' && j.checklist?.rtReturnDestination) return j.checklist.rtReturnDestination;
-                if (j.checklist?.rtReturnOption === 'origin') return j.origin;
-                if (j.destination && !j.destination.toLowerCase().includes('planta prt')) return j.destination;
-                if (j.destName && !j.destName.toLowerCase().includes('planta prt')) return j.destName;
+                const returnOpt = j.checklist?.rtReturnOption || j.draft?.formData?.rtReturnOption;
+                const returnDest = j.checklist?.rtReturnDestination || j.draft?.formData?.rtReturnDestination;
+                if (returnOpt === 'other' && returnDest) return returnDest;
+                if (returnOpt === 'origin') return j.origin || 'Origen';
+                if (j.destination && j.destination.includes('->')) {
+                  const parts = j.destination.split('->');
+                  return parts[parts.length - 1].trim();
+                }
+                if (j.destination && !j.destination.toLowerCase().includes('planta prt') && !j.destination.toLowerCase().includes('prt')) return j.destination.trim();
+                if (j.destName && !j.destName.toLowerCase().includes('planta prt') && !j.destName.toLowerCase().includes('prt')) return j.destName.trim();
                 return j.origin || 'Por definir';
               };
 
@@ -751,7 +757,7 @@ const handleDownloadPDF = async (job) => {
                     <MapPin className="w-4 h-4 text-slate-400 mt-0.5 shrink-0"/>
                     <div>
                       <p className="text-xs font-bold text-slate-700 dark:text-slate-300 break-words">
-                        {selectedHistoryJob.origin || '-'} ➔ {selectedHistoryJob.waypoints?.length ? `(+${selectedHistoryJob.waypoints.length} int) ➔ ` : ''}{selectedHistoryJob.tripType === 'revision' ? (selectedHistoryJob.checklist?.rtReturnOption === 'other' ? selectedHistoryJob.checklist.rtReturnDestination : selectedHistoryJob.origin) : (selectedHistoryJob.destination || '-')}
+                        {selectedHistoryJob.origin || '-'} ➔ {selectedHistoryJob.waypoints?.length ? `(+${selectedHistoryJob.waypoints.length} int) ➔ ` : ''}{selectedHistoryJob.tripType === 'revision' ? getRtFinalDestination(selectedHistoryJob) : (selectedHistoryJob.destination || '-')}
                       </p>
                     </div>
                   </div>

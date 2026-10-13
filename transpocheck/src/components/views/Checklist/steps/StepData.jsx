@@ -216,14 +216,39 @@ export const StepData = () => {
           )}
 
           {formData.rtStatus === 'rechazado' && (
-            <input 
-              value={formData.rtRejectReason} 
-              onChange={e => setF('rtRejectReason', e.target.value)} 
-              placeholder="¿Cuál fue la razón del rechazo?" 
-              required 
-              autoComplete="off" autoCorrect="off" spellCheck="false" 
-              className="w-full border-2 border-red-300 dark:border-red-700/50 p-3.5 rounded-2xl outline-none focus:border-red-500 font-bold text-red-900 dark:text-red-300 bg-white dark:bg-slate-900 mt-3 animate-in fade-in shadow-inner" 
-            />
+            <div className="space-y-3 animate-in fade-in">
+              <input 
+                value={formData.rtRejectReason} 
+                onChange={e => setF('rtRejectReason', e.target.value)} 
+                placeholder="¿Cuál fue la razón del rechazo?" 
+                required 
+                autoComplete="off" autoCorrect="off" spellCheck="false" 
+                className="w-full border-2 border-red-300 dark:border-red-700/50 p-3.5 rounded-2xl outline-none focus:border-red-500 font-bold text-red-900 dark:text-red-300 bg-white dark:bg-slate-900 mt-3 shadow-inner" 
+              />
+              <div className="p-4 border border-red-200 dark:border-red-800/50 bg-red-50/30 dark:bg-red-900/10 rounded-2xl space-y-3">
+                <p className="text-[11px] font-black text-red-800 dark:text-red-400 uppercase tracking-widest">¿Destino tras rechazo?</p>
+                <div className="flex gap-5">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-red-700 dark:text-red-300 select-none">
+                    <input type="radio" name="rtReturnOptionRej" value="origin" checked={formData.rtReturnOption === 'origin'} onChange={e => setF('rtReturnOption', e.target.value)} className="w-4 h-4 accent-red-600" />
+                    Volver al Origen
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-red-700 dark:text-red-300 select-none">
+                    <input type="radio" name="rtReturnOptionRej" value="other" checked={formData.rtReturnOption === 'other'} onChange={e => setF('rtReturnOption', e.target.value)} className="w-4 h-4 accent-red-600" />
+                    Otro Destino
+                  </label>
+                </div>
+                {formData.rtReturnOption === 'other' && (
+                  <input 
+                    value={formData.rtReturnDestination} 
+                    onChange={e => setF('rtReturnDestination', e.target.value)} 
+                    placeholder="Especifique el destino final tras rechazo..." 
+                    required 
+                    autoComplete="off" autoCorrect="off" spellCheck="false" 
+                    className="w-full border-2 border-red-300 dark:border-red-700/50 p-3 rounded-xl outline-none focus:border-red-500 font-bold text-red-900 dark:text-red-300 bg-white dark:bg-slate-900 mt-2 shadow-inner" 
+                  />
+                )}
+              </div>
+            </div>
           )}
 
           {(formData.rtStatus === 'aprobado' || formData.rtStatus === 'aprobado_ayuda') && (

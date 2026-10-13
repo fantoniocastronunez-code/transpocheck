@@ -86,15 +86,7 @@ export default function HistoryJobCard({ j, ...props }) {
            <div className="relative z-20 flex items-center gap-2">
               <div className="absolute -left-[20px] w-2.5 h-2.5 rounded-full bg-[#60a5fa] shadow-sm"></div>
               <span className="text-[11px] font-bold text-blue-200 leading-tight truncate w-full pr-1">
-                 {j.tripType === 'revision'
-                      ? (j.destination?.includes('->')
-                          ? j.destination.split('->')[j.destination.split('->').length - 1].trim()
-                          : (j.checklist?.rtReturnOption === 'other' && j.checklist?.rtReturnDestination
-                            ? j.checklist.rtReturnDestination
-                            : j.checklist?.rtReturnOption === 'origin'
-                              ? j.origin
-                              : (j.destination && !j.destination.toLowerCase().includes('prt') ? j.destination : (j.origin || 'Por definir'))))
-                      : (j.destination || '-')}
+                 {j.tripType === 'revision' ? getRtFinalDestination(j) : (j.destination || '-')}
               </span>
            </div>
         </div>

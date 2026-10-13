@@ -162,7 +162,21 @@ export default function ClientSignView({ jobId, db }) {
         currentY += Math.max(hP, hD) + 6;
         
         let routeText = `${job.origin || '-'}  ->  ${job.destination || '-'}`;
-        if (job.tripType === 'revision') { if (job.checklist?.rtStatus === 'aprobado') { const ret = job.checklist.rtReturnOption === 'other' ? job.checklist.rtReturnDestination : job.origin; routeText = `${job.origin || '-'}  ->  PRT  ->  ${ret || '-'}`; } else if (job.checklist?.rtStatus === 'rechazado') { routeText = `${job.origin || '-'}  ->  PRT (Rechazada)`; } else { routeText = `${job.origin || '-'}  ->  PRT`; } }
+        if (job.tripType === 'revision') {
+          const returnOpt = job.checklist?.rtReturnOption;
+          const returnDest = job.checklist?.rtReturnDestination;
+          const ret = returnOpt === 'other' && returnDest 
+            ? returnDest 
+            : (returnOpt === 'origin' ? job.origin : (job.destination?.includes('->') ? job.destination.split('->')[job.destination.split('->').length - 1].trim() : job.origin));
+
+          if (job.checklist?.rtStatus === 'aprobado' || job.checklist?.rtStatus === 'aprobado_ayuda') { 
+            routeText = `${job.origin || '-'}  ->  PRT  ->  ${ret || '-'}`; 
+          } else if (job.checklist?.rtStatus === 'rechazado') { 
+            routeText = ret ? `${job.origin || '-'}  ->  PRT (Rechazada)  ->  ${ret}` : `${job.origin || '-'}  ->  PRT (Rechazada)`; 
+          } else { 
+            routeText = `${job.origin || '-'}  ->  PRT`; 
+          } 
+        }
         let routeH = drawKV("Ruta Asignada", routeText, 15, currentY, leftColWidth);
         currentY += routeH + 8;
 

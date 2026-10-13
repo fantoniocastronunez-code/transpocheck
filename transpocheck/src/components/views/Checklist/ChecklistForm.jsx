@@ -215,6 +215,13 @@ const ChecklistInner = ({ openCamera }) => {
           if (job.tripType === 'revision') {
             updates.prt_result = formDataWithLocation.rtStatus;
             updates.prt_reason = formDataWithLocation.rtRejectReason || '';
+            if (formDataWithLocation.rtReturnOption) {
+              const effectiveFinal = formDataWithLocation.rtReturnOption === 'other' ? (formDataWithLocation.rtReturnDestination || '') : job.origin;
+              const prtPart = (job.destination || '').includes('->') ? job.destination.split('->')[0].trim() : (job.destination?.trim() || 'PRT');
+              if (effectiveFinal) {
+                updates.destination = `${prtPart} -> ${effectiveFinal}`;
+              }
+            }
           }
           
           // Guardar draft rápido
@@ -232,9 +239,18 @@ const ChecklistInner = ({ openCamera }) => {
           // Subir fotos
           const finalData = await syncFilesToStorage(formDataWithLocation, setProgress);
           
-          await updateDoc(doc(db, 'transport_jobs', job.id), {
+          const finalJobUpdates = {
             checklist: finalData, status: 'completed', completedAt: Date.now(), draft: null
-          });
+          };
+          if (job.tripType === 'revision' && finalData.rtReturnOption) {
+            const effectiveFinal = finalData.rtReturnOption === 'other' ? (finalData.rtReturnDestination || '') : job.origin;
+            const prtPart = (job.destination || '').includes('->') ? job.destination.split('->')[0].trim() : (job.destination?.trim() || 'PRT');
+            if (effectiveFinal) {
+              finalJobUpdates.destination = `${prtPart} -> ${effectiveFinal}`;
+            }
+          }
+
+          await updateDoc(doc(db, 'transport_jobs', job.id), finalJobUpdates);
           await processChecklistExpenses(finalData);
 
           if (matchedVehicle && matchedVehicle.id) {

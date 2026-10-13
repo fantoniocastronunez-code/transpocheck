@@ -178,15 +178,22 @@ export const generateStandardFileName = (job, dateStr, identifier) => {
 export const getRouteStr = (j) => {
   if (j.tripType === 'revision') {
     const rtStat = j.checklist?.rtStatus || j.prt_result;
-    const manualDest = j.destination?.includes('->') 
-                    ? j.destination.split('->')[j.destination.split('->').length - 1].trim() 
-                    : null;
-    
-    const ret = manualDest 
-       ? manualDest 
-       : (j.checklist?.rtReturnOption === 'other' && j.checklist?.rtReturnDestination
-          ? j.checklist.rtReturnDestination 
-          : (j.checklist?.rtReturnOption === 'origin' ? j.origin : (j.destination && !j.destination.toLowerCase().includes('prt') ? j.destination : j.origin)));
+    const returnOpt = j.checklist?.rtReturnOption || j.draft?.formData?.rtReturnOption;
+    const returnDest = j.checklist?.rtReturnDestination || j.draft?.formData?.rtReturnDestination;
+
+    let ret = null;
+    if (returnOpt === 'other' && returnDest) {
+      ret = returnDest;
+    } else if (returnOpt === 'origin') {
+      ret = j.origin;
+    } else if (j.destination?.includes('->')) {
+      const parts = j.destination.split('->');
+      ret = parts[parts.length - 1].trim();
+    } else if (j.destination && !j.destination.toLowerCase().includes('prt')) {
+      ret = j.destination;
+    } else {
+      ret = j.origin;
+    }
 
     if (rtStat === 'aprobado' || rtStat === 'aprobado_ayuda') {
         return `${j.origin || '-'} ➔ PRT ➔ ${ret || '-'}`;

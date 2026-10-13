@@ -635,19 +635,20 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       // 2. Lógica Inteligente para el Retorno (Tramo 2: PRT -> Destino Final)
       if (job.tripType === 'revision') {
-        const typedDest = job.checklist?.rtReturnDestination || '';
+        const returnOpt = job.checklist?.rtReturnOption || job.draft?.formData?.rtReturnOption;
+        const typedDest = job.checklist?.rtReturnDestination || job.draft?.formData?.rtReturnDestination || '';
         const cleanFinalDest = finalDestAfterPrt ? finalDestAfterPrt.toLowerCase().trim() : '';
         const cleanOrigin = job.origin ? job.origin.toLowerCase().trim() : '';
 
         // Verificar si el destino final es literalmente el mismo que el origen original
-        const isExplicitOrigin = job.checklist?.rtReturnOption === 'origin' ||
-          (typedDest && cleanOrigin && typedDest.toLowerCase().trim() === cleanOrigin) ||
-          (cleanFinalDest && cleanOrigin && cleanFinalDest === cleanOrigin);
+        const isExplicitOrigin = returnOpt === 'origin' ||
+          (returnOpt === 'other' && typedDest && cleanOrigin && typedDest.toLowerCase().trim() === cleanOrigin) ||
+          (!returnOpt && cleanFinalDest && cleanOrigin && cleanFinalDest === cleanOrigin);
 
         if (isExplicitOrigin) {
           // 🔥 EL SECRETO: Si vuelve al origen, usamos EXACTAMENTE la variable `orig` (que ya contiene el Plus Code válido)
           returnDest = orig;
-        } else if (job.checklist?.rtReturnOption === 'other' && typedDest) {
+        } else if (returnOpt === 'other' && typedDest) {
           let resolvedRet = await resolveAddress(typedDest, null, null);
           if (resolvedRet && !resolvedRet.toLowerCase().includes('chile') && !resolvedRet.includes('+')) resolvedRet += ', Chile';
           returnDest = resolvedRet;
@@ -718,7 +719,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       if (phase === 'arrived_destination' || phase === 'arrived_prt') {
         // eslint-disable-next-line react-hooks/purity
         if (!job.arrivedDestinationAt) finalExtra.arrivedDestinationAt = Date.now();
-        finalExtra.drivenDistance = await calculateJobDistance(job);
+        finalExtra.drivenDistance = await calculateJobDistance({ ...job, ...finalExtra });
         
         if (phase === 'arrived_prt' && (!job.checklist || !job.checklist.prtArrivalTime)) {
             finalExtra['checklist.prtArrivalTime'] = Date.now();
@@ -745,7 +746,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         }
       }
     } catch (e) {
-      console.error(e); showAlert("Error de conexión al actualizar fase.");
+      console.error(e); showAlert("[ERR-PHASE-UPDATE-01] Error de conexión al actualizar fase.");
     } finally {
       setTimeout(() => setProcessingId(null), 300);
     }
@@ -1338,18 +1339,21 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   };
 
   const getRtFinalDestination = (job) => {
-    // 1. PRIORIDAD ABSOLUTA: Si el administrador editó la ruta con flechas, esta gana por sobre el checklist.
+    // 1. Si ya se decidió la RT (en checklist o borrador), esa decisión manda por sobre todo
+    const returnOpt = job.checklist?.rtReturnOption || job.draft?.formData?.rtReturnOption;
+    const returnDest = job.checklist?.rtReturnDestination || job.draft?.formData?.rtReturnDestination;
+
+    if (returnOpt === 'other' && returnDest) {
+      return returnDest;
+    }
+    if (returnOpt === 'origin') {
+      return job.origin || 'Origen';
+    }
+
+    // 2. Si aún no se decide en RT, tomamos el destino planificado en la creación (con flechas)
     if (job.destination && job.destination.includes('->')) {
       const parts = job.destination.split('->');
       return parts[parts.length - 1].trim();
-    }
-
-    // 2. Si no hay ruta editada manual, tomamos la decisión del checklist
-    if (job.checklist?.rtReturnOption === 'other' && job.checklist?.rtReturnDestination) {
-      return job.checklist.rtReturnDestination;
-    }
-    if (job.checklist?.rtReturnOption === 'origin') {
-      return job.origin;
     }
 
     // 3. Fallback final si no hay checklist cerrado ni flechas
@@ -2045,7 +2049,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <form onSubmit={(e) => {
             e.preventDefault();
-            if (prtReturnOpt === 'other' && !prtReturnDest.trim()) return showAlert("Debes ingresar el nuevo destino para continuar.");
+            if (prtReturnOpt === 'other' && !prtReturnDest.trim()) return showAlert("[ERR-RT-DEST-01] Debes ingresar el nuevo destino para continuar.");
 
             let finalReturnOpt = prtReturnOpt;
             let finalReturnDest = prtReturnDest;
@@ -2068,11 +2072,38 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               rtReturnDestination: finalReturnOpt === 'other' ? finalReturnDest : ''
             };
 
+            const effectiveFinalDest = finalReturnOpt === 'other' ? finalReturnDest : prtPromptJob.origin;
+            const prtPart = (prtPromptJob.destination || '').includes('->')
+              ? prtPromptJob.destination.split('->')[0].trim()
+              : (prtPromptJob.destination?.trim() || 'PRT');
+            const newDestination = prtPart ? `${prtPart} -> ${effectiveFinalDest}` : effectiveFinalDest;
+
             const extraUpdates = {
               prt_result: 'rechazado',
               prt_reason: reasonText,
-              checklist: mergedChecklist
+              checklist: mergedChecklist,
+              destination: newDestination
             };
+
+            if (finalReturnOpt === 'origin') {
+              extraUpdates.destContactName = prtPromptJob.originContactName || '';
+              extraUpdates.destContactPhone = prtPromptJob.originContactPhone || '';
+              extraUpdates.destAddress = prtPromptJob.originAddress || '';
+              extraUpdates.destCommune = prtPromptJob.originCommune || '';
+            } else if (finalReturnOpt === 'other' && finalReturnDest) {
+              const matched = (directoryMemory || []).find(d => (d.placeName || d.name)?.trim().toLowerCase() === finalReturnDest.trim().toLowerCase());
+              if (matched) {
+                extraUpdates.destContactName = matched.contactName || '';
+                extraUpdates.destContactPhone = matched.contactPhone || '';
+                extraUpdates.destAddress = matched.address || '';
+                extraUpdates.destCommune = matched.commune || '';
+              } else {
+                extraUpdates.destContactName = finalReturnDest;
+                extraUpdates.destContactPhone = '';
+                extraUpdates.destAddress = finalReturnDest;
+                extraUpdates.destCommune = '';
+              }
+            }
 
             // Sincroniza hacia el interior del borrador si existe, para que el formulario no despierte mareado
             if (prtPromptJob.draft?.formData) {
@@ -2080,6 +2111,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               extraUpdates['draft.formData.rtRejectReason'] = reasonText;
               extraUpdates['draft.formData.rtReturnOption'] = finalReturnOpt;
               extraUpdates['draft.formData.rtReturnDestination'] = finalReturnOpt === 'other' ? finalReturnDest : '';
+              extraUpdates['draft.formData.destination'] = newDestination;
             }
 
             updatePhase(prtPromptJob, 'prt_done', extraUpdates);
@@ -2150,7 +2182,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <form onSubmit={(e) => {
             e.preventDefault();
-            if (prtReturnOpt === 'other' && !prtReturnDest.trim()) return showAlert("Debes ingresar el nuevo destino para continuar.");
+            if (prtReturnOpt === 'other' && !prtReturnDest.trim()) return showAlert("[ERR-RT-DEST-02] Debes ingresar el nuevo destino para continuar.");
 
             if (prtReturnOpt === 'other' && prtReturnDest) {
               saveNewDestinationToMemory(prtReturnDest);
@@ -2163,16 +2195,44 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               rtReturnDestination: prtReturnOpt === 'other' ? prtReturnDest : ''
             };
 
+            const effectiveFinalDest = prtReturnOpt === 'other' ? prtReturnDest : prtApprovePromptJob.origin;
+            const prtPart = (prtApprovePromptJob.destination || '').includes('->')
+              ? prtApprovePromptJob.destination.split('->')[0].trim()
+              : (prtApprovePromptJob.destination?.trim() || 'PRT');
+            const newDestination = prtPart ? `${prtPart} -> ${effectiveFinalDest}` : effectiveFinalDest;
+
             const extraUpdates = {
               prt_result: prtApproveType,
-              checklist: mergedChecklist
+              checklist: mergedChecklist,
+              destination: newDestination
             };
+
+            if (prtReturnOpt === 'origin') {
+              extraUpdates.destContactName = prtApprovePromptJob.originContactName || '';
+              extraUpdates.destContactPhone = prtApprovePromptJob.originContactPhone || '';
+              extraUpdates.destAddress = prtApprovePromptJob.originAddress || '';
+              extraUpdates.destCommune = prtApprovePromptJob.originCommune || '';
+            } else if (prtReturnOpt === 'other' && prtReturnDest) {
+              const matched = (directoryMemory || []).find(d => (d.placeName || d.name)?.trim().toLowerCase() === prtReturnDest.trim().toLowerCase());
+              if (matched) {
+                extraUpdates.destContactName = matched.contactName || '';
+                extraUpdates.destContactPhone = matched.contactPhone || '';
+                extraUpdates.destAddress = matched.address || '';
+                extraUpdates.destCommune = matched.commune || '';
+              } else {
+                extraUpdates.destContactName = prtReturnDest;
+                extraUpdates.destContactPhone = '';
+                extraUpdates.destAddress = prtReturnDest;
+                extraUpdates.destCommune = '';
+              }
+            }
 
             // Sincroniza hacia el interior del borrador si existe
             if (prtApprovePromptJob.draft?.formData) {
               extraUpdates['draft.formData.rtStatus'] = prtApproveType;
               extraUpdates['draft.formData.rtReturnOption'] = prtReturnOpt;
               extraUpdates['draft.formData.rtReturnDestination'] = prtReturnOpt === 'other' ? prtReturnDest : '';
+              extraUpdates['draft.formData.destination'] = newDestination;
             }
 
             updatePhase(prtApprovePromptJob, 'prt_done', extraUpdates);

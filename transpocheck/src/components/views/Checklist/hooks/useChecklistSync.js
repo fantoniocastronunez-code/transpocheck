@@ -75,9 +75,9 @@ export const useChecklistSync = ({
       // 3. Overrides from job data
       if (data?.prt_result) draftData.rtStatus = data.prt_result;
       if (data?.prt_reason) draftData.rtRejectReason = data.prt_reason;
-      if (data?.checklist?.rtReturnOption) {
-        draftData.rtReturnOption = data.checklist.rtReturnOption;
-        draftData.rtReturnDestination = data.checklist.rtReturnDestination || '';
+      if (data?.checklist?.rtReturnOption || data?.draft?.formData?.rtReturnOption) {
+        draftData.rtReturnOption = data.checklist?.rtReturnOption || data.draft?.formData?.rtReturnOption;
+        draftData.rtReturnDestination = data.checklist?.rtReturnDestination || data.draft?.formData?.rtReturnDestination || '';
       }
       draftData.vehicleType = data?.checklist?.vehicleType || data?.vehicleType || matchedVehicle?.vehicleType || matchedVehicle?.type || draftData.vehicleType || 'auto';
 
@@ -176,6 +176,14 @@ export const useChecklistSync = ({
 
         if (fbDraftData.rtStatus !== 'pendiente' && job.phase === 'arrived_prt') {
           updates.phase = 'prt_done';
+        }
+
+        if (fbDraftData.rtReturnOption) {
+          const effectiveFinal = fbDraftData.rtReturnOption === 'other' ? (fbDraftData.rtReturnDestination || '') : job.origin;
+          const prtPart = (job.destination || '').includes('->') ? job.destination.split('->')[0].trim() : (job.destination?.trim() || 'PRT');
+          if (effectiveFinal) {
+            updates.destination = `${prtPart} -> ${effectiveFinal}`;
+          }
         }
       }
 
