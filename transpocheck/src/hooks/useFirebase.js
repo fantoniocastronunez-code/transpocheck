@@ -217,46 +217,103 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
     if (jobs.length > 0) cleanupDrafts();
   }, [jobs]);
 
-  // Efecto 5: Lectura de Base de Datos en Tiempo Real
+  // Efecto 5: Lectura de Base de Datos en Tiempo Real (Ultra-Optimizado para Conductor y Móvil)
   useEffect(() => {
     if (!user) return;
     
-    const qJobs = query(collection(db, 'transport_jobs'), orderBy('createdAt', 'desc'), limit(jobLimit));
-    const unsubJobs = onSnapshot(qJobs, (snapshot) => {
-      if (!isFirstLoad.current) {
-        snapshot.docChanges().forEach((change) => {
-          const d = change.doc.data();
-          const isReallyNew = (Date.now() - (d.createdAt || 0)) < 120000;
-          
-          if (change.type === 'added' && d.status === 'pending' && d.assignedEmails?.includes(currentUserEmail) && isReallyNew) {
-             triggerNotification('📍 ¡Nuevo Traslado!', `CLIENTE: ${d.client}\nPATENTE: ${d.plate || d.vin}`);
-          }
-          
-          if (change.type === 'modified' && d.status === 'accepted' && isRealAdmin && activeRole === 'admin') {
-             // Filtro Anti-Spam: Solo avisa si NO tenemos este ID en la memoria
-             if (!notifiedJobs.current.has(d.id)) {
-                 triggerNotification('✅ Trabajo Aceptado', `CLIENTE: ${d.client}\nPATENTE: ${d.plate || d.vin}`);
-                 notifiedJobs.current.add(d.id); // Guardamos el ID para ignorar las siguientes actualizaciones del GPS
-             }
-          }
-        });
-      }
-      setJobs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-      isFirstLoad.current = false;
-    });
+    const isDriverMode = !isRealAdmin || (activeRole === 'driver' && simulatedDriverEmail);
+    const unsubs = [];
+
+    if (isDriverMode) {
+      // 🚀 MODO CONDUCTOR: Reducción masiva de lecturas en Firestore y consumo de datos móviles
+      let activeDocs = [];
+      let recentDocs = [];
+
+      const syncJobs = () => {
+        const jobsMap = new Map();
+        recentDocs.forEach(j => jobsMap.set(j.id, j));
+        activeDocs.forEach(j => jobsMap.set(j.id, j));
+        setJobs(Array.from(jobsMap.values()));
+      };
+
+      // 1. Trabajos activos (pendientes, aceptados, en ruta, pedidos): garantiza que NUNCA falte un trabajo asignado
+      const qActive = query(collection(db, 'transport_jobs'), where('status', 'in', ['pending', 'accepted', 'pending_guide', 'requested']));
+      const unsubActive = onSnapshot(qActive, (snapshot) => {
+        if (!isFirstLoad.current) {
+          snapshot.docChanges().forEach((change) => {
+            const d = change.doc.data();
+            const isReallyNew = (Date.now() - (d.createdAt || 0)) < 120000;
+            if (change.type === 'added' && d.status === 'pending' && d.assignedEmails?.includes(currentUserEmail) && isReallyNew) {
+              triggerNotification('📍 ¡Nuevo Traslado!', `CLIENTE: ${d.client}\nPATENTE: ${d.plate || d.vin}`);
+            }
+          });
+        }
+        activeDocs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        syncJobs();
+        isFirstLoad.current = false;
+      }, (err) => console.error("[ERR-FB-JOBS-ACTIVE]", err));
+      unsubs.push(unsubActive);
+
+      // 2. Historial reciente (máx 35 en vez de 300 para no gastar cuota de Firestore)
+      const driverLimit = Math.min(jobLimit || 35, 50);
+      const qRecent = query(collection(db, 'transport_jobs'), orderBy('createdAt', 'desc'), limit(driverLimit));
+      const unsubRecent = onSnapshot(qRecent, (snapshot) => {
+        recentDocs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        syncJobs();
+      }, (err) => console.error("[ERR-FB-JOBS-RECENT]", err));
+      unsubs.push(unsubRecent);
+
+      // 3. Gastos optimizados (máx 30 en vez de 300)
+      const qExpenses = query(collection(db, 'expenses'), orderBy('createdAt', 'desc'), limit(30));
+      const unsubExpenses = onSnapshot(qExpenses, snap => setExpenses(snap.docs.map(d => ({ id: d.id, ...d.data() }))), (err) => console.error("[ERR-FB-EXP-01]", err));
+      unsubs.push(unsubExpenses);
+
+    } else {
+      // 🏢 MODO ADMINISTRADOR: Monitor completo de la central
+      const qJobs = query(collection(db, 'transport_jobs'), orderBy('createdAt', 'desc'), limit(jobLimit));
+      const unsubJobs = onSnapshot(qJobs, (snapshot) => {
+        if (!isFirstLoad.current) {
+          snapshot.docChanges().forEach((change) => {
+            const d = change.doc.data();
+            const isReallyNew = (Date.now() - (d.createdAt || 0)) < 120000;
+            
+            if (change.type === 'added' && d.status === 'pending' && d.assignedEmails?.includes(currentUserEmail) && isReallyNew) {
+               triggerNotification('📍 ¡Nuevo Traslado!', `CLIENTE: ${d.client}\nPATENTE: ${d.plate || d.vin}`);
+            }
+            
+            if (change.type === 'modified' && d.status === 'accepted' && isRealAdmin && activeRole === 'admin') {
+               // Filtro Anti-Spam: Solo avisa si NO tenemos este ID en la memoria
+               if (!notifiedJobs.current.has(d.id)) {
+                   triggerNotification('✅ Trabajo Aceptado', `CLIENTE: ${d.client}\nPATENTE: ${d.plate || d.vin}`);
+                   notifiedJobs.current.add(d.id);
+               }
+            }
+          });
+        }
+        setJobs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        isFirstLoad.current = false;
+      }, (err) => console.error("[ERR-FB-JOBS-ADMIN]", err));
+      unsubs.push(unsubJobs);
+
+      const qExpenses = query(collection(db, 'expenses'), orderBy('createdAt', 'desc'), limit(300));
+      const unsubExpenses = onSnapshot(qExpenses, snap => setExpenses(snap.docs.map(d => ({ id: d.id, ...d.data() }))), (err) => console.error("[ERR-FB-EXP-ADMIN]", err));
+      unsubs.push(unsubExpenses);
+    }
 
     const unsubDrivers = onSnapshot(collection(db, 'drivers'), snap => {
       setDrivers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       setDataLoaded(true); // Candado maestro abierto
-    });
-    
-    const qExpenses = query(collection(db, 'expenses'), orderBy('createdAt', 'desc'), limit(300));
-    const unsubExpenses = onSnapshot(qExpenses, snap => setExpenses(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    const unsubVehicles = onSnapshot(collection(db, 'vehicles'), snap => setVehicles(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    const unsubClients = onSnapshot(collection(db, 'clients'), snap => setCustomClients(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    }, (err) => console.error("[ERR-FB-DRIVERS]", err));
+    unsubs.push(unsubDrivers);
 
-    return () => { unsubJobs(); unsubDrivers(); unsubExpenses(); unsubVehicles(); unsubClients(); };
-  }, [user, currentUserEmail, isRealAdmin, jobLimit, activeRole]);
+    const unsubVehicles = onSnapshot(collection(db, 'vehicles'), snap => setVehicles(snap.docs.map(d => ({ id: d.id, ...d.data() }))), (err) => console.error("[ERR-FB-VEHICLES]", err));
+    unsubs.push(unsubVehicles);
+
+    const unsubClients = onSnapshot(collection(db, 'clients'), snap => setCustomClients(snap.docs.map(d => ({ id: d.id, ...d.data() }))), (err) => console.error("[ERR-FB-CLIENTS]", err));
+    unsubs.push(unsubClients);
+
+    return () => { unsubs.forEach(u => { if (typeof u === 'function') u(); }); };
+  }, [user, currentUserEmail, isRealAdmin, jobLimit, activeRole, simulatedDriverEmail]);
 
   return {
     user, actualUserEmail, currentUserEmail, isRealAdmin, isSuperAdmin, isQuoter, isPartTime,

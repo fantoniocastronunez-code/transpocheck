@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { updateDoc, doc, deleteDoc, addDoc, collection, deleteField, getDocs, query, where } from 'firebase/firestore';
-import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
 import { storage } from '../../firebase';
 import {
   Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle,
@@ -1378,15 +1378,15 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const renderHistoryJobCard = (j) => <HistoryJobCard key={j.id} j={j} {...historyJobCardProps} />;
 
   const handlePurgeOldJobs = async () => {
-    showConfirm("⚠️ ¿Estás seguro de limpiar la base de datos? Se empaquetarán todas las actas de más de 30 días en un archivo ZIP para tu respaldo, y luego se eliminarán de la nube.", async () => {
+    showConfirm("⚠️ ¿Estás seguro de limpiar la base de datos? Se empaquetará un respaldo ZIP de las actas de más de 15 días, se consolidarán las estadísticas y se eliminarán los traslados y fotos de inspección de Storage y Firestore. Las fotos de documentos de vehículos (SOAP, RT, etc.) se conservarán intactas.", async () => {
       try {
-        showAlert("⏳ Buscando traslados antiguos en la base de datos...");
-        const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+        showAlert("⏳ Buscando traslados de más de 15 días en la base de datos...");
+        const fifteenDaysAgo = Date.now() - (15 * 24 * 60 * 60 * 1000);
 
-        const q = query(collection(db, 'transport_jobs'), where('createdAt', '<', thirtyDaysAgo));
+        const q = query(collection(db, 'transport_jobs'), where('createdAt', '<', fifteenDaysAgo));
         const snap = await getDocs(q);
 
-        if (snap.empty) return showAlert("No hay traslados antiguos para eliminar.");
+        if (snap.empty) return showAlert("No hay traslados de más de 15 días para eliminar.");
 
         const jobsToExport = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(j => j.checklist);
 
@@ -1416,7 +1416,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           link.download = `Respaldo_Limpieza_LogisticAPP_${new Date().toISOString().split('T')[0]}.zip`;
           link.click();
 
-          showAlert("✅ Respaldo ZIP descargado. Consolidando estadísticas y borrando...");
+          showAlert("✅ Respaldo ZIP descargado. Consolidando estadísticas y fotos...");
         }
 
         // NUEVO: Agrupar traslados a eliminar por mes para crear la "fotografía estática"
@@ -1494,14 +1494,130 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           await setDoc(statRef, monthStats);
         }
 
+        // --- PROTECCIÓN MÁXIMA DE FOTOS DE DOCUMENTOS DE VEHÍCULOS ---
+        // 1. Recolectar URLs protegidas de vehículos en memoria y Firestore
+        const protectedDocUrls = new Set();
+        if (Array.isArray(vehicles)) {
+          vehicles.forEach(v => {
+            if (v?.docsPhotos && typeof v.docsPhotos === 'object') {
+              Object.values(v.docsPhotos).forEach(u => {
+                if (typeof u === 'string' && u.trim()) protectedDocUrls.add(u.trim());
+              });
+            }
+            ['soapPhoto', 'rtPhoto', 'gasesPhoto', 'padronPhoto', 'permisoPhoto'].forEach(f => {
+              if (typeof v?.[f] === 'string' && v[f].trim()) protectedDocUrls.add(v[f].trim());
+            });
+          });
+        }
+
+        try {
+          const vehiclesSnap = await getDocs(collection(db, 'vehicles'));
+          vehiclesSnap.docs.forEach(docSnap => {
+            const v = docSnap.data();
+            if (v?.docsPhotos && typeof v.docsPhotos === 'object') {
+              Object.values(v.docsPhotos).forEach(u => {
+                if (typeof u === 'string' && u.trim()) protectedDocUrls.add(u.trim());
+              });
+            }
+            ['soapPhoto', 'rtPhoto', 'gasesPhoto', 'padronPhoto', 'permisoPhoto'].forEach(f => {
+              if (typeof v?.[f] === 'string' && v[f].trim()) protectedDocUrls.add(v[f].trim());
+            });
+          });
+        } catch (vehErr) {
+          console.warn("[ERR-PURGE-DOCS-01] Advertencia leyendo vehículos para proteger fotos:", vehErr);
+        }
+
+        // 2. Proteger fotos de documentos presentes en los traslados a purgar
+        snap.docs.forEach(documentSnap => {
+          const j = documentSnap.data();
+          if (j?.checklist?.docsPhotos && typeof j.checklist.docsPhotos === 'object') {
+            Object.values(j.checklist.docsPhotos).forEach(u => {
+              if (typeof u === 'string' && u.trim()) protectedDocUrls.add(u.trim());
+            });
+          }
+        });
+
+        // 3. Identificar URLs candidatas a ser eliminadas de Storage
+        const candidateStorageUrls = new Set();
+        snap.docs.forEach(documentSnap => {
+          const j = documentSnap.data();
+          if (j?.checklist?.photos && typeof j.checklist.photos === 'object') {
+            Object.values(j.checklist.photos).forEach(u => {
+              if (typeof u === 'string' && u.startsWith('http')) candidateStorageUrls.add(u.trim());
+            });
+          }
+          if (typeof j?.checklist?.signatureData === 'string' && j.checklist.signatureData.startsWith('http')) {
+            candidateStorageUrls.add(j.checklist.signatureData.trim());
+          }
+          if (typeof j?.checklist?.fuelReceipt === 'string' && j.checklist.fuelReceipt.startsWith('http')) {
+            candidateStorageUrls.add(j.checklist.fuelReceipt.trim());
+          }
+          if (typeof j?.checklist?.guiaDespachoPdf === 'string' && j.checklist.guiaDespachoPdf.startsWith('http')) {
+            candidateStorageUrls.add(j.checklist.guiaDespachoPdf.trim());
+          }
+          if (typeof j?.guideUrl === 'string' && j.guideUrl.startsWith('http')) {
+            candidateStorageUrls.add(j.guideUrl.trim());
+          }
+        });
+
+        // 4. Filtrar candidatas: NUNCA borrar URLs protegidas ni nombres de documentos clave
+        const isProtectedDocUrl = (url) => {
+          if (!url || typeof url !== 'string') return true;
+          const trimmed = url.trim();
+          if (protectedDocUrls.has(trimmed)) return true;
+          const lower = trimmed.toLowerCase();
+          if (
+            lower.includes('doc_soap') ||
+            lower.includes('doc_permiso') ||
+            lower.includes('doc_rt') ||
+            lower.includes('doc_gases') ||
+            lower.includes('doc_padron') ||
+            lower.includes('doc_revision')
+          ) {
+            return true;
+          }
+          return false;
+        };
+
+        const urlsToDelete = Array.from(candidateStorageUrls).filter(url => {
+          const isStorage = url.includes('firebasestorage.googleapis.com') || url.includes('firebasestorage.app');
+          if (!isStorage) return false;
+          return !isProtectedDocUrl(url);
+        });
+
+        // 5. Eliminar fotos de Storage en lotes seguros
+        let deletedPhotosCount = 0;
+        if (urlsToDelete.length > 0) {
+          showAlert(`⏳ Eliminando ${urlsToDelete.length} fotos de inspección de Storage...`);
+          const BATCH_SIZE = 10;
+          for (let i = 0; i < urlsToDelete.length; i += BATCH_SIZE) {
+            const batch = urlsToDelete.slice(i, i + BATCH_SIZE);
+            await Promise.allSettled(batch.map(async (url) => {
+              try {
+                const fileRef = ref(storage, url);
+                await deleteObject(fileRef);
+                deletedPhotosCount++;
+              } catch (err) {
+                if (err?.code !== 'storage/object-not-found') {
+                  console.warn('[ERR-PURGE-STORAGE-01] Error al eliminar archivo de storage:', url, err);
+                }
+              }
+            }));
+          }
+        }
+
+        // 6. Eliminar documentos de Firestore
+        showAlert(`⏳ Eliminando ${snap.docs.length} traslados de la base de datos...`);
         let count = 0;
         for (const document of snap.docs) {
-          // AHORA SÍ: Eliminamos el documento por completo para liberar espacio 100% real
           await deleteDoc(doc(db, 'transport_jobs', document.id));
           count++;
         }
-        showAlert(`✅ Limpieza Maestra: ${count} traslados respaldados en ZIP y eliminados de la nube (Fotografía estadística guardada con éxito).`);
-      } catch (err) { console.error(err); showAlert("Error al limpiar la base de datos."); }
+        showAlert(`✅ Limpieza Maestra: ${count} traslados (>15 días) y ${deletedPhotosCount} fotos de inspección eliminadas de Storage y Firestore. Las fotos de documentos de vehículos se conservaron intactas.`);
+      } catch (err) {
+        console.error("[ERR-PURGE-DB-02] Error al limpiar la base de datos:", err);
+        showAlert("[ERR-PURGE-DB-02] Error al limpiar la base de datos.");
+      }
     });
   };
 
