@@ -71,7 +71,16 @@ export default function GuideUploadModal({
                    }
 
                    const draftData = guideUploadJob.draft?.formData || {};
-                   const existingPhotos = { ...(guideUploadJob.checklist?.photos || {}), ...(draftData.photos || {}) };
+                   const draftPhotos = draftData.photos || {};
+                   const checklistPhotos = guideUploadJob.checklist?.photos || {};
+                   const existingPhotos = { ...checklistPhotos, ...draftPhotos };
+
+                   // Asegurar que las URLs válidas de Storage siempre ganan sobre flags booleanos temporales
+                   Object.entries(checklistPhotos).forEach(([k, v]) => {
+                     if (typeof v === 'string' && v.startsWith('http')) {
+                       existingPhotos[k] = v;
+                     }
+                   });
 
                    const newChecklist = { ...draftData, ...(guideUploadJob.checklist || {}), photos: existingPhotos };
                    if (guideLink) newChecklist.guiaDespachoLink = guideLink;

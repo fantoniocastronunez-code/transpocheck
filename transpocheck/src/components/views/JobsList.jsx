@@ -121,13 +121,41 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       await uploadString(storageRef, base64String, 'data_url');
       const url = await getDownloadURL(storageRef);
       
-      const keyMap = { 'pickup_odo': 'dashboard', 'pickup_fuel': 'fuelGauge', 'arrival_odo': 'dashboard', 'arrival_fuel': 'fuelGauge' };
-      const targetKey = keyMap[name];
-      if (targetKey) {
-        await updateDoc(doc(db, 'transport_jobs', jobId), { [`checklist.photos.${targetKey}`]: url });
+      const updateData = {};
+      if (name === 'pickup_odo') {
+        updateData['checklist.photos.pickup_odo'] = url;
+        updateData['checklist.photos.mileage'] = url;
+        updateData['checklist.photos.pickupOdometer'] = url;
+        updateData['checklist.photos.dashboardInitial'] = url;
+        updateData['draft.formData.photos.pickup_odo'] = url;
+        updateData['draft.formData.photos.mileage'] = url;
+      } else if (name === 'pickup_fuel') {
+        updateData['checklist.photos.pickup_fuel'] = url;
+        updateData['checklist.photos.fuel'] = url;
+        updateData['checklist.photos.pickupFuel'] = url;
+        updateData['draft.formData.photos.pickup_fuel'] = url;
+        updateData['draft.formData.photos.fuel'] = url;
+      } else if (name === 'arrival_odo') {
+        updateData['checklist.photos.arrival_odo'] = url;
+        updateData['checklist.photos.odometer'] = url;
+        updateData['checklist.photos.arrivalOdometer'] = url;
+        updateData['checklist.photos.dashboard'] = url;
+        updateData['draft.formData.photos.arrival_odo'] = url;
+        updateData['draft.formData.photos.odometer'] = url;
+        updateData['draft.formData.photos.dashboard'] = url;
+      } else if (name === 'arrival_fuel') {
+        updateData['checklist.photos.arrival_fuel'] = url;
+        updateData['checklist.photos.fuelGauge'] = url;
+        updateData['checklist.photos.arrivalFuel'] = url;
+        updateData['draft.formData.photos.arrival_fuel'] = url;
+        updateData['draft.formData.photos.fuelGauge'] = url;
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        await updateDoc(doc(db, 'transport_jobs', jobId), updateData);
       }
     } catch (e) {
-      console.warn("Background photo upload failed:", e);
+      console.warn("[ERR-PHOTO-UPLOAD-BG-01] Background photo upload failed:", e);
     }
   };
   
@@ -169,11 +197,19 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
            if (!oldDraft.formData) oldDraft.formData = { photos: {} };
            if (!oldDraft.formData.photos) oldDraft.formData.photos = {};
            
-           if (pickupPhoto) oldDraft.formData.photos.dashboard = pickupPhoto;
-           if (pickupFuelPhoto) oldDraft.formData.photos.fuelGauge = pickupFuelPhoto;
+           if (pickupPhoto) {
+             oldDraft.formData.photos.pickup_odo = pickupPhoto;
+             oldDraft.formData.photos.mileage = pickupPhoto;
+             oldDraft.formData.photos.dashboard = pickupPhoto;
+           }
+           if (pickupFuelPhoto) {
+             oldDraft.formData.photos.pickup_fuel = pickupFuelPhoto;
+             oldDraft.formData.photos.fuel = pickupFuelPhoto;
+             oldDraft.formData.photos.fuelGauge = pickupFuelPhoto;
+           }
            
            await saveLocalDraft(pickupPromptJob.id, oldDraft);
-         } catch(e) { console.error("Error guardando foto en draft local", e); }
+         } catch(e) { console.error("[ERR-LOCAL-DRAFT-PICKUP-01]", e); }
       }
 
       // Disparamos la subida en segundo plano (NO bloquea el popup)
@@ -193,9 +229,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       if (pickupPhotoLocation) updatedDraft.photos.mileageLocation = pickupPhotoLocation;
       if (pickupFuelPhotoLocation) updatedDraft.photos.fuelLocation = pickupFuelPhotoLocation;
       
-      // Mapeamos para que la ChecklistForm los encuentre (usamos false porque se subirán en 2do plano)
-      updatedDraft.photos.dashboard = false;
-      updatedDraft.photos.fuelGauge = false;
+      // Mapeamos para que la ChecklistForm los encuentre (usamos false temporalmente mientras sube)
+      updatedDraft.photos.pickup_odo = false;
+      updatedDraft.photos.pickup_fuel = false;
+      updatedDraft.photos.mileage = false;
+      updatedDraft.photos.fuel = false;
 
       const payload = {
         checklist: {
@@ -204,8 +242,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           fuelLevel: pickupFuelLevel !== undefined ? pickupFuelLevel : (currentDraft.fuelLevel ?? null),
           photos: {
             ...(pickupPromptJob.checklist?.photos || {}),
-            dashboard: false,
-            fuelGauge: false
+            pickup_odo: false,
+            pickup_fuel: false,
+            mileage: false,
+            fuel: false
           }
         },
         draft: {
@@ -275,11 +315,18 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
            if (!oldDraft.formData) oldDraft.formData = { photos: {} };
            if (!oldDraft.formData.photos) oldDraft.formData.photos = {};
            
-           if (arrivalPhoto) oldDraft.formData.photos.dashboard = arrivalPhoto;
-           if (arrivalFuelPhoto) oldDraft.formData.photos.fuelGauge = arrivalFuelPhoto;
+           if (arrivalPhoto) {
+             oldDraft.formData.photos.arrival_odo = arrivalPhoto;
+             oldDraft.formData.photos.odometer = arrivalPhoto;
+             oldDraft.formData.photos.dashboard = arrivalPhoto;
+           }
+           if (arrivalFuelPhoto) {
+             oldDraft.formData.photos.arrival_fuel = arrivalFuelPhoto;
+             oldDraft.formData.photos.fuelGauge = arrivalFuelPhoto;
+           }
            
            await saveLocalDraft(arrivalPromptJob.id, oldDraft);
-         } catch(e) { console.error("Error guardando foto final en draft local", e); }
+         } catch(e) { console.error("[ERR-LOCAL-DRAFT-ARRIVAL-01]", e); }
       }
 
       // Disparamos la subida en segundo plano
@@ -295,13 +342,14 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         arrivalFuelLevel: arrivalFuelLevel !== undefined ? arrivalFuelLevel : (currentDraft.arrivalFuelLevel ?? null),
         photos: {
            ...(currentPhotos || {}),
-           fuelGauge: false,
-           dashboard: false
+           arrival_odo: false,
+           arrival_fuel: false,
+           odometer: false,
+           fuelGauge: false
         }
       };
 
       if (arrivalPhoto) {
-        updatedDraft.photos.odometer = false; // También en odometer por si acaso
         if (arrivalPhotoLocation) updatedDraft.photos.odometerLocation = arrivalPhotoLocation;
       }
       if (arrivalFuelPhotoLocation) updatedDraft.photos.fuelGaugeLocation = arrivalFuelPhotoLocation;
@@ -313,7 +361,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           arrivalFuelLevel: arrivalFuelLevel !== undefined ? arrivalFuelLevel : (currentDraft.arrivalFuelLevel ?? null),
           photos: {
             ...(arrivalPromptJob.checklist?.photos || {}),
-            dashboard: false,
+            arrival_odo: false,
+            arrival_fuel: false,
+            odometer: false,
             fuelGauge: false
           }
         },

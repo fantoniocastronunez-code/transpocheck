@@ -1,5 +1,8 @@
-import React from 'react';
-import { FileText, X, MapPin, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { FileText, X, MapPin, AlertCircle, Loader2 } from 'lucide-react';
+import { db, storage } from '../../../firebase';
+import { ref, listAll, getDownloadURL } from 'firebase/storage';
+import { doc, updateDoc } from 'firebase/firestore';
 
 export default function HistoryModal({
   selectedHistoryJob,
@@ -10,7 +13,117 @@ export default function HistoryModal({
   drivers,
   setFullScreenPhoto
 }) {
+  const [storagePhotos, setStoragePhotos] = useState({});
+  const [loadingPhotos, setLoadingPhotos] = useState(false);
+
+  useEffect(() => {
+    if (!selectedHistoryJob?.id) {
+      setStoragePhotos({});
+      return;
+    }
+
+    const currentPhotos = selectedHistoryJob.checklist?.photos || {};
+    const hasPickupOdo = Boolean(currentPhotos.pickup_odo || currentPhotos.mileage || currentPhotos.pickupOdometer);
+    const hasArrivalOdo = Boolean(currentPhotos.arrival_odo || (selectedHistoryJob.status === 'completed' && currentPhotos.odometer) || currentPhotos.arrivalOdometer);
+    const hasPickupFuel = Boolean(currentPhotos.pickup_fuel || currentPhotos.fuel || currentPhotos.pickupFuel);
+    const hasArrivalFuel = Boolean(currentPhotos.arrival_fuel || (selectedHistoryJob.status === 'completed' && currentPhotos.fuelGauge) || currentPhotos.arrivalFuel);
+
+    // Si ya tiene las 4 fotos con URL válida, no es necesario consultar Storage
+    if (hasPickupOdo && hasArrivalOdo && hasPickupFuel && hasArrivalFuel) {
+      setStoragePhotos({});
+      return;
+    }
+
+    let isMounted = true;
+    const fetchStoragePhotos = async () => {
+      try {
+        setLoadingPhotos(true);
+        const folderRef = ref(storage, `checklists/${selectedHistoryJob.id}`);
+        const listResult = await listAll(folderRef);
+        if (!isMounted) return;
+
+        const resolved = {};
+        for (const item of listResult.items) {
+          const lowerName = item.name.toLowerCase();
+          if (lowerName.startsWith('pickup_odo')) {
+            resolved.pickup_odo = await getDownloadURL(item);
+          } else if (lowerName.startsWith('pickup_fuel')) {
+            resolved.pickup_fuel = await getDownloadURL(item);
+          } else if (lowerName.startsWith('arrival_odo')) {
+            resolved.arrival_odo = await getDownloadURL(item);
+          } else if (lowerName.startsWith('arrival_fuel')) {
+            resolved.arrival_fuel = await getDownloadURL(item);
+          }
+        }
+
+        if (isMounted) {
+          setStoragePhotos(resolved);
+
+          // Sincronizar en segundo plano con Firestore para que queden guardadas de forma permanente
+          const updates = {};
+          if (resolved.pickup_odo && !currentPhotos.pickup_odo) {
+            updates['checklist.photos.pickup_odo'] = resolved.pickup_odo;
+            if (!currentPhotos.mileage) updates['checklist.photos.mileage'] = resolved.pickup_odo;
+          }
+          if (resolved.pickup_fuel && !currentPhotos.pickup_fuel) {
+            updates['checklist.photos.pickup_fuel'] = resolved.pickup_fuel;
+            if (!currentPhotos.fuel) updates['checklist.photos.fuel'] = resolved.pickup_fuel;
+          }
+          if (resolved.arrival_odo && !currentPhotos.arrival_odo) {
+            updates['checklist.photos.arrival_odo'] = resolved.arrival_odo;
+            if (!currentPhotos.odometer) updates['checklist.photos.odometer'] = resolved.arrival_odo;
+          }
+          if (resolved.arrival_fuel && !currentPhotos.arrival_fuel) {
+            updates['checklist.photos.arrival_fuel'] = resolved.arrival_fuel;
+            if (!currentPhotos.fuelGauge) updates['checklist.photos.fuelGauge'] = resolved.arrival_fuel;
+          }
+
+          if (Object.keys(updates).length > 0) {
+            updateDoc(doc(db, 'transport_jobs', selectedHistoryJob.id), updates).catch(err => {
+              console.warn("[ERR-SYNC-STORAGE-PHOTOS-01]", err);
+            });
+          }
+        }
+      } catch (err) {
+        console.warn("[ERR-RESOLVE-STORAGE-PHOTOS-02]", err);
+      } finally {
+        if (isMounted) setLoadingPhotos(false);
+      }
+    };
+
+    fetchStoragePhotos();
+
+    return () => { isMounted = false; };
+  }, [selectedHistoryJob?.id]);
+
   if (!selectedHistoryJob) return null;
+
+  const chkPhotos = selectedHistoryJob.checklist?.photos || {};
+
+  const pickupOdoImg = storagePhotos.pickup_odo 
+    || chkPhotos.pickup_odo 
+    || chkPhotos.mileage 
+    || chkPhotos.pickupOdometer 
+    || chkPhotos.dashboardInitial
+    || (chkPhotos.dashboard && chkPhotos.dashboard !== (storagePhotos.arrival_odo || chkPhotos.arrival_odo || chkPhotos.odometer) ? chkPhotos.dashboard : null)
+    || (selectedHistoryJob.status !== 'completed' ? chkPhotos.odometer : null);
+
+  const arrivalOdoImg = storagePhotos.arrival_odo 
+    || chkPhotos.arrival_odo 
+    || chkPhotos.arrivalOdometer 
+    || (selectedHistoryJob.status === 'completed' ? chkPhotos.odometer : null)
+    || (chkPhotos.dashboard && chkPhotos.dashboard !== pickupOdoImg ? chkPhotos.dashboard : null);
+
+  const pickupFuelImg = storagePhotos.pickup_fuel 
+    || chkPhotos.pickup_fuel 
+    || chkPhotos.fuel 
+    || chkPhotos.pickupFuel 
+    || (selectedHistoryJob.status !== 'completed' ? chkPhotos.fuelGauge : null);
+
+  const arrivalFuelImg = storagePhotos.arrival_fuel 
+    || chkPhotos.arrival_fuel 
+    || chkPhotos.arrivalFuel 
+    || (selectedHistoryJob.status === 'completed' ? chkPhotos.fuelGauge : null);
 
   return (
     <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[300] flex items-center justify-center p-4 cursor-default">
@@ -73,11 +186,18 @@ export default function HistoryModal({
                     <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">
                        {selectedHistoryJob.checklist?.mileage || 'No registrado'}
                     </p>
-                    {(() => {
-                       const imgUrl = selectedHistoryJob.checklist?.photos?.mileage || (selectedHistoryJob.status !== 'completed' ? selectedHistoryJob.checklist?.photos?.odometer : null);
-                       if (!imgUrl) return null;
-                       return <img src={imgUrl} alt="Odómetro Inicio" className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(imgUrl, '_blank')} />;
-                    })()}
+                    {pickupOdoImg ? (
+                       <img 
+                         src={pickupOdoImg} 
+                         alt="Odómetro Inicio" 
+                         className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity shadow-sm" 
+                         onClick={() => setFullScreenPhoto ? setFullScreenPhoto(pickupOdoImg) : window.open(pickupOdoImg, '_blank')} 
+                       />
+                    ) : loadingPhotos ? (
+                       <div className="w-16 h-16 rounded-lg border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+                         <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+                       </div>
+                    ) : null}
                   </div>
                 </div>
 
@@ -88,11 +208,18 @@ export default function HistoryModal({
                     <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">
                        {selectedHistoryJob.checklist?.arrivalMileage || 'No registrado'}
                     </p>
-                    {(() => {
-                       const imgUrl = selectedHistoryJob.status === 'completed' ? selectedHistoryJob.checklist?.photos?.odometer : null;
-                       if (!imgUrl) return null;
-                       return <img src={imgUrl} alt="Odómetro Fin" className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(imgUrl, '_blank')} />;
-                    })()}
+                    {arrivalOdoImg ? (
+                       <img 
+                         src={arrivalOdoImg} 
+                         alt="Odómetro Fin" 
+                         className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity shadow-sm" 
+                         onClick={() => setFullScreenPhoto ? setFullScreenPhoto(arrivalOdoImg) : window.open(arrivalOdoImg, '_blank')} 
+                       />
+                    ) : loadingPhotos ? (
+                       <div className="w-16 h-16 rounded-lg border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+                         <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+                       </div>
+                    ) : null}
                   </div>
                 </div>
 
@@ -103,11 +230,18 @@ export default function HistoryModal({
                     <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">
                        {selectedHistoryJob.checklist?.fuelLevel !== undefined ? `${Math.round(selectedHistoryJob.checklist.fuelLevel <= 1 && selectedHistoryJob.checklist.fuelLevel !== 0 ? selectedHistoryJob.checklist.fuelLevel * 100 : selectedHistoryJob.checklist.fuelLevel)}%` : 'No registrado'}
                     </p>
-                    {(() => {
-                       const imgUrl = selectedHistoryJob.checklist?.photos?.fuel || (selectedHistoryJob.status !== 'completed' ? selectedHistoryJob.checklist?.photos?.fuelGauge : null);
-                       if (!imgUrl) return null;
-                       return <img src={imgUrl} alt="Combustible Inicio" className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(imgUrl, '_blank')} />;
-                    })()}
+                    {pickupFuelImg ? (
+                       <img 
+                         src={pickupFuelImg} 
+                         alt="Combustible Inicio" 
+                         className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity shadow-sm" 
+                         onClick={() => setFullScreenPhoto ? setFullScreenPhoto(pickupFuelImg) : window.open(pickupFuelImg, '_blank')} 
+                       />
+                    ) : loadingPhotos ? (
+                       <div className="w-16 h-16 rounded-lg border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+                         <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+                       </div>
+                    ) : null}
                   </div>
                 </div>
 
@@ -118,11 +252,18 @@ export default function HistoryModal({
                     <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">
                        {selectedHistoryJob.checklist?.arrivalFuelLevel !== undefined ? `${Math.round(selectedHistoryJob.checklist.arrivalFuelLevel <= 1 && selectedHistoryJob.checklist.arrivalFuelLevel !== 0 ? selectedHistoryJob.checklist.arrivalFuelLevel * 100 : selectedHistoryJob.checklist.arrivalFuelLevel)}%` : 'No registrado'}
                     </p>
-                    {(() => {
-                       const imgUrl = selectedHistoryJob.status === 'completed' ? selectedHistoryJob.checklist?.photos?.fuelGauge : null;
-                       if (!imgUrl) return null;
-                       return <img src={imgUrl} alt="Combustible Fin" className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(imgUrl, '_blank')} />;
-                    })()}
+                    {arrivalFuelImg ? (
+                       <img 
+                         src={arrivalFuelImg} 
+                         alt="Combustible Fin" 
+                         className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity shadow-sm" 
+                         onClick={() => setFullScreenPhoto ? setFullScreenPhoto(arrivalFuelImg) : window.open(arrivalFuelImg, '_blank')} 
+                       />
+                    ) : loadingPhotos ? (
+                       <div className="w-16 h-16 rounded-lg border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+                         <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+                       </div>
+                    ) : null}
                   </div>
                 </div>
 
