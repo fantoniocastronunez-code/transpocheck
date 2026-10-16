@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { X, HardDrive } from 'lucide-react';
+import { storage } from '../../firebase';
 import ConfigClients from './Config/ConfigClients';
 import ConfigVehicles from './Config/ConfigVehicles';
 import ConfigDrivers from './Config/ConfigDrivers';
 import ConfigDirectory from './Config/ConfigDirectory';
 import ConfigTolls from './Config/ConfigTolls';
 import ConfigEquipment from './Config/ConfigEquipment';
+import FirebaseStorageMetrics from './Config/FirebaseStorageMetrics';
 
 function StorageWidget() {
   const [usage, setUsage] = useState(0);
@@ -87,8 +89,18 @@ export default function ConfigView({ currentUserEmail, allClientsList, customCli
          {adminPermissions?.manage_directory !== false && <button onClick={()=>setConfigSubTab('directory')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='directory'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Directorio</button>}
          {adminPermissions?.manage_tolls !== false && <button onClick={()=>setConfigSubTab('tolls')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='tolls'?'bg-emerald-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Peajes</button>}
          {adminPermissions?.manage_equipment !== false && <button onClick={()=>setConfigSubTab('equipment')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='equipment'?'bg-amber-500 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Equipamiento</button>}
+         {isSuperAdmin && <button onClick={()=>setConfigSubTab('storage')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='storage'?'bg-purple-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Almacenamiento Nube</button>}
       </div>
       
+      {/* MÉTRICAS DE ALMACENAMIENTO DE FIREBASE STORAGE (NUBE) */}
+      <FirebaseStorageMetrics 
+        db={db} 
+        storage={storage} 
+        vehicles={vehicles} 
+        showAlert={showAlert} 
+        showConfirm={showConfirm} 
+      />
+
       <StorageWidget />
 
       {configSubTab === 'clients' && (
