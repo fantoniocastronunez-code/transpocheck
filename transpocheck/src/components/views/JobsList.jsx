@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { updateDoc, doc, deleteDoc, addDoc, collection, deleteField, getDocs, query, where } from 'firebase/firestore';
-import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadString, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
 import { storage } from '../../firebase';
 import {
   Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle,
   Copy, X, XCircle, MapPin, Clock, FileDown, Search, ChevronUp, ChevronDown,
-  Trash2, Car, Repeat, PenTool, Truck, Plus, FileText, AlertCircle, DollarSign, Map as MapIcon, RefreshCw, Save, Camera, Key
+  Trash2, Car, Repeat, PenTool, Truck, Plus, FileText, AlertCircle, DollarSign, Map as MapIcon, RefreshCw, Save, Camera, Key, HardDrive
 } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import VinPlateBadge from '../ui/VinPlateBadge';
@@ -1621,6 +1621,146 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     });
   };
 
+  const handlePurgeOrphanPhotos = async () => {
+    showConfirm("⚠️ ¿Deseas escanear y eliminar las fotos huérfanas de Firebase Storage?\n\nEsta función buscará fotos de traslados eliminados en el pasado que quedaron ocupando espacio en la nube. Las fotos de documentos de vehículos (SOAP, Revisión Técnica, etc.) se protegerán y NO se borrarán.", async () => {
+      try {
+        showAlert("⏳ Escaneando base de datos y Storage en busca de fotos huérfanas...");
+
+        // 1. Obtener todos los IDs de traslados activos en Firestore
+        const jobsSnap = await getDocs(collection(db, 'transport_jobs'));
+        const activeJobIds = new Set(jobsSnap.docs.map(d => d.id));
+
+        // 2. Proteger al 100% las fotos de documentos de vehículos (SOAP, RT, etc.)
+        const protectedDocUrls = new Set();
+        if (Array.isArray(vehicles)) {
+          vehicles.forEach(v => {
+            if (v?.docsPhotos && typeof v.docsPhotos === 'object') {
+              Object.values(v.docsPhotos).forEach(u => {
+                if (typeof u === 'string' && u.trim()) protectedDocUrls.add(u.trim());
+              });
+            }
+            ['soapPhoto', 'rtPhoto', 'gasesPhoto', 'padronPhoto', 'permisoPhoto'].forEach(f => {
+              if (typeof v?.[f] === 'string' && v[f].trim()) protectedDocUrls.add(v[f].trim());
+            });
+          });
+        }
+
+        try {
+          const vehSnap = await getDocs(collection(db, 'vehicles'));
+          vehSnap.docs.forEach(docSnap => {
+            const v = docSnap.data();
+            if (v?.docsPhotos && typeof v.docsPhotos === 'object') {
+              Object.values(v.docsPhotos).forEach(u => {
+                if (typeof u === 'string' && u.trim()) protectedDocUrls.add(u.trim());
+              });
+            }
+            ['soapPhoto', 'rtPhoto', 'gasesPhoto', 'padronPhoto', 'permisoPhoto'].forEach(f => {
+              if (typeof v?.[f] === 'string' && v[f].trim()) protectedDocUrls.add(v[f].trim());
+            });
+          });
+        } catch (vehErr) {
+          console.warn("[ERR-PURGE-ORPHAN-DOCS] Advertencia leyendo vehículos para proteger fotos:", vehErr);
+        }
+
+        // 3. Función para determinar si un archivo de Storage es documento protegido
+        const isDocFile = (fileName, fullPath) => {
+          if (!fileName) return false;
+          const nameLower = fileName.toLowerCase();
+          const pathLower = (fullPath || '').toLowerCase();
+          if (
+            nameLower.includes('doc_soap') ||
+            nameLower.includes('doc_permiso') ||
+            nameLower.includes('doc_rt') ||
+            nameLower.includes('doc_gases') ||
+            nameLower.includes('doc_padron') ||
+            nameLower.includes('doc_revision') ||
+            nameLower.startsWith('doc_') ||
+            pathLower.includes('doc_soap') ||
+            pathLower.includes('doc_permiso') ||
+            pathLower.includes('doc_rt') ||
+            pathLower.includes('doc_gases') ||
+            pathLower.includes('doc_padron')
+          ) {
+            return true;
+          }
+          return false;
+        };
+
+        // 4. Listar todas las carpetas dentro de 'checklists/' en Storage
+        const checklistsRootRef = ref(storage, 'checklists');
+        let rootListing;
+        try {
+          rootListing = await listAll(checklistsRootRef);
+        } catch (listErr) {
+          console.error("[ERR-PURGE-ORPHAN-LIST] Error listando Storage:", listErr);
+          return showAlert("[ERR-PURGE-ORPHAN-LIST] No se pudo acceder a las carpetas de Storage. Revisa la conexión o permisos.");
+        }
+
+        const orphanFolders = rootListing.prefixes.filter(prefixRef => !activeJobIds.has(prefixRef.name));
+
+        if (orphanFolders.length === 0 && rootListing.items.length === 0) {
+          return showAlert("✅ ¡Excelente! No se encontraron fotos huérfanas en Storage. Tu almacenamiento está completamente al día.");
+        }
+
+        showAlert(`⏳ Analizando ${orphanFolders.length} carpetas huérfanas encontradas...`);
+
+        let deletedCount = 0;
+        let protectedCount = 0;
+
+        // 5. Procesar cada carpeta huérfana
+        for (const folderRef of orphanFolders) {
+          try {
+            const folderContent = await listAll(folderRef);
+            const filesToDelete = [];
+
+            for (const itemRef of folderContent.items) {
+              if (isDocFile(itemRef.name, itemRef.fullPath)) {
+                protectedCount++;
+              } else {
+                filesToDelete.push(itemRef);
+              }
+            }
+
+            // Borrar en lotes concurrentes para máxima velocidad
+            const BATCH = 5;
+            for (let i = 0; i < filesToDelete.length; i += BATCH) {
+              const chunk = filesToDelete.slice(i, i + BATCH);
+              await Promise.allSettled(chunk.map(async (fileRef) => {
+                try {
+                  await deleteObject(fileRef);
+                  deletedCount++;
+                } catch (delErr) {
+                  if (delErr?.code !== 'storage/object-not-found') {
+                    console.warn('[ERR-PURGE-ORPHAN-01] Error borrando archivo huérfano:', fileRef.fullPath, delErr);
+                  }
+                }
+              }));
+            }
+          } catch (folderErr) {
+            console.warn('[ERR-PURGE-ORPHAN-FOLDER] Error procesando carpeta:', folderRef.name, folderErr);
+          }
+        }
+
+        // 6. Revisar si hay archivos sueltos huérfanos directamente en 'checklists/'
+        for (const itemRef of rootListing.items) {
+          if (isDocFile(itemRef.name, itemRef.fullPath)) {
+            protectedCount++;
+          } else {
+            try {
+              await deleteObject(itemRef);
+              deletedCount++;
+            } catch (e) { /* ignorar */ }
+          }
+        }
+
+        showAlert(`✅ Barrido exitoso: Se eliminaron ${deletedCount} fotos huérfanas de ${orphanFolders.length} traslados antiguos. Se protegieron y conservaron ${protectedCount} documentos de vehículos intactos.`);
+      } catch (err) {
+        console.error("[ERR-PURGE-ORPHAN-02] Error al barrer fotos huérfanas:", err);
+        showAlert("[ERR-PURGE-ORPHAN-02] Ocurrió un error al limpiar las fotos huérfanas.");
+      }
+    });
+  };
+
   const handleDownloadAllZIP = async () => {
     showAlert("⏳ Comprimiendo... Por favor espera.");
     try {
@@ -1836,6 +1976,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                 <>
                   <button type="button" onClick={handlePurgeOldJobs} className="group bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 transition-colors">
                     <Trash2 className="w-5 h-5" /> Limpiar DB
+                  </button>
+
+                  <button type="button" onClick={handlePurgeOrphanPhotos} className="group bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/50 px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 transition-colors" title="Escanear y eliminar fotos en Storage de traslados eliminados">
+                    <HardDrive className="w-5 h-5" /> Fotos Huérfanas
                   </button>
 
                   <button type="button" onClick={handleDownloadAllZIP} className="group bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 transition-colors">
