@@ -45,12 +45,18 @@ export const useChecklistSync = ({
           for (const key in localData.formData.photos || {}) {
             if (localData.formData.photos[key]) draftData.photos[key] = localData.formData.photos[key];
           }
+          if (localData.formData.docsPhotos) {
+            if (!draftData.docsPhotos) draftData.docsPhotos = {};
+            for (const key in localData.formData.docsPhotos) {
+              if (localData.formData.docsPhotos[key]) draftData.docsPhotos[key] = localData.formData.docsPhotos[key];
+            }
+          }
           const base64Fields = ['signatureData', 'fuelReceipt', 'scandocPdf', 'guiaDespachoPdf'];
           base64Fields.forEach(field => {
               if (localData.formData[field]) draftData[field] = localData.formData[field];
           });
           
-          const nonBase64Fields = Object.keys(localData.formData).filter(k => k !== 'photos' && !base64Fields.includes(k));
+          const nonBase64Fields = Object.keys(localData.formData).filter(k => k !== 'photos' && k !== 'docsPhotos' && !base64Fields.includes(k));
           nonBase64Fields.forEach(field => {
             const localVal = localData.formData[field];
             const isLocalEmptyStr = localVal === '';
@@ -87,6 +93,14 @@ export const useChecklistSync = ({
             draftData.photos[key] = data.checklist.photos[key];
           }
         }
+      }
+
+      // Integrar fotos de documentos de la ficha del vehículo si no están en el borrador
+      if (matchedVehicle?.docsPhotos) {
+        draftData.docsPhotos = {
+          ...matchedVehicle.docsPhotos,
+          ...(draftData.docsPhotos || {})
+        };
       }
 
       setFormData(draftData);
@@ -160,6 +174,15 @@ export const useChecklistSync = ({
         }
       }
 
+      // Limpiar fotos base64 en fbDraftData.docsPhotos para evitar exceder 1MB en Firestore
+      if (fbDraftData.docsPhotos) {
+        for (const key in fbDraftData.docsPhotos) {
+          if (typeof fbDraftData.docsPhotos[key] === 'string' && !fbDraftData.docsPhotos[key].startsWith('http')) {
+            delete fbDraftData.docsPhotos[key];
+          }
+        }
+      }
+
       // Limpiar otros campos base64 en el borrador de Firestore
       const base64Fields = ['signatureData', 'fuelReceipt', 'scandocPdf', 'guiaDespachoPdf'];
       base64Fields.forEach(field => {
@@ -200,6 +223,9 @@ export const useChecklistSync = ({
 
     let totalFiles = 0;
     for (const val of Object.values(d.photos)) { if (typeof val === 'string' && val.startsWith('data:image')) totalFiles++; }
+    if (d.docsPhotos) {
+      for (const val of Object.values(d.docsPhotos)) { if (typeof val === 'string' && val.startsWith('data:image')) totalFiles++; }
+    }
     if (typeof d.signatureData === 'string' && d.signatureData.startsWith('data:image')) totalFiles++;
     if (typeof d.scandocPdf === 'string' && d.scandocPdf.startsWith('data:')) totalFiles++;
     if (typeof d.guiaDespachoPdf === 'string' && d.guiaDespachoPdf.startsWith('data:')) totalFiles++;
@@ -223,6 +249,24 @@ export const useChecklistSync = ({
         } catch (err) { console.error(`Error subiendo foto ${key}:`, err); }
       } else {
         uploadedPhotos[key] = val;
+      }
+    }
+
+    // Subir fotos de documentos (SOAP, Permiso, Revisión Técnica, Gases) a Firebase Storage
+    const uploadedDocsPhotos = {};
+    if (d.docsPhotos) {
+      for (const [key, val] of Object.entries(d.docsPhotos)) {
+        if (typeof val === 'string' && val.startsWith('data:image')) {
+          try {
+            const url = await uploadImageToStorage(val, `checklists/${jobIdFolder}`, `doc_${key}_${Date.now()}.jpg`);
+            uploadedDocsPhotos[key] = url;
+            updateProgress(`doc ${key.toUpperCase()}`);
+          } catch (err) {
+            console.error(`[ERR-UPLOAD-DOC-${key.toUpperCase()}] Error subiendo foto doc ${key}:`, err);
+          }
+        } else if (typeof val === 'string' && val.startsWith('http')) {
+          uploadedDocsPhotos[key] = val;
+        }
       }
     }
 
@@ -261,6 +305,7 @@ export const useChecklistSync = ({
     }
 
     d.photos = uploadedPhotos;
+    d.docsPhotos = uploadedDocsPhotos;
 
     if (totalFiles > 0 && setUploadProgress) {
       setUploadProgress({ active: true, current: totalFiles, total: totalFiles, text: '¡Sincronizado!' });

@@ -151,10 +151,8 @@ export default function HistoryModal({
           {(() => {
              const ident = getJobIdentifier(selectedHistoryJob);
              let vDocs = selectedHistoryJob.checklist?.docsExpiry;
-             if (!vDocs && vehicles && ident && ident !== 'S/N') {
-                 const v = vehicles.find(x => x.plate === ident.toUpperCase());
-                 if (v && v.docsExpiry) vDocs = v.docsExpiry;
-             }
+             const v = (vehicles && ident && ident !== 'S/N') ? vehicles.find(x => x.plate === ident.toUpperCase()) : null;
+             if (!vDocs && v && v.docsExpiry) vDocs = v.docsExpiry;
              if (!vDocs) return null;
 
              const formatExp = (dateStr) => {
@@ -168,14 +166,38 @@ export default function HistoryModal({
                 return <span className="text-green-700 dark:text-green-400 font-bold text-xs">{monthStr} {y}</span>;
              };
 
+             const docPhotos = { ...(v?.docsPhotos || {}), ...(selectedHistoryJob.checklist?.docsPhotos || {}) };
+             const docItems = [
+               { id: 'revTecnica', name: 'Rev. Técnica' },
+               { id: 'gases', name: 'Gases' },
+               { id: 'permiso', name: 'Permiso Circ.' },
+               { id: 'soap', name: 'SOAP' }
+             ];
+
              return (
                <div>
                  <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 dark:border-slate-800 pb-1">3. Vencimiento Documentos</h4>
                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                   <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded-lg border border-slate-100 dark:border-slate-800 text-center"><p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">Rev. Técnica</p>{formatExp(vDocs.revTecnica)}</div>
-                   <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded-lg border border-slate-100 dark:border-slate-800 text-center"><p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">Gases</p>{formatExp(vDocs.gases)}</div>
-                   <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded-lg border border-slate-100 dark:border-slate-800 text-center"><p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">Permiso Circ.</p>{formatExp(vDocs.permiso)}</div>
-                   <div className="bg-slate-50 dark:bg-slate-900 p-2 rounded-lg border border-slate-100 dark:border-slate-800 text-center"><p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">SOAP</p>{formatExp(vDocs.soap)}</div>
+                   {docItems.map(({ id, name }) => {
+                     const photoUrl = docPhotos[id];
+                     return (
+                       <div key={id} className="bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 text-center flex flex-col justify-between">
+                         <div>
+                           <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">{name}</p>
+                           {formatExp(vDocs[id])}
+                         </div>
+                         {photoUrl && typeof photoUrl === 'string' && photoUrl.startsWith('http') && (
+                           <button 
+                             type="button" 
+                             onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(photoUrl); }}
+                             className="mt-2 text-[9px] font-black uppercase text-blue-600 dark:text-blue-400 hover:text-blue-500 flex items-center justify-center gap-1 bg-blue-50 dark:bg-blue-900/30 py-1 px-1.5 rounded-lg border border-blue-200 dark:border-blue-800/40 transition-colors"
+                           >
+                             <FileText className="w-3 h-3"/> Ver Foto
+                           </button>
+                         )}
+                       </div>
+                     );
+                   })}
                  </div>
                </div>
              );
@@ -223,7 +245,10 @@ export default function HistoryModal({
 
           {/* 5. GALERÍA DE FOTOS */}
           {(() => {
-            const allPhotos = { ...(selectedHistoryJob.checklist?.photos || {}), ...(selectedHistoryJob.checklist?.docsPhotos || {}) };
+            const ident = getJobIdentifier(selectedHistoryJob);
+            const v = (vehicles && ident && ident !== 'S/N') ? vehicles.find(x => x.plate === ident.toUpperCase()) : null;
+            const docPhotos = { ...(v?.docsPhotos || {}), ...(selectedHistoryJob.checklist?.docsPhotos || {}) };
+            const allPhotos = { ...(selectedHistoryJob.checklist?.photos || {}), ...docPhotos };
             const hasPhotos = Object.values(allPhotos).some(p => typeof p === 'string' && p.startsWith('http'));
             if (!hasPhotos) return null;
             return (

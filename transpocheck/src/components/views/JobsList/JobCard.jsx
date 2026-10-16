@@ -379,6 +379,7 @@ const StatusAnimation = ({ type, vehicleType, isChassisCab, origin, destination,
 
 export default function JobCard({ j, ...props }) {
   const [showDetails, setShowDetails] = useState(false);
+  const [showDocsModal, setShowDocsModal] = useState(false);
   const { analyzeJobStatus, getJobIdentifier, vehicles, menuOpenId, setMenuOpenId, isAdminView, onEditJob, currentUserEmail, setRelayPromptJob, setForceCloseJob, db, updateDoc, deleteField, doc, showAlert, showConfirm, setJobToFail, latestVehiclePhotos, setFullScreenPhoto, role, processingId, setProcessingId, handleApproveRequest, handleRejectRequest, handleApprovePhotoOverride, handleAcceptJob, setTrackingJobId, setGuideUploadJob, setGuideLink, setGuideFileBase64, updatePhase, setPickupPromptJob, setArrivalPromptJob, setArrivalMileage, setArrivalPhoto, setPrtApproveType, setPrtReturnOpt, setPrtReturnDest, setPrtApprovePromptJob, setPrtPromptJob, onStartChecklist, handleUndoPhase, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, WaitTimerBadge, SwipeButton, AlertCircle, Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, Truck, X, XCircle, Clock, Car, MapPin, FileText, RefreshCw, Search } = props;
     const { isRequested, isPending, isAccepted, isPendingGuide, step2Done, step3Done, step4Done } = analyzeJobStatus(j);
     
@@ -386,27 +387,33 @@ export default function JobCard({ j, ...props }) {
 
 
 
-    // NUEVO: Motor de Alertas de Documentos por Vencer (30 días) o Vencidos
+    // NUEVO: Motor de Alertas y Fotos de Documentos del Vehículo
     let expiringDocs = [];
+    let vehicleDocPhotos = {};
     if (vehicles && ident && ident !== 'S/N' && j.tripType !== 'simple') {
        const v = vehicles.find(x => x.plate === ident.toUpperCase());
-       if (v && v.docsExpiry) {
-           const today = new Date(); today.setHours(0,0,0,0);
-           const limit = new Date(); limit.setDate(today.getDate() + 30); // Aviso 30 días antes
-           const docNames = { soap: 'SOAP', permiso: 'Permiso Circ.', revTecnica: 'Rev. Técnica', gases: 'Gases' };
-           
-           for (const [key, dateStr] of Object.entries(v.docsExpiry)) {
-               if (!dateStr) continue;
-               const [year, month, day] = dateStr.split('-');
-               const expDate = new Date(year, month - 1, day);
-               if (expDate < today) {
-                   expiringDocs.push(`🔴 ${docNames[key]} Vencido (${day}/${month}/${year})`);
-               } else if (expDate <= limit) {
-                   expiringDocs.push(`🟠 ${docNames[key]} vence el ${day}/${month}/${year}`);
+       if (v) {
+           if (v.docsPhotos) vehicleDocPhotos = v.docsPhotos;
+           if (v.docsExpiry) {
+               const today = new Date(); today.setHours(0,0,0,0);
+               const limit = new Date(); limit.setDate(today.getDate() + 30); // Aviso 30 días antes
+               const docNames = { soap: 'SOAP', permiso: 'Permiso Circ.', revTecnica: 'Rev. Técnica', gases: 'Gases' };
+               
+               for (const [key, dateStr] of Object.entries(v.docsExpiry)) {
+                   if (!dateStr) continue;
+                   const [year, month, day] = dateStr.split('-');
+                   const expDate = new Date(year, month - 1, day);
+                   if (expDate < today) {
+                       expiringDocs.push(`🔴 ${docNames[key]} Vencido (${day}/${month}/${year})`);
+                   } else if (expDate <= limit) {
+                       expiringDocs.push(`🟠 ${docNames[key]} vence el ${day}/${month}/${year}`);
+                   }
                }
            }
        }
     }
+    const combinedDocPhotos = { ...vehicleDocPhotos, ...(j.checklist?.docsPhotos || {}) };
+    const availableDocPhotoKeys = Object.keys(combinedDocPhotos).filter(k => typeof combinedDocPhotos[k] === 'string' && combinedDocPhotos[k].startsWith('http'));
 
     return (
       // --- OPTIMIZACIÓN: Quitamos el overflow-hidden del padre para que el menú no se corte ---
@@ -831,6 +838,19 @@ export default function JobCard({ j, ...props }) {
           </div>
         )}
 
+        {availableDocPhotoKeys.length > 0 && (
+          <div className="mt-2 mb-1">
+            <button
+              type="button"
+              onClick={() => setShowDocsModal(true)}
+              className="w-full bg-blue-950/40 hover:bg-blue-900/50 text-blue-300 border border-blue-500/30 font-bold py-2.5 px-3 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-2"
+            >
+              <FileText className="w-4 h-4 text-blue-400" />
+              <span>Ver Fotos Documentos del Vehículo ({availableDocPhotoKeys.length})</span>
+            </button>
+          </div>
+        )}
+
         {(() => {
            const activeDocHref = j.guideLink || j.guideUrl || j.docLink || j.docUrl || j.rtLink || j.rtDoc || (j.rtData && j.rtData.link) || j.pdfUrl || j.fileUrl || j.checklist?.guiaDespachoPdf || j.checklist?.guiaDespachoLink;
            if (activeDocHref) {
@@ -959,6 +979,62 @@ export default function JobCard({ j, ...props }) {
             </>
           )}
         </div>
+
+        {/* MODAL DE FOTOS DE DOCUMENTOS DEL VEHÍCULO */}
+        {showDocsModal && (
+          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4 cursor-default animate-in fade-in" onClick={() => setShowDocsModal(false)}>
+            <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-md p-5 flex flex-col shadow-2xl relative" onClick={e => e.stopPropagation()}>
+              <div className="flex justify-between items-center pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-2 text-white">
+                  <div className="p-2 bg-blue-600/20 text-blue-400 rounded-xl">
+                    <FileText className="w-5 h-5"/>
+                  </div>
+                  <div>
+                    <h3 className="font-black text-sm uppercase">Documentos del Vehículo</h3>
+                    <p className="text-[10px] text-slate-400 font-bold">{ident}</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowDocsModal(false)} className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-full transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                {[
+                  { id: 'soap', label: 'Seguro SOAP' },
+                  { id: 'permiso', label: 'Permiso de Circulación' },
+                  { id: 'revTecnica', label: 'Revisión Técnica' },
+                  { id: 'gases', label: 'Gases' }
+                ].map(docItem => {
+                  const url = combinedDocPhotos[docItem.id];
+                  if (!url || typeof url !== 'string' || !url.startsWith('http')) return null;
+                  return (
+                    <div 
+                      key={docItem.id} 
+                      onClick={() => { setShowDocsModal(false); setFullScreenPhoto(url); }}
+                      className="bg-slate-800/80 hover:bg-slate-800 border border-slate-700 hover:border-blue-500 rounded-2xl p-2.5 flex flex-col items-center gap-2 cursor-pointer transition-all shadow-sm group"
+                    >
+                      <div className="w-full aspect-[4/3] rounded-xl overflow-hidden bg-black/40 border border-slate-700 flex items-center justify-center">
+                        <img src={url} alt={docItem.label} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      </div>
+                      <span className="text-[10px] font-black uppercase text-slate-200 text-center truncate w-full">{docItem.label}</span>
+                      <span className="text-[9px] font-bold text-blue-400 flex items-center gap-1">🔍 Toca para ampliar</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-slate-800 text-center">
+                <button 
+                  onClick={() => setShowDocsModal(false)}
+                  className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2 rounded-xl text-xs transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

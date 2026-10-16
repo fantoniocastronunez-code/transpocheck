@@ -54,15 +54,20 @@ export default function VehicleHistoryView({ db, showAlert }) {
     }
   };
 
-  const renderGallery = (photos) => {
-    if (!photos) return <p className="text-xs text-slate-400 font-bold italic mt-2">Sin registro fotográfico.</p>;
+  const renderGallery = (photos, docsPhotos) => {
+    const combinedPhotos = { ...(photos || {}), ...(docsPhotos || {}) };
+    if (!photos && !docsPhotos) return <p className="text-xs text-slate-400 font-bold italic mt-2">Sin registro fotográfico.</p>;
     
     // Filtrar solo las fotos que realmente se subieron y tienen una URL
-    const validPhotos = Object.entries(photos).filter(([k, v]) => v && typeof v === 'string' && v.startsWith('http'));
+    const validPhotos = Object.entries(combinedPhotos).filter(([k, v]) => v && typeof v === 'string' && v.startsWith('http'));
     
     if (validPhotos.length === 0) return <p className="text-xs text-slate-400 font-bold italic mt-2">Sin registro fotográfico.</p>;
 
-    const labels = { front: 'Frente', back: 'Atrás', left: 'Lat. Piloto', right: 'Lat. Copiloto', dashboard: 'Tablero', tire: 'Repuesto', interior_front: 'Int. Adelante', interior_back: 'Int. Atrás' };
+    const labels = { 
+      front: 'Frente', back: 'Atrás', left: 'Lat. Piloto', right: 'Lat. Copiloto', 
+      dashboard: 'Tablero', tire: 'Repuesto', interior_front: 'Int. Adelante', interior_back: 'Int. Atrás',
+      permiso: 'Permiso Circ.', soap: 'Seguro SOAP', revTecnica: 'Rev. Técnica', gases: 'Gases'
+    };
 
     return (
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 mt-4">
@@ -254,7 +259,7 @@ export default function VehicleHistoryView({ db, showAlert }) {
                       {/* Galería de Fotos */}
                       <div>
                         <h5 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest flex items-center gap-1.5 mb-1"><Camera className="w-4 h-4 text-slate-500 dark:text-slate-400"/> Evidencia Fotográfica</h5>
-                        {renderGallery(job.checklist?.photos)}
+                        {renderGallery(job.checklist?.photos, job.checklist?.docsPhotos)}
                       </div>
 
                     </div>

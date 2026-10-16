@@ -1,10 +1,11 @@
-import React from 'react';
-import { Camera, CheckCircle, AlertTriangle, FileText, MapPin, CloudOff } from 'lucide-react';
+import React, { useState } from 'react';
+import { Camera, CheckCircle, AlertTriangle, FileText, MapPin, CloudOff, Eye, X } from 'lucide-react';
 import { useChecklist } from '../ChecklistContext';
 import { FormattedMonthInput } from '../../../ui/FormattedMonthInput';
 
 export const StepDocs = ({ openCamera }) => {
   const { job, formData, setF, showAlert } = useChecklist();
+  const [previewDocPhoto, setPreviewDocPhoto] = useState(null);
 
   const isRevisionTecnica = job?.tripType === 'revision' || 
                             job?.destination?.toUpperCase()?.includes('REVISION TECNICA') ||
@@ -17,7 +18,8 @@ export const StepDocs = ({ openCamera }) => {
         const compressed = await resizeImage(file, 1200, 0.6);
         setF('docsPhotos', { ...(formData.docsPhotos || {}), [docId]: compressed });
       } catch (e) {
-        showAlert("Error al procesar la foto.");
+        console.error("[ERR-DOC-PHOTO-01]", e);
+        showAlert("Error al procesar la foto [ERR-DOC-PHOTO-01].");
       }
     });
   };
@@ -84,7 +86,8 @@ export const StepDocs = ({ openCamera }) => {
                         <button 
                            type="button" 
                            onClick={() => handleCapturePhoto(doc.id)}
-                           className={`p-2 rounded-xl border-2 transition-colors ${photo ? 'border-blue-500 bg-blue-500/10 text-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.3)]' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-400 hover:border-blue-400 hover:text-blue-500'}`}
+                           title={photo ? "Tomar nueva foto para reemplazar" : "Tomar foto"}
+                           className={`p-2 rounded-xl border-2 transition-colors flex items-center gap-1.5 ${photo ? 'border-blue-500 bg-blue-500/10 text-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.3)]' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-400 hover:border-blue-400 hover:text-blue-500'}`}
                         >
                            <Camera className="w-5 h-5" />
                         </button>
@@ -93,7 +96,7 @@ export const StepDocs = ({ openCamera }) => {
 
                   {/* Expiry Date (only if checked) */}
                   {isChecked && (
-                     <div className="pl-12 flex gap-4 animate-in fade-in slide-in-from-top-2">
+                     <div className="pl-12 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
                        <div className="flex-1 bg-slate-100 dark:bg-slate-800/50 p-2 rounded-xl flex items-center gap-2 border border-slate-200 dark:border-slate-700">
                           <span className="text-[10px] font-black uppercase text-slate-500">Vencimiento:</span>
                           <FormattedMonthInput 
@@ -102,8 +105,22 @@ export const StepDocs = ({ openCamera }) => {
                           />
                        </div>
                        {photo && (
-                         <div className="w-12 h-10 rounded-lg overflow-hidden border border-blue-500 shrink-0">
-                            <img src={photo} className="w-full h-full object-cover" />
+                         <div 
+                           onClick={() => setPreviewDocPhoto({ url: photo, title: doc.label })}
+                           className="h-10 px-2 rounded-xl border border-blue-400/80 bg-blue-50 dark:bg-blue-900/40 flex items-center gap-2 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-800/60 transition-colors shrink-0 shadow-sm"
+                           title="Toca para ver el documento en grande"
+                         >
+                            <div className="w-8 h-8 rounded-lg overflow-hidden border border-blue-500 shrink-0">
+                               <img src={photo} className="w-full h-full object-cover" alt={doc.label} />
+                            </div>
+                            <div className="flex flex-col text-left">
+                               <span className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400 flex items-center gap-1 leading-tight">
+                                  <Eye className="w-3 h-3"/> Ver
+                                </span>
+                               {typeof photo === 'string' && photo.startsWith('http') && (
+                                  <span className="text-[8px] font-bold text-slate-500 dark:text-slate-400 leading-tight">En Ficha</span>
+                               )}
+                            </div>
                          </div>
                        )}
                      </div>
@@ -222,6 +239,40 @@ export const StepDocs = ({ openCamera }) => {
           </div>
         )}
       </div>
+      )}
+
+      {/* Modal de Previsualización de Foto del Documento */}
+      {previewDocPhoto && (
+        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[9999] flex flex-col items-center justify-center p-4 cursor-pointer animate-in fade-in" onClick={() => setPreviewDocPhoto(null)}>
+          <div className="bg-slate-900 border border-slate-700 p-4 rounded-3xl max-w-lg w-full flex flex-col gap-3 shadow-2xl relative" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center pb-2 border-b border-slate-800">
+              <div className="flex items-center gap-2 text-white">
+                <FileText className="w-5 h-5 text-blue-400" />
+                <span className="font-black text-sm uppercase">{previewDocPhoto.title}</span>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setPreviewDocPhoto(null)} 
+                className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="max-h-[70vh] overflow-hidden rounded-2xl flex items-center justify-center bg-black/60 p-1">
+              <img src={previewDocPhoto.url} alt={previewDocPhoto.title} className="max-w-full max-h-[68vh] object-contain rounded-xl" />
+            </div>
+            <div className="flex justify-between items-center pt-2 border-t border-slate-800 text-[11px] text-slate-400">
+              <span>Toca la cámara si necesitas actualizar o reemplazar esta foto.</span>
+              <button 
+                type="button"
+                onClick={() => window.open(previewDocPhoto.url, '_blank')}
+                className="text-blue-400 hover:underline font-bold"
+              >
+                Abrir
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

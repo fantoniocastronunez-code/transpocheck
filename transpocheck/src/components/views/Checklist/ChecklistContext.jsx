@@ -11,6 +11,7 @@ export const ChecklistProvider = ({ children, job, currentUserEmail, onCancel, o
   const matchedVehicle = vehicles?.find(v => v.plate === String(job?.plate || job?.vin || '').toUpperCase());
   const initialDocs = matchedVehicle?.docs || { soap: false, permiso: false, revTecnica: false, gases: false };
   const initialDocsExpiry = matchedVehicle?.docsExpiry || {};
+  const initialDocsPhotos = matchedVehicle?.docsPhotos || {};
   const initialReminders = matchedVehicle?.internalReminders || [];
 
   let autoReturnOpt = 'origin';
@@ -34,6 +35,7 @@ export const ChecklistProvider = ({ children, job, currentUserEmail, onCancel, o
     pendingPin: null,
     docs: job?.checklist?.docs || initialDocs,
     docsExpiry: job?.checklist?.docsExpiry || initialDocsExpiry,
+    docsPhotos: job?.checklist?.docsPhotos || initialDocsPhotos,
     internalReminders: job?.checklist?.internalReminders || initialReminders,
     observations: '', transitNotes: job?.checklist?.transitNotes || '', receiverName: '', receiverRut: '', noReception: false, signatureData: null, location: null,
     hasEquipment: job?.checklist?.hasEquipment || false,

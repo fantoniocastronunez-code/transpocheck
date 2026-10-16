@@ -195,6 +195,40 @@ const ChecklistInner = ({ openCamera }) => {
           }
         };
 
+        const saveVehicleDocs = async (finalData) => {
+          try {
+            let targetVehicle = matchedVehicle;
+            const cleanIdent = String(finalData.plateOrVin || job?.plate || job?.vin || '').trim().toUpperCase();
+            if (!targetVehicle && cleanIdent && cleanIdent !== 'S/N' && vehicles) {
+              targetVehicle = vehicles.find(v => (v.plate && v.plate.toUpperCase() === cleanIdent) || (v.vin && v.vin.toUpperCase() === cleanIdent));
+            }
+
+            if (targetVehicle && targetVehicle.id) {
+              await updateDoc(doc(db, 'vehicles', targetVehicle.id), {
+                docs: finalData.docs || {},
+                docsExpiry: finalData.docsExpiry || {},
+                docsPhotos: finalData.docsPhotos || {}
+              });
+            } else if (cleanIdent && cleanIdent !== 'S/N') {
+              await addDoc(collection(db, 'vehicles'), {
+                plate: cleanIdent,
+                brand: finalData.brand || job?.brand || '',
+                model: finalData.model || job?.model || '',
+                client: finalData.client || job?.client || '',
+                vehicleType: finalData.vehicleType || 'auto',
+                docs: finalData.docs || {},
+                docsExpiry: finalData.docsExpiry || {},
+                docsPhotos: finalData.docsPhotos || {},
+                createdAt: Date.now(),
+                tripsCount: 1,
+                lastTripDate: Date.now()
+              });
+            }
+          } catch (err) {
+            console.error("[ERR-VEHICLE-DOCS-SAVE-01] Error guardando documentos en ficha del vehículo:", err);
+          }
+        };
+
         if (isQuick) {
           const finalData = await syncFilesToStorage(formDataWithLocation, setProgress);
           const driverObj = drivers?.find(d => d.email === currentUserEmail) || { name: currentUserEmail };
@@ -206,9 +240,7 @@ const ChecklistInner = ({ openCamera }) => {
             checklist: finalData, tripType: 'simple'
           });
           
-          if (matchedVehicle && matchedVehicle.id) {
-            try { await updateDoc(doc(db, 'vehicles', matchedVehicle.id), { docs: finalData.docs || {}, docsExpiry: finalData.docsExpiry || {}, docsPhotos: finalData.docsPhotos || {} }); } catch (e) {}
-          }
+          await saveVehicleDocs(finalData);
         } else {
           // Normal Job
           const updates = { phase: 'returning', 'draft.step': step };
@@ -228,6 +260,13 @@ const ChecklistInner = ({ openCamera }) => {
           const draftDataForFirestore = JSON.parse(JSON.stringify(formDataWithLocation));
           for (const key in draftDataForFirestore.photos) {
             if (typeof draftDataForFirestore.photos[key] === 'string' && !draftDataForFirestore.photos[key].startsWith('http')) draftDataForFirestore.photos[key] = false;
+          }
+          if (draftDataForFirestore.docsPhotos) {
+            for (const key in draftDataForFirestore.docsPhotos) {
+              if (typeof draftDataForFirestore.docsPhotos[key] === 'string' && !draftDataForFirestore.docsPhotos[key].startsWith('http')) {
+                delete draftDataForFirestore.docsPhotos[key];
+              }
+            }
           }
           const base64Fields = ['signatureData', 'fuelReceipt', 'scandocPdf', 'guiaDespachoPdf'];
           base64Fields.forEach(field => {
@@ -253,9 +292,7 @@ const ChecklistInner = ({ openCamera }) => {
           await updateDoc(doc(db, 'transport_jobs', job.id), finalJobUpdates);
           await processChecklistExpenses(finalData);
 
-          if (matchedVehicle && matchedVehicle.id) {
-            try { await updateDoc(doc(db, 'vehicles', matchedVehicle.id), { docs: finalData.docs || {}, docsExpiry: finalData.docsExpiry || {}, docsPhotos: finalData.docsPhotos || {} }); } catch (e) {}
-          }
+          await saveVehicleDocs(finalData);
         }
 
         if (clearLocalDraft) await clearLocalDraft();
