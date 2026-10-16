@@ -761,26 +761,68 @@ const handleDownloadPDF = async (job) => {
                       </p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+                    {/* Odómetro Inicio */}
                     <div>
-                      <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Odómetro al finalizar</p>
+                      <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Odómetro Inicio</p>
                       <div className="flex flex-col gap-1.5 mt-0.5">
                         <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">
-                          {selectedHistoryJob.checklist?.arrivalMileage || selectedHistoryJob.checklist?.mileage || 'No registrado'}
+                          {selectedHistoryJob.checklist?.mileage || 'No registrado'}
                         </p>
-                        {selectedHistoryJob.checklist?.photos?.odometer && (
-                            <img src={selectedHistoryJob.checklist.photos.odometer} alt="Odómetro Final" className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(selectedHistoryJob.checklist.photos.odometer, '_blank')} />
-                        )}
+                        {(() => {
+                          const p = selectedHistoryJob.checklist?.photos || {};
+                          const img = p.pickup_odo || p.mileage || p.pickupOdometer || p.dashboardInitial || (p.dashboard && p.dashboard !== (p.arrival_odo || p.odometer) ? p.dashboard : null);
+                          if (!img) return null;
+                          return <img src={img} alt="Odómetro Inicio" className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setFullScreenPhoto(img)} />;
+                        })()}
                       </div>
                     </div>
+
+                    {/* Odómetro Fin */}
                     <div>
-                      <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Combustible</p>
+                      <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Odómetro Fin</p>
                       <div className="flex flex-col gap-1.5 mt-0.5">
-                        {selectedHistoryJob.checklist?.photos?.fuelGauge ? (
-                            <img src={selectedHistoryJob.checklist.photos.fuelGauge} alt="Combustible" className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(selectedHistoryJob.checklist.photos.fuelGauge, '_blank')} />
-                        ) : (
-                            <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">{selectedHistoryJob.checklist?.fuelLevel !== undefined ? `${Math.round(selectedHistoryJob.checklist.fuelLevel <= 1 && selectedHistoryJob.checklist.fuelLevel !== 0 ? selectedHistoryJob.checklist.fuelLevel * 100 : selectedHistoryJob.checklist.fuelLevel)}%` : 'No registrado'}</p>
-                        )}
+                        <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">
+                          {selectedHistoryJob.checklist?.arrivalMileage || (selectedHistoryJob.status === 'completed' ? selectedHistoryJob.checklist?.mileage : '') || 'No registrado'}
+                        </p>
+                        {(() => {
+                          const p = selectedHistoryJob.checklist?.photos || {};
+                          const img = p.arrival_odo || (selectedHistoryJob.status === 'completed' ? (p.odometer || p.arrivalOdometer) : null) || p.dashboard;
+                          if (!img) return null;
+                          return <img src={img} alt="Odómetro Final" className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setFullScreenPhoto(img)} />;
+                        })()}
+                      </div>
+                    </div>
+
+                    {/* Combustible Inicio */}
+                    <div>
+                      <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Comb. Inicio</p>
+                      <div className="flex flex-col gap-1.5 mt-0.5">
+                        <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">
+                          {selectedHistoryJob.checklist?.fuelLevel !== undefined ? `${Math.round(selectedHistoryJob.checklist.fuelLevel <= 1 && selectedHistoryJob.checklist.fuelLevel !== 0 ? selectedHistoryJob.checklist.fuelLevel * 100 : selectedHistoryJob.checklist.fuelLevel)}%` : 'No registrado'}
+                        </p>
+                        {(() => {
+                          const p = selectedHistoryJob.checklist?.photos || {};
+                          const img = p.pickup_fuel || p.fuel || p.pickupFuel;
+                          if (!img) return null;
+                          return <img src={img} alt="Combustible Inicio" className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setFullScreenPhoto(img)} />;
+                        })()}
+                      </div>
+                    </div>
+
+                    {/* Combustible Fin */}
+                    <div>
+                      <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Comb. Fin</p>
+                      <div className="flex flex-col gap-1.5 mt-0.5">
+                        <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">
+                          {selectedHistoryJob.checklist?.arrivalFuelLevel !== undefined ? `${Math.round(selectedHistoryJob.checklist.arrivalFuelLevel <= 1 && selectedHistoryJob.checklist.arrivalFuelLevel !== 0 ? selectedHistoryJob.checklist.arrivalFuelLevel * 100 : selectedHistoryJob.checklist.arrivalFuelLevel)}%` : 'No registrado'}
+                        </p>
+                        {(() => {
+                          const p = selectedHistoryJob.checklist?.photos || {};
+                          const img = p.arrival_fuel || p.arrivalFuel || (selectedHistoryJob.status === 'completed' ? p.fuelGauge : null);
+                          if (!img) return null;
+                          return <img src={img} alt="Combustible Fin" className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setFullScreenPhoto(img)} />;
+                        })()}
                       </div>
                     </div>
 
@@ -905,7 +947,38 @@ const handleDownloadPDF = async (job) => {
                   <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 dark:border-slate-800 pb-1">5. Galería Fotográfica</h4>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {Object.entries(allPhotos).filter(([k,v]) => typeof v === 'string' && v.startsWith('http')).map(([k,v]) => {
-                      const photoLabels = { front: 'Frente', back: 'Atrás', left: 'Lat. Piloto', right: 'Lat. Copiloto', left_cab: 'Lat. Cabina Piloto', left_body: 'Lat. Carroc. Piloto', right_cab: 'Lat. Cabina Copiloto', right_body: 'Lat. Carroc. Copiloto', dashboard: 'Tablero', tire: 'Repuesto', interior_front: 'Int. Adelante', interior_back: 'Int. Atrás', odometer: 'Odómetro', vin: 'Nro Chasis', mileage: 'Kilometraje', fuelGauge: 'Med. Combustible', permiso: 'Permiso Circ.', soap: 'Seguro SOAP', revTecnica: 'Rev. Técnica', gases: 'Gases' };
+                      const photoLabels = { 
+                        front: 'Frente', 
+                        back: 'Atrás', 
+                        left: 'Lat. Piloto', 
+                        right: 'Lat. Copiloto', 
+                        left_cab: 'Lat. Cabina Piloto', 
+                        left_body: 'Lat. Carroc. Piloto', 
+                        right_cab: 'Lat. Cabina Copiloto', 
+                        right_body: 'Lat. Carroc. Copiloto', 
+                        dashboard: 'Tablero', 
+                        tire: 'Repuesto', 
+                        interior_front: 'Int. Adelante', 
+                        interior_back: 'Int. Atrás', 
+                        odometer: 'Odómetro', 
+                        vin: 'Nro Chasis', 
+                        mileage: 'Kilometraje', 
+                        fuelGauge: 'Med. Combustible', 
+                        pickup_odo: 'Odómetro Inicio',
+                        arrival_odo: 'Odómetro Fin',
+                        pickup_fuel: 'Comb. Inicio',
+                        arrival_fuel: 'Comb. Fin',
+                        pickupOdometer: 'Odómetro Inicio',
+                        arrivalOdometer: 'Odómetro Fin',
+                        pickupFuel: 'Comb. Inicio',
+                        arrivalFuel: 'Comb. Fin',
+                        fuel: 'Comb. Inicio',
+                        dashboardInitial: 'Odómetro Inicio',
+                        permiso: 'Permiso Circ.', 
+                        soap: 'Seguro SOAP', 
+                        revTecnica: 'Rev. Técnica', 
+                        gases: 'Gases' 
+                      };
                       return (
                         <div key={k} className="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 aspect-square cursor-pointer" onClick={() => setFullScreenPhoto(v)}>
                           <img src={v} alt={k} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />

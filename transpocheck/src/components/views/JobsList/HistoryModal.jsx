@@ -389,7 +389,7 @@ export default function HistoryModal({
             const ident = getJobIdentifier(selectedHistoryJob);
             const v = (vehicles && ident && ident !== 'S/N') ? vehicles.find(x => x.plate === ident.toUpperCase()) : null;
             const docPhotos = { ...(v?.docsPhotos || {}), ...(selectedHistoryJob.checklist?.docsPhotos || {}) };
-            const allPhotos = { ...(selectedHistoryJob.checklist?.photos || {}), ...docPhotos };
+            const allPhotos = { ...(selectedHistoryJob.checklist?.photos || {}), ...storagePhotos, ...docPhotos };
             const hasPhotos = Object.values(allPhotos).some(p => typeof p === 'string' && p.startsWith('http'));
             if (!hasPhotos) return null;
             return (
@@ -397,7 +397,38 @@ export default function HistoryModal({
               <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 dark:border-slate-800 pb-1">5. Galería Fotográfica</h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {Object.entries(allPhotos).filter(([k,v]) => typeof v === 'string' && v.startsWith('http')).map(([k,v]) => {
-                  const photoLabels = { front: 'Frente', back: 'Atrás', left: 'Lat. Piloto', right: 'Lat. Copiloto', left_cab: 'Lat. Cabina Piloto', left_body: 'Lat. Carroc. Piloto', right_cab: 'Lat. Cabina Copiloto', right_body: 'Lat. Carroc. Copiloto', dashboard: 'Tablero', tire: 'Repuesto', interior_front: 'Int. Adelante', interior_back: 'Int. Atrás', odometer: 'Odómetro', vin: 'Nro Chasis', mileage: 'Kilometraje', fuelGauge: 'Med. Combustible', permiso: 'Permiso Circ.', soap: 'Seguro SOAP', revTecnica: 'Rev. Técnica', gases: 'Gases' };
+                  const photoLabels = { 
+                    front: 'Frente', 
+                    back: 'Atrás', 
+                    left: 'Lat. Piloto', 
+                    right: 'Lat. Copiloto', 
+                    left_cab: 'Lat. Cabina Piloto', 
+                    left_body: 'Lat. Carroc. Piloto', 
+                    right_cab: 'Lat. Cabina Copiloto', 
+                    right_body: 'Lat. Carroc. Copiloto', 
+                    dashboard: 'Tablero', 
+                    tire: 'Repuesto', 
+                    interior_front: 'Int. Adelante', 
+                    interior_back: 'Int. Atrás', 
+                    odometer: 'Odómetro', 
+                    vin: 'Nro Chasis', 
+                    mileage: 'Kilometraje', 
+                    fuelGauge: 'Med. Combustible', 
+                    pickup_odo: 'Odómetro Inicio',
+                    arrival_odo: 'Odómetro Fin',
+                    pickup_fuel: 'Comb. Inicio',
+                    arrival_fuel: 'Comb. Fin',
+                    pickupOdometer: 'Odómetro Inicio',
+                    arrivalOdometer: 'Odómetro Fin',
+                    pickupFuel: 'Comb. Inicio',
+                    arrivalFuel: 'Comb. Fin',
+                    fuel: 'Comb. Inicio',
+                    dashboardInitial: 'Odómetro Inicio',
+                    permiso: 'Permiso Circ.', 
+                    soap: 'Seguro SOAP', 
+                    revTecnica: 'Rev. Técnica', 
+                    gases: 'Gases' 
+                  };
                   return (
                     <div key={k} className="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 aspect-square cursor-pointer" onClick={() => setFullScreenPhoto(v)}>
                       <img src={v} alt={k} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
