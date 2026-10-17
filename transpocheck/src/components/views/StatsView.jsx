@@ -1,322 +1,162 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { 
-    BarChart3, Users, Car, CheckCircle, Map as MapIcon, Navigation, Repeat, X, MapPin, DollarSign, Download, ChevronLeft, ChevronRight, Calendar, Save, Shield, Clock, Settings
+    BarChart3, Users, Car, CheckCircle, Map as MapIcon, Navigation, Repeat, X, MapPin, 
+    DollarSign, Download, ChevronLeft, ChevronRight, Calendar, Shield, Clock, Settings,
+    RefreshCw, Trash2, Database, AlertCircle
 } from 'lucide-react';
 import { getVehicleIdentifierLabel } from '../../utils/helpers';
+import { 
+    getMonthKey, 
+    parseDist, 
+    extractLightweightJob, 
+    calculateStatsFromLightweightJobs, 
+    syncMonthJobs, 
+    removeJobFromMonthlyStats 
+} from '../../utils/statsSync';
 
 export default function StatsView({ jobs = [], drivers = [], vehicles = [], allClientsList = [], db, showAlert, showConfirm }) {
-    // ESTADO DEL MODAL (Ventana flotante de detalles)
+    // Estado del modal de detalles
     const [modalData, setModalData] = useState(null);
     
-    // NUEVO: Estado para controlar el mes que se está visualizando
+    // Mes visualizado
     const [viewDate, setViewDate] = useState(new Date());
 
-    // STATS CONGELADAS
-    const [frozenStats, setFrozenStats] = useState(null);
-    const [isFreezing, setIsFreezing] = useState(false);
+    // Estado local de las estadísticas sincronizadas desde Firestore
+    const [storedStats, setStoredStats] = useState(null);
+    const [jobsSummaryMap, setJobsSummaryMap] = useState({});
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [syncSuccess, setSyncSuccess] = useState(false);
 
-    const currentMonthKey = `${viewDate.getFullYear()}-${(viewDate.getMonth() + 1).toString().padStart(2, '0')}`;
+    const currentMonthKey = getMonthKey(viewDate) || `${viewDate.getFullYear()}-${(viewDate.getMonth() + 1).toString().padStart(2, '0')}`;
 
+    // 1. ESCUCHADOR EN TIEMPO REAL de las estadísticas independientes del mes seleccionado
     useEffect(() => {
-        if (!db) return;
-        const fetchFrozenStats = async () => {
-            try {
-                const docRef = doc(db, 'monthly_stats', currentMonthKey);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    setFrozenStats(docSnap.data().stats);
-                } else {
-                    // SI NO HAY MONTHLY STATS, BUSCAR EN HISTORICAL STATS (de Limpiar BD)
-                    const histRef = doc(db, 'historical_stats', currentMonthKey);
-                    const histSnap = await getDoc(histRef);
-                    if (histSnap.exists()) {
-                        const hData = histSnap.data();
-                        
-                        // Convertir de formato historical a formato monthly
-                        const topClients = Object.entries(hData.clientCounts || {}).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, count]) => ({ name, count }));
-                        const topClientsByRevenue = Object.entries(hData.clientRevenues || {}).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({ name, value }));
-                        const topDriversKm = Object.entries(hData.driverKms || {}).sort((a, b) => b[1] - a[1]).map(([name, km]) => ({ name, km }));
-                        const topPlates = Object.entries(hData.plateCounts || {}).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([plate, count]) => ({ plate, count }));
-                        
-                        const topDriversByCategory = {};
-                        for (const [cat, counts] of Object.entries(hData.categoryCounts || {})) {
-                            let topDriver = null, maxCount = 0;
-                            for (const [drv, count] of Object.entries(counts)) {
-                                if (count > maxCount) { maxCount = count; topDriver = drv; }
-                            }
-                            if (topDriver) topDriversByCategory[cat] = { name: topDriver, count: maxCount };
-                        }
+        if (!db || !currentMonthKey) return;
 
-                        const convertedStats = {
-                            monthlyJobs: [],
-                            totalJobs: hData.totalJobs || 0,
-                            topClients,
-                            topClientsByRevenue,
-                            totalRevenue: hData.totalRevenue || 0,
-                            prtStats: hData.prtStats || { total: 0, approved: 0, help: 0, rejected: 0 },
-                            totalKm: Math.round(hData.totalKm || 0),
-                            todayKm: 0,
-                            topDriversKm,
-                            topDriversByCategory,
-                            topPlates
-                        };
-                        
-                        // Guardar en monthly_stats para que ya quede nativo!
-                        await setDoc(docRef, {
-                            monthKey: currentMonthKey,
-                            timestamp: Date.now(),
-                            stats: convertedStats,
-                            autoFrozenFromHistory: true
-                        });
-                        setFrozenStats(convertedStats);
-                    } else {
-                        setFrozenStats(null);
-                    }
-                }
-            } catch (e) {
-                console.error("Error fetching frozen stats:", e);
-            }
-        };
-        fetchFrozenStats();
-    }, [currentMonthKey, db]);
+        const docRef = doc(db, 'monthly_stats', currentMonthKey);
+        const unsubscribe = onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                const summary = data.jobsSummary || {};
+                setJobsSummaryMap(summary);
 
-    // FUNCIÓN EXTRACTADA PARA CALCULAR ESTADÍSTICAS (Reusable)
-    const calculateMonthStats = (targetDate, allJobs, allDrivers) => {
-        if (!Array.isArray(allJobs)) {
-            return { monthlyJobs: [], totalJobs: 0, topClients: [], topClientsByRevenue: [], totalRevenue: 0, prtStats: { total: 0, approved: 0, help: 0, rejected: 0 }, totalKm: 0, todayKm: 0, topDriversKm: [], topDriversByCategory: {}, topPlates: [] };
-        }
+                const jobsList = Object.values(summary).sort((a, b) => 
+                    (b.completedAt || b.createdAt || 0) - (a.completedAt || a.createdAt || 0)
+                );
 
-        const now = new Date();
-        const currentMonth = targetDate.getMonth();
-        const currentYear = targetDate.getFullYear();
-
-        const startOfMonth = new Date(currentYear, currentMonth, 1, 0, 0, 0, 0).getTime();
-        const endOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999).getTime();
-
-        const monthlyJobs = allJobs.filter(j => {
-            let jobTime = null;
-            if (j.completedAt) jobTime = new Date(j.completedAt).getTime();
-            else if (j.createdAt) jobTime = new Date(j.createdAt).getTime();
-            if (!jobTime || isNaN(jobTime)) return false;
-            return jobTime >= startOfMonth && jobTime <= endOfMonth && (j.status === 'completed' || j.status === 'failed');
-        });
-
-        const clientCounts = {};
-        const clientRevenues = {};
-        let totalRevenue = 0;
-
-        monthlyJobs.forEach(j => {
-            const cName = j.client || 'Sin Cliente';
-            clientCounts[cName] = (clientCounts[cName] || 0) + 1;
-            const price = Number(j.companyPrice) || 0;
-            clientRevenues[cName] = (clientRevenues[cName] || 0) + price;
-            totalRevenue += price;
-        });
-        const topClients = Object.entries(clientCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, count]) => ({ name, count }));
-        const topClientsByRevenue = Object.entries(clientRevenues).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({ name, value }));
-
-        const prtJobs = monthlyJobs.filter(j => j.tripType === 'revision');
-        let prtApproved = 0, prtApprovedHelp = 0, prtRejected = 0;
-        prtJobs.forEach(j => {
-            if (j.status === 'failed' || j.prt_result === 'rechazado') prtRejected++;
-            else if (j.prt_result === 'aprobado_ayuda') prtApprovedHelp++;
-            else prtApproved++; 
-        });
-
-        const parseDist = (str) => {
-            if (!str) return 0;
-            let s = str.toLowerCase().replace(/[^\d.,]/g, '');
-            if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
-            else if (s.includes('.') && s.split('.').pop().length === 3) s = s.replace(/\./g, '');
-            return parseFloat(s) || 0;
-        };
-
-        let totalKm = 0;
-        let todayKm = 0;
-        const todayStr = now.toISOString().split('T')[0];
-
-        monthlyJobs.forEach(j => {
-            if (j.drivenDistance && j.drivenDistance.includes('km')) {
-                const km = parseDist(j.drivenDistance);
-                if (km > 0) {
-                    totalKm += km;
-                    if (j.completedAt) {
-                        const jDate = new Date(j.completedAt).toISOString().split('T')[0];
-                        if (jDate === todayStr) todayKm += km;
-                    }
-                }
-            }
-        });
-
-        const driverKms = {};
-        monthlyJobs.forEach(j => {
-            if (j.status !== 'completed' || !j.acceptedByEmail) return;
-            if (j.drivenDistance && j.drivenDistance.includes('km')) {
-                const km = parseDist(j.drivenDistance);
-                if (km > 0) {
-                    const drvName = (Array.isArray(allDrivers) ? allDrivers.find(d => d.email === j.acceptedByEmail)?.name : null) || 'Desconocido';
-                    driverKms[drvName] = (driverKms[drvName] || 0) + km;
-                }
-            }
-        });
-        const topDriversKm = Object.entries(driverKms).sort((a, b) => b[1] - a[1]).map(([name, km]) => ({ name, km }));
-
-        const categoryCounts = {
-            'auto': {}, 'camioneta': {}, 'furgon_pequeno': {}, 'furgon_grande': {},
-            'camion_simple': {}, 'camion_doble': {}, 'camion_2ejes': {},
-            'camion_3ejes': {}, 'camion_8x4': {}, 'carro_arrastre': {}, 'servicio': {}
-        };
-        monthlyJobs.forEach(j => {
-            if (j.status !== 'completed' || !j.acceptedByEmail) return;
-            const drvName = (Array.isArray(allDrivers) ? allDrivers.find(d => d.email === j.acceptedByEmail)?.name : null) || 'Desconocido';
-            let vType = (j.checklist?.vehicleType || 'auto').toLowerCase();
-            if (j.tripType === 'simple') vType = 'servicio';
-
-            if (categoryCounts[vType] !== undefined) {
-                categoryCounts[vType][drvName] = (categoryCounts[vType][drvName] || 0) + 1;
-            }
-        });
-
-        const topDriversByCategory = {};
-        for (const [cat, counts] of Object.entries(categoryCounts)) {
-            let topDriver = null, maxCount = 0;
-            for (const [drv, count] of Object.entries(counts)) {
-                if (count > maxCount) { maxCount = count; topDriver = drv; }
-            }
-            if (topDriver) topDriversByCategory[cat] = { name: topDriver, count: maxCount };
-        }
-
-        const plateCounts = {};
-        monthlyJobs.forEach(j => {
-            const plate = (j.plate && j.plate !== 'S/N') ? j.plate : ((j.vin && j.vin !== 'S/N') ? j.vin : null);
-            if (plate) {
-                const cleanPlate = plate.toUpperCase().trim();
-                plateCounts[cleanPlate] = (plateCounts[cleanPlate] || 0) + 1;
-            }
-        });
-        const topPlates = Object.entries(plateCounts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([plate, count]) => ({ plate, count }));
-
-        return {
-            monthlyJobs,
-            totalJobs: monthlyJobs.length,
-            topClients,
-            topClientsByRevenue,
-            totalRevenue,
-            prtStats: { total: prtJobs.length, approved: prtApproved, help: prtApprovedHelp, rejected: prtRejected },
-            totalKm: Math.round(totalKm),
-            todayKm: Math.round(todayKm),
-            topDriversKm,
-            topDriversByCategory,
-            topPlates
-        };
-    };
-
-    // 1. CÁLCULO DE MÉTRICAS (MEMOIZADO)
-    const stats = useMemo(() => {
-        if (frozenStats) return frozenStats;
-        return calculateMonthStats(viewDate, jobs, drivers);
-    }, [jobs, drivers, viewDate, frozenStats]);
-
-    // NUEVO: AUTO-CONGELAR MESES PASADOS (Background Global y Retroactivo)
-    useEffect(() => {
-        if (!db || !jobs || jobs.length === 0) return;
-        
-        const now = new Date();
-
-        // Función para congelar automáticamente el mes pasado si nadie lo ha hecho
-        const autoFreezePreviousMonthGlobal = async () => {
-            const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-            const prevKey = `${prev.getFullYear()}-${(prev.getMonth() + 1).toString().padStart(2, '0')}`;
-            
-            try {
-                const docRef = doc(db, 'monthly_stats', prevKey);
-                const snap = await getDoc(docRef);
-                if (!snap.exists()) {
-                    const prevStats = calculateMonthStats(prev, jobs, drivers);
-                    if (prevStats.totalJobs > 0) {
-                        await setDoc(docRef, {
-                            monthKey: prevKey,
-                            timestamp: Date.now(),
-                            stats: { ...prevStats, monthlyJobs: [] },
-                            autoFrozenGlobal: true
-                        });
-                    }
-                }
-            } catch (e) {
-                console.error("Error auto-congelando mes pasado global:", e);
-            }
-        };
-
-        autoFreezePreviousMonthGlobal();
-        
-        // También congelamos el mes que estamos viendo si es pasado (retroactivo inmediato)
-        const isPastMonth = viewDate.getFullYear() < now.getFullYear() || 
-                           (viewDate.getFullYear() === now.getFullYear() && viewDate.getMonth() < now.getMonth());
-
-        if (isPastMonth && !frozenStats && !isFreezing && stats?.totalJobs > 0) {
-            setIsFreezing(true);
-            const autoFreezePast = async () => {
-                try {
-                    await setDoc(doc(db, 'monthly_stats', currentMonthKey), {
-                        monthKey: currentMonthKey,
-                        timestamp: Date.now(),
-                        stats: { ...stats, monthlyJobs: [] },
-                        autoFrozen: true
+                if (data.stats) {
+                    setStoredStats({
+                        ...data.stats,
+                        monthlyJobs: jobsList.length > 0 ? jobsList : (data.stats.monthlyJobs || [])
                     });
-                    setFrozenStats({ ...stats, monthlyJobs: [] });
-                } catch (e) {
-                    console.error("Error auto-congelando mes pasado visualizado", e);
-                } finally {
-                    setIsFreezing(false);
+                } else if (jobsList.length > 0) {
+                    setStoredStats(calculateStatsFromLightweightJobs(jobsList));
                 }
-            };
-            autoFreezePast();
-        }
-    }, [viewDate, frozenStats, isFreezing, db, stats, currentMonthKey, jobs, drivers]);
+            } else {
+                setStoredStats(null);
+                setJobsSummaryMap({});
+            }
+        }, (err) => {
+            console.error('[ERR-STATS-SNAPSHOT-01] Error escuchando monthly_stats:', err);
+        });
 
-    const handleFreezeMonth = () => {
+        return () => unsubscribe();
+    }, [db, currentMonthKey]);
+
+    // 2. AUTO-SINCRONIZACIÓN: Recopilar datos desde los traslados de forma independiente
+    // y sumarlos a las estadísticas del mes sin duplicar ni bloquear
+    const syncLockRef = useRef(false);
+    useEffect(() => {
+        if (!db || !currentMonthKey || syncLockRef.current) return;
+
+        let isMounted = true;
+        const autoSync = async () => {
+            syncLockRef.current = true;
+            try {
+                const result = await syncMonthJobs(db, currentMonthKey, jobs, drivers);
+                if (isMounted && result?.stats) {
+                    setSyncSuccess(true);
+                    setTimeout(() => { if (isMounted) setSyncSuccess(false); }, 3000);
+                }
+            } catch (err) {
+                console.error('[ERR-STATS-AUTOSYNC-01] Error en auto-sincronización:', err);
+            } finally {
+                syncLockRef.current = false;
+            }
+        };
+
+        autoSync();
+
+        return () => { isMounted = false; };
+    }, [db, currentMonthKey, jobs, drivers]);
+
+    // 3. CÁLCULO DE MÉTRICAS VISUALES
+    const stats = useMemo(() => {
+        if (storedStats) return storedStats;
+
+        // Fallback provisional si aún no carga el documento en Firestore
+        const monthActiveJobs = (jobs || []).filter(j => {
+            if (j.status !== 'completed' && j.status !== 'failed') return false;
+            return getMonthKey(j.completedAt || j.createdAt) === currentMonthKey;
+        }).map(j => extractLightweightJob(j, drivers)).filter(Boolean);
+
+        return calculateStatsFromLightweightJobs(monthActiveJobs);
+    }, [storedStats, jobs, drivers, currentMonthKey]);
+
+    // Sincronización manual forzada por el usuario
+    const handleManualSync = async () => {
         if (!db) {
-            if (showAlert) showAlert("Error: BD no conectada", "error");
+            if (showAlert) showAlert("[ERR-STATS-SYNC-02] Base de datos no conectada.");
             return;
         }
-        
-        const monthNamesStr = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-        const monthName = monthNamesStr[viewDate.getMonth()];
-        const year = viewDate.getFullYear();
-        
-        if (showConfirm) {
-            showConfirm(`¿Congelar las estadísticas de ${monthName} ${year}?\n\nAl congelar, los datos de este mes quedarán guardados permanentemente (Foto estática) y no se borrarán si haces limpieza de la base de datos de trabajos.\n\nNormalmente se hace el último día del mes o el primer día del siguiente.`, async () => {
-                setIsFreezing(true);
-                try {
-                    await setDoc(doc(db, 'monthly_stats', currentMonthKey), {
-                        monthKey: currentMonthKey,
-                        timestamp: Date.now(),
-                        stats: { ...stats, monthlyJobs: [] } // Eliminamos los trabajos crudos para no exceder límite de Firestore y evitar anidaciones
-                    });
-                    setFrozenStats({ ...stats, monthlyJobs: [] });
-                    if (showAlert) showAlert("Estadísticas congeladas correctamente.", "success");
-                } catch (e) {
-                    console.error(e);
-                    if (showAlert) showAlert("Error al congelar estadísticas.", "error");
-                } finally {
-                    setIsFreezing(false);
-                }
-            });
+        setIsSyncing(true);
+        try {
+            const res = await syncMonthJobs(db, currentMonthKey, jobs, drivers);
+            if (res && showAlert) {
+                showAlert("✅ Estadísticas sincronizadas e independientes resguardadas.");
+            }
+        } catch (e) {
+            console.error('[ERR-STATS-MANUAL-SYNC]', e);
+            if (showAlert) showAlert("[ERR-STATS-MANUAL-SYNC] Error al sincronizar estadísticas.");
+        } finally {
+            setIsSyncing(false);
         }
+    };
+
+    // Eliminación de un registro individual de estadísticas (ej: prueba o error)
+    const handleDeleteStatRecord = (jobId) => {
+        if (!showConfirm || !jobId) return;
+        showConfirm("¿Eliminar este registro específico de las estadísticas?\n\nLos totales de kilómetros, ingresos y cantidad de traslados se recalcularán automáticamente sin afectar la lista de traslados activos.", async () => {
+            try {
+                const ok = await removeJobFromMonthlyStats(db, currentMonthKey, jobId);
+                if (ok) {
+                    if (showAlert) showAlert("✅ Registro eliminado de las estadísticas.");
+                    setModalData(prev => prev ? {
+                        ...prev,
+                        jobs: (prev.jobs || []).filter(item => String(item.id) !== String(jobId))
+                    } : null);
+                } else {
+                    if (showAlert) showAlert("[ERR-STATS-DEL-01] No se encontró el registro a eliminar.");
+                }
+            } catch (err) {
+                console.error('[ERR-STATS-DEL-02] Error al eliminar registro:', err);
+                if (showAlert) showAlert("[ERR-STATS-DEL-02] Error al eliminar de estadísticas.");
+            }
+        });
     };
 
     // UI HELPER
     const getPercent = (value, total) => total === 0 ? 0 : Math.round((value / total) * 100);
 
-    // 2. FUNCIONES DE CLICK (Llenan el modal con datos)
+    // 4. FUNCIONES DE CLICK (Abre el modal con los traslados resguardados)
     const handleClientClick = (clientName) => {
-        const filtered = stats.monthlyJobs.filter(j => (j.client || 'Sin Cliente') === clientName);
+        const filtered = (stats.monthlyJobs || []).filter(j => (j.client || 'Sin Cliente') === clientName);
         setModalData({ title: `Traslados Cliente: ${clientName}`, jobs: filtered });
     };
 
     const handlePRTClick = (type) => {
-        const mJobs = stats.monthlyJobs.filter(j => j.tripType === 'revision');
+        const mJobs = (stats.monthlyJobs || []).filter(j => j.tripType === 'revision');
         let filtered = [], title = "";
         if (type === 'approved') {
             filtered = mJobs.filter(j => j.status !== 'failed' && j.prt_result !== 'rechazado' && j.prt_result !== 'aprobado_ayuda');
@@ -332,56 +172,56 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
     };
 
     const handleDriverKmClick = (driverName) => {
-        const filtered = stats.monthlyJobs.filter(j => {
-            const drvName = (Array.isArray(drivers) ? drivers.find(d => d.email === j.acceptedByEmail)?.name : null) || 'Desconocido';
-            return drvName === driverName && j.drivenDistance && j.drivenDistance.includes('km');
+        const filtered = (stats.monthlyJobs || []).filter(j => {
+            const matchesDriver = (j.driverName === driverName) || 
+                (Array.isArray(drivers) && drivers.find(d => d.email === j.driverEmail)?.name === driverName);
+            const km = Number(j.km) || parseDist(j.drivenDistance);
+            return matchesDriver && km > 0;
         });
         setModalData({ title: `Rutas de ${driverName}`, jobs: filtered });
     };
 
     const handleCategoryClick = (categoryKey, driverName, categoryLabel) => {
-        const filtered = stats.monthlyJobs.filter(j => {
-            const drvName = (Array.isArray(drivers) ? drivers.find(d => d.email === j.acceptedByEmail)?.name : null) || 'Desconocido';
-            let vType = (j.checklist?.vehicleType || 'auto').toLowerCase();
-            // Lógica corregida para que el filtro coincida con el cálculo
-            if (j.tripType === 'simple') {
-                vType = 'servicio';
-            }
-            return drvName === driverName && vType === categoryKey;
+        const filtered = (stats.monthlyJobs || []).filter(j => {
+            const matchesDriver = (j.driverName === driverName) || 
+                (Array.isArray(drivers) && drivers.find(d => d.email === j.driverEmail)?.name === driverName);
+            const vType = (j.vehicleType || 'auto').toLowerCase();
+            return matchesDriver && vType === categoryKey;
         });
         setModalData({ title: `${categoryLabel} - ${driverName}`, jobs: filtered });
     };
 
     const handlePlateClick = (targetPlate) => {
-        const filtered = stats.monthlyJobs.filter(j => {
-            const plate = (j.plate && j.plate !== 'S/N') ? j.plate : ((j.vin && j.vin !== 'S/N') ? j.vin : null);
-            return plate && plate.toUpperCase().trim() === targetPlate;
+        const filtered = (stats.monthlyJobs || []).filter(j => {
+            const plate = j.plate || '';
+            return plate.toUpperCase().trim() === targetPlate.toUpperCase().trim();
         });
         setModalData({ title: `Movimientos ${getVehicleIdentifierLabel(targetPlate)}`, jobs: filtered });
     };
 
-    // NUEVO: Exportar tabla a Excel (CSV)
+    // Exportar tabla a Excel (CSV) con UTF-8
     const handleExportExcel = () => {
-        if (!modalData || !modalData.jobs) return;
-        const headers = ['Fecha', 'Marca', 'Modelo', 'Patente/VIN', 'Desde', 'Hasta', 'Valor ($)'];
+        if (!modalData || !modalData.jobs || modalData.jobs.length === 0) return;
+        const headers = ['Fecha', 'Marca', 'Modelo', 'Patente/VIN', 'Desde', 'Hasta', 'Conductor', 'Distancia', 'Valor ($)'];
         
         const rows = modalData.jobs.map(j => {
             const date = new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL');
             const brand = j.brand || '-';
             const model = j.model || '-';
-            const plate = (j.plate && j.plate !== 'S/N') ? j.plate : (j.vin || 'S/N');
+            const plate = j.plate || 'S/N';
             const origin = j.origin || '-';
-            const destination = j.destination || j.destName || '-';
+            const destination = j.destination || '-';
+            const driver = j.driverName || 'Desconocido';
+            const distance = j.drivenDistance || (j.km ? `${j.km} km` : '-');
             const price = j.companyPrice || 0;
-            return `"${date}";"${brand}";"${model}";"${plate}";"${origin}";"${destination}";"${price}"`;
+            return `"${date}";"${brand}";"${model}";"${plate}";"${origin}";"${destination}";"${driver}";"${distance}";"${price}"`;
         });
 
-        // \uFEFF fuerza a Excel a leer el archivo con codificación UTF-8 (mantiene los acentos y las ñ)
         const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(';'), ...rows].join('\n');
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Reporte_${modalData.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.csv`);
+        link.setAttribute("download", `Estadisticas_${modalData.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -396,65 +236,103 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                 
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 relative z-10 mb-6">
                     <div>
-                        <h2 className="text-2xl sm:text-3xl font-black mb-1">Dashboard Analítico</h2>
-                        <p className="text-blue-100 font-bold text-sm">Métricas operativas interactivas y exportables</p>
+                        <div className="flex items-center gap-2 mb-1">
+                            <h2 className="text-2xl sm:text-3xl font-black">Dashboard Analítico</h2>
+                            <span className="inline-flex items-center gap-1 bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider" title="Los datos se recopilan independientemente y persisten aunque borres traslados">
+                                <Database className="w-3 h-3 text-emerald-300" /> Independiente
+                            </span>
+                        </div>
+                        <p className="text-blue-100 font-bold text-sm">Métricas recopiladas de forma autónoma desde traslados</p>
                     </div>
                     
-                    {/* CONTROLADOR DE MESES */}
-                    <div className="flex items-center gap-3 bg-white/10 dark:bg-slate-900/40 p-1.5 rounded-2xl backdrop-blur-md border border-white/20 dark:border-slate-800/20 w-fit shrink-0">
-                        <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))} className="p-2 hover:bg-white/20 dark:bg-slate-900 rounded-xl transition-colors active:scale-95">
-                            <ChevronLeft className="w-5 h-5 text-white" />
-                        </button>
-                        <div className="flex flex-col items-center justify-center min-w-[120px]">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-blue-200 flex items-center gap-1"><Calendar className="w-3 h-3"/> Período</p>
-                            <p className="text-sm font-extrabold capitalize text-white">
-                                {viewDate.toLocaleString('es-CL', { month: 'long', year: 'numeric' })}
-                            </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                        {/* CONTROLADOR DE MESES */}
+                        <div className="flex items-center gap-3 bg-white/10 dark:bg-slate-900/40 p-1.5 rounded-2xl backdrop-blur-md border border-white/20 dark:border-slate-800/20 shrink-0">
+                            <button 
+                                onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))} 
+                                className="p-2 hover:bg-white/20 dark:hover:bg-slate-800 rounded-xl transition-colors active:scale-95"
+                                title="Mes anterior"
+                            >
+                                <ChevronLeft className="w-5 h-5 text-white" />
+                            </button>
+                            <div className="flex flex-col items-center justify-center min-w-[120px]">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-blue-200 flex items-center gap-1">
+                                    <Calendar className="w-3 h-3"/> Período
+                                </p>
+                                <p className="text-sm font-extrabold capitalize text-white">
+                                    {viewDate.toLocaleString('es-CL', { month: 'long', year: 'numeric' })}
+                                </p>
+                            </div>
+                            <button 
+                                onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))} 
+                                disabled={viewDate.getMonth() === new Date().getMonth() && viewDate.getFullYear() === new Date().getFullYear()} 
+                                className="p-2 hover:bg-white/20 dark:hover:bg-slate-800 rounded-xl transition-colors active:scale-95 disabled:opacity-30 disabled:pointer-events-none"
+                                title="Mes siguiente"
+                            >
+                                <ChevronRight className="w-5 h-5 text-white" />
+                            </button>
                         </div>
-                        <button onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))} disabled={viewDate.getMonth() === new Date().getMonth() && viewDate.getFullYear() === new Date().getFullYear()} className="p-2 hover:bg-white/20 dark:bg-slate-900 rounded-xl transition-colors active:scale-95 disabled:opacity-30 disabled:pointer-events-none">
-                            <ChevronRight className="w-5 h-5 text-white" />
+
+                        {/* BOTÓN SINCRONIZAR AHORA */}
+                        <button 
+                            onClick={handleManualSync} 
+                            disabled={isSyncing}
+                            className="p-3 bg-white/10 hover:bg-white/20 active:scale-95 text-white border border-white/20 rounded-2xl transition-all shadow-sm flex items-center gap-2"
+                            title="Actualizar y verificar sincronización de datos independientes"
+                        >
+                            <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin text-amber-300' : 'text-blue-200'}`} />
+                            <span className="text-xs font-bold hidden sm:inline">
+                                {isSyncing ? 'Sincronizando...' : 'Sincronizar'}
+                            </span>
                         </button>
                     </div>
-
-                    {/* BOTÓN CONGELAR MES */}
-                    <button 
-                        onClick={handleFreezeMonth} 
-                        disabled={isFreezing}
-                        className={`p-3 rounded-2xl transition-all shadow-sm flex items-center gap-2 ${frozenStats ? 'bg-emerald-500/20 text-emerald-200 border border-emerald-500/30 cursor-default' : 'bg-white/10 hover:bg-white/20 text-white border border-white/20 active:scale-95'}`}
-                        title="Guardar foto del mes (permanente)"
-                    >
-                        {isFreezing ? <Clock className="w-5 h-5 animate-spin" /> : (frozenStats ? <Shield className="w-5 h-5" /> : <Save className="w-5 h-5" />)}
-                        <span className="text-xs font-bold hidden sm:inline">{isFreezing ? 'Procesando...' : (frozenStats ? 'Mes Congelado' : 'Congelar Mes')}</span>
-                    </button>
                 </div>
 
-                <div className="bg-white/10 dark:bg-slate-900/40 backdrop-blur-md border border-white/20 dark:border-slate-800/10 p-3 rounded-2xl mb-6 relative z-10 flex flex-col sm:flex-row justify-center items-center gap-2 text-center">
-                    <p className="text-xs font-bold text-blue-100">
-                        Mostrando registros desde el <span className="text-white font-black">1 de {viewDate.toLocaleString('es-CL', { month: 'long' })}</span> hasta el <span className="text-white font-black">{new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate()} de {viewDate.toLocaleString('es-CL', { month: 'long' })}</span>.
+                {/* BANNER INFORMATIVO DE PERSISTENCIA */}
+                <div className="bg-white/10 dark:bg-slate-900/40 backdrop-blur-md border border-white/20 dark:border-slate-800/10 p-3 rounded-2xl mb-6 relative z-10 flex flex-col sm:flex-row justify-between items-center gap-2 text-center sm:text-left">
+                    <p className="text-xs font-bold text-blue-100 flex items-center gap-1.5">
+                        <Shield className="w-4 h-4 text-emerald-300 shrink-0" />
+                        <span>
+                            Mostrando <span className="text-white font-black">{stats.totalJobs || 0}</span> traslados del <span className="text-white font-black">1 al {new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate()} de {viewDate.toLocaleString('es-CL', { month: 'long' })}</span>.
+                        </span>
                     </p>
+                    <span className="text-[11px] font-medium text-blue-200 bg-white/5 px-2.5 py-1 rounded-xl border border-white/10">
+                        🛡️ Resguardo activo: Si eliminas traslados de la lista, sus datos numéricos permanecen aquí.
+                    </span>
                 </div>
                 
+                {/* TARJETAS PRINCIPALES */}
                 <div className="flex flex-wrap gap-4 relative z-10">
                     <div className="bg-white/10 dark:bg-slate-900/40 backdrop-blur-md border border-white/20 dark:border-slate-800/20 p-4 rounded-2xl flex-1 min-w-[120px]">
                         <p className="text-[10px] font-black uppercase tracking-widest text-blue-200 mb-1">Total Traslados</p>
                         <p className="text-3xl font-black">{stats.totalJobs || 0}</p>
                     </div>
                     <div className="bg-white/10 dark:bg-slate-900/40 backdrop-blur-md border border-white/20 dark:border-slate-800/20 p-4 rounded-2xl flex-1 min-w-[120px]">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200 mb-1 flex items-center gap-1"><MapIcon className="w-3 h-3" /> KM del Período</p>
-                        <p className="text-3xl font-black text-emerald-300">{stats.totalKm || 0} <span className="text-sm font-bold text-emerald-100">km</span></p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200 mb-1 flex items-center gap-1">
+                            <MapIcon className="w-3 h-3" /> KM del Período
+                        </p>
+                        <p className="text-3xl font-black text-emerald-300">
+                            {Number(stats.totalKm || 0).toLocaleString('es-CL')} <span className="text-sm font-bold text-emerald-100">km</span>
+                        </p>
                     </div>
                     <div className="bg-white/10 dark:bg-slate-900/40 backdrop-blur-md border border-white/20 dark:border-slate-800/20 p-4 rounded-2xl flex-1 min-w-[120px]">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-200 mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> Ingresos Totales</p>
-                        <p className="text-3xl font-black text-amber-300"><span className="text-sm font-bold text-amber-100">$</span>{stats.totalRevenue ? stats.totalRevenue.toLocaleString('es-CL') : 0}</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-200 mb-1 flex items-center gap-1">
+                            <DollarSign className="w-3 h-3" /> Ingresos Totales
+                        </p>
+                        <p className="text-3xl font-black text-amber-300">
+                            <span className="text-sm font-bold text-amber-100">$</span>
+                            {stats.totalRevenue ? stats.totalRevenue.toLocaleString('es-CL') : 0}
+                        </p>
                     </div>
                 </div>
             </div>
 
+            {/* SECCIONES ESTADÍSTICAS */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
                 {/* 1. TOP CLIENTES */}
                 <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
-                    <div className="flex items-center gap-2 mb-4 border-b border-slate-50 pb-3">
+                    <div className="flex items-center gap-2 mb-4 border-b border-slate-50 dark:border-slate-800 pb-3">
                         <div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-xl"><Users className="w-4 h-4 text-blue-600 dark:text-blue-400"/></div>
                         <h3 className="font-extrabold text-slate-800 dark:text-slate-200">Top Clientes del Período</h3>
                     </div>
@@ -463,7 +341,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                     ) : (
                         <div className="space-y-2">
                             {stats.topClients.map(({name, count}, idx) => (
-                                <button key={name} onClick={() => handleClientClick(name)} className="w-full text-left flex items-center gap-3 p-2 hover:bg-slate-50 dark:bg-slate-900 hover:scale-[1.01] active:scale-95 transition-all rounded-xl border border-transparent hover:border-slate-100 dark:border-slate-800 hover:shadow-sm">
+                                <button key={name} onClick={() => handleClientClick(name)} className="w-full text-left flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 hover:scale-[1.01] active:scale-95 transition-all rounded-xl border border-transparent hover:border-slate-100 dark:hover:border-slate-800 hover:shadow-sm">
                                     <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${idx === 0 ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>{idx + 1}</span>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex justify-between mb-1">
@@ -480,9 +358,9 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                     )}
                 </div>
 
-                {/* NUEVO: INGRESOS POR CLIENTE */}
+                {/* 2. INGRESOS POR CLIENTE */}
                 <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
-                    <div className="flex items-center gap-2 mb-4 border-b border-slate-50 pb-3">
+                    <div className="flex items-center gap-2 mb-4 border-b border-slate-50 dark:border-slate-800 pb-3">
                         <div className="bg-emerald-100 dark:bg-emerald-900/40 p-2 rounded-xl"><DollarSign className="w-4 h-4 text-emerald-600 dark:text-emerald-400"/></div>
                         <h3 className="font-extrabold text-slate-800 dark:text-slate-200">Ingresos por Cliente</h3>
                     </div>
@@ -491,7 +369,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                     ) : (
                         <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 scrollbar-none">
                             {stats.topClientsByRevenue.map(({name, value: revenue}, idx) => (
-                                <button key={name} onClick={() => handleClientClick(name)} className="w-full text-left flex items-center gap-3 p-2.5 hover:bg-slate-50 dark:bg-slate-900 hover:scale-[1.01] active:scale-95 transition-all rounded-xl border border-transparent hover:border-slate-100 dark:border-slate-800 hover:shadow-sm">
+                                <button key={name} onClick={() => handleClientClick(name)} className="w-full text-left flex items-center gap-3 p-2.5 hover:bg-slate-50 dark:hover:bg-slate-800 hover:scale-[1.01] active:scale-95 transition-all rounded-xl border border-transparent hover:border-slate-100 dark:hover:border-slate-800 hover:shadow-sm">
                                     <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${idx === 0 ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>{idx + 1}</span>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{name}</p>
@@ -505,14 +383,16 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                     )}
                 </div>
 
-                {/* 2. RENDIMIENTO PRT INTERACTIVO */}
+                {/* 3. RENDIMIENTO PRT */}
                 <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
-                    <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-3">
+                    <div className="flex items-center justify-between mb-4 border-b border-slate-50 dark:border-slate-800 pb-3">
                         <div className="flex items-center gap-2">
                             <div className="bg-amber-100 dark:bg-amber-900/40 p-2 rounded-xl"><CheckCircle className="w-4 h-4 text-amber-600 dark:text-amber-400"/></div>
                             <h3 className="font-extrabold text-slate-800 dark:text-slate-200">Rendimiento PRT</h3>
                         </div>
-                        <span className="text-xs font-black bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-1 rounded-lg">{stats.prtStats?.total || 0} Revisiones</span>
+                        <span className="text-xs font-black bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-1 rounded-lg">
+                            {stats.prtStats?.total || 0} Revisiones
+                        </span>
                     </div>
                     
                     {(!stats.prtStats || stats.prtStats.total === 0) ? (
@@ -526,15 +406,15 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                             </div>
                             
                             <div className="flex gap-2 text-center mt-2">
-                                <button onClick={() => handlePRTClick('approved')} className="flex-1 bg-green-50 dark:bg-green-900/30 p-2 rounded-xl border border-green-100 dark:border-green-800/50 cursor-pointer hover:bg-green-100 dark:bg-green-900/40 hover:scale-105 active:scale-95 transition-all shadow-sm">
+                                <button onClick={() => handlePRTClick('approved')} className="flex-1 bg-green-50 dark:bg-green-900/30 p-2 rounded-xl border border-green-100 dark:border-green-800/50 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/50 hover:scale-105 active:scale-95 transition-all shadow-sm">
                                     <p className="text-lg font-black text-green-600 dark:text-green-400">{stats.prtStats.approved}</p>
                                     <p className="text-[9px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wide leading-tight">Legales<br/>100%</p>
                                 </button>
-                                <button onClick={() => handlePRTClick('help')} className="flex-1 bg-amber-50 dark:bg-amber-900/30 p-2 rounded-xl border border-amber-100 dark:border-amber-800/50 cursor-pointer hover:bg-amber-100 dark:bg-amber-900/40 hover:scale-105 active:scale-95 transition-all shadow-sm">
+                                <button onClick={() => handlePRTClick('help')} className="flex-1 bg-amber-50 dark:bg-amber-900/30 p-2 rounded-xl border border-amber-100 dark:border-amber-800/50 cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/50 hover:scale-105 active:scale-95 transition-all shadow-sm">
                                     <p className="text-lg font-black text-amber-600 dark:text-amber-400">{stats.prtStats.help}</p>
                                     <p className="text-[9px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wide leading-tight">Aprob.<br/>Ayuda</p>
                                 </button>
-                                <button onClick={() => handlePRTClick('rejected')} className="flex-1 bg-red-50 dark:bg-red-900/30 p-2 rounded-xl border border-red-100 dark:border-red-800/50 cursor-pointer hover:bg-red-100 dark:bg-red-900/40 hover:scale-105 active:scale-95 transition-all shadow-sm">
+                                <button onClick={() => handlePRTClick('rejected')} className="flex-1 bg-red-50 dark:bg-red-900/30 p-2 rounded-xl border border-red-100 dark:border-red-800/50 cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/50 hover:scale-105 active:scale-95 transition-all shadow-sm">
                                     <p className="text-lg font-black text-red-600 dark:text-red-400">{stats.prtStats.rejected}</p>
                                     <p className="text-[9px] font-bold text-red-700 dark:text-red-400 uppercase tracking-wide leading-tight">Rechazos<br/>PRT</p>
                                 </button>
@@ -543,9 +423,9 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                     )}
                 </div>
 
-                {/* 3. TABLA DE KILOMETRAJE POR CONDUCTOR */}
+                {/* 4. KILÓMETROS POR CONDUCTOR */}
                 <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
-                    <div className="flex items-center gap-2 mb-4 border-b border-slate-50 pb-3">
+                    <div className="flex items-center gap-2 mb-4 border-b border-slate-50 dark:border-slate-800 pb-3">
                         <div className="bg-indigo-100 dark:bg-indigo-900/40 p-2 rounded-xl"><MapIcon className="w-4 h-4 text-indigo-600 dark:text-indigo-400"/></div>
                         <h3 className="font-extrabold text-slate-800 dark:text-slate-200">Kilómetros por Conductor</h3>
                     </div>
@@ -564,17 +444,19 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                                 </thead>
                                 <tbody>
                                     {stats.topDriversKm.map(({name, km}, idx) => (
-                                        <tr key={name} onClick={() => handleDriverKmClick(name)} className="hover:bg-slate-100 dark:bg-slate-800 active:bg-slate-200 dark:bg-slate-700 cursor-pointer transition-colors group">
-                                            <td className="py-2.5 pr-2 border-b border-slate-50 text-center rounded-l-xl">
-                                                <span className={`inline-flex w-5 h-5 rounded-full items-center justify-center text-[9px] font-black ${idx === 0 ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400' : idx === 1 ? 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400' : idx === 2 ? 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400' : 'bg-slate-50 dark:bg-slate-900 text-slate-400 group-hover:bg-white dark:bg-slate-900'}`}>
+                                        <tr key={name} onClick={() => handleDriverKmClick(name)} className="hover:bg-slate-100 dark:hover:bg-slate-800 active:bg-slate-200 dark:active:bg-slate-700 cursor-pointer transition-colors group">
+                                            <td className="py-2.5 pr-2 border-b border-slate-50 dark:border-slate-800 text-center rounded-l-xl">
+                                                <span className={`inline-flex w-5 h-5 rounded-full items-center justify-center text-[9px] font-black ${idx === 0 ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400' : idx === 1 ? 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400' : idx === 2 ? 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400' : 'bg-slate-50 dark:bg-slate-900 text-slate-400 group-hover:bg-white dark:group-hover:bg-slate-800'}`}>
                                                     {idx + 1}
                                                 </span>
                                             </td>
-                                            <td className="py-2.5 pr-2 border-b border-slate-50">
+                                            <td className="py-2.5 pr-2 border-b border-slate-50 dark:border-slate-800">
                                                 <p className="text-xs font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">{name}</p>
                                             </td>
-                                            <td className="py-2.5 pl-1 border-b border-slate-50 text-right rounded-r-xl pr-2">
-                                                <span className="text-xs font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded-md">{Math.round(km).toLocaleString('es-CL')} <span className="text-[9px] text-indigo-400 uppercase tracking-widest ml-0.5">km</span></span>
+                                            <td className="py-2.5 pl-1 border-b border-slate-50 dark:border-slate-800 text-right rounded-r-xl pr-2">
+                                                <span className="text-xs font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded-md">
+                                                    {Math.round(km).toLocaleString('es-CL')} <span className="text-[9px] text-indigo-400 uppercase tracking-widest ml-0.5">km</span>
+                                                </span>
                                             </td>
                                         </tr>
                                     ))}
@@ -584,9 +466,9 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                     )}
                 </div>
 
-                {/* 4. ESPECIALIZACIÓN POR TIPO DE VEHÍCULO */}
+                {/* 5. LÍDERES POR VEHÍCULO */}
                 <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
-                    <div className="flex items-center gap-2 mb-4 border-b border-slate-50 pb-3">
+                    <div className="flex items-center gap-2 mb-4 border-b border-slate-50 dark:border-slate-800 pb-3">
                         <div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-xl"><Car className="w-4 h-4 text-blue-600 dark:text-blue-400"/></div>
                         <h3 className="font-extrabold text-slate-800 dark:text-slate-200">Líderes por Vehículo</h3>
                     </div>
@@ -612,7 +494,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                                 if (!leader) return null;
 
                                 return (
-                                    <button key={key} onClick={() => handleCategoryClick(key, leader.name, label)} className="w-full text-left flex justify-between items-center bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:bg-slate-800 hover:scale-[1.02] active:scale-95 transition-all p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                                    <button key={key} onClick={() => handleCategoryClick(key, leader.name, label)} className="w-full text-left flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 hover:scale-[1.02] active:scale-95 transition-all p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
                                         <div className="flex flex-col min-w-0 pr-2">
                                             <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider truncate">{label}</span>
                                             <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{leader.name}</span>
@@ -627,10 +509,10 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                     )}
                 </div>
 
-                {/* 5. VEHÍCULOS MÁS MOVIDOS */}
+                {/* 6. VEHÍCULOS FRECUENTES */}
                 <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm md:col-span-2">
-                    <div className="flex items-center gap-2 mb-4 border-b border-slate-50 pb-3">
-                        <div className="bg-rose-100 p-2 rounded-xl"><Repeat className="w-4 h-4 text-rose-600"/></div>
+                    <div className="flex items-center gap-2 mb-4 border-b border-slate-50 dark:border-slate-800 pb-3">
+                        <div className="bg-rose-100 dark:bg-rose-900/40 p-2 rounded-xl"><Repeat className="w-4 h-4 text-rose-600 dark:text-rose-400"/></div>
                         <h3 className="font-extrabold text-slate-800 dark:text-slate-200">Vehículos Frecuentes del Mes</h3>
                     </div>
                     
@@ -639,14 +521,14 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                             {stats.topPlates.map(({plate, count}, idx) => (
-                                <button key={plate} onClick={() => handlePlateClick(plate)} className="w-full text-left flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:bg-slate-800 hover:scale-[1.02] active:scale-95 transition-all rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                                <button key={plate} onClick={() => handlePlateClick(plate)} className="w-full text-left flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 hover:scale-[1.02] active:scale-95 transition-all rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
                                     <div className="flex items-center gap-2.5">
                                         <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black shrink-0 ${idx === 0 ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}>{idx + 1}</span>
-                                        <div className="bg-white dark:bg-slate-900 border-2 border-slate-800 text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded-md text-xs font-black tracking-widest shadow-sm">
+                                        <div className="bg-white dark:bg-slate-900 border-2 border-slate-800 dark:border-slate-600 text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded-md text-xs font-black tracking-widest shadow-sm">
                                             {plate}
                                         </div>
                                     </div>
-                                    <span className="bg-rose-50 text-rose-600 px-2 py-0.5 rounded-lg text-[10px] font-black tracking-wider border border-rose-100">
+                                    <span className="bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 px-2 py-0.5 rounded-lg text-[10px] font-black tracking-wider border border-rose-100 dark:border-rose-800/40">
                                         {count} VIAJES
                                     </span>
                                 </button>
@@ -657,48 +539,78 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
 
             </div>
 
-            {/* MODAL DE DETALLES: SE MUESTRA SOLO SI ALGUIEN HACE CLICK */}
+            {/* MODAL DE DETALLES: Registros resguardados e independientes */}
             {modalData && (
                 <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col animate-in zoom-in-95 duration-200 border border-slate-200 dark:border-slate-700">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col animate-in zoom-in-95 duration-200 border border-slate-200 dark:border-slate-700">
                         
-                        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900 rounded-t-3xl">
+                        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 rounded-t-3xl">
                             <div className="min-w-0 pr-4">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Auditoría de Registros</p>
+                                <div className="flex items-center gap-1.5 mb-0.5">
+                                    <Database className="w-3 h-3 text-blue-500" />
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                        Registros Resguardados ({modalData.jobs ? modalData.jobs.length : 0})
+                                    </p>
+                                </div>
                                 <h3 className="font-black text-slate-800 dark:text-slate-200 text-[15px] truncate">{modalData.title}</h3>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
-                                <button onClick={handleExportExcel} className="p-2.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 rounded-xl hover:bg-emerald-200 transition-colors shadow-sm active:scale-95 flex items-center gap-2" title="Descargar Tabla en Excel">
-                                    <Download className="w-4 h-4"/> <span className="hidden sm:inline text-xs font-black uppercase tracking-wider">Excel</span>
+                                <button 
+                                    onClick={handleExportExcel} 
+                                    className="p-2.5 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 rounded-xl hover:bg-emerald-200 transition-colors shadow-sm active:scale-95 flex items-center gap-2" 
+                                    title="Descargar Tabla en Excel"
+                                >
+                                    <Download className="w-4 h-4"/> 
+                                    <span className="hidden sm:inline text-xs font-black uppercase tracking-wider">Excel</span>
                                 </button>
-                                <button onClick={() => setModalData(null)} className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full hover:bg-red-50 dark:bg-red-900/30 hover:text-red-500 hover:border-red-200 dark:border-red-800/50 transition-colors shadow-sm active:scale-95">
+                                <button 
+                                    onClick={() => setModalData(null)} 
+                                    className="p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-500 hover:border-red-200 dark:hover:border-red-800/50 transition-colors shadow-sm active:scale-95"
+                                >
                                     <X className="w-4 h-4"/>
                                 </button>
                             </div>
                         </div>
                         
-                        <div className="p-4 overflow-y-auto scrollbar-none flex-1 space-y-3 bg-slate-100 dark:bg-slate-800 rounded-b-3xl">
-                            {modalData.jobs.length === 0 ? (
-                                <p className="text-center text-slate-400 font-bold py-6 text-sm">No se encontraron registros activos.</p>
+                        <div className="p-4 overflow-y-auto scrollbar-none flex-1 space-y-3 bg-slate-100 dark:bg-slate-800/30 rounded-b-3xl">
+                            {(!modalData.jobs || modalData.jobs.length === 0) ? (
+                                <p className="text-center text-slate-400 font-bold py-6 text-sm">No se encontraron registros activos en este grupo.</p>
                             ) : (
                                 modalData.jobs.map(j => (
                                     <div key={j.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
                                         <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500 group-hover:bg-blue-600 transition-colors"></div>
                                         
-                                        {/* CABECERA: FECHA, CLIENTE Y VEHÍCULO */}
+                                        {/* CABECERA: FECHA, CLIENTE, VEHÍCULO Y PATENTE */}
                                         <div className="flex justify-between items-start mb-3 pl-1.5">
                                             <div className="pr-2">
-                                                <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-0.5">{new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL')}</p>
-                                                <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-tight truncate">{j.client || 'Sin cliente'}</p>
+                                                <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-0.5">
+                                                    {new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL')}
+                                                </p>
+                                                <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-tight truncate">
+                                                    {j.client || 'Sin cliente'}
+                                                </p>
                                                 <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 uppercase tracking-wide">
-                                                    {(j.operationMode === 'servicio' || !!j.description) ? (j.associatedVehicle || 'Servicio en Terreno') : `${j.brand || 'S/MARCA'} ${j.model || ''}`}
+                                                    {(j.operationMode === 'servicio' || !!j.description) 
+                                                        ? (j.associatedVehicle || j.description || 'Servicio en Terreno') 
+                                                        : `${j.brand || 'S/MARCA'} ${j.model || ''}`}
                                                 </p>
                                             </div>
-                                            <span className="bg-slate-800 text-white text-[10px] font-black px-2.5 py-1 rounded-md tracking-widest shadow-sm shrink-0">{j.plate || j.vin || j.associatedPlate || 'S/N'}</span>
+                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                <span className="bg-slate-800 text-white text-[10px] font-black px-2.5 py-1 rounded-md tracking-widest shadow-sm">
+                                                    {j.plate || j.vin || j.associatedPlate || 'S/N'}
+                                                </span>
+                                                <button 
+                                                    onClick={() => handleDeleteStatRecord(j.id)}
+                                                    className="p-1 text-slate-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                                                    title="Quitar este traslado de las estadísticas"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
                                         </div>
                                         
-                                        {/* RUTA: DESDE - HASTA o SERVICIO */}
-                                        <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-3 mb-3 border border-slate-100 dark:border-slate-800 space-y-2.5 ml-1.5">
+                                        {/* RUTA O DESCRIPCIÓN */}
+                                        <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-3 mb-3 border border-slate-100 dark:border-slate-800 space-y-2 ml-1.5">
                                             {(j.operationMode === 'servicio' || !!j.description) ? (
                                                 <>
                                                     <div className="flex items-start gap-2.5">
@@ -729,17 +641,32 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                                                         <div className="bg-amber-100 dark:bg-amber-900/40 p-1.5 rounded-full shrink-0"><Navigation className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400"/></div>
                                                         <div className="flex-1 min-w-0 pt-0.5">
                                                             <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest leading-none mb-0.5">Hasta (Destino)</p>
-                                                            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 leading-snug line-clamp-2">{j.destination || j.destName || 'Destino no especificado'}</p>
+                                                            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 leading-snug line-clamp-2">{j.destination || 'Destino no especificado'}</p>
                                                         </div>
                                                     </div>
                                                 </>
                                             )}
                                         </div>
 
-                                        {/* CONDUCTOR Y DISTANCIA */}
-                                        <div className="flex items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-400 pl-1.5">
-                                            <p className="flex items-center gap-1.5"><Car className="w-3.5 h-3.5 text-slate-400 shrink-0"/> {Array.isArray(drivers) ? drivers.find(d => d.email === j.acceptedByEmail)?.name || 'Conductor' : 'Conductor'}</p>
-                                            {j.drivenDistance && <span className="flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest border border-indigo-100 dark:border-indigo-800/50"><MapIcon className="w-3.5 h-3.5 text-indigo-500 shrink-0"/> {j.drivenDistance}</span>}
+                                        {/* CONDUCTOR, DISTANCIA Y PRECIO */}
+                                        <div className="flex items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-400 pl-1.5 flex-wrap gap-2">
+                                            <p className="flex items-center gap-1.5">
+                                                <Car className="w-3.5 h-3.5 text-slate-400 shrink-0"/> 
+                                                <span>{j.driverName || 'Conductor'}</span>
+                                            </p>
+                                            <div className="flex items-center gap-2">
+                                                {(j.km > 0 || j.drivenDistance) && (
+                                                    <span className="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest border border-indigo-100 dark:border-indigo-800/50">
+                                                        <MapIcon className="w-3 h-3 text-indigo-500 shrink-0"/> 
+                                                        {j.drivenDistance || `${j.km} km`}
+                                                    </span>
+                                                )}
+                                                {Number(j.companyPrice) > 0 && (
+                                                    <span className="flex items-center gap-0.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-md text-[10px] font-black border border-emerald-100 dark:border-emerald-800/50">
+                                                        ${Number(j.companyPrice).toLocaleString('es-CL')}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 ))

@@ -26,6 +26,7 @@ import ArrivalModal from './JobsList/ArrivalModal';
 import PickupModal from './JobsList/PickupModal';
 import { formatDateDisplay, analyzeJobStatus, generateStandardFileName, generateWhatsAppText, getRouteStr, resizeImage, resizeAndWatermarkImage } from '../../utils/helpers';
 import { purgeOrphanStoragePhotos, formatBytes } from '../../utils/storageMetrics';
+import { saveJobToMonthlyStatsBeforeDelete, getMonthKey, extractLightweightJob, calculateStatsFromLightweightJobs } from '../../utils/statsSync';
 
 export default function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, onNewJob, db, currentUserEmail, showAlert, showConfirm, allClientsList, onLoadMore, vehicles }) {
   const [menuOpenId, setMenuOpenId] = useState(null);
@@ -1003,11 +1004,15 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const handleDeleteJob = async (jobId) => {
     showConfirm("¿Estás seguro de eliminar este trabajo definitivamente?", async () => {
       try {
+        const targetJob = (jobs || []).find(j => j.id === jobId);
+        if (targetJob && (targetJob.status === 'completed' || targetJob.status === 'failed')) {
+          await saveJobToMonthlyStatsBeforeDelete(db, targetJob, drivers);
+        }
         await deleteDoc(doc(db, 'transport_jobs', jobId));
-        showAlert("✅ Traslado eliminado correctamente de la base de datos.");
+        showAlert("✅ Traslado eliminado. Sus datos numéricos quedaron resguardados en Estadísticas.");
       } catch (e) {
-        console.error("Error eliminando traslado:", e);
-        showAlert("❌ Error al eliminar el traslado. Revisa tu conexión.");
+        console.error("[ERR-DELETE-JOB-01] Error eliminando traslado:", e);
+        showAlert("[ERR-DELETE-JOB-01] Error al eliminar el traslado. Revisa tu conexión.");
       }
     });
   };
@@ -1470,79 +1475,45 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           showAlert("✅ Respaldo ZIP descargado. Consolidando estadísticas y fotos...");
         }
 
-        // NUEVO: Agrupar traslados a eliminar por mes para crear la "fotografía estática"
+        // NUEVO: Agrupar traslados a eliminar por mes para resguardo independiente permanente en estadísticas
         const { getDoc, setDoc } = await import('firebase/firestore');
         const jobsByMonth = {};
 
         snap.docs.forEach(documentSnap => {
           const j = { id: documentSnap.id, ...documentSnap.data() };
           if (j.status === 'completed' || j.status === 'failed') {
-            const d = new Date(j.completedAt || j.createdAt);
-            const key = `${d.getFullYear()}-${d.getMonth()}`;
-            if (!jobsByMonth[key]) jobsByMonth[key] = [];
-            jobsByMonth[key].push(j);
+            const key = getMonthKey(j.completedAt || j.createdAt);
+            if (key) {
+              if (!jobsByMonth[key]) jobsByMonth[key] = [];
+              jobsByMonth[key].push(j);
+            }
           }
         });
 
-        // Guardar estadísticas estáticas en Firebase
+        // Guardar estadísticas estáticas y resúmenes ligeros en monthly_stats (sin fotos ni checklists pesados)
         for (const [monthKey, monthJobs] of Object.entries(jobsByMonth)) {
-          const statRef = doc(db, 'historical_stats', monthKey);
-          const statSnap = await getDoc(statRef);
-          let monthStats = statSnap.exists() ? statSnap.data() : {
-            isStaticSnapshot: true,
-            totalJobs: 0, totalKm: 0, totalRevenue: 0,
-            prtStats: { total: 0, approved: 0, help: 0, rejected: 0 },
-            clientCounts: {}, clientRevenues: {}, driverKms: {}, categoryCounts: {}, plateCounts: {}
-          };
+          try {
+            const statRef = doc(db, 'monthly_stats', monthKey);
+            const statSnap = await getDoc(statRef);
+            let jobsSummary = statSnap.exists() ? (statSnap.data().jobsSummary || {}) : {};
 
-          monthJobs.forEach(j => {
-            monthStats.totalJobs += 1;
+            monthJobs.forEach(j => {
+              const lw = extractLightweightJob(j, drivers);
+              if (lw && lw.id) {
+                jobsSummary[lw.id] = lw;
+              }
+            });
 
-            const cName = j.client || 'Sin Cliente';
-            monthStats.clientCounts[cName] = (monthStats.clientCounts[cName] || 0) + 1;
-
-            const price = Number(j.companyPrice) || 0;
-            monthStats.clientRevenues[cName] = (monthStats.clientRevenues[cName] || 0) + price;
-            monthStats.totalRevenue += price;
-
-            if (j.tripType === 'revision') {
-              monthStats.prtStats.total += 1;
-              if (j.status === 'failed' || j.prt_result === 'rechazado') monthStats.prtStats.rejected += 1;
-              else if (j.prt_result === 'aprobado_ayuda') monthStats.prtStats.help += 1;
-              else monthStats.prtStats.approved += 1;
-            }
-
-            let km = 0;
-            if (j.drivenDistance && j.drivenDistance.includes('km')) {
-              let s = j.drivenDistance.toLowerCase().replace(/[^\d.,]/g, '');
-              if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
-              else if (s.includes('.') && s.split('.').pop().length === 3) s = s.replace(/\./g, '');
-              km = parseFloat(s) || 0;
-            }
-
-            if (km > 0) {
-              monthStats.totalKm += km;
-              const drvName = (Array.isArray(drivers) ? drivers.find(d => d.email === j.acceptedByEmail)?.name : null) || j.acceptedByEmail || 'Desconocido';
-              monthStats.driverKms[drvName] = (monthStats.driverKms[drvName] || 0) + km;
-            }
-
-            if ((j.status === 'completed' || j.status === 'failed') && j.acceptedByEmail) {
-              const drvName = (Array.isArray(drivers) ? drivers.find(d => d.email === j.acceptedByEmail)?.name : null) || j.acceptedByEmail || 'Desconocido';
-              let vType = (j.checklist?.vehicleType || 'auto').toLowerCase();
-              if (j.tripType === 'simple') vType = 'servicio';
-
-              if (!monthStats.categoryCounts[vType]) monthStats.categoryCounts[vType] = {};
-              monthStats.categoryCounts[vType][drvName] = (monthStats.categoryCounts[vType][drvName] || 0) + 1;
-            }
-
-            const plate = (j.plate && j.plate !== 'S/N') ? j.plate : ((j.vin && j.vin !== 'S/N') ? j.vin : null);
-            if (plate) {
-              const cleanPlate = plate.toUpperCase().trim();
-              monthStats.plateCounts[cleanPlate] = (monthStats.plateCounts[cleanPlate] || 0) + 1;
-            }
-          });
-
-          await setDoc(statRef, monthStats);
+            const calculatedStats = calculateStatsFromLightweightJobs(Object.values(jobsSummary));
+            await setDoc(statRef, {
+              monthKey,
+              updatedAt: Date.now(),
+              stats: calculatedStats,
+              jobsSummary
+            }, { merge: true });
+          } catch (errMonth) {
+            console.error(`[ERR-PURGE-STATS-${monthKey}] Error resguardando estadísticas del mes:`, errMonth);
+          }
         }
 
         // --- PROTECCIÓN MÁXIMA DE FOTOS DE DOCUMENTOS DE VEHÍCULOS ---
