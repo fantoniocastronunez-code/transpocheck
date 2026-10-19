@@ -1434,7 +1434,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const renderHistoryJobCard = (j) => <HistoryJobCard key={j.id} j={j} {...historyJobCardProps} />;
 
   const handlePurgeOldJobs = async () => {
-    showConfirm("⚠️ ¿Estás seguro de limpiar la base de datos? Se empaquetará un respaldo ZIP de las actas de más de 15 días, se consolidarán las estadísticas y se eliminarán los traslados y fotos de inspección de Storage y Firestore. Las fotos de documentos de vehículos (SOAP, RT, etc.) se conservarán intactas.", async () => {
+    showConfirm("⚠️ ¿Estás seguro de limpiar la base de datos? Se empaquetará un respaldo ZIP de las actas de más de 15 días, se consolidarán las estadísticas y se eliminarán los traslados y fotos de inspección de Storage y Firestore. Los traslados eliminados seguirán contando como número en el ranking del mes (se reinicia el día 1 de cada mes). Las fotos de documentos de vehículos (SOAP, RT, etc.) se conservarán intactas.", async () => {
       try {
         showAlert("⏳ Buscando traslados de más de 15 días en la base de datos...");
         const fifteenDaysAgo = Date.now() - (15 * 24 * 60 * 60 * 1000);
@@ -1635,7 +1635,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           await deleteDoc(doc(db, 'transport_jobs', document.id));
           count++;
         }
-        showAlert(`✅ Limpieza Maestra: ${count} traslados (>15 días) y ${deletedPhotosCount} fotos de inspección eliminadas de Storage y Firestore. Las fotos de documentos de vehículos se conservaron intactas.`);
+        showAlert(`✅ Limpieza Maestra: ${count} traslados (>15 días) y ${deletedPhotosCount} fotos de inspección eliminadas. Los traslados seguirán sumando como número en el ranking mensual hasta el día 1 del próximo mes.`);
       } catch (err) {
         console.error("[ERR-PURGE-DB-02] Error al limpiar la base de datos:", err);
         showAlert("[ERR-PURGE-DB-02] Error al limpiar la base de datos.");

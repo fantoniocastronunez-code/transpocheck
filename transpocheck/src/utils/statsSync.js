@@ -39,8 +39,9 @@ export const extractLightweightJob = (job, drivers = []) => {
   const km = parseDist(job.drivenDistance || job.km || job.distance || 0);
   
   let driverName = 'Desconocido';
-  if (Array.isArray(drivers) && job.acceptedByEmail) {
-    const found = drivers.find(d => d.email?.toLowerCase() === job.acceptedByEmail?.toLowerCase());
+  const acceptedEmail = (job.acceptedByEmail || job.driverEmail || '').trim();
+  if (Array.isArray(drivers) && acceptedEmail) {
+    const found = drivers.find(d => d.email?.toLowerCase().trim() === acceptedEmail.toLowerCase());
     if (found?.name) driverName = found.name;
   }
   if (driverName === 'Desconocido' && job.driverName) {
@@ -71,7 +72,12 @@ export const extractLightweightJob = (job, drivers = []) => {
     companyPrice: Number(job.companyPrice) || 0,
     drivenDistance: job.drivenDistance || (km > 0 ? `${km} km` : ''),
     km: Math.round(km * 10) / 10,
-    driverEmail: job.acceptedByEmail || '',
+    driverEmail: acceptedEmail,
+    acceptedByEmail: acceptedEmail,
+    assignedEmails: Array.isArray(job.assignedEmails) ? job.assignedEmails : [],
+    forceRanking: !!job.forceRanking,
+    excludeFromRanking: !!job.excludeFromRanking,
+    isPintura: !!job.isPintura,
     driverName,
     plate: String(plate).toUpperCase().trim(),
     brand: String(job.brand || '').toUpperCase().trim(),
@@ -98,7 +104,7 @@ export const isLightweightJobEqual = (a, b) => {
     Number(a.km) === Number(b.km) &&
     a.drivenDistance === b.drivenDistance &&
     a.prt_result === b.prt_result &&
-    a.driverEmail === b.driverEmail &&
+    (a.driverEmail || a.acceptedByEmail) === (b.driverEmail || b.acceptedByEmail) &&
     a.driverName === b.driverName &&
     a.client === b.client &&
     a.vehicleType === b.vehicleType &&
@@ -108,7 +114,10 @@ export const isLightweightJobEqual = (a, b) => {
     a.origin === b.origin &&
     a.destination === b.destination &&
     a.operationMode === b.operationMode &&
-    a.description === b.description;
+    a.description === b.description &&
+    !!a.forceRanking === !!b.forceRanking &&
+    !!a.excludeFromRanking === !!b.excludeFromRanking &&
+    !!a.isPintura === !!b.isPintura;
 };
 
 /**
@@ -209,6 +218,25 @@ export const calculateStatsFromLightweightJobs = (jobsList = []) => {
     .slice(0, 6)
     .map(([plate, count]) => ({ plate, count }));
 
+  // 6. Ranking de conductores del mes (para resguardo permanente de puntajes)
+  const driverJobCounts = {};
+  sortedJobs.forEach(j => {
+    if (j.status !== 'completed') return;
+    const isService = j.tripType === 'simple' || j.isPintura;
+    const isScoring = isService ? !!j.forceRanking : !j.excludeFromRanking;
+    if (!isScoring) return;
+
+    const email = (j.acceptedByEmail || j.driverEmail || '').toLowerCase().trim();
+    if (email) {
+      driverJobCounts[email] = (driverJobCounts[email] || 0) + 1;
+    } else if (Array.isArray(j.assignedEmails)) {
+      j.assignedEmails.forEach(ae => {
+        const aeClean = (ae || '').toLowerCase().trim();
+        if (aeClean) driverJobCounts[aeClean] = (driverJobCounts[aeClean] || 0) + 1;
+      });
+    }
+  });
+
   return {
     monthlyJobs: sortedJobs,
     totalJobs: sortedJobs.length,
@@ -220,7 +248,8 @@ export const calculateStatsFromLightweightJobs = (jobsList = []) => {
     todayKm: Math.round(todayKm),
     topDriversKm,
     topDriversByCategory,
-    topPlates
+    topPlates,
+    driverRanking: driverJobCounts
   };
 };
 

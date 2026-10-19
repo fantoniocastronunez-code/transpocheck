@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { 
   Trophy, Car, Wallet, Clock, ChevronRight, FileText, 
   CheckCircle, Star, Navigation, TrendingUp, Shield, 
@@ -6,6 +7,7 @@ import {
 } from 'lucide-react';
 import { formatMoney } from '../../utils/helpers';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
+import { getMonthKey } from '../../utils/statsSync';
 
 const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
@@ -18,21 +20,60 @@ const parseDist = (str) => {
   return parseFloat(s) || 0;
 };
 
-export default function DriverDashboardView({ myDriver, jobs, expenses, drivers, currentUserEmail }) {
+export default function DriverDashboardView({ myDriver, jobs = [], expenses = [], drivers = [], currentUserEmail, db }) {
   const now = new Date();
   const currentMonthName = MONTH_NAMES[now.getMonth()];
   const currentYear = now.getFullYear();
+  const currentMonthKey = getMonthKey(now) || `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
 
+  const [monthlyStatsData, setMonthlyStatsData] = useState(null);
 
+  // Escuchar monthly_stats para mantener las métricas del mes aunque se purguen traslados >15 días
+  useEffect(() => {
+    if (!db || !currentMonthKey) return;
+    const statRef = doc(db, 'monthly_stats', currentMonthKey);
+    const unsub = onSnapshot(statRef, (snap) => {
+      if (snap.exists()) {
+        setMonthlyStatsData(snap.data());
+      } else {
+        setMonthlyStatsData(null);
+      }
+    }, (err) => {
+      console.error('[ERR-DRIVER-DASH-SNAP-01] Error escuchando estadísticas:', err);
+    });
+    return () => unsub();
+  }, [db, currentMonthKey]);
 
   const stats = useMemo(() => {
     const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
 
+    // Combinar traslados de monthly_stats con activos en vivo
+    const mergedMap = new Map();
+    const storedSummary = monthlyStatsData?.jobsSummary || {};
+    Object.values(storedSummary).forEach(sj => {
+      if (!sj || !sj.id) return;
+      const jDate = sj.completedAt || sj.createdAt || 0;
+      if (jDate >= firstOfMonth && (sj.status === 'completed' || sj.status === 'finished')) {
+        mergedMap.set(sj.id, sj);
+      }
+    });
+    (jobs || []).forEach(j => {
+      if (!j || !j.id) return;
+      mergedMap.set(j.id, j);
+    });
+
+    const allCombinedJobs = Array.from(mergedMap.values());
+    const current = (currentUserEmail || '').toLowerCase().trim();
+
     // Todos mis trabajos
-    const myJobs = jobs.filter(j => 
-      j.acceptedByEmail === currentUserEmail || 
-      (!j.acceptedByEmail && j.assignedEmails?.includes(currentUserEmail))
-    );
+    const myJobs = allCombinedJobs.filter(j => {
+      const email = (j.acceptedByEmail || j.driverEmail || '').toLowerCase().trim();
+      if (email && email === current) return true;
+      if (!email && Array.isArray(j.assignedEmails)) {
+        return j.assignedEmails.some(ae => (ae || '').toLowerCase().trim() === current);
+      }
+      return false;
+    });
 
     // Completados este mes
     const monthlyCompleted = myJobs.filter(j => {
@@ -47,8 +88,8 @@ export default function DriverDashboardView({ myDriver, jobs, expenses, drivers,
     let monthlyKm = 0;
     let totalKm = 0;
     myJobs.filter(j => j.status === 'completed').forEach(j => {
-      if (j.drivenDistance && j.drivenDistance.includes('km')) {
-        const km = parseDist(j.drivenDistance);
+      const km = parseDist(j.drivenDistance || j.km || 0);
+      if (km > 0) {
         totalKm += km;
         const jobDate = j.completedAt || j.createdAt || 0;
         if (jobDate >= firstOfMonth) monthlyKm += km;
@@ -89,15 +130,15 @@ export default function DriverDashboardView({ myDriver, jobs, expenses, drivers,
       totalCompleted,
       monthlyKm: Math.round(monthlyKm),
       totalKm: Math.round(totalKm),
-      rankPosition: myRankPosition,
-      totalDrivers: ranking.length,
-      myScore,
+      rankPosition: 0,
+      totalDrivers: (drivers || []).length,
+      myScore: monthlyCompleted.length,
       breakdown: { traslados, prt, servicios, viajes },
       recentJobs,
       activeJobs,
       streak
     };
-  }, [jobs, drivers, currentUserEmail]);
+  }, [jobs, drivers, currentUserEmail, monthlyStatsData]);
 
   // --- ESTADO DE LICENCIA ---
   const licenseStatus = useMemo(() => {
