@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { CloudUpload } from 'lucide-react';
 
 const renderVehicle = (vType, wheelClass, wheelFill, isChassisCab) => {
     const type = (vType || '').toLowerCase();
@@ -380,12 +381,14 @@ const StatusAnimation = ({ type, vehicleType, isChassisCab, origin, destination,
 export default function JobCard({ j, ...props }) {
   const [showDetails, setShowDetails] = useState(false);
   const [showDocsModal, setShowDocsModal] = useState(false);
-  const { analyzeJobStatus, getJobIdentifier, vehicles, menuOpenId, setMenuOpenId, isAdminView, onEditJob, currentUserEmail, setRelayPromptJob, setForceCloseJob, db, updateDoc, deleteField, doc, showAlert, showConfirm, setJobToFail, latestVehiclePhotos, setFullScreenPhoto, role, processingId, setProcessingId, handleApproveRequest, handleRejectRequest, handleApprovePhotoOverride, handleAcceptJob, setTrackingJobId, setGuideUploadJob, setGuideLink, setGuideFileBase64, updatePhase, setPickupPromptJob, setArrivalPromptJob, setArrivalMileage, setArrivalPhoto, setPrtApproveType, setPrtReturnOpt, setPrtReturnDest, setPrtApprovePromptJob, setPrtPromptJob, onStartChecklist, handleUndoPhase, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, WaitTimerBadge, SwipeButton, AlertCircle, Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, Truck, X, XCircle, Clock, Car, MapPin, FileText, RefreshCw, Search } = props;
+  const { analyzeJobStatus, getJobIdentifier, vehicles, menuOpenId, setMenuOpenId, isAdminView, onEditJob, currentUserEmail, setRelayPromptJob, setForceCloseJob, db, updateDoc, deleteField, doc, showAlert, showConfirm, setJobToFail, latestVehiclePhotos, setFullScreenPhoto, role, processingId, setProcessingId, handleApproveRequest, handleRejectRequest, handleApprovePhotoOverride, handleAcceptJob, setTrackingJobId, setGuideUploadJob, setGuideLink, setGuideFileBase64, updatePhase, setPickupPromptJob, setArrivalPromptJob, setArrivalMileage, setArrivalPhoto, setPrtApproveType, setPrtReturnOpt, setPrtReturnDest, setPrtApprovePromptJob, setPrtPromptJob, onStartChecklist, handleUndoPhase, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, WaitTimerBadge, SwipeButton, AlertCircle, Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, Truck, X, XCircle, Clock, Car, MapPin, FileText, RefreshCw, Search, syncQueue } = props;
     const { isRequested, isPending, isAccepted, isPendingGuide, step2Done, step3Done, step4Done } = analyzeJobStatus(j);
     
     const ident = getJobIdentifier(j);
 
-
+    // ESTADO DE SUBIDA EN SEGUNDO PLANO (COLA DE SUBIDAS)
+    const activeSyncTask = syncQueue?.find(t => t.jobId === j.id && t.status === 'syncing');
+    const isUploading = Boolean(activeSyncTask);
 
     // NUEVO: Motor de Alertas y Fotos de Documentos del Vehículo
     let expiringDocs = [];
@@ -417,9 +420,50 @@ export default function JobCard({ j, ...props }) {
 
     return (
       // --- OPTIMIZACIÓN: Quitamos el overflow-hidden del padre para que el menú no se corte ---
-      // Además, si la tarjeta tiene el menú abierto, elevamos su z-index
-      <div key={j.id} className={`bg-[#1e293b]/60 backdrop-blur-2xl rounded-[1.5rem] border p-3 sm:p-4 flex flex-col shadow-2xl relative hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-default group ${j.isUrgent ? 'border-red-400/50 ring-2 ring-red-400/30' : (j.fleetGroup ? 'border-indigo-400/50' : 'border-slate-700/50')} ${menuOpenId === j.id ? 'z-50' : 'z-10'}`}>
+      // Además, si la tarjeta tiene el menú abierto, elevamos su z-index. Si está subiendo, se estiliza con borde esmeralda y efecto esmerilado.
+      <div 
+        key={j.id} 
+        className={`bg-[#1e293b]/60 backdrop-blur-2xl rounded-[1.5rem] border p-3 sm:p-4 flex flex-col shadow-2xl relative ${!isUploading ? 'hover:-translate-y-1 active:scale-[0.98]' : 'select-none'} transition-all duration-300 cursor-default group ${
+          isUploading 
+            ? 'border-emerald-500/80 ring-4 ring-emerald-500/30 shadow-[0_0_35px_rgba(16,185,129,0.3)]' 
+            : (j.isUrgent ? 'border-red-400/50 ring-2 ring-red-400/30' : (j.fleetGroup ? 'border-indigo-400/50' : 'border-slate-700/50'))
+        } ${menuOpenId === j.id ? 'z-50' : 'z-10'}`}
+      >
         
+        {/* OVERLAY VIDRIO ESMERILADO DE SUBIDA EN SEGUNDO PLANO */}
+        {isUploading && (
+          <div className="absolute inset-0 z-40 rounded-[1.5rem] bg-slate-950/85 backdrop-blur-md flex flex-col items-center justify-center p-4 text-center select-none pointer-events-auto cursor-wait border-2 border-emerald-500/70 shadow-[0_0_35px_rgba(16,185,129,0.35)] animate-in fade-in zoom-in-95 duration-300">
+            <div className="relative mb-3 flex items-center justify-center">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border-2 border-emerald-500/50 flex items-center justify-center text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.4)]">
+                <CloudUpload className="w-7 h-7 animate-bounce text-emerald-400" />
+              </div>
+              <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-slate-900"></span>
+              </span>
+            </div>
+            
+            <span className="text-emerald-400 font-black tracking-[0.25em] text-base sm:text-lg uppercase drop-shadow-[0_0_12px_rgba(16,185,129,0.6)] animate-pulse">
+              SUBIENDO
+            </span>
+            
+            <p className="text-xs font-bold text-slate-200 mt-1 max-w-[230px] leading-relaxed">
+              Sincronizando fotos y checklist con la nube...
+            </p>
+
+            {activeSyncTask?.progressText && (
+              <div className="mt-2.5 px-3 py-1 rounded-full bg-emerald-950/90 border border-emerald-500/50 text-[10px] sm:text-[11px] font-mono font-bold text-emerald-300 flex items-center gap-1.5 shadow-inner">
+                <Clock className="w-3 h-3 animate-spin text-emerald-400 shrink-0" />
+                <span className="truncate max-w-[200px]">{activeSyncTask.progressText}</span>
+              </div>
+            )}
+            
+            <span className="text-[10px] text-slate-400 font-medium mt-2">
+              No cierres la app mientras se completa la subida
+            </span>
+          </div>
+        )}
+
         {/* --- OPTIMIZACIÓN: Los fondos decorativos ahora viven en un contenedor con overflow-hidden para no salirse de los bordes redondeados --- */}
         <div className="absolute inset-0 rounded-[2rem] overflow-hidden pointer-events-none">
             {/* Efecto de luz ambiental en la esquina */}

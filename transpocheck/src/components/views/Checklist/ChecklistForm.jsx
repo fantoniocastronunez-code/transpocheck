@@ -305,12 +305,18 @@ const ChecklistInner = ({ openCamera }) => {
     };
 
     if (pushSyncTask) {
-      const syncTask = pushSyncTask(`Sync ${job?.plate || job?.vin || 'Vehículo'}`);
+      const syncTask = pushSyncTask(`Sync ${job?.plate || job?.vin || 'Vehículo'}`, { jobId: job?.id });
       showAlert(`✅ ¡Completaste el ${calculateProgress()}% del Checklist! Subida en 2do plano iniciada.`);
       onComplete();
       
+      const setBgProgress = (prog) => {
+        if (!prog) return;
+        const msg = typeof prog === 'string' ? prog : (prog.text || (prog.total ? `Subiendo fotos (${prog.current}/${prog.total})` : 'Subiendo...'));
+        if (syncTask?.updateProgress) syncTask.updateProgress(msg);
+      };
+
       // Iniciar proceso sin await
-      runBackgroundProcess(syncTask);
+      runBackgroundProcess(syncTask, setBgProgress);
     } else {
       try {
         await runBackgroundProcess(null, setUploadProgress);

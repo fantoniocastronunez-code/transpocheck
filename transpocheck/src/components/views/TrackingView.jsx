@@ -937,53 +937,75 @@ const handleDownloadPDF = async (job) => {
                 </div>
               )}
 
-              {/* 5. GALERÍA DE FOTOS */}
+              {/* 5. GALERÍA DE FOTOS (CON DEDUPLICACIÓN DE ALIASES Y URLS) */}
               {(() => {
                 const allPhotos = { ...(selectedHistoryJob.checklist?.photos || {}), ...(selectedHistoryJob.checklist?.docsPhotos || {}) };
-                const hasPhotos = Object.values(allPhotos).some(p => typeof p === 'string' && p.startsWith('http'));
-                if (!hasPhotos) return null;
+                const photoLabels = { 
+                  pickup_odo: 'Odómetro Inicio',
+                  pickup_fuel: 'Comb. Inicio',
+                  arrival_odo: 'Odómetro Fin',
+                  arrival_fuel: 'Comb. Fin',
+                  front: 'Frente', 
+                  back: 'Atrás', 
+                  left: 'Lat. Piloto', 
+                  right: 'Lat. Copiloto', 
+                  left_cab: 'Lat. Cabina Piloto', 
+                  left_body: 'Lat. Carroc. Piloto', 
+                  right_cab: 'Lat. Cabina Copiloto', 
+                  right_body: 'Lat. Carroc. Copiloto', 
+                  dashboard: 'Tablero', 
+                  tire: 'Repuesto', 
+                  interior_front: 'Int. Adelante', 
+                  interior_back: 'Int. Atrás', 
+                  vin: 'Nro Chasis', 
+                  fuelGauge: 'Med. Combustible', 
+                  odometer: selectedHistoryJob.status === 'completed' ? 'Odómetro Fin' : 'Odómetro Inicio', 
+                  mileage: 'Odómetro Inicio', 
+                  fuel: 'Comb. Inicio', 
+                  pickupOdometer: 'Odómetro Inicio',
+                  arrivalOdometer: 'Odómetro Fin',
+                  pickupFuel: 'Comb. Inicio',
+                  arrivalFuel: 'Comb. Fin',
+                  dashboardInitial: 'Odómetro Inicio',
+                  permiso: 'Permiso Circ.', 
+                  soap: 'Seguro SOAP', 
+                  revTecnica: 'Rev. Técnica', 
+                  gases: 'Gases' 
+                };
+
+                const keyPriority = {
+                  pickup_odo: 100, arrival_odo: 100, pickup_fuel: 100, arrival_fuel: 100,
+                  front: 90, back: 90, left: 90, right: 90, left_cab: 90, right_cab: 90, left_body: 90, right_body: 90,
+                  dashboard: 85, tire: 85, interior_front: 85, interior_back: 85, vin: 85,
+                  permiso: 80, soap: 80, revTecnica: 80, gases: 80,
+                  fuelGauge: 70, odometer: 70, mileage: 60, fuel: 60,
+                  pickupOdometer: 50, arrivalOdometer: 50, pickupFuel: 50, arrivalFuel: 50, dashboardInitial: 40
+                };
+
+                // Deduplicar agrupando por URL única
+                const uniquePhotosMap = new Map();
+                for (const [k, url] of Object.entries(allPhotos)) {
+                  if (typeof url !== 'string' || !url.startsWith('http')) continue;
+                  const existing = uniquePhotosMap.get(url);
+                  const score = keyPriority[k] || 10;
+                  if (!existing || score > existing.score) {
+                    uniquePhotosMap.set(url, { key: k, url, score, label: photoLabels[k] || k.replace('det', 'Detalle ') });
+                  }
+                }
+
+                const uniquePhotosList = Array.from(uniquePhotosMap.values());
+                if (uniquePhotosList.length === 0) return null;
+
                 return (
                 <div>
                   <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 dark:border-slate-800 pb-1">5. Galería Fotográfica</h4>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {Object.entries(allPhotos).filter(([k,v]) => typeof v === 'string' && v.startsWith('http')).map(([k,v]) => {
-                      const photoLabels = { 
-                        front: 'Frente', 
-                        back: 'Atrás', 
-                        left: 'Lat. Piloto', 
-                        right: 'Lat. Copiloto', 
-                        left_cab: 'Lat. Cabina Piloto', 
-                        left_body: 'Lat. Carroc. Piloto', 
-                        right_cab: 'Lat. Cabina Copiloto', 
-                        right_body: 'Lat. Carroc. Copiloto', 
-                        dashboard: 'Tablero', 
-                        tire: 'Repuesto', 
-                        interior_front: 'Int. Adelante', 
-                        interior_back: 'Int. Atrás', 
-                        odometer: 'Odómetro', 
-                        vin: 'Nro Chasis', 
-                        mileage: 'Kilometraje', 
-                        fuelGauge: 'Med. Combustible', 
-                        pickup_odo: 'Odómetro Inicio',
-                        arrival_odo: 'Odómetro Fin',
-                        pickup_fuel: 'Comb. Inicio',
-                        arrival_fuel: 'Comb. Fin',
-                        pickupOdometer: 'Odómetro Inicio',
-                        arrivalOdometer: 'Odómetro Fin',
-                        pickupFuel: 'Comb. Inicio',
-                        arrivalFuel: 'Comb. Fin',
-                        fuel: 'Comb. Inicio',
-                        dashboardInitial: 'Odómetro Inicio',
-                        permiso: 'Permiso Circ.', 
-                        soap: 'Seguro SOAP', 
-                        revTecnica: 'Rev. Técnica', 
-                        gases: 'Gases' 
-                      };
+                    {uniquePhotosList.map(({ key: k, url: v, label }) => {
                       return (
-                        <div key={k} className="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 aspect-square cursor-pointer" onClick={() => setFullScreenPhoto(v)}>
-                          <img src={v} alt={k} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
+                        <div key={v} className="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 aspect-square cursor-pointer" onClick={() => setFullScreenPhoto(v)}>
+                          <img src={v} alt={label} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
                           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                            <p className="text-white text-[9px] font-black uppercase truncate">{photoLabels[k] || k.replace('det', 'Detalle ')}</p>
+                            <p className="text-white text-[9px] font-black uppercase truncate">{label}</p>
                           </div>
                         </div>
                       );

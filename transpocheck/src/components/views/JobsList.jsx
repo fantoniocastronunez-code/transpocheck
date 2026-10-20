@@ -28,7 +28,7 @@ import { formatDateDisplay, analyzeJobStatus, generateStandardFileName, generate
 import { purgeOrphanStoragePhotos, formatBytes } from '../../utils/storageMetrics';
 import { saveJobToMonthlyStatsBeforeDelete, getMonthKey, extractLightweightJob, calculateStatsFromLightweightJobs } from '../../utils/statsSync';
 
-export default function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, onNewJob, db, currentUserEmail, showAlert, showConfirm, allClientsList, onLoadMore, vehicles }) {
+export default function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, onNewJob, db, currentUserEmail, showAlert, showConfirm, allClientsList, onLoadMore, vehicles, syncQueue = [] }) {
   const [menuOpenId, setMenuOpenId] = useState(null);
   const attemptedReschedules = React.useRef(new Set());
   const [auditMode, setAuditMode] = useState(false); // <-- NUEVO: Estado del switch de auditoría
@@ -126,31 +126,16 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       const updateData = {};
       if (name === 'pickup_odo') {
         updateData['checklist.photos.pickup_odo'] = url;
-        updateData['checklist.photos.mileage'] = url;
-        updateData['checklist.photos.pickupOdometer'] = url;
-        updateData['checklist.photos.dashboardInitial'] = url;
         updateData['draft.formData.photos.pickup_odo'] = url;
-        updateData['draft.formData.photos.mileage'] = url;
       } else if (name === 'pickup_fuel') {
         updateData['checklist.photos.pickup_fuel'] = url;
-        updateData['checklist.photos.fuel'] = url;
-        updateData['checklist.photos.pickupFuel'] = url;
         updateData['draft.formData.photos.pickup_fuel'] = url;
-        updateData['draft.formData.photos.fuel'] = url;
       } else if (name === 'arrival_odo') {
         updateData['checklist.photos.arrival_odo'] = url;
-        updateData['checklist.photos.odometer'] = url;
-        updateData['checklist.photos.arrivalOdometer'] = url;
-        updateData['checklist.photos.dashboard'] = url;
         updateData['draft.formData.photos.arrival_odo'] = url;
-        updateData['draft.formData.photos.odometer'] = url;
-        updateData['draft.formData.photos.dashboard'] = url;
       } else if (name === 'arrival_fuel') {
         updateData['checklist.photos.arrival_fuel'] = url;
-        updateData['checklist.photos.fuelGauge'] = url;
-        updateData['checklist.photos.arrivalFuel'] = url;
         updateData['draft.formData.photos.arrival_fuel'] = url;
-        updateData['draft.formData.photos.fuelGauge'] = url;
       }
 
       if (Object.keys(updateData).length > 0) {
@@ -201,13 +186,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
            
            if (pickupPhoto) {
              oldDraft.formData.photos.pickup_odo = pickupPhoto;
-             oldDraft.formData.photos.mileage = pickupPhoto;
-             oldDraft.formData.photos.dashboard = pickupPhoto;
            }
            if (pickupFuelPhoto) {
              oldDraft.formData.photos.pickup_fuel = pickupFuelPhoto;
-             oldDraft.formData.photos.fuel = pickupFuelPhoto;
-             oldDraft.formData.photos.fuelGauge = pickupFuelPhoto;
            }
            
            await saveLocalDraft(pickupPromptJob.id, oldDraft);
@@ -234,8 +215,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       // Mapeamos para que la ChecklistForm los encuentre (usamos false temporalmente mientras sube)
       updatedDraft.photos.pickup_odo = false;
       updatedDraft.photos.pickup_fuel = false;
-      updatedDraft.photos.mileage = false;
-      updatedDraft.photos.fuel = false;
 
       const payload = {
         checklist: {
@@ -245,9 +224,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           photos: {
             ...(pickupPromptJob.checklist?.photos || {}),
             pickup_odo: false,
-            pickup_fuel: false,
-            mileage: false,
-            fuel: false
+            pickup_fuel: false
           }
         },
         draft: {
@@ -319,12 +296,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
            
            if (arrivalPhoto) {
              oldDraft.formData.photos.arrival_odo = arrivalPhoto;
-             oldDraft.formData.photos.odometer = arrivalPhoto;
-             oldDraft.formData.photos.dashboard = arrivalPhoto;
            }
            if (arrivalFuelPhoto) {
              oldDraft.formData.photos.arrival_fuel = arrivalFuelPhoto;
-             oldDraft.formData.photos.fuelGauge = arrivalFuelPhoto;
            }
            
            await saveLocalDraft(arrivalPromptJob.id, oldDraft);
@@ -345,9 +319,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         photos: {
            ...(currentPhotos || {}),
            arrival_odo: false,
-           arrival_fuel: false,
-           odometer: false,
-           fuelGauge: false
+           arrival_fuel: false
         }
       };
 
@@ -364,9 +336,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           photos: {
             ...(arrivalPromptJob.checklist?.photos || {}),
             arrival_odo: false,
-            arrival_fuel: false,
-            odometer: false,
-            fuelGauge: false
+            arrival_fuel: false
           }
         },
         draft: {
@@ -1422,7 +1392,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const jobCardProps = {
     analyzeJobStatus, getJobIdentifier, vehicles, menuOpenId, setMenuOpenId, isAdminView, onEditJob, currentUserEmail, setRelayPromptJob, setForceCloseJob, db, updateDoc, deleteField, doc, showAlert, showConfirm, setJobToFail, latestVehiclePhotos, setFullScreenPhoto, role, processingId, setProcessingId, handleApproveRequest, handleRejectRequest, handleApprovePhotoOverride, handleAcceptJob, setGuideUploadJob, setGuideLink, setGuideFileBase64, updatePhase, setPickupPromptJob, setArrivalPromptJob, setArrivalMileage, setArrivalPhoto, setPrtApproveType, setPrtReturnOpt, setPrtReturnDest, setPrtApprovePromptJob, setPrtPromptJob, onStartChecklist, handleUndoPhase, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, WaitTimerBadge, SwipeButton, AlertCircle, Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, Truck, X, XCircle, Clock, Car, MapPin, FileText, RefreshCw, Search,
     // FALTANTES QUE CAUSABAN LA PANTALLA BLANCA AL ABRIR EL MENÚ:
-    Copy, Trash2, Repeat, FileDown, cpyWapp, handleDuplicateJob, handleDeleteJob, generatePDF, handleShareWhatsAppPDF
+    Copy, Trash2, Repeat, FileDown, cpyWapp, handleDuplicateJob, handleDeleteJob, generatePDF, handleShareWhatsAppPDF,
+    syncQueue
   };
   const renderActiveJobCard = (j) => <JobCard key={j.id} j={j} {...jobCardProps} />;
 

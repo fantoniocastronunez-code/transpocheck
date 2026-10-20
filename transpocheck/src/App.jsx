@@ -112,7 +112,7 @@ function LogisticApp() {
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
   const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
-  const APP_VERSION = "v1.2.59"; // IMPORTANT: Update this version string when making changes.
+  const APP_VERSION = "v1.2.60"; // IMPORTANT: Update this version string when making changes.
   
   // VARIABLES MÁGICAS: Atrapan lo que Android nos comparte desde CamScanner o Adobe Scan
   const sharedText = searchParams.get('shared_text');
@@ -195,16 +195,22 @@ function LogisticApp() {
   
   // NUEVO: ESTADO GLOBAL DE COLA EN SEGUNDO PLANO
   const [syncQueue, setSyncQueue] = useState([]);
-  const pushSyncTask = (taskName) => {
+  const pushSyncTask = (taskName, meta = {}) => {
      const id = Date.now() + Math.random();
-     setSyncQueue(prev => [...prev, { id, name: taskName, status: 'syncing' }]);
+     const jobId = typeof meta === 'string' ? meta : meta?.jobId;
+     const newTask = { id, name: taskName, status: 'syncing', jobId, progressText: '', ...(typeof meta === 'object' ? meta : {}) };
+     setSyncQueue(prev => [...prev, newTask]);
      return {
+        updateProgress: (text) => {
+           setSyncQueue(prev => prev.map(t => t.id === id ? { ...t, progressText: text } : t));
+        },
         finish: () => {
-           setSyncQueue(prev => prev.map(t => t.id === id ? { ...t, status: 'done' } : t));
-           setTimeout(() => setSyncQueue(prev => prev.filter(t => t.id !== id)), 6000); // Desaparece tras 6 seg
+           setSyncQueue(prev => prev.map(t => t.id === id ? { ...t, status: 'done', progressText: '¡Listo!' } : t));
+           setTimeout(() => setSyncQueue(prev => prev.filter(t => t.id !== id)), 5000); // Desaparece tras 5 seg
         },
         error: (err) => {
-           setSyncQueue(prev => prev.map(t => t.id === id ? { ...t, status: 'error', error: err } : t));
+           const errMsg = err?.message || String(err);
+           setSyncQueue(prev => prev.map(t => t.id === id ? { ...t, status: 'error', error: errMsg } : t));
            setTimeout(() => setSyncQueue(prev => prev.filter(t => t.id !== id)), 10000);
         }
      };
@@ -1008,6 +1014,7 @@ function LogisticApp() {
                           onNewJob={(type) => { setEditingJob(null); setAdminTab('newJob'); }}
                           db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} allClientsList={allClientsList}
                           onLoadMore={() => setJobLimit(prev => prev + 20)}
+                          syncQueue={syncQueue}
                         />
                       </div>
                     )}
@@ -1029,6 +1036,7 @@ function LogisticApp() {
                        onNewJob={(type) => setShowRequestJob(type)}
                        db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} allClientsList={allClientsList}
                        onLoadMore={() => setJobLimit(prev => prev + 20)}
+                       syncQueue={syncQueue}
                     />
                   </div>
                 )}
