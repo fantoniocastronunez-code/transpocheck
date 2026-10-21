@@ -53,12 +53,12 @@ export default function LeaderboardView({ jobs = [], drivers = [], isAdminView, 
     return () => { isMounted = false; };
   }, [db, currentMonthKey, jobs, drivers]);
 
-  // 3. FUSIÓN DE TRASLADOS: Combina los activos con los resguardados (incluyendo eliminados >15 días)
+  // 3. FUSIÓN DE TRASLADOS: Combina los activos con los resguardados (incluyendo eliminados >30 días)
   // Se reinicia de forma limpia el día 1 de cada mes porque firstOfCurrentMonth y currentMonthKey corresponden al mes actual.
   const monthlyCompleted = useMemo(() => {
     const mergedMap = new Map();
 
-    // A) Traslados resguardados en monthly_stats (conserva traslados eliminados con >15 días)
+    // A) Traslados resguardados en monthly_stats (conserva traslados eliminados con >30 días)
     const storedSummary = monthlyStatsData?.jobsSummary || {};
     Object.values(storedSummary).forEach(sj => {
       if (!sj || !sj.id) return;
@@ -143,7 +143,7 @@ export default function LeaderboardView({ jobs = [], drivers = [], isAdminView, 
       try {
         await updateDoc(doc(db, 'transport_jobs', job.id), { [field]: newVal });
       } catch (errLive) {
-        // Documento ya eliminado de transport_jobs (>15 días), se manejará en monthly_stats
+        // Documento ya eliminado de transport_jobs (>30 días), se manejará en monthly_stats
       }
 
       // 2. Actualizar permanentemente en monthly_stats
@@ -189,7 +189,7 @@ export default function LeaderboardView({ jobs = [], drivers = [], isAdminView, 
         <div className="flex items-center gap-2">
           <Archive className="w-4 h-4 text-emerald-500 shrink-0" />
           <span>
-            Los traslados completados de más de 15 días eliminados <strong>siguen contando en el ranking como número</strong>. Se reinicia automáticamente el <strong>día 1 de cada mes</strong>.
+            Los traslados completados de más de 30 días eliminados <strong>siguen contando en el ranking como número</strong>. Se reinicia automáticamente el <strong>día 1 de cada mes</strong>.
           </span>
         </div>
       </div>

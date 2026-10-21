@@ -28,7 +28,7 @@ export default function DriverDashboardView({ myDriver, jobs = [], expenses = []
 
   const [monthlyStatsData, setMonthlyStatsData] = useState(null);
 
-  // Escuchar monthly_stats para mantener las métricas del mes aunque se purguen traslados >15 días
+  // Escuchar monthly_stats para mantener las métricas del mes aunque se purguen traslados >30 días
   useEffect(() => {
     if (!db || !currentMonthKey) return;
     const statRef = doc(db, 'monthly_stats', currentMonthKey);
