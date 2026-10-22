@@ -1,115 +1,83 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 @variant dark (&:where(.dark, .dark *));
 
-/* === TRANSPOCHECK MODERN FLAT DESIGN (DARK MODE) === */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+/* === TRANSPOCHECK THEME VARIABLES & TYPOGRAPHY === */
 
 :root {
-  --flat-blue: #3b82f6; /* Indigo/Blue */
-  --flat-blue-hover: #60a5fa;
-  --flat-green: #10b981; /* Mint Green */
+  --flat-blue: #2563eb;
+  --flat-blue-hover: #3b82f6;
+  --flat-green: #10b981;
   --flat-green-hover: #34d399;
   
-  --bg-color: #111827; /* Fondo general (Slate 900) */
-  --card-bg: #1f2937; /* Fondo de tarjetas (Slate 800) */
-  --border-color: #374151; /* Bordes sutiles (Slate 700) */
-  --text-primary: #f9fafb; /* Texto principal (Gray 50) */
-  --text-secondary: #9ca3af; /* Texto secundario (Gray 400) */
+  --bg-color: #f8fafc;
+  --card-bg: #ffffff;
+  --border-color: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+}
+
+.dark {
+  --flat-blue: #3b82f6;
+  --flat-blue-hover: #60a5fa;
+  --flat-green: #10b981;
+  --flat-green-hover: #34d399;
+
+  --bg-color: #0b1120;
+  --card-bg: #1e293b;
+  --border-color: #334155;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
 }
 
 body {
-  font-family: 'Inter', system-ui, sans-serif !important;
-  background-color: var(--bg-color) !important;
-  color: var(--text-primary) !important;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--text-primary);
   min-height: 100vh;
 }
 
-/* 1. Tarjetas Planas (Flat Cards) Oscuras sin transparencias */
-.bg-white, .bg-slate-50, .bg-gray-50, .bg-slate-900, .bg-gray-900, .bg-gray-800, .glass-card {
-  background-color: var(--card-bg) !important;
-  border: 1px solid var(--border-color) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  /* Sin sombras ni brillos, diseño 100% plano */
-  box-shadow: none !important;
-  color: var(--text-primary) !important;
+/* Glass card support */
+.glass-card {
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #0f172a;
+}
+.dark .glass-card {
+  background-color: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f1f5f9;
 }
 
-/* Bordes ligeramente redondeados pero no excesivos */
-.rounded-lg, .rounded-xl, .rounded-2xl {
-  border-radius: 0.5rem !important; /* Más cuadrado y corporativo */
+/* Inputs en modo oscuro para fallback consistente */
+.dark input:not([type="checkbox"]):not([type="radio"]), 
+.dark select, 
+.dark textarea {
+  background-color: #0f172a;
+  color: #f8fafc;
+  border-color: #334155;
 }
 
-/* 2. Textos (Gris claro a blanco para máximo contraste) */
-.text-gray-900, .text-gray-800, .text-slate-900, .text-slate-800 {
-  color: var(--text-primary) !important;
-}
-.text-gray-700, .text-gray-600, .text-gray-500, .text-slate-700, .text-slate-600, .text-slate-500 {
-  color: var(--text-secondary) !important;
-}
-
-/* 3. Colores Planos Sólidos (Sin resplandores/Glow) */
-.bg-blue-600, .bg-blue-500, .bg-indigo-600 {
-  background-color: var(--flat-blue) !important;
-  border: none !important;
-  box-shadow: none !important; /* Estricto: SIN glow */
-  color: white !important;
-  border-radius: 0.375rem !important;
-}
-.bg-blue-600:hover, .bg-blue-500:hover {
-  background-color: var(--flat-blue-hover) !important;
-}
-.text-blue-600, .text-blue-500 {
-  color: var(--flat-blue-hover) !important;
-  text-shadow: none !important;
-}
-
-.bg-green-600, .bg-green-500 {
-  background-color: var(--flat-green) !important;
-  border: none !important;
-  box-shadow: none !important; /* Estricto: SIN glow */
-  color: white !important;
-  border-radius: 0.375rem !important;
-}
-.bg-green-600:hover, .bg-green-500:hover {
-  background-color: var(--flat-green-hover) !important;
-}
-.text-green-600, .text-green-500 {
-  color: var(--flat-green-hover) !important;
-  text-shadow: none !important;
-}
-
-/* 4. Inputs y Formularios */
-input, select, textarea {
-  background-color: #111827 !important; /* Fondo más oscuro que la tarjeta */
-  color: var(--text-primary) !important;
-  border: 1px solid var(--border-color) !important;
-  border-radius: 0.375rem !important;
-  box-shadow: none !important;
-}
-input:focus, select:focus, textarea:focus {
-  border-color: var(--flat-blue) !important;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important; /* Anillo de focus estándar */
-  outline: none !important;
-}
-
-/* 5. Ajustes de bordes (Bottom Navs, Headers, Dividers) */
-.border-gray-200, .border-slate-200, .border-t, .border-b, hr {
-  border-color: var(--border-color) !important;
-}
-
-/* 6. Modales (Overlay oscuro plano) */
+/* Modales */
 .fixed.inset-0.bg-black\/50, .bg-slate-900\/80 {
-  background-color: rgba(0, 0, 0, 0.8) !important;
-  backdrop-filter: none !important; /* Sin desenfoque de cristal */
+  background-color: rgba(0, 0, 0, 0.75) !important;
 }
 
-/* === FIX PARA IPHONE NOTCH (SAFE AREA) === */
+/* === UTILIDADES PARA SAFE AREA DE IPHONE (NOTCH, DYNAMIC ISLAND & HOME BAR) === */
+.safe-top-header {
+  padding-top: calc(0.75rem + env(safe-area-inset-top, 0px)) !important;
+}
+
+.safe-bottom-bar {
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px)) !important;
+}
+
 @supports (padding-top: env(safe-area-inset-top)) {
-  /* Header */
+  /* Header de barra fija principal */
   .fixed-nav-bar {
-    padding-top: calc(1rem + env(safe-area-inset-top)) !important;
-    height: calc(4rem + env(safe-area-inset-top)) !important;
+    padding-top: calc(0.75rem + env(safe-area-inset-top)) !important;
+    height: calc(4.25rem + env(safe-area-inset-top)) !important;
   }
   /* Padding general para las vistas (etiqueta main) */
   main {

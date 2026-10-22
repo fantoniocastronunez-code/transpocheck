@@ -112,7 +112,7 @@ function LogisticApp() {
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
   const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
-  const APP_VERSION = "v1.2.61"; // IMPORTANT: Update this version string when making changes.
+  const APP_VERSION = "v1.2.62"; // IMPORTANT: Update this version string when making changes.
   
   // VARIABLES MÁGICAS: Atrapan lo que Android nos comparte desde CamScanner o Adobe Scan
   const sharedText = searchParams.get('shared_text');
@@ -740,7 +740,9 @@ function LogisticApp() {
       <div 
         className={`fixed inset-0 z-[-2] pointer-events-none transition-opacity duration-700 ease-in-out`}
         style={{ 
-          background: 'linear-gradient(to bottom, rgba(241, 245, 249, 0.4), rgba(203, 213, 225, 0.7))',
+          background: 'linear-gradient(to bottom, rgba(248, 250, 252, 0.85), rgba(241, 245, 249, 0.94))',
+          backdropFilter: 'blur(3px)',
+          WebkitBackdropFilter: 'blur(3px)',
           opacity: darkMode ? 0 : 1 
         }}
       />
@@ -755,23 +757,23 @@ function LogisticApp() {
       />
 
       {globalStyles}
-      <header className="fixed-nav-bar bg-white/30 dark:bg-black/40 backdrop-blur-md border-b border-white/10 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300">
+      <header className="fixed-nav-bar bg-white/85 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200/80 dark:border-white/10 text-slate-800 dark:text-white p-4 shadow-sm dark:shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300">
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
-      {/* Logo de la app más pequeño en móvil */}
-      <div className="bg-white dark:bg-slate-900 p-1 sm:p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">
-        <img src="/logo.png" alt="Logo App" className="w-7 h-7 sm:w-12 sm:h-12 object-contain" />
-      </div>
-      
-      {/* Nombre de la aplicación adaptado para no chocar */}
-      <h1 className="font-alfa text-lg sm:text-3xl tracking-wide shrink-0 text-white" style={{ paddingTop: '2px' }}>
-        LogisticAPP
-      </h1>
-      
-      {/* Logo Logística TS SpA ajustado al nuevo tamaño */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0 ml-0.5 sm:ml-1 overflow-hidden">
-        <img src="/LogoLogistica.png" alt="Logística TS SpA" className="h-8 sm:h-15 object-contain" />
-      </div>
-    </div>
+          {/* Logo de la app más pequeño en móvil */}
+          <div className="bg-white/90 dark:bg-slate-900 p-1 sm:p-1.5 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-800 flex items-center justify-center shrink-0">
+            <img src="/logo.png" alt="Logo App" className="w-7 h-7 sm:w-12 sm:h-12 object-contain" />
+          </div>
+          
+          {/* Nombre de la aplicación adaptado para no chocar */}
+          <h1 className="font-alfa text-lg sm:text-3xl tracking-wide shrink-0 text-slate-800 dark:text-white" style={{ paddingTop: '2px' }}>
+            LogisticAPP
+          </h1>
+          
+          {/* Logo Logística TS SpA ajustado al nuevo tamaño */}
+          <div className="bg-white/90 dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-800 flex items-center justify-center shrink-0 ml-0.5 sm:ml-1 overflow-hidden">
+            <img src="/LogoLogistica.png" alt="Logística TS SpA" className="h-8 sm:h-15 object-contain" />
+          </div>
+        </div>
         <div className="flex items-center gap-2 sm:gap-4">
           
           {/* NUEVO: BOTÓN TUERCA (AJUSTES) */}
@@ -781,9 +783,9 @@ function LogisticApp() {
                 setSettingsOpen(!settingsOpen);
                 setRoleMenuOpen(false); // <-- NUEVO: Cierra el ojo al abrir la tuerca
               }} 
-              className="p-2 bg-white/20 dark:bg-black/30 hover:bg-white/40 dark:hover:bg-black/50 rounded-xl transition-colors shadow-sm border border-white/20 backdrop-blur-md"
+              className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700 rounded-xl transition-colors shadow-sm border border-slate-200 dark:border-slate-700 backdrop-blur-md"
             >
-              <Settings className="w-5 h-5 text-slate-700 dark:text-white" />
+              <Settings className="w-5 h-5 text-slate-700 dark:text-slate-200" />
             </button>
             
             {settingsOpen && (
@@ -896,7 +898,7 @@ function LogisticApp() {
                 </div>
                 {/* VERSIÓN DE LA APP */}
                 <div className="bg-slate-50 dark:bg-slate-900 p-2.5 text-center border-t border-slate-100 dark:border-slate-800">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">LogisticAPP v.3.2.46</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">LogisticAPP {APP_VERSION}</p>
                 </div>
               </div>
             )}
@@ -909,9 +911,9 @@ function LogisticApp() {
                 setRoleMenuOpen(!roleMenuOpen);
                 setSettingsOpen(false); // <-- NUEVO: Cierra la tuerca al abrir el ojo
               }} 
-              className="flex items-center gap-2 bg-white/20 dark:bg-black/30 hover:bg-white/40 dark:hover:bg-black/50 px-3 py-2 rounded-xl transition-colors shadow-sm border border-white/20 backdrop-blur-md text-slate-700 dark:text-white"
+              className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700 px-3 py-2 rounded-xl transition-colors shadow-sm border border-slate-200 dark:border-slate-700 backdrop-blur-md text-slate-700 dark:text-slate-200"
             >
-              <Eye className="w-5 h-5 text-slate-700 dark:text-white"/>
+              <Eye className="w-5 h-5 text-slate-700 dark:text-slate-200"/>
                 <span className="hidden md:inline">
                   {activeRole === 'admin' ? 'Modo: Admin' : activeRole === 'driver' ? (
                     simulatedDriverEmail 

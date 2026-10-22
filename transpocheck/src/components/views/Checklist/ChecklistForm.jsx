@@ -338,7 +338,7 @@ const ChecklistInner = ({ openCamera }) => {
     <div className="fixed inset-0 bg-slate-50 dark:bg-slate-950 z-50 flex flex-col h-[100dvh] overflow-hidden animate-in slide-in-from-bottom-full duration-300">
 
       {/* HEADER PRINCIPAL */}
-      <div className="flex justify-between items-center bg-white dark:bg-slate-900 px-4 py-3 sm:py-4 shadow-sm relative z-50 border-b border-slate-200 dark:border-slate-800 shrink-0">
+      <div className="safe-top-header flex justify-between items-center bg-white dark:bg-slate-900 px-4 pb-3 sm:pb-4 shadow-sm relative z-50 border-b border-slate-200 dark:border-slate-800 shrink-0">
         <button
           onClick={onCancel}
           className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 bg-slate-100 dark:bg-slate-800 p-2 sm:p-2.5 rounded-xl transition-all active:scale-95 border border-slate-200 dark:border-slate-700"
@@ -361,7 +361,7 @@ const ChecklistInner = ({ openCamera }) => {
 
       {/* BARRA DE PROGRESO */}
       {!isSimple && (
-        <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200/50 dark:border-slate-800/50">
+        <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200/50 dark:border-slate-800/50 shrink-0">
           <div className="flex justify-between items-center mb-1.5">
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Progreso del Checklist</span>
             <span className="text-[10px] font-black text-blue-600 dark:text-blue-400">{calculateProgress()}% Completado</span>
@@ -378,7 +378,7 @@ const ChecklistInner = ({ openCamera }) => {
       <TabsHeader />
 
       {/* CONTENIDO DESLIZABLE */}
-      <div className="flex-1 overflow-y-auto pb-40 scroll-smooth">
+      <div className="flex-1 overflow-y-auto pb-[calc(11rem+env(safe-area-inset-bottom,0px))] scroll-smooth">
         {isSimple ? (
           <FastTrackView openCamera={openCamera} />
         ) : (
@@ -393,7 +393,7 @@ const ChecklistInner = ({ openCamera }) => {
       </div>
 
       {/* BARRA INFERIOR (NAVEGACIÓN Y GUARDAR) */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-t border-slate-200/50 dark:border-slate-800/50 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)] z-50 flex flex-col gap-3">
+      <div className="safe-bottom-bar absolute bottom-0 left-0 right-0 p-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800/80 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)] z-50 flex flex-col gap-3">
 
         <div className="flex gap-3">
           <button

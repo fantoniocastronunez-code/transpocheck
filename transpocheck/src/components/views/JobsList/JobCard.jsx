@@ -423,10 +423,10 @@ export default function JobCard({ j, ...props }) {
       // Además, si la tarjeta tiene el menú abierto, elevamos su z-index. Si está subiendo, se estiliza con borde esmeralda y efecto esmerilado.
       <div 
         key={j.id} 
-        className={`bg-[#1e293b]/60 backdrop-blur-2xl rounded-[1.5rem] border p-3 sm:p-4 flex flex-col shadow-2xl relative ${!isUploading ? 'hover:-translate-y-1 active:scale-[0.98]' : 'select-none'} transition-all duration-300 cursor-default group ${
+        className={`bg-white/90 dark:bg-[#1e293b]/60 backdrop-blur-2xl rounded-[1.5rem] border p-3 sm:p-4 flex flex-col shadow-2xl relative ${!isUploading ? 'hover:-translate-y-1 active:scale-[0.98]' : 'select-none'} transition-all duration-300 cursor-default group ${
           isUploading 
             ? 'border-emerald-500/80 ring-4 ring-emerald-500/30 shadow-[0_0_35px_rgba(16,185,129,0.3)]' 
-            : (j.isUrgent ? 'border-red-400/50 ring-2 ring-red-400/30' : (j.fleetGroup ? 'border-indigo-400/50' : 'border-slate-700/50'))
+            : (j.isUrgent ? 'border-red-400/50 ring-2 ring-red-400/30' : (j.fleetGroup ? 'border-indigo-400/50' : 'border-slate-200/80 dark:border-slate-700/50'))
         } ${menuOpenId === j.id ? 'z-50' : 'z-10'}`}
       >
         
@@ -472,7 +472,7 @@ export default function JobCard({ j, ...props }) {
             <div className={`absolute top-0 left-0 bottom-0 w-1.5 transition-all ${isRequested ? 'bg-gradient-to-b from-pink-400 to-pink-600' : (isPending ? 'bg-gradient-to-b from-amber-300 to-amber-500' : 'bg-gradient-to-b from-blue-400 to-blue-600 shadow-[0_0_8px_rgba(59,130,246,0.5)]')}`}></div>
         </div>
         
-        <div className="flex justify-between items-start mb-3 border-b border-white/10 pb-3 pl-1 relative z-20">
+        <div className="flex justify-between items-start mb-3 border-b border-slate-200/80 dark:border-white/10 pb-3 pl-1 relative z-20">
           <div className="flex flex-col gap-2 w-full">
             <div className="flex justify-between items-start w-full gap-2">
               <div className="shrink-0 relative z-10 flex flex-col items-end gap-1">

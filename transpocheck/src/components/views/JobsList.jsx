@@ -1913,7 +1913,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         <div className="w-full lg:flex-1 flex flex-col overflow-hidden">
           <button onClick={() => setIsPendingOpen(!isPendingOpen)} className="w-full flex justify-between items-center p-4">
             <div className="flex flex-col items-start">
-              <h3 className="font-extrabold text-slate-700 dark:text-slate-300 flex items-center gap-2"><Clock className="w-5 h-5 text-amber-500" /> Pendientes ({pendingJobsList.length})</h3>
+              <h3 className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-2"><Clock className="w-5 h-5 text-amber-500" /> Pendientes ({pendingJobsList.length})</h3>
               {isPendingOpen && pendingJobsList.length > 1 && <span className="text-[11px] font-bold text-amber-500/80 flex items-center gap-1 mt-1 lg:hidden animate-pulse">👉 Desliza para ver más</span>}
             </div>
             {isPendingOpen ? <ChevronUp className="w-5 h-5 shrink-0" /> : <ChevronDown className="w-5 h-5 shrink-0" />}
@@ -1932,7 +1932,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       </div>
 
       <div className="mt-10">
-        <h3 className="font-extrabold text-slate-700 dark:text-slate-300 mb-4 border-b-2 pb-2">Finalizados de Hoy ({todayHistoryJobs.length})</h3>
+        <h3 className="font-extrabold text-slate-800 dark:text-slate-200 mb-4 border-b-2 border-slate-200/80 dark:border-slate-800/80 pb-2">Finalizados de Hoy ({todayHistoryJobs.length})</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">{todayHistoryJobs.map(j => renderHistoryJobCard(j))}</div>
       </div>
 

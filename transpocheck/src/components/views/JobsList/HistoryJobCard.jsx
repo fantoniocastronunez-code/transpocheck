@@ -7,20 +7,20 @@ export default function HistoryJobCard({ j, ...props }) {
   const ident = getJobIdentifier(j);
 
   return (
-    <div key={j.id} onClick={() => setSelectedHistoryJob(j)} className="bg-slate-900/40 p-4 rounded-2xl shadow-xl border border-white/5 backdrop-blur-md flex flex-col justify-between relative hover:shadow-2xl hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-pointer overflow-hidden mt-3">
+    <div key={j.id} onClick={() => setSelectedHistoryJob(j)} className="bg-white/90 dark:bg-slate-900/40 p-4 rounded-2xl shadow-md dark:shadow-xl border border-slate-200/80 dark:border-white/5 backdrop-blur-md flex flex-col justify-between relative hover:shadow-xl hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 cursor-pointer overflow-hidden mt-3">
       
       {/* Side Status Bar */}
       <div className={`absolute top-0 left-0 bottom-0 w-1.5 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
 
       {/* Top Bar: Status & Date */}
       <div className="flex justify-between items-center mb-3 pl-2 relative z-10">
-         <div className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm ${isFailed ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}`}>
+         <div className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm ${isFailed ? 'bg-red-500/20 text-red-500 dark:text-red-400 border border-red-500/30' : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'}`}>
            {isFailed ? 'RECHAZADO' : 'ENTREGADO'}
          </div>
          <div className="flex items-center gap-1">
-           <p className="text-slate-400 font-bold text-[10px]">{new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL')}</p>
+           <p className="text-slate-500 dark:text-slate-400 font-bold text-[10px]">{new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL')}</p>
            {isAdminView && auditMode && (
-             <button onClick={(e) => { e.stopPropagation(); setEditDateJob(j); }} className="text-blue-400 hover:bg-blue-900/30 p-1 rounded transition-colors" title="Corregir Fecha">
+             <button onClick={(e) => { e.stopPropagation(); setEditDateJob(j); }} className="text-blue-500 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 p-1 rounded transition-colors" title="Corregir Fecha">
                <Edit2 className="w-3 h-3" />
              </button>
            )}
@@ -38,7 +38,7 @@ export default function HistoryJobCard({ j, ...props }) {
               src={displayPhoto}
               alt="Frente"
               onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(displayPhoto); }}
-              className="w-12 h-12 rounded-xl object-cover border border-slate-700/50 shadow-md cursor-pointer hover:opacity-80 transition-opacity shrink-0"
+              className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-slate-700/50 shadow-md cursor-pointer hover:opacity-80 transition-opacity shrink-0"
             />
           );
         })()}
@@ -49,34 +49,34 @@ export default function HistoryJobCard({ j, ...props }) {
               </div>
            )}
            {j.tripType === 'simple' ? (
-              <p className="text-[13px] font-bold uppercase text-purple-300 leading-tight truncate pr-2 mt-0.5">{j.description || 'Servicio en Terreno'}</p>
+              <p className="text-[13px] font-bold uppercase text-purple-600 dark:text-purple-300 leading-tight truncate pr-2 mt-0.5">{j.description || 'Servicio en Terreno'}</p>
            ) : (
-              <p className="text-[13px] font-bold uppercase text-white leading-tight truncate pr-2 mt-0.5">{j.brand} {j.model}</p>
+              <p className="text-[13px] font-bold uppercase text-slate-800 dark:text-white leading-tight truncate pr-2 mt-0.5">{j.brand} {j.model}</p>
            )}
-           <p className="text-[10px] font-bold text-slate-400 truncate mt-0.5">Cond: <span className="text-slate-200">{driverName}</span></p>
+           <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate mt-0.5">Cond: <span className="text-slate-700 dark:text-slate-200">{driverName}</span></p>
         </div>
       </div>
 
-      {isFailed && <p className="text-red-400 text-[11px] mb-3 ml-2 font-bold line-clamp-2">Razón: {j.failedReason}</p>}
+      {isFailed && <p className="text-red-500 dark:text-red-400 text-[11px] mb-3 ml-2 font-bold line-clamp-2">Razón: {j.failedReason}</p>}
 
       {/* Main Content Area: Timeline + Stats */}
       <div className="flex gap-4 mb-4 pl-2">
         {/* Timeline (Left side) */}
         <div className="flex-1 min-w-0 relative pl-[20px] flex flex-col gap-4 py-2 justify-center">
            {/* Continuous Connecting Line */}
-           <div className="absolute left-[3.5px] top-[14px] bottom-[14px] w-[1px] bg-slate-500/50 z-10"></div>
+           <div className="absolute left-[3.5px] top-[14px] bottom-[14px] w-[1px] bg-slate-300 dark:bg-slate-500/50 z-10"></div>
            
            {/* Origin */}
            <div className="relative z-20 flex items-center gap-2">
-              <div className="absolute -left-[20px] w-2.5 h-2.5 rounded-full bg-slate-300 shadow-sm"></div>
-              <span className="text-[11px] font-bold text-slate-200 leading-tight truncate w-full pr-1">{j.origin || '-'}</span>
+              <div className="absolute -left-[20px] w-2.5 h-2.5 rounded-full bg-slate-400 dark:bg-slate-300 shadow-sm"></div>
+              <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200 leading-tight truncate w-full pr-1">{j.origin || '-'}</span>
            </div>
 
            {/* Waypoints / PRT */}
            {(j.waypoints?.length > 0 || j.tripType === 'revision') && (
              <div className="relative z-20 flex items-center gap-2">
                 <div className="absolute -left-[20px] w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm"></div>
-                <span className="text-[10px] font-black text-amber-500 leading-tight truncate uppercase w-full pr-1">
+                <span className="text-[10px] font-black text-amber-600 dark:text-amber-500 leading-tight truncate uppercase w-full pr-1">
                   {j.tripType === 'revision' ? (j.destination?.includes('->') ? (j.destination.split('->').length > 2 ? j.destination.split('->')[1].trim() : j.destination.split('->')[0].trim()) : 'PRT') : `${j.waypoints.length} PARADAS`}
                 </span>
              </div>
@@ -84,19 +84,19 @@ export default function HistoryJobCard({ j, ...props }) {
 
            {/* Destination */}
            <div className="relative z-20 flex items-center gap-2">
-              <div className="absolute -left-[20px] w-2.5 h-2.5 rounded-full bg-[#60a5fa] shadow-sm"></div>
-              <span className="text-[11px] font-bold text-blue-200 leading-tight truncate w-full pr-1">
+              <div className="absolute -left-[20px] w-2.5 h-2.5 rounded-full bg-[#3b82f6] dark:bg-[#60a5fa] shadow-sm"></div>
+              <span className="text-[11px] font-bold text-blue-600 dark:text-blue-200 leading-tight truncate w-full pr-1">
                  {j.tripType === 'revision' ? getRtFinalDestination(j) : (j.destination || '-')}
               </span>
            </div>
         </div>
 
         {/* Stats Glass Box (Right side) */}
-        <div className="w-[100px] shrink-0 flex flex-col gap-2 bg-[#1e293b]/50 p-2.5 rounded-[1rem] border border-slate-700/50 shadow-inner justify-center backdrop-blur-md">
+        <div className="w-[100px] shrink-0 flex flex-col gap-2 bg-slate-50 dark:bg-[#1e293b]/50 p-2.5 rounded-[1rem] border border-slate-200 dark:border-slate-700/50 shadow-inner justify-center backdrop-blur-md">
            <div className="flex flex-col items-center text-center">
-              <Clock className="w-3.5 h-3.5 text-blue-400 mb-1 opacity-80" />
-              <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Tiempo</span>
-              <span className="text-sm font-black text-white leading-tight">
+              <Clock className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 mb-1 opacity-80" />
+              <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mb-1">Tiempo</span>
+              <span className="text-sm font-black text-slate-800 dark:text-white leading-tight">
                 {(() => {
                   const endTime = j.arrivedDestinationAt || j.completedAt || Date.now();
                   const startTime = j.pickedUpAt || j.createdAt || endTime;
@@ -109,19 +109,19 @@ export default function HistoryJobCard({ j, ...props }) {
               </span>
            </div>
            
-           <div className="w-8 h-px bg-slate-700/50 mx-auto my-1"></div>
+           <div className="w-8 h-px bg-slate-200 dark:bg-slate-700/50 mx-auto my-1"></div>
            
            <div className="flex flex-col items-center text-center relative">
               <div className="flex items-center gap-1 mb-1 relative">
-                 <MapPin className="w-3.5 h-3.5 text-emerald-400 opacity-80" />
+                 <MapPin className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 opacity-80" />
                  {isAdminView && auditMode && (
-                   <button onClick={(e) => { e.stopPropagation(); handleSingleRecalculate(j); }} disabled={processingId === `${j.id}-recalc-km`} className="absolute -right-5 -top-1 text-blue-400 hover:text-blue-300 disabled:opacity-50">
+                   <button onClick={(e) => { e.stopPropagation(); handleSingleRecalculate(j); }} disabled={processingId === `${j.id}-recalc-km`} className="absolute -right-5 -top-1 text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 disabled:opacity-50">
                      {processingId === `${j.id}-recalc-km` ? <Clock className="w-3 h-3 animate-spin" /> : <MapIcon className="w-3 h-3" />}
                    </button>
                  )}
               </div>
-              <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Distancia</span>
-              <span className="text-sm font-black text-white leading-tight truncate w-full px-1">
+              <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mb-1">Distancia</span>
+              <span className="text-sm font-black text-slate-800 dark:text-white leading-tight truncate w-full px-1">
                 {j.drivenDistance || 'No calc'}
               </span>
            </div>
@@ -130,36 +130,36 @@ export default function HistoryJobCard({ j, ...props }) {
 
       {/* AVISO VISUAL DE ACTA YA COMPARTIDA/RENDIDA */}
       {j.sharedCount > 0 && (
-        <div className="mb-3 bg-[#0f172a] border border-emerald-900/50 text-emerald-400 text-[10px] font-bold px-2 py-1.5 rounded-lg text-center flex items-center justify-center gap-1.5 shadow-sm">
+        <div className="mb-3 bg-emerald-50 dark:bg-[#0f172a] border border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold px-2 py-1.5 rounded-lg text-center flex items-center justify-center gap-1.5 shadow-sm">
           <CheckCircle className="w-3.5 h-3.5" /> Acta Rendida ({j.sharedCount} {j.sharedCount === 1 ? 'vez' : 'veces'})
         </div>
       )}
 
       {/* NUEVO: SELECTOR RÁPIDO DE PRT PARA ADMIN */}
       {isAdminView && j.tripType === 'revision' && (j.status === 'completed' || j.status === 'failed') && (
-        <div className="mb-3 bg-[#1c2235] border border-[#2a3441] rounded-xl p-2 flex flex-col gap-1.5 shadow-inner">
-          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Auditar Resultado PRT:</span>
+        <div className="mb-3 bg-slate-50 dark:bg-[#1c2235] border border-slate-200 dark:border-[#2a3441] rounded-xl p-2 flex flex-col gap-1.5 shadow-inner">
+          <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Auditar Resultado PRT:</span>
           <div className="flex gap-1">
             <button
               onClick={(e) => { e.stopPropagation(); showConfirm("¿Aprobado Legal?", async () => { await updateDoc(doc(db, 'transport_jobs', j.id), { prt_result: 'aprobado', checklist: { ...(j.checklist || {}), rtStatus: 'aprobado' }, status: 'completed', failedReason: deleteField() }); }); }}
-              className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${j.prt_result === 'aprobado' || j.checklist?.rtStatus === 'aprobado' ? 'bg-green-600 text-white shadow-sm' : 'bg-[#0f172a] border border-slate-700 text-slate-400 hover:text-green-400'}`}>Legal</button>
+              className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${j.prt_result === 'aprobado' || j.checklist?.rtStatus === 'aprobado' ? 'bg-green-600 text-white shadow-sm' : 'bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400'}`}>Legal</button>
             <button
               onClick={(e) => { e.stopPropagation(); showConfirm("¿Aprobado con Ayuda?", async () => { await updateDoc(doc(db, 'transport_jobs', j.id), { prt_result: 'aprobado_ayuda', checklist: { ...(j.checklist || {}), rtStatus: 'aprobado_ayuda' }, status: 'completed', failedReason: deleteField() }); }); }}
-              className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${j.prt_result === 'aprobado_ayuda' || j.checklist?.rtStatus === 'aprobado_ayuda' ? 'bg-amber-600 text-white shadow-sm' : 'bg-[#0f172a] border border-slate-700 text-slate-400 hover:text-amber-400'}`}>Ayuda</button>
+              className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${j.prt_result === 'aprobado_ayuda' || j.checklist?.rtStatus === 'aprobado_ayuda' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400'}`}>Ayuda</button>
             <button
               onClick={(e) => { e.stopPropagation(); showConfirm("¿Rechazado?", async () => { await updateDoc(doc(db, 'transport_jobs', j.id), { prt_result: 'rechazado', checklist: { ...(j.checklist || {}), rtStatus: 'rechazado' }, status: 'failed', failedReason: 'Rechazo en Planta PRT (Editado por Admin)' }); }); }}
-              className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${j.prt_result === 'rechazado' || j.checklist?.rtStatus === 'rechazado' ? 'bg-red-600 text-white shadow-sm' : 'bg-[#0f172a] border border-slate-700 text-slate-400 hover:text-red-400'}`}>Rechazo</button>
+              className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${j.prt_result === 'rechazado' || j.checklist?.rtStatus === 'rechazado' ? 'bg-red-600 text-white shadow-sm' : 'bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400'}`}>Rechazo</button>
           </div>
         </div>
       )}
 
       {/* Acciones */}
-      <div className="flex gap-1.5 mt-auto border-t border-slate-700/50 pt-3">
-        {isAdminView && <button onClick={(e) => { e.stopPropagation(); onEditJob(j); }} className="flex-1 py-2 flex justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors border border-slate-700/50" title="Editar"><Edit2 className="w-3.5 h-3.5" /></button>}
-        {isAdminView && <button onClick={(e) => { e.stopPropagation(); handleDuplicateJob(j); }} className="flex-1 py-2 flex justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors border border-slate-700/50" title="Repetir"><Repeat className="w-3.5 h-3.5" /></button>}
+      <div className="flex gap-1.5 mt-auto border-t border-slate-200/80 dark:border-slate-700/50 pt-3">
+        {isAdminView && <button onClick={(e) => { e.stopPropagation(); onEditJob(j); }} className="flex-1 py-2 flex justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition-colors border border-slate-200 dark:border-slate-700/50" title="Editar"><Edit2 className="w-3.5 h-3.5" /></button>}
+        {isAdminView && <button onClick={(e) => { e.stopPropagation(); handleDuplicateJob(j); }} className="flex-1 py-2 flex justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition-colors border border-slate-200 dark:border-slate-700/50" title="Repetir"><Repeat className="w-3.5 h-3.5" /></button>}
 
         {j.checklist && (j.checklist.scandocPdf || j.checklist.scandocPdfInbox || j.checklist.scannerLink) && (
-          <a href={j.checklist.scandocPdf || j.checklist.scandocPdfInbox || j.checklist.scannerLink} onClick={(e) => e.stopPropagation()} target="_blank" rel="noreferrer" className="flex-1 py-2 flex justify-center items-center bg-indigo-900/40 hover:bg-indigo-800/50 text-indigo-400 rounded-lg transition-colors border border-indigo-800/50" title="Ver Documentación PRT">
+          <a href={j.checklist.scandocPdf || j.checklist.scandocPdfInbox || j.checklist.scannerLink} onClick={(e) => e.stopPropagation()} target="_blank" rel="noreferrer" className="flex-1 py-2 flex justify-center items-center bg-indigo-50 dark:bg-indigo-900/40 hover:bg-indigo-100 dark:hover:bg-indigo-800/50 text-indigo-600 dark:text-indigo-400 rounded-lg transition-colors border border-indigo-200 dark:border-indigo-800/50" title="Ver Documentación PRT">
             <span className="sr-only">PRT</span><FileText className="w-3.5 h-3.5" />
           </a>
         )}
@@ -168,7 +168,7 @@ export default function HistoryJobCard({ j, ...props }) {
           const historyDocHref = j.guideLink || j.guideUrl || j.docLink || j.docUrl || j.rtLink || j.rtDoc || (j.rtData && j.rtData.link) || j.pdfUrl || j.fileUrl || j.checklist?.guiaDespachoPdf || j.checklist?.guiaDespachoLink;
           if (historyDocHref) {
             return (
-              <a href={historyDocHref} onClick={(e) => e.stopPropagation()} target="_blank" rel="noreferrer" className="flex-1 py-2 flex justify-center items-center bg-cyan-900/40 hover:bg-cyan-800/50 text-cyan-400 rounded-lg transition-colors border border-cyan-800/50" title="Ver Guía/Doc Adjunto">
+              <a href={historyDocHref} onClick={(e) => e.stopPropagation()} target="_blank" rel="noreferrer" className="flex-1 py-2 flex justify-center items-center bg-cyan-50 dark:bg-cyan-900/40 hover:bg-cyan-100 dark:hover:bg-cyan-800/50 text-cyan-700 dark:text-cyan-400 rounded-lg transition-colors border border-cyan-200 dark:border-cyan-800/50" title="Ver Guía/Doc Adjunto">
                 <span className="sr-only">GUÍA</span><FileText className="w-3.5 h-3.5" />
               </a>
             );
@@ -176,11 +176,11 @@ export default function HistoryJobCard({ j, ...props }) {
           return null;
         })()}
 
-        <button onClick={(e) => { e.stopPropagation(); generatePDF(j); }} disabled={processingId === `${j.id}-pdf`} className="flex-1 py-2 flex justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors border border-slate-700/50 disabled:opacity-50" title="Descargar PDF">{processingId === `${j.id}-pdf` ? <Clock className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}</button>
-        <button onClick={(e) => { e.stopPropagation(); handleShareWhatsAppPDF(j); }} disabled={processingId === `${j.id}-wapp`} className="flex-1 py-2 flex justify-center items-center bg-emerald-900/40 hover:bg-emerald-800/50 text-emerald-400 rounded-lg transition-colors border border-emerald-800/50 disabled:opacity-50" title="Compartir PDF por WhatsApp">
+        <button onClick={(e) => { e.stopPropagation(); generatePDF(j); }} disabled={processingId === `${j.id}-pdf`} className="flex-1 py-2 flex justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg transition-colors border border-slate-200 dark:border-slate-700/50 disabled:opacity-50" title="Descargar PDF">{processingId === `${j.id}-pdf` ? <Clock className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}</button>
+        <button onClick={(e) => { e.stopPropagation(); handleShareWhatsAppPDF(j); }} disabled={processingId === `${j.id}-wapp`} className="flex-1 py-2 flex justify-center items-center bg-emerald-50 dark:bg-emerald-900/40 hover:bg-emerald-100 dark:hover:bg-emerald-800/50 text-emerald-600 dark:text-emerald-400 rounded-lg transition-colors border border-emerald-200 dark:border-emerald-800/50 disabled:opacity-50" title="Compartir PDF por WhatsApp">
           {processingId === `${j.id}-wapp` ? <Clock className="w-3.5 h-3.5 animate-spin" /> : <Share2 className="w-3.5 h-3.5" />}
         </button>
-        {isAdminView && <button onClick={(e) => { e.stopPropagation(); handleDeleteJob(j.id); }} className="flex-1 py-2 flex justify-center bg-red-900/40 hover:bg-red-800/50 text-red-400 rounded-lg transition-colors border border-red-800/50" title="Eliminar"><Trash2 className="w-3.5 h-3.5" /></button>}
+        {isAdminView && <button onClick={(e) => { e.stopPropagation(); handleDeleteJob(j.id); }} className="flex-1 py-2 flex justify-center bg-red-50 dark:bg-red-900/40 hover:bg-red-100 dark:hover:bg-red-800/50 text-red-600 dark:text-red-400 rounded-lg transition-colors border border-red-200 dark:border-red-800/50" title="Eliminar"><Trash2 className="w-3.5 h-3.5" /></button>}
       </div>
     </div>
   );

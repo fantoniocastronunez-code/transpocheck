@@ -24,7 +24,7 @@ export const TabsHeader = () => {
   const totalSteps = tabs.length;
 
   return (
-    <div className="sticky top-[64px] sm:top-[80px] z-50 bg-slate-50/90 dark:bg-slate-950/90 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 py-5 transition-all w-full overflow-hidden">
+    <div className="shrink-0 z-40 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800/60 py-4 transition-all w-full overflow-hidden">
        <div className="max-w-md mx-auto w-full px-4 sm:px-6 relative pb-6 sm:pb-4">
           
           {/* Progress Track Container */}
