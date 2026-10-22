@@ -585,16 +585,16 @@ export default function JobCard({ j, ...props }) {
                 })()}
                 <div>
                     {j.tripType === 'simple' ? (
-                       <p className="text-lg font-bold text-purple-300 leading-tight mt-1 break-words pr-2">{j.description || 'Servicio en Terreno'}</p>
+                       <p className="text-lg font-bold text-purple-700 dark:text-purple-300 leading-tight mt-1 break-words pr-2">{j.description || 'Servicio en Terreno'}</p>
                     ) : (
-                       <p className="text-lg font-bold text-white leading-tight mt-1 break-words pr-2 tracking-tight">{j.brand} {j.model}</p>
+                       <p className="text-lg font-bold text-slate-800 dark:text-white leading-tight mt-1 break-words pr-2 tracking-tight">{j.brand} {j.model}</p>
                     )}
-                    <p className="text-[12px] font-medium text-slate-400 mt-0.5 uppercase tracking-wider flex items-center flex-wrap gap-2">
+                    <p className="text-[12px] font-semibold text-slate-600 dark:text-slate-400 mt-0.5 uppercase tracking-wider flex items-center flex-wrap gap-2">
                        {j.client}
                        {j.fleetGroup && <span className="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 px-1.5 py-0.5 rounded text-[9px] font-black border border-indigo-200 dark:border-indigo-800/50">EN FLOTA (CONVOY)</span>}
                     </p>
                     {j.createdBy && (
-                       <p className="text-[11px] font-medium text-slate-500 mt-0.5">Creado por: {j.createdBy}</p>
+                       <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">Creado por: {j.createdBy}</p>
                     )}
                 </div>
               </div>
@@ -607,7 +607,7 @@ export default function JobCard({ j, ...props }) {
               
               {/* Continuous Timeline Line */}
               {(j.destination || j.tripType !== 'simple') && (
-                <div className="absolute left-[7.5px] top-[14px] bottom-[14px] w-[1px] bg-slate-500/50 z-10"></div>
+                <div className="absolute left-[7.5px] top-[14px] bottom-[14px] w-[1px] bg-slate-300 dark:bg-slate-500/50 z-10"></div>
               )}
               
               {/* Floating Date Badge (Right Side) */}
@@ -632,11 +632,11 @@ export default function JobCard({ j, ...props }) {
 
               {/* Origin */}
               <div className="relative">
-                <div className="absolute -left-[24px] top-1.5 w-3 h-3 rounded-full bg-slate-300 z-20 shadow-sm"></div>
+                <div className="absolute -left-[24px] top-1.5 w-3 h-3 rounded-full bg-slate-400 dark:bg-slate-300 z-20 shadow-sm"></div>
                 
                 <div className="flex items-center gap-1.5 mb-0.5">
-                   <p className="text-[12px] text-slate-400 font-medium">{j.tripType === 'simple' ? 'Lugar:' : 'Desde:'}</p>
-                   <p className="text-[15px] font-bold text-white pr-20 leading-snug uppercase">{j.origin || 'Por definir'}</p>
+                   <p className="text-[12px] text-slate-500 dark:text-slate-400 font-semibold">{j.tripType === 'simple' ? 'Lugar:' : 'Desde:'}</p>
+                   <p className="text-[15px] font-bold text-slate-800 dark:text-white pr-20 leading-snug uppercase">{j.origin || 'Por definir'}</p>
                 </div>
               </div>
 
@@ -675,8 +675,8 @@ export default function JobCard({ j, ...props }) {
                 <div className="relative">
                   <div className="absolute -left-[24px] top-1.5 w-3 h-3 rounded-full bg-[#60a5fa] z-20 shadow-sm"></div>
                   <div className="flex items-center gap-1.5 mb-0.5">
-                     <p className="text-[12px] text-blue-400 font-medium">Hasta:</p>
-                     <p className="text-[15px] font-bold text-blue-200 pr-20 leading-snug uppercase">{j.tripType === 'revision' ? getRtFinalDestination(j) : (j.destination || 'Por definir')}</p>
+                     <p className="text-[12px] text-blue-600 dark:text-blue-400 font-semibold">Hasta:</p>
+                     <p className="text-[15px] font-bold text-blue-700 dark:text-blue-200 pr-20 leading-snug uppercase">{j.tripType === 'revision' ? getRtFinalDestination(j) : (j.destination || 'Por definir')}</p>
                   </div>
                 </div>
               )}
@@ -687,10 +687,10 @@ export default function JobCard({ j, ...props }) {
               <div className="mt-4 mb-1 flex">
                 <button 
                   onClick={() => setShowDetails(!showDetails)}
-                  className="flex items-center gap-1.5 bg-transparent hover:bg-slate-800/50 border border-slate-500/50 rounded-full px-3 py-1.5 transition-colors"
+                  className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-transparent dark:hover:bg-slate-800/50 border border-slate-300 dark:border-slate-500/50 rounded-full px-3 py-1.5 transition-colors"
                 >
-                  <MapPin className="w-3.5 h-3.5 text-slate-300" />
-                  <span className="text-[11px] font-bold text-white tracking-wide">
+                  <MapPin className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
+                  <span className="text-[11px] font-bold text-slate-700 dark:text-white tracking-wide">
                     {showDetails ? 'Ocultar Detalles' : 'Contactos y Waze'}
                   </span>
                 </button>
@@ -701,14 +701,14 @@ export default function JobCard({ j, ...props }) {
               <div className="mt-3 mb-4 space-y-2 animate-in fade-in slide-in-from-top-2 duration-300 relative z-20">
                 {/* BLOQUE ORIGEN */}
                 {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone || j.originAddress || j.originCommune) && (
-                  <div className="pt-3 border-t border-slate-700/50 flex flex-col gap-2">
+                  <div className="pt-3 border-t border-slate-200 dark:border-slate-700/50 flex flex-col gap-2">
                      {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone) && (
-                     <div className="flex items-center justify-between gap-2 bg-slate-800/50 p-2.5 rounded-xl border border-slate-700/50">
+                     <div className="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/50">
                        <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                          <div className="bg-emerald-900/40 p-2 rounded-lg shrink-0 border border-emerald-800/50"><Users className="w-4 h-4 text-emerald-400"/></div>
+                          <div className="bg-emerald-100 dark:bg-emerald-900/40 p-2 rounded-lg shrink-0 border border-emerald-200 dark:border-emerald-800/50"><Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400"/></div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 truncate">Encargado Origen</p>
-                            <p className="text-xs font-bold text-slate-200 truncate">{j.originContactName || j.contactName || 'No especificado'}</p>
+                            <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-0.5 truncate">Encargado Origen</p>
+                            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{j.originContactName || j.contactName || 'No especificado'}</p>
                           </div>
                        </div>
                        {(j.originContactPhone || j.contactPhone) && (
@@ -721,10 +721,10 @@ export default function JobCard({ j, ...props }) {
                      )}
                      
                      {(j.originAddress || j.originCommune) && (
-                        <div className="flex justify-between items-center bg-slate-800/30 p-2.5 rounded-xl border border-slate-700/50 mt-1">
-                          <p className="text-[11px] font-medium text-slate-300 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-slate-500"/>{j.originAddress}{j.originAddress && j.originCommune ? ', ' : ''}{j.originCommune}</p>
+                        <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/30 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/50 mt-1">
+                          <p className="text-[11px] font-medium text-slate-600 dark:text-slate-300 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-slate-500"/>{j.originAddress}{j.originAddress && j.originCommune ? ', ' : ''}{j.originCommune}</p>
                           {isAccepted && (
-                            <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.originAddress || ''} ${j.originCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-900/40 hover:bg-blue-800/50 text-blue-300 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition-colors border border-blue-800/50"><Navigation className="w-3 h-3"/> Waze</a>
+                            <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.originAddress || ''} ${j.originCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 dark:hover:bg-blue-800/50 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition-colors border border-blue-200 dark:border-blue-800/50"><Navigation className="w-3 h-3"/> Waze</a>
                           )}
                         </div>
                      )}
@@ -733,14 +733,14 @@ export default function JobCard({ j, ...props }) {
 
                 {/* BLOQUE DESTINO */}
                 {(j.destContactName || j.destContactPhone || j.destAddress || j.destCommune) && (
-                  <div className="pt-2 border-t border-slate-700/50 flex flex-col gap-2">
+                  <div className="pt-2 border-t border-slate-200 dark:border-slate-700/50 flex flex-col gap-2">
                      {(j.destContactName || j.destContactPhone) && (
-                     <div className="flex items-center justify-between gap-2 bg-slate-800/50 p-2.5 rounded-xl border border-slate-700/50">
+                     <div className="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/50">
                        <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                          <div className="bg-blue-900/40 p-2 rounded-lg shrink-0 border border-blue-800/50"><Users className="w-4 h-4 text-blue-400"/></div>
+                          <div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-lg shrink-0 border border-blue-200 dark:border-blue-800/50"><Users className="w-4 h-4 text-blue-600 dark:text-blue-400"/></div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 truncate">Encargado Destino</p>
-                            <p className="text-xs font-bold text-slate-200 truncate">{j.destContactName || 'No especificado'}</p>
+                            <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-0.5 truncate">Encargado Destino</p>
+                            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{j.destContactName || 'No especificado'}</p>
                           </div>
                        </div>
                        {j.destContactPhone && (
@@ -753,8 +753,8 @@ export default function JobCard({ j, ...props }) {
                      )}
 
                      {(j.destAddress || j.destCommune) && (
-                        <div className="flex justify-between items-center bg-blue-900/20 p-2.5 rounded-xl border border-blue-800/40 mt-1">
-                          <p className="text-[11px] font-medium text-blue-300 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-blue-500"/>{j.destAddress}{j.destAddress && j.destCommune ? ', ' : ''}{j.destCommune}</p>
+                        <div className="flex justify-between items-center bg-blue-50 dark:bg-blue-900/20 p-2.5 rounded-xl border border-blue-200 dark:border-blue-800/40 mt-1">
+                          <p className="text-[11px] font-medium text-blue-800 dark:text-blue-300 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-blue-500"/>{j.destAddress}{j.destAddress && j.destCommune ? ', ' : ''}{j.destCommune}</p>
                           {isAccepted && (
                             <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.destAddress || ''} ${j.destCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shrink-0 shadow-md transition-colors"><Navigation className="w-3 h-3"/> Waze</a>
                           )}
@@ -766,11 +766,11 @@ export default function JobCard({ j, ...props }) {
             )}
 
             {j.waypoints && j.waypoints.length > 0 && showDetails && (
-              <div className="mb-4 pt-2 border-t border-slate-700/50">
+              <div className="mb-4 pt-2 border-t border-slate-200 dark:border-slate-700/50">
                 <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest mb-1.5 flex items-center gap-1"><MapPin className="w-3 h-3"/> Ruta intermedia:</p>
                 <div className="flex flex-col gap-1">
                   {j.waypoints.map((wp, i) => (
-                     <span key={i} className="text-[11px] font-bold text-slate-300 leading-snug break-words"><span className="font-black mr-1 text-slate-500">{i + 1}.</span> {wp}</span>
+                     <span key={i} className="text-[11px] font-bold text-slate-700 dark:text-slate-300 leading-snug break-words"><span className="font-black mr-1 text-slate-500">{i + 1}.</span> {wp}</span>
                   ))}
                 </div>
               </div>
@@ -818,20 +818,20 @@ export default function JobCard({ j, ...props }) {
                
                // NUEVO DISEÑO PARA LA SECCIÓN DE ANIMACIÓN:
                return (
-                 <div className="mt-2 pt-4 flex flex-col border-t border-slate-700/50">
+                 <div className="mt-2 pt-4 flex flex-col border-t border-slate-200 dark:border-slate-700/50">
                    {animationType === 'searching' ? (
                       <div className="flex items-center justify-center gap-2 mb-3 mt-1">
-                         <Search className="w-4 h-4 text-slate-400" />
-                         <p className="text-[15px] font-medium text-white tracking-wide">{statusTitle}</p>
+                         <Search className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                         <p className="text-[15px] font-bold text-slate-800 dark:text-white tracking-wide">{statusTitle}</p>
                       </div>
                    ) : (
-                      <div className="flex items-center gap-3 w-full bg-slate-800/50 p-3 rounded-xl border border-slate-700/50 shadow-inner mb-3">
-                        <div className="p-1 shrink-0 bg-slate-900 rounded-lg border border-slate-800">
+                      <div className="flex items-center gap-3 w-full bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 shadow-inner mb-3">
+                        <div className="p-1 shrink-0 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
                            {statusIcon}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm text-white truncate">{statusTitle}</p>
-                          {statusSub && <p className="text-[11px] font-medium text-slate-400 truncate">{statusSub}</p>}
+                          <p className="font-bold text-sm text-slate-800 dark:text-white truncate">{statusTitle}</p>
+                          {statusSub && <p className="text-[11px] font-medium text-slate-600 dark:text-slate-400 truncate">{statusSub}</p>}
                         </div>
                       </div>
                    )}

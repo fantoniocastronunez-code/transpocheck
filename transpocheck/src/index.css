@@ -12,9 +12,9 @@
   
   --bg-color: #f8fafc;
   --card-bg: #ffffff;
-  --border-color: #e2e8f0;
+  --border-color: #cbd5e1;
   --text-primary: #0f172a;
-  --text-secondary: #64748b;
+  --text-secondary: #475569;
 }
 
 .dark {
@@ -36,10 +36,101 @@ body {
   min-height: 100vh;
 }
 
+/* === REFUERZO DE CONTRASTE PARA MODO CLARO (TEXTOS GRISES / SECUNDARIOS) === */
+/* En modo claro, los grises claros (slate-400 y slate-500) se convierten en tonos pizarra oscuros, */
+/* nítidos y con ratio de contraste accesible (WCAG AAA >= 7:1) para máxima legibilidad. */
+html:not(.dark) {
+  --color-slate-400: #475569;
+  --color-slate-500: #334155;
+  --color-gray-400: #4b5563;
+  --color-gray-500: #374151;
+  --color-zinc-400: #52525b;
+  --color-zinc-500: #3f3f46;
+}
+
+@supports (color: color(display-p3 0 0 0)) {
+  html:not(.dark) {
+    --color-slate-400: #475569;
+    --color-slate-500: #334155;
+    --color-gray-400: #4b5563;
+    --color-gray-500: #374151;
+    --color-zinc-400: #52525b;
+    --color-zinc-500: #3f3f46;
+  }
+}
+
+@supports (color: lab(0% 0 0)) {
+  html:not(.dark) {
+    --color-slate-400: #475569;
+    --color-slate-500: #334155;
+    --color-gray-400: #4b5563;
+    --color-gray-500: #374151;
+    --color-zinc-400: #52525b;
+    --color-zinc-500: #3f3f46;
+  }
+}
+
+/* Para elementos dentro de contenedores explícitamente oscuros o en modo oscuro, */
+/* se preserva la legibilidad con tonos claros */
+.dark,
+[class*="bg-slate-900"],
+[class*="bg-slate-950"],
+[class*="bg-slate-800"],
+[class*="bg-gray-900"],
+[class*="bg-black"],
+[class*="from-slate-800"],
+[class*="from-slate-900"] {
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-zinc-400: #a1a1aa;
+  --color-zinc-500: #71717a;
+}
+
+/* Reglas directas con especificidad para garantizar que ningún texto gris sea pálido en modo claro */
+html:not(.dark) .text-slate-400,
+html:not(.dark) .text-gray-400,
+html:not(.dark) .text-zinc-400 {
+  color: #475569;
+}
+
+html:not(.dark) .text-slate-500,
+html:not(.dark) .text-gray-500,
+html:not(.dark) .text-zinc-500 {
+  color: #334155;
+}
+
+/* Excepciones para textos dentro de bloques oscuros cuando la app está en modo claro */
+html:not(.dark) [class*="bg-slate-900"] .text-slate-400,
+html:not(.dark) [class*="bg-slate-950"] .text-slate-400,
+html:not(.dark) [class*="bg-slate-800"] .text-slate-400,
+html:not(.dark) [class*="bg-black"] .text-slate-400,
+html:not(.dark) [class*="from-slate-800"] .text-slate-400,
+html:not(.dark) [class*="from-slate-900"] .text-slate-400 {
+  color: #94a3b8;
+}
+
+html:not(.dark) [class*="bg-slate-900"] .text-slate-500,
+html:not(.dark) [class*="bg-slate-950"] .text-slate-500,
+html:not(.dark) [class*="bg-slate-800"] .text-slate-500,
+html:not(.dark) [class*="bg-black"] .text-slate-500,
+html:not(.dark) [class*="from-slate-800"] .text-slate-500,
+html:not(.dark) [class*="from-slate-900"] .text-slate-500 {
+  color: #cbd5e1;
+}
+
+/* Placeholders nítidos y legibles en modo claro */
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder {
+  color: #64748b !important;
+  opacity: 1;
+}
+
 /* Glass card support */
 .glass-card {
-  background-color: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(226, 232, 240, 0.8);
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(203, 213, 225, 0.8);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   color: #0f172a;
