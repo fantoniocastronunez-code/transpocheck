@@ -272,6 +272,13 @@ const ChecklistInner = ({ openCamera }) => {
           base64Fields.forEach(field => {
             if (typeof draftDataForFirestore[field] === 'string' && !draftDataForFirestore[field].startsWith('http')) draftDataForFirestore[field] = false;
           });
+          if (draftDataForFirestore.carDamages) {
+            for (const zoneId in draftDataForFirestore.carDamages) {
+              if (typeof draftDataForFirestore.carDamages[zoneId]?.photo === 'string' && !draftDataForFirestore.carDamages[zoneId].photo.startsWith('http')) {
+                draftDataForFirestore.carDamages[zoneId] = { ...draftDataForFirestore.carDamages[zoneId], photo: false };
+              }
+            }
+          }
           updates['draft.formData'] = draftDataForFirestore;
           try { await updateDoc(doc(db, 'transport_jobs', job.id), updates); } catch(e){}
 
@@ -530,16 +537,14 @@ const ChecklistInner = ({ openCamera }) => {
                       try {
                         const { resizeImage } = await import('../../../utils/helpers');
                         const compressed = await resizeImage(f, 1200, 0.6);
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                          setFormData(p => ({ ...p, photos: { ...p.photos, odometer: reader.result } }));
-                          setIsSubmitting(false);
-                          setProcessingAction(null);
-                        };
-                        reader.readAsDataURL(compressed);
-                      } catch (e) {
+                        setFormData(p => ({ ...p, photos: { ...p.photos, odometer: compressed } }));
                         setIsSubmitting(false);
                         setProcessingAction(null);
+                      } catch (e) {
+                        console.error("[ERR-FINAL-ODO-01] Error foto odómetro:", e);
+                        setIsSubmitting(false);
+                        setProcessingAction(null);
+                        showAlert("Error al procesar la foto [ERR-FINAL-ODO-01].");
                       }
                    })}
                    className={`relative overflow-hidden w-full py-3.5 rounded-[1.25rem] flex items-center justify-center gap-2 border transition-all ${formData.photos?.odometer ? 'border-green-500/50 bg-green-900/30 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'border-blue-500/30 bg-gradient-to-b from-blue-600/20 to-blue-900/40 text-blue-300 hover:from-blue-500/30 hover:to-blue-800/50 shadow-[0_0_15px_rgba(59,130,246,0.15)]'}`}
@@ -558,16 +563,14 @@ const ChecklistInner = ({ openCamera }) => {
                       try {
                         const { resizeImage } = await import('../../../utils/helpers');
                         const compressed = await resizeImage(f, 1200, 0.6);
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                          setFormData(p => ({ ...p, photos: { ...p.photos, fuelGauge: reader.result } }));
-                          setIsSubmitting(false);
-                          setProcessingAction(null);
-                        };
-                        reader.readAsDataURL(compressed);
-                      } catch (e) {
+                        setFormData(p => ({ ...p, photos: { ...p.photos, fuelGauge: compressed } }));
                         setIsSubmitting(false);
                         setProcessingAction(null);
+                      } catch (e) {
+                        console.error("[ERR-FINAL-FUEL-01] Error foto combustible:", e);
+                        setIsSubmitting(false);
+                        setProcessingAction(null);
+                        showAlert("Error al procesar la foto [ERR-FINAL-FUEL-01].");
                       }
                    })}
                    className={`relative overflow-hidden w-full py-3.5 rounded-[1.25rem] flex items-center justify-center gap-2 border transition-all ${formData.photos?.fuelGauge ? 'border-green-500/50 bg-green-900/30 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'border-blue-500/30 bg-gradient-to-b from-blue-600/20 to-blue-900/40 text-blue-300 hover:from-blue-500/30 hover:to-blue-800/50 shadow-[0_0_15px_rgba(59,130,246,0.15)]'}`}

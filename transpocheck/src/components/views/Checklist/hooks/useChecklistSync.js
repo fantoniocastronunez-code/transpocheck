@@ -55,6 +55,12 @@ export const useChecklistSync = ({
           base64Fields.forEach(field => {
               if (localData.formData[field]) draftData[field] = localData.formData[field];
           });
+          if (localData.formData.carDamages) {
+            if (!draftData.carDamages) draftData.carDamages = {};
+            for (const key in localData.formData.carDamages) {
+              if (localData.formData.carDamages[key]) draftData.carDamages[key] = localData.formData.carDamages[key];
+            }
+          }
           
           const nonBase64Fields = Object.keys(localData.formData).filter(k => k !== 'photos' && k !== 'docsPhotos' && !base64Fields.includes(k));
           nonBase64Fields.forEach(field => {
@@ -183,13 +189,19 @@ export const useChecklistSync = ({
         }
       }
 
-      // Limpiar otros campos base64 en el borrador de Firestore
       const base64Fields = ['signatureData', 'fuelReceipt', 'scandocPdf', 'guiaDespachoPdf'];
       base64Fields.forEach(field => {
           if (typeof fbDraftData[field] === 'string' && !fbDraftData[field].startsWith('http')) {
               fbDraftData[field] = false; 
           }
       });
+      if (fbDraftData.carDamages) {
+        for (const zoneId in fbDraftData.carDamages) {
+          if (typeof fbDraftData.carDamages[zoneId]?.photo === 'string' && !fbDraftData.carDamages[zoneId].photo.startsWith('http')) {
+            fbDraftData.carDamages[zoneId] = { ...fbDraftData.carDamages[zoneId], photo: false };
+          }
+        }
+      }
 
       const updates = { draft: { step, formData: fbDraftData } };
 
@@ -225,6 +237,11 @@ export const useChecklistSync = ({
     for (const val of Object.values(d.photos)) { if (typeof val === 'string' && val.startsWith('data:image')) totalFiles++; }
     if (d.docsPhotos) {
       for (const val of Object.values(d.docsPhotos)) { if (typeof val === 'string' && val.startsWith('data:image')) totalFiles++; }
+    }
+    if (d.carDamages) {
+      for (const val of Object.values(d.carDamages)) {
+        if (typeof val?.photo === 'string' && val.photo.startsWith('data:image')) totalFiles++;
+      }
     }
     if (typeof d.signatureData === 'string' && d.signatureData.startsWith('data:image')) totalFiles++;
     if (typeof d.scandocPdf === 'string' && d.scandocPdf.startsWith('data:')) totalFiles++;
@@ -302,6 +319,22 @@ export const useChecklistSync = ({
         d.guiaDespachoPdf = url;
         updateProgress('Guía Despacho');
       } catch (err) { console.error("Error subiendo Guía:", err); }
+    }
+
+    if (d.carDamages) {
+      const uploadedDamages = { ...d.carDamages };
+      for (const [zoneId, dmg] of Object.entries(d.carDamages)) {
+        if (typeof dmg?.photo === 'string' && dmg.photo.startsWith('data:image')) {
+          try {
+            const url = await uploadImageToStorage(dmg.photo, `checklists/${jobIdFolder}`, `damage_${zoneId}_${Date.now()}.jpg`);
+            uploadedDamages[zoneId] = { ...dmg, photo: url };
+            updateProgress(`daño ${zoneId.toUpperCase()}`);
+          } catch (err) {
+            console.error(`[ERR-UPLOAD-DAMAGE-${zoneId.toUpperCase()}] Error subiendo foto daño ${zoneId}:`, err);
+          }
+        }
+      }
+      d.carDamages = uploadedDamages;
     }
 
     d.photos = uploadedPhotos;

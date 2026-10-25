@@ -52,7 +52,14 @@ export const buildPDFDoc = async (job, isPublic = false, drivers = []) => {
 
     const loadSimpleLogo = async (src) => { return new Promise((resolve) => { const img = new Image(); img.src = src; img.crossOrigin = "Anonymous"; img.onload = () => { const tempCanvas = document.createElement('canvas'); tempCanvas.width = img.width; tempCanvas.height = img.height; const ctx = tempCanvas.getContext('2d'); ctx.drawImage(img, 0, 0, img.width, img.height); resolve({ data: tempCanvas.toDataURL('image/png'), w: img.width, h: img.height }); }; img.onerror = () => resolve(null); setTimeout(() => resolve(null), 1500); }); };
 
-    const photos = job.checklist?.photos || {};
+    const photos = { ...(job.checklist?.photos || {}) };
+    if (job.checklist?.carDamages) {
+      for (const [zone, d] of Object.entries(job.checklist.carDamages)) {
+        if (d?.photo && typeof d.photo === 'string' && d.photo.startsWith('http')) {
+          photos[`damage_${zone}`] = d.photo;
+        }
+      }
+    }
     const otherPhotoKeys = Object.keys(photos).filter(k => k !== 'front' && typeof photos[k] === 'string' && photos[k]);
 
     const [logoApp, logoLogistica, frontPhotoObj, signatureStr, ...preloadedOtherPhotos] = await Promise.all([
@@ -205,7 +212,20 @@ export const buildPDFDoc = async (job, isPublic = false, drivers = []) => {
 
 
 
-        docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("OBSERVACIONES:", 15, currentY); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor); const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin observaciones registradas.'}`), leftColWidth); docPDF.text(obsSplit, 15, currentY + 4); currentY += (obsSplit.length * 4) + 8;
+        docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("DETALLES Y OBSERVACIONES DE LA REVISIÓN:", 15, currentY); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor); const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin observaciones registradas.'}`), leftColWidth); docPDF.text(obsSplit, 15, currentY + 4); currentY += (obsSplit.length * 4) + 8;
+        
+        if (job.checklist?.carDamages) {
+          const dmgItems = Object.entries(job.checklist.carDamages)
+            .filter(([_, d]) => d && d.status && d.status !== 'ok')
+            .map(([zone, d]) => `${zone.toUpperCase()}: ${d.status.toUpperCase()}${d.notes ? ` (${d.notes})` : ''}`);
+          if (dmgItems.length > 0) {
+            docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(220, 38, 38); docPDF.text("INSPECCIÓN DE DAÑOS REGISTRADOS:", 15, currentY);
+            docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38);
+            const dmgSplit = docPDF.splitTextToSize(cleanStr(dmgItems.join(' | ')), leftColWidth);
+            docPDF.text(dmgSplit, 15, currentY + 4);
+            currentY += (dmgSplit.length * 4) + 8;
+          }
+        }
         
         if (job.checklist?.transitNotes) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("NOTAS DURANTE EL TRASLADO:", 15, currentY); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38); const transitSplit = docPDF.splitTextToSize(cleanStr(job.checklist.transitNotes), leftColWidth); docPDF.text(transitSplit, 15, currentY + 4); currentY += (transitSplit.length * 4) + 8; }
 
@@ -321,7 +341,7 @@ export const buildPDFDoc = async (job, isPublic = false, drivers = []) => {
     if (preloadedOtherPhotos.length > 0) {
       const labels = job.tripType === 'simple' 
          ? { det1: 'Evidencia 1', det2: 'Evidencia 2', det3: 'Evidencia 3', det4: 'Evidencia 4', det5: 'Evidencia 5', det6: 'Evidencia 6', det7: 'Evidencia 7', det8: 'Evidencia 8', det9: 'Evidencia 9', det10: 'Evidencia 10' }
-         : { left: 'Lat. Piloto', right: 'Lat. Copiloto', left_cab: 'Lat. Cabina Piloto', left_body: 'Lat. Carroc. Piloto', right_cab: 'Lat. Cabina Copiloto', right_body: 'Lat. Carroc. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', interior_front: 'Int. Adelante', interior_back: 'Int. Atras', odometer: 'Odómetro', fuelGauge: 'Med. Combustible', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4', det5: 'Detalle 5', det6: 'Detalle 6', det7: 'Detalle 7', det8: 'Detalle 8' };
+         : { left: 'Lat. Piloto', right: 'Lat. Copiloto', left_cab: 'Lat. Cabina Piloto', left_body: 'Lat. Carroc. Piloto', right_cab: 'Lat. Cabina Copiloto', right_body: 'Lat. Carroc. Copiloto', back: 'Atras', tire: 'Repuesto', dashboard: 'Tablero', interior_front: 'Int. Adelante', interior_back: 'Int. Atras', odometer: 'Odómetro', fuelGauge: 'Med. Combustible', damage_luces: 'Daño Luces', damage_neumaticos: 'Daño Neumáticos', damage_carroceria: 'Daño Carrocería', damage_parabrisas: 'Daño Parabrisas', det1: 'Detalle 1', det2: 'Detalle 2', det3: 'Detalle 3', det4: 'Detalle 4', det5: 'Detalle 5', det6: 'Detalle 6', det7: 'Detalle 7', det8: 'Detalle 8' };
       
       let photoY = 46; let currentCol = 1; let addedPage = false; 
       const detailPins = job.checklist?.detailPins || [];

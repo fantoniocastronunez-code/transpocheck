@@ -340,6 +340,61 @@ export default function HistoryModal({
             </div>
           )}
 
+          {/* DETALLES Y OBSERVACIONES DE LA REVISIÓN */}
+          {(selectedHistoryJob.checklist?.observations || selectedHistoryJob.checklist?.carDamages) && (
+            <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-xl shadow-sm mb-4">
+              <h4 className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-widest mb-2 flex items-center gap-1.5">
+                <FileText className="w-4 h-4"/> Detalles y Observaciones de la Revisión
+              </h4>
+              {selectedHistoryJob.checklist?.observations ? (
+                <p className="text-xs font-bold text-slate-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed bg-white dark:bg-slate-950 p-3 rounded-lg border border-slate-100 dark:border-slate-800 italic">
+                  "{selectedHistoryJob.checklist.observations}"
+                </p>
+              ) : (
+                <p className="text-xs font-medium text-slate-400 italic">Sin observaciones de texto adicionales.</p>
+              )}
+
+              {/* Inspección por zonas si hay daños marcados */}
+              {selectedHistoryJob.checklist?.carDamages && (() => {
+                const damagedZones = Object.entries(selectedHistoryJob.checklist.carDamages)
+                  .filter(([_, d]) => d && d.status && d.status !== 'ok');
+                if (damagedZones.length === 0) return null;
+                return (
+                  <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
+                    <p className="text-[9px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider">
+                      Inspección de Daños:
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {damagedZones.map(([zone, d]) => (
+                        <div key={zone} className="bg-white dark:bg-slate-950 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 flex items-start justify-between gap-2">
+                          <div>
+                            <span className="text-[10px] font-black uppercase text-red-600 dark:text-red-400 block">
+                              {zone}: {d.status}
+                            </span>
+                            {d.notes && (
+                              <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 italic block mt-0.5">
+                                "{d.notes}"
+                              </span>
+                            )}
+                          </div>
+                          {d.photo && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(d.photo); }}
+                              className="shrink-0 text-[9px] font-black uppercase text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded border border-blue-200 dark:border-blue-800"
+                            >
+                              Ver Foto
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
           {/* 4. RECEPCIÓN */}
           {selectedHistoryJob.checklist && (
             <div>
@@ -377,7 +432,15 @@ export default function HistoryModal({
             const ident = getJobIdentifier(selectedHistoryJob);
             const v = (vehicles && ident && ident !== 'S/N') ? vehicles.find(x => x.plate === ident.toUpperCase()) : null;
             const docPhotos = { ...(v?.docsPhotos || {}), ...(selectedHistoryJob.checklist?.docsPhotos || {}) };
-            const allPhotos = { ...(selectedHistoryJob.checklist?.photos || {}), ...storagePhotos, ...docPhotos };
+            const damagePhotos = {};
+            if (selectedHistoryJob.checklist?.carDamages) {
+              for (const [zone, d] of Object.entries(selectedHistoryJob.checklist.carDamages)) {
+                if (d?.photo && typeof d.photo === 'string' && d.photo.startsWith('http')) {
+                  damagePhotos[`damage_${zone}`] = d.photo;
+                }
+              }
+            }
+            const allPhotos = { ...(selectedHistoryJob.checklist?.photos || {}), ...storagePhotos, ...docPhotos, ...damagePhotos };
             
             const photoLabels = { 
               pickup_odo: 'Odómetro Inicio',
@@ -409,12 +472,17 @@ export default function HistoryModal({
               permiso: 'Permiso Circ.', 
               soap: 'Seguro SOAP', 
               revTecnica: 'Rev. Técnica', 
-              gases: 'Gases' 
+              gases: 'Gases',
+              damage_luces: 'Daño: Luces',
+              damage_neumaticos: 'Daño: Neumáticos',
+              damage_carroceria: 'Daño: Carrocería',
+              damage_parabrisas: 'Daño: Parabrisas'
             };
 
             const keyPriority = {
               pickup_odo: 100, arrival_odo: 100, pickup_fuel: 100, arrival_fuel: 100,
               front: 90, back: 90, left: 90, right: 90, left_cab: 90, right_cab: 90, left_body: 90, right_body: 90,
+              damage_luces: 88, damage_neumaticos: 88, damage_carroceria: 88, damage_parabrisas: 88,
               dashboard: 85, tire: 85, interior_front: 85, interior_back: 85, vin: 85,
               permiso: 80, soap: 80, revTecnica: 80, gases: 80,
               fuelGauge: 70, odometer: 70, mileage: 60, fuel: 60,

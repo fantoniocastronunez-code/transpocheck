@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Camera, CheckCircle, AlertTriangle, X } from 'lucide-react';
+import { Camera, CheckCircle, AlertTriangle, X, FileText } from 'lucide-react';
 import { useChecklist } from '../ChecklistContext';
 
 export const StepNotes = ({ openCamera }) => {
@@ -24,14 +24,11 @@ export const StepNotes = ({ openCamera }) => {
     openCamera(`Foto: ${label}`, async (file) => {
       try {
         const { resizeImage } = await import('../../../../utils/helpers');
-        const compressed = await resizeImage(file, 1200, 0.6);
-        const reader = new FileReader();
-        reader.onload = () => {
-          updateDamage(zoneId, { ...damages[zoneId], photo: reader.result });
-        };
-        reader.readAsDataURL(compressed);
+        const dataUrl = await resizeImage(file, 1200, 0.6);
+        updateDamage(zoneId, { ...damages[zoneId], photo: dataUrl });
       } catch (e) {
-        showAlert("Error al procesar la foto.");
+        console.error("[ERR-REV-PHOTO-01] Error al procesar la foto de revisión:", e);
+        showAlert("Error al procesar la foto [ERR-REV-PHOTO-01].");
       }
     });
   };
@@ -220,6 +217,29 @@ export const StepNotes = ({ openCamera }) => {
               )}
            </div>
         )}
+      </div>
+
+      {/* CUADRO DE TEXTO PARA ANOTAR DETALLES / OBSERVACIONES */}
+      <div className="bg-slate-50/50 dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-800/50 p-6 rounded-3xl shadow-lg relative overflow-hidden">
+        {/* Glassmorphism Background Glow */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"></div>
+        <div className="flex items-center gap-2 mb-2 relative z-10">
+          <FileText className="w-5 h-5 text-blue-500" />
+          <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest">
+            Detalles y Observaciones de la Revisión
+          </h3>
+        </div>
+        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-4 relative z-10">
+          Anota aquí cualquier detalle, desperfecto o novedad relevante detectada durante la inspección del vehículo.
+        </p>
+
+        <textarea
+          rows={4}
+          value={formData.observations || ''}
+          onChange={(e) => setF('observations', e.target.value)}
+          placeholder="Ej: Rayón superficial en costado derecho, tapiz con manchas leves, rueda de repuesto con poco aire..."
+          className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl p-4 text-xs font-bold text-slate-700 dark:text-slate-200 focus:border-blue-500 dark:focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 resize-none shadow-inner relative z-10"
+        />
       </div>
 
     </div>
