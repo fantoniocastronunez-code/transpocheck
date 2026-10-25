@@ -14,8 +14,15 @@ export default function HistoryJobCard({ j, ...props }) {
 
       {/* Top Bar: Status & Date */}
       <div className="flex justify-between items-center mb-3 pl-2 relative z-10">
-         <div className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm ${isFailed ? 'bg-red-500/20 text-red-500 dark:text-red-400 border border-red-500/30' : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'}`}>
-           {isFailed ? 'RECHAZADO' : 'ENTREGADO'}
+         <div className="flex items-center gap-1.5 flex-wrap">
+           <div className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm ${isFailed ? 'bg-red-500/20 text-red-500 dark:text-red-400 border border-red-500/30' : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'}`}>
+             {isFailed ? 'RECHAZADO' : 'ENTREGADO'}
+           </div>
+           {j.expenses && j.expenses.length > 0 && (
+             <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider">
+               💳 {j.expenses.length} Gasto{j.expenses.length > 1 ? 's' : ''} (${j.expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0).toLocaleString('es-CL')})
+             </span>
+           )}
          </div>
          <div className="flex items-center gap-1">
            <p className="text-slate-500 dark:text-slate-400 font-bold text-[10px]">{new Date(j.completedAt || j.createdAt).toLocaleDateString('es-CL')}</p>

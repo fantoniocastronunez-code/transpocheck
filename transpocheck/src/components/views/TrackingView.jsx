@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, updateDoc, doc, getDocs } from 'firebase/firestore';
-import { CheckCircle, Clock, FileDown, Navigation, MapPin, X, Search, LogOut, Sun, Moon, FileText, AlertCircle } from 'lucide-react';
+import { CheckCircle, Clock, FileDown, Navigation, MapPin, X, Search, LogOut, Sun, Moon, FileText, AlertCircle, Receipt } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import WaitTimerBadge from '../ui/WaitTimerBadge';
 import SignaturePad from '../ui/SignaturePad';
@@ -960,6 +960,92 @@ const handleDownloadPDF = async (job) => {
                 </div>
               )}
 
+              {/* GASTOS ASOCIADOS AL TRASLADO */}
+              {selectedHistoryJob.expenses && selectedHistoryJob.expenses.length > 0 && (
+                <div className="bg-emerald-50/50 dark:bg-emerald-950/20 border-2 border-emerald-500/30 dark:border-emerald-700/40 p-4 rounded-2xl shadow-sm mb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-3 border-b border-emerald-200 dark:border-emerald-800/40 gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-emerald-500 text-white rounded-xl shadow-sm">
+                        <Receipt className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                          Gastos Asociados al Traslado
+                        </h4>
+                        <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                          {selectedHistoryJob.expenses.length} registro{selectedHistoryJob.expenses.length > 1 ? 's' : ''} ingresado{selectedHistoryJob.expenses.length > 1 ? 's' : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-800 px-3 py-1.5 rounded-xl flex items-center gap-2 self-start sm:self-auto shadow-sm">
+                      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Total Gastos:</span>
+                      <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">
+                        ${selectedHistoryJob.expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0).toLocaleString('es-CL')}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {selectedHistoryJob.expenses.map((exp, idx) => (
+                      <div 
+                        key={exp.id || idx} 
+                        className="bg-white dark:bg-slate-900/90 border border-emerald-100 dark:border-emerald-900/40 rounded-xl p-3 shadow-sm flex flex-col justify-between"
+                      >
+                        <div>
+                          <div className="flex justify-between items-start mb-2 gap-2">
+                            <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider ${
+                              exp.type === 'fuel' 
+                                ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800' 
+                                : 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800'
+                            }`}>
+                              {exp.type === 'fuel' ? '⛽ Combustible' : `💳 ${exp.category || 'Otro Gasto'}`}
+                            </span>
+                            <span className="text-sm font-black text-slate-800 dark:text-white">
+                              ${(Number(exp.amount) || 0).toLocaleString('es-CL')}
+                            </span>
+                          </div>
+
+                          {exp.motivo && (
+                            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2 italic">
+                              "{exp.motivo}"
+                            </p>
+                          )}
+
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400 space-y-0.5 mb-3">
+                            <p>👤 <span className="font-bold">{exp.registeredByName || exp.registeredByEmail || 'Conductor'}</span></p>
+                            {exp.createdAt && (
+                              <p>🕒 {new Date(exp.createdAt).toLocaleString('es-CL')}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* FOTOS DEL GASTO */}
+                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex gap-2">
+                          {exp.fuelGaugeUrl && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(exp.fuelGaugeUrl); }}
+                              className="flex-1 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 py-1.5 px-2 rounded-lg text-[10px] font-black flex items-center justify-center gap-1 transition-colors"
+                            >
+                              📸 Estanque
+                            </button>
+                          )}
+                          {exp.receiptUrl && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(exp.receiptUrl); }}
+                              className="flex-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 py-1.5 px-2 rounded-lg text-[10px] font-black flex items-center justify-center gap-1 transition-colors"
+                            >
+                              🧾 Boleta
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* 4. RECEPCIÓN */}
               {selectedHistoryJob.checklist && (
                 <div>
@@ -1002,7 +1088,18 @@ const handleDownloadPDF = async (job) => {
                     }
                   }
                 }
-                const allPhotos = { ...(selectedHistoryJob.checklist?.photos || {}), ...(selectedHistoryJob.checklist?.docsPhotos || {}), ...damagePhotos };
+                const expensePhotos = {};
+                if (selectedHistoryJob.expenses && Array.isArray(selectedHistoryJob.expenses)) {
+                  selectedHistoryJob.expenses.forEach((exp, idx) => {
+                    if (exp.fuelGaugeUrl && typeof exp.fuelGaugeUrl === 'string' && exp.fuelGaugeUrl.startsWith('http')) {
+                      expensePhotos[`gasto_${idx + 1}_estanque`] = exp.fuelGaugeUrl;
+                    }
+                    if (exp.receiptUrl && typeof exp.receiptUrl === 'string' && exp.receiptUrl.startsWith('http')) {
+                      expensePhotos[`gasto_${idx + 1}_boleta`] = exp.receiptUrl;
+                    }
+                  });
+                }
+                const allPhotos = { ...(selectedHistoryJob.checklist?.photos || {}), ...(selectedHistoryJob.checklist?.docsPhotos || {}), ...damagePhotos, ...expensePhotos };
                 const photoLabels = { 
                   pickup_odo: 'Odómetro Inicio',
                   pickup_fuel: 'Comb. Inicio',
@@ -1055,8 +1152,16 @@ const handleDownloadPDF = async (job) => {
                   if (typeof url !== 'string' || !url.startsWith('http')) continue;
                   const existing = uniquePhotosMap.get(url);
                   const score = keyPriority[k] || 10;
+                  let calculatedLabel = photoLabels[k];
+                  if (!calculatedLabel) {
+                    if (k.startsWith('gasto_')) {
+                      calculatedLabel = k.includes('_boleta') ? `Gasto #${k.split('_')[1]}: Boleta` : `Gasto #${k.split('_')[1]}: Estanque`;
+                    } else {
+                      calculatedLabel = k.replace('det', 'Detalle ');
+                    }
+                  }
                   if (!existing || score > existing.score) {
-                    uniquePhotosMap.set(url, { key: k, url, score, label: photoLabels[k] || k.replace('det', 'Detalle ') });
+                    uniquePhotosMap.set(url, { key: k, url, score, label: calculatedLabel });
                   }
                 }
 

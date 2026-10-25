@@ -21,6 +21,7 @@ import BulkReplaceModal from './JobsList/BulkReplaceModal';
 import GuideUploadModal from './JobsList/GuideUploadModal';
 import FullScreenPhotoModal from './JobsList/FullScreenPhotoModal';
 import HistoryModal from './JobsList/HistoryModal';
+import JobExpenseModal from './JobsList/JobExpenseModal';
 import KovacsModal from './JobsList/KovacsModal';
 import ArrivalModal from './JobsList/ArrivalModal';
 import PickupModal from './JobsList/PickupModal';
@@ -44,6 +45,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [editDateJob, setEditDateJob] = useState(null); // <-- NUEVO: Estado para editar fecha de término
   const [editDriverJob, setEditDriverJob] = useState(null); // <-- NUEVO: Estado para editar conductor
   const [editKmJob, setEditKmJob] = useState(null); // <-- NUEVO: Estado para editar kilometraje manual
+  const [expenseModalJob, setExpenseModalJob] = useState(null); // <-- Modal para ingreso de gastos
 
   const [dupPromptJob, setDupPromptJob] = useState(null);
   const [dupMode, setDupMode] = useState('clone');
@@ -1393,14 +1395,14 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     analyzeJobStatus, getJobIdentifier, vehicles, menuOpenId, setMenuOpenId, isAdminView, onEditJob, currentUserEmail, setRelayPromptJob, setForceCloseJob, db, updateDoc, deleteField, doc, showAlert, showConfirm, setJobToFail, latestVehiclePhotos, setFullScreenPhoto, role, processingId, setProcessingId, handleApproveRequest, handleRejectRequest, handleApprovePhotoOverride, handleAcceptJob, setGuideUploadJob, setGuideLink, setGuideFileBase64, updatePhase, setPickupPromptJob, setArrivalPromptJob, setArrivalMileage, setArrivalPhoto, setPrtApproveType, setPrtReturnOpt, setPrtReturnDest, setPrtApprovePromptJob, setPrtPromptJob, onStartChecklist, handleUndoPhase, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, WaitTimerBadge, SwipeButton, AlertCircle, Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, Truck, X, XCircle, Clock, Car, MapPin, FileText, RefreshCw, Search,
     // FALTANTES QUE CAUSABAN LA PANTALLA BLANCA AL ABRIR EL MENÚ:
     Copy, Trash2, Repeat, FileDown, cpyWapp, handleDuplicateJob, handleDeleteJob, generatePDF, handleShareWhatsAppPDF,
-    syncQueue
+    syncQueue, setExpenseModalJob
   };
   const renderActiveJobCard = (j) => <JobCard key={j.id} j={j} {...jobCardProps} />;
 
   const historyJobCardProps = {
     drivers, getJobIdentifier, setSelectedHistoryJob, latestVehiclePhotos, setFullScreenPhoto, auditMode, isAdminView, setEditDateJob, setEditKmJob, setEditDriverJob, handleSingleRecalculate, processingId, onEditJob, handleDuplicateJob, generatePDF, handleShareWhatsAppPDF, handleDeleteJob, updateDoc, doc, deleteField, db, showConfirm, showAlert, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, AlertCircle, Navigation, Edit2, MapPin, FileText, Clock, MapIcon, CheckCircle, Repeat, FileDown, Trash2, Share2,
     // FALTANTES DE SEGURIDAD EN EL HISTORIAL:
-    Copy, MoreVertical, cpyWapp
+    Copy, MoreVertical, cpyWapp, setExpenseModalJob
   };
   const renderHistoryJobCard = (j) => <HistoryJobCard key={j.id} j={j} {...historyJobCardProps} />;
 
@@ -3048,6 +3050,18 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       <FullScreenPhotoModal
         fullScreenPhoto={fullScreenPhoto}
+        setFullScreenPhoto={setFullScreenPhoto}
+      />
+
+      <JobExpenseModal
+        job={expenseModalJob}
+        isOpen={Boolean(expenseModalJob)}
+        onClose={() => setExpenseModalJob(null)}
+        currentUserEmail={currentUserEmail}
+        drivers={drivers}
+        showAlert={showAlert}
+        showConfirm={showConfirm}
+        db={db}
         setFullScreenPhoto={setFullScreenPhoto}
       />
 

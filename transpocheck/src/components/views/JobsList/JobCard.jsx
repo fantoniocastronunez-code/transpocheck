@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CloudUpload } from 'lucide-react';
+import { CloudUpload, Receipt } from 'lucide-react';
 
 const renderVehicle = (vType, wheelClass, wheelFill, isChassisCab) => {
     const type = (vType || '').toLowerCase();
@@ -381,7 +381,7 @@ const StatusAnimation = ({ type, vehicleType, isChassisCab, origin, destination,
 export default function JobCard({ j, ...props }) {
   const [showDetails, setShowDetails] = useState(false);
   const [showDocsModal, setShowDocsModal] = useState(false);
-  const { analyzeJobStatus, getJobIdentifier, vehicles, menuOpenId, setMenuOpenId, isAdminView, onEditJob, currentUserEmail, setRelayPromptJob, setForceCloseJob, db, updateDoc, deleteField, doc, showAlert, showConfirm, setJobToFail, latestVehiclePhotos, setFullScreenPhoto, role, processingId, setProcessingId, handleApproveRequest, handleRejectRequest, handleApprovePhotoOverride, handleAcceptJob, setTrackingJobId, setGuideUploadJob, setGuideLink, setGuideFileBase64, updatePhase, setPickupPromptJob, setArrivalPromptJob, setArrivalMileage, setArrivalPhoto, setPrtApproveType, setPrtReturnOpt, setPrtReturnDest, setPrtApprovePromptJob, setPrtPromptJob, onStartChecklist, handleUndoPhase, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, WaitTimerBadge, SwipeButton, AlertCircle, Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, Truck, X, XCircle, Clock, Car, MapPin, FileText, RefreshCw, Search, syncQueue } = props;
+  const { analyzeJobStatus, getJobIdentifier, vehicles, menuOpenId, setMenuOpenId, isAdminView, onEditJob, currentUserEmail, setRelayPromptJob, setForceCloseJob, db, updateDoc, deleteField, doc, showAlert, showConfirm, setJobToFail, latestVehiclePhotos, setFullScreenPhoto, role, processingId, setProcessingId, handleApproveRequest, handleRejectRequest, handleApprovePhotoOverride, handleAcceptJob, setTrackingJobId, setGuideUploadJob, setGuideLink, setGuideFileBase64, updatePhase, setPickupPromptJob, setArrivalPromptJob, setArrivalMileage, setArrivalPhoto, setPrtApproveType, setPrtReturnOpt, setPrtReturnDest, setPrtApprovePromptJob, setPrtPromptJob, onStartChecklist, handleUndoPhase, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, WaitTimerBadge, SwipeButton, AlertCircle, Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, Truck, X, XCircle, Clock, Car, MapPin, FileText, RefreshCw, Search, syncQueue, setExpenseModalJob } = props;
     const { isRequested, isPending, isAccepted, isPendingGuide, step2Done, step3Done, step4Done } = analyzeJobStatus(j);
     
     const ident = getJobIdentifier(j);
@@ -497,6 +497,17 @@ export default function JobCard({ j, ...props }) {
                      <AlertCircle className="w-3 h-3"/> NOTA EN RUTA
                    </span>
                 )}
+                {j.expenses && j.expenses.length > 0 && (
+                   <button 
+                     type="button"
+                     onClick={(e) => { e.stopPropagation(); setExpenseModalJob && setExpenseModalJob(j); }}
+                     className="bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm text-center leading-tight mb-1 flex items-center gap-1 cursor-pointer hover:bg-emerald-200 dark:hover:bg-emerald-900/80 transition-colors"
+                     title="Ver / registrar gastos"
+                   >
+                     <Receipt className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                     {j.expenses.length} Gasto{j.expenses.length > 1 ? 's' : ''} (${j.expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0).toLocaleString('es-CL')})
+                   </button>
+                )}
               </div>
               
               <div className="flex items-center gap-1 relative shrink-0 z-50">
@@ -524,6 +535,12 @@ export default function JobCard({ j, ...props }) {
                         window.open(`https://wa.me/?text=${encodeURIComponent(textToShare)}`, '_blank');
                         setMenuOpenId(null);
                       }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-t border-slate-50 dark:border-slate-700/50"><Share2 className="w-4 h-4"/> Notificar Receptor</button>
+                    )}
+
+                    {(isAccepted || isAdminView) && (
+                      <button onClick={() => { setExpenseModalJob && setExpenseModalJob(j); setMenuOpenId(null); }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-t border-slate-50 dark:border-slate-700/50">
+                        <Receipt className="w-4 h-4"/> Ingreso de Gastos
+                      </button>
                     )}
 
 
@@ -938,7 +955,24 @@ export default function JobCard({ j, ...props }) {
           )}
 
           {(!isRequested && (j.status === 'accepted' || j.status === 'pending_guide') && j.acceptedByEmail !== currentUserEmail) ? (
-             <div className="bg-white/10 dark:bg-black/30 backdrop-blur-sm border border-white/20 text-slate-600 dark:text-slate-300 text-xs font-bold text-center py-3 rounded-xl">Vehículo a cargo de un compañero.</div>
+             <div className="flex flex-col gap-2">
+               <div className="bg-white/10 dark:bg-black/30 backdrop-blur-sm border border-white/20 text-slate-600 dark:text-slate-300 text-xs font-bold text-center py-3 rounded-xl">Vehículo a cargo de un compañero.</div>
+               {isAdminView && (
+                 <button 
+                   type="button" 
+                   onClick={() => setExpenseModalJob && setExpenseModalJob(j)} 
+                   className="w-full bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black py-2.5 px-3 rounded-xl text-xs shadow-md transition-all flex items-center justify-center gap-2 active:scale-95"
+                 >
+                   <Receipt className="w-4 h-4 text-emerald-200" />
+                   <span>Ingreso de Gastos</span>
+                   {j.expenses && j.expenses.length > 0 && (
+                     <span className="ml-1 bg-white/20 text-white px-2 py-0.5 rounded-full text-[10px] font-black border border-white/20">
+                       {j.expenses.length} (${j.expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0).toLocaleString('es-CL')})
+                     </span>
+                   )}
+                 </button>
+               )}
+             </div>
           ) : (
             <>
               {isPending && (!isAdminView || j.assignedEmails?.includes(currentUserEmail)) && (
@@ -954,6 +988,19 @@ export default function JobCard({ j, ...props }) {
                        </div>
                        <button onClick={() => { setGuideUploadJob(j); setGuideLink(''); setGuideFileBase64(null); }} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-3.5 rounded-xl text-sm shadow-md transition-colors flex justify-center items-center gap-2">
                           <FileText className="w-5 h-5"/> Subir Guía y Finalizar
+                       </button>
+                       <button 
+                         type="button" 
+                         onClick={() => setExpenseModalJob && setExpenseModalJob(j)} 
+                         className="w-full bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black py-2.5 px-3 rounded-xl text-xs shadow-md transition-all flex items-center justify-center gap-2 active:scale-95"
+                       >
+                         <Receipt className="w-4 h-4 text-emerald-200" />
+                         <span>Ingreso de Gastos</span>
+                         {j.expenses && j.expenses.length > 0 && (
+                           <span className="ml-1 bg-white/20 text-white px-2 py-0.5 rounded-full text-[10px] font-black border border-white/20">
+                             {j.expenses.length} (${j.expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0).toLocaleString('es-CL')})
+                           </span>
+                         )}
                        </button>
                     </div>
                   ) : (
@@ -1012,6 +1059,21 @@ export default function JobCard({ j, ...props }) {
                           }} text={`Desliza: Llegué a ${displayDest}`} icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />
                         );
                       })()}
+
+                      {/* BOTÓN IMPORTANTE: INGRESO DE GASTOS */}
+                      <button 
+                        type="button"
+                        onClick={() => setExpenseModalJob && setExpenseModalJob(j)} 
+                        className="w-full bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black py-2.5 px-3 rounded-xl text-xs shadow-md shadow-emerald-900/20 transition-all flex items-center justify-center gap-2 active:scale-95 border border-emerald-400/30"
+                      >
+                        <Receipt className="w-4 h-4 text-emerald-200" />
+                        <span>Ingreso de Gastos</span>
+                        {j.expenses && j.expenses.length > 0 && (
+                          <span className="ml-1 bg-white/20 text-white px-2 py-0.5 rounded-full text-[10px] font-black border border-white/20">
+                            {j.expenses.length} (${j.expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0).toLocaleString('es-CL')})
+                          </span>
+                        )}
+                      </button>
 
                       <button onClick={()=>onStartChecklist(j)} className={`w-full font-bold py-2 rounded-xl text-xs shadow-sm transition-colors ${(j.phase === 'arrived_destination') ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'}`}>
                         📸 {(j.phase === 'arrived_destination') ? (j.tripType === 'simple' ? 'Cerrar Acta de Servicio' : 'Cerrar Checklist') : (j.tripType === 'simple' ? 'Pre-llenar Acta' : 'Pre-llenar Checklist')}
