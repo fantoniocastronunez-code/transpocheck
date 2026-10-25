@@ -60,16 +60,6 @@ export const buildPDFDoc = async (job, isPublic = false, drivers = []) => {
         }
       }
     }
-    if (job.expenses && Array.isArray(job.expenses)) {
-      job.expenses.forEach((exp, idx) => {
-        if (exp.fuelGaugeUrl && typeof exp.fuelGaugeUrl === 'string' && exp.fuelGaugeUrl.startsWith('http')) {
-          photos[`gasto_${idx + 1}_estanque`] = exp.fuelGaugeUrl;
-        }
-        if (exp.receiptUrl && typeof exp.receiptUrl === 'string' && exp.receiptUrl.startsWith('http')) {
-          photos[`gasto_${idx + 1}_boleta`] = exp.receiptUrl;
-        }
-      });
-    }
     const otherPhotoKeys = Object.keys(photos).filter(k => k !== 'front' && typeof photos[k] === 'string' && photos[k]);
 
     const [logoApp, logoLogistica, frontPhotoObj, signatureStr, ...preloadedOtherPhotos] = await Promise.all([
@@ -280,23 +270,6 @@ export const buildPDFDoc = async (job, isPublic = false, drivers = []) => {
           }
         }
 
-        if (job.expenses && Array.isArray(job.expenses) && job.expenses.length > 0) {
-          const totalExpenses = job.expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
-          docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(16, 185, 129);
-          docPDF.text(`GASTOS DEL TRASLADO (${job.expenses.length}): TOTAL $${totalExpenses.toLocaleString('es-CL')}`, 15, currentY);
-          currentY += 4;
-          job.expenses.forEach(exp => {
-            const typeLabel = exp.type === 'fuel' ? 'Combustible' : `Otro (${exp.category || 'Varios'})`;
-            const desc = exp.motivo ? ` - "${cleanStr(exp.motivo)}"` : '';
-            const line = cleanStr(`* ${typeLabel}: $${(Number(exp.amount) || 0).toLocaleString('es-CL')}${desc}`);
-            docPDF.setFontSize(7.5); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...primaryColor);
-            const splitLine = docPDF.splitTextToSize(line, leftColWidth);
-            docPDF.text(splitLine, 17, currentY);
-            currentY += (splitLine.length * 3.5) + 1;
-          });
-          currentY += 3;
-        }
-
         sectionNum++;
     }
 
@@ -427,9 +400,6 @@ export const buildPDFDoc = async (job, isPublic = false, drivers = []) => {
           
           let fallbackLabel = key;
           if (key.startsWith('det')) fallbackLabel = (job.tripType === 'simple' ? 'Evidencia ' : 'Detalle ') + key.replace('det', '');
-          if (key.startsWith('gasto_')) {
-            fallbackLabel = key.includes('_boleta') ? `Boleta Gasto #${key.split('_')[1]}` : `Estanque Gasto #${key.split('_')[1]}`;
-          }
           
           docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S'); docPDF.setFillColor(...lightBg); docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F'); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor); docPDF.text((labels[key] || fallbackLabel).toUpperCase(), finalX + (imgW/2), photoY - 3, { align: "center" });
           try { docPDF.addImage(base64Img, 'JPEG', finalX, photoY + 2, imgW, imgH); } catch(e) { docPDF.addImage(base64Img, 'PNG', finalX, photoY + 2, imgW, imgH); }
