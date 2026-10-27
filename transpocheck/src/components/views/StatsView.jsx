@@ -488,6 +488,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                                 { key: 'camion_3ejes', label: 'CAMIÓN (3 EJES TRASEROS)' },
                                 { key: 'camion_8x4', label: 'CAMIÓN 8X4' },
                                 { key: 'carro_arrastre', label: 'CARRO DE ARRASTRE' },
+                                { key: 'maquinaria', label: 'MAQUINARIA' },
                                 { key: 'servicio', label: 'SERVICIOS EN TERRENO' }
                             ].map(({ key, label }) => {
                                 const leader = stats.topDriversByCategory[key];

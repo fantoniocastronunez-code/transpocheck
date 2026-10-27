@@ -66,6 +66,23 @@ const carroArrastreShape = (
   </div>
 );
 
+const maquinariaShape = (
+  <div className="w-full h-full relative flex flex-col items-center">
+    <div className="w-[75%] h-[35%] bg-amber-400 rounded-t-xl rounded-b-sm border-4 border-slate-500 p-1 flex flex-col justify-end shadow-inner z-10 relative">
+      <div className="w-full h-3/5 bg-slate-800/60 rounded-t-md"></div>
+    </div>
+    <div className="w-[85%] h-[55%] mx-auto bg-amber-500 border-4 border-slate-500 rounded-b-lg mt-0.5 relative overflow-hidden shadow-inner z-10 flex flex-col justify-between p-1">
+      <div className="w-full h-2 bg-slate-700/40 rounded-sm"></div>
+      <div className="flex justify-between px-1">
+        <div className="w-2 h-4 bg-slate-800 rounded-sm"></div>
+        <div className="w-2 h-4 bg-slate-800 rounded-sm"></div>
+      </div>
+    </div>
+    <div className="absolute top-[25%] -left-1 w-2.5 h-[65%] bg-slate-800 rounded-sm shadow-md z-0"></div>
+    <div className="absolute top-[25%] -right-1 w-2.5 h-[65%] bg-slate-800 rounded-sm shadow-md z-0"></div>
+  </div>
+);
+
 // 2. Diccionario de Enrutamiento (Soporta todos tus tipos específicos, acentos y variaciones)
 const SHAPES = {
   'auto': autoShape,
@@ -99,6 +116,8 @@ const SHAPES = {
   
   'carro_arrastre': carroArrastreShape,
   'carro de arrastre': carroArrastreShape,
+  'maquinaria': maquinariaShape,
+  'maquinaria pesada': maquinariaShape,
 };
 
 const VehicleShapeIcon = ({ type }) => {

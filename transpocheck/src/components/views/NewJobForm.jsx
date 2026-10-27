@@ -456,7 +456,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
              if (isGrabado) acciones.push(`GRABADO DE ${qtyGrabado} VIDRIO${qtyGrabado > 1 ? 'S' : ''}`);
              
              // Adaptamos el texto y priorizamos mostrar la PATENTE en lugar del VIN
-             const tipoVeh = asocJob.vehicleType?.includes('camion') ? 'CAMIÓN' : 'VEHÍCULO';
+             const tipoVeh = asocJob.vehicleType === 'maquinaria' ? 'MAQUINARIA' : asocJob.vehicleType?.includes('camion') ? 'CAMIÓN' : 'VEHÍCULO';
              const identificador = asocJob.plate ? `PATENTE ${asocJob.plate}` : `VIN ${asocJob.vin || 'S/N'}`;
              const autoText = `${acciones.join(" Y ")} DE ${tipoVeh} ${asocJob.brand?.toUpperCase() || ''} MODELO ${asocJob.model?.toUpperCase() || ''} ${identificador}`.trim();
              
@@ -903,6 +903,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                             <option value="camion_3ejes">🚛 Camión (3 Ejes traseros)</option>
                             <option value="camion_8x4">🚚 Camión Rigid (8x4)</option>
                             <option value="carro_arrastre">🛒 Carro Arrastre</option>
+                            <option value="maquinaria">🚜 Maquinaria</option>
                           </select>
                        </div>
                     </div>

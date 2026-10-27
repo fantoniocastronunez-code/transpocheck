@@ -30,7 +30,7 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
                      formData.zoomZone === 'bl' ? 'scale-[1.8] origin-bottom-left z-50' :
                       'scale-[1.8] origin-bottom-right z-50'
             }`}
-          style={{ height: formData.vehicleType?.includes('camion') || formData.vehicleType === 'furgon_grande' || formData.vehicleType === 'carro_arrastre' ? '260px' : '220px' }}
+          style={{ height: formData.vehicleType?.includes('camion') || formData.vehicleType === 'furgon_grande' || formData.vehicleType === 'carro_arrastre' || formData.vehicleType === 'maquinaria' ? '260px' : '220px' }}
           onClick={(e) => {
             const rect = e.currentTarget.getBoundingClientRect();
             const x = ((e.clientX - rect.left) / rect.width) * 100;
@@ -83,6 +83,30 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
                   <div className="w-[80%] h-[11%] bg-slate-800/40 mx-auto rounded-b-[20px] rounded-t-[4px] shadow-sm border-b-2 border-white dark:border-slate-800/20"></div>
                 </div>
                 <div className="absolute bottom-1.5 left-[20%] w-[60%] h-4 border-t-2 border-slate-400/60 rounded-t-lg pointer-events-none"></div>
+              </div>
+            </div>
+          )}
+
+          {formData.vehicleType === 'maquinaria' && (
+            <div className="w-full h-full relative flex flex-col items-center justify-center">
+              <div className="absolute top-[18%] -left-3 w-4 h-40 bg-slate-800 rounded-sm shadow-md z-0 overflow-hidden">
+                <div className="w-full h-full bg-[repeating-linear-gradient(0deg,transparent,transparent_8px,#475569_8px,#475569_12px)]"></div>
+              </div>
+              <div className="absolute top-[18%] -right-3 w-4 h-40 bg-slate-800 rounded-sm shadow-md z-0 overflow-hidden">
+                <div className="w-full h-full bg-[repeating-linear-gradient(0deg,transparent,transparent_8px,#475569_8px,#475569_12px)]"></div>
+              </div>
+              <div className="w-[50%] h-[15%] bg-amber-400 rounded-t-lg border-4 border-amber-600 shadow-md z-10 flex items-center justify-center">
+                <div className="w-2 h-full bg-slate-700"></div>
+              </div>
+              <div className="w-[85%] h-[75%] bg-amber-300 dark:bg-amber-600 rounded-xl border-4 border-amber-500 dark:border-amber-700 relative flex flex-col p-2 shadow-inner z-10">
+                <div className="w-[80%] h-[32%] bg-slate-800/60 mx-auto rounded-lg shadow-sm border-2 border-amber-500 flex items-center justify-center">
+                  <span className="text-[8px] font-black text-amber-300 tracking-wider">CABINA</span>
+                </div>
+                <div className="flex-1 w-[90%] mx-auto bg-amber-400 dark:bg-amber-700/80 rounded-md mt-2 border-2 border-amber-500 flex flex-col justify-around p-1">
+                  <div className="w-full h-1 bg-slate-700/30"></div>
+                  <div className="w-full h-1 bg-slate-700/30"></div>
+                  <div className="w-full h-1 bg-slate-700/30"></div>
+                </div>
               </div>
             </div>
           )}

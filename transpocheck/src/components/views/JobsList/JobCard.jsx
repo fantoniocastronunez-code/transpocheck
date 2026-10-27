@@ -108,6 +108,17 @@ const renderVehicle = (vType, wheelClass, wheelFill, isChassisCab) => {
             </React.Fragment>
         );
     }
+
+    if (type.includes('maquin')) {
+        return (
+            <React.Fragment>
+                <path d="M 12 25 L 28 25 L 30 35 L 36 38 L 36 45 L 8 45 L 8 38 Z" />
+                <path d="M 32 38 L 44 42 L 48 34 L 46 46 L 40 46 Z" />
+                <circle cx="16" cy="48" r="6" className={wheelClass} fill={wheelFill} />
+                <circle cx="34" cy="50" r="4" className={wheelClass} fill={wheelFill} />
+            </React.Fragment>
+        );
+    }
     
     return (
         <React.Fragment>

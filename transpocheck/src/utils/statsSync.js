@@ -137,7 +137,7 @@ export const calculateStatsFromLightweightJobs = (jobsList = []) => {
   const categoryCounts = {
     'auto': {}, 'camioneta': {}, 'furgon_pequeno': {}, 'furgon_grande': {},
     'camion_simple': {}, 'camion_doble': {}, 'camion_2ejes': {},
-    'camion_3ejes': {}, 'camion_8x4': {}, 'carro_arrastre': {}, 'servicio': {}
+    'camion_3ejes': {}, 'camion_8x4': {}, 'carro_arrastre': {}, 'maquinaria': {}, 'servicio': {}
   };
   const plateCounts = {};
 

@@ -2109,6 +2109,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                         <option value="camion_3ejes">Camión (3 Ejes Traseros)</option>
                         <option value="camion_8x4">Camión 8x4</option>
                         <option value="carro_arrastre">Carro de Arrastre</option>
+                        <option value="maquinaria">Maquinaria</option>
                       </select>
                     </div>
                   )}

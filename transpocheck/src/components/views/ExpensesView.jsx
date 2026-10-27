@@ -625,6 +625,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
                   <option value="Camión (3 Ejes traseros)">Camión (3 Ejes traseros)</option>
                   <option value="Camión Rigid (8x4)">Camión Rigid (8x4)</option>
                   <option value="Carro Arrastre">Carro Arrastre</option>
+                  <option value="Maquinaria">Maquinaria</option>
                 </select>
               </div>
               
