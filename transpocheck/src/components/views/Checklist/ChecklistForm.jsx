@@ -58,10 +58,20 @@ const ChecklistInner = ({ openCamera }) => {
   });
 
   const calculateProgress = () => {
+    if (isSimple) {
+      let simpleEarned = 0;
+      const simpleTotal = 4;
+      if (Object.values(formData.photos || {}).some(Boolean)) simpleEarned += 1;
+      if (formData.receiverName && String(formData.receiverName).trim() !== '') simpleEarned += 1;
+      if (formData.receiverRut && String(formData.receiverRut).trim() !== '') simpleEarned += 1;
+      if (formData.signatureData) simpleEarned += 1;
+      return Math.min(100, Math.round((simpleEarned / simpleTotal) * 100));
+    }
+
     let earned = 0;
 
     const isAuto = !formData.vehicleType || formData.vehicleType === 'auto';
-    let total = isAuto ? 27 : 29;
+    let total = isAuto ? 23 : 25;
 
     // 1. Documents (4 docs * 3 points = 12 points)
     const checkDoc = (id) => {
@@ -79,16 +89,7 @@ const ChecklistInner = ({ openCamera }) => {
       checkDoc('gases');
     }
 
-    // 2. Revisión (4 points)
-    const checkRevision = (id) => {
-       if (formData.carDamages?.[id]?.status) earned += 1;
-    };
-    checkRevision('luces');
-    checkRevision('neumaticos');
-    checkRevision('carroceria');
-    checkRevision('parabrisas');
-
-    // 3. Photos (8 or 10 points)
+    // 2. Photos (8 or 10 points)
     const checkPhoto = (id) => {
        if (formData.photos?.[id]) earned += 1;
     };
@@ -109,11 +110,12 @@ const ChecklistInner = ({ openCamera }) => {
       checkPhoto('right_body');
     }
 
-    // 4. Signature (3 points)
+    // 3. Signature (3 points)
     if (formData.receiverName && String(formData.receiverName).trim() !== '') earned += 1;
     if (formData.receiverRut && String(formData.receiverRut).trim() !== '') earned += 1;
     if (formData.signatureData) earned += 1;
 
+    if (total <= 0) return 100;
     return Math.min(100, Math.round((earned / total) * 100));
   };
 
@@ -392,7 +394,7 @@ const ChecklistInner = ({ openCamera }) => {
           <div className="px-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             {step === 1 && <StepData />}
             {step === 2 && <StepDocs openCamera={openCamera} />}
-            {step === 3 && <StepNotes openCamera={openCamera} />}
+            {step === 3 && <StepNotes />}
             {step === 4 && <StepPhotos openCamera={openCamera} />}
             {step === 5 && <StepSignature />}
           </div>

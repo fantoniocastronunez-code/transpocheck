@@ -1,228 +1,18 @@
-import React, { useState } from 'react';
-import { Camera, CheckCircle, AlertTriangle, X, FileText } from 'lucide-react';
+import React from 'react';
+import { FileText } from 'lucide-react';
 import { useChecklist } from '../ChecklistContext';
 
-export const StepNotes = ({ openCamera }) => {
-  const { formData, setF, showAlert } = useChecklist();
-  
-  const damages = formData.carDamages || {};
-  const updateDamage = (zoneId, data) => {
-     setF('carDamages', { ...damages, [zoneId]: data });
-  };
-
-  const [activeZone, setActiveZone] = useState(null);
-
-  const zones = [
-    { id: 'luces', label: 'Luces', icon: '💡' },
-    { id: 'neumaticos', label: 'Neumáticos', icon: '🚗' },
-    { id: 'carroceria', label: 'Carrocería', icon: '🚙' },
-    { id: 'parabrisas', label: 'Parabrisas', icon: '💧' },
-  ];
-
-  const handleCapturePhoto = async (zoneId) => {
-    const label = zones.find(z => z.id === zoneId)?.label || zoneId;
-    openCamera(`Foto: ${label}`, async (file) => {
-      try {
-        const { resizeImage } = await import('../../../../utils/helpers');
-        const dataUrl = await resizeImage(file, 1200, 0.6);
-        updateDamage(zoneId, { ...damages[zoneId], photo: dataUrl });
-      } catch (e) {
-        console.error("[ERR-REV-PHOTO-01] Error al procesar la foto de revisión:", e);
-        showAlert("Error al procesar la foto [ERR-REV-PHOTO-01].");
-      }
-    });
-  };
+export const StepNotes = () => {
+  const { formData, setF } = useChecklist();
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300 pb-10">
-      
-      <div className="bg-slate-50/50 dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-800/50 p-6 rounded-3xl shadow-lg relative overflow-hidden">
-        {/* Glassmorphism Background Glow */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"></div>
-
-        <h3 className="text-lg font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest mb-2 relative z-10">
-          Inspección de Daños
-        </h3>
-        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-6 relative z-10">
-          Por favor, evalúe el estado de cada parte del vehículo
-        </p>
-        
-        <div className="grid grid-cols-2 gap-3 relative z-10">
-          {zones.map(z => {
-            const status = damages[z.id]?.status;
-            const isExpanded = activeZone === z.id;
-            
-            let btnClass = 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-purple-400';
-            if (status === 'ok') btnClass = 'bg-green-500/10 border-green-500 text-green-600 dark:text-green-400 shadow-[0_0_10px_rgba(34,197,94,0.2)]';
-            else if (status === 'rayado') btnClass = 'bg-yellow-500/10 border-yellow-500 text-yellow-600 dark:text-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.2)]';
-            else if (status === 'abollado') btnClass = 'bg-red-500/10 border-red-500 text-red-600 dark:text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.2)]';
-            
-            if (isExpanded) btnClass = 'bg-purple-500/20 border-purple-500 text-purple-600 dark:text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.3)] ring-2 ring-purple-500/20';
-
-            return (
-              <div key={z.id} className="flex flex-col">
-                <button
-                  onClick={() => setActiveZone(isExpanded ? null : z.id)}
-                  className={`p-4 rounded-2xl border-2 flex items-center justify-between transition-all ${btnClass}`}
-                >
-                   <div className="flex items-center gap-2">
-                     <span>{z.icon}</span>
-                     <span className="text-xs font-black uppercase tracking-wider">{z.label}</span>
-                   </div>
-                   {status && !isExpanded && (
-                     <CheckCircle className="w-4 h-4 opacity-50" />
-                   )}
-                </button>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Expanded Zone Selector */}
-        {activeZone && (
-           <div className="mt-6 p-5 bg-white/50 dark:bg-slate-800/50 border-2 border-purple-500/50 rounded-3xl animate-in fade-in slide-in-from-top-2 relative z-20">
-              <div className="flex justify-between items-center mb-4">
-                 <h4 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest">
-                   Estado: <span className="text-purple-500">{zones.find(z => z.id === activeZone)?.label}</span>
-                 </h4>
-                 <button onClick={() => setActiveZone(null)} className="text-slate-400 hover:text-slate-600 p-1"><X className="w-5 h-5"/></button>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                 {/* OK Button - always present */}
-                 <button 
-                   onClick={() => { updateDamage(activeZone, { ...damages[activeZone], status: 'ok' }); setActiveZone(null); }}
-                   className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/30 hover:border-green-500 rounded-2xl transition-all"
-                 >
-                   <div className="bg-green-500 text-white rounded-full p-1"><CheckCircle className="w-4 h-4" /></div>
-                   <div className="text-left flex-1">
-                     <span className="block text-sm font-black text-green-700 dark:text-green-400 uppercase tracking-wider">OK</span>
-                   </div>
-                 </button>
-
-                 {/* Dynamic Options based on zone */}
-                 {activeZone === 'luces' && (
-                   <button 
-                     onClick={() => updateDamage(activeZone, { ...damages[activeZone], status: 'quemada' })}
-                     className={`flex items-center gap-3 p-4 ${damages[activeZone]?.status === 'quemada' ? 'bg-red-500/20 border-red-500 ring-2 ring-red-500/20' : 'bg-red-500/5 border-red-500/30 hover:border-red-500'} border rounded-2xl transition-all`}
-                   >
-                     <div className="bg-red-500 text-white rounded-full p-1"><AlertTriangle className="w-4 h-4" /></div>
-                     <div className="text-left flex-1">
-                       <span className="block text-sm font-black text-red-700 dark:text-red-400 uppercase tracking-wider">Alguna Quemada</span>
-                     </div>
-                   </button>
-                 )}
-
-                 {activeZone === 'neumaticos' && (
-                   <>
-                     <button 
-                       onClick={() => updateDamage(activeZone, { ...damages[activeZone], status: 'pinchado' })}
-                       className={`flex items-center gap-3 p-4 ${damages[activeZone]?.status === 'pinchado' ? 'bg-yellow-500/20 border-yellow-500 ring-2 ring-yellow-500/20' : 'bg-yellow-500/5 border-yellow-500/30 hover:border-yellow-500'} border rounded-2xl transition-all`}
-                     >
-                       <div className="bg-yellow-500 text-white rounded-full p-1"><AlertTriangle className="w-4 h-4" /></div>
-                       <div className="text-left flex-1">
-                         <span className="block text-sm font-black text-yellow-700 dark:text-yellow-400 uppercase tracking-wider">Pinchado</span>
-                       </div>
-                     </button>
-                     <button 
-                       onClick={() => updateDamage(activeZone, { ...damages[activeZone], status: 'roto' })}
-                       className={`flex items-center gap-3 p-4 ${damages[activeZone]?.status === 'roto' ? 'bg-red-500/20 border-red-500 ring-2 ring-red-500/20' : 'bg-red-500/5 border-red-500/30 hover:border-red-500'} border rounded-2xl transition-all`}
-                     >
-                       <div className="bg-red-500 text-white rounded-full p-1"><X className="w-4 h-4" /></div>
-                       <div className="text-left flex-1">
-                         <span className="block text-sm font-black text-red-700 dark:text-red-400 uppercase tracking-wider">Roto</span>
-                       </div>
-                     </button>
-                   </>
-                 )}
-
-                 {activeZone === 'carroceria' && (
-                   <>
-                     <button 
-                       onClick={() => updateDamage(activeZone, { ...damages[activeZone], status: 'rayado' })}
-                       className={`flex items-center gap-3 p-4 ${damages[activeZone]?.status === 'rayado' ? 'bg-yellow-500/20 border-yellow-500 ring-2 ring-yellow-500/20' : 'bg-yellow-500/5 border-yellow-500/30 hover:border-yellow-500'} border rounded-2xl transition-all`}
-                     >
-                       <div className="bg-yellow-500 text-white rounded-full p-1"><AlertTriangle className="w-4 h-4" /></div>
-                       <div className="text-left flex-1">
-                         <span className="block text-sm font-black text-yellow-700 dark:text-yellow-400 uppercase tracking-wider">Rayado</span>
-                       </div>
-                     </button>
-                     <button 
-                       onClick={() => updateDamage(activeZone, { ...damages[activeZone], status: 'abollado' })}
-                       className={`flex items-center gap-3 p-4 ${damages[activeZone]?.status === 'abollado' ? 'bg-red-500/20 border-red-500 ring-2 ring-red-500/20' : 'bg-red-500/5 border-red-500/30 hover:border-red-500'} border rounded-2xl transition-all`}
-                     >
-                       <div className="bg-red-500 text-white rounded-full p-1"><X className="w-4 h-4" /></div>
-                       <div className="text-left flex-1">
-                         <span className="block text-sm font-black text-red-700 dark:text-red-400 uppercase tracking-wider">Abollado</span>
-                       </div>
-                     </button>
-                   </>
-                 )}
-
-                 {activeZone === 'parabrisas' && (
-                   <>
-                     <button 
-                       onClick={() => updateDamage(activeZone, { ...damages[activeZone], status: 'rayado' })}
-                       className={`flex items-center gap-3 p-4 ${damages[activeZone]?.status === 'rayado' ? 'bg-yellow-500/20 border-yellow-500 ring-2 ring-yellow-500/20' : 'bg-yellow-500/5 border-yellow-500/30 hover:border-yellow-500'} border rounded-2xl transition-all`}
-                     >
-                       <div className="bg-yellow-500 text-white rounded-full p-1"><AlertTriangle className="w-4 h-4" /></div>
-                       <div className="text-left flex-1">
-                         <span className="block text-sm font-black text-yellow-700 dark:text-yellow-400 uppercase tracking-wider">Rayado</span>
-                       </div>
-                     </button>
-                     <button 
-                       onClick={() => updateDamage(activeZone, { ...damages[activeZone], status: 'roto' })}
-                       className={`flex items-center gap-3 p-4 ${damages[activeZone]?.status === 'roto' ? 'bg-red-500/20 border-red-500 ring-2 ring-red-500/20' : 'bg-red-500/5 border-red-500/30 hover:border-red-500'} border rounded-2xl transition-all`}
-                     >
-                       <div className="bg-red-500 text-white rounded-full p-1"><X className="w-4 h-4" /></div>
-                       <div className="text-left flex-1">
-                         <span className="block text-sm font-black text-red-700 dark:text-red-400 uppercase tracking-wider">Roto</span>
-                       </div>
-                     </button>
-                   </>
-                 )}
-              </div>
-
-              {/* Photo Upload and Notes for Damage */}
-              {damages[activeZone]?.status && damages[activeZone]?.status !== 'ok' && (
-                 <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 animate-in fade-in space-y-4">
-                    
-                    <div>
-                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">
-                          Indicar cuál(es) y observaciones:
-                       </label>
-                       <input 
-                          type="text"
-                          placeholder="Ej: Foco delantero izquierdo quemado..."
-                          value={damages[activeZone]?.notes || ''}
-                          onChange={(e) => updateDamage(activeZone, { ...damages[activeZone], notes: e.target.value })}
-                          className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 outline-none focus:border-purple-500 transition-colors"
-                       />
-                    </div>
-
-                    <button 
-                       onClick={() => handleCapturePhoto(activeZone)}
-                       className={`w-full py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2 flex items-center justify-center gap-2 transition-all ${damages[activeZone]?.photo ? 'bg-blue-500/10 border-blue-500 text-blue-500' : 'border-dashed border-slate-300 dark:border-slate-700 text-slate-500 hover:border-blue-400 hover:text-blue-500'}`}
-                    >
-                      <Camera className="w-4 h-4" />
-                      {damages[activeZone]?.photo ? 'Reemplazar Foto del Daño' : 'Tomar Foto del Daño (Obligatorio)'}
-                    </button>
-                    {damages[activeZone]?.photo && (
-                      <div className="mt-2 w-full h-32 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 relative group">
-                         <img src={damages[activeZone].photo} className="w-full h-full object-cover" />
-                      </div>
-                    )}
-                 </div>
-              )}
-           </div>
-        )}
-      </div>
-
       {/* CUADRO DE TEXTO PARA ANOTAR DETALLES / OBSERVACIONES */}
       <div className="bg-slate-50/50 dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-800/50 p-6 rounded-3xl shadow-lg relative overflow-hidden">
         {/* Glassmorphism Background Glow */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 right-0 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
         <div className="flex items-center gap-2 mb-2 relative z-10">
           <FileText className="w-5 h-5 text-blue-500" />
           <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest">
@@ -234,14 +24,14 @@ export const StepNotes = ({ openCamera }) => {
         </p>
 
         <textarea
-          rows={4}
+          rows={6}
           value={formData.observations || ''}
           onChange={(e) => setF('observations', e.target.value)}
           placeholder="Ej: Rayón superficial en costado derecho, tapiz con manchas leves, rueda de repuesto con poco aire..."
-          className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl p-4 text-xs font-bold text-slate-700 dark:text-slate-200 focus:border-blue-500 dark:focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 resize-none shadow-inner relative z-10"
+          className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl p-4 text-xs font-bold text-slate-700 dark:text-slate-200 focus:border-blue-500 dark:focus:border-blue-500 outline-none transition-all placeholder:text-slate-400 resize-none shadow-inner relative z-10 min-h-[140px]"
         />
       </div>
-
     </div>
   );
 };
+
