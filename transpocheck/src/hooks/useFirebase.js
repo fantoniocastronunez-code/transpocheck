@@ -49,6 +49,7 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
   const [drivers, setDrivers] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [vehicles, setVehicles] = useState([]);
+  const [vehicleModels, setVehicleModels] = useState([]);
   const [customClients, setCustomClients] = useState([]);
   const [broadcast, setBroadcast] = useState(null);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -309,6 +310,9 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
     const unsubVehicles = onSnapshot(collection(db, 'vehicles'), snap => setVehicles(snap.docs.map(d => ({ id: d.id, ...d.data() }))), (err) => console.error("[ERR-FB-VEHICLES]", err));
     unsubs.push(unsubVehicles);
 
+    const unsubVehicleModels = onSnapshot(collection(db, 'vehicle_models'), snap => setVehicleModels(snap.docs.map(d => ({ id: d.id, ...d.data() }))), (err) => console.error("[ERR-FB-MODELS]", err));
+    unsubs.push(unsubVehicleModels);
+
     const unsubClients = onSnapshot(collection(db, 'clients'), snap => setCustomClients(snap.docs.map(d => ({ id: d.id, ...d.data() }))), (err) => console.error("[ERR-FB-CLIENTS]", err));
     unsubs.push(unsubClients);
 
@@ -318,7 +322,7 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
   return {
     user, actualUserEmail, currentUserEmail, isRealAdmin, isSuperAdmin, isQuoter, isPartTime,
     adminPermissions,
-    jobs, drivers, expenses, vehicles, customClients,
+    jobs, drivers, expenses, vehicles, customClients, vehicleModels,
     broadcast, dataLoaded, notificationsEnabled,
     requestNotificationPermission
   };

@@ -3,6 +3,7 @@ import { X, HardDrive } from 'lucide-react';
 import { storage } from '../../firebase';
 import ConfigClients from './Config/ConfigClients';
 import ConfigVehicles from './Config/ConfigVehicles';
+import ConfigBrandsModels from './Config/ConfigBrandsModels';
 import ConfigDrivers from './Config/ConfigDrivers';
 import ConfigDirectory from './Config/ConfigDirectory';
 import ConfigTolls from './Config/ConfigTolls';
@@ -66,7 +67,7 @@ function StorageWidget() {
   );
 }
 
-export default function ConfigView({ currentUserEmail, allClientsList, customClients, vehicles, drivers, db, showAlert, showConfirm, isSuperAdmin, adminPermissions }) {
+export default function ConfigView({ currentUserEmail, allClientsList, customClients, vehicles, vehicleModels = [], drivers, db, showAlert, showConfirm, isSuperAdmin, adminPermissions }) {
   const [configSubTab, setConfigSubTab] = useState('clients');
   const [fullScreenDoc, setFullScreenDoc] = useState(null); 
   
@@ -85,6 +86,7 @@ export default function ConfigView({ currentUserEmail, allClientsList, customCli
       <div className="flex flex-wrap gap-2 pb-2 w-full">
          {adminPermissions?.manage_clients !== false && <button onClick={()=>setConfigSubTab('clients')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='clients'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Clientes</button>}
          {adminPermissions?.manage_vehicles !== false && <button onClick={()=>setConfigSubTab('vehicles')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='vehicles'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Vehículos</button>}
+         {adminPermissions?.manage_vehicles !== false && <button onClick={()=>setConfigSubTab('models')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='models'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Marcas y Modelos</button>}
          {adminPermissions?.manage_users !== false && <button onClick={()=>setConfigSubTab('drivers')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='drivers'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Usuarios</button>}
          {adminPermissions?.manage_directory !== false && <button onClick={()=>setConfigSubTab('directory')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='directory'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Directorio</button>}
          {adminPermissions?.manage_tolls !== false && <button onClick={()=>setConfigSubTab('tolls')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='tolls'?'bg-emerald-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Peajes</button>}
@@ -116,6 +118,16 @@ export default function ConfigView({ currentUserEmail, allClientsList, customCli
         <ConfigVehicles 
           allClientsList={allClientsList} 
           vehicles={vehicles} 
+          db={db} 
+          showAlert={showAlert} 
+          showConfirm={showConfirm} 
+        />
+      )}
+
+      {configSubTab === 'models' && (
+        <ConfigBrandsModels 
+          vehicles={vehicles} 
+          vehicleModels={vehicleModels} 
           db={db} 
           showAlert={showAlert} 
           showConfirm={showConfirm} 

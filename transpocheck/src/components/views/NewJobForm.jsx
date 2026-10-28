@@ -12,7 +12,7 @@ import DeletableSelect from '../ui/DeletableSelect';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
-export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, drivers, db, showAlert, onSuccess, pushSyncTask, myDriver, user }) {
+export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, vehicles, vehicleModels = [], drivers, db, showAlert, onSuccess, pushSyncTask, myDriver, user }) {
   const [isOcrProcessing, setIsOcrProcessing] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   
@@ -133,6 +133,18 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   useEffect(() => {
     const autoSelectVehicleType = async () => {
       if (brand && model && brand.length > 1 && model.length > 1) {
+        // 0. Buscar primero en el catálogo oficial de marcas y modelos
+        const catalogMatch = (vehicleModels || []).find(vm => 
+          vm.brand?.toUpperCase().trim() === brand.toUpperCase().trim() && 
+          vm.model?.toUpperCase().trim() === model.toUpperCase().trim() && 
+          vm.vehicleType
+        );
+        if (catalogMatch) {
+          setVehicleType(catalogMatch.vehicleType);
+          setHistoricalVehicleType(catalogMatch.vehicleType);
+          return;
+        }
+
         // 1. Buscar en la memoria rápida (lista de vehículos frecuentes o recientes)
         const localMatch = vehicles.find(v => 
           v.brand?.toUpperCase().trim() === brand.toUpperCase().trim() && 
@@ -176,7 +188,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     }, 600);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [brand, model, vehicles, db]);
+  }, [brand, model, vehicles, vehicleModels, db]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSearchingVehicle, setIsSearchingVehicle] = useState(false);
@@ -312,7 +324,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
       if (vinMatch) setVin(vinMatch[0]);
 
       // 3. Deducir Marca buscando coincidencias de tu propia base de datos
-      const allBrands = [...new Set(vehicles.map(v => v.brand?.toUpperCase().trim()).filter(Boolean))];
+      const allBrands = [...new Set([...(vehicles || []).map(v => v.brand?.toUpperCase().trim()), ...(vehicleModels || []).map(vm => vm.brand?.toUpperCase().trim())].filter(Boolean))];
       let foundBrand = '';
       for (const b of allBrands) {
         if (b.length > 2 && text.includes(b)) {
@@ -324,7 +336,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
 
       // 4. Si encontramos la marca, deducimos el Modelo de esa marca específica
       if (foundBrand) {
-        const modelsOfBrand = [...new Set(vehicles.filter(v => v.brand?.toUpperCase().trim() === foundBrand).map(v => v.model?.toUpperCase().trim()).filter(Boolean))];
+        const modelsOfBrand = [...new Set([...(vehicles || []).filter(v => v.brand?.toUpperCase().trim() === foundBrand).map(v => v.model?.toUpperCase().trim()), ...(vehicleModels || []).filter(vm => vm.brand?.toUpperCase().trim() === foundBrand).map(vm => vm.model?.toUpperCase().trim())].filter(Boolean))];
         for (const m of modelsOfBrand) {
           if (m.length > 1 && text.includes(m)) {
             setModel(m);
@@ -708,14 +720,18 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     const isConfirmed = await showConfirmDialog(`¿Estás seguro que deseas eliminar la marca "${optName}" de las sugerencias?`, "Eliminar Marca");
     if (!isConfirmed) return;
     try {
-       const { updateDoc, doc, deleteField } = await import('firebase/firestore');
+       const { updateDoc, doc, deleteField, deleteDoc } = await import('firebase/firestore');
        const toUpdate = vehicles.filter(v => v.brand?.toUpperCase().trim() === optName.toUpperCase().trim());
        for(let v of toUpdate) {
           await updateDoc(doc(db, 'vehicles', v.id), { brand: deleteField() });
        }
+       const catalogToDelete = (vehicleModels || []).filter(vm => vm.brand?.toUpperCase().trim() === optName.toUpperCase().trim());
+       for (let vm of catalogToDelete) {
+          await deleteDoc(doc(db, 'vehicle_models', vm.id));
+       }
        showAlert(`✅ Marca "${optName}" eliminada de las sugerencias.`);
     } catch(e) {
-       showAlert("❌ Error al eliminar la marca.");
+       showAlert("❌ [ERR-DEL-BRAND-01] Error al eliminar la marca.");
     }
   };
 
@@ -723,19 +739,29 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     const isConfirmed = await showConfirmDialog(`¿Estás seguro que deseas eliminar el modelo "${optName}" de las sugerencias?`, "Eliminar Modelo");
     if (!isConfirmed) return;
     try {
-       const { updateDoc, doc, deleteField } = await import('firebase/firestore');
+       const { updateDoc, doc, deleteField, deleteDoc } = await import('firebase/firestore');
        const toUpdate = vehicles.filter(v => v.model?.toUpperCase().trim() === optName.toUpperCase().trim());
        for(let v of toUpdate) {
           await updateDoc(doc(db, 'vehicles', v.id), { model: deleteField() });
        }
+       const catalogToDelete = (vehicleModels || []).filter(vm => vm.model?.toUpperCase().trim() === optName.toUpperCase().trim() && (!brand || vm.brand?.toUpperCase().trim() === brand.toUpperCase().trim()));
+       for (let vm of catalogToDelete) {
+          await deleteDoc(doc(db, 'vehicle_models', vm.id));
+       }
        showAlert(`✅ Modelo "${optName}" eliminado de las sugerencias.`);
     } catch(e) {
-       showAlert("❌ Error al eliminar el modelo.");
+       showAlert("❌ [ERR-DEL-MODEL-01] Error al eliminar el modelo.");
     }
   };
 
-  const brandOptions = [...new Set(vehicles.map(v => v.brand?.toUpperCase().trim()).filter(Boolean))].sort();
-  const modelOptions = [...new Set(vehicles.filter(v => !brand || v.brand?.toUpperCase().trim() === brand?.toUpperCase().trim()).map(v => v.model?.toUpperCase().trim()).filter(Boolean))].sort();
+  const brandOptions = [...new Set([
+    ...(vehicles || []).map(v => v.brand?.toUpperCase().trim()),
+    ...(vehicleModels || []).map(vm => vm.brand?.toUpperCase().trim())
+  ].filter(Boolean))].sort();
+  const modelOptions = [...new Set([
+    ...(vehicles || []).filter(v => !brand || v.brand?.toUpperCase().trim() === brand?.toUpperCase().trim()).map(v => v.model?.toUpperCase().trim()),
+    ...(vehicleModels || []).filter(vm => !brand || vm.brand?.toUpperCase().trim() === brand?.toUpperCase().trim()).map(vm => vm.model?.toUpperCase().trim())
+  ].filter(Boolean))].sort();
 
   const destinationOptions = [
     ...directoryList.map(dir => dir.placeName),

@@ -112,7 +112,7 @@ function LogisticApp() {
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
   const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
-  const APP_VERSION = "v1.2.69"; // IMPORTANT: Update this version string when making changes.
+  const APP_VERSION = "v1.2.70"; // IMPORTANT: Update this version string when making changes.
   
   // VARIABLES MÁGICAS: Atrapan lo que Android nos comparte desde CamScanner o Adobe Scan
   const sharedText = searchParams.get('shared_text');
@@ -246,7 +246,7 @@ function LogisticApp() {
   const { 
     user, actualUserEmail, currentUserEmail, isRealAdmin, isSuperAdmin, isQuoter, isPartTime,
     adminPermissions,
-    jobs, drivers, expenses, vehicles, customClients, 
+    jobs, drivers, expenses, vehicles, customClients, vehicleModels, 
     broadcast, dataLoaded, notificationsEnabled, requestNotificationPermission
   } = useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAlert);
 
@@ -1021,13 +1021,13 @@ function LogisticApp() {
                       </div>
                     )}
                     
-                    {adminTab === 'newJob' && <div className="animate-in zoom-in-[0.98] slide-in-from-bottom-8 duration-500 ease-out"><NewJobForm key={editingJob ? editingJob.id : 'new'} jobToEdit={editingJob} onCancelEdit={() => {setEditingJob(null); setAdminTab('dashboard');}} allClientsList={allClientsList} vehicles={vehicles} drivers={drivers.filter(d => !d.isHidden)} db={db} showAlert={showAlert} onSuccess={() => setAdminTab('dashboard')} pushSyncTask={pushSyncTask} myDriver={myDriver} user={user} /></div>}
+                    {adminTab === 'newJob' && <div className="animate-in zoom-in-[0.98] slide-in-from-bottom-8 duration-500 ease-out"><NewJobForm key={editingJob ? editingJob.id : 'new'} jobToEdit={editingJob} onCancelEdit={() => {setEditingJob(null); setAdminTab('dashboard');}} allClientsList={allClientsList} vehicles={vehicles} vehicleModels={vehicleModels} drivers={drivers.filter(d => !d.isHidden)} db={db} showAlert={showAlert} onSuccess={() => setAdminTab('dashboard')} pushSyncTask={pushSyncTask} myDriver={myDriver} user={user} /></div>}
                     
                     {adminTab === 'history' && <div className="animate-in zoom-in-[0.98] duration-300"><VehicleHistoryView db={db} showAlert={showAlert} /></div>}
                     
                     {adminTab === 'stats' && <div className="animate-in zoom-in-[0.98] duration-300"><StatsView jobs={jobs} drivers={drivers} vehicles={vehicles} allClientsList={allClientsList} db={db} showAlert={showAlert} showConfirm={showConfirm} /></div>}
 
-                    {isSuperAdmin && adminTab === 'config' && <div className="animate-in zoom-in-[0.98] duration-300"><ConfigView currentUserEmail={currentUserEmail} allClientsList={allClientsList} customClients={customClients} vehicles={vehicles} drivers={drivers} db={db} showAlert={showAlert} showConfirm={showConfirm} isSuperAdmin={isSuperAdmin} adminPermissions={adminPermissions} /></div>}
+                    {isSuperAdmin && adminTab === 'config' && <div className="animate-in zoom-in-[0.98] duration-300"><ConfigView currentUserEmail={currentUserEmail} allClientsList={allClientsList} customClients={customClients} vehicles={vehicles} vehicleModels={vehicleModels} drivers={drivers} db={db} showAlert={showAlert} showConfirm={showConfirm} isSuperAdmin={isSuperAdmin} adminPermissions={adminPermissions} /></div>}
                   </>
                 ) : (
                   <div className="space-y-6">
