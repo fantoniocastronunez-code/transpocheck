@@ -208,15 +208,25 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
           });
         }
 
-        // Si cambió la categoría y tiene vehículos en flota, sincronizamos
+        // Si cambió la categoría y tiene vehículos en flota, sincronizamos de manera resiliente
+        let fleetSyncFailed = 0;
         if (editingItem.vehicleDocIds && editingItem.vehicleDocIds.length > 0) {
-          const syncPromises = editingItem.vehicleDocIds.map(vId => 
-            updateDoc(doc(db, 'vehicles', vId), { vehicleType: typeInput })
+          const syncResults = await Promise.allSettled(
+            editingItem.vehicleDocIds.map(vId => 
+              updateDoc(doc(db, 'vehicles', vId), { vehicleType: typeInput })
+            )
           );
-          await Promise.all(syncPromises);
+          fleetSyncFailed = syncResults.filter(r => r.status === 'rejected').length;
+          if (fleetSyncFailed > 0) {
+            console.warn(`[WARN-MODEL-SYNC-01] ${fleetSyncFailed} vehículos en flota no pudieron sincronizarse automáticamente.`);
+          }
         }
 
-        showAlert(`✅ [OK-MODEL-UPDATE] Modelo "${cleanBrand} ${cleanModel}" actualizado exitosamente.`);
+        if (fleetSyncFailed > 0) {
+          showAlert(`✅ [OK-MODEL-UPDATE] Modelo "${cleanBrand} ${cleanModel}" actualizado. (Nota: ${fleetSyncFailed} vehículo(s) en flota no pudieron sincronizarse).`);
+        } else {
+          showAlert(`✅ [OK-MODEL-UPDATE] Modelo "${cleanBrand} ${cleanModel}" actualizado exitosamente.`);
+        }
       } else {
         // Crear nuevo modelo
         const existing = vehicleModels.find(vm => 
@@ -260,9 +270,11 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
         
         // Si tiene vehículos asociados en la flota, limpiamos el campo modelo para que no quede huérfano en sugerencias
         if (item.vehicleDocIds && item.vehicleDocIds.length > 0) {
-          for (let vId of item.vehicleDocIds) {
-            await updateDoc(doc(db, 'vehicles', vId), { model: deleteField() });
-          }
+          await Promise.allSettled(
+            item.vehicleDocIds.map(vId =>
+              updateDoc(doc(db, 'vehicles', vId), { model: deleteField() })
+            )
+          );
         }
 
         showAlert(`✅ [OK-MODEL-DEL] Modelo "${item.brand} ${item.model}" eliminado.`);
