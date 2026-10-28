@@ -71,7 +71,7 @@ const ChecklistInner = ({ openCamera }) => {
     let earned = 0;
 
     const isAuto = !formData.vehicleType || formData.vehicleType === 'auto';
-    let total = isAuto ? 23 : 25;
+    let total = isAuto ? 22 : 24;
 
     // 1. Documents (4 docs * 3 points = 12 points)
     const checkDoc = (id) => {
@@ -89,11 +89,10 @@ const ChecklistInner = ({ openCamera }) => {
       checkDoc('gases');
     }
 
-    // 2. Photos (8 or 10 points)
+    // 2. Photos (7 or 9 points)
     const checkPhoto = (id) => {
        if (formData.photos?.[id]) earned += 1;
     };
-    checkPhoto('dashboard');
     checkPhoto('tire');
     checkPhoto('interior_front');
     checkPhoto('interior_back');

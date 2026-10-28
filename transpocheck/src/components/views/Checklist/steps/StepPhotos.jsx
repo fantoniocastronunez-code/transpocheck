@@ -146,7 +146,6 @@ export const StepPhotos = ({ openCamera }) => {
       <div className="grid grid-cols-2 gap-3 mt-0 pt-4 border-t border-slate-100 dark:border-slate-800">
         {(() => {
           const extraPhotos = [
-            { id: 'dashboard', l: 'Tablero' }, 
             { id: 'tire', l: 'Repuesto' }, 
             { id: 'interior_front', l: 'Int. Adelante' }, 
             { id: 'interior_back', l: 'Int. Atrás' }
