@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, X, MapPin, AlertCircle, Loader2, Receipt } from 'lucide-react';
+import { FileText, X, MapPin, AlertCircle, Loader2, Receipt, CheckSquare, Check, Wrench } from 'lucide-react';
 import { db, storage } from '../../../firebase';
 import { ref, listAll, getDownloadURL } from 'firebase/storage';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -392,6 +392,76 @@ export default function HistoryModal({
                   </div>
                 );
               })()}
+            </div>
+          )}
+
+          {/* EQUIPAMIENTO VERIFICADO */}
+          {(selectedHistoryJob.checklist?.equipment || selectedHistoryJob.checklist?.hasEquipment) && (
+            <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-xl shadow-sm mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-[10px] font-black uppercase text-amber-600 dark:text-amber-400 tracking-widest flex items-center gap-1.5">
+                  <CheckSquare className="w-4 h-4 text-amber-500" /> Equipamiento Verificado
+                </h4>
+                {(() => {
+                  const eq = selectedHistoryJob.checklist?.equipment || {};
+                  const verifiedCount = Object.values(eq).filter(Boolean).length;
+                  const totalCount = Object.keys(eq).length;
+                  if (!totalCount) return null;
+                  return (
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300">
+                      {verifiedCount} de {totalCount} presentes
+                    </span>
+                  );
+                })()}
+              </div>
+
+              {(() => {
+                const eq = selectedHistoryJob.checklist?.equipment || {};
+                const entries = Object.entries(eq);
+                if (entries.length === 0) {
+                  return (
+                    <p className="text-xs font-medium text-slate-400 italic">
+                      Sin registro de ítems de equipamiento.
+                    </p>
+                  );
+                }
+                return (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+                    {entries.map(([item, isChecked]) => (
+                      <div
+                        key={item}
+                        className={`p-2.5 rounded-xl border flex items-center gap-2 text-xs font-black transition-all ${
+                          isChecked
+                            ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 shadow-sm'
+                            : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 opacity-60'
+                        }`}
+                      >
+                        <div
+                          className={`w-4 h-4 rounded flex items-center justify-center shrink-0 ${
+                            isChecked
+                              ? 'bg-emerald-500 text-white'
+                              : 'border border-slate-300 dark:border-slate-600'
+                          }`}
+                        >
+                          {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                        </div>
+                        <span className="truncate">{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {selectedHistoryJob.checklist?.equipmentDetails && (
+                <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                  <p className="text-[9px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider mb-1 flex items-center gap-1">
+                    <Wrench className="w-3 h-3 text-amber-500" /> Detalle de Equipamiento / Accesorios Extra:
+                  </p>
+                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-950 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 italic">
+                    "{selectedHistoryJob.checklist.equipmentDetails}"
+                  </p>
+                </div>
+              )}
             </div>
           )}
 

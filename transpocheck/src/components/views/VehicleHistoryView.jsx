@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { Search, ShieldCheck, Calendar, User, MapPin, Camera, X, AlertTriangle, FileText, Clock, Activity } from 'lucide-react';
+import { Search, ShieldCheck, Calendar, User, MapPin, Camera, X, AlertTriangle, FileText, Clock, Activity, CheckSquare, Check, Wrench } from 'lucide-react';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import VehicleShapeIcon from '../ui/VehicleShapeIcon';
 
@@ -245,6 +245,67 @@ export default function VehicleHistoryView({ db, showAlert }) {
                           "{job.checklist?.observations || 'Sin observaciones registradas al momento del retiro.'}"
                         </div>
                       </div>
+
+                      {/* Equipamiento Verificado */}
+                      {(job.checklist?.equipment || job.checklist?.hasEquipment) && (
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <h5 className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest flex items-center gap-1.5">
+                              <CheckSquare className="w-4 h-4 text-amber-500" /> Equipamiento Verificado
+                            </h5>
+                            {(() => {
+                              const eq = job.checklist?.equipment || {};
+                              const verifiedCount = Object.values(eq).filter(Boolean).length;
+                              const totalCount = Object.keys(eq).length;
+                              if (!totalCount) return null;
+                              return (
+                                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300">
+                                  {verifiedCount} de {totalCount} presentes
+                                </span>
+                              );
+                            })()}
+                          </div>
+
+                          {(() => {
+                            const eq = job.checklist?.equipment || {};
+                            const entries = Object.entries(eq);
+                            if (entries.length === 0) {
+                              return <p className="text-xs text-slate-400 font-bold italic">Sin registro detallado de equipamiento.</p>;
+                            }
+                            return (
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                {entries.map(([item, isChecked]) => (
+                                  <div
+                                    key={item}
+                                    className={`p-2.5 rounded-xl border flex items-center gap-2 text-xs font-bold ${
+                                      isChecked
+                                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200'
+                                        : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 opacity-60'
+                                    }`}
+                                  >
+                                    <div
+                                      className={`w-4 h-4 rounded flex items-center justify-center shrink-0 ${
+                                        isChecked ? 'bg-emerald-500 text-white' : 'border border-slate-300 dark:border-slate-600'
+                                      }`}
+                                    >
+                                      {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                                    </div>
+                                    <span className="truncate">{item}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          })()}
+
+                          {job.checklist?.equipmentDetails && (
+                            <p className="text-xs text-slate-600 dark:text-slate-400 font-medium italic mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1">
+                              <Wrench className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                              <span className="font-bold not-italic text-slate-700 dark:text-slate-300">Detalle: </span>
+                              "{job.checklist.equipmentDetails}"
+                            </p>
+                          )}
+                        </div>
+                      )}
 
                       {/* Comentarios del Cliente (Receptor) */}
                       {job.checklist?.clientComments && (

@@ -229,18 +229,21 @@ export const buildPDFDoc = async (job, isPublic = false, drivers = []) => {
         
         if (job.checklist?.transitNotes) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("NOTAS DURANTE EL TRASLADO:", 15, currentY); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38); const transitSplit = docPDF.splitTextToSize(cleanStr(job.checklist.transitNotes), leftColWidth); docPDF.text(transitSplit, 15, currentY + 4); currentY += (transitSplit.length * 4) + 8; }
 
-        if (job.checklist?.hasEquipment && job.checklist?.equipment) {
+        if (job.checklist?.equipment || job.checklist?.hasEquipment) {
+          const eq = job.checklist?.equipment || {};
+          const eqKeys = Object.keys(eq).filter(k => Boolean(eq[k]));
           docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("EQUIPAMIENTO VERIFICADO:", 15, currentY); currentY += 4;
-          const eqKeys = Object.keys(job.checklist.equipment).filter(k => job.checklist.equipment[k]);
           docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
           if (eqKeys.length > 0) {
             const eqStr = docPDF.splitTextToSize(cleanStr(eqKeys.join(', ')), leftColWidth);
-            docPDF.text(eqStr, 15, currentY); currentY += (eqStr.length * 4) + 2;
+            docPDF.text(eqStr, 15, currentY); currentY += (eqStr.length * 4) + 3;
           } else {
-            docPDF.text("Ningún ítem marcado", 15, currentY); currentY += 6;
+            docPDF.setFont("helvetica", "italic");
+            docPDF.setTextColor(...secondaryColor);
+            docPDF.text("Ningun item de equipamiento verificado", 15, currentY); currentY += 6;
           }
           if (job.checklist?.equipmentDetails) {
-            docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("DETALLE HERRAMIENTAS:", 15, currentY); currentY += 4;
+            docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("DETALLE HERRAMIENTAS / ACCESORIOS:", 15, currentY); currentY += 4;
             docPDF.setFontSize(8); docPDF.setFont("helvetica", "italic"); docPDF.setTextColor(...primaryColor);
             const detStr = docPDF.splitTextToSize(cleanStr(job.checklist.equipmentDetails), leftColWidth);
             docPDF.text(detStr, 15, currentY); currentY += (detStr.length * 4) + 4;

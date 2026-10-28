@@ -193,6 +193,27 @@ export default function ClientSignView({ jobId, db }) {
         currentY += hGas + 8;
 
         docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("OBSERVACIONES:", 15, currentY); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor); const obsSplit = docPDF.splitTextToSize(cleanStr(`${job.checklist?.observations || 'Sin observaciones registradas.'}`), leftColWidth); docPDF.text(obsSplit, 15, currentY + 4); currentY += (obsSplit.length * 4) + 6;
+
+        if (job.checklist?.equipment || job.checklist?.hasEquipment) {
+          const eq = job.checklist?.equipment || {};
+          const eqKeys = Object.keys(eq).filter(k => Boolean(eq[k]));
+          docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("EQUIPAMIENTO VERIFICADO:", 15, currentY); currentY += 4;
+          docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...primaryColor);
+          if (eqKeys.length > 0) {
+            const eqStr = docPDF.splitTextToSize(cleanStr(eqKeys.join(', ')), leftColWidth);
+            docPDF.text(eqStr, 15, currentY); currentY += (eqStr.length * 4) + 3;
+          } else {
+            docPDF.setFont("helvetica", "italic");
+            docPDF.setTextColor(...secondaryColor);
+            docPDF.text("Ningun item de equipamiento verificado", 15, currentY); currentY += 6;
+          }
+          if (job.checklist?.equipmentDetails) {
+            docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text("DETALLE HERRAMIENTAS / ACCESORIOS:", 15, currentY); currentY += 4;
+            docPDF.setFontSize(8); docPDF.setFont("helvetica", "italic"); docPDF.setTextColor(...primaryColor);
+            const detStr = docPDF.splitTextToSize(cleanStr(job.checklist.equipmentDetails), leftColWidth);
+            docPDF.text(detStr, 15, currentY); currentY += (detStr.length * 4) + 4;
+          }
+        }
         if (job.waitTimeMinutes && job.waitTimeMinutes > 20) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38); const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA EN ORIGEN: ${job.waitTimeMinutes} minutos`, leftColWidth); docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2; } else if (job.checklist?.hasWaitTime) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(220, 38, 38);  const wtStr = docPDF.splitTextToSize(`TIEMPO DE ESPERA: ${cleanStr(job.checklist.waitTime || 'Sí')}`, leftColWidth);  docPDF.text(wtStr, 15, currentY); currentY += (wtStr.length * 4) + 2;  }
         if (job.checklist?.hasFuelCharge) { docPDF.setFontSize(8); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(37, 99, 235); const fcStr = docPDF.splitTextToSize(`CARGA DE COMBUSTIBLE: ${cleanStr(job.checklist.fuelChargeAmount || 'Sí')}`, leftColWidth); docPDF.text(fcStr, 15, currentY); currentY += (fcStr.length * 4) + 2; }
         currentY += 8; 
@@ -332,6 +353,64 @@ export default function ClientSignView({ jobId, db }) {
               <X className="w-6 h-6" />
             </button>
             <img src={fullScreenImage} alt="Evidencia Ampliada" className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
+          </div>
+        )}
+
+        {/* Equipamiento Verificado */}
+        {(job.checklist?.equipment || job.checklist?.hasEquipment) && (
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-500" /> Equipamiento Verificado
+              </h3>
+              {(() => {
+                const eq = job.checklist?.equipment || {};
+                const verifiedCount = Object.values(eq).filter(Boolean).length;
+                const totalCount = Object.keys(eq).length;
+                if (!totalCount) return null;
+                return (
+                  <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300">
+                    {verifiedCount} de {totalCount} presentes
+                  </span>
+                );
+              })()}
+            </div>
+            {(() => {
+              const eq = job.checklist?.equipment || {};
+              const entries = Object.entries(eq);
+              if (entries.length === 0) {
+                return <p className="text-xs text-slate-400 font-bold italic">Sin ítems registrados.</p>;
+              }
+              return (
+                <div className="grid grid-cols-2 gap-2 mt-3">
+                  {entries.map(([item, isChecked]) => (
+                    <div
+                      key={item}
+                      className={`p-2.5 rounded-xl border flex items-center gap-2 text-xs font-bold ${
+                        isChecked
+                          ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200'
+                          : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 opacity-60'
+                      }`}
+                    >
+                      <div
+                        className={`w-4 h-4 rounded flex items-center justify-center shrink-0 ${
+                          isChecked ? 'bg-emerald-500 text-white' : 'border border-slate-300 dark:border-slate-600'
+                        }`}
+                      >
+                        {isChecked && <CheckCircle className="w-3.5 h-3.5" />}
+                      </div>
+                      <span className="truncate">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+            {job.checklist?.equipmentDetails && (
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium italic mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <span className="font-bold not-italic text-slate-700 dark:text-slate-300">Detalle: </span>
+                {job.checklist.equipmentDetails}
+              </p>
+            )}
           </div>
         )}
 
