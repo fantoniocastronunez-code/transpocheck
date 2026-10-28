@@ -878,18 +878,6 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                             <p className="text-xs text-blue-500 font-bold">Escribe Patente o VIN para autocompletar</p>
                          </div>
                       </div>
-                      <div className="flex gap-2 w-full sm:w-auto">
-                        <button type="button" onClick={() => setCameraConfig({ isOpen: true })} disabled={isOcrProcessing} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-black text-sm transition-all border border-blue-500/30 ${isOcrProcessing ? 'bg-blue-500/10 text-blue-500' : 'bg-blue-500 text-white hover:bg-blue-600 shadow-[0_0_15px_rgba(59,130,246,0.3)]'}`}>
-                          {isOcrProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
-                          {isOcrProcessing ? 'Leyendo...' : 'Escanear Guía'}
-                        </button>
-                        <div className="relative flex-1 sm:flex-none">
-                          <input type="file" accept="image/*,application/pdf" onChange={handleOcrUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" disabled={isOcrProcessing} />
-                          <button type="button" disabled={isOcrProcessing} className="w-full h-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-black text-sm bg-white/50 dark:bg-slate-900/50 border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                            <FileText className="w-4 h-4"/> Archivo
-                          </button>
-                        </div>
-                      </div>
                     </div>
 
                     <div className="flex items-center min-h-[24px]">
