@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Receipt, Fuel, Camera, X, Check, DollarSign, 
-  AlertCircle, Loader2, Plus, Tag, FileText, CheckCircle2 
+  AlertCircle, Loader2, Plus, Tag, FileText, CheckCircle2, Trash2 
 } from 'lucide-react';
 import InAppCamera from '../../ui/InAppCamera';
 import { resizeImage } from '../../../utils/helpers';
@@ -26,6 +26,7 @@ export default function JobExpenseModal({
   const [motivo, setMotivo] = useState('');
   const [receiptPhoto, setReceiptPhoto] = useState(null);
   const [fuelGaugePhoto, setFuelGaugePhoto] = useState(null);
+  const [pendingExpenses, setPendingExpenses] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
 
   // Cámara nativa in-app
@@ -82,105 +83,182 @@ export default function JobExpenseModal({
     return Number(String(str).replace(/[^0-9]/g, '')) || 0;
   };
 
-  const handleSubmit = async (e) => {
-    e?.preventDefault();
-    if (isSaving) return;
-
+  // Validación de los campos actuales del formulario
+  const validateFormFields = (isBatchAdd = false) => {
     const numAmount = cleanNumericAmount(amount);
 
     if (numAmount <= 0) {
-      return showAlert("❌ [ERR-EXP-VAL-01] Debes ingresar un monto válido mayor a $0.");
+      showAlert(isBatchAdd 
+        ? "❌ [ERR-EXP-VAL-01] Ingresa un monto mayor a $0 para añadir este gasto a la lista." 
+        : "❌ [ERR-EXP-VAL-01] Debes ingresar un monto válido mayor a $0.");
+      return false;
     }
 
     if (isFuel) {
       if (!fuelGaugePhoto) {
-        return showAlert("❌ [ERR-EXP-VAL-02] Es obligatoria la foto del estanque después de cargar combustible.");
+        showAlert("❌ [ERR-EXP-VAL-02] Es obligatoria la foto del estanque después de cargar combustible.");
+        return false;
       }
       if (!receiptPhoto) {
-        return showAlert("❌ [ERR-EXP-VAL-03] Es obligatoria la foto de la boleta o comprobante de combustible.");
+        showAlert("❌ [ERR-EXP-VAL-03] Es obligatoria la foto de la boleta o comprobante de combustible.");
+        return false;
       }
     } else {
       if (!motivo || motivo.trim().length === 0) {
-        return showAlert("❌ [ERR-EXP-VAL-04] Debes indicar el motivo del gasto (Ej: Peaje, Estacionamiento, etc.).");
+        showAlert("❌ [ERR-EXP-VAL-04] Debes indicar el motivo del gasto (Ej: Peaje, Estacionamiento, etc.).");
+        return false;
       }
       if (!receiptPhoto) {
-        return showAlert("❌ [ERR-EXP-VAL-05] Es obligatoria la foto de la boleta o comprobante del gasto.");
+        showAlert("❌ [ERR-EXP-VAL-05] Es obligatoria la foto de la boleta o comprobante del gasto.");
+        return false;
       }
+    }
+
+    return true;
+  };
+
+  // Botón +: Añade el gasto actual a la lista de gastos pendientes por guardar
+  const handleAddExpenseToList = () => {
+    if (!validateFormFields(true)) return;
+
+    const numAmount = cleanNumericAmount(amount);
+    const newItem = {
+      id: `pending_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      type: expenseType,
+      category: isFuel ? 'combustible' : 'otro',
+      motivo: isFuel ? 'Carga de Combustible' : motivo.trim(),
+      amount: numAmount,
+      receiptPhoto,
+      fuelGaugePhoto: isFuel ? fuelGaugePhoto : null
+    };
+
+    setPendingExpenses(prev => [...prev, newItem]);
+    
+    // Limpiamos campos para permitir ingresar de inmediato el siguiente gasto
+    setAmount('');
+    setMotivo('');
+    setReceiptPhoto(null);
+    setFuelGaugePhoto(null);
+    setExpenseType('other'); // Facilitar ingresar peajes u otros gastos consecutivamente
+  };
+
+  const handleRemovePendingExpense = (idxToRemove) => {
+    setPendingExpenses(prev => prev.filter((_, idx) => idx !== idxToRemove));
+  };
+
+  const handleSubmit = async (e) => {
+    e?.preventDefault();
+    if (isSaving) return;
+
+    const currentNumAmount = cleanNumericAmount(amount);
+    const hasCurrentFormValues = currentNumAmount > 0 || Boolean(receiptPhoto) || Boolean(fuelGaugePhoto) || Boolean(motivo.trim());
+
+    const allExpensesToProcess = [...pendingExpenses];
+
+    // Si el usuario tiene un gasto en curso en los inputs, validamos y lo sumamos al lote
+    if (hasCurrentFormValues) {
+      if (!validateFormFields(false)) return;
+
+      allExpensesToProcess.push({
+        id: `pending_${Date.now()}_curr`,
+        type: expenseType,
+        category: isFuel ? 'combustible' : 'otro',
+        motivo: isFuel ? 'Carga de Combustible' : motivo.trim(),
+        amount: currentNumAmount,
+        receiptPhoto,
+        fuelGaugePhoto: isFuel ? fuelGaugePhoto : null
+      });
+    }
+
+    if (allExpensesToProcess.length === 0) {
+      return showAlert("❌ [ERR-EXP-VAL-06] Debes ingresar al menos un gasto para guardar.");
     }
 
     setIsSaving(true);
 
     try {
-      // 1. Subir imágenes a Firebase Storage
       const timestamp = Date.now();
-      const receiptUrl = await uploadImageToStorage(
-        receiptPhoto, 
-        `expenses/${job.id}`, 
-        `receipt_${timestamp}.jpg`
-      );
+      const newJobExpenses = [];
+      let totalBatchAmount = 0;
 
-      let fuelGaugeUrl = null;
-      if (isFuel && fuelGaugePhoto) {
-        fuelGaugeUrl = await uploadImageToStorage(
-          fuelGaugePhoto, 
-          `expenses/${job.id}`, 
-          `fuel_after_${timestamp}.jpg`
+      for (let i = 0; i < allExpensesToProcess.length; i++) {
+        const item = allExpensesToProcess[i];
+        const itemTimestamp = timestamp + i;
+        totalBatchAmount += item.amount;
+
+        // 1. Subir imagen de comprobante / boleta
+        const receiptUrl = await uploadImageToStorage(
+          item.receiptPhoto,
+          `expenses/${job.id}`,
+          `receipt_${itemTimestamp}.jpg`
         );
-      }
 
-      const detailText = isFuel 
-        ? `Carga de Combustible (Patente: ${jobIdent})`
-        : `${motivo.trim()} (Patente: ${jobIdent})`;
+        // 2. Subir imagen de estanque si aplica
+        let fuelGaugeUrl = null;
+        if (item.type === 'fuel' && item.fuelGaugePhoto) {
+          fuelGaugeUrl = await uploadImageToStorage(
+            item.fuelGaugePhoto,
+            `expenses/${job.id}`,
+            `fuel_after_${itemTimestamp}.jpg`
+          );
+        }
 
-      // 2. Crear registro en colección global 'expenses' para finanzas y rendiciones
-      await addDoc(collection(db, 'expenses'), {
-        driverId: currentDriver?.id || '',
-        driverEmail: currentDriver?.email || currentUserEmail,
-        driverName: currentDriver?.name || currentUserEmail,
-        type: 'expense',
-        category: isFuel ? 'combustible' : 'otro',
-        amount: numAmount,
-        detail: detailText,
-        jobId: job.id,
-        plate: jobIdent,
-        deductedAmount: numAmount,
-        receiptImage: receiptUrl,
-        fuelGaugeImage: fuelGaugeUrl || null,
-        createdAt: timestamp
-      });
+        const detailText = item.type === 'fuel'
+          ? `Carga de Combustible (Patente: ${jobIdent})`
+          : `${item.motivo} (Patente: ${jobIdent})`;
 
-      // 3. Descontar del saldo del conductor en 'drivers'
-      if (currentDriver?.id) {
-        const curBal = Number(currentDriver.balance) || 0;
-        await updateDoc(doc(db, 'drivers', currentDriver.id), {
-          balance: curBal - numAmount
+        // 3. Crear registro en colección global 'expenses' para finanzas y rendiciones
+        await addDoc(collection(db, 'expenses'), {
+          driverId: currentDriver?.id || '',
+          driverEmail: currentDriver?.email || currentUserEmail,
+          driverName: currentDriver?.name || currentUserEmail,
+          type: 'expense',
+          category: item.category,
+          amount: item.amount,
+          detail: detailText,
+          jobId: job.id,
+          plate: jobIdent,
+          deductedAmount: item.amount,
+          receiptImage: receiptUrl,
+          fuelGaugeImage: fuelGaugeUrl || null,
+          createdAt: itemTimestamp
+        });
+
+        // 4. Registro formateado para transport_jobs.expenses
+        newJobExpenses.push({
+          id: `exp_${itemTimestamp}`,
+          type: item.type,
+          category: item.category,
+          motivo: item.motivo,
+          amount: item.amount,
+          receiptUrl,
+          fuelGaugeUrl: fuelGaugeUrl || null,
+          registeredByEmail: currentUserEmail,
+          registeredByName: currentDriver?.name || currentUserEmail,
+          createdAt: itemTimestamp
         });
       }
 
-      // 4. Guardar en el documento de traslado 'transport_jobs' para Ficha Técnica inmediata
-      const existingExpenses = Array.isArray(job.expenses) ? job.expenses : [];
-      const newExpenseRecord = {
-        id: `exp_${timestamp}`,
-        type: isFuel ? 'fuel' : 'other',
-        category: isFuel ? 'combustible' : 'otro',
-        motivo: isFuel ? 'Carga de Combustible' : motivo.trim(),
-        amount: numAmount,
-        receiptUrl,
-        fuelGaugeUrl: fuelGaugeUrl || null,
-        registeredByEmail: currentUserEmail,
-        registeredByName: currentDriver?.name || currentUserEmail,
-        createdAt: timestamp
-      };
+      // 5. Descontar total del saldo del conductor
+      if (currentDriver?.id) {
+        const curBal = Number(currentDriver.balance) || 0;
+        await updateDoc(doc(db, 'drivers', currentDriver.id), {
+          balance: curBal - totalBatchAmount
+        });
+      }
 
+      // 6. Guardar en el documento de traslado transport_jobs
+      const existingExpenses = Array.isArray(job.expenses) ? job.expenses : [];
       await updateDoc(doc(db, 'transport_jobs', job.id), {
-        expenses: [...existingExpenses, newExpenseRecord]
+        expenses: [...existingExpenses, ...newJobExpenses]
       });
 
-      showAlert(`✅ [OK-EXP-01] Gasto de $${numAmount.toLocaleString('es-CL')} registrado con éxito e integrado a la Ficha Técnica.`);
+      showAlert(`✅ [OK-EXP-BATCH-01] ${newJobExpenses.length} gasto${newJobExpenses.length > 1 ? 's' : ''} registrado${newJobExpenses.length > 1 ? 's' : ''} con éxito ($${totalBatchAmount.toLocaleString('es-CL')}) e integrado${newJobExpenses.length > 1 ? 's' : ''} a la Ficha Técnica.`);
+      setPendingExpenses([]);
       onClose();
     } catch (err) {
-      console.error("[ERR-EXP-SAVE-01] Error al guardar gasto del traslado:", err);
-      showAlert(`❌ [ERR-EXP-SAVE-01] Ocurrió un error al guardar el gasto: ${err.message || 'Error de conexión'}`);
+      console.error("[ERR-EXP-SAVE-BATCH-01] Error al guardar gastos:", err);
+      showAlert(`❌ [ERR-EXP-SAVE-BATCH-01] Ocurrió un error al guardar los gastos: ${err.message || 'Error de conexión'}`);
     } finally {
       setIsSaving(false);
     }
@@ -200,9 +278,16 @@ export default function JobExpenseModal({
               <Receipt className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-black leading-tight uppercase tracking-wider">
-                Ingreso de Gastos
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base sm:text-lg font-black leading-tight uppercase tracking-wider">
+                  Ingreso de Gastos
+                </h3>
+                {pendingExpenses.length > 0 && (
+                  <span className="bg-white/25 text-white font-black text-[10px] px-2 py-0.5 rounded-full animate-pulse">
+                    {pendingExpenses.length} en lista
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-amber-100 font-bold">
                 {job.brand} {job.model} • <span className="underline">{jobIdent}</span>
               </p>
@@ -220,6 +305,84 @@ export default function JobExpenseModal({
 
         {/* Contenido scrolleable */}
         <div className="p-4 sm:p-6 overflow-y-auto space-y-5 flex-1">
+
+          {/* LISTA DE GASTOS LISTOS PARA GUARDAR EN LOTE */}
+          {pendingExpenses.length > 0 && (
+            <div className="bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-300 dark:border-amber-700/60 rounded-2xl p-3.5 space-y-2.5 animate-in fade-in slide-in-from-top-2">
+              <div className="flex justify-between items-center pb-2 border-b border-amber-200 dark:border-amber-800/40">
+                <span className="text-[11px] font-black uppercase text-amber-800 dark:text-amber-300 tracking-wider flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  Gastos Listos para Guardar ({pendingExpenses.length})
+                </span>
+                <span className="text-xs font-black text-amber-900 dark:text-amber-200 bg-amber-200/60 dark:bg-amber-900/50 px-2.5 py-0.5 rounded-lg">
+                  Subtotal: ${pendingExpenses.reduce((s, e) => s + e.amount, 0).toLocaleString('es-CL')}
+                </span>
+              </div>
+
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                {pendingExpenses.map((pExp, idx) => (
+                  <div key={pExp.id || idx} className="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-amber-200 dark:border-amber-800/50 flex items-center justify-between gap-2 shadow-xs">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className={`p-1.5 rounded-lg shrink-0 ${pExp.type === 'fuel' ? 'bg-amber-100 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400'}`}>
+                        {pExp.type === 'fuel' ? <Fuel className="w-4 h-4" /> : <Receipt className="w-4 h-4" />}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-black text-slate-800 dark:text-slate-200 truncate">
+                          {pExp.motivo}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400">
+                            ${pExp.amount.toLocaleString('es-CL')}
+                          </span>
+                          <span className="text-[9px] text-slate-400 font-bold">
+                            • {pExp.type === 'fuel' ? 'Boleta + Estanque' : 'Boleta'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      {pExp.receiptPhoto && (
+                        <img 
+                          src={pExp.receiptPhoto} 
+                          alt="Boleta" 
+                          className="w-8 h-8 rounded-lg object-cover border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => setFullScreenPhoto && setFullScreenPhoto(pExp.receiptPhoto)}
+                          title="Ver boleta"
+                        />
+                      )}
+                      {pExp.fuelGaugePhoto && (
+                        <img 
+                          src={pExp.fuelGaugePhoto} 
+                          alt="Estanque" 
+                          className="w-8 h-8 rounded-lg object-cover border border-amber-300 dark:border-amber-700 cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => setFullScreenPhoto && setFullScreenPhoto(pExp.fuelGaugePhoto)}
+                          title="Ver estanque"
+                        />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePendingExpense(idx)}
+                        className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                        title="Eliminar de la lista"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Encabezado de Sección de Formulario */}
+          {pendingExpenses.length > 0 && (
+            <div className="flex items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <span className="text-[10px] font-black uppercase text-amber-600 dark:text-amber-400 tracking-wider">
+                + Añadir Otro Gasto al Mismo Traslado
+              </span>
+            </div>
+          )}
 
           {/* Selector de Tipo de Gasto */}
           <div>
@@ -432,6 +595,17 @@ export default function JobExpenseModal({
 
           </div>
 
+          {/* BOTÓN + PARA AÑADIR A LA LISTA */}
+          <button
+            type="button"
+            onClick={handleAddExpenseToList}
+            disabled={isSaving}
+            className="w-full py-3.5 px-4 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 border-2 border-dashed border-amber-500/50 hover:border-amber-500 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 shadow-xs disabled:opacity-50"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            <span>Añadir a la lista para guardar juntos (+)</span>
+          </button>
+
           {/* Historial de Gastos ya registrados en este traslado */}
           {existingExpenses.length > 0 && (
             <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
@@ -494,12 +668,23 @@ export default function JobExpenseModal({
             {isSaving ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Guardando Gasto...</span>
+                <span>Guardando Gastos...</span>
               </>
             ) : (
               <>
                 <Check className="w-4 h-4" />
-                <span>Guardar e Integrar a Ficha</span>
+                <span>
+                  {(() => {
+                    const currentAmt = cleanNumericAmount(amount);
+                    const hasCurr = currentAmt > 0 && (receiptPhoto || fuelGaugePhoto || motivo.trim());
+                    const count = pendingExpenses.length + (hasCurr ? 1 : 0);
+                    const total = pendingExpenses.reduce((s, e) => s + e.amount, 0) + (hasCurr ? currentAmt : 0);
+                    if (count > 0) {
+                      return `Guardar ${count} Gasto${count > 1 ? 's' : ''} ($${total.toLocaleString('es-CL')})`;
+                    }
+                    return 'Guardar e Integrar a Ficha';
+                  })()}
+                </span>
               </>
             )}
           </button>
