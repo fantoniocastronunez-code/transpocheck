@@ -11,11 +11,12 @@ rules_version = '2';
 // 1. vehicle_models
 //    Document ID: Auto-generated or custom model ID
 //    Fields:
-//      - brand: string (1-100 chars, required) - Vehicle brand (e.g. TOYOTA, CHEVROLET)
-//      - model: string (1-100 chars, required) - Vehicle model (e.g. COROLLA, SAIL)
-//      - vehicleType: string (1-50 chars, required) - Category (e.g. sedan, suv, pickup, camion, etc.)
-//      - createdAt: number (epoch ms) or timestamp (optional, immutable)
-//      - updatedAt: number (epoch ms) or timestamp (optional)
+//      - brand: string (1-100 chars, optional/null) - Vehicle brand (e.g. TOYOTA, CHEVROLET)
+//      - model: string (1-100 chars, optional/null) - Vehicle model (e.g. COROLLA, SAIL)
+//      - vehicleType: string (1-50 chars, optional/null) - Category (e.g. sedan, suv, pickup, camion, etc.)
+//      - createdAt: number (epoch ms), timestamp, string (<= 100 chars), or null (optional)
+//      - updatedAt: number (epoch ms), timestamp, string (<= 100 chars), or null (optional)
+//      - Tolerates extra legacy document fields without strict key restriction
 //
 // 2. transport_jobs
 //    Document ID: Auto-generated or "quick_{timestamp}"
@@ -40,13 +41,18 @@ rules_version = '2';
 // 3. vehicles
 //    Document ID: Auto-generated
 //    Fields:
-//      - brand: string (1-100 chars, optional)
-//      - model: string (1-100 chars, optional)
-//      - plate: string (1-20 chars, optional)
-//      - vin: string (1-50 chars, optional)
-//      - vehicleType: string (1-50 chars, optional)
-//      - client: string (1-200 chars, optional)
-//      - createdAt: number (epoch ms) or timestamp (optional, immutable)
+//      - brand: string (1-100 chars, optional/null)
+//      - model: string (1-100 chars, optional/null)
+//      - plate: string (1-30 chars, optional/null)
+//      - vin: string (1-100 chars, optional/null)
+//      - vehicleType: string (1-50 chars, optional/null)
+//      - client: string (1-200 chars, optional/null)
+//      - createdAt: number (epoch ms), timestamp, string (<= 100 chars), or null (optional)
+//      - lastTripDate: number (epoch ms), timestamp, string (<= 100 chars), or null (optional)
+//      - tripsCount: number or null (optional)
+//      - docs: map or null (optional)
+//      - docsExpiry: map or null (optional)
+//      - docsPhotos: map or null (optional)
 //
 // 4. drivers
 //    Document ID: Auto-generated
@@ -156,25 +162,34 @@ service cloud.firestore {
       return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
     }
 
+    function dataHasValidCreatedAt(data) {
+      return !('createdAt' in data) ||
+             data.createdAt == null ||
+             data.createdAt is number ||
+             data.createdAt is timestamp ||
+             data.createdAt is string;
+    }
+
     // ===============================================================
     // Collection 1: vehicle_models (Catalog of Brands and Models)
     // ===============================================================
 
     function isValidVehicleModel(data) {
-      return data.keys().hasAll(['brand', 'model', 'vehicleType']) &&
-             data.keys().hasOnly(['brand', 'model', 'vehicleType', 'createdAt', 'updatedAt']) &&
-             data.brand is string && data.brand.size() >= 1 && data.brand.size() <= 100 &&
-             data.model is string && data.model.size() >= 1 && data.model.size() <= 100 &&
-             data.vehicleType is string && data.vehicleType.size() >= 1 && data.vehicleType.size() <= 50 &&
-             (!('createdAt' in data) || data.createdAt is number || data.createdAt is timestamp) &&
-             (!('updatedAt' in data) || data.updatedAt is number || data.updatedAt is timestamp);
+      return (!('brand' in data) || data.brand == null || (data.brand is string && data.brand.size() <= 100)) &&
+             (!('model' in data) || data.model == null || (data.model is string && data.model.size() <= 100)) &&
+             (!('vehicleType' in data) || data.vehicleType == null || (data.vehicleType is string && data.vehicleType.size() <= 50)) &&
+             (!('createdAt' in data) || data.createdAt == null || data.createdAt is number || data.createdAt is timestamp || (data.createdAt is string && data.createdAt.size() <= 100)) &&
+             (!('updatedAt' in data) || data.updatedAt == null || data.updatedAt is number || data.updatedAt is timestamp || (data.updatedAt is string && data.updatedAt.size() <= 100));
     }
 
     match /vehicle_models/{modelId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() && isValidVehicleModel(request.resource.data);
       allow update: if isAuthenticated() && isValidVehicleModel(request.resource.data) &&
-                    (!('createdAt' in resource.data) || areImmutableFieldsUnchanged(['createdAt']));
+                    (isBootstrapAdmin() ||
+                     !('createdAt' in resource.data) ||
+                     areImmutableFieldsUnchanged(['createdAt']) ||
+                     dataHasValidCreatedAt(request.resource.data));
       allow delete: if isAuthenticated();
     }
 
@@ -212,20 +227,28 @@ service cloud.firestore {
     // ===============================================================
 
     function isValidVehicle(data) {
-      return (!('plate' in data) || (data.plate is string && data.plate.size() <= 20)) &&
-             (!('vin' in data) || (data.vin is string && data.vin.size() <= 50)) &&
-             (!('brand' in data) || (data.brand is string && data.brand.size() <= 100)) &&
-             (!('model' in data) || (data.model is string && data.model.size() <= 100)) &&
-             (!('vehicleType' in data) || (data.vehicleType is string && data.vehicleType.size() <= 50)) &&
-             (!('client' in data) || (data.client is string && data.client.size() <= 200)) &&
-             (!('createdAt' in data) || data.createdAt is number || data.createdAt is timestamp);
+      return (!('plate' in data) || data.plate == null || (data.plate is string && data.plate.size() <= 30)) &&
+             (!('vin' in data) || data.vin == null || (data.vin is string && data.vin.size() <= 100)) &&
+             (!('brand' in data) || data.brand == null || (data.brand is string && data.brand.size() <= 100)) &&
+             (!('model' in data) || data.model == null || (data.model is string && data.model.size() <= 100)) &&
+             (!('vehicleType' in data) || data.vehicleType == null || (data.vehicleType is string && data.vehicleType.size() <= 50)) &&
+             (!('client' in data) || data.client == null || (data.client is string && data.client.size() <= 200)) &&
+             (!('createdAt' in data) || data.createdAt == null || data.createdAt is number || data.createdAt is timestamp || (data.createdAt is string && data.createdAt.size() <= 100)) &&
+             (!('lastTripDate' in data) || data.lastTripDate == null || data.lastTripDate is number || data.lastTripDate is timestamp || (data.lastTripDate is string && data.lastTripDate.size() <= 100)) &&
+             (!('tripsCount' in data) || data.tripsCount == null || data.tripsCount is number) &&
+             (!('docs' in data) || data.docs == null || data.docs is map) &&
+             (!('docsExpiry' in data) || data.docsExpiry == null || data.docsExpiry is map) &&
+             (!('docsPhotos' in data) || data.docsPhotos == null || data.docsPhotos is map);
     }
 
     match /vehicles/{vehicleId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() && isValidVehicle(request.resource.data);
       allow update: if isAuthenticated() && isValidVehicle(request.resource.data) &&
-                    (!('createdAt' in resource.data) || areImmutableFieldsUnchanged(['createdAt']));
+                    (isBootstrapAdmin() ||
+                     !('createdAt' in resource.data) ||
+                     areImmutableFieldsUnchanged(['createdAt']) ||
+                     dataHasValidCreatedAt(request.resource.data));
       allow delete: if isAuthenticated();
     }
 
