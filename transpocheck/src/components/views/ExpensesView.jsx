@@ -127,12 +127,15 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
   const addExp = async (e, type, amount, detail, driverId, dName, dEmail, receiptImage = null) => {
     e.preventDefault();
     if (isSubmitting) return;
-    setIsSubmitting(true);
+
+    if (!amount || isNaN(amount) || amount <= 0) {
+      return showAlert("[ERR-EXP-03] Debes ingresar un monto válido mayor a $0.");
+    }
+
     const currentBalance = drivers.find(d => d.id === driverId)?.balance || 0;
     
-    if (!isAdminView && type === 'expense' && amount > currentBalance) {
-        setIsSubmitting(false);
-        return showAlert(`Saldo insuficiente. Tienes ${formatMoney(currentBalance)}. Solicita asignación de dinero al administrador para rendir este monto.`);
+    if (!isAdminView && type === 'expense' && (currentBalance <= 0 || amount > currentBalance)) {
+      return showAlert(`[ERR-EXP-01] Saldo insuficiente. Tienes ${formatMoney(currentBalance)}. Solicita asignación de dinero al administrador para registrar este gasto.`);
     }
     const assocJobId = e.target.jobId?.value || '';
     let detailString = detail || (type === 'assignment' ? 'Asignación de fondos' : 'Gasto registrado por Admin');
@@ -140,9 +143,10 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
     const isFuel = detailString.toLowerCase().includes('combustible') || detailString.toLowerCase().includes('bencina');
 
     if (!isAdminView && type === 'expense' && !receiptImage && isFuel) {
-        setIsSubmitting(false);
-        return showAlert(`Debes adjuntar la foto de la boleta o comprobante de combustible.`);
+      return showAlert(`[ERR-EXP-02] Debes adjuntar la foto de la boleta o comprobante de combustible.`);
     }
+
+    setIsSubmitting(true);
 
     if (assocJobId) {
       const jb = activeOrPendingJobs.find(x => x.id === assocJobId);
@@ -186,16 +190,20 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
 
       e.target.reset(); 
       if (!isAdminView) setExpenseReceipt(null);
-      showAlert(type === 'assignment' ? "Fondo asignado correctamente." : "Gasto registrado exitosamente.");
-    } catch (err) { console.error(err); }
-    finally { setTimeout(() => setIsSubmitting(false), 300); }
+      showAlert(type === 'assignment' ? "✅ Fondo asignado correctamente." : "✅ Gasto registrado exitosamente.");
+    } catch (err) {
+      console.error("[ERR-EXP-SAVE-01]", err);
+      showAlert(`❌ Error al registrar gasto [ERR-EXP-SAVE-01]: ${err.message || 'Error de conexión'}`);
+    } finally {
+      setTimeout(() => setIsSubmitting(false), 300);
+    }
   };
 
   const [isSubmittingReturn, setIsSubmittingReturn] = useState(false);
   const [cameraConfig, setCameraConfig] = useState({ isOpen: false, title: '', target: '' }); // <-- NUEVO ESTADO PARA LA CÁMARA
 
   const submitReturn = async () => {
-    if (returnMethod === 'transferencia' && !returnReceipt) return showAlert("Sube la foto de la transferencia.");
+    if (returnMethod === 'transferencia' && !returnReceipt) return showAlert("[ERR-RETURN-01] Sube la foto del comprobante de transferencia.");
     if (!myDriver?.balance) return;
     if (isSubmittingReturn) return;
     setIsSubmittingReturn(true);
@@ -237,7 +245,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
               setIsReturnOpen(false); setReturnReceipt(null); showAlert("✅ Rendición enviada. Esperando validación de Admin.");
             } catch(e) {
               console.error("Error enviando rendición:", e);
-              showAlert("❌ Ocurrió un error al enviar la rendición.");
+              showAlert("❌ Ocurrió un error al enviar la rendición [ERR-RETURN-02].");
             }
             finally { setTimeout(() => setIsSubmittingReturn(false), 300); }
           };
@@ -273,12 +281,12 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
               showAlert("✅ Rendición aprobada. El balance del conductor volvió a 0.");
             } catch(e){
               console.error("Error aprobando rendición:", e);
-              showAlert("❌ Error al aprobar la rendición. Revisa tu conexión.");
+              showAlert("❌ Error al aprobar la rendición [ERR-RETURN-03]. Revisa tu conexión.");
             }
           };
 
           const delExp = (exp) => {
-            if (!isAdminView && exp.type === 'assignment') return showAlert("No posees permisos.");
+            if (!isAdminView && exp.type === 'assignment') return showAlert("[ERR-EXP-DEL-01] No posees permisos para eliminar asignaciones.");
             showConfirm("¿Eliminar registro financiero? El saldo se recalculará.", async () => {
               try {
                 const d = drivers.find(x => x.id === exp.driverId);
@@ -290,7 +298,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
                 showAlert("✅ Registro eliminado y saldo recalculado.");
               } catch(e){
                 console.error("Error eliminando registro:", e);
-                showAlert("❌ Error al eliminar el registro financiero.");
+                showAlert("❌ Error al eliminar el registro financiero [ERR-EXP-DEL-02].");
               }
             });
           };
@@ -687,7 +695,17 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
             )}
           </button>
 
-          <button type="submit" disabled={myBalance <= 0 || hasPendingReturn || isSubmitting} className={`w-full py-4 rounded-xl font-extrabold text-sm transition-all mt-2 ${myBalance > 0 && !hasPendingReturn && !isSubmitting ? 'bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-200' : 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'}`}>{isSubmitting ? 'Procesando...' : 'Descontar Gasto de mi Saldo'}</button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className={`w-full py-4 rounded-xl font-extrabold text-sm transition-all mt-2 active:scale-[0.98] ${
+              !isSubmitting
+                ? 'bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-500/20 cursor-pointer'
+                : 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'
+            }`}
+          >
+            {isSubmitting ? 'Procesando...' : 'Descontar Gasto de mi Saldo'}
+          </button>
         </form>
       </div>
       
@@ -696,6 +714,26 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
             <Clock className="w-6 h-6 text-amber-500 mx-auto mb-2"/>
             <p className="font-extrabold text-sm text-amber-700 dark:text-amber-400">Rendición en Revisión</p>
             <p className="text-xs font-bold text-amber-600 dark:text-amber-400 mt-1">El administrador debe aprobar tu comprobante para actualizar el saldo a $0.</p>
+            <button
+              type="button"
+              onClick={() => {
+                showConfirm("¿Deseas cancelar esta rendición para seguir utilizando tu saldo normalmente?", async () => {
+                  try {
+                    const pendingExp = expenses.find(e => e.driverId === myDriver.id && e.type === 'pending_return');
+                    if (pendingExp) {
+                      await deleteDoc(doc(db, 'expenses', pendingExp.id));
+                      showAlert("✅ Rendición cancelada. Tu saldo sigue activo.");
+                    }
+                  } catch (err) {
+                    console.error("[ERR-CANCEL-RETURN-01]", err);
+                    showAlert(`❌ Error al cancelar rendición [ERR-CANCEL-RETURN-01]: ${err.message}`);
+                  }
+                });
+              }}
+              className="mt-3 text-xs font-black text-amber-700 dark:text-amber-300 underline hover:text-amber-800 dark:hover:text-amber-200 transition-colors cursor-pointer inline-block"
+            >
+              Cancelar Rendición Pendiente
+            </button>
         </div>
       ) : (
         myBalance > 0 && (
