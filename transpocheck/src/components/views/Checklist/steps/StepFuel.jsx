@@ -105,9 +105,43 @@ export const StepFuel = ({ openCamera }) => {
       const { id } = e.detail;
       if (id === 'fuelReceipt') setF(id, null);
     };
+
+    const handleRetake = (e) => {
+      const { id, label } = e.detail;
+      if (id === 'fuelReceipt') {
+        setF(id, null);
+        setTimeout(() => {
+          if (openCamera) {
+            openCamera(label || 'Foto de Boleta / Odómetro', f => handlePic(f, id));
+          } else {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.capture = 'environment';
+            input.onchange = (ev) => handlePic(ev, id);
+            input.click();
+          }
+        }, 150);
+      }
+    };
+
+    const handleRotate = (e) => {
+      const { id, url: newUrl } = e.detail;
+      if (id === 'fuelReceipt' && newUrl) {
+        setF(id, newUrl);
+      }
+    };
+
     window.addEventListener('deleteImage', handleDelete);
-    return () => window.removeEventListener('deleteImage', handleDelete);
-  }, [setF]);
+    window.addEventListener('retakeImage', handleRetake);
+    window.addEventListener('rotateImage', handleRotate);
+
+    return () => {
+      window.removeEventListener('deleteImage', handleDelete);
+      window.removeEventListener('retakeImage', handleRetake);
+      window.removeEventListener('rotateImage', handleRotate);
+    };
+  }, [setF, openCamera]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">

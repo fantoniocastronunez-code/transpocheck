@@ -78,19 +78,42 @@ export const FastTrackView = ({ openCamera }) => {
     };
 
     const handleRetake = (e) => {
-      const { id } = e.detail;
+      const { id, label } = e.detail;
       handleDelete(e);
       setTimeout(() => {
-        handlePhotoClick(id);
-      }, 300);
+        if (openCamera) {
+          openCamera(label || `Evidencia ${id}`, f => handlePic(f, id), false);
+        } else {
+          const input = document.createElement('input');
+          input.type = 'file';
+          input.accept = 'image/*';
+          input.capture = 'environment';
+          input.onchange = (ev) => handlePic(ev, id);
+          input.click();
+        }
+      }, 150);
+    };
+
+    const handleRotate = (e) => {
+      const { id, url: newUrl } = e.detail;
+      if (!id || !newUrl) return;
+      setFormData?.(prev => ({
+        ...prev,
+        photos: { ...prev.photos, [id]: newUrl }
+      }));
+      if (!setFormData) {
+        setF('photos', { ...formData.photos, [id]: newUrl });
+      }
     };
 
     window.addEventListener('deleteImage', handleDelete);
     window.addEventListener('retakeImage', handleRetake);
+    window.addEventListener('rotateImage', handleRotate);
 
     return () => {
       window.removeEventListener('deleteImage', handleDelete);
       window.removeEventListener('retakeImage', handleRetake);
+      window.removeEventListener('rotateImage', handleRotate);
     };
   }, [setF, setFormData, formData.photos]);
 

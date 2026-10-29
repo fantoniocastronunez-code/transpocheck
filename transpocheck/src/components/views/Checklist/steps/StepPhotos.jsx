@@ -1,8 +1,8 @@
 import React from 'react';
-import { Camera, CheckCircle } from 'lucide-react';
+import { Camera, CheckCircle, RotateCw } from 'lucide-react';
 import { useChecklist } from '../ChecklistContext';
 import { VehicleCroquis } from '../components/VehicleCroquis';
-import { resizeImage } from '../../../../utils/helpers';
+import { resizeImage, rotateImage90Degrees } from '../../../../utils/helpers';
 
 export const StepPhotos = ({ openCamera }) => {
   const { job, formData, setF, setFormData, uploadImageToStorage, showAlert } = useChecklist();
@@ -35,28 +35,41 @@ export const StepPhotos = ({ openCamera }) => {
       }
     } catch (err) {
       console.error("Error al procesar la foto:", err);
-      showAlert("Error al procesar la foto. Intenta con una imagen más pequeña.");
+      showAlert("Error al procesar la foto. Intenta con una imagen más pequeña. [ERR-PHOTO-PROCESS-01]");
+    }
+  };
+
+  const triggerCamera = (id, label, enableAnnotation = false) => {
+    if (openCamera) {
+      openCamera(label, f => handlePic(f, id), enableAnnotation);
+    } else {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.capture = 'environment';
+      input.onchange = (e) => handlePic(e, id);
+      input.click();
     }
   };
 
   const handlePhotoClick = (id, label, enableAnnotation = false) => {
     if (formData.photos[id]) {
-      // In production, dispatch global event or context to open fullscreen view
-      // For now we'll just alert or if we implement a FullScreenImage viewer later
       const evt = new CustomEvent('openFullScreenImage', { detail: { url: formData.photos[id], id, label }});
       window.dispatchEvent(evt);
     } else {
-      if(openCamera) {
-        openCamera(label, f => handlePic(f, id), enableAnnotation);
-      } else {
-        // Fallback for testing/desktop without openCamera prop properly passed
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'image/*';
-        input.capture = 'environment';
-        input.onchange = (e) => handlePic(e, id);
-        input.click();
-      }
+      triggerCamera(id, label, enableAnnotation);
+    }
+  };
+
+  const handleRotateInline = async (id) => {
+    const currentUrl = formData.photos[id];
+    if (!currentUrl) return;
+    try {
+      const rotated = await rotateImage90Degrees(currentUrl);
+      const evt = new CustomEvent('rotateImage', { detail: { id, url: rotated } });
+      window.dispatchEvent(evt);
+    } catch (err) {
+      console.error("[ERR-PHOTO-ROTATE-INLINE] Error al rotar imagen:", err);
     }
   };
 
@@ -72,20 +85,56 @@ export const StepPhotos = ({ openCamera }) => {
 
     const handleRetake = (e) => {
       const { id, label } = e.detail;
-      handleDelete(e);
+      const isDetail = typeof id === 'string' && id.startsWith('det');
+
+      // 1. Limpiar foto previa
+      setFormData(prev => ({
+        ...prev,
+        photos: { ...prev.photos, [id]: false }
+      }));
+
+      // 2. Abrir inmediatamente la cámara sin verificar si ya existía
       setTimeout(() => {
-        handlePhotoClick(id, label, true); // Assume retakes might need annotation, or pass from event
-      }, 300); // Wait for modal to close
+        triggerCamera(id, label || 'Fotografiar', isDetail);
+      }, 150);
+    };
+
+    const handleRotate = async (e) => {
+      const { id, url: newUrl } = e.detail;
+      if (!id || !newUrl) return;
+
+      setFormData(prev => ({
+        ...prev,
+        photos: { ...prev.photos, [id]: newUrl }
+      }));
+
+      if (job?.id && job.id !== 'NEW_QUICK_JOB' && uploadImageToStorage) {
+        try {
+          const storageUrl = await uploadImageToStorage(
+            newUrl,
+            `checklists/${job.id}`,
+            `photo_${id}_${Date.now()}.jpg`
+          );
+          setFormData(prev => ({
+            ...prev,
+            photos: { ...prev.photos, [id]: storageUrl }
+          }));
+        } catch (upErr) {
+          console.warn("[ERR-PHOTO-ROTATE-UPLOAD] Falló subir foto rotada a Storage:", upErr);
+        }
+      }
     };
 
     window.addEventListener('deleteImage', handleDelete);
     window.addEventListener('retakeImage', handleRetake);
+    window.addEventListener('rotateImage', handleRotate);
 
     return () => {
       window.removeEventListener('deleteImage', handleDelete);
       window.removeEventListener('retakeImage', handleRetake);
+      window.removeEventListener('rotateImage', handleRotate);
     };
-  }, [setFormData, formData.photos]);
+  }, [setFormData, openCamera, job, uploadImageToStorage]);
 
 
   return (
@@ -156,13 +205,11 @@ export const StepPhotos = ({ openCamera }) => {
           }
           
           return extraPhotos.map(p => (
-            <button 
-              type="button" 
+            <div 
               key={p.id} 
-              onClick={() => handlePhotoClick(p.id, p.l)} 
-              className={`w-full h-14 rounded-2xl border-2 flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden bg-white dark:bg-slate-900 shadow-sm transition-all 
+              className={`w-full h-14 rounded-2xl border-2 flex items-center justify-between px-2.5 cursor-pointer relative overflow-hidden bg-white dark:bg-slate-900 shadow-sm transition-all 
               ${formData.photos[p.id] 
-                ? 'border-green-400 ring-2 ring-green-100' 
+                ? 'border-green-400 ring-2 ring-green-100 dark:ring-green-900/30' 
                 : (p.id === 'vin' 
                   ? 'border-dashed border-red-300 dark:border-red-700/50 hover:bg-red-50 dark:hover:bg-red-900/30' 
                   : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800')
@@ -170,17 +217,40 @@ export const StepPhotos = ({ openCamera }) => {
             >
               {formData.photos[p.id] ? (
                 <>
-                  <img src={formData.photos[p.id]} className="absolute inset-0 w-full h-full object-cover opacity-30" />
-                  <CheckCircle className="w-5 h-5 text-green-500 relative z-10 bg-white dark:bg-slate-900 rounded-full" />
-                  <span className="text-[10px] font-black text-green-800 dark:text-green-300 relative z-10">{p.l}</span>
+                  <img 
+                    src={formData.photos[p.id]} 
+                    className="absolute inset-0 w-full h-full object-cover opacity-25 cursor-pointer" 
+                    onClick={() => handlePhotoClick(p.id, p.l)}
+                  />
+                  <div 
+                    className="flex items-center gap-1.5 flex-1 truncate z-10 mr-1 cursor-pointer"
+                    onClick={() => handlePhotoClick(p.id, p.l)}
+                  >
+                    <CheckCircle className="w-4 h-4 text-green-500 shrink-0 bg-white dark:bg-slate-900 rounded-full" />
+                    <span className="text-[10px] font-black text-green-800 dark:text-green-300 truncate">{p.l}</span>
+                  </div>
+                  <button
+                    type="button"
+                    title="Girar imagen 90°"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRotateInline(p.id);
+                    }}
+                    className="relative z-20 w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-slate-700 transition-colors active:scale-90 shrink-0"
+                  >
+                    <RotateCw className="w-3.5 h-3.5" />
+                  </button>
                 </>
               ) : (
-                <>
+                <div 
+                  onClick={() => handlePhotoClick(p.id, p.l)}
+                  className="w-full h-full flex items-center justify-center gap-2 cursor-pointer"
+                >
                   <Camera className={`w-4 h-4 ${p.id === 'vin' ? 'text-red-400 animate-pulse' : 'text-slate-400'}`} />
                   <span className={`text-[10px] font-black uppercase ${p.id === 'vin' ? 'text-red-500 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'}`}>{p.l}</span>
-                </>
+                </div>
               )}
-            </button>
+            </div>
           ));
         })()}
       </div>

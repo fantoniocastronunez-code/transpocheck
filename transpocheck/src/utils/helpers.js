@@ -153,6 +153,52 @@ export const resizeImage = (file, maxWidth = 1920, quality = 0.85) => {
 };
 
 // ==============================================================
+// Rotar imagen 90 grados en sentido horario
+// ==============================================================
+export const rotateImage90Degrees = async (imageUrl) => {
+  let source = imageUrl;
+  // Si es una URL externa (ej. Firebase Storage), intentar fetch como blob para evitar canvas 'tainted'
+  if (typeof imageUrl === 'string' && imageUrl.startsWith('http')) {
+    try {
+      const resp = await fetch(imageUrl);
+      const blob = await resp.blob();
+      source = URL.createObjectURL(blob);
+    } catch (e) {
+      console.warn("[ERR-PHOTO-ROTATE-FETCH] Fallback a source directo:", e);
+    }
+  }
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        // Al rotar 90 grados, el nuevo ancho es el alto anterior y viceversa
+        canvas.width = img.naturalHeight || img.height;
+        canvas.height = img.naturalWidth || img.width;
+        const ctx = canvas.getContext('2d');
+
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(90 * Math.PI / 180);
+        ctx.drawImage(img, -img.width / 2, -img.height / 2);
+
+        const rotatedDataUrl = canvas.toDataURL('image/jpeg', 0.90);
+        resolve(rotatedDataUrl);
+      } catch (err) {
+        console.error("[ERR-PHOTO-ROTATE-CANVAS] Error procesando rotación en canvas:", err);
+        reject(err);
+      }
+    };
+    img.onerror = (err) => {
+      console.error("[ERR-PHOTO-ROTATE-LOAD] No se pudo cargar imagen para rotación:", err);
+      reject(err);
+    };
+    img.src = source;
+  });
+};
+
+// ==============================================================
 // LÓGICA CENTRALIZADA PARA LOGISTICAPP (TARJETAS, TEXTOS Y PDFS)
 // ==============================================================
 
