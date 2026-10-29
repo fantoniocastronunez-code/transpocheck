@@ -29,20 +29,20 @@ export default async function handler(req, res) {
   let cardHtml = '';
   
   // --- optimización: variable de color dinámico ---
-  let accentcolor = '#3b82f6'; // azul por defecto
+  let accentColor = '#3b82f6'; // azul por defecto
 
-  const formatmoneylocal = (val) => {
-    return new intl.numberformat('es-cl', { style: 'currency', currency: 'clp' }).format(val || 0);
+  const formatMoneyLocal = (val) => {
+    return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(val || 0);
   };
 
   // --- LÓGICA Y COLORES ---
   if (type === 'asignacion') {
-    accentcolor = '#10b981'; // verde
-    subject = `💰 fondo asignado exitosamente - logisticapp`;
-    title = 'asignación de fondos';
-    message = `hola <strong>${drivername}</strong>.<br><br>se te ha asignado un nuevo monto de viático para tus rutas.`;
-    cardhtml = `
-      <p style="margin: 0 0 10px 0; color: #334155; font-size: 15px;"><strong>monto entregado:</strong> <span style="color: #10b981; font-weight: 900; font-size: 18px;">${formatmoneylocal(amount)}</span></p>
+    accentColor = '#10b981'; // verde
+    subject = `💰 Fondo Asignado Exitosamente - LogisticAPP`;
+    title = 'Asignación de Fondos';
+    message = `Hola <strong>${driverName}</strong>.<br><br>Se te ha asignado un nuevo monto de viático para tus rutas.`;
+    cardHtml = `
+      <p style="margin: 0 0 10px 0; color: #334155; font-size: 15px;"><strong>Monto Entregado:</strong> <span style="color: #10b981; font-weight: 900; font-size: 18px;">${formatMoneyLocal(amount)}</span></p>
       <p style="margin: 0; color: #334155; font-size: 15px;"><strong>Detalle:</strong> ${detail || 'Asignación de fondos'}</p>
     `;
   } else if (type === 'nuevo_monto') {

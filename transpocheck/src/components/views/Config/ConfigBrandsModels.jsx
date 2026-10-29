@@ -255,7 +255,11 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
       setEditingItem(null);
     } catch (err) {
       console.error("[ERR-MODEL-SAVE-01] Error al guardar modelo:", err);
-      showAlert(`❌ [ERR-MODEL-SAVE-01] Ocurrió un error al guardar: ${err.message || 'Error de conexión'}`);
+      const isPermError = err?.code === 'permission-denied' || err?.message?.includes('permissions');
+      const detailMsg = isPermError 
+        ? 'Permisos insuficientes en Firestore. Asegúrate de publicar las reglas de "vehicle_models" en la consola de Firebase.' 
+        : (err.message || 'Error de conexión');
+      showAlert(`❌ [ERR-MODEL-SAVE-01] Ocurrió un error al guardar: ${detailMsg}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -280,7 +284,11 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
         showAlert(`✅ [OK-MODEL-DEL] Modelo "${item.brand} ${item.model}" eliminado.`);
       } catch (err) {
         console.error("[ERR-MODEL-DEL-01] Error al eliminar modelo:", err);
-        showAlert(`❌ [ERR-MODEL-DEL-01] No se pudo eliminar el modelo: ${err.message}`);
+        const isPermError = err?.code === 'permission-denied' || err?.message?.includes('permissions');
+        const detailMsg = isPermError 
+          ? 'Permisos insuficientes en Firestore. Asegúrate de publicar las reglas de "vehicle_models" en la consola de Firebase.' 
+          : err.message;
+        showAlert(`❌ [ERR-MODEL-DEL-01] No se pudo eliminar el modelo: ${detailMsg}`);
       }
     });
   };
