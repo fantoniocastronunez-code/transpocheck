@@ -68,42 +68,67 @@ function StorageWidget() {
 }
 
 export default function ConfigView({ currentUserEmail, allClientsList, customClients, vehicles, vehicleModels = [], drivers, db, showAlert, showConfirm, isSuperAdmin, adminPermissions }) {
-  const [configSubTab, setConfigSubTab] = useState('clients');
+  // Inicializar recuperando la última pestaña guardada para que las modificaciones mantengan al usuario en su vista
+  const [configSubTab, setConfigSubTab] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('config_active_subtab');
+      return saved || 'clients';
+    } catch (e) {
+      return 'clients';
+    }
+  });
+
   const [fullScreenDoc, setFullScreenDoc] = useState(null); 
+
+  const handleSelectTab = (tab) => {
+    setConfigSubTab(tab);
+    try {
+      sessionStorage.setItem('config_active_subtab', tab);
+    } catch (e) {}
+  };
   
-  // Set default tab safely based on permissions
+  // Validar permisos solo para asegurar que la pestaña activa sea lícita, sin forzar 'clients' si el usuario ya está en otra pestaña permitida
   useEffect(() => {
-     if (adminPermissions?.manage_clients !== false) { setConfigSubTab('clients'); }
-     else if (adminPermissions?.manage_vehicles !== false) { setConfigSubTab('vehicles'); }
-     else if (adminPermissions?.manage_users !== false) { setConfigSubTab('drivers'); }
-     else if (adminPermissions?.manage_directory !== false) { setConfigSubTab('directory'); }
-     else if (adminPermissions?.manage_tolls !== false) { setConfigSubTab('tolls'); }
-     else if (adminPermissions?.manage_equipment !== false) { setConfigSubTab('equipment'); }
-  }, [adminPermissions]);
+    const isAllowed = (tab) => {
+      if (tab === 'clients') return adminPermissions?.manage_clients !== false;
+      if (tab === 'vehicles' || tab === 'models') return adminPermissions?.manage_vehicles !== false;
+      if (tab === 'drivers') return adminPermissions?.manage_users !== false;
+      if (tab === 'directory') return adminPermissions?.manage_directory !== false;
+      if (tab === 'tolls') return adminPermissions?.manage_tolls !== false;
+      if (tab === 'equipment') return adminPermissions?.manage_equipment !== false;
+      if (tab === 'storage') return !!isSuperAdmin;
+      return false;
+    };
+
+    if (!isAllowed(configSubTab)) {
+      let fallbackTab = 'clients';
+      if (adminPermissions?.manage_clients !== false) fallbackTab = 'clients';
+      else if (adminPermissions?.manage_vehicles !== false) fallbackTab = 'vehicles';
+      else if (adminPermissions?.manage_users !== false) fallbackTab = 'drivers';
+      else if (adminPermissions?.manage_directory !== false) fallbackTab = 'directory';
+      else if (adminPermissions?.manage_tolls !== false) fallbackTab = 'tolls';
+      else if (adminPermissions?.manage_equipment !== false) fallbackTab = 'equipment';
+      else if (isSuperAdmin) fallbackTab = 'storage';
+
+      setConfigSubTab(fallbackTab);
+      try {
+        sessionStorage.setItem('config_active_subtab', fallbackTab);
+      } catch (e) {}
+    }
+  }, [adminPermissions, isSuperAdmin, configSubTab]);
 
   return (
     <div className="space-y-6 relative w-full">
       <div className="flex flex-wrap gap-2 pb-2 w-full">
-         {adminPermissions?.manage_clients !== false && <button onClick={()=>setConfigSubTab('clients')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='clients'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Clientes</button>}
-         {adminPermissions?.manage_vehicles !== false && <button onClick={()=>setConfigSubTab('vehicles')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='vehicles'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Vehículos</button>}
-         {adminPermissions?.manage_vehicles !== false && <button onClick={()=>setConfigSubTab('models')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='models'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Marcas y Modelos</button>}
-         {adminPermissions?.manage_users !== false && <button onClick={()=>setConfigSubTab('drivers')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='drivers'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Usuarios</button>}
-         {adminPermissions?.manage_directory !== false && <button onClick={()=>setConfigSubTab('directory')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='directory'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Directorio</button>}
-         {adminPermissions?.manage_tolls !== false && <button onClick={()=>setConfigSubTab('tolls')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='tolls'?'bg-emerald-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Peajes</button>}
-         {adminPermissions?.manage_equipment !== false && <button onClick={()=>setConfigSubTab('equipment')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='equipment'?'bg-amber-500 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Equipamiento</button>}
-         {isSuperAdmin && <button onClick={()=>setConfigSubTab('storage')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='storage'?'bg-purple-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Almacenamiento Nube</button>}
+         {adminPermissions?.manage_clients !== false && <button onClick={()=>handleSelectTab('clients')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='clients'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Clientes</button>}
+         {adminPermissions?.manage_vehicles !== false && <button onClick={()=>handleSelectTab('vehicles')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='vehicles'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Vehículos</button>}
+         {adminPermissions?.manage_vehicles !== false && <button onClick={()=>handleSelectTab('models')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='models'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Marcas y Modelos</button>}
+         {adminPermissions?.manage_users !== false && <button onClick={()=>handleSelectTab('drivers')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='drivers'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Usuarios</button>}
+         {adminPermissions?.manage_directory !== false && <button onClick={()=>handleSelectTab('directory')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='directory'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Directorio</button>}
+         {adminPermissions?.manage_tolls !== false && <button onClick={()=>handleSelectTab('tolls')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='tolls'?'bg-emerald-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Peajes</button>}
+         {adminPermissions?.manage_equipment !== false && <button onClick={()=>handleSelectTab('equipment')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='equipment'?'bg-amber-500 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Equipamiento</button>}
+         {isSuperAdmin && <button onClick={()=>handleSelectTab('storage')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='storage'?'bg-purple-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Almacenamiento Nube</button>}
       </div>
-      
-      {/* MÉTRICAS DE ALMACENAMIENTO DE FIREBASE STORAGE (NUBE) */}
-      <FirebaseStorageMetrics 
-        db={db} 
-        storage={storage} 
-        vehicles={vehicles} 
-        showAlert={showAlert} 
-        showConfirm={showConfirm} 
-      />
-
-      <StorageWidget />
 
       {configSubTab === 'clients' && (
         <ConfigClients 
@@ -168,6 +193,19 @@ export default function ConfigView({ currentUserEmail, allClientsList, customCli
           showAlert={showAlert} 
           showConfirm={showConfirm} 
         />
+      )}
+
+      {configSubTab === 'storage' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <FirebaseStorageMetrics 
+            db={db} 
+            storage={storage} 
+            vehicles={vehicles} 
+            showAlert={showAlert} 
+            showConfirm={showConfirm} 
+          />
+          <StorageWidget />
+        </div>
       )}
 
       {fullScreenDoc && (
