@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { updateDoc, doc, addDoc, collection, getDocs, query, where } from 'firebase/firestore';
-import { X, User, CheckCircle, Plus, AlertCircle, FileText, Loader2, Camera } from 'lucide-react';
+import { X, User, CheckCircle, Plus, AlertCircle, FileText, Loader2, Camera, Star } from 'lucide-react';
 import CustomClientSelector from '../ui/CustomClientSelector';
 import Tesseract from 'tesseract.js';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -754,6 +754,17 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
     }
   };
 
+  const favoriteModels = useMemo(() => {
+    const list = (vehicleModels || []).filter(vm => vm.isFavorite && vm.brand && vm.model);
+    const seen = new Set();
+    return list.filter(item => {
+      const key = `${item.brand.toUpperCase().trim()}___${item.model.toUpperCase().trim()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).sort((a, b) => `${a.brand} ${a.model}`.localeCompare(`${b.brand} ${b.model}`));
+  }, [vehicleModels]);
+
   const brandOptions = [...new Set([
     ...(vehicles || []).map(v => v.brand?.toUpperCase().trim()),
     ...(vehicleModels || []).map(vm => vm.brand?.toUpperCase().trim())
@@ -894,6 +905,43 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                           <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider ml-1">VIN / Chasis</label>
                           <input value={vin} onChange={e=>handleVehicleSearch(e.target.value.replace(/[^a-zA-Z0-9]/g, ''), 'vin')} maxLength="17" type="text" placeholder="17 CARACTERES" autoComplete="off" className={`w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl uppercase outline-none font-black transition-all ${isSearchingVehicle ? 'border-blue-400 ring-2 ring-blue-500/20' : vehicleFoundStatus === 'found' ? 'border-green-500/50 text-green-600 dark:text-green-400' : 'focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-slate-800 dark:text-slate-100'}`} />
                        </div>
+
+                       {/* Acceso Rápido: Vehículos Frecuentes */}
+                       {favoriteModels.length > 0 && (
+                          <div className="sm:col-span-2 p-3 bg-amber-500/10 dark:bg-amber-950/20 rounded-2xl border border-amber-500/20 space-y-2">
+                             <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-extrabold text-[11px] uppercase tracking-wider">
+                                <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                                <span>Vehículos Frecuentes (1 Toque):</span>
+                             </div>
+                             <div className="flex flex-wrap gap-2">
+                                {favoriteModels.map(fav => {
+                                   const isSelected = brand?.toUpperCase().trim() === fav.brand.toUpperCase().trim() && model?.toUpperCase().trim() === fav.model.toUpperCase().trim();
+                                   return (
+                                      <button
+                                         key={fav.id || `${fav.brand}-${fav.model}`}
+                                         type="button"
+                                         onClick={() => {
+                                            setBrand(fav.brand);
+                                            setModel(fav.model);
+                                            if (fav.vehicleType) {
+                                               setVehicleType(fav.vehicleType);
+                                               setHistoricalVehicleType(fav.vehicleType);
+                                            }
+                                         }}
+                                         className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-1.5 cursor-pointer border ${
+                                            isSelected
+                                               ? 'bg-amber-500 text-white border-amber-600 shadow-md shadow-amber-500/30 scale-[1.02]'
+                                               : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:border-amber-400 dark:hover:border-amber-500'
+                                         }`}
+                                      >
+                                         <Star className={`w-3.5 h-3.5 ${isSelected ? 'fill-white text-white' : 'text-amber-500 fill-amber-400'}`} />
+                                         <span>{fav.brand} {fav.model}</span>
+                                      </button>
+                                   );
+                                })}
+                             </div>
+                          </div>
+                       )}
 
                        <div className="space-y-1 z-[990] relative">
                           <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider ml-1">Marca</label>

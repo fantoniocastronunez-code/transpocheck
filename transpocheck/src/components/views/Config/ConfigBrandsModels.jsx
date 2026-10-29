@@ -4,7 +4,7 @@ import {
 } from 'firebase/firestore';
 import { 
   Car, Plus, Search, Edit2, Trash2, ChevronDown, ChevronUp, 
-  Tag, Filter, Check, X, Layers, AlertCircle, Sparkles 
+  Tag, Filter, Check, X, Layers, AlertCircle, Sparkles, Star 
 } from 'lucide-react';
 
 export const VEHICLE_TYPES = [
@@ -29,6 +29,7 @@ export const getVehicleTypeInfo = (typeKey) => {
 export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], db, showAlert, showConfirm }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTypeFilter, setSelectedTypeFilter] = useState('all');
+  const [onlyFavoritesFilter, setOnlyFavoritesFilter] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [expandedBrands, setExpandedBrands] = useState({});
@@ -37,6 +38,7 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
   const [brandInput, setBrandInput] = useState('');
   const [modelInput, setModelInput] = useState('');
   const [typeInput, setTypeInput] = useState('auto');
+  const [isFavoriteInput, setIsFavoriteInput] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 1. Unificamos marcas y modelos desde 'vehicles' y la colección dedicada 'vehicle_models'
@@ -58,7 +60,8 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
             source: 'vehicles',
             fleetCount: 1,
             catalogDocId: null,
-            vehicleDocIds: [v.id]
+            vehicleDocIds: [v.id],
+            isFavorite: false
           });
         } else {
           const item = map.get(key);
@@ -79,10 +82,12 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
       const m = vm.model?.toUpperCase().trim();
       if (b && m) {
         const key = `${b}___${m}`;
+        const isFav = vm.isFavorite === true;
         if (map.has(key)) {
           const item = map.get(key);
           item.catalogDocId = vm.id;
           item.vehicleType = vm.vehicleType || item.vehicleType || 'auto';
+          item.isFavorite = isFav;
           item.source = 'catalog_and_fleet';
         } else {
           map.set(key, {
@@ -93,7 +98,8 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
             source: 'catalog_only',
             fleetCount: 0,
             catalogDocId: vm.id,
-            vehicleDocIds: []
+            vehicleDocIds: [],
+            isFavorite: isFav
           });
         }
       }
@@ -118,8 +124,9 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
         item.model.toLowerCase().includes(cleanSearch);
 
       const matchesType = selectedTypeFilter === 'all' || item.vehicleType === selectedTypeFilter;
+      const matchesFav = !onlyFavoritesFilter || item.isFavorite;
 
-      if (matchesSearch && matchesType) {
+      if (matchesSearch && matchesType && matchesFav) {
         if (!groups[item.brand]) {
           groups[item.brand] = [];
         }
@@ -127,13 +134,17 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
       }
     });
 
-    // Ordenar los modelos dentro de cada marca
+    // Ordenar los modelos dentro de cada marca: favoritos primero, luego alfabético
     Object.keys(groups).forEach(b => {
-      groups[b].sort((a, b) => a.model.localeCompare(b.model));
+      groups[b].sort((a, b) => {
+        if (a.isFavorite && !b.isFavorite) return -1;
+        if (!a.isFavorite && b.isFavorite) return 1;
+        return a.model.localeCompare(b.model);
+      });
     });
 
     return groups;
-  }, [consolidatedModels, searchTerm, selectedTypeFilter]);
+  }, [consolidatedModels, searchTerm, selectedTypeFilter, onlyFavoritesFilter]);
 
   const sortedBrandNames = useMemo(() => {
     return Object.keys(groupedByBrand).sort();
@@ -164,6 +175,7 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
     setBrandInput(initialBrand);
     setModelInput('');
     setTypeInput('auto');
+    setIsFavoriteInput(false);
     setIsModalOpen(true);
   };
 
@@ -172,7 +184,36 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
     setBrandInput(item.brand);
     setModelInput(item.model);
     setTypeInput(item.vehicleType || 'auto');
+    setIsFavoriteInput(item.isFavorite === true);
     setIsModalOpen(true);
+  };
+
+  const handleToggleFavorite = async (item) => {
+    const nextFavorite = !item.isFavorite;
+    try {
+      if (item.catalogDocId) {
+        await updateDoc(doc(db, 'vehicle_models', item.catalogDocId), {
+          isFavorite: nextFavorite,
+          updatedAt: Date.now()
+        });
+      } else {
+        await addDoc(collection(db, 'vehicle_models'), {
+          brand: item.brand,
+          model: item.model,
+          vehicleType: item.vehicleType || 'auto',
+          isFavorite: nextFavorite,
+          createdAt: Date.now()
+        });
+      }
+      showAlert(
+        nextFavorite 
+          ? `⭐ "${item.brand} ${item.model}" marcado como frecuente para nuevos traslados.` 
+          : `⭐ "${item.brand} ${item.model}" quitado de frecuentes.`
+      );
+    } catch (err) {
+      console.error("[ERR-MODEL-FAV-01] Error al cambiar estado favorito:", err);
+      showAlert(`❌ [ERR-MODEL-FAV-01] Error al guardar favorito: ${err.message || 'Error de permisos'}`);
+    }
   };
 
   const handleSaveModel = async (e) => {
@@ -196,6 +237,7 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
             brand: cleanBrand,
             model: cleanModel,
             vehicleType: typeInput,
+            isFavorite: isFavoriteInput,
             updatedAt: Date.now()
           });
         } else {
@@ -204,6 +246,7 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
             brand: cleanBrand,
             model: cleanModel,
             vehicleType: typeInput,
+            isFavorite: isFavoriteInput,
             createdAt: Date.now()
           });
         }
@@ -237,6 +280,7 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
         if (existing) {
           await updateDoc(doc(db, 'vehicle_models', existing.id), {
             vehicleType: typeInput,
+            isFavorite: isFavoriteInput,
             updatedAt: Date.now()
           });
           showAlert(`✅ [OK-MODEL-SAVE] Categoría de "${cleanBrand} ${cleanModel}" actualizada a "${getVehicleTypeInfo(typeInput).label}".`);
@@ -245,6 +289,7 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
             brand: cleanBrand,
             model: cleanModel,
             vehicleType: typeInput,
+            isFavorite: isFavoriteInput,
             createdAt: Date.now()
           });
           showAlert(`✅ [OK-MODEL-SAVE] Modelo "${cleanBrand} ${cleanModel}" (${getVehicleTypeInfo(typeInput).label}) añadido al catálogo.`);
@@ -363,6 +408,20 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+          <button
+            type="button"
+            onClick={() => setOnlyFavoritesFilter(prev => !prev)}
+            className={`py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 whitespace-nowrap border cursor-pointer ${
+              onlyFavoritesFilter 
+                ? 'bg-amber-500 text-white border-amber-600 shadow-sm shadow-amber-500/25' 
+                : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-amber-400'
+            }`}
+            title="Filtrar sólo modelos frecuentes / favoritos"
+          >
+            <Star className={`w-3.5 h-3.5 ${onlyFavoritesFilter ? 'fill-white text-white' : 'text-amber-500 fill-amber-400'}`} />
+            <span>Favoritos</span>
+          </button>
+
           <select
             value={selectedTypeFilter}
             onChange={(e) => setSelectedTypeFilter(e.target.value)}
@@ -377,14 +436,14 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
           <button
             type="button"
             onClick={handleExpandAll}
-            className="px-3 py-2 rounded-xl text-[11px] font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors whitespace-nowrap"
+            className="px-3 py-2 rounded-xl text-[11px] font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors whitespace-nowrap cursor-pointer"
           >
             Expandir Todo
           </button>
           <button
             type="button"
             onClick={handleCollapseAll}
-            className="px-3 py-2 rounded-xl text-[11px] font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors whitespace-nowrap"
+            className="px-3 py-2 rounded-xl text-[11px] font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors whitespace-nowrap cursor-pointer"
           >
             Colapsar
           </button>
@@ -472,13 +531,22 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
                         return (
                           <div
                             key={item.key}
-                            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 flex items-center justify-between gap-2 shadow-xs hover:border-blue-400 dark:hover:border-blue-600 transition-colors group"
+                            className={`bg-white dark:bg-slate-900 border rounded-xl p-3 flex items-center justify-between gap-2 shadow-xs transition-colors group ${
+                              item.isFavorite 
+                                ? 'border-amber-400 dark:border-amber-500/60 ring-1 ring-amber-400/20' 
+                                : 'border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-600'
+                            }`}
                           >
                             <div className="min-w-0 flex-1">
-                              <p className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide truncate">
-                                {item.model}
-                              </p>
-                              <div className="flex items-center gap-1.5 mt-1">
+                              <div className="flex items-center gap-1.5">
+                                {item.isFavorite && (
+                                  <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400 shrink-0" />
+                                )}
+                                <p className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide truncate">
+                                  {item.model}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                                 <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                                   <span>{typeInfo.emoji}</span>
                                   <span className="truncate">{typeInfo.label}</span>
@@ -494,8 +562,20 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
                             <div className="flex items-center gap-1 shrink-0">
                               <button
                                 type="button"
+                                onClick={() => handleToggleFavorite(item)}
+                                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                                  item.isFavorite 
+                                    ? 'text-amber-500 bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/50' 
+                                    : 'text-slate-300 dark:text-slate-600 hover:text-amber-400 hover:bg-amber-50/50 dark:hover:bg-amber-950/20'
+                                }`}
+                                title={item.isFavorite ? "Quitar de favoritos" : "Marcar como frecuente para nuevo traslado"}
+                              >
+                                <Star className={`w-4 h-4 ${item.isFavorite ? 'fill-amber-400 text-amber-500' : ''}`} />
+                              </button>
+                              <button
+                                type="button"
                                 onClick={() => openEditModal(item)}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
                                 title="Editar Modelo y Categoría"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
@@ -503,7 +583,7 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
                               <button
                                 type="button"
                                 onClick={() => handleDeleteModel(item)}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
                                 title="Eliminar Modelo"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -615,6 +695,25 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
                   Esta categoría se asignará automáticamente al ingresar este modelo en un traslado.
                 </p>
               </div>
+
+              {/* Favorito / Frecuente */}
+              <label className="flex items-start gap-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 cursor-pointer hover:bg-amber-500/15 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={isFavoriteInput}
+                  onChange={(e) => setIsFavoriteInput(e.target.checked)}
+                  className="w-5 h-5 mt-0.5 text-amber-500 rounded accent-amber-500 cursor-pointer"
+                />
+                <div className="flex-1">
+                  <span className="text-xs font-black text-amber-800 dark:text-amber-300 uppercase flex items-center gap-1.5">
+                    <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                    Marcar como Frecuente / Favorito
+                  </span>
+                  <p className="text-[10px] text-amber-700/80 dark:text-amber-400/80 font-bold mt-0.5 leading-tight">
+                    Aparecerá como acceso rápido de 1-toque al crear un nuevo traslado (ej: TOYOTA HILUX).
+                  </p>
+                </div>
+              </label>
 
             </div>
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { collection, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
-import { Truck, Edit2, Trash2, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import { Truck, Edit2, Trash2, ChevronDown, ChevronUp, AlertTriangle, X } from 'lucide-react';
 import LicensePlateBadge from '../../ui/LicensePlateBadge';
 
 export default function ConfigVehicles({ allClientsList, vehicles, db, showAlert, showConfirm }) {
@@ -35,10 +35,34 @@ export default function ConfigVehicles({ allClientsList, vehicles, db, showAlert
              await Promise.all(deletePromises);
              showAlert(`✅ ${toDelete.length} vehículos eliminados exitosamente.`);
          } catch(e) {
-             console.error(e);
-             showAlert("❌ Error al borrar vehículos.");
+             console.error('[ERR-VEH-BULK-01]', e);
+             showAlert("❌ [ERR-VEH-BULK-01] Error al borrar vehículos inactivos.");
          }
      });
+  };
+
+  const handleDeleteClientFleet = (clientName, clientVehicles) => {
+    if (!clientVehicles || clientVehicles.length === 0) return;
+    showConfirm(
+      `¿Estás seguro de eliminar la flota completa de "${clientName}" (${clientVehicles.length} vehículo${clientVehicles.length > 1 ? 's' : ''})?\n\nEsta acción eliminará permanentemente todos los vehículos asignados a este cliente.`,
+      async () => {
+        showAlert(`⏳ Eliminando flota de ${clientName}...`);
+        try {
+          const deletePromises = clientVehicles.map(v => deleteDoc(doc(db, 'vehicles', v.id)));
+          const results = await Promise.allSettled(deletePromises);
+          const failed = results.filter(r => r.status === 'rejected');
+          if (failed.length > 0) {
+            console.error('[ERR-VEH-FLEET-DEL-01] Algunos vehículos fallaron al eliminarse:', failed);
+            showAlert(`⚠️ [ERR-VEH-FLEET-DEL-01] Se eliminaron ${results.length - failed.length} vehículos, pero ${failed.length} fallaron. Verifica los permisos de Firestore.`);
+          } else {
+            showAlert(`✅ Flota de "${clientName}" eliminada exitosamente (${clientVehicles.length} vehículos).`);
+          }
+        } catch (err) {
+          console.error('[ERR-VEH-FLEET-DEL-02]', err);
+          showAlert(`❌ [ERR-VEH-FLEET-DEL-02] Error al eliminar la flota: ${err.message || 'Error desconocido'}`);
+        }
+      }
+    );
   };
 
   return (
@@ -113,15 +137,38 @@ export default function ConfigVehicles({ allClientsList, vehicles, db, showAlert
              
              return (
                <div key={clientName} className="border-2 border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden bg-slate-50 dark:bg-slate-800/50">
-                  <button onClick={() => toggleClient(clientName)} className="w-full flex justify-between items-center p-4 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors outline-none focus:ring-2 ring-inset ring-blue-500">
-                     <div className="flex items-center gap-3">
-                        <div className="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 w-8 h-8 rounded-full flex items-center justify-center font-black text-sm">
-                           {clientVehicles.length}
-                        </div>
-                        <span className="font-extrabold text-slate-700 dark:text-slate-200 uppercase">{clientName}</span>
-                     </div>
-                     {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400"/> : <ChevronDown className="w-5 h-5 text-slate-400"/>}
-                  </button>
+                  <div className="w-full flex justify-between items-center p-4 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                    <button 
+                      type="button"
+                      onClick={() => toggleClient(clientName)} 
+                      className="flex-1 flex items-center gap-3 text-left outline-none cursor-pointer"
+                    >
+                      <div className="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 w-8 h-8 rounded-full flex items-center justify-center font-black text-sm">
+                        {clientVehicles.length}
+                      </div>
+                      <span className="font-extrabold text-slate-700 dark:text-slate-200 uppercase">{clientName}</span>
+                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        title={`Borrar flota completa de ${clientName}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteClientFleet(clientName, clientVehicles);
+                        }}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors border border-transparent hover:border-red-200 dark:hover:border-red-800/40 cursor-pointer"
+                      >
+                        <X className="w-4 h-4 stroke-[2.5]" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleClient(clientName)}
+                        className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg cursor-pointer"
+                      >
+                        {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400"/> : <ChevronDown className="w-5 h-5 text-slate-400"/>}
+                      </button>
+                    </div>
+                  </div>
 
                   {isExpanded && (
                      <div className="p-3 space-y-2 bg-slate-50 dark:bg-slate-800/30">
@@ -139,7 +186,7 @@ export default function ConfigVehicles({ allClientsList, vehicles, db, showAlert
                                </div>
                                <div className="flex gap-2">
                                   <button onClick={() => {setEditingVehicle(v); window.scrollTo({ top: 0, behavior: 'smooth' });}} className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"><Edit2 className="w-4 h-4 text-slate-600 dark:text-slate-300"/></button>
-                                  <button onClick={()=>showConfirm("¿Eliminar vehículo?", async () => {try { await deleteDoc(doc(db, 'vehicles', v.id)); } catch (e) {}})} className="p-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
+                                  <button onClick={()=>showConfirm("¿Eliminar vehículo?", async () => {try { await deleteDoc(doc(db, 'vehicles', v.id)); showAlert("✅ Vehículo eliminado correctamente."); } catch (e) { console.error('[ERR-VEH-DEL-01]', e); showAlert("❌ [ERR-VEH-DEL-01] Error al eliminar el vehículo."); }})} className="p-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>
                                </div>
                             </div>
                           );
