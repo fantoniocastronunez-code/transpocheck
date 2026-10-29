@@ -1,438 +1,105 @@
 rules_version = '2';
-
-// ===============================================================
-// Assumed Data Model & Architecture Overview
-// ===============================================================
-//
-// Application: Transpocheck / LogisticAPP (Project: logisticapp-45452)
-//
-// Collections:
-//
-// 1. vehicle_models
-//    Document ID: Auto-generated or custom model ID
-//    Fields:
-//      - brand: string (1-100 chars, optional/null) - Vehicle brand (e.g. TOYOTA, CHEVROLET)
-//      - model: string (1-100 chars, optional/null) - Vehicle model (e.g. COROLLA, SAIL)
-//      - vehicleType: string (1-50 chars, optional/null) - Category (e.g. sedan, suv, pickup, camion, etc.)
-//      - createdAt: number (epoch ms), timestamp, string (<= 100 chars), or null (optional)
-//      - updatedAt: number (epoch ms), timestamp, string (<= 100 chars), or null (optional)
-//      - Tolerates extra legacy document fields without strict key restriction
-//
-// 2. transport_jobs
-//    Document ID: Auto-generated or "quick_{timestamp}"
-//    Fields:
-//      - status: string (1-50 chars, optional/required in workflow)
-//      - client: string (1-200 chars, optional)
-//      - origin: string (1-300 chars, optional)
-//      - destination: string (1-300 chars, optional)
-//      - brand: string (1-100 chars, optional)
-//      - model: string (1-100 chars, optional)
-//      - plate: string (1-20 chars, optional)
-//      - vin: string (1-50 chars, optional)
-//      - vehicleType: string (1-50 chars, optional)
-//      - tripType: string (1-50 chars, optional)
-//      - assignedEmails: list of strings (max 50 items, optional)
-//      - assignedDrivers: list of maps (max 50 items, optional)
-//      - relayHistory: list of maps (max 50 items, optional)
-//      - checklist: map (optional) - Inspection checklist, signatures, and photos
-//      - draft: map (optional) - Temporary in-progress driver draft
-//      - createdAt: number (epoch ms) or timestamp (optional, immutable)
-//
-// 3. vehicles
-//    Document ID: Auto-generated
-//    Fields:
-//      - brand: string (1-100 chars, optional/null)
-//      - model: string (1-100 chars, optional/null)
-//      - plate: string (1-30 chars, optional/null)
-//      - vin: string (1-100 chars, optional/null)
-//      - vehicleType: string (1-50 chars, optional/null)
-//      - client: string (1-200 chars, optional/null)
-//      - createdAt: number (epoch ms), timestamp, string (<= 100 chars), or null (optional)
-//      - lastTripDate: number (epoch ms), timestamp, string (<= 100 chars), or null (optional)
-//      - tripsCount: number or null (optional)
-//      - docs: map or null (optional)
-//      - docsExpiry: map or null (optional)
-//      - docsPhotos: map or null (optional)
-//
-// 4. drivers
-//    Document ID: Auto-generated
-//    Fields:
-//      - name: string (1-150 chars, required)
-//      - email: string (1-150 chars, required, valid email format)
-//      - role: string (1-50 chars, optional) - driver, admin, super_admin, quoter, part_time
-//      - balance: number (optional) - Driver balance / petty cash
-//      - licenses: list (max 20 items, optional)
-//      - licenseExpiry: string (1-50 chars, optional)
-//      - permissions: map (optional) - Granular admin/driver capabilities
-//      - fcmToken: string (1-500 chars, optional) - Push notification token
-//      - createdAt: number (epoch ms) or timestamp (optional, immutable)
-//
-// 5. expenses
-//    Document ID: Auto-generated
-//    Fields:
-//      - amount: number (optional)
-//      - type: string (1-50 chars, optional) - fuel, toll, viatico, assignment, etc.
-//      - driverId: string (1-100 chars, optional)
-//      - driverEmail: string (1-150 chars, optional)
-//      - driverName: string (1-150 chars, optional)
-//      - jobId: string (1-100 chars, optional)
-//      - detail: string (1-500 chars, optional)
-//      - createdAt: number (epoch ms) or timestamp (optional, immutable)
-//
-// 6. clients
-//    Document ID: Auto-generated
-//    Fields:
-//      - name: string (1-200 chars, required)
-//      - email: string (1-500 chars, optional)
-//      - contactName: string (1-500 chars, optional)
-//      - contactPin: string (1-100 chars, optional)
-//      - color: string (1-50 chars, optional)
-//      - createdAt: number (epoch ms) or timestamp (optional, immutable)
-//
-// 7. directory
-//    Document ID: Auto-generated
-//    Fields:
-//      - placeName: string (1-200 chars, required)
-//      - contactName: string (1-200 chars, optional)
-//      - address: string (1-300 chars, optional)
-//      - commune: string (1-100 chars, optional)
-//      - phone: string (1-50 chars, optional)
-//      - isAutoSaved: bool (optional)
-//      - createdAt: number (epoch ms) or timestamp (optional, immutable)
-//
-// 8. tolls
-//    Document ID: Auto-generated
-//    Fields:
-//      - name: string (1-200 chars, required)
-//      - price: number (optional)
-//      - tag: string (1-50 chars, optional)
-//      - type: string (1-50 chars, optional)
-//      - createdAt: number (epoch ms) or timestamp (optional, immutable)
-//
-// 9. prts
-//    Document ID: Auto-generated
-//    Fields:
-//      - name: string (1-200 chars, required)
-//      - address: string (1-300 chars, optional)
-//      - commune: string (1-100 chars, optional)
-//      - createdAt: number (epoch ms) or timestamp (optional, immutable)
-//
-// 10. system_config
-//     Document ID: Specific identifiers (broadcast, force_refresh, equipment, storage_metrics)
-//     Fields: dynamic maps according to configuration type
-//
-// 11. inbox
-//     Document ID: Auto-generated
-//     Fields:
-//       - userEmail: string (1-150 chars, required, valid email format)
-//       - message: string (1-1000 chars, optional)
-//       - title: string (1-200 chars, optional)
-//       - createdAt: number (epoch ms) or timestamp (optional, immutable)
-//
-// 12. monthly_stats & historical_stats
-//     Document ID: Month key formatted YYYY-MM
-//     Fields: metrics aggregation maps
-//
-// ===============================================================
-
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    // 1. EL CANDADO MAESTRO: Verificamos los correos desde el servidor seguro de Google
+    function isAdmin() {
+      return request.auth != null && 
+             (request.auth.token.email == 'fcastro@logisticats.cl' || 
+              request.auth.token.email == 'hcastro@logisticats.cl');
+    }
 
-    // ===============================================================
-    // Global Helper Functions
-    // ===============================================================
-
-    function isAuthenticated() {
+    // Función básica para saber si cualquier usuario está logueado en la app (Equipo interno)
+    function isLogged() {
       return request.auth != null;
     }
 
-    function isBootstrapAdmin() {
-      return isAuthenticated() && (
-        request.auth.token.email in ['fcastro@logisticats.cl', 'hcastro@logisticats.cl'] ||
-        request.auth.token.admin == true
-      );
+    // -----------------------------------------------------------------------
+    // 2. REGLAS POR COLECCIÓN
+    // -----------------------------------------------------------------------
+
+    // A) CONFIGURACIÓN DEL SISTEMA (Avisos Globales Pop-Up)
+    match /system_config/{docId} {
+      allow read: if true; // Todos pueden leer la config
+      allow write: if isAdmin(); // BLOQUEO: Solo los admins pueden modificar
     }
 
-    function isValidEmail(email) {
-      return email is string &&
-        email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    // B) CLIENTES (Base de datos de accesos)
+    match /clients/{document=**} {
+      allow read: if true; // ABIERTO: Para que el portal valide el correo del cliente sin estar logueado
+      allow create, delete: if isAdmin(); // BLOQUEO: Nadie más puede agregar o borrar clientes
+      
+      // MAGIA: El Admin puede actualizar todo. El cliente anónimo SOLO puede tocar el 'contactPin'.
+      allow update: if isAdmin() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['contactPin']);
     }
 
-    function areImmutableFieldsUnchanged(fields) {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
-    }
-
-    function dataHasValidCreatedAt(data) {
-      return !('createdAt' in data) ||
-             data.createdAt == null ||
-             data.createdAt is number ||
-             data.createdAt is timestamp ||
-             data.createdAt is string;
-    }
-
-    // ===============================================================
-    // Collection 1: vehicle_models (Catalog of Brands and Models)
-    // ===============================================================
-
-    function isValidVehicleModel(data) {
-      return (!('brand' in data) || data.brand == null || (data.brand is string && data.brand.size() <= 100)) &&
-             (!('model' in data) || data.model == null || (data.model is string && data.model.size() <= 100)) &&
-             (!('vehicleType' in data) || data.vehicleType == null || (data.vehicleType is string && data.vehicleType.size() <= 50)) &&
-             (!('createdAt' in data) || data.createdAt == null || data.createdAt is number || data.createdAt is timestamp || (data.createdAt is string && data.createdAt.size() <= 100)) &&
-             (!('updatedAt' in data) || data.updatedAt == null || data.updatedAt is number || data.updatedAt is timestamp || (data.updatedAt is string && data.updatedAt.size() <= 100));
-    }
-
-    match /vehicle_models/{modelId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidVehicleModel(request.resource.data);
-      allow update: if isAuthenticated() && isValidVehicleModel(request.resource.data) &&
-                    (isBootstrapAdmin() ||
-                     !('createdAt' in resource.data) ||
-                     areImmutableFieldsUnchanged(['createdAt']) ||
-                     dataHasValidCreatedAt(request.resource.data));
-      allow delete: if isAuthenticated();
-    }
-
-    // ===============================================================
-    // Collection 2: transport_jobs (Transfers & Checklists)
-    // ===============================================================
-
-    function isValidJob(data) {
-      return (!('status' in data) || (data.status is string && data.status.size() <= 50)) &&
-             (!('createdAt' in data) || data.createdAt is number || data.createdAt is timestamp) &&
-             (!('client' in data) || (data.client is string && data.client.size() <= 200)) &&
-             (!('origin' in data) || (data.origin is string && data.origin.size() <= 300)) &&
-             (!('destination' in data) || (data.destination is string && data.destination.size() <= 300)) &&
-             (!('plate' in data) || (data.plate is string && data.plate.size() <= 20)) &&
-             (!('vin' in data) || (data.vin is string && data.vin.size() <= 50)) &&
-             (!('brand' in data) || (data.brand is string && data.brand.size() <= 100)) &&
-             (!('model' in data) || (data.model is string && data.model.size() <= 100)) &&
-             (!('vehicleType' in data) || (data.vehicleType is string && data.vehicleType.size() <= 50)) &&
-             (!('tripType' in data) || (data.tripType is string && data.tripType.size() <= 50)) &&
-             (!('assignedEmails' in data) || (data.assignedEmails is list && data.assignedEmails.size() <= 50)) &&
-             (!('assignedDrivers' in data) || (data.assignedDrivers is list && data.assignedDrivers.size() <= 50)) &&
-             (!('relayHistory' in data) || (data.relayHistory is list && data.relayHistory.size() <= 50));
-    }
-
+    // C) TRABAJOS, GASTOS Y VEHÍCULOS
     match /transport_jobs/{jobId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidJob(request.resource.data);
-      allow update: if isAuthenticated() && isValidJob(request.resource.data) &&
-                    (!('createdAt' in resource.data) || areImmutableFieldsUnchanged(['createdAt']));
-      allow delete: if isAuthenticated();
+      allow read: if true; // ABIERTO: El cliente debe poder leer sus trabajos para ver el GPS
+      allow create: if isLogged(); // Solo conductores/admin pueden crear
+      allow delete: if isAdmin(); // Nadie puede borrar un trabajo excepto tú
+      
+      // MAGIA: El equipo interno actualiza todo. El cliente anónimo SOLO puede actualizar el 'checklist' (para poder firmar).
+      allow update: if isLogged() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['checklist']);
     }
 
-    // ===============================================================
-    // Collection 3: vehicles (Fleet Vehicles)
-    // ===============================================================
-
-    function isValidVehicle(data) {
-      return (!('plate' in data) || data.plate == null || (data.plate is string && data.plate.size() <= 30)) &&
-             (!('vin' in data) || data.vin == null || (data.vin is string && data.vin.size() <= 100)) &&
-             (!('brand' in data) || data.brand == null || (data.brand is string && data.brand.size() <= 100)) &&
-             (!('model' in data) || data.model == null || (data.model is string && data.model.size() <= 100)) &&
-             (!('vehicleType' in data) || data.vehicleType == null || (data.vehicleType is string && data.vehicleType.size() <= 50)) &&
-             (!('client' in data) || data.client == null || (data.client is string && data.client.size() <= 200)) &&
-             (!('createdAt' in data) || data.createdAt == null || data.createdAt is number || data.createdAt is timestamp || (data.createdAt is string && data.createdAt.size() <= 100)) &&
-             (!('lastTripDate' in data) || data.lastTripDate == null || data.lastTripDate is number || data.lastTripDate is timestamp || (data.lastTripDate is string && data.lastTripDate.size() <= 100)) &&
-             (!('tripsCount' in data) || data.tripsCount == null || data.tripsCount is number) &&
-             (!('docs' in data) || data.docs == null || data.docs is map) &&
-             (!('docsExpiry' in data) || data.docsExpiry == null || data.docsExpiry is map) &&
-             (!('docsPhotos' in data) || data.docsPhotos == null || data.docsPhotos is map);
+    match /expenses/{expId} {
+      allow read, create, update: if isLogged();
+      allow delete: if isAdmin(); // Bloqueo contra conductores que quieran borrar viáticos asignados
     }
-
+    
     match /vehicles/{vehicleId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidVehicle(request.resource.data);
-      allow update: if isAuthenticated() && isValidVehicle(request.resource.data) &&
-                    (isBootstrapAdmin() ||
-                     !('createdAt' in resource.data) ||
-                     areImmutableFieldsUnchanged(['createdAt']) ||
-                     dataHasValidCreatedAt(request.resource.data));
-      allow delete: if isAuthenticated();
+      allow read: if true; // ABIERTO: El portal de clientes necesita leer datos del vehículo
+      allow create, update: if isLogged();
+      allow delete: if isAdmin();
     }
 
-    // ===============================================================
-    // Collection 4: drivers (Team Members & Drivers)
-    // ===============================================================
-
-    function isValidDriver(data) {
-      return data.keys().hasAll(['name', 'email']) &&
-             data.name is string && data.name.size() >= 1 && data.name.size() <= 150 &&
-             data.email is string && data.email.size() <= 150 && isValidEmail(data.email) &&
-             (!('role' in data) || (data.role is string && data.role.size() <= 50)) &&
-             (!('balance' in data) || data.balance is number) &&
-             (!('licenses' in data) || (data.licenses is list && data.licenses.size() <= 20)) &&
-             (!('licenseExpiry' in data) || (data.licenseExpiry is string && data.licenseExpiry.size() <= 50)) &&
-             (!('fcmToken' in data) || (data.fcmToken is string && data.fcmToken.size() <= 500)) &&
-             (!('createdAt' in data) || data.createdAt is number || data.createdAt is timestamp);
+    // CATÁLOGO DE MARCAS Y MODELOS (Para selector en traslados, cotizaciones y flota)
+    match /vehicle_models/{modelId} {
+      allow read: if true; // ABIERTO: Para autocompletar modelos en cotizaciones, formularios y portal
+      allow create, update: if isLogged(); // Choferes y administradores pueden añadir o categorizar modelos
+      allow delete: if isLogged(); // Administradores y equipo autorizado pueden depurar catálogo
     }
-
+    
     match /drivers/{driverId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidDriver(request.resource.data) &&
-                    (!('role' in request.resource.data) ||
-                     request.resource.data.role == 'driver' ||
-                     isBootstrapAdmin());
-      allow update: if isAuthenticated() && isValidDriver(request.resource.data) &&
-                    (!('createdAt' in resource.data) || areImmutableFieldsUnchanged(['createdAt'])) &&
-                    (areImmutableFieldsUnchanged(['role', 'permissions']) || isBootstrapAdmin());
-      allow delete: if isBootstrapAdmin();
+      allow read: if true; // ABIERTO: El cliente necesita ver el nombre/foto de quien lleva el auto
+      allow create, update: if isLogged();
+      allow delete: if isAdmin(); // Nadie puede borrar a un compañero del sistema
+    }
+    
+    match /directory/{document=**} {
+      allow read: if true; 
+      allow write: if isLogged();
+    }
+    
+    match /prts/{document=**} {
+      allow read: if true; 
+      allow write: if isLogged();
     }
 
-    // ===============================================================
-    // Collection 5: expenses (Job & Driver Expenses)
-    // ===============================================================
-
-    function isValidExpense(data) {
-      return (!('amount' in data) || data.amount is number) &&
-             (!('type' in data) || (data.type is string && data.type.size() <= 50)) &&
-             (!('driverEmail' in data) || (data.driverEmail is string && data.driverEmail.size() <= 150)) &&
-             (!('driverName' in data) || (data.driverName is string && data.driverName.size() <= 150)) &&
-             (!('jobId' in data) || (data.jobId is string && data.jobId.size() <= 100)) &&
-             (!('detail' in data) || (data.detail is string && data.detail.size() <= 500)) &&
-             (!('createdAt' in data) || data.createdAt is number || data.createdAt is timestamp);
+    // D) BANDEJA DE ENTRADA (INBOX)
+    match /inbox/{document=**} {
+      allow read, write: if isLogged(); // Permite a los usuarios logueados subir y eliminar sus propios archivos
     }
 
-    match /expenses/{expenseId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidExpense(request.resource.data);
-      allow update: if isAuthenticated() && isValidExpense(request.resource.data) &&
-                    (!('createdAt' in resource.data) || areImmutableFieldsUnchanged(['createdAt']));
-      allow delete: if isAuthenticated();
+   // E) ESTADÍSTICAS HISTÓRICAS CONSOLIDADAS
+    match /historical_stats/{document=**} {
+      allow read: if isLogged(); // Conductores y Admins pueden ver estadísticas
+      allow write: if isAdmin(); // SOLO el Admin puede escribir (guardar/modificar la foto estática)
     }
 
-    // ===============================================================
-    // Collection 6: clients (Company & Client Catalog)
-    // ===============================================================
-
-    function isValidClient(data) {
-      return data.name is string && data.name.size() >= 1 && data.name.size() <= 200 &&
-             (!('email' in data) || (data.email is string && data.email.size() <= 500)) &&
-             (!('contactName' in data) || (data.contactName is string && data.contactName.size() <= 500)) &&
-             (!('contactPin' in data) || (data.contactPin is string && data.contactPin.size() <= 100)) &&
-             (!('color' in data) || (data.color is string && data.color.size() <= 50)) &&
-             (!('createdAt' in data) || data.createdAt is number || data.createdAt is timestamp);
+    // F) COTIZACIONES Y PEAJES (NUEVO)
+    match /quotes/{document=**} {
+      allow read, write: if isLogged();
+    }
+    
+    match /tolls/{document=**} {
+      allow read, write: if isLogged();
+    }
+    
+    match /monthly_stats/{document} {
+      allow read, write: if true;
     }
 
-    match /clients/{clientId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidClient(request.resource.data);
-      allow update: if isAuthenticated() && isValidClient(request.resource.data) &&
-                    (!('createdAt' in resource.data) || areImmutableFieldsUnchanged(['createdAt']));
-      allow delete: if isAuthenticated();
-    }
-
-    // ===============================================================
-    // Collection 7: directory (Saved Places & Contacts)
-    // ===============================================================
-
-    function isValidDirectory(data) {
-      return data.placeName is string && data.placeName.size() >= 1 && data.placeName.size() <= 200 &&
-             (!('contactName' in data) || (data.contactName is string && data.contactName.size() <= 200)) &&
-             (!('address' in data) || (data.address is string && data.address.size() <= 300)) &&
-             (!('commune' in data) || (data.commune is string && data.commune.size() <= 100)) &&
-             (!('phone' in data) || (data.phone is string && data.phone.size() <= 50)) &&
-             (!('isAutoSaved' in data) || data.isAutoSaved is bool) &&
-             (!('createdAt' in data) || data.createdAt is number || data.createdAt is timestamp);
-    }
-
-    match /directory/{directoryId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidDirectory(request.resource.data);
-      allow update: if isAuthenticated() && isValidDirectory(request.resource.data) &&
-                    (!('createdAt' in resource.data) || areImmutableFieldsUnchanged(['createdAt']));
-      allow delete: if isAuthenticated();
-    }
-
-    // ===============================================================
-    // Collection 8: tolls (Highway Tolls)
-    // ===============================================================
-
-    function isValidToll(data) {
-      return data.name is string && data.name.size() >= 1 && data.name.size() <= 200 &&
-             (!('price' in data) || data.price is number) &&
-             (!('tag' in data) || (data.tag is string && data.tag.size() <= 50)) &&
-             (!('type' in data) || (data.type is string && data.type.size() <= 50)) &&
-             (!('createdAt' in data) || data.createdAt is number || data.createdAt is timestamp);
-    }
-
-    match /tolls/{tollId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidToll(request.resource.data);
-      allow update: if isAuthenticated() && isValidToll(request.resource.data) &&
-                    (!('createdAt' in resource.data) || areImmutableFieldsUnchanged(['createdAt']));
-      allow delete: if isAuthenticated();
-    }
-
-    // ===============================================================
-    // Collection 9: prts (Technical Inspection Plants)
-    // ===============================================================
-
-    function isValidPrt(data) {
-      return data.name is string && data.name.size() >= 1 && data.name.size() <= 200 &&
-             (!('address' in data) || (data.address is string && data.address.size() <= 300)) &&
-             (!('commune' in data) || (data.commune is string && data.commune.size() <= 100)) &&
-             (!('createdAt' in data) || data.createdAt is number || data.createdAt is timestamp);
-    }
-
-    match /prts/{prtId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidPrt(request.resource.data);
-      allow update: if isAuthenticated() && isValidPrt(request.resource.data) &&
-                    (!('createdAt' in resource.data) || areImmutableFieldsUnchanged(['createdAt']));
-      allow delete: if isAuthenticated();
-    }
-
-    // ===============================================================
-    // Collection 10: system_config (Broadcasts, Refresh, Equipment, Storage)
-    // ===============================================================
-
-    match /system_config/{configId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
-    }
-
-    // ===============================================================
-    // Collection 11: inbox (User Notifications)
-    // ===============================================================
-
-    function isValidInbox(data) {
-      return data.userEmail is string && data.userEmail.size() <= 150 && isValidEmail(data.userEmail) &&
-             (!('message' in data) || (data.message is string && data.message.size() <= 1000)) &&
-             (!('title' in data) || (data.title is string && data.title.size() <= 200)) &&
-             (!('createdAt' in data) || data.createdAt is number || data.createdAt is timestamp);
-    }
-
-    match /inbox/{msgId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidInbox(request.resource.data);
-      allow update: if isAuthenticated() && isValidInbox(request.resource.data) &&
-                    (!('createdAt' in resource.data) || areImmutableFieldsUnchanged(['createdAt']));
-      allow delete: if isAuthenticated();
-    }
-
-    // ===============================================================
-    // Collection 12 & 13: monthly_stats & historical_stats
-    // ===============================================================
-
-    match /monthly_stats/{monthKey} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
-    }
-
-    match /historical_stats/{monthKey} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
-    }
-
-    // ===============================================================
-    // Root Default Deny (Catches any unspecified subcollections or paths)
-    // ===============================================================
-
-    match /{document=**} {
-      allow read, write: false;
-    }
   }
 }
-
