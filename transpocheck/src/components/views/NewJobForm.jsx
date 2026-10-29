@@ -878,22 +878,21 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
            {/* STEP 2: VEHICULO / SERVICIO */}
            <div className="animate-in fade-in slide-in-from-right-8 duration-500 border-t border-slate-200/50 dark:border-slate-700/50 pt-8">
                {operationMode === 'traslado' ? (
-                 <div className="space-y-6">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200/50 dark:border-slate-700/50 pb-4">
+                 <div className="space-y-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200/50 dark:border-slate-700/50 pb-3">
                       <div className="flex items-center gap-4">
                          {vehiclePhoto && (
                             <img src={vehiclePhoto} alt="Perfil" className="w-14 h-14 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shadow-md animate-in zoom-in" />
                          )}
                          <div>
                             <h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-100">Datos del Vehículo</h3>
-                            <p className="text-xs text-blue-500 font-bold">Escribe Patente o VIN para autocompletar</p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-xs text-blue-500 font-bold">Escribe Patente o VIN para autocompletar</p>
+                              {isSearchingVehicle && <span className="text-xs font-black text-blue-400 animate-pulse">· Buscando coincidencia...</span>}
+                              {vehicleFoundStatus === 'found' && !isSearchingVehicle && <span className="text-xs font-black text-green-400">· ¡Encontrado en tu historial!</span>}
+                            </div>
                          </div>
                       </div>
-                    </div>
-
-                    <div className="flex items-center min-h-[24px]">
-                      {isSearchingVehicle && <span className="text-xs font-black text-blue-500 animate-pulse">Buscando coincidencia...</span>}
-                      {vehicleFoundStatus === 'found' && !isSearchingVehicle && <span className="text-xs font-black text-green-500">¡Encontrado en tu historial!</span>}
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
