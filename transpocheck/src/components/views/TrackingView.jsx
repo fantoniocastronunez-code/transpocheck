@@ -320,7 +320,7 @@ const handleDownloadPDF = async (job) => {
               const getRtFinalDestination = (j) => {
                 const returnOpt = j.checklist?.rtReturnOption || j.draft?.formData?.rtReturnOption;
                 const returnDest = j.checklist?.rtReturnDestination || j.draft?.formData?.rtReturnDestination;
-                if (returnOpt === 'other' && returnDest) return returnDest;
+                if ((returnOpt === 'other' || returnOpt === 'destination') && returnDest) return returnDest;
                 if (returnOpt === 'origin') return j.origin || 'Origen';
                 if (j.destination && j.destination.includes('->')) {
                   const parts = j.destination.split('->');
@@ -437,7 +437,7 @@ const handleDownloadPDF = async (job) => {
                   )}
 
                   {job.tripType === 'revision' && step4Done && (job.prt_result === 'aprobado' || job.prt_result === 'aprobado_ayuda') && (
-                  <div className="relative pt-2"><div className="absolute -left-8 w-6 h-6 rounded-full border-4 border-white dark:border-slate-800 shadow-sm flex items-center justify-center z-10 bg-blue-500 scale-110"><Navigation className="w-3 h-3 text-white"/></div><p className="font-extrabold text-sm text-slate-800 dark:text-slate-200">Camino a destino</p><p className="text-xs font-bold text-blue-600 dark:text-blue-400 mt-0.5">{job.checklist?.rtReturnOption === 'other' ? job.checklist?.rtReturnDestination : job.origin}</p></div>
+                  <div className="relative pt-2"><div className="absolute -left-8 w-6 h-6 rounded-full border-4 border-white dark:border-slate-800 shadow-sm flex items-center justify-center z-10 bg-blue-500 scale-110"><Navigation className="w-3 h-3 text-white"/></div><p className="font-extrabold text-sm text-slate-800 dark:text-slate-200">Camino a destino</p><p className="text-xs font-bold text-blue-600 dark:text-blue-400 mt-0.5">{getRtFinalDestination(job)}</p></div>
                   )}
                 </div>
 

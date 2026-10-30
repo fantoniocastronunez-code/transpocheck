@@ -1047,16 +1047,35 @@ export default function JobCard({ j, ...props }) {
                       
                       {j.phase === 'picked_up' && j.tripType === 'revision' && <SwipeButton key={`btn-prt-${j.id}`} onConfirm={()=>updatePhase(j, 'arrived_prt')} text="Desliza: Llegué a PRT" icon={<MapPin className="w-4 h-4"/>} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_prt`} />}
                       
-                      {j.phase === 'arrived_prt' && (
-                        <div className="flex gap-2">
-                          <button onClick={() => { setPrtApproveType('aprobado'); setPrtReturnOpt('origin'); setPrtReturnDest(''); setPrtApprovePromptJob(j); }} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-1 disabled:opacity-50">
-                             {processingId === `${j.id}-prt_done` ? <Clock className="w-3 h-3 animate-spin"/> : '✅'} {processingId === `${j.id}-prt_done` ? 'Procesando...' : 'Aprobado'}
-                          </button>
-                          <button onClick={() => { setPrtReturnOpt('origin'); setPrtReturnDest(''); setPrtPromptJob(j); }} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors disabled:opacity-50 flex justify-center items-center gap-1">
-                             {processingId === `${j.id}-prt_done` ? <Clock className="w-3 h-3 animate-spin"/> : '❌'} {processingId === `${j.id}-prt_done` ? 'Procesando...' : 'Rechazado'}
-                          </button>
-                        </div>
-                      )}
+                      {j.phase === 'arrived_prt' && (() => {
+                        const assigned = (j.destination || '').includes('->')
+                          ? j.destination.split('->').slice(1).join('->').trim()
+                          : (!j.destination?.toLowerCase().includes('prt') && !j.destination?.toLowerCase().includes('planta') ? (j.destination?.trim() || '') : '');
+                        return (
+                          <div className="flex gap-2">
+                            <button onClick={() => { 
+                              setPrtApproveType('aprobado'); 
+                              if (assigned) {
+                                setPrtReturnOpt('destination');
+                                setPrtReturnDest(assigned);
+                              } else {
+                                setPrtReturnOpt('origin'); 
+                                setPrtReturnDest(''); 
+                              }
+                              setPrtApprovePromptJob(j); 
+                            }} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-1 disabled:opacity-50 cursor-pointer">
+                               {processingId === `${j.id}-prt_done` ? <Clock className="w-3 h-3 animate-spin"/> : '✅'} {processingId === `${j.id}-prt_done` ? 'Procesando...' : 'Aprobado'}
+                            </button>
+                            <button onClick={() => { 
+                              setPrtReturnOpt('origin'); 
+                              setPrtReturnDest(''); 
+                              setPrtPromptJob(j); 
+                            }} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors disabled:opacity-50 flex justify-center items-center gap-1 cursor-pointer">
+                               {processingId === `${j.id}-prt_done` ? <Clock className="w-3 h-3 animate-spin"/> : '❌'} {processingId === `${j.id}-prt_done` ? 'Procesando...' : 'Rechazado'}
+                            </button>
+                          </div>
+                        );
+                      })()}
 
                       {j.phase === 'prt_done' && (() => {
                         const targetDest = getRtFinalDestination(j);

@@ -228,7 +228,7 @@ export const getRouteStr = (j) => {
     const returnDest = j.checklist?.rtReturnDestination || j.draft?.formData?.rtReturnDestination;
 
     let ret = null;
-    if (returnOpt === 'other' && returnDest) {
+    if ((returnOpt === 'other' || returnOpt === 'destination') && returnDest) {
       ret = returnDest;
     } else if (returnOpt === 'origin') {
       ret = j.origin;

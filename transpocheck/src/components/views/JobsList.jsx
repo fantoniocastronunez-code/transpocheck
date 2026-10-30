@@ -53,10 +53,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [dupDriverEmails, setDupDriverEmails] = useState([]); // AHORA ES UN ARREGLO
   const [directoryMemory, setDirectoryMemory] = useState([]); // <-- NUEVO: Memoria de directorio para sugerencias
 
-  const destinationOptions = [
+  const destinationOptions = [...new Set([
     ...(directoryMemory || []).map(dir => dir.placeName || dir.name || dir.address),
     ...(allClientsList || [])
-  ].filter(Boolean);
+  ].filter(Boolean))].sort();
 
   const [showBulkSign, setShowBulkSign] = useState(false);
   const [bulkSelectedIds, setBulkSelectedIds] = useState([]);
@@ -666,13 +666,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
         // Verificar si el destino final es literalmente el mismo que el origen original
         const isExplicitOrigin = returnOpt === 'origin' ||
-          (returnOpt === 'other' && typedDest && cleanOrigin && typedDest.toLowerCase().trim() === cleanOrigin) ||
+          ((returnOpt === 'other' || returnOpt === 'destination') && typedDest && cleanOrigin && typedDest.toLowerCase().trim() === cleanOrigin) ||
           (!returnOpt && cleanFinalDest && cleanOrigin && cleanFinalDest === cleanOrigin);
 
         if (isExplicitOrigin) {
           // 🔥 EL SECRETO: Si vuelve al origen, usamos EXACTAMENTE la variable `orig` (que ya contiene el Plus Code válido)
           returnDest = orig;
-        } else if (returnOpt === 'other' && typedDest) {
+        } else if ((returnOpt === 'other' || returnOpt === 'destination') && typedDest) {
           let resolvedRet = await resolveAddress(typedDest, null, null);
           if (resolvedRet && !resolvedRet.toLowerCase().includes('chile') && !resolvedRet.includes('+')) resolvedRet += ', Chile';
           returnDest = resolvedRet;
@@ -1366,12 +1366,27 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     }
   };
 
+  const getAssignedJobDestination = (job) => {
+    if (!job || !job.destination) return '';
+    if (job.destination.includes('->')) {
+      const parts = job.destination.split('->').map(p => p.trim()).filter(Boolean);
+      if (parts.length >= 2) {
+        return parts.slice(1).join(' -> ');
+      }
+    }
+    const destLower = job.destination.toLowerCase();
+    if (!destLower.includes('prt') && !destLower.includes('planta') && !destLower.includes('revision') && !destLower.includes('revisión')) {
+      return job.destination.trim();
+    }
+    return '';
+  };
+
   const getRtFinalDestination = (job) => {
     // 1. Si ya se decidió la RT (en checklist o borrador), esa decisión manda por sobre todo
     const returnOpt = job.checklist?.rtReturnOption || job.draft?.formData?.rtReturnOption;
     const returnDest = job.checklist?.rtReturnDestination || job.draft?.formData?.rtReturnDestination;
 
-    if (returnOpt === 'other' && returnDest) {
+    if ((returnOpt === 'other' || returnOpt === 'destination') && returnDest) {
       return returnDest;
     }
     if (returnOpt === 'origin') {
@@ -2178,7 +2193,9 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
       )}
 
-      {prtPromptJob && (
+      {prtPromptJob && (() => {
+        const assignedDest = getAssignedJobDestination(prtPromptJob);
+        return (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <form onSubmit={(e) => {
             e.preventDefault();
@@ -2187,12 +2204,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             let finalReturnOpt = prtReturnOpt;
             let finalReturnDest = prtReturnDest;
 
-            // Magia: Si eligen ayuda, lo catalogamos como 'otro destino' forzado para que el sistema no se rompa
-            if (prtReturnOpt === 'prt_help') {
+            if (prtReturnOpt === 'destination') {
+              finalReturnDest = assignedDest;
+            } else if (prtReturnOpt === 'prt_help') {
               finalReturnOpt = 'other';
               finalReturnDest = 'PRT (Reintento con Ayuda)';
             }
-            if (finalReturnOpt === 'other' && finalReturnDest) {
+            if (finalReturnOpt === 'other' && finalReturnDest && finalReturnDest !== 'PRT (Reintento con Ayuda)') {
               saveNewDestinationToMemory(finalReturnDest);
             }
 
@@ -2202,10 +2220,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               rtStatus: 'rechazado',
               rtRejectReason: reasonText,
               rtReturnOption: finalReturnOpt,
-              rtReturnDestination: finalReturnOpt === 'other' ? finalReturnDest : ''
+              rtReturnDestination: (finalReturnOpt === 'other' || finalReturnOpt === 'destination') ? finalReturnDest : ''
             };
 
-            const effectiveFinalDest = finalReturnOpt === 'other' ? finalReturnDest : prtPromptJob.origin;
+            const effectiveFinalDest = (finalReturnOpt === 'other' || finalReturnOpt === 'destination') 
+              ? finalReturnDest 
+              : prtPromptJob.origin;
             const prtPart = (prtPromptJob.destination || '').includes('->')
               ? prtPromptJob.destination.split('->')[0].trim()
               : (prtPromptJob.destination?.trim() || 'PRT');
@@ -2223,6 +2243,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               extraUpdates.destContactPhone = prtPromptJob.originContactPhone || '';
               extraUpdates.destAddress = prtPromptJob.originAddress || '';
               extraUpdates.destCommune = prtPromptJob.originCommune || '';
+            } else if (finalReturnOpt === 'destination') {
+              extraUpdates.destContactName = prtPromptJob.destContactName || finalReturnDest;
+              extraUpdates.destContactPhone = prtPromptJob.destContactPhone || '';
+              extraUpdates.destAddress = prtPromptJob.destAddress || finalReturnDest;
+              extraUpdates.destCommune = prtPromptJob.destCommune || '';
             } else if (finalReturnOpt === 'other' && finalReturnDest) {
               const matched = (directoryMemory || []).find(d => (d.placeName || d.name)?.trim().toLowerCase() === finalReturnDest.trim().toLowerCase());
               if (matched) {
@@ -2243,7 +2268,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               extraUpdates['draft.formData.rtStatus'] = 'rechazado';
               extraUpdates['draft.formData.rtRejectReason'] = reasonText;
               extraUpdates['draft.formData.rtReturnOption'] = finalReturnOpt;
-              extraUpdates['draft.formData.rtReturnDestination'] = finalReturnOpt === 'other' ? finalReturnDest : '';
+              extraUpdates['draft.formData.rtReturnDestination'] = (finalReturnOpt === 'other' || finalReturnOpt === 'destination') ? finalReturnDest : '';
               extraUpdates['draft.formData.destination'] = newDestination;
             }
 
@@ -2253,10 +2278,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
             <div className="flex justify-between items-center mb-4 shrink-0">
               <h3 className="text-lg font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1.5"><XCircle className="text-red-500 w-5 h-5" /> Rechazo PRT</h3>
-              <button type="button" onClick={() => setPrtPromptJob(null)} className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"><X className="w-4 h-4 text-slate-600 dark:text-slate-400" /></button>
+              <button type="button" onClick={() => setPrtPromptJob(null)} className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors cursor-pointer"><X className="w-4 h-4 text-slate-600 dark:text-slate-400" /></button>
             </div>
 
-            <div className="overflow-y-auto space-y-5 pr-1 pb-2">
+            <div className={`overflow-y-auto space-y-4 pr-1 ${prtReturnOpt === 'other' ? 'pb-44' : 'pb-2'}`}>
               <div className="space-y-2.5">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">1. Motivo del Rechazo</label>
                 <textarea name="reason" required placeholder="Escribe por qué rechazaron el vehículo..." autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 p-3 rounded-xl font-bold text-sm outline-none focus:border-red-500" rows="2"></textarea>
@@ -2265,17 +2290,40 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               <div className="space-y-2.5 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">2. ¿Hacia dónde se dirige ahora?</label>
 
-                <button type="button" onClick={() => { setPrtReturnOpt('origin'); setPrtReturnDest(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${prtReturnOpt === 'origin' ? 'border-red-500 bg-red-50 dark:bg-red-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-red-200 dark:border-red-800/50'}`}>
+                {/* OPCION RETORNAR AL ORIGEN */}
+                <button type="button" onClick={() => { setPrtReturnOpt('origin'); setPrtReturnDest(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 cursor-pointer ${prtReturnOpt === 'origin' ? 'border-red-500 bg-red-50 dark:bg-red-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-red-200 dark:border-red-800/50'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${prtReturnOpt === 'origin' ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'}`}>
                     {prtReturnOpt === 'origin' && <div className="w-2 h-2 bg-red-500 rounded-full"></div>}
                   </div>
                   <div className="min-w-0">
                     <p className={`font-extrabold text-sm ${prtReturnOpt === 'origin' ? 'text-red-800 dark:text-red-300' : 'text-slate-700 dark:text-slate-300'}`}>Retornar al Origen</p>
-                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">Volver a {prtPromptJob.origin}</p>
+                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">Volver a {prtPromptJob.origin || 'Origen'}</p>
                   </div>
                 </button>
 
-                <button type="button" onClick={() => { setPrtReturnOpt('prt_help'); setPrtReturnDest(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${prtReturnOpt === 'prt_help' ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-amber-200 dark:border-amber-800/50'}`}>
+                {/* OPCION CONTINUAR A DESTINO ASIGNADO */}
+                {assignedDest ? (
+                  <button type="button" onClick={() => { setPrtReturnOpt('destination'); setPrtReturnDest(assignedDest); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 cursor-pointer ${prtReturnOpt === 'destination' ? 'border-red-500 bg-red-50 dark:bg-red-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-red-200 dark:border-red-800/50'}`}>
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${prtReturnOpt === 'destination' ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'}`}>
+                      {prtReturnOpt === 'destination' && <div className="w-2 h-2 bg-red-500 rounded-full"></div>}
+                    </div>
+                    <div className="min-w-0">
+                      <p className={`font-extrabold text-sm ${prtReturnOpt === 'destination' ? 'text-red-800 dark:text-red-300' : 'text-slate-700 dark:text-slate-300'}`}>Continuar a Destino</p>
+                      <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">Ir a {assignedDest}</p>
+                    </div>
+                  </button>
+                ) : (
+                  <div className="w-full text-left p-2.5 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 flex items-center gap-3 opacity-60">
+                    <div className="w-4 h-4 rounded-full border-2 border-slate-300 dark:border-slate-600 flex items-center justify-center shrink-0"></div>
+                    <div className="min-w-0">
+                      <p className="font-extrabold text-xs text-slate-500 dark:text-slate-400">Continuar a Destino</p>
+                      <p className="text-[10px] font-semibold text-slate-400 truncate">Sin destino asignado al crear el traslado</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* OPCION REINTENTAR CON AYUDA */}
+                <button type="button" onClick={() => { setPrtReturnOpt('prt_help'); setPrtReturnDest(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 cursor-pointer ${prtReturnOpt === 'prt_help' ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-amber-200 dark:border-amber-800/50'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${prtReturnOpt === 'prt_help' ? 'border-amber-500' : 'border-slate-300 dark:border-slate-600'}`}>
                     {prtReturnOpt === 'prt_help' && <div className="w-2 h-2 bg-amber-500 rounded-full"></div>}
                   </div>
@@ -2285,50 +2333,62 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                   </div>
                 </button>
 
-                <button type="button" onClick={() => setPrtReturnOpt('other')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-start gap-3 ${prtReturnOpt === 'other' ? 'border-red-500 bg-red-50 dark:bg-red-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-red-200 dark:border-red-800/50'}`}>
+                {/* OPCION IR A OTRO DESTINO */}
+                <div onClick={() => { if (prtReturnOpt !== 'other') { setPrtReturnOpt('other'); setPrtReturnDest(''); } }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-start gap-3 cursor-pointer ${prtReturnOpt === 'other' ? 'border-red-500 bg-red-50 dark:bg-red-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-red-200 dark:border-red-800/50'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${prtReturnOpt === 'other' ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'}`}>
                     {prtReturnOpt === 'other' && <div className="w-2 h-2 bg-red-500 rounded-full"></div>}
                   </div>
                   <div className="w-full min-w-0">
                     <p className={`font-extrabold text-sm ${prtReturnOpt === 'other' ? 'text-red-800 dark:text-red-300' : 'text-slate-700 dark:text-slate-300'}`}>Ir a Otro Destino</p>
                     {prtReturnOpt === 'other' ? (
-                      <div className="mt-2 w-full animate-in fade-in slide-in-from-top-1">
+                      <div className="mt-2 w-full relative z-[150]" onClick={e => e.stopPropagation()}>
                         <AutocompleteInput name="prtReturnDest" options={destinationOptions} value={prtReturnDest} onChange={e => setPrtReturnDest(e.target.value.toUpperCase())} required placeholder="Escribe el destino..." className="w-full bg-white dark:bg-slate-900 border border-red-300 dark:border-red-700/50 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-red-500 font-bold" />
                       </div>
                     ) : (
                       <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">Elige un nuevo lugar</p>
                     )}
                   </div>
-                </button>
+                </div>
               </div>
             </div>
 
-            <button type="submit" disabled={processingId === `${prtPromptJob.id}-prt_done`} className="w-full shrink-0 py-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-sm shadow-md transition-colors mt-2 flex justify-center items-center gap-2 disabled:opacity-50">
+            <button type="submit" disabled={processingId === `${prtPromptJob.id}-prt_done`} className="w-full shrink-0 py-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-sm shadow-md transition-colors mt-2 flex justify-center items-center gap-2 disabled:opacity-50 cursor-pointer">
               Confirmar Rechazo y Continuar
             </button>
           </form>
         </div>
-      )}
+        );
+      })()}
 
       {/* NUEVO: POP-UP DE TIPO DE APROBACIÓN PRT CON DESTINO */}
-      {prtApprovePromptJob && (
+      {prtApprovePromptJob && (() => {
+        const assignedDest = getAssignedJobDestination(prtApprovePromptJob);
+        return (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
           <form onSubmit={(e) => {
             e.preventDefault();
-            if (prtReturnOpt === 'other' && !prtReturnDest.trim()) return showAlert("[ERR-RT-DEST-02] Debes ingresar el nuevo destino para continuar.");
+            let finalReturnOpt = prtReturnOpt;
+            let finalReturnDest = prtReturnDest;
 
-            if (prtReturnOpt === 'other' && prtReturnDest) {
-              saveNewDestinationToMemory(prtReturnDest);
+            if (prtReturnOpt === 'destination') {
+              finalReturnDest = assignedDest;
+            }
+            if (finalReturnOpt === 'other' && !finalReturnDest.trim()) return showAlert("[ERR-RT-DEST-02] Debes ingresar el nuevo destino para continuar.");
+
+            if (finalReturnOpt === 'other' && finalReturnDest) {
+              saveNewDestinationToMemory(finalReturnDest);
             }
 
             const mergedChecklist = {
               ...(prtApprovePromptJob.checklist || {}),
               rtStatus: prtApproveType,
-              rtReturnOption: prtReturnOpt,
-              rtReturnDestination: prtReturnOpt === 'other' ? prtReturnDest : ''
+              rtReturnOption: finalReturnOpt,
+              rtReturnDestination: (finalReturnOpt === 'other' || finalReturnOpt === 'destination') ? finalReturnDest : ''
             };
 
-            const effectiveFinalDest = prtReturnOpt === 'other' ? prtReturnDest : prtApprovePromptJob.origin;
+            const effectiveFinalDest = (finalReturnOpt === 'other' || finalReturnOpt === 'destination') 
+              ? finalReturnDest 
+              : prtApprovePromptJob.origin;
             const prtPart = (prtApprovePromptJob.destination || '').includes('->')
               ? prtApprovePromptJob.destination.split('->')[0].trim()
               : (prtApprovePromptJob.destination?.trim() || 'PRT');
@@ -2340,22 +2400,27 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               destination: newDestination
             };
 
-            if (prtReturnOpt === 'origin') {
+            if (finalReturnOpt === 'origin') {
               extraUpdates.destContactName = prtApprovePromptJob.originContactName || '';
               extraUpdates.destContactPhone = prtApprovePromptJob.originContactPhone || '';
               extraUpdates.destAddress = prtApprovePromptJob.originAddress || '';
               extraUpdates.destCommune = prtApprovePromptJob.originCommune || '';
-            } else if (prtReturnOpt === 'other' && prtReturnDest) {
-              const matched = (directoryMemory || []).find(d => (d.placeName || d.name)?.trim().toLowerCase() === prtReturnDest.trim().toLowerCase());
+            } else if (finalReturnOpt === 'destination') {
+              extraUpdates.destContactName = prtApprovePromptJob.destContactName || finalReturnDest;
+              extraUpdates.destContactPhone = prtApprovePromptJob.destContactPhone || '';
+              extraUpdates.destAddress = prtApprovePromptJob.destAddress || finalReturnDest;
+              extraUpdates.destCommune = prtApprovePromptJob.destCommune || '';
+            } else if (finalReturnOpt === 'other' && finalReturnDest) {
+              const matched = (directoryMemory || []).find(d => (d.placeName || d.name)?.trim().toLowerCase() === finalReturnDest.trim().toLowerCase());
               if (matched) {
                 extraUpdates.destContactName = matched.contactName || '';
                 extraUpdates.destContactPhone = matched.contactPhone || '';
                 extraUpdates.destAddress = matched.address || '';
                 extraUpdates.destCommune = matched.commune || '';
               } else {
-                extraUpdates.destContactName = prtReturnDest;
+                extraUpdates.destContactName = finalReturnDest;
                 extraUpdates.destContactPhone = '';
-                extraUpdates.destAddress = prtReturnDest;
+                extraUpdates.destAddress = finalReturnDest;
                 extraUpdates.destCommune = '';
               }
             }
@@ -2363,8 +2428,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             // Sincroniza hacia el interior del borrador si existe
             if (prtApprovePromptJob.draft?.formData) {
               extraUpdates['draft.formData.rtStatus'] = prtApproveType;
-              extraUpdates['draft.formData.rtReturnOption'] = prtReturnOpt;
-              extraUpdates['draft.formData.rtReturnDestination'] = prtReturnOpt === 'other' ? prtReturnDest : '';
+              extraUpdates['draft.formData.rtReturnOption'] = finalReturnOpt;
+              extraUpdates['draft.formData.rtReturnDestination'] = (finalReturnOpt === 'other' || finalReturnOpt === 'destination') ? finalReturnDest : '';
               extraUpdates['draft.formData.destination'] = newDestination;
             }
 
@@ -2376,7 +2441,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               <button type="button" onClick={() => setPrtApprovePromptJob(null)} className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"><X className="w-4 h-4 text-slate-600 dark:text-slate-400" /></button>
             </div>
 
-            <div className="overflow-y-auto space-y-5 pr-1 pb-2">
+            <div className={`overflow-y-auto space-y-5 pr-1 ${prtReturnOpt === 'other' ? 'pb-44' : 'pb-2'}`}>
               <div className="space-y-2.5">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">1. Tipo de Aprobación</label>
                 <div className="flex gap-2">
@@ -2387,7 +2452,30 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
               <div className="space-y-2.5 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">2. ¿Hacia dónde se dirige ahora?</label>
-                <button type="button" onClick={() => { setPrtReturnOpt('origin'); setPrtReturnDest(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${prtReturnOpt === 'origin' ? 'border-green-500 bg-green-50 dark:bg-green-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-green-200 dark:border-green-800/50'}`}>
+
+                {/* OPCION CONTINUAR A DESTINO ASIGNADO */}
+                {assignedDest ? (
+                  <button type="button" onClick={() => { setPrtReturnOpt('destination'); setPrtReturnDest(assignedDest); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 cursor-pointer ${prtReturnOpt === 'destination' ? 'border-green-500 bg-green-50 dark:bg-green-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-green-200 dark:border-green-800/50'}`}>
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${prtReturnOpt === 'destination' ? 'border-green-500' : 'border-slate-300 dark:border-slate-600'}`}>
+                      {prtReturnOpt === 'destination' && <div className="w-2 h-2 bg-green-500 rounded-full"></div>}
+                    </div>
+                    <div className="min-w-0">
+                      <p className={`font-extrabold text-sm ${prtReturnOpt === 'destination' ? 'text-green-800 dark:text-green-300' : 'text-slate-700 dark:text-slate-300'}`}>Continuar a Destino</p>
+                      <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">Ir a {assignedDest}</p>
+                    </div>
+                  </button>
+                ) : (
+                  <div className="w-full text-left p-2.5 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 flex items-center gap-3 opacity-60">
+                    <div className="w-4 h-4 rounded-full border-2 border-slate-300 dark:border-slate-600 flex items-center justify-center shrink-0"></div>
+                    <div className="min-w-0">
+                      <p className="font-extrabold text-xs text-slate-500 dark:text-slate-400">Continuar a Destino</p>
+                      <p className="text-[10px] font-semibold text-slate-400 truncate">Sin destino asignado al crear el traslado</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* OPCION RETORNAR AL ORIGEN */}
+                <button type="button" onClick={() => { setPrtReturnOpt('origin'); setPrtReturnDest(''); }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 cursor-pointer ${prtReturnOpt === 'origin' ? 'border-green-500 bg-green-50 dark:bg-green-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-green-200 dark:border-green-800/50'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${prtReturnOpt === 'origin' ? 'border-green-500' : 'border-slate-300 dark:border-slate-600'}`}>
                     {prtReturnOpt === 'origin' && <div className="w-2 h-2 bg-green-500 rounded-full"></div>}
                   </div>
@@ -2397,30 +2485,32 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                   </div>
                 </button>
 
-                <button type="button" onClick={() => setPrtReturnOpt('other')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-start gap-3 ${prtReturnOpt === 'other' ? 'border-green-500 bg-green-50 dark:bg-green-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-green-200 dark:border-green-800/50'}`}>
+                {/* OPCION IR A OTRO DESTINO */}
+                <div onClick={() => { if (prtReturnOpt !== 'other') { setPrtReturnOpt('other'); setPrtReturnDest(''); } }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-start gap-3 cursor-pointer ${prtReturnOpt === 'other' ? 'border-green-500 bg-green-50 dark:bg-green-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-green-200 dark:border-green-800/50'}`}>
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${prtReturnOpt === 'other' ? 'border-green-500' : 'border-slate-300 dark:border-slate-600'}`}>
                     {prtReturnOpt === 'other' && <div className="w-2 h-2 bg-green-500 rounded-full"></div>}
                   </div>
                   <div className="w-full min-w-0">
                     <p className={`font-extrabold text-sm ${prtReturnOpt === 'other' ? 'text-green-800 dark:text-green-300' : 'text-slate-700 dark:text-slate-300'}`}>Ir a Otro Destino</p>
                     {prtReturnOpt === 'other' ? (
-                      <div className="mt-2 w-full animate-in fade-in slide-in-from-top-1">
+                      <div className="mt-2 w-full relative z-[150]" onClick={e => e.stopPropagation()}>
                         <AutocompleteInput name="prtReturnDest" options={destinationOptions} value={prtReturnDest} onChange={e => setPrtReturnDest(e.target.value.toUpperCase())} required placeholder="Escribe el destino..." className="w-full bg-white dark:bg-slate-900 border border-green-300 dark:border-green-700/50 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-green-500 font-bold" />
                       </div>
                     ) : (
                       <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">Elige un nuevo lugar</p>
                     )}
                   </div>
-                </button>
+                </div>
               </div>
             </div>
 
-            <button type="submit" disabled={processingId === `${prtApprovePromptJob.id}-prt_done`} className="w-full shrink-0 py-4 bg-green-600 hover:bg-green-700 text-white rounded-xl font-black text-sm shadow-md transition-colors mt-2 flex justify-center items-center gap-2 disabled:opacity-50">
+            <button type="submit" disabled={processingId === `${prtApprovePromptJob.id}-prt_done`} className="w-full shrink-0 py-4 bg-green-600 hover:bg-green-700 text-white rounded-xl font-black text-sm shadow-md transition-colors mt-2 flex justify-center items-center gap-2 disabled:opacity-50 cursor-pointer">
               Confirmar y Continuar
             </button>
           </form>
         </div>
-      )}
+        );
+      })()}
 
       {relayPromptJob && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">

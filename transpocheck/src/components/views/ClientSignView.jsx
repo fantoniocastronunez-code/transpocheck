@@ -165,7 +165,7 @@ export default function ClientSignView({ jobId, db }) {
         if (job.tripType === 'revision') {
           const returnOpt = job.checklist?.rtReturnOption;
           const returnDest = job.checklist?.rtReturnDestination;
-          const ret = returnOpt === 'other' && returnDest 
+          const ret = (returnOpt === 'other' || returnOpt === 'destination') && returnDest 
             ? returnDest 
             : (returnOpt === 'origin' ? job.origin : (job.destination?.includes('->') ? job.destination.split('->')[job.destination.split('->').length - 1].trim() : job.origin));
 

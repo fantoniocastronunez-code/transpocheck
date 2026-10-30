@@ -214,7 +214,7 @@ export const useChecklistSync = ({
         }
 
         if (fbDraftData.rtReturnOption) {
-          const effectiveFinal = fbDraftData.rtReturnOption === 'other' ? (fbDraftData.rtReturnDestination || '') : job.origin;
+          const effectiveFinal = (fbDraftData.rtReturnOption === 'other' || fbDraftData.rtReturnOption === 'destination') ? (fbDraftData.rtReturnDestination || '') : job.origin;
           const prtPart = (job.destination || '').includes('->') ? job.destination.split('->')[0].trim() : (job.destination?.trim() || 'PRT');
           if (effectiveFinal) {
             updates.destination = `${prtPart} -> ${effectiveFinal}`;

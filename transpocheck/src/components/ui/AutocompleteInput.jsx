@@ -35,8 +35,8 @@ export default function AutocompleteInput({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [wrapperRef]);
 
-  const filteredOptions = options.filter(opt => 
-    opt.toLowerCase().includes(internalValue.toLowerCase())
+  const filteredOptions = (options || []).filter(opt => 
+    typeof opt === 'string' && opt.toLowerCase().includes((internalValue || '').toLowerCase())
   ).slice(0, 50); // limit to avoid massive lists
 
   const handleChange = (e) => {
@@ -72,8 +72,8 @@ export default function AutocompleteInput({
         className={className}
       />
       
-      {isOpen && (internalValue || options.length > 0) && (
-        <div className="absolute z-[100] w-full mt-1 bg-white dark:bg-slate-800 border-2 border-purple-200 dark:border-purple-800/50 rounded-xl shadow-xl max-h-60 overflow-y-auto">
+      {isOpen && (internalValue || (options && options.length > 0)) && (
+        <div className="absolute z-[200] left-0 right-0 top-full mt-1 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl max-h-48 overflow-y-auto">
           {filteredOptions.length > 0 ? (
             filteredOptions.map((opt, idx) => (
               <div 

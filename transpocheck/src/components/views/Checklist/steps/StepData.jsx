@@ -15,6 +15,19 @@ export const StepData = () => {
   // Reloj local para trámite PRT
   const [nowTick, setNowTick] = useState(Date.now());
 
+  const assignedDest = (() => {
+    if (!job || !job.destination) return '';
+    if (job.destination.includes('->')) {
+      const parts = job.destination.split('->').map(p => p.trim()).filter(Boolean);
+      if (parts.length >= 2) return parts.slice(1).join(' -> ');
+    }
+    const destLower = job.destination.toLowerCase();
+    if (!destLower.includes('prt') && !destLower.includes('planta') && !destLower.includes('revision') && !destLower.includes('revisión')) {
+      return job.destination.trim();
+    }
+    return '';
+  })();
+
   useEffect(() => {
     if (formData.prtArrivalTime && formData.rtStatus === 'pendiente') {
       const interval = setInterval(() => setNowTick(Date.now()), 60000);
@@ -227,13 +240,19 @@ export const StepData = () => {
               />
               <div className="p-4 border border-red-200 dark:border-red-800/50 bg-red-50/30 dark:bg-red-900/10 rounded-2xl space-y-3">
                 <p className="text-[11px] font-black text-red-800 dark:text-red-400 uppercase tracking-widest">¿Destino tras rechazo?</p>
-                <div className="flex gap-5">
+                <div className="flex flex-wrap gap-4">
+                  {assignedDest && (
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-red-700 dark:text-red-300 select-none">
+                      <input type="radio" name="rtReturnOptionRej" value="destination" checked={formData.rtReturnOption === 'destination'} onChange={() => { setF('rtReturnOption', 'destination'); setF('rtReturnDestination', assignedDest); }} className="w-4 h-4 accent-red-600" />
+                      Continuar a {assignedDest}
+                    </label>
+                  )}
                   <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-red-700 dark:text-red-300 select-none">
-                    <input type="radio" name="rtReturnOptionRej" value="origin" checked={formData.rtReturnOption === 'origin'} onChange={e => setF('rtReturnOption', e.target.value)} className="w-4 h-4 accent-red-600" />
+                    <input type="radio" name="rtReturnOptionRej" value="origin" checked={formData.rtReturnOption === 'origin'} onChange={() => { setF('rtReturnOption', 'origin'); setF('rtReturnDestination', ''); }} className="w-4 h-4 accent-red-600" />
                     Volver al Origen
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-red-700 dark:text-red-300 select-none">
-                    <input type="radio" name="rtReturnOptionRej" value="other" checked={formData.rtReturnOption === 'other'} onChange={e => setF('rtReturnOption', e.target.value)} className="w-4 h-4 accent-red-600" />
+                    <input type="radio" name="rtReturnOptionRej" value="other" checked={formData.rtReturnOption === 'other'} onChange={() => { setF('rtReturnOption', 'other'); setF('rtReturnDestination', ''); }} className="w-4 h-4 accent-red-600" />
                     Otro Destino
                   </label>
                 </div>
@@ -254,13 +273,19 @@ export const StepData = () => {
           {(formData.rtStatus === 'aprobado' || formData.rtStatus === 'aprobado_ayuda') && (
             <div className="mt-3 p-4 border border-green-200 dark:border-green-800/50 bg-green-50/30 dark:bg-green-900/10 rounded-2xl space-y-3 animate-in fade-in">
               <p className="text-[11px] font-black text-green-800 dark:text-green-400 uppercase tracking-widest">¿Destino tras aprobar?</p>
-              <div className="flex gap-5">
+              <div className="flex flex-wrap gap-4">
+                {assignedDest && (
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-green-700 dark:text-green-300 select-none">
+                    <input type="radio" name="rtReturnOption" value="destination" checked={formData.rtReturnOption === 'destination'} onChange={() => { setF('rtReturnOption', 'destination'); setF('rtReturnDestination', assignedDest); }} className="w-4 h-4 accent-green-600" />
+                    Continuar a {assignedDest}
+                  </label>
+                )}
                 <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-green-700 dark:text-green-300 select-none">
-                  <input type="radio" name="rtReturnOption" value="origin" checked={formData.rtReturnOption === 'origin'} onChange={e => setF('rtReturnOption', e.target.value)} className="w-4 h-4 accent-green-600" />
+                  <input type="radio" name="rtReturnOption" value="origin" checked={formData.rtReturnOption === 'origin'} onChange={() => { setF('rtReturnOption', 'origin'); setF('rtReturnDestination', ''); }} className="w-4 h-4 accent-green-600" />
                   Volver al Origen
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-green-700 dark:text-green-300 select-none">
-                  <input type="radio" name="rtReturnOption" value="other" checked={formData.rtReturnOption === 'other'} onChange={e => setF('rtReturnOption', e.target.value)} className="w-4 h-4 accent-green-600" />
+                  <input type="radio" name="rtReturnOption" value="other" checked={formData.rtReturnOption === 'other'} onChange={() => { setF('rtReturnOption', 'other'); setF('rtReturnDestination', ''); }} className="w-4 h-4 accent-green-600" />
                   Otro Destino
                 </label>
               </div>

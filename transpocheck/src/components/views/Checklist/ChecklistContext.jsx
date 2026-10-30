@@ -19,8 +19,8 @@ export const ChecklistProvider = ({ children, job, currentUserEmail, onCancel, o
   if (job?.tripType === 'revision' && job?.destination) {
     const parts = job.destination.split('->');
     const finalLeg = (parts.length > 1 ? parts[1] : job.destination).trim();
-    if (finalLeg && job.origin && finalLeg.toLowerCase() !== job.origin.toLowerCase()) {
-      autoReturnOpt = 'other';
+    if (finalLeg && job.origin && finalLeg.toLowerCase() !== job.origin.toLowerCase() && !finalLeg.toLowerCase().includes('prt')) {
+      autoReturnOpt = 'destination';
       autoReturnDest = finalLeg;
     }
   }

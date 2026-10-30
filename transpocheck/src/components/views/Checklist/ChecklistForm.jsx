@@ -249,7 +249,7 @@ const ChecklistInner = ({ openCamera }) => {
             updates.prt_result = formDataWithLocation.rtStatus;
             updates.prt_reason = formDataWithLocation.rtRejectReason || '';
             if (formDataWithLocation.rtReturnOption) {
-              const effectiveFinal = formDataWithLocation.rtReturnOption === 'other' ? (formDataWithLocation.rtReturnDestination || '') : job.origin;
+              const effectiveFinal = (formDataWithLocation.rtReturnOption === 'other' || formDataWithLocation.rtReturnOption === 'destination') ? (formDataWithLocation.rtReturnDestination || '') : job.origin;
               const prtPart = (job.destination || '').includes('->') ? job.destination.split('->')[0].trim() : (job.destination?.trim() || 'PRT');
               if (effectiveFinal) {
                 updates.destination = `${prtPart} -> ${effectiveFinal}`;
@@ -290,7 +290,7 @@ const ChecklistInner = ({ openCamera }) => {
             checklist: finalData, status: 'completed', completedAt: Date.now(), draft: null
           };
           if (job.tripType === 'revision' && finalData.rtReturnOption) {
-            const effectiveFinal = finalData.rtReturnOption === 'other' ? (finalData.rtReturnDestination || '') : job.origin;
+            const effectiveFinal = (finalData.rtReturnOption === 'other' || finalData.rtReturnOption === 'destination') ? (finalData.rtReturnDestination || '') : job.origin;
             const prtPart = (job.destination || '').includes('->') ? job.destination.split('->')[0].trim() : (job.destination?.trim() || 'PRT');
             if (effectiveFinal) {
               finalJobUpdates.destination = `${prtPart} -> ${effectiveFinal}`;
