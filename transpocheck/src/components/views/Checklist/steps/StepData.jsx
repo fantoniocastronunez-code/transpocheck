@@ -8,7 +8,7 @@ import DejaVuModal from '../components/DejaVuModal';
 
 export const StepData = () => {
   const { job, formData, setF, isQuick, allClientsList } = useChecklist();
-  
+
   // Custom hook para el Déjà Vu Pericial
   const { dejaVuData, showDejaVuModal, setShowDejaVuModal } = useDejaVu(formData.plateOrVin, job?.id);
 
@@ -37,7 +37,7 @@ export const StepData = () => {
 
   return (
     <div className="space-y-5 animate-in fade-in duration-300">
-      
+
       {/* Selector de Cliente */}
       {isQuick ? (
         <div className="space-y-2">
@@ -77,11 +77,11 @@ export const StepData = () => {
       {/* Datos del Vehículo */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 shadow-sm space-y-4 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 dark:bg-blue-900/20 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
-        
+
         <h3 className="text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest flex items-center gap-2 relative z-10">
           Vehículo
         </h3>
-        
+
         <div className="relative z-10">
           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 absolute -top-2 left-3 bg-white dark:bg-slate-900 px-1 z-10">Patente o VIN</label>
           <input
@@ -113,10 +113,10 @@ export const StepData = () => {
         {/* Checkbox Vehículo Nuevo */}
         <label className="flex items-center gap-3 mt-4 relative z-10 cursor-pointer bg-slate-50 dark:bg-slate-800/50 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 transition-colors">
           <div className="relative flex items-center">
-            <input 
-              type="checkbox" 
-              checked={formData.isNewVehicle || false} 
-              onChange={e => setF('isNewVehicle', e.target.checked)} 
+            <input
+              type="checkbox"
+              checked={formData.isNewVehicle || false}
+              onChange={e => setF('isNewVehicle', e.target.checked)}
               className="sr-only"
             />
             <div className={`w-6 h-6 border-2 rounded-lg transition-all flex items-center justify-center shadow-inner ${formData.isNewVehicle ? 'bg-blue-500 border-blue-500' : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600'}`}>
@@ -144,9 +144,9 @@ export const StepData = () => {
             <p className="text-[12px] font-bold text-purple-600/90 dark:text-purple-400/90 leading-snug mb-3">
               Hay registros de daños previos en este vehículo (Traslado del {new Date(dejaVuData.completedAt).toLocaleDateString()}).
             </p>
-            <button 
-              type="button" 
-              onClick={() => setShowDejaVuModal(true)} 
+            <button
+              type="button"
+              onClick={() => setShowDejaVuModal(true)}
               className="bg-purple-600 hover:bg-purple-700 text-white text-[11px] px-4 py-2.5 rounded-xl font-black uppercase transition-colors shadow-md shadow-purple-500/20 w-full active:scale-95"
             >
               Ver Daños Anteriores
@@ -163,18 +163,18 @@ export const StepData = () => {
           </h3>
 
           {(!formData.prtArrivalTime && formData.rtStatus === 'pendiente') && (
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={async () => {
-                 setF('prtArrivalTime', Date.now());
-                 if (job?.phase === 'picked_up') {
-                   try {
-                     await updateDoc(doc(db, 'transport_jobs', job.id), { phase: 'arrived_prt' });
-                   } catch (e) {
-                     console.error("[ERR-PRT-01]", e);
-                   }
-                 }
-              }} 
+                setF('prtArrivalTime', Date.now());
+                if (job?.phase === 'picked_up') {
+                  try {
+                    await updateDoc(doc(db, 'transport_jobs', job.id), { phase: 'arrived_prt' });
+                  } catch (e) {
+                    console.error("[ERR-PRT-01]", e);
+                  }
+                }
+              }}
               className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black py-4 rounded-2xl shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 transition-all active:scale-95"
             >
               <MapPin className="w-5 h-5" /> LLEGUÉ A LA PRT (Iniciar Tiempo)
@@ -202,23 +202,23 @@ export const StepData = () => {
           {(formData.prtArrivalTime || formData.rtStatus !== 'pendiente') && (
             <div className="animate-in fade-in slide-in-from-top-2 duration-300 pt-3 border-t border-slate-100 dark:border-slate-800">
               <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-3">Resultado de la Revisión</h3>
-              <select 
-                value={formData.rtStatus} 
+              <select
+                value={formData.rtStatus}
                 onChange={e => {
                   setF('rtStatus', e.target.value);
                   if (e.target.value !== 'pendiente' && !formData.prtFinishTime && formData.prtArrivalTime) {
-                    setF('prtFinishTime', Date.now()); 
+                    setF('prtFinishTime', Date.now());
                   }
-                }} 
+                }}
                 className={`w-full border-2 p-4 rounded-2xl outline-none font-black text-sm appearance-none shadow-sm transition-all
-                ${formData.rtStatus === 'pendiente' 
-                  ? 'border-blue-300 dark:border-blue-700/50 bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-400' 
-                  : formData.rtStatus === 'aprobado' 
-                    ? 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 shadow-green-500/10' 
-                    : formData.rtStatus === 'aprobado_ayuda' 
-                      ? 'border-amber-400 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 shadow-amber-500/10' 
-                      : 'border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 shadow-red-500/10'
-                }`}
+                ${formData.rtStatus === 'pendiente'
+                    ? 'border-blue-300 dark:border-blue-700/50 bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-400'
+                    : formData.rtStatus === 'aprobado'
+                      ? 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 shadow-green-500/10'
+                      : formData.rtStatus === 'aprobado_ayuda'
+                        ? 'border-amber-400 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 shadow-amber-500/10'
+                        : 'border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 shadow-red-500/10'
+                  }`}
               >
                 <option value="pendiente" disabled>⏳ TRÁMITE EN CURSO...</option>
                 <option value="aprobado">✅ APROBADO</option>
@@ -230,13 +230,13 @@ export const StepData = () => {
 
           {formData.rtStatus === 'rechazado' && (
             <div className="space-y-3 animate-in fade-in">
-              <input 
-                value={formData.rtRejectReason} 
-                onChange={e => setF('rtRejectReason', e.target.value)} 
-                placeholder="¿Cuál fue la razón del rechazo?" 
-                required 
-                autoComplete="off" autoCorrect="off" spellCheck="false" 
-                className="w-full border-2 border-red-300 dark:border-red-700/50 p-3.5 rounded-2xl outline-none focus:border-red-500 font-bold text-red-900 dark:text-red-300 bg-white dark:bg-slate-900 mt-3 shadow-inner" 
+              <input
+                value={formData.rtRejectReason}
+                onChange={e => setF('rtRejectReason', e.target.value)}
+                placeholder="¿Cuál fue la razón del rechazo?"
+                required
+                autoComplete="off" autoCorrect="off" spellCheck="false"
+                className="w-full border-2 border-red-300 dark:border-red-700/50 p-3.5 rounded-2xl outline-none focus:border-red-500 font-bold text-red-900 dark:text-red-300 bg-white dark:bg-slate-900 mt-3 shadow-inner"
               />
               <div className="p-4 border border-red-200 dark:border-red-800/50 bg-red-50/30 dark:bg-red-900/10 rounded-2xl space-y-3">
                 <p className="text-[11px] font-black text-red-800 dark:text-red-400 uppercase tracking-widest">¿Destino tras rechazo?</p>
@@ -257,13 +257,13 @@ export const StepData = () => {
                   </label>
                 </div>
                 {formData.rtReturnOption === 'other' && (
-                  <input 
-                    value={formData.rtReturnDestination} 
-                    onChange={e => setF('rtReturnDestination', e.target.value)} 
-                    placeholder="Especifique el destino final tras rechazo..." 
-                    required 
-                    autoComplete="off" autoCorrect="off" spellCheck="false" 
-                    className="w-full border-2 border-red-300 dark:border-red-700/50 p-3 rounded-xl outline-none focus:border-red-500 font-bold text-red-900 dark:text-red-300 bg-white dark:bg-slate-900 mt-2 shadow-inner" 
+                  <input
+                    value={formData.rtReturnDestination}
+                    onChange={e => setF('rtReturnDestination', e.target.value)}
+                    placeholder="Especifique el destino final tras rechazo..."
+                    required
+                    autoComplete="off" autoCorrect="off" spellCheck="false"
+                    className="w-full border-2 border-red-300 dark:border-red-700/50 p-3 rounded-xl outline-none focus:border-red-500 font-bold text-red-900 dark:text-red-300 bg-white dark:bg-slate-900 mt-2 shadow-inner"
                   />
                 )}
               </div>
@@ -290,13 +290,13 @@ export const StepData = () => {
                 </label>
               </div>
               {formData.rtReturnOption === 'other' && (
-                <input 
-                  value={formData.rtReturnDestination} 
-                  onChange={e => setF('rtReturnDestination', e.target.value)} 
-                  placeholder="Especifique el destino final..." 
-                  required 
-                  autoComplete="off" autoCorrect="off" spellCheck="false" 
-                  className="w-full border-2 border-green-300 dark:border-green-700/50 p-3 rounded-xl outline-none focus:border-green-500 font-bold text-green-900 dark:text-green-300 bg-white dark:bg-slate-900 mt-2 shadow-inner" 
+                <input
+                  value={formData.rtReturnDestination}
+                  onChange={e => setF('rtReturnDestination', e.target.value)}
+                  placeholder="Especifique el destino final..."
+                  required
+                  autoComplete="off" autoCorrect="off" spellCheck="false"
+                  className="w-full border-2 border-green-300 dark:border-green-700/50 p-3 rounded-xl outline-none focus:border-green-500 font-bold text-green-900 dark:text-green-300 bg-white dark:bg-slate-900 mt-2 shadow-inner"
                 />
               )}
             </div>
@@ -305,10 +305,10 @@ export const StepData = () => {
       )}
 
       {/* RENDERIZADO DEL MODAL DÉJÀ VU */}
-      <DejaVuModal 
-        showDejaVuModal={showDejaVuModal} 
-        setShowDejaVuModal={setShowDejaVuModal} 
-        dejaVuData={dejaVuData} 
+      <DejaVuModal
+        showDejaVuModal={showDejaVuModal}
+        setShowDejaVuModal={setShowDejaVuModal}
+        dejaVuData={dejaVuData}
       />
     </div>
   );

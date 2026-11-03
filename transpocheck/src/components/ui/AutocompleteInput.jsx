@@ -3,12 +3,12 @@ import { Search } from 'lucide-react';
 
 import { X } from 'lucide-react';
 
-export default function AutocompleteInput({ 
-  value, 
-  onChange, 
-  options, 
-  placeholder, 
-  className, 
+export default function AutocompleteInput({
+  value,
+  onChange,
+  options,
+  placeholder,
+  className,
   required,
   name,
   defaultValue,
@@ -35,7 +35,7 @@ export default function AutocompleteInput({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [wrapperRef]);
 
-  const filteredOptions = (options || []).filter(opt => 
+  const filteredOptions = (options || []).filter(opt =>
     typeof opt === 'string' && opt.toLowerCase().includes((internalValue || '').toLowerCase())
   ).slice(0, 50); // limit to avoid massive lists
 
@@ -71,29 +71,29 @@ export default function AutocompleteInput({
         autoCapitalize="characters"
         className={className}
       />
-      
+
       {isOpen && (internalValue || (options && options.length > 0)) && (
         <div className="absolute z-[200] left-0 right-0 top-full mt-1 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl max-h-48 overflow-y-auto">
           {filteredOptions.length > 0 ? (
             filteredOptions.map((opt, idx) => (
-              <div 
+              <div
                 key={idx}
                 onMouseDown={(e) => { e.preventDefault(); handleSelect(opt); }}
                 className="px-4 py-3 hover:bg-purple-50 dark:hover:bg-purple-900/30 cursor-pointer border-b border-slate-100 dark:border-slate-700/50 last:border-0 font-bold text-sm text-slate-700 dark:text-slate-300 flex items-center justify-between gap-2 group"
               >
                 <div className="flex items-center gap-2">
-                   <Search className="w-3.5 h-3.5 text-slate-400" />
-                   <span className="truncate">{opt}</span>
+                  <Search className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="truncate">{opt}</span>
                 </div>
                 {onDeleteOption && (
-                   <button 
-                     type="button"
-                     onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onDeleteOption(opt); }}
-                     className="p-1.5 rounded-lg bg-red-500/10 text-red-500 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity hover:bg-red-500/20"
-                     title="Eliminar de la lista"
-                   >
-                     <X className="w-4 h-4" />
-                   </button>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onDeleteOption(opt); }}
+                    className="p-1.5 rounded-lg bg-red-500/10 text-red-500 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity hover:bg-red-500/20"
+                    title="Eliminar de la lista"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 )}
               </div>
             ))

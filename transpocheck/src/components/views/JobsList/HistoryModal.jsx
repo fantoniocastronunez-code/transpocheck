@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, X, MapPin, AlertCircle, Loader2, Receipt, CheckSquare, Check, Wrench } from 'lucide-react';
+import { FileText, X, MapPin, AlertCircle, Loader2, Receipt, CheckSquare, Check, Wrench, Copy } from 'lucide-react';
 import { db, storage } from '../../../firebase';
 import { ref, listAll, getDownloadURL } from 'firebase/storage';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -11,7 +11,8 @@ export default function HistoryModal({
   getRouteStr,
   vehicles,
   drivers,
-  setFullScreenPhoto
+  setFullScreenPhoto,
+  cpyWapp
 }) {
   const [storagePhotos, setStoragePhotos] = useState({});
   const [loadingPhotos, setLoadingPhotos] = useState(false);
@@ -126,9 +127,20 @@ export default function HistoryModal({
               </p>
             </div>
           </div>
-          <button onClick={() => setSelectedHistoryJob(null)} className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full hover:bg-slate-100 dark:bg-slate-800 transition-colors">
-            <X className="w-5 h-5 text-slate-600 dark:text-slate-400"/>
-          </button>
+          <div className="flex items-center gap-2">
+            {cpyWapp && (
+              <button
+                onClick={() => cpyWapp(selectedHistoryJob)}
+                className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/40 transition-colors shadow-sm"
+                title="Copiar Resumen para WhatsApp"
+              >
+                <Copy className="w-5 h-5"/>
+              </button>
+            )}
+            <button onClick={() => setSelectedHistoryJob(null)} className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full hover:bg-slate-100 dark:bg-slate-800 transition-colors">
+              <X className="w-5 h-5 text-slate-600 dark:text-slate-400"/>
+            </button>
+          </div>
         </div>
 
         <div className="p-5 overflow-y-auto space-y-6 flex-1">
