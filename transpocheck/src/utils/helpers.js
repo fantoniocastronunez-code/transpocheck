@@ -358,7 +358,7 @@ export const calculateDriverChecklistScore = (jobs, driverEmail, drivers = []) =
     let vehiclePhotos = 0;
     if (cl.photos) {
       Object.values(cl.photos).forEach(photo => {
-        if (typeof photo === 'string' && photo.length > 50) vehiclePhotos++;
+        if (typeof photo === 'string' && (photo.length > 20 || photo.startsWith('data:') || photo.startsWith('http'))) vehiclePhotos++;
       });
     }
     totalFields += 4;
@@ -368,16 +368,27 @@ export const calculateDriverChecklistScore = (jobs, driverEmail, drivers = []) =
     // signature
     // Require signature unless the job is a failed revision
     if (job.status !== 'failed') {
+      const hasSig = Boolean(
+        cl.signatureData ||
+        cl.signature ||
+        job.signatureData ||
+        cl.clientSigned ||
+        cl.noReception
+      );
       totalFields++;
-      if (cl.signature) fieldsFilled++;
+      if (hasSig) fieldsFilled++;
       else missingSignatures++;
 
+      const hasName = Boolean(
+        (cl.receiverName && String(cl.receiverName).trim().length >= 2) ||
+        cl.noReception
+      );
       totalFields++;
-      if (cl.receiverName && cl.receiverName.trim().length > 2) fieldsFilled++;
+      if (hasName) fieldsFilled++;
       else missingSignatures++;
 
       // Penalización 1: Firmar con su propio nombre
-      if (cl.receiverName && driverName) {
+      if (cl.receiverName && driverName && !cl.noReception) {
         const rName = cl.receiverName.toLowerCase().trim();
         const dName = driverName.toLowerCase().trim();
         const isSelf = rName.length > 3 && dName.length > 3 && (rName.includes(dName.split(' ')[0]) || dName.includes(rName.split(' ')[0]));
@@ -425,7 +436,7 @@ export const calculateDriverChecklistScore = (jobs, driverEmail, drivers = []) =
   }
 
   if (completionPercentage < 0.95) {
-    if (missingPhotos >= missingSignatures) {
+    if (missingPhotos >= missingSignatures && missingPhotos > 0) {
       tips.push('Toma más fotos del vehículo (frente, interior, daños).');
     } else if (missingSignatures > 0) {
       tips.push('Asegúrate de pedir siempre la firma y nombre de quien recibe.');

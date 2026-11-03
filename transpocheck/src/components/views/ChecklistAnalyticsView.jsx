@@ -47,40 +47,44 @@ export default function ChecklistAnalyticsView({ jobs, drivers, currentUserEmail
       
       const cl = job.checklist || {};
       
-      // Check photos
+      // Check photos (standard 4 photos)
+      let photoCount = 0;
       if (cl.photos) {
          Object.values(cl.photos).forEach(photo => {
-            if (typeof photo === 'string' && photo.length > 50) checkField(true);
-            else checkField(false);
+            if (typeof photo === 'string' && (photo.length > 20 || photo.startsWith('data:') || photo.startsWith('http'))) {
+               photoCount++;
+            }
          });
       }
-      // Check docs
+      for (let i = 0; i < 4; i++) {
+         checkField(i < photoCount);
+      }
+
+      // Check docs attached
       if (cl.docsPhotos) {
          Object.values(cl.docsPhotos).forEach(photo => {
-            if (typeof photo === 'string' && photo.length > 50) {
-               checkField(true);
+            if (typeof photo === 'string' && photo.length > 20) {
                stats.docsAttached++;
-            } else checkField(false);
+            }
          });
       }
       if (cl.scandocPdf || cl.scandocPdfInbox) {
-         checkField(true);
          stats.docsAttached++;
       }
       
-      // Check signature
-      checkField(cl.signature);
-      checkField(cl.receiverName);
-      checkField(cl.receiverRut);
+      // Check signature & receiver
+      const hasSig = Boolean(cl.signatureData || cl.signature || job.signatureData || cl.clientSigned || cl.noReception);
+      checkField(hasSig);
+      checkField(Boolean(cl.receiverName && String(cl.receiverName).trim().length >= 2) || Boolean(cl.noReception));
+      if (!cl.noReception) {
+         checkField(Boolean(cl.receiverRut && String(cl.receiverRut).trim().length >= 2));
+      }
       
       // Expiry dates
       if (cl.docsExpiry) {
          Object.values(cl.docsExpiry).forEach(date => {
             if (date) {
-               checkField(true);
                stats.expiryDatesFilled++;
-            } else {
-               checkField(false);
             }
          });
       }

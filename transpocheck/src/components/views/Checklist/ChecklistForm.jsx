@@ -62,57 +62,79 @@ const ChecklistInner = ({ openCamera }) => {
       let simpleEarned = 0;
       const simpleTotal = 4;
       if (Object.values(formData.photos || {}).some(Boolean)) simpleEarned += 1;
-      if (formData.receiverName && String(formData.receiverName).trim() !== '') simpleEarned += 1;
-      if (formData.receiverRut && String(formData.receiverRut).trim() !== '') simpleEarned += 1;
-      if (formData.signatureData) simpleEarned += 1;
+      if ((formData.receiverName && String(formData.receiverName).trim() !== '') || formData.noReception) simpleEarned += 1;
+      if ((formData.receiverRut && String(formData.receiverRut).trim() !== '') || formData.noReception) simpleEarned += 1;
+      if (formData.signatureData || formData.clientSigned || formData.noReception) simpleEarned += 1;
       return Math.min(100, Math.round((simpleEarned / simpleTotal) * 100));
     }
 
     let earned = 0;
+    let total = 0;
 
-    const isAuto = !formData.vehicleType || formData.vehicleType === 'auto';
-    let total = isAuto ? 22 : 24;
-
-    // 1. Documents (4 docs * 3 points = 12 points)
-    const checkDoc = (id) => {
-       if (formData.docs?.[id]) earned += 1;
-       if (formData.docsExpiry?.[id] && String(formData.docsExpiry[id]).trim() !== '') earned += 1;
-       if (formData.docsPhotos?.[id]) earned += 1;
-    };
-    
-    if (formData.isNewVehicle) {
-      total -= 12; // 4 documents * 3 points
-    } else {
+    // 1. Documentos (4 docs * 2 puntos = 8 puntos, si no es vehículo nuevo)
+    if (!formData.isNewVehicle) {
+      const checkDoc = (id) => {
+        total += 2;
+        if (formData.docs?.[id]) earned += 1;
+        const hasExpiryOrPhoto = Boolean(
+          (formData.docsExpiry?.[id] && String(formData.docsExpiry[id]).trim() !== '') ||
+          formData.docsPhotos?.[id]
+        );
+        if (hasExpiryOrPhoto) earned += 1;
+      };
       checkDoc('permiso');
       checkDoc('soap');
       checkDoc('revTecnica');
       checkDoc('gases');
     }
 
-    // 2. Photos (7 or 9 points)
-    const checkPhoto = (id) => {
-       if (formData.photos?.[id]) earned += 1;
-    };
-    checkPhoto('tire');
-    checkPhoto('interior_front');
-    checkPhoto('interior_back');
-    checkPhoto('front');
-    checkPhoto('back');
+    // 2. Revisión (Kilometraje y Combustible) (2 puntos)
+    total += 2;
+    if (formData.mileage && String(formData.mileage).trim() !== '') earned += 1;
+    if (formData.fuelLevel !== undefined && formData.fuelLevel !== null && formData.fuelLevel !== '') earned += 1;
 
-    if (isAuto) {
-      checkPhoto('left');
-      checkPhoto('right');
+    // 3. Fotos del Vehículo
+    const isCamion = Boolean(formData.vehicleType && formData.vehicleType.includes('camion'));
+    const lateralPoints = isCamion ? 4 : 2;
+    total += 2 + lateralPoints + 1 + 1; // Frente(1) + Atrás(1) + Laterales(2 o 4) + Interior(1) + Extra(1)
+
+    // Frente y Atrás
+    if (formData.photos?.front) earned += 1;
+    if (formData.photos?.back) earned += 1;
+
+    // Laterales (Soporta formato cabina+carrocería para camiones o laterales estándar)
+    if (isCamion) {
+      if (formData.photos?.left_cab || formData.photos?.left) earned += 1;
+      if (formData.photos?.left_body || formData.photos?.left) earned += 1;
+      if (formData.photos?.right_cab || formData.photos?.right) earned += 1;
+      if (formData.photos?.right_body || formData.photos?.right) earned += 1;
     } else {
-      checkPhoto('left_cab');
-      checkPhoto('left_body');
-      checkPhoto('right_cab');
-      checkPhoto('right_body');
+      if (formData.photos?.left || formData.photos?.left_cab) earned += 1;
+      if (formData.photos?.right || formData.photos?.right_cab) earned += 1;
     }
 
-    // 3. Signature (3 points)
-    if (formData.receiverName && String(formData.receiverName).trim() !== '') earned += 1;
-    if (formData.receiverRut && String(formData.receiverRut).trim() !== '') earned += 1;
-    if (formData.signatureData) earned += 1;
+    // Interior
+    if (formData.photos?.interior_front || formData.photos?.interior_back) earned += 1;
+
+    // Foto extra flexible (Repuesto, Interior atrás, VIN, pin de daño o vehículo sucio)
+    const hasExtra = Boolean(
+      formData.photos?.tire ||
+      formData.photos?.interior_back ||
+      formData.photos?.vin ||
+      formData.isDirtyVehicle ||
+      Object.keys(formData.photos || {}).some(k => k.startsWith('det') && formData.photos[k])
+    );
+    if (hasExtra) earned += 1;
+
+    // 4. Firma / Recepción (3 puntos)
+    total += 3;
+    if (formData.noReception) {
+      earned += 3;
+    } else {
+      if (formData.receiverName && String(formData.receiverName).trim() !== '') earned += 1;
+      if (formData.receiverRut && String(formData.receiverRut).trim() !== '') earned += 1;
+      if (formData.signatureData || formData.clientSigned || formData.signatureLocked) earned += 1;
+    }
 
     if (total <= 0) return 100;
     return Math.min(100, Math.round((earned / total) * 100));
