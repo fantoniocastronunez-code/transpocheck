@@ -1,33 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, addDoc, onSnapshot, updateDoc, doc, getDocs, query, where, orderBy, limit, deleteField } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { collection, addDoc, onSnapshot, updateDoc, doc, getDocs, query, where, orderBy, limit, deleteField } from 'firebase/firestore';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
-import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { app, auth, db, storage, googleProvider } from '../firebase';
 
-// 1. CONFIGURACIÓN INICIAL
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
-};
-
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-export const auth = getAuth(app);
-let database;
-try {
-  database = initializeFirestore(app, {
-    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
-  });
-} catch (error) {
-  database = getFirestore(app);
-}
-export const db = database;
-export const storage = getStorage(app);
-export const googleProvider = new GoogleAuthProvider();
+export { auth, db, storage, googleProvider };
 
 let messaging = null;
 isSupported().then((supported) => {
@@ -44,16 +22,71 @@ export const uploadImageToStorage = async (base64String, folderPath, fileName) =
 
 // 2. EL CUSTOM HOOK PRINCIPAL
 export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAlert) {
-  const [user, setUser] = useState(null);
-  const [jobs, setJobs] = useState([]);
-  const [drivers, setDrivers] = useState([]);
-  const [expenses, setExpenses] = useState([]);
-  const [vehicles, setVehicles] = useState([]);
-  const [vehicleModels, setVehicleModels] = useState([]);
-  const [customClients, setCustomClients] = useState([]);
+  const [user, setUser] = useState(() => auth.currentUser || null);
+
+  // Inicialización instantánea desde caché local para evitar pantalla de carga al reabrir el navegador
+  const [jobs, setJobs] = useState(() => {
+    try {
+      const saved = localStorage.getItem('app_cache_jobs');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) { return []; }
+  });
+
+  const [drivers, setDrivers] = useState(() => {
+    try {
+      const saved = localStorage.getItem('app_cache_drivers');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) { return []; }
+  });
+
+  const [expenses, setExpenses] = useState(() => {
+    try {
+      const saved = localStorage.getItem('app_cache_expenses');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) { return []; }
+  });
+
+  const [vehicles, setVehicles] = useState(() => {
+    try {
+      const saved = localStorage.getItem('app_cache_vehicles');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) { return []; }
+  });
+
+  const [vehicleModels, setVehicleModels] = useState(() => {
+    try {
+      const saved = localStorage.getItem('app_cache_vehicle_models');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) { return []; }
+  });
+
+  const [customClients, setCustomClients] = useState(() => {
+    try {
+      const saved = localStorage.getItem('app_cache_custom_clients');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) { return []; }
+  });
+
   const [broadcast, setBroadcast] = useState(null);
-  const [dataLoaded, setDataLoaded] = useState(false);
+
+  // Candado de carga: si ya tenemos conductores en caché, abrimos de inmediato (0ms de espera)
+  const [dataLoaded, setDataLoaded] = useState(() => {
+    try {
+      const cached = localStorage.getItem('app_cache_drivers');
+      return !!(cached && cached.length > 5);
+    } catch (e) { return false; }
+  });
+
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+
+  // Fallback de seguridad: si tras 2.5s no ha cargado, abrir la app de todos modos para nunca bloquear la pantalla
+  useEffect(() => {
+    if (dataLoaded) return;
+    const timer = setTimeout(() => {
+      setDataLoaded(true);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [dataLoaded]);
 
   // Variables de identidad derivadas
   const actualUserEmail = user?.email?.trim().toLowerCase();
@@ -126,7 +159,7 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
             await navigator.serviceWorker.ready;
           } catch (err) {
             console.error('Error registrando Service Worker:', err);
-            showAlert("❌ Error al registrar el Service Worker.");
+            showAlert("❌ Error al registrar el Service Worker [ERR-FCM-SW-01].");
             return;
           }
           
@@ -145,7 +178,7 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
           }
         }
       }
-    } catch (error) { showAlert("❌ Error: " + error.message); }
+    } catch (error) { showAlert("❌ Error [ERR-FCM-NOTIF-01]: " + error.message); }
   };
 
   // Efecto 1: Autenticación
@@ -191,14 +224,13 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
       registeringRef.current = true;
       (async () => {
         try {
-          // Ya sabemos que no existe en el array local, lo creamos directamente sin consultar a la BD otra vez
           await addDoc(collection(db, 'drivers'), {
             name: user.displayName || 'Usuario Nuevo',
             email: safeEmail, balance: 0, licenses: [], licenseExpiry: '', createdAt: Date.now(), role: 'driver'
           });
           console.log("✅ Auto-registro exitoso para:", safeEmail);
         } catch(e) { 
-          console.error("Error auto-registro", e); 
+          console.error("[ERR-DRIVER-AUTOREG-01] Error auto-registro:", e); 
         } finally { 
           registeringRef.current = false; 
         }
@@ -218,7 +250,7 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
     if (jobs.length > 0) cleanupDrafts();
   }, [jobs]);
 
-  // Efecto 5: Lectura de Base de Datos en Tiempo Real (Ultra-Optimizado para Conductor y Móvil)
+  // Efecto 5: Lectura de Base de Datos en Tiempo Real (Ultra-Optimizado con caché local persistente)
   useEffect(() => {
     if (!user) return;
     
@@ -234,10 +266,14 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
         const jobsMap = new Map();
         recentDocs.forEach(j => jobsMap.set(j.id, j));
         activeDocs.forEach(j => jobsMap.set(j.id, j));
-        setJobs(Array.from(jobsMap.values()));
+        const finalJobs = Array.from(jobsMap.values());
+        setJobs(finalJobs);
+        try {
+          localStorage.setItem('app_cache_jobs', JSON.stringify(finalJobs.slice(0, 50)));
+        } catch (e) { /* ignore quota */ }
       };
 
-      // 1. Trabajos activos (pendientes, aceptados, en ruta, pedidos): garantiza que NUNCA falte un trabajo asignado
+      // 1. Trabajos activos
       const qActive = query(collection(db, 'transport_jobs'), where('status', 'in', ['pending', 'accepted', 'pending_guide', 'requested']));
       const unsubActive = onSnapshot(qActive, (snapshot) => {
         if (!isFirstLoad.current) {
@@ -255,7 +291,7 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
       }, (err) => console.error("[ERR-FB-JOBS-ACTIVE]", err));
       unsubs.push(unsubActive);
 
-      // 2. Historial reciente (máx 35 en vez de 300 para no gastar cuota de Firestore)
+      // 2. Historial reciente
       const driverLimit = Math.min(jobLimit || 35, 50);
       const qRecent = query(collection(db, 'transport_jobs'), orderBy('createdAt', 'desc'), limit(driverLimit));
       const unsubRecent = onSnapshot(qRecent, (snapshot) => {
@@ -264,9 +300,15 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
       }, (err) => console.error("[ERR-FB-JOBS-RECENT]", err));
       unsubs.push(unsubRecent);
 
-      // 3. Gastos optimizados (máx 30 en vez de 300)
+      // 3. Gastos optimizados
       const qExpenses = query(collection(db, 'expenses'), orderBy('createdAt', 'desc'), limit(30));
-      const unsubExpenses = onSnapshot(qExpenses, snap => setExpenses(snap.docs.map(d => ({ id: d.id, ...d.data() }))), (err) => console.error("[ERR-FB-EXP-01]", err));
+      const unsubExpenses = onSnapshot(qExpenses, snap => {
+        const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setExpenses(docs);
+        try {
+          localStorage.setItem('app_cache_expenses', JSON.stringify(docs.slice(0, 50)));
+        } catch (e) { /* ignore quota */ }
+      }, (err) => console.error("[ERR-FB-EXP-01]", err));
       unsubs.push(unsubExpenses);
 
     } else {
@@ -283,7 +325,6 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
             }
             
             if (change.type === 'modified' && d.status === 'accepted' && isRealAdmin && activeRole === 'admin') {
-               // Filtro Anti-Spam: Solo avisa si NO tenemos este ID en la memoria
                if (!notifiedJobs.current.has(d.id)) {
                    triggerNotification('✅ Trabajo Aceptado', `CLIENTE: ${d.client}\nPATENTE: ${d.plate || d.vin}`);
                    notifiedJobs.current.add(d.id);
@@ -291,29 +332,61 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
             }
           });
         }
-        setJobs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setJobs(docs);
+        try {
+          localStorage.setItem('app_cache_jobs', JSON.stringify(docs.slice(0, 50)));
+        } catch (e) { /* ignore quota */ }
         isFirstLoad.current = false;
       }, (err) => console.error("[ERR-FB-JOBS-ADMIN]", err));
       unsubs.push(unsubJobs);
 
       const qExpenses = query(collection(db, 'expenses'), orderBy('createdAt', 'desc'), limit(300));
-      const unsubExpenses = onSnapshot(qExpenses, snap => setExpenses(snap.docs.map(d => ({ id: d.id, ...d.data() }))), (err) => console.error("[ERR-FB-EXP-ADMIN]", err));
+      const unsubExpenses = onSnapshot(qExpenses, snap => {
+        const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setExpenses(docs);
+        try {
+          localStorage.setItem('app_cache_expenses', JSON.stringify(docs.slice(0, 50)));
+        } catch (e) { /* ignore quota */ }
+      }, (err) => console.error("[ERR-FB-EXP-ADMIN]", err));
       unsubs.push(unsubExpenses);
     }
 
     const unsubDrivers = onSnapshot(collection(db, 'drivers'), snap => {
-      setDrivers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setDrivers(docs);
+      try {
+        localStorage.setItem('app_cache_drivers', JSON.stringify(docs));
+      } catch (e) { /* ignore quota */ }
       setDataLoaded(true); // Candado maestro abierto
     }, (err) => console.error("[ERR-FB-DRIVERS]", err));
     unsubs.push(unsubDrivers);
 
-    const unsubVehicles = onSnapshot(collection(db, 'vehicles'), snap => setVehicles(snap.docs.map(d => ({ id: d.id, ...d.data() }))), (err) => console.error("[ERR-FB-VEHICLES]", err));
+    const unsubVehicles = onSnapshot(collection(db, 'vehicles'), snap => {
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setVehicles(docs);
+      try {
+        localStorage.setItem('app_cache_vehicles', JSON.stringify(docs));
+      } catch (e) { /* ignore quota */ }
+    }, (err) => console.error("[ERR-FB-VEHICLES]", err));
     unsubs.push(unsubVehicles);
 
-    const unsubVehicleModels = onSnapshot(collection(db, 'vehicle_models'), snap => setVehicleModels(snap.docs.map(d => ({ id: d.id, ...d.data() }))), (err) => console.error("[ERR-FB-MODELS]", err));
+    const unsubVehicleModels = onSnapshot(collection(db, 'vehicle_models'), snap => {
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setVehicleModels(docs);
+      try {
+        localStorage.setItem('app_cache_vehicle_models', JSON.stringify(docs));
+      } catch (e) { /* ignore quota */ }
+    }, (err) => console.error("[ERR-FB-MODELS]", err));
     unsubs.push(unsubVehicleModels);
 
-    const unsubClients = onSnapshot(collection(db, 'clients'), snap => setCustomClients(snap.docs.map(d => ({ id: d.id, ...d.data() }))), (err) => console.error("[ERR-FB-CLIENTS]", err));
+    const unsubClients = onSnapshot(collection(db, 'clients'), snap => {
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      setCustomClients(docs);
+      try {
+        localStorage.setItem('app_cache_custom_clients', JSON.stringify(docs));
+      } catch (e) { /* ignore quota */ }
+    }, (err) => console.error("[ERR-FB-CLIENTS]", err));
     unsubs.push(unsubClients);
 
     return () => { unsubs.forEach(u => { if (typeof u === 'function') u(); }); };

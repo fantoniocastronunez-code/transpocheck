@@ -112,7 +112,7 @@ function LogisticApp() {
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
   const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
-  const APP_VERSION = "v1.2.88"; // IMPORTANT: Update this version string when making changes.
+  const APP_VERSION = "v1.2.89"; // IMPORTANT: Update this version string when making changes.
 
   // VARIABLES MÁGICAS: Atrapan lo que Android nos comparte desde CamScanner o Adobe Scan
   const sharedText = searchParams.get('shared_text');
@@ -294,7 +294,7 @@ function LogisticApp() {
     }
   }, [isRealAdmin, isQuoter, activeRole, simulatedDriverEmail]);
 
-  // --- MOTOR DE ACTUALIZACIÓN AUTOMÁTICA Y DESPERTADOR (ANTI-LAG XIAOMI) ---
+  // --- MOTOR DE ACTUALIZACIÓN PROGRAMADA (SOLO MADRUGADA) ---
   useEffect(() => {
     const checkAndForceUpdate = () => {
       const now = new Date();
@@ -302,52 +302,17 @@ function LogisticApp() {
       const dateString = now.toISOString().split('T')[0];
       const lastUpdate = localStorage.getItem('last_daily_refresh');
 
-      // Si son las 3:00 AM o más tarde, y hoy no se ha refrescado...
-      if (currentHour >= 3 && lastUpdate !== dateString) {
+      // Solo si la app quedó abierta de madrugada (3:00 AM - 4:59 AM)
+      if ((currentHour === 3 || currentHour === 4) && lastUpdate !== dateString) {
         localStorage.setItem('last_daily_refresh', dateString);
-
-        // 1. Limpiar caché visual del navegador
-        if ('caches' in window) {
-          caches.keys().then((names) => {
-            names.forEach(name => caches.delete(name));
-          });
-        }
-
-        // 2. Destruir Service Workers (Evita que la PWA se quede pegada)
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistrations().then(regs => {
-            regs.forEach(r => r.unregister());
-          });
-        }
-
-        // 3. Recargar forzosamente
-        console.log("⏰ Ejecutando limpieza y actualización de las 3 AM...");
-        setTimeout(() => window.location.reload(true), 300);
+        console.log("⏰ Ejecutando actualización programada de madrugada...");
+        setTimeout(() => window.location.reload(), 1000);
       }
     };
 
-    checkAndForceUpdate(); // Revisa apenas el usuario abre la app
-    const interval = setInterval(checkAndForceUpdate, 10 * 60 * 1000); // Revisa cada 10 min si la pantalla quedó prendida
-
-    // Revisa instantáneamente si el conductor desbloquea el celular o vuelve a la app
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        checkAndForceUpdate();
-        // MAGIA: Patada al WebSocket de Firebase para forzar reconexión inmediata en Android/MIUI
-        if (db) {
-          import('firebase/firestore').then(({ enableNetwork, disableNetwork }) => {
-            disableNetwork(db).then(() => enableNetwork(db)).catch(() => { });
-          });
-        }
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [db]);
+    const interval = setInterval(checkAndForceUpdate, 15 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
   // --------------------------------------------------
 
   useEffect(() => {

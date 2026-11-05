@@ -1,31 +1,30 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-// Importamos las herramientas modernas de caché offline
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDlX1VY0n5dDEvD_Tyivb0u_DLdfsargfI",
-  authDomain: "logisticapp-45452.firebaseapp.com",
-  projectId: "logisticapp-45452",
-  storageBucket: "logisticapp-45452.firebasestorage.app",
-  messagingSenderId: "522404772814",
-  appId: "1:522404772814:web:6ae1154eb945d36475099f"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDlX1VY0n5dDEvD_Tyivb0u_DLdfsargfI",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "logisticapp-45452.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "logisticapp-45452",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "logisticapp-45452.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "522404772814",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:522404772814:web:6ae1154eb945d36475099f"
 };
 
-// --- OPTIMIZACIÓN: Patrón Singleton para evitar inicializaciones duplicadas en recargas rápidas ---
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+// Singleton para asegurar una única instancia compartida en toda la app
+export const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider();
 
-// 🚀 LA MAGIA: Motor Offline (Subterráneo) activado con la sintaxis moderna a prueba de choques
+// Motor Offline persistente en IndexedDB (soporta múltiples pestañas sin colisiones)
 let database;
 try {
   database = initializeFirestore(app, {
     localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
   });
 } catch (error) {
-  // Si ya fue inicializado por otro módulo (ej. useFirebase.js), simplemente obtenemos la instancia
   database = getFirestore(app);
 }
 export const db = database;
