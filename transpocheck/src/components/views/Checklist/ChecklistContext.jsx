@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '../../../firebase'; // Asumiendo que esta es la ruta, ajustar si es necesario
 import { getVehicleIdentifierLabel } from '../../../utils/helpers'; // Asumiendo la ruta
+import { useChecklistSync } from './hooks/useChecklistSync';
 
 const ChecklistContext = createContext();
 
@@ -64,6 +65,12 @@ export const ChecklistProvider = ({ children, job, currentUserEmail, onCancel, o
   // Helper para setear campos individuales fácilmente
   const setF = (f, v) => setFormData(p => ({ ...p, [f]: v }));
 
+  // Instanciar Sincronización y Guardado en Segundo Plano
+  const sync = useChecklistSync({
+    job, isQuick, formData, setFormData, step, setStep, isDraftLoaded, setIsDraftLoaded,
+    defaultData, matchedVehicle, drivers, currentUserEmail, uploadImageToStorage, pushSyncTask, showAlert
+  });
+
   const value = {
     job, currentUserEmail, onCancel, onComplete, showAlert, showConfirm,
     allClientsList, drivers, expenses, vehicles, uploadImageToStorage, pushSyncTask,
@@ -75,7 +82,13 @@ export const ChecklistProvider = ({ children, job, currentUserEmail, onCancel, o
     isQuick,
     defaultData,
     matchedVehicle,
-    db
+    db,
+    syncFilesToStorage: sync.syncFilesToStorage,
+    clearLocalDraft: sync.clearLocalDraft,
+    flushDraft: sync.flushDraft,
+    saveDraftToIndexedDB: sync.saveDraftToIndexedDB,
+    persistStoragePhoto: sync.persistStoragePhoto,
+    checkIsExpired: sync.checkIsExpired
   };
 
   return (

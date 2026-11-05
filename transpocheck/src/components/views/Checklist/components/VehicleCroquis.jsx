@@ -3,7 +3,7 @@ import { Search, X, Camera, CheckCircle } from 'lucide-react';
 import { useChecklist } from '../ChecklistContext';
 
 export const VehicleCroquis = ({ handlePhotoClick }) => {
-  const { formData, setF, showAlert } = useChecklist();
+  const { formData, setF, setFormData, saveDraftToIndexedDB, persistStoragePhoto, showAlert } = useChecklist();
 
   return (
     <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-3xl border-2 border-slate-100 dark:border-slate-800 mb-1 select-none relative shadow-sm">
@@ -330,7 +330,24 @@ export const VehicleCroquis = ({ handlePhotoClick }) => {
           {(formData.detailPins || []).map(pin => (
             <div key={pin.id} onClick={() => handlePhotoClick(pin.id, 'Detalle del Daño')} className="absolute w-10 h-10 -ml-5 -mt-5 bg-red-500 rounded-full border-[3px] border-white dark:border-slate-800 shadow-xl flex items-center justify-center z-50 animate-in zoom-in cursor-pointer hover:scale-110 transition-transform" style={{ left: `${pin.x}%`, top: `${pin.y}%` }}>
               <img src={formData.photos[pin.id]} className="w-full h-full object-cover rounded-full opacity-90" alt="Detalle" />
-              <button type="button" onClick={(e) => { e.stopPropagation(); setF('photos', { ...formData.photos, [pin.id]: false }); setF('detailPins', formData.detailPins.filter(p => p.id !== pin.id)); }} className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] hover:bg-red-700 shadow-md transition-colors"><X className="w-3 h-3" /></button>
+              <button type="button" onClick={(e) => {
+                e.stopPropagation();
+                if (setFormData) {
+                  setFormData(prev => {
+                    const updated = {
+                      ...prev,
+                      photos: { ...(prev.photos || {}), [pin.id]: false },
+                      detailPins: (prev.detailPins || []).filter(p => p.id !== pin.id)
+                    };
+                    if (saveDraftToIndexedDB) saveDraftToIndexedDB(updated);
+                    return updated;
+                  });
+                  if (persistStoragePhoto) persistStoragePhoto('photos', pin.id, false);
+                } else {
+                  setF('photos', { ...formData.photos, [pin.id]: false });
+                  setF('detailPins', (formData.detailPins || []).filter(p => p.id !== pin.id));
+                }
+              }} className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] hover:bg-red-700 shadow-md transition-colors"><X className="w-3 h-3" /></button>
             </div>
           ))}
 

@@ -4,7 +4,7 @@ import { useChecklist } from '../ChecklistContext';
 import { FormattedMonthInput } from '../../../ui/FormattedMonthInput';
 
 export const StepDocs = ({ openCamera }) => {
-  const { job, formData, setF, showAlert } = useChecklist();
+  const { job, formData, setF, setFormData, showAlert, uploadImageToStorage, saveDraftToIndexedDB, persistStoragePhoto } = useChecklist();
   const [previewDocPhoto, setPreviewDocPhoto] = useState(null);
 
   const isRevisionTecnica = job?.tripType === 'revision' || 
@@ -16,7 +16,39 @@ export const StepDocs = ({ openCamera }) => {
       try {
         const { resizeImage } = await import('../../../../utils/helpers');
         const compressed = await resizeImage(file, 1200, 0.6);
-        setF('docsPhotos', { ...(formData.docsPhotos || {}), [docId]: compressed });
+        
+        setFormData(prev => {
+          const updated = {
+            ...prev,
+            docsPhotos: { ...(prev.docsPhotos || {}), [docId]: compressed }
+          };
+          if (saveDraftToIndexedDB) saveDraftToIndexedDB(updated);
+          return updated;
+        });
+
+        if (job?.id && job.id !== 'NEW_QUICK_JOB' && uploadImageToStorage) {
+          uploadImageToStorage(
+            compressed,
+            `checklists/${job.id}`,
+            `doc_${docId}_${Date.now()}.jpg`
+          ).then(storageUrl => {
+            if (storageUrl) {
+              setFormData(prev => {
+                const updated = {
+                  ...prev,
+                  docsPhotos: { ...(prev.docsPhotos || {}), [docId]: storageUrl }
+                };
+                if (saveDraftToIndexedDB) saveDraftToIndexedDB(updated);
+                return updated;
+              });
+              if (persistStoragePhoto) {
+                persistStoragePhoto('docsPhotos', docId, storageUrl);
+              }
+            }
+          }).catch(err => {
+            console.warn(`[ERR-DOC-UPLOAD-BG-${docId.toUpperCase()}] Error subiendo doc a storage:`, err);
+          });
+        }
       } catch (e) {
         console.error("[ERR-DOC-PHOTO-01]", e);
         showAlert("Error al procesar la foto [ERR-DOC-PHOTO-01].");

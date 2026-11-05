@@ -29,7 +29,11 @@ export const FastTrackView = ({ openCamera }) => {
     if (!f) return;
     try {
       const dataUrl = await resizeImage(f, 1920, 0.85);
-      setF('photos', { ...formData.photos, [id]: dataUrl });
+      setFormData(prev => {
+        const updated = { ...prev, photos: { ...(prev.photos || {}), [id]: dataUrl } };
+        if (saveDraftToIndexedDB) saveDraftToIndexedDB(updated);
+        return updated;
+      });
 
       if (job?.id !== 'NEW_QUICK_JOB' && uploadImageToStorage) {
         const storageUrl = await uploadImageToStorage(
@@ -37,11 +41,20 @@ export const FastTrackView = ({ openCamera }) => {
           `checklists/${job.id}`,
           `quick_photo_${id}_${Date.now()}.jpg`
         );
-        setF('photos', { ...formData.photos, [id]: storageUrl });
+        if (storageUrl) {
+          setFormData(prev => {
+            const updated = { ...prev, photos: { ...(prev.photos || {}), [id]: storageUrl } };
+            if (saveDraftToIndexedDB) saveDraftToIndexedDB(updated);
+            return updated;
+          });
+          if (persistStoragePhoto) {
+            persistStoragePhoto('photos', id, storageUrl);
+          }
+        }
       }
     } catch (err) {
-      console.error(err);
-      showAlert("Error al procesar la foto.");
+      console.error("[ERR-FAST-TRACK-PHOTO-01]", err);
+      showAlert("Error al procesar la foto [ERR-FAST-TRACK-PHOTO-01].");
     }
   };
 
@@ -66,15 +79,15 @@ export const FastTrackView = ({ openCamera }) => {
   React.useEffect(() => {
     const handleDelete = (e) => {
       const { id } = e.detail;
-      // In fast track, detailPins are not used much, but we clear the photo
-      setFormData?.(prev => ({
-        ...prev,
-        photos: { ...prev.photos, [id]: false }
-      }));
-      // fallback if setFormData isn't extracted
-      if (!setFormData) {
-        setF('photos', { ...formData.photos, [id]: false });
-      }
+      setFormData(prev => {
+        const updated = {
+          ...prev,
+          photos: { ...(prev.photos || {}), [id]: false }
+        };
+        if (saveDraftToIndexedDB) saveDraftToIndexedDB(updated);
+        return updated;
+      });
+      if (persistStoragePhoto) persistStoragePhoto('photos', id, false);
     };
 
     const handleRetake = (e) => {
@@ -97,12 +110,36 @@ export const FastTrackView = ({ openCamera }) => {
     const handleRotate = (e) => {
       const { id, url: newUrl } = e.detail;
       if (!id || !newUrl) return;
-      setFormData?.(prev => ({
-        ...prev,
-        photos: { ...prev.photos, [id]: newUrl }
-      }));
-      if (!setFormData) {
-        setF('photos', { ...formData.photos, [id]: newUrl });
+      setFormData(prev => {
+        const updated = {
+          ...prev,
+          photos: { ...(prev.photos || {}), [id]: newUrl }
+        };
+        if (saveDraftToIndexedDB) saveDraftToIndexedDB(updated);
+        return updated;
+      });
+      if (job?.id && job.id !== 'NEW_QUICK_JOB' && uploadImageToStorage) {
+        uploadImageToStorage(
+          newUrl,
+          `checklists/${job.id}`,
+          `quick_photo_${id}_${Date.now()}.jpg`
+        ).then(storageUrl => {
+          if (storageUrl) {
+            setFormData(prev => {
+              const updated = {
+                ...prev,
+                photos: { ...(prev.photos || {}), [id]: storageUrl }
+              };
+              if (saveDraftToIndexedDB) saveDraftToIndexedDB(updated);
+              return updated;
+            });
+            if (persistStoragePhoto) {
+              persistStoragePhoto('photos', id, storageUrl);
+            }
+          }
+        }).catch(err => {
+          console.warn("[ERR-FAST-TRACK-ROTATE-UPLOAD]", err);
+        });
       }
     };
 

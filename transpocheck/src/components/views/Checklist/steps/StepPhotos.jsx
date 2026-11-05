@@ -5,7 +5,7 @@ import { VehicleCroquis } from '../components/VehicleCroquis';
 import { resizeImage, rotateImage90Degrees } from '../../../../utils/helpers';
 
 export const StepPhotos = ({ openCamera }) => {
-  const { job, formData, setF, setFormData, uploadImageToStorage, showAlert } = useChecklist();
+  const { job, formData, setF, setFormData, uploadImageToStorage, showAlert, saveDraftToIndexedDB, persistStoragePhoto } = useChecklist();
 
   const handlePic = async (eOrFile, id) => {
     const f = eOrFile.target ? eOrFile.target.files[0] : eOrFile;
@@ -19,6 +19,7 @@ export const StepPhotos = ({ openCamera }) => {
           newData.detailPins = [...(prev.detailPins || []), prev.pendingPin];
           newData.pendingPin = null;
         }
+        if (saveDraftToIndexedDB) saveDraftToIndexedDB(newData);
         return newData;
       });
 
@@ -28,13 +29,22 @@ export const StepPhotos = ({ openCamera }) => {
           `checklists/${job.id}`,
           `photo_${id}_${Date.now()}.jpg`
         );
-        setFormData(prev => ({
-          ...prev,
-          photos: { ...prev.photos, [id]: storageUrl }
-        }));
+        if (storageUrl) {
+          setFormData(prev => {
+            const updated = {
+              ...prev,
+              photos: { ...prev.photos, [id]: storageUrl }
+            };
+            if (saveDraftToIndexedDB) saveDraftToIndexedDB(updated);
+            return updated;
+          });
+          if (persistStoragePhoto) {
+            persistStoragePhoto('photos', id, storageUrl);
+          }
+        }
       }
     } catch (err) {
-      console.error("Error al procesar la foto:", err);
+      console.error("[ERR-PHOTO-PROCESS-01] Error al procesar la foto:", err);
       showAlert("Error al procesar la foto. Intenta con una imagen más pequeña. [ERR-PHOTO-PROCESS-01]");
     }
   };
@@ -76,11 +86,16 @@ export const StepPhotos = ({ openCamera }) => {
   React.useEffect(() => {
     const handleDelete = (e) => {
       const { id } = e.detail;
-      setFormData(prev => ({
-        ...prev,
-        photos: { ...prev.photos, [id]: false },
-        detailPins: (prev.detailPins || []).filter(p => p.id !== id)
-      }));
+      setFormData(prev => {
+        const updated = {
+          ...prev,
+          photos: { ...prev.photos, [id]: false },
+          detailPins: (prev.detailPins || []).filter(p => p.id !== id)
+        };
+        if (saveDraftToIndexedDB) saveDraftToIndexedDB(updated);
+        return updated;
+      });
+      if (persistStoragePhoto) persistStoragePhoto('photos', id, false);
     };
 
     const handleRetake = (e) => {
@@ -103,10 +118,14 @@ export const StepPhotos = ({ openCamera }) => {
       const { id, url: newUrl } = e.detail;
       if (!id || !newUrl) return;
 
-      setFormData(prev => ({
-        ...prev,
-        photos: { ...prev.photos, [id]: newUrl }
-      }));
+      setFormData(prev => {
+        const updated = {
+          ...prev,
+          photos: { ...prev.photos, [id]: newUrl }
+        };
+        if (saveDraftToIndexedDB) saveDraftToIndexedDB(updated);
+        return updated;
+      });
 
       if (job?.id && job.id !== 'NEW_QUICK_JOB' && uploadImageToStorage) {
         try {
@@ -115,10 +134,19 @@ export const StepPhotos = ({ openCamera }) => {
             `checklists/${job.id}`,
             `photo_${id}_${Date.now()}.jpg`
           );
-          setFormData(prev => ({
-            ...prev,
-            photos: { ...prev.photos, [id]: storageUrl }
-          }));
+          if (storageUrl) {
+            setFormData(prev => {
+              const updated = {
+                ...prev,
+                photos: { ...prev.photos, [id]: storageUrl }
+              };
+              if (saveDraftToIndexedDB) saveDraftToIndexedDB(updated);
+              return updated;
+            });
+            if (persistStoragePhoto) {
+              persistStoragePhoto('photos', id, storageUrl);
+            }
+          }
         } catch (upErr) {
           console.warn("[ERR-PHOTO-ROTATE-UPLOAD] Falló subir foto rotada a Storage:", upErr);
         }

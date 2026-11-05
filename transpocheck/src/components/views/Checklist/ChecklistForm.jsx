@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Loader2, Save, CheckCircle } from 'lucide-react';
 import { ChecklistProvider, useChecklist } from './ChecklistContext';
-import { useChecklistSync } from './hooks/useChecklistSync';
 import InAppCamera from '../../ui/InAppCamera';
 
 import { TabsHeader } from './components/TabsHeader';
@@ -24,7 +23,7 @@ const ChecklistInner = ({ openCamera }) => {
     job, isQuick, formData, setFormData, step, setStep, isDraftLoaded, setIsDraftLoaded,
     isSubmitting, setIsSubmitting, processingAction, setProcessingAction,
     defaultData, matchedVehicle, drivers, currentUserEmail, uploadImageToStorage, pushSyncTask,
-    showAlert, showConfirm, onCancel, onComplete
+    showAlert, showConfirm, onCancel, onComplete, syncFilesToStorage, clearLocalDraft, flushDraft
   } = useChecklist();
 
   const [uploadProgress, setUploadProgress] = useState({ active: false, current: 0, total: 0, text: '' });
@@ -51,11 +50,7 @@ const ChecklistInner = ({ openCamera }) => {
     setFormData(prev => ({ ...prev, fuelLevel: fuel }));
   };
 
-  // Instanciar Hooks
-  const { syncFilesToStorage, clearLocalDraft } = useChecklistSync({
-    job, isQuick, formData, setFormData, step, setStep, setIsDraftLoaded,
-    defaultData, matchedVehicle, drivers, currentUserEmail, uploadImageToStorage, pushSyncTask, showAlert
-  });
+  // Hooks instanciados centralmente en ChecklistContext
 
   const calculateProgress = () => {
     if (isSimple) {
@@ -370,7 +365,10 @@ const ChecklistInner = ({ openCamera }) => {
       {/* HEADER PRINCIPAL */}
       <div className="safe-top-header flex justify-between items-center bg-white dark:bg-slate-900 px-4 pb-3 sm:pb-4 shadow-sm relative z-50 border-b border-slate-200 dark:border-slate-800 shrink-0">
         <button
-          onClick={onCancel}
+          onClick={async () => {
+            try { if (flushDraft) await flushDraft(); } catch (e) { console.warn('[ERR-CANCEL-FLUSH-01]', e); }
+            onCancel();
+          }}
           className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 bg-slate-100 dark:bg-slate-800 p-2 sm:p-2.5 rounded-xl transition-all active:scale-95 border border-slate-200 dark:border-slate-700"
         >
           <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
