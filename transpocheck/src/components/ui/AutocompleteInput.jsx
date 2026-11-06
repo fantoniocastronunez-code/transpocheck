@@ -86,7 +86,7 @@ export default function AutocompleteInput({
                 {onDeleteOption && (
                   <button
                     type="button"
-                    onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); onDeleteOption(opt); }}
+                    onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setIsOpen(false); onDeleteOption(opt); }}
                     className="p-1 rounded bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity hover:bg-red-100 dark:hover:bg-red-900/50"
                     title="Eliminar de la lista"
                   >

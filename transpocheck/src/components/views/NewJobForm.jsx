@@ -803,7 +803,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
       <form onSubmit={handleCreateOrUpdateJob} className="space-y-6">
         
         {/* GLASSMORPHISM MAIN CARD */}
-        <div className="bg-slate-50/50 dark:bg-[#131b2f]/80 border border-slate-200/50 dark:border-slate-700/50 p-6 sm:p-10 rounded-xl shadow-lg relative space-y-12">
+        <div className="bg-slate-50/50 dark:bg-[#131b2f]/80 border border-slate-200/50 dark:border-slate-700/50 p-6 sm:p-10 rounded-xl shadow-lg relative isolate space-y-12">
            
            {/* STEP 1: TIPO DE SERVICIO */}
            <div className="animate-in fade-in slide-in-from-right-8 duration-500 space-y-6">
@@ -942,11 +942,11 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                           </div>
                        )}
 
-                       <div className="space-y-1 z-[990] relative">
+                       <div className="space-y-1 z-30 relative">
                           <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider ml-1">Marca</label>
                           <AutocompleteInput name="brand" options={brandOptions} onDeleteOption={handleDeleteBrandOption} value={brand} onChange={e=>setBrand(e.target.value?.toUpperCase() || '')} placeholder="Ej: TOYOTA" className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl uppercase outline-none font-black text-slate-800 dark:text-slate-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" />
                        </div>
-                       <div className="space-y-1 z-[980] relative">
+                       <div className="space-y-1 z-20 relative">
                           <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider ml-1">Modelo</label>
                           <AutocompleteInput name="model" options={modelOptions} onDeleteOption={handleDeleteModelOption} value={model} onChange={e=>setModel(e.target.value?.toUpperCase() || '')} placeholder="Ej: HILUX" className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl uppercase outline-none font-black text-slate-800 dark:text-slate-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" />
                        </div>
@@ -1069,7 +1069,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                           <input name="scheduledTime" type="time" defaultValue={jobToEdit?.scheduledTime || ''} className="w-2/5 bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all" />
                         </div>
                      </div>
-                     <div className="space-y-1 relative z-[999]">
+                     <div className="space-y-1 relative z-30">
                         <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider ml-1">Cliente</label>
                         <CustomClientSelector value={selectedClient} onChange={setSelectedClient} clients={allClientsList} placeholder="Seleccione Cliente" />
                         {selectedClient === 'OTRO' && <input type="text" value={manualClient} onChange={e => setManualClient(e.target.value)} placeholder="Nombre del cliente" required className="w-full mt-2 bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all animate-in fade-in slide-in-from-top-2" />}
@@ -1077,13 +1077,13 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                   </div>
                   
                   <div className="space-y-4">
-                     <div className="space-y-1 relative z-[900]">
+                     <div className="space-y-1 relative z-20">
                         <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider ml-1">Origen / Retiro</label>
                         <AutocompleteInput name="origin" options={destinationOptions} onDeleteOption={handleDeleteDestinationOption} defaultValue={jobToEdit?.origin || ''} required placeholder="¿Desde dónde?" className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all" />
                      </div>
                      
                      {operationMode === 'traslado' && tripType === 'revision' ? (
-                        <div className="bg-blue-500/5 p-4 rounded-xl border border-blue-500/20 space-y-3 relative z-[800]">
+                        <div className="bg-blue-500/5 p-4 rounded-xl border border-blue-500/20 space-y-3 relative z-10">
                            <div className="space-y-1">
                               <label className="text-[10px] font-extrabold text-blue-500 uppercase tracking-wider ml-1">Planta de Revisión</label>
                               <DeletableSelect
@@ -1103,7 +1103,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                            </div>
                         </div>
                      ) : (
-                        <div className="space-y-1 relative z-[800]">
+                        <div className="space-y-1 relative z-10">
                            <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider ml-1">Destino Final</label>
                            <AutocompleteInput name="destination" options={destinationOptions} onDeleteOption={handleDeleteDestinationOption} defaultValue={jobToEdit?.destination || ''} required={operationMode === 'traslado'} placeholder="Hasta (Destino)" className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all" />
                         </div>
@@ -1178,17 +1178,17 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
 
       {/* NUEVO: Modal de Confirmación Nativo */}
       {confirmModal && (
-        <div className="fixed inset-0 bg-slate-900/80 flex items-center justify-center z-[500] p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-xl p-6 w-full max-w-sm shadow-lg flex flex-col animate-in zoom-in-95 border-t-8 border-orange-500">
-            <h3 className="text-lg font-black text-slate-800 dark:text-slate-200 flex items-center gap-2 mb-3 leading-tight">
-              <AlertCircle className="w-5 h-5 text-orange-500 shrink-0" /> {confirmModal.title}
+        <div className="fixed inset-0 bg-slate-950/70 flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white dark:bg-[#171E29] rounded-xl p-6 w-full max-w-sm shadow-lg flex flex-col border border-slate-200 dark:border-slate-800 border-t-4 border-t-amber-600">
+            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 mb-2.5 leading-tight">
+              <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-500 shrink-0" /> {confirmModal.title}
             </h3>
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-6 whitespace-pre-wrap">
+            <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-6 whitespace-pre-wrap">
               {confirmModal.message}
             </p>
-            <div className="flex gap-3">
-              <button onClick={confirmModal.onCancel} className="flex-1 py-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>
-              <button onClick={confirmModal.onConfirm} className="flex-1 py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-extrabold text-sm shadow-md transition-colors">Aceptar</button>
+            <div className="flex gap-2.5">
+              <button onClick={confirmModal.onCancel} className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-md font-semibold text-sm transition-colors duration-150">Cancelar</button>
+              <button onClick={confirmModal.onConfirm} className="flex-1 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-md font-semibold text-sm shadow-xs transition-colors duration-150">Aceptar</button>
             </div>
           </div>
         </div>

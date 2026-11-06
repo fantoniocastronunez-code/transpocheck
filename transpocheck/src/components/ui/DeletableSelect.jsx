@@ -71,7 +71,7 @@ export default function DeletableSelect({
                   {onDeleteOption && (
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); onDeleteOption(opt); }}
+                      onClick={(e) => { e.stopPropagation(); setIsOpen(false); onDeleteOption(opt); }}
                       title="Eliminar de la lista"
                       aria-label={`Eliminar ${opt.name}`}
                       className="mr-2 p-1 shrink-0 rounded bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
