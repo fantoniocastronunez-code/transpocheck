@@ -1244,43 +1244,57 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
   const getDStr = j => j.scheduledDate ? formatDateDisplay(j.scheduledDate) : formatDateDisplay(new Date().toISOString().split('T')[0]);
 
-  const handleCopyWhatsApp = (job) => {
+  const copyTextToClipboard = async (rawText) => {
+    // Normalizar a saltos de línea Unix estándar (\n).
+    // IMPORTANTE: NUNCA usar \r\n (CRLF). En iOS Safari y WhatsApp para iPhone,
+    // el carácter \r es interpretado por UIKit como espacio en blanco, lo que provocaba
+    // que todo el mensaje se pegara en una sola línea continua desordenada.
+    const cleanText = String(rawText || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(cleanText);
+        return true;
+      }
+      throw new Error("fallback");
+    } catch (err) {
+      const textArea = document.createElement("textarea");
+      textArea.value = cleanText;
+      textArea.style.position = "fixed";
+      textArea.style.top = "0";
+      textArea.style.left = "-9999px";
+      textArea.style.opacity = "0";
+      textArea.setAttribute('readonly', '');
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      textArea.setSelectionRange(0, 999999);
+      let success = false;
+      try {
+        success = document.execCommand('copy');
+      } catch (e) {
+        success = false;
+      }
+      document.body.removeChild(textArea);
+      return success;
+    }
+  };
+
+  const handleCopyWhatsApp = async (job) => {
     updateDoc(doc(db, 'transport_jobs', job.id), { sharedCount: (job.sharedCount || 0) + 1 }).catch(e => console.log(e));
 
     const dateStr = getDStr(job);
     const dateShort = dateStr.substring(0, 5);
     const jobPlate = getJobIdentifier(job);
+    const text = generateWhatsAppText(job, dateShort, jobPlate);
 
-    // FIX iOS Clipboard: Replace \n with \r\n globally before copying
-    const text = generateWhatsAppText(job, dateShort, jobPlate).replace(/\n/g, '\r\n');
-
-    const copyToClipboard = async () => {
-      try {
-        if (navigator.clipboard && window.isSecureContext) {
-          await navigator.clipboard.writeText(text);
-          showAlert("✅ Formato copiado al portapapeles. Listo para pegar en WhatsApp.");
-        } else {
-          throw new Error("fallback");
-        }
-      } catch (err) {
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        textArea.style.position = "fixed";
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        try {
-          document.execCommand('copy');
-          showAlert("✅ Formato copiado al portapapeles. Listo para pegar en WhatsApp.");
-        } catch (e) {
-          showAlert("❌ [ERR-CLIP-01] Tu navegador bloqueó el copiado automático.");
-        }
-        document.body.removeChild(textArea);
-      }
-      setMenuOpenId(null);
-    };
-
-    copyToClipboard();
+    const success = await copyTextToClipboard(text);
+    if (success) {
+      showAlert("✅ Formato copiado al portapapeles. Listo para pegar en WhatsApp.");
+    } else {
+      showAlert("❌ [ERR-CLIP-01] Tu navegador bloqueó el copiado automático.");
+    }
+    setMenuOpenId(null);
   };
   const cpyWapp = handleCopyWhatsApp;
 
@@ -1313,27 +1327,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       const cleanPlate = getJobIdentifier(job);
 
       const fileName = generateStandardFileName(job, dateStrForFile, cleanPlate);
-      let textToShare = generateWhatsAppText(job, dateShort, cleanPlate);
+      const textToShare = generateWhatsAppText(job, dateShort, cleanPlate);
 
-      // FIX iOS Clipboard: Replace \n with \r\n globally before copying to clipboard
-      // Esto previene que iPhone/iOS quite los saltos de línea al pegar en WhatsApp.
-      textToShare = textToShare.replace(/\n/g, '\r\n');
-
-      // Copiamos el texto al portapapeles de inmediato, por si cualquier cosa falla después
-      try {
-        if (navigator.clipboard && window.isSecureContext) {
-          await navigator.clipboard.writeText(textToShare);
-        } else {
-          const textArea = document.createElement("textarea");
-          textArea.value = textToShare;
-          textArea.style.position = "fixed";
-          document.body.appendChild(textArea);
-          textArea.focus();
-          textArea.select();
-          document.execCommand('copy');
-          document.body.removeChild(textArea);
-        }
-      } catch (err) { console.error("Error copiando al portapapeles:", err); }
+      // Copiamos el texto al portapapeles con saltos de línea Unix (\n) limpios compatibles con iPhone y Android
+      await copyTextToClipboard(textToShare);
 
       const docPDF = await buildPDFDoc(job);
       const pdfBlob = docPDF.output('blob');

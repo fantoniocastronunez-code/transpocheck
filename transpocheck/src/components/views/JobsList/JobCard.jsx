@@ -518,20 +518,39 @@ export default function JobCard({ j, ...props }) {
               <button onClick={() => setMenuOpenId(menuOpenId === j.id ? null : j.id)} className="p-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-colors border border-slate-200 dark:border-slate-700"><MoreVertical className="w-4 h-4" /></button>
               {menuOpenId === j.id && (
                 <div className="absolute right-0 top-9 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg rounded-lg w-56 z-[999] overflow-hidden text-xs text-slate-700 dark:text-slate-200 divide-y divide-slate-100 dark:divide-slate-800">
-                  <button onClick={() => {
+                  <button onClick={async () => {
                     const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
-                    const textToShare = `📍 Sigue en tiempo real todos los traslados de ${j.client || 'tu empresa'} aquí:\r\n${url}`;
-                    const textArea = document.createElement("textarea");
-                    textArea.value = textToShare; textArea.style.position = "fixed"; document.body.appendChild(textArea);
-                    textArea.focus(); textArea.select();
-                    try { document.execCommand('copy'); showAlert("✅ Portal de Cliente copiado. ¡Pégalo en WhatsApp!"); } catch (e) { }
-                    document.body.removeChild(textArea); setMenuOpenId(null);
+                    const textToShare = `📍 Sigue en tiempo real todos los traslados de ${j.client || 'tu empresa'} aquí:\n${url}`;
+                    try {
+                      if (navigator.clipboard && window.isSecureContext) {
+                        await navigator.clipboard.writeText(textToShare);
+                      } else {
+                        throw new Error("fallback");
+                      }
+                      showAlert("✅ Portal de Cliente copiado. ¡Pégalo en WhatsApp!");
+                    } catch (e) {
+                      const textArea = document.createElement("textarea");
+                      textArea.value = textToShare;
+                      textArea.style.position = "fixed";
+                      textArea.style.left = "-9999px";
+                      textArea.setAttribute('readonly', '');
+                      document.body.appendChild(textArea);
+                      textArea.focus();
+                      textArea.select();
+                      textArea.setSelectionRange(0, 999999);
+                      try {
+                        document.execCommand('copy');
+                        showAlert("✅ Portal de Cliente copiado. ¡Pégalo en WhatsApp!");
+                      } catch (err) {}
+                      document.body.removeChild(textArea);
+                    }
+                    setMenuOpenId(null);
                   }} className="w-full text-left px-3 py-2.5 font-semibold flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-blue-600 dark:text-blue-400"><Navigation className="w-4 h-4" /> Portal Cliente</button>
 
                   {isAccepted && (
                     <button onClick={() => {
                       const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
-                      const textToShare = `📍 Hola! El vehículo ${ident} va en camino a ${j.destination || 'su destino'}. Puedes seguir el traslado en tiempo real aquí:\r\n${url}`;
+                      const textToShare = `📍 Hola! El vehículo ${ident} va en camino a ${j.destination || 'su destino'}. Puedes seguir el traslado en tiempo real aquí:\n${url}`;
                       window.open(`https://wa.me/?text=${encodeURIComponent(textToShare)}`, '_blank');
                       setMenuOpenId(null);
                     }} className="w-full text-left px-3 py-2.5 font-semibold flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-emerald-600 dark:text-emerald-400"><Share2 className="w-4 h-4" /> Notificar Receptor</button>
