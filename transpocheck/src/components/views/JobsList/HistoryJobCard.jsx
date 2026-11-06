@@ -52,8 +52,12 @@ export default function HistoryJobCard({ j, ...props }) {
         })()}
         <div className="flex-1 min-w-0 flex flex-col justify-center">
           {ident !== 'S/N' && (
-            <div className="mb-0.5 max-w-[120px] transform scale-85 origin-left">
-              <LicensePlateBadge text={ident} />
+            <div className="mb-0.5 max-w-[140px] transform scale-85 origin-left">
+              {j.plate && j.plate !== 'S/N' ? (
+                <LicensePlateBadge text={j.plate} />
+              ) : (
+                <VinPlateBadge vin={j.vin || ident} />
+              )}
             </div>
           )}
           {j.tripType === 'simple' ? (

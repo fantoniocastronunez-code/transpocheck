@@ -483,9 +483,15 @@ export default function JobCard({ j, ...props }) {
               )}
               {ident !== 'S/N' && (
                 <div className="transform scale-[0.82] origin-top-left mb-0.5">
-                  <LicensePlateBadge text={ident} />
-                  {j.vin && ident !== j.vin && (
-                    <div className="mr-1 mt-1"><VinPlateBadge vin={j.vin} /></div>
+                  {j.plate && j.plate !== 'S/N' ? (
+                    <>
+                      <LicensePlateBadge text={j.plate} />
+                      {j.vin && j.vin !== j.plate && (
+                        <div className="mr-1 mt-1"><VinPlateBadge vin={j.vin} compact /></div>
+                      )}
+                    </>
+                  ) : (
+                    <VinPlateBadge vin={j.vin || ident} />
                   )}
                 </div>
               )}

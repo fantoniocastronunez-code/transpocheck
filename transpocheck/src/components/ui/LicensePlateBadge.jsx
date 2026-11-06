@@ -4,19 +4,23 @@ import VinPlateBadge from './VinPlateBadge';
 const LicensePlateBadge = ({ text, className = "" }) => {
   const cleanText = (text || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
 
-  if (cleanText.length !== 6) {
-    if (cleanText.length >= 10) {
+  // En Chile, una patente vehicular válida de 6 caracteres SIEMPRE contiene letras:
+  // - Formato Antiguo (1985-2007): 2 letras + 4 números (ej: AA1234)
+  // - Formato Nuevo (2007-presente): 4 letras + 2 números (ej: BBCL10, ABCD12)
+  const isOldFormat = /^[A-Z]{2}[0-9]{4}$/.test(cleanText);
+  const isNewFormat = /^[A-Z]{4}[0-9]{2}$/.test(cleanText);
+  const isChileanPlate = isOldFormat || isNewFormat;
+
+  if (!isChileanPlate) {
+    if (cleanText && cleanText !== 'SN') {
       return <VinPlateBadge vin={cleanText} className={className} />;
     }
     return (
-      <span className={`bg-slate-800 text-white px-2 py-1 rounded-md text-xs font-black tracking-widest shrink-0 ${className}`}>
+      <span className={`bg-slate-800 text-white px-2 py-1 rounded-md text-xs font-semibold tracking-widest shrink-0 ${className}`}>
         {text || 'S/N'}
       </span>
     );
   }
-
-  // Identificar el formato (Antiguo: 2 letras 4 números, Nuevo: 4 letras 2 números)
-  const isOldFormat = /^[A-Z]{2}[0-9]{4}$/.test(cleanText);
 
   let part1, part2, part3, separator1, separator2;
 
