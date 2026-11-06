@@ -22,7 +22,6 @@ import GuideUploadModal from './JobsList/GuideUploadModal';
 import FullScreenPhotoModal from './JobsList/FullScreenPhotoModal';
 import HistoryModal from './JobsList/HistoryModal';
 import JobExpenseModal from './JobsList/JobExpenseModal';
-import KovacsModal from './JobsList/KovacsModal';
 import ArrivalModal from './JobsList/ArrivalModal';
 import PickupModal from './JobsList/PickupModal';
 import { formatDateDisplay, analyzeJobStatus, generateStandardFileName, generateWhatsAppText, getRouteStr, resizeImage, resizeAndWatermarkImage } from '../../utils/helpers';
@@ -88,10 +87,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const [replaceField, setReplaceField] = useState('destination');
   const [replaceSearchTerm, setReplaceSearchTerm] = useState('');
   const [replaceNewTerm, setReplaceNewTerm] = useState('');
-
-  const [showKovacsModal, setShowKovacsModal] = useState(false);
-  const [kovacsStartDate, setKovacsStartDate] = useState('');
-  const [kovacsEndDate, setKovacsEndDate] = useState('');
 
   const [guideUploadJob, setGuideUploadJob] = useState(null);
   const [guideLink, setGuideLink] = useState('');
@@ -1673,83 +1668,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     } catch (err) { showAlert("Error al generar ZIP."); }
   };
 
-  // NUEVO: Descarga Facturación Kovacs (Actas sin foto + Guías de Despacho)
-  const handleKovacsZIP = async () => {
-    if (!kovacsStartDate || !kovacsEndDate) return showAlert("⚠️ Debes seleccionar una fecha de inicio y fin.");
-
-    const startObj = new Date(kovacsStartDate + "T00:00:00");
-    const endObj = new Date(kovacsEndDate + "T23:59:59");
-    const startTime = startObj.getTime();
-    const endTime = endObj.getTime();
-
-    const kovacsJobs = jobs.filter(j => {
-      if (j.status !== 'completed' || !j.checklist || !(j.client || '').toLowerCase().includes('kovac')) return false;
-      let jobTime = j.completedAt;
-      if (!jobTime && j.createdAt) jobTime = typeof j.createdAt.toMillis === 'function' ? j.createdAt.toMillis() : j.createdAt;
-      if (typeof jobTime !== 'number') return false;
-      return jobTime >= startTime && jobTime <= endTime;
-    });
-
-    if (kovacsJobs.length === 0) return showAlert("No hay traslados de Kovacs finalizados en el rango seleccionado.");
-
-    setShowKovacsModal(false);
-    showAlert(`⏳ Facturación Kovacs: Procesando ${kovacsJobs.length} traslados...`);
-    try {
-      const JSZip = await new Promise((resolve) => {
-        if (window.JSZip) return resolve(window.JSZip);
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
-        script.onload = () => resolve(window.JSZip);
-        document.body.appendChild(script);
-      });
-
-      const zip = new JSZip();
-      let count = 0;
-
-      for (const job of kovacsJobs) {
-        const cleanPlate = getJobIdentifier(job);
-        const dateStr = getDStr(job);
-
-        // 1. Crear copia del trabajo y vaciar las fotos del checklist para generar PDF liviano (1 hoja)
-        const jobSinFotos = JSON.parse(JSON.stringify(job));
-        if (jobSinFotos.checklist) {
-          jobSinFotos.checklist.photos = {};
-        }
-
-        const docPDF = await buildPDFDoc(jobSinFotos);
-        const actaName = `Acta_SinFotos_${cleanPlate}_${dateStr}.pdf`.replace(/\//g, '-');
-        zip.file(actaName, docPDF.output('blob'));
-
-        // 2. Extraer Guía de Despacho si está adjunta
-        const guideUrl = job.guideLink || job.guideUrl || job.docLink || job.docUrl || job.rtLink || job.rtDoc || job.pdfUrl || job.fileUrl || job.checklist?.guiaDespachoPdf || job.checklist?.guiaDespachoLink;
-
-        if (guideUrl && guideUrl.startsWith('http')) {
-          try {
-            const res = await fetch(guideUrl);
-            const blob = await res.blob();
-            const ext = blob.type.includes('image') ? 'jpg' : 'pdf';
-            const guideName = `Guia_${cleanPlate}_${dateStr}.${ext}`.replace(/\//g, '-');
-            zip.file(guideName, blob);
-          } catch (fetchErr) {
-            console.warn(`CORS o error al obtener guía de ${cleanPlate}`);
-          }
-        }
-        count++;
-      }
-
-      const content = await zip.generateAsync({ type: 'blob' });
-      const url = URL.createObjectURL(content);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `Facturacion_KOVACS_${new Date().toISOString().split('T')[0]}.zip`;
-      link.click();
-      showAlert(`✅ ¡Facturación Kovacs lista! Se descargaron ${count} actas simplificadas con sus respectivas guías.`);
-    } catch (err) {
-      console.error(err);
-      showAlert("Error al generar el paquete de Kovacs.");
-    }
-  };
-
   // NUEVO: Función para Buscar y Reemplazar Masivamente
   const executeBulkReplace = async () => {
     if (!replaceSearchTerm.trim() || !replaceNewTerm.trim()) {
@@ -1868,9 +1786,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
                   <button type="button" onClick={handleDownloadAllZIP} className="group bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 transition-colors">
                     <FileDown className="w-5 h-5" /> ZIP
-                  </button>
-                  <button type="button" onClick={() => setShowKovacsModal(true)} className="group bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 shadow-md transition-colors">
-                    <FileText className="w-5 h-5" /> Facturación Kovacs
                   </button>
                 </>
               )}
@@ -3244,17 +3159,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           }
           setProcessingId(null);
         }}
-      />
-
-      {/* --- MODAL KOVACS DATE PICKER --- */}
-      <KovacsModal
-        showKovacsModal={showKovacsModal}
-        setShowKovacsModal={setShowKovacsModal}
-        kovacsStartDate={kovacsStartDate}
-        setKovacsStartDate={setKovacsStartDate}
-        kovacsEndDate={kovacsEndDate}
-        setKovacsEndDate={setKovacsEndDate}
-        handleKovacsZIP={handleKovacsZIP}
       />
 
       {/* NUEVO: Modal de Confirmación para iOS/Safari al Compartir PDF */}
