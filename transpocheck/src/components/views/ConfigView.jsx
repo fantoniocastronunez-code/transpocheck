@@ -36,7 +36,7 @@ function StorageWidget() {
   const strokeDashoffset = strokeDasharray - (percentage / 100) * strokeDasharray;
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200 dark:border-slate-800 flex items-center justify-between mb-6">
+    <div className="bg-white dark:bg-slate-900 rounded-xl p-5 sm:p-6 shadow-sm border border-slate-200 dark:border-slate-800 flex items-center justify-between mb-6">
       <div>
         <h3 className="text-lg font-black text-slate-800 dark:text-slate-200 flex items-center gap-2 mb-1">
           <HardDrive className="w-5 h-5 text-blue-500"/> Almacenamiento Local (Caché)
@@ -127,7 +127,7 @@ export default function ConfigView({ currentUserEmail, allClientsList, customCli
          {adminPermissions?.manage_directory !== false && <button onClick={()=>handleSelectTab('directory')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='directory'?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Directorio</button>}
          {adminPermissions?.manage_tolls !== false && <button onClick={()=>handleSelectTab('tolls')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='tolls'?'bg-emerald-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Peajes</button>}
          {adminPermissions?.manage_equipment !== false && <button onClick={()=>handleSelectTab('equipment')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='equipment'?'bg-amber-500 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Equipamiento</button>}
-         {isSuperAdmin && <button onClick={()=>handleSelectTab('storage')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='storage'?'bg-purple-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Almacenamiento Nube</button>}
+         {isSuperAdmin && <button onClick={()=>handleSelectTab('storage')} className={`shrink-0 px-4 py-2 rounded-full font-bold text-sm transition-colors ${configSubTab==='storage'?'bg-sky-600 text-white':'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Almacenamiento Nube</button>}
       </div>
 
       {configSubTab === 'clients' && (
@@ -209,9 +209,9 @@ export default function ConfigView({ currentUserEmail, allClientsList, customCli
       )}
 
       {fullScreenDoc && (
-        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center z-[300] p-4 cursor-zoom-out animate-in fade-in" onClick={() => setFullScreenDoc(null)}>
+        <div className="fixed inset-0 bg-slate-900/90 flex items-center justify-center z-[300] p-4 cursor-zoom-out animate-in fade-in" onClick={() => setFullScreenDoc(null)}>
           <button className="absolute top-[calc(1rem+env(safe-area-inset-top))] right-4 p-2 bg-white dark:bg-slate-900 hover:bg-white dark:bg-slate-900 rounded-full text-white transition-colors shadow-lg"><X className="w-6 h-6"/></button>
-          <img src={fullScreenDoc} className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
+          <img src={fullScreenDoc} className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-lg" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
     </div>

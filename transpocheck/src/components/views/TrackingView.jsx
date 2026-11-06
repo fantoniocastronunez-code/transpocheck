@@ -159,14 +159,14 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
 
   if (loading) return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 pt-24 space-y-6 max-w-5xl mx-auto">
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 max-w-2xl mx-auto h-32 flex flex-col items-center justify-center animate-pulse shadow-sm">
-        <div className="w-14 h-14 bg-slate-200 dark:bg-slate-700 rounded-2xl mb-3"></div>
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-100 dark:border-slate-800 max-w-2xl mx-auto h-32 flex flex-col items-center justify-center shadow-sm">
+        <div className="w-14 h-14 bg-slate-200 dark:bg-slate-700 rounded-xl mb-3"></div>
         <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3 mb-2"></div>
         <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {[1, 2, 3, 4].map(i => (
-          <div key={i} className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 h-48 animate-pulse shadow-sm flex flex-col justify-between">
+          <div key={i} className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-100 dark:border-slate-800 h-48 shadow-sm flex flex-col justify-between">
             <div className="flex justify-between items-start"><div className="h-5 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div><div className="h-6 w-20 bg-slate-200 dark:bg-slate-700 rounded-lg"></div></div>
             <div className="space-y-3"><div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div><div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div></div>
           </div>
@@ -198,7 +198,7 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
 
       <header className={`fixed-nav-bar ${branding.primary} text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300`}>
         <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
-          <div className="bg-white dark:bg-slate-900 p-1 sm:p-1.5 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0">
+          <div className="bg-white dark:bg-slate-900 p-1 sm:p-1.5 rounded-xl flex items-center justify-center shrink-0">
             <img src="/logo.png" alt="Logo App" className="w-7 h-7 sm:w-12 sm:h-12 object-contain" />
           </div>
 
@@ -206,7 +206,7 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
             LogisticAPP
           </h1>
 
-          <div className="bg-white dark:bg-slate-900 rounded-xl backdrop-blur-sm flex items-center justify-center shrink-0 ml-0.5 sm:ml-1 overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center shrink-0 ml-0.5 sm:ml-1 overflow-hidden">
             <img src="/LogoLogistica.png" alt="Logística TS SpA" className="h-8 sm:h-15 object-contain" />
           </div>
         </div>
@@ -232,10 +232,10 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
       </header>
 
       <main className="max-w-5xl mx-auto p-4 pt-20 sm:pt-24 space-y-8">
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 text-center relative overflow-hidden max-w-2xl mx-auto">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 text-center relative overflow-hidden max-w-2xl mx-auto">
           <div className={`absolute top-0 left-0 w-full h-1.5 ${branding.fill}`}></div>
 
-          <div className="mx-auto w-36 h-36 rounded-[28px] flex items-center justify-center mb-4 shadow-md border overflow-hidden transition-all duration-300 p-3" style={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0' }}>
+          <div className="mx-auto w-36 h-36 rounded-xl flex items-center justify-center mb-4 shadow-md border overflow-hidden transition-all duration-300 p-3" style={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0' }}>
             <img
               src={
                 clientLogo || ( // NUEVO: Prioriza el logo de Firebase si existe
@@ -250,7 +250,7 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
               className="w-full h-full object-contain"
               onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
             />
-            <div className={`w-full h-full flex items-center justify-center text-5xl font-black ${branding.text} ${branding.light} rounded-2xl`} style={{ display: 'none' }}>
+            <div className={`w-full h-full flex items-center justify-center text-5xl font-black ${branding.text} ${branding.light} rounded-xl`} style={{ display: 'none' }}>
               {initials}
             </div>
           </div>
@@ -264,7 +264,7 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
 
         {/* NUEVO: BANNER DE VISTA FILTRADA */}
         {trackId && (
-          <div className="bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-800/50 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm animate-in fade-in max-w-2xl mx-auto">
+          <div className="bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-800/50 p-4 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm animate-in fade-in max-w-2xl mx-auto">
             <div>
               <p className="text-xs font-black text-blue-800 dark:text-blue-300 uppercase tracking-widest text-left">Vista Filtrada</p>
               <p className="text-sm font-bold text-blue-600 dark:text-blue-400 text-left">Mostrando solo el vehículo de la notificación.</p>
@@ -284,12 +284,12 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <Search className="w-5 h-5 text-slate-400" />
             </div>
-            <input type="text" placeholder="Buscar por patente, marca o modelo..." className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500 shadow-sm transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            <input type="text" placeholder="Buscar por patente, marca o modelo..." className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500 shadow-sm transition-colors" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
           </div>
         )}
 
         {pendingSignatureJobs.length > 0 && (
-          <div className="bg-blue-600 rounded-3xl p-5 shadow-xl text-white flex flex-col sm:flex-row items-center justify-between gap-4 animate-in zoom-in duration-300 border-4 border-blue-400 max-w-2xl mx-auto">
+          <div className="bg-blue-600 rounded-xl p-5 shadow-md text-white flex flex-col sm:flex-row items-center justify-between gap-4 animate-in zoom-in duration-300 border-4 border-blue-400 max-w-2xl mx-auto">
             <div>
               <h3 className="font-black text-xl flex items-center gap-2"><CheckCircle className="w-6 h-6 text-green-300" /> ¡Acción Requerida!</h3>
               <p className="font-bold text-blue-100 text-sm mt-1">Tienes {pendingSignatureJobs.length} vehículo(s) esperando tu firma de recepción.</p>
@@ -307,7 +307,7 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
           <h3 className="font-extrabold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2"><Navigation className="w-5 h-5 text-blue-600 dark:text-blue-400" /> Vehículos en Tránsito ({activeJobs.length})</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {activeJobs.length === 0 ? (
-              <p className="text-sm font-bold text-slate-400 bg-white dark:bg-slate-900 p-4 rounded-2xl border text-center col-span-full">No se encontraron traslados activos.</p>
+              <p className="text-sm font-bold text-slate-400 bg-white dark:bg-slate-900 p-4 rounded-xl border text-center col-span-full">No se encontraron traslados activos.</p>
             ) : activeJobs.map(job => {
               const isPending = job.status === 'pending';
               const isAccepted = job.status === 'accepted';
@@ -332,7 +332,7 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
               };
 
               return (
-                <div key={job.id} className="bg-white dark:bg-slate-900 w-full max-w-[calc(100vw-2rem)] sm:max-w-none p-5 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+                <div key={job.id} className="bg-white dark:bg-slate-900 w-full max-w-[calc(100vw-2rem)] sm:max-w-none p-5 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden flex flex-col hover:shadow-md transition-shadow">
                   <div className={`absolute top-0 left-0 w-full h-1.5 ${isPending ? 'bg-amber-400' : 'bg-blue-500'}`}></div>
                   <div className="flex justify-between items-start mb-3 gap-3">
                     {/* NUEVO: Miniatura con inteligencia histórica */}
@@ -353,7 +353,7 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                       <h2 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5 flex-wrap">
                         {job.tripType === 'simple' ? 'Servicio en Terreno' : 'En Traslado'}
                         {(job.checklist?.transitNotes || job.draft?.formData?.transitNotes) && (
-                          <span className="bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800/50 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1 animate-pulse">
+                          <span className="bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800/50 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1">
                             <AlertCircle className="w-2.5 h-2.5" /> NOTA EN RUTA
                           </span>
                         )}
@@ -397,7 +397,7 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                         </div>
 
                         {/* DESTINO */}
-                        <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_2PX_10px_rgba(0,0,0,0.04)] z-10">
+                        <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800 shadow-[0_2PX_10px_rgba(0,0,0,0.04)] z-10">
                           <span className="flex items-center gap-1.5 text-[9px] font-black text-blue-500 uppercase tracking-widest mb-1">
                             <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
                             Hasta
@@ -446,10 +446,10 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                   {job.liveLocation && job.phase === 'picked_up' && (
                     <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-5 animate-in fade-in duration-500">
                       <div className="flex items-center justify-between mb-3">
-                        <p className="text-xs font-black text-blue-600 dark:text-blue-400 uppercase flex items-center gap-1.5"><Navigation className="w-4 h-4 animate-bounce" /> GPS en vivo</p>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1"><span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Conectado</p>
+                        <p className="text-xs font-black text-blue-600 dark:text-blue-400 uppercase flex items-center gap-1.5"><Navigation className="w-4 h-4" /> GPS en vivo</p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1"><span className="w-2 h-2 bg-green-500 rounded-full"></span> Conectado</p>
                       </div>
-                      <div className="w-full h-48 bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-slate-700 shadow-inner relative pointer-events-none">
+                      <div className="w-full h-48 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden border-2 border-slate-200 dark:border-slate-700 shadow-inner relative pointer-events-none">
                         <iframe
                           width="100%"
                           height="100%"
@@ -471,11 +471,11 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {historyJobs.length === 0 ? (
-              <p className="text-sm font-bold text-slate-400 bg-white dark:bg-slate-900 p-4 rounded-2xl border text-center col-span-full">No se encontraron resultados.</p>
+              <p className="text-sm font-bold text-slate-400 bg-white dark:bg-slate-900 p-4 rounded-xl border text-center col-span-full">No se encontraron resultados.</p>
             ) : historyJobs.map(job => {
               const isFailed = job.status === 'failed';
               return (
-                <div key={job.id} onClick={() => setSelectedHistoryJob(job)} className="bg-white dark:bg-slate-900 w-full max-w-[calc(100vw-2rem)] sm:max-w-none p-3.5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-between relative pl-4 overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
+                <div key={job.id} onClick={() => setSelectedHistoryJob(job)} className="bg-white dark:bg-slate-900 w-full max-w-[calc(100vw-2rem)] sm:max-w-none p-3.5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-between relative pl-4 overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
                   <div className={`absolute top-0 left-0 bottom-0 w-2 ${isFailed ? 'bg-red-500' : 'bg-green-500'}`}></div>
 
                   <div className="flex justify-between items-center mb-2 gap-2">
@@ -514,7 +514,7 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                         <MapPin className="inline w-3 h-3 mr-0.5 -mt-0.5 text-slate-400 shrink-0" />
                         {job.origin || '-'}
                       </span>
-                      <span className="text-slate-300 font-black shrink-0">➔</span>
+                      <span className="text-slate-300 font-black shrink-0">-</span>
                       <span className="truncate text-blue-600 dark:text-blue-400 max-w-[45%] text-right" title={job.destination}>
                         {job.tripType === 'revision' ? 'PRT' : (job.destination || '-')}
                       </span>
@@ -530,8 +530,8 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                     </div>
                     <div className="flex gap-2 items-center">
                       {job.checklist && (job.checklist.scandocPdf || job.checklist.scandocPdfInbox || job.checklist.scannerLink) && (
-                        <a href={job.checklist.scandocPdf || job.checklist.scandocPdfInbox || job.checklist.scannerLink} onClick={(e) => e.stopPropagation()} target="_blank" rel="noreferrer" className="flex items-center justify-center p-2.5 text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:bg-indigo-900/40 rounded-xl transition-colors border border-indigo-100 dark:border-indigo-800/50 relative" title="Ver Documentación PRT">
-                          <span className="absolute -top-1.5 -right-1.5 bg-indigo-600 text-white text-[7px] font-black px-1 py-0.5 rounded shadow-sm">PRT</span>
+                        <a href={job.checklist.scandocPdf || job.checklist.scandocPdfInbox || job.checklist.scannerLink} onClick={(e) => e.stopPropagation()} target="_blank" rel="noreferrer" className="flex items-center justify-center p-2.5 text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/30 hover:bg-sky-100 dark:bg-sky-900/40 rounded-xl transition-colors border border-sky-100 dark:border-sky-800/50 relative" title="Ver Documentación PRT">
+                          <span className="absolute -top-1.5 -right-1.5 bg-sky-600 text-white text-[7px] font-black px-1 py-0.5 rounded shadow-sm">PRT</span>
                           <FileText className="w-4 h-4" />
                         </a>
                       )}
@@ -550,7 +550,7 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
             <div className="mt-8 text-center pb-8 animate-in fade-in duration-300">
               <button
                 onClick={() => setHistoryLimit(prev => prev + 30)}
-                className="bg-white dark:bg-slate-900 border-2 border-blue-100 dark:border-blue-800/50 hover:border-blue-300 dark:border-blue-700/50 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-900/30 px-8 py-3 rounded-2xl font-black shadow-sm transition-all flex items-center justify-center gap-2 mx-auto"
+                className="bg-white dark:bg-slate-900 border-2 border-blue-100 dark:border-blue-800/50 hover:border-blue-300 dark:border-blue-700/50 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:bg-blue-900/30 px-8 py-3 rounded-xl font-black shadow-sm transition-all flex items-center justify-center gap-2 mx-auto"
               >
                 cargar traslados anteriores <FileDown className="w-5 h-5" />
               </button>
@@ -562,8 +562,8 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
       </main>
 
       {batchSignOpen && (
-        <div className="fixed inset-0 bg-slate-900/85 backdrop-blur-sm flex items-center justify-center z-[200] p-4 sm:p-6">
-          <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl w-full max-w-[420px] max-h-[92vh] flex flex-col relative overflow-hidden animate-in fade-in zoom-in-95">
+        <div className="fixed inset-0 bg-slate-900/85 flex items-center justify-center z-[200] p-4 sm:p-6">
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg w-full max-w-[420px] max-h-[92vh] flex flex-col relative overflow-hidden animate-in fade-in zoom-in-95">
 
             {/* CABECERA FLOTANTE */}
             <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900 shrink-0">
@@ -580,7 +580,7 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
               {/* LISTA DE VEHÍCULOS (Más compacta) */}
               <div className="space-y-2.5 border-b border-slate-100 dark:border-slate-800 pb-5">
                 {pendingSignatureJobs.map(j => (
-                  <label key={j.id} className={`flex items-center gap-3 p-3.5 rounded-2xl border-2 cursor-pointer transition-all ${batchFormData.selectedIds.includes(j.id) ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:border-slate-600'}`}>
+                  <label key={j.id} className={`flex items-center gap-3 p-3.5 rounded-xl border-2 cursor-pointer transition-all ${batchFormData.selectedIds.includes(j.id) ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:border-slate-600'}`}>
                     <input type="checkbox" checked={batchFormData.selectedIds.includes(j.id)} onChange={(e) => {
                       const ids = e.target.checked ? [...batchFormData.selectedIds, j.id] : batchFormData.selectedIds.filter(id => id !== j.id);
                       setBatchFormData({ ...batchFormData, selectedIds: ids });
@@ -646,7 +646,7 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                     <label className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest ml-1 block">Firma Digital</label>
                     <span className="text-[9px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">Aplica para todos</span>
                   </div>
-                  <div className="rounded-2xl overflow-hidden shadow-inner border border-slate-200 dark:border-slate-700">
+                  <div className="rounded-xl overflow-hidden shadow-inner border border-slate-200 dark:border-slate-700">
                     <SignaturePad initialData={batchFormData.signature} onSave={d => setBatchFormData({ ...batchFormData, signature: d })} onClear={() => setBatchFormData({ ...batchFormData, signature: null })} />
                   </div>
                 </div>
@@ -655,7 +655,7 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
 
             {/* PIE DE PÁGINA (Botón Independiente) */}
             <div className="p-5 sm:p-6 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 shrink-0">
-              <button type="submit" form="batch-sign-form" className="w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black py-4 rounded-2xl shadow-[0_8px_20px_rgba(37,99,235,0.3)] transition-all text-[15px] flex items-center justify-center gap-2">
+              <button type="submit" form="batch-sign-form" className="w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black py-4 rounded-xl shadow-[0_8px_20px_rgba(37,99,235,0.3)] transition-all text-[15px] flex items-center justify-center gap-2">
                 <CheckCircle className="w-5 h-5" /> Confirmar Lote ({batchFormData.selectedIds.length})
               </button>
             </div>
@@ -666,7 +666,7 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
 
       {/* NUEVO MODAL: VISOR DE FOTO PANTALLA COMPLETA */}
       {fullScreenPhoto && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[999] flex items-center justify-center p-4 cursor-zoom-out" onClick={() => setFullScreenPhoto(null)}>
+        <div className="fixed inset-0 bg-black/90 z-[999] flex items-center justify-center p-4 cursor-zoom-out" onClick={() => setFullScreenPhoto(null)}>
           <div className="absolute top-[calc(1rem+env(safe-area-inset-top))] right-4 flex gap-3 z-[1000]">
             <button
               onClick={async (e) => {
@@ -687,27 +687,27 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                   window.open(fullScreenPhoto, '_blank');
                 }
               }}
-              className="bg-white dark:bg-slate-900 p-2 rounded-full hover:bg-white dark:bg-slate-900 transition-colors shadow-lg backdrop-blur-md flex items-center justify-center"
+              className="bg-white dark:bg-slate-900 p-2 rounded-full hover:bg-white dark:bg-slate-900 transition-colors shadow-lg flex items-center justify-center"
               title="Descargar Imagen"
             >
               <FileDown className="w-6 h-6 text-white" />
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(null); }}
-              className="bg-white dark:bg-slate-900 p-2 rounded-full hover:bg-white dark:bg-slate-900 transition-colors shadow-lg backdrop-blur-md flex items-center justify-center"
+              className="bg-white dark:bg-slate-900 p-2 rounded-full hover:bg-white dark:bg-slate-900 transition-colors shadow-lg flex items-center justify-center"
               title="Cerrar"
             >
               <X className="w-6 h-6 text-white" />
             </button>
           </div>
-          <img src={fullScreenPhoto} alt="Ampliación" className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl cursor-default" onClick={(e) => e.stopPropagation()} />
+          <img src={fullScreenPhoto} alt="Ampliación" className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-lg cursor-default" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
 
       {/* NUEVO MODAL: FICHA TÉCNICA DE HISTORIAL */}
       {selectedHistoryJob && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[300] flex items-center justify-center p-4 cursor-default">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95">
+        <div className="fixed inset-0 bg-slate-900/80 z-[300] flex items-center justify-center p-4 cursor-default">
+          <div className="bg-white dark:bg-slate-900 rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-lg overflow-hidden animate-in zoom-in-95">
             <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 p-4 sm:p-5 flex justify-between items-start shrink-0 relative">
               <div className="flex gap-3 items-center">
                 <div className="bg-blue-100 dark:bg-blue-900/40 p-2.5 rounded-xl"><FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" /></div>
@@ -759,7 +759,7 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                     <MapPin className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
                     <div>
                       <p className="text-xs font-bold text-slate-700 dark:text-slate-300 break-words">
-                        {selectedHistoryJob.origin || '-'} ➔ {selectedHistoryJob.waypoints?.length ? `(+${selectedHistoryJob.waypoints.length} int) ➔ ` : ''}{selectedHistoryJob.tripType === 'revision' ? getRtFinalDestination(selectedHistoryJob) : (selectedHistoryJob.destination || '-')}
+                        {selectedHistoryJob.origin || '-'} → {selectedHistoryJob.waypoints?.length ? `(+${selectedHistoryJob.waypoints.length} int) → ` : ''}{selectedHistoryJob.tripType === 'revision' ? getRtFinalDestination(selectedHistoryJob) : (selectedHistoryJob.destination || '-')}
                       </p>
                     </div>
                   </div>
@@ -1141,7 +1141,7 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                         return (
                           <div key={v} className="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 aspect-square cursor-pointer" onClick={() => setFullScreenPhoto(v)}>
                             <img src={v} alt={label} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
-                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                            <div className="absolute inset-x-0 bottom-0 bg-slate-950/80 p-2">
                               <p className="text-white text-[9px] font-black uppercase truncate">{label}</p>
                             </div>
                           </div>

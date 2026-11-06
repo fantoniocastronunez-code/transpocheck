@@ -8,22 +8,22 @@ import {
 } from 'lucide-react';
 
 export const VEHICLE_TYPES = [
-  { value: 'auto', label: 'Auto / SUV', emoji: '🚙' },
-  { value: 'camioneta', label: 'Camioneta', emoji: '🛻' },
-  { value: 'furgon_pequeno', label: 'Furgón Pequeño', emoji: '🚐' },
-  { value: 'furgon_grande', label: 'Furgón Grande', emoji: '🚐' },
-  { value: 'camion', label: 'Camión Simple', emoji: '🚚' },
-  { value: 'camion_doble', label: 'Camión Doble Cabina', emoji: '🚚' },
-  { value: 'camion_2ejes', label: 'Camión (2 Ejes traseros)', emoji: '🚛' },
-  { value: 'camion_3ejes', label: 'Camión (3 Ejes traseros)', emoji: '🚛' },
-  { value: 'camion_8x4', label: 'Camión Rigid (8x4)', emoji: '🚚' },
-  { value: 'carro_arrastre', label: 'Carro Arrastre', emoji: '🛒' },
-  { value: 'maquinaria', label: 'Maquinaria', emoji: '🚜' },
+  { value: 'auto', label: 'Auto / SUV', emoji: '' },
+  { value: 'camioneta', label: 'Camioneta', emoji: '' },
+  { value: 'furgon_pequeno', label: 'Furgón Pequeño', emoji: '' },
+  { value: 'furgon_grande', label: 'Furgón Grande', emoji: '' },
+  { value: 'camion', label: 'Camión Simple', emoji: '' },
+  { value: 'camion_doble', label: 'Camión Doble Cabina', emoji: '' },
+  { value: 'camion_2ejes', label: 'Camión (2 Ejes traseros)', emoji: '' },
+  { value: 'camion_3ejes', label: 'Camión (3 Ejes traseros)', emoji: '' },
+  { value: 'camion_8x4', label: 'Camión Rigid (8x4)', emoji: '' },
+  { value: 'carro_arrastre', label: 'Carro Arrastre', emoji: '' },
+  { value: 'maquinaria', label: 'Maquinaria', emoji: '' },
 ];
 
 export const getVehicleTypeInfo = (typeKey) => {
   const found = VEHICLE_TYPES.find(t => t.value === typeKey);
-  return found || { value: typeKey || 'auto', label: typeKey || 'Auto / SUV', emoji: '🚙' };
+  return found || { value: typeKey || 'auto', label: typeKey || 'Auto / SUV', emoji: '' };
 };
 
 export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], db, showAlert, showConfirm }) {
@@ -342,7 +342,7 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
     <div className="space-y-6 w-full min-w-0">
       
       {/* 1. HEADER Y TARJETAS DE MÉTRICAS */}
-      <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700 p-6 rounded-3xl text-white shadow-md relative overflow-hidden">
+      <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl text-white shadow-md relative overflow-hidden">
         <Car className="absolute -right-4 -bottom-4 w-36 h-36 opacity-10" />
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
           <div>
@@ -362,7 +362,7 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
           <button
             type="button"
             onClick={() => openAddModal()}
-            className="px-5 py-3 rounded-2xl bg-white hover:bg-blue-50 text-blue-700 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-blue-900/30 transition-all active:scale-95 shrink-0"
+            className="px-5 py-3 rounded-xl bg-white hover:bg-blue-50 text-blue-700 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-blue-900/30 transition-all active:scale-95 shrink-0"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
             <span>Agregar Marca y Modelo</span>
@@ -371,15 +371,15 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
 
         {/* Mini contadores */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-6 pt-4 border-t border-white/15">
-          <div className="bg-white/10 backdrop-blur-sm p-3 rounded-xl">
+          <div className="bg-white/10 p-3 rounded-xl">
             <span className="text-[10px] font-bold text-blue-200 uppercase tracking-widest block">Marcas Registradas</span>
             <span className="text-xl font-black">{totalBrandsCount}</span>
           </div>
-          <div className="bg-white/10 backdrop-blur-sm p-3 rounded-xl">
+          <div className="bg-white/10 p-3 rounded-xl">
             <span className="text-[10px] font-bold text-blue-200 uppercase tracking-widest block">Modelos Totales</span>
             <span className="text-xl font-black">{totalModelsCount}</span>
           </div>
-          <div className="bg-white/10 backdrop-blur-sm p-3 rounded-xl col-span-2 sm:col-span-1">
+          <div className="bg-white/10 p-3 rounded-xl col-span-2 sm:col-span-1">
             <span className="text-[10px] font-bold text-blue-200 uppercase tracking-widest block">Categorías de Vehículo</span>
             <span className="text-xl font-black">{VEHICLE_TYPES.length}</span>
           </div>
@@ -387,7 +387,7 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
       </div>
 
       {/* 2. BARRA DE BÚSQUEDA Y FILTROS */}
-      <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row gap-3 items-center justify-between">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row gap-3 items-center justify-between">
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
@@ -452,7 +452,7 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
 
       {/* 3. LISTADO AGRUPADO DE MARCAS Y SUS RESPECTIVOS MODELOS */}
       {sortedBrandNames.length === 0 ? (
-        <div className="bg-white dark:bg-slate-900 p-12 text-center rounded-3xl border border-slate-100 dark:border-slate-800 space-y-3">
+        <div className="bg-white dark:bg-slate-900 p-12 text-center rounded-xl border border-slate-100 dark:border-slate-800 space-y-3">
           <Car className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto" />
           <h4 className="text-base font-extrabold text-slate-700 dark:text-slate-300">
             No se encontraron marcas ni modelos
@@ -479,7 +479,7 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
             return (
               <div
                 key={brandName}
-                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs transition-all"
+                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs transition-all"
               >
                 {/* Cabecera de la Marca */}
                 <div 
@@ -603,15 +603,15 @@ export default function ConfigBrandsModels({ vehicles = [], vehicleModels = [], 
 
       {/* 4. MODAL PARA AGREGAR O EDITAR MARCA Y MODELO */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[200] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-slate-950/80 z-[200] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <form 
             onSubmit={handleSaveModel} 
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl w-full max-w-md shadow-lg overflow-hidden animate-in zoom-in-95 duration-200"
           >
             {/* Header del modal */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-5 text-white flex justify-between items-center">
+            <div className="bg-slate-900 border-b border-slate-800 p-5 text-white flex justify-between items-center">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                <div className="p-2 bg-white/20 rounded-xl">
                   <Car className="w-5 h-5" />
                 </div>
                 <div>

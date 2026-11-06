@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, X, MapPin, AlertCircle, Loader2, Receipt, CheckSquare, Check, Wrench, Copy } from 'lucide-react';
+import { FileText, X, MapPin, AlertCircle, Loader2, Receipt, CheckSquare, Check, Wrench, Copy, Fuel, User, Clock, Camera } from 'lucide-react';
 import { db, storage } from '../../../firebase';
 import { ref, listAll, getDownloadURL } from 'firebase/storage';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -115,14 +115,14 @@ export default function HistoryModal({
     || (selectedHistoryJob.status === 'completed' ? chkPhotos.fuelGauge : null);
 
   return (
-    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[300] flex items-center justify-center p-4 cursor-default">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in zoom-in-95">
-        <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 p-4 sm:p-5 flex justify-between items-start shrink-0 relative">
+    <div className="fixed inset-0 bg-slate-950/75 z-[300] flex items-center justify-center p-4 cursor-default">
+      <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 w-full max-w-2xl max-h-[90vh] flex flex-col shadow-lg overflow-hidden">
+        <div className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 p-4 flex justify-between items-start shrink-0 relative">
           <div className="flex gap-3 items-center">
-            <div className="bg-blue-100 dark:bg-blue-900/40 p-2.5 rounded-xl"><FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" /></div>
+            <div className="bg-blue-50 dark:bg-blue-950/50 p-2 rounded-md border border-blue-200 dark:border-blue-800/60"><FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" /></div>
             <div>
-              <h3 className="text-lg font-black text-slate-800 dark:text-slate-200 leading-tight">Ficha Técnica</h3>
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400">
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 leading-tight">Ficha Técnica</h3>
+              <p className="text-xs font-mono text-slate-500 dark:text-slate-400">
                 {new Date(selectedHistoryJob.completedAt || selectedHistoryJob.createdAt).toLocaleString('es-CL')}
               </p>
             </div>
@@ -131,71 +131,71 @@ export default function HistoryModal({
             {cpyWapp && (
               <button
                 onClick={() => cpyWapp(selectedHistoryJob)}
-                className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/40 transition-colors shadow-sm"
+                className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 rounded-md hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
                 title="Copiar Resumen para WhatsApp"
               >
-                <Copy className="w-5 h-5" />
+                <Copy className="w-4 h-4" />
               </button>
             )}
-            <button onClick={() => setSelectedHistoryJob(null)} className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full hover:bg-slate-100 dark:bg-slate-800 transition-colors">
-              <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            <button onClick={() => setSelectedHistoryJob(null)} className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+              <X className="w-4 h-4 text-slate-600 dark:text-slate-400" />
             </button>
           </div>
         </div>
 
-        <div className="p-5 overflow-y-auto space-y-6 flex-1">
+        <div className="p-5 overflow-y-auto space-y-5 flex-1">
 
           {/* 1. INFO VEHÍCULO */}
           <div>
-            <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 dark:border-slate-800 pb-1">1. Información del Vehículo</h4>
-            <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+            <h4 className="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400 tracking-wider mb-2 border-b border-slate-200 dark:border-slate-800 pb-1">1. Información del Vehículo</h4>
+            <div className="grid grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-md border border-slate-200 dark:border-slate-800">
               <div>
-                <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Marca / Modelo</p>
-                <p className="text-sm font-black text-slate-800 dark:text-slate-200">{selectedHistoryJob.tripType === 'simple' ? selectedHistoryJob.description : `${selectedHistoryJob.brand} ${selectedHistoryJob.model}`}</p>
+                <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Marca / Modelo</p>
+                <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{selectedHistoryJob.tripType === 'simple' ? selectedHistoryJob.description : `${selectedHistoryJob.brand} ${selectedHistoryJob.model}`}</p>
               </div>
               <div>
-                <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Identificador</p>
-                <p className="text-sm font-black text-slate-800 dark:text-slate-200">{getJobIdentifier(selectedHistoryJob)} {selectedHistoryJob.vin && selectedHistoryJob.vin !== getJobIdentifier(selectedHistoryJob) ? `(VIN: ${selectedHistoryJob.vin})` : ''}</p>
+                <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Identificador</p>
+                <p className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100">{getJobIdentifier(selectedHistoryJob)} {selectedHistoryJob.vin && selectedHistoryJob.vin !== getJobIdentifier(selectedHistoryJob) ? `(VIN: ${selectedHistoryJob.vin})` : ''}</p>
               </div>
               <div>
-                <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Cliente</p>
-                <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{selectedHistoryJob.client || 'Sin Cliente'}</p>
+                <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Cliente</p>
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">{selectedHistoryJob.client || 'Sin Cliente'}</p>
               </div>
               <div>
-                <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Conductor</p>
-                <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{selectedHistoryJob.checklist?.assignedDriverName || drivers?.find(d => d.email === selectedHistoryJob.acceptedByEmail)?.name || selectedHistoryJob.acceptedByEmail}</p>
+                <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Conductor</p>
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">{selectedHistoryJob.checklist?.assignedDriverName || drivers?.find(d => d.email === selectedHistoryJob.acceptedByEmail)?.name || selectedHistoryJob.acceptedByEmail}</p>
               </div>
             </div>
           </div>
 
           {/* 2. VIAJE Y KILOMETRAJE */}
           <div>
-            <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 dark:border-slate-800 pb-1">2. Ruta y Kilometraje</h4>
-            <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+            <h4 className="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400 tracking-wider mb-2 border-b border-slate-200 dark:border-slate-800 pb-1">2. Ruta y Kilometraje</h4>
+            <div className="bg-slate-50 dark:bg-slate-800/40 p-3 rounded-md border border-slate-200 dark:border-slate-800">
               <div className="flex items-start gap-2 mb-2">
                 <MapPin className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
                 <div>
-                  <p className="text-xs font-bold text-slate-700 dark:text-slate-300 break-words">{getRouteStr(selectedHistoryJob)}</p>
+                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 break-words">{getRouteStr(selectedHistoryJob)}</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
                 {/* Odómetro Inicio */}
                 <div>
-                  <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Odómetro Inicio</p>
+                  <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Odómetro Inicio</p>
                   <div className="flex flex-col gap-1.5 mt-0.5">
-                    <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">
+                    <p className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100 leading-none">
                       {selectedHistoryJob.checklist?.mileage || 'No registrado'}
                     </p>
                     {pickupOdoImg ? (
                       <img
                         src={pickupOdoImg}
                         alt="Odómetro Inicio"
-                        className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity shadow-sm"
+                        className="w-16 h-16 object-cover rounded-md border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity"
                         onClick={() => setFullScreenPhoto ? setFullScreenPhoto(pickupOdoImg) : window.open(pickupOdoImg, '_blank')}
                       />
                     ) : loadingPhotos ? (
-                      <div className="w-16 h-16 rounded-lg border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
-                        <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+                      <div className="w-16 h-16 rounded-md border border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+                        <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
                       </div>
                     ) : null}
                   </div>
@@ -203,21 +203,21 @@ export default function HistoryModal({
 
                 {/* Odómetro Fin */}
                 <div>
-                  <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Odómetro Fin</p>
+                  <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Odómetro Fin</p>
                   <div className="flex flex-col gap-1.5 mt-0.5">
-                    <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">
+                    <p className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100 leading-none">
                       {selectedHistoryJob.checklist?.arrivalMileage || 'No registrado'}
                     </p>
                     {arrivalOdoImg ? (
                       <img
                         src={arrivalOdoImg}
                         alt="Odómetro Fin"
-                        className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity shadow-sm"
+                        className="w-16 h-16 object-cover rounded-md border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity"
                         onClick={() => setFullScreenPhoto ? setFullScreenPhoto(arrivalOdoImg) : window.open(arrivalOdoImg, '_blank')}
                       />
                     ) : loadingPhotos ? (
-                      <div className="w-16 h-16 rounded-lg border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
-                        <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+                      <div className="w-16 h-16 rounded-md border border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+                        <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
                       </div>
                     ) : null}
                   </div>
@@ -225,21 +225,21 @@ export default function HistoryModal({
 
                 {/* Combustible Inicio */}
                 <div>
-                  <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Comb. Inicio</p>
+                  <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Comb. Inicio</p>
                   <div className="flex flex-col gap-1.5 mt-0.5">
-                    <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">
+                    <p className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100 leading-none">
                       {selectedHistoryJob.checklist?.fuelLevel !== undefined ? `${Math.round(selectedHistoryJob.checklist.fuelLevel <= 1 && selectedHistoryJob.checklist.fuelLevel !== 0 ? selectedHistoryJob.checklist.fuelLevel * 100 : selectedHistoryJob.checklist.fuelLevel)}%` : 'No registrado'}
                     </p>
                     {pickupFuelImg ? (
                       <img
                         src={pickupFuelImg}
                         alt="Combustible Inicio"
-                        className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity shadow-sm"
+                        className="w-16 h-16 object-cover rounded-md border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity"
                         onClick={() => setFullScreenPhoto ? setFullScreenPhoto(pickupFuelImg) : window.open(pickupFuelImg, '_blank')}
                       />
                     ) : loadingPhotos ? (
-                      <div className="w-16 h-16 rounded-lg border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
-                        <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+                      <div className="w-16 h-16 rounded-md border border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+                        <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
                       </div>
                     ) : null}
                   </div>
@@ -247,29 +247,29 @@ export default function HistoryModal({
 
                 {/* Combustible Fin */}
                 <div>
-                  <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Comb. Fin</p>
+                  <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Comb. Fin</p>
                   <div className="flex flex-col gap-1.5 mt-0.5">
-                    <p className="text-sm font-black text-slate-800 dark:text-slate-200 leading-none">
+                    <p className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100 leading-none">
                       {selectedHistoryJob.checklist?.arrivalFuelLevel !== undefined ? `${Math.round(selectedHistoryJob.checklist.arrivalFuelLevel <= 1 && selectedHistoryJob.checklist.arrivalFuelLevel !== 0 ? selectedHistoryJob.checklist.arrivalFuelLevel * 100 : selectedHistoryJob.checklist.arrivalFuelLevel)}%` : 'No registrado'}
                     </p>
                     {arrivalFuelImg ? (
                       <img
                         src={arrivalFuelImg}
                         alt="Combustible Fin"
-                        className="w-16 h-16 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity shadow-sm"
+                        className="w-16 h-16 object-cover rounded-md border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity"
                         onClick={() => setFullScreenPhoto ? setFullScreenPhoto(arrivalFuelImg) : window.open(arrivalFuelImg, '_blank')}
                       />
                     ) : loadingPhotos ? (
-                      <div className="w-16 h-16 rounded-lg border-2 border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
-                        <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+                      <div className="w-16 h-16 rounded-md border border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+                        <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
                       </div>
                     ) : null}
                   </div>
                 </div>
 
                 <div className="col-span-2 mt-2">
-                  <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Distancia GPS (Maps)</p>
-                  <p className="text-sm font-black text-blue-600 dark:text-blue-400">{selectedHistoryJob.drivenDistance || 'No calculado'}</p>
+                  <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Distancia GPS (Maps)</p>
+                  <p className="text-sm font-mono font-bold text-blue-600 dark:text-blue-400">{selectedHistoryJob.drivenDistance || 'No calculado'}</p>
                 </div>
                 {(selectedHistoryJob.checklist?.photos?.fuelGaugeLocation || selectedHistoryJob.checklist?.photos?.odometerLocation || selectedHistoryJob.checklist?.location) && (
                   <div className="col-span-2 mt-2">
@@ -277,10 +277,10 @@ export default function HistoryModal({
                       href={`https://maps.google.com/?q=${(selectedHistoryJob.checklist?.photos?.fuelGaugeLocation || selectedHistoryJob.checklist?.photos?.odometerLocation || selectedHistoryJob.checklist?.location).lat},${(selectedHistoryJob.checklist?.photos?.fuelGaugeLocation || selectedHistoryJob.checklist?.photos?.odometerLocation || selectedHistoryJob.checklist?.location).lng}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-3 px-4 rounded-xl font-extrabold text-xs transition-colors border border-slate-200 dark:border-slate-700 shadow-sm w-full text-center"
+                      className="flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-2.5 px-3 rounded-md font-semibold text-xs transition-colors border border-slate-200 dark:border-slate-700 w-full text-center"
                     >
-                      <MapPin className="w-4 h-4 text-red-500 shrink-0" />
-                      <span>Reporte de kilometraje y combustible tomado acá</span>
+                      <MapPin className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                      <span>Ver ubicación GPS del reporte</span>
                     </a>
                   </div>
                 )}
@@ -303,8 +303,8 @@ export default function HistoryModal({
               const monthStr = monthNames[parseInt(m, 10) - 1] || m;
               const today = new Date();
               const isExpired = parseInt(y, 10) < today.getFullYear() || (parseInt(y, 10) === today.getFullYear() && parseInt(m, 10) - 1 < today.getMonth());
-              if (isExpired) return <span className="text-red-600 dark:text-red-400 font-bold text-xs">{monthStr} {y} (Vencido)</span>;
-              return <span className="text-green-700 dark:text-green-400 font-bold text-xs">{monthStr} {y}</span>;
+              if (isExpired) return <span className="text-red-600 dark:text-red-400 font-mono font-semibold text-xs">{monthStr} {y} (Vencido)</span>;
+              return <span className="text-emerald-700 dark:text-emerald-400 font-mono font-semibold text-xs">{monthStr} {y}</span>;
             };
 
             const docPhotos = { ...(v?.docsPhotos || {}), ...(selectedHistoryJob.checklist?.docsPhotos || {}) };
@@ -317,21 +317,21 @@ export default function HistoryModal({
 
             return (
               <div>
-                <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 dark:border-slate-800 pb-1">3. Vencimiento Documentos</h4>
+                <h4 className="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400 tracking-wider mb-2 border-b border-slate-200 dark:border-slate-800 pb-1">3. Vencimiento Documentos</h4>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {docItems.map(({ id, name }) => {
                     const photoUrl = docPhotos[id];
                     return (
-                      <div key={id} className="bg-slate-50 dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 text-center flex flex-col justify-between">
+                      <div key={id} className="bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-md border border-slate-200 dark:border-slate-800 text-center flex flex-col justify-between">
                         <div>
-                          <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-0.5">{name}</p>
+                          <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase mb-0.5">{name}</p>
                           {formatExp(vDocs[id])}
                         </div>
                         {photoUrl && typeof photoUrl === 'string' && photoUrl.startsWith('http') && (
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(photoUrl); }}
-                            className="mt-2 text-[9px] font-black uppercase text-blue-600 dark:text-blue-400 hover:text-blue-500 flex items-center justify-center gap-1 bg-blue-50 dark:bg-blue-900/30 py-1 px-1.5 rounded-lg border border-blue-200 dark:border-blue-800/40 transition-colors"
+                            className="mt-2 text-[10px] font-semibold uppercase text-blue-600 dark:text-blue-400 hover:text-blue-500 flex items-center justify-center gap-1 bg-blue-50 dark:bg-blue-950/40 py-1 px-1.5 rounded border border-blue-200 dark:border-blue-800/60 transition-colors"
                           >
                             <FileText className="w-3 h-3" /> Ver Foto
                           </button>
@@ -346,45 +346,44 @@ export default function HistoryModal({
 
           {/* NOTAS DE TRASLADO EN FICHA */}
           {selectedHistoryJob.checklist?.transitNotes && (
-            <div className="bg-orange-50 dark:bg-orange-900/30 border-2 border-orange-200 dark:border-orange-800/50 p-4 rounded-xl shadow-sm mb-4">
-              <h4 className="text-[10px] font-black uppercase text-orange-600 dark:text-orange-400 tracking-widest mb-1 flex items-center gap-1.5"><AlertCircle className="w-4 h-4" /> Notas durante el traslado</h4>
-              <p className="text-xs font-bold text-orange-800 dark:text-orange-300 italic">"{selectedHistoryJob.checklist.transitNotes}"</p>
+            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 p-3.5 rounded-md mb-4">
+              <h4 className="text-[11px] font-semibold uppercase text-amber-700 dark:text-amber-400 tracking-wider mb-1 flex items-center gap-1.5"><AlertCircle className="w-4 h-4" /> Notas durante el traslado</h4>
+              <p className="text-xs font-medium text-amber-900 dark:text-amber-300">"{selectedHistoryJob.checklist.transitNotes}"</p>
             </div>
           )}
 
           {/* DETALLES Y OBSERVACIONES DE LA REVISIÓN */}
           {(selectedHistoryJob.checklist?.observations || selectedHistoryJob.checklist?.carDamages) && (
-            <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-xl shadow-sm mb-4">
-              <h4 className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-widest mb-2 flex items-center gap-1.5">
+            <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 p-4 rounded-md mb-4">
+              <h4 className="text-[11px] font-semibold uppercase text-blue-600 dark:text-blue-400 tracking-wider mb-2 flex items-center gap-1.5">
                 <FileText className="w-4 h-4" /> Detalles y Observaciones de la Revisión
               </h4>
               {selectedHistoryJob.checklist?.observations ? (
-                <p className="text-xs font-bold text-slate-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed bg-white dark:bg-slate-950 p-3 rounded-lg border border-slate-100 dark:border-slate-800 italic">
+                <p className="text-xs font-medium text-slate-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed bg-white dark:bg-slate-900 p-3 rounded border border-slate-200 dark:border-slate-800">
                   "{selectedHistoryJob.checklist.observations}"
                 </p>
               ) : (
-                <p className="text-xs font-medium text-slate-400 italic">Sin observaciones de texto adicionales.</p>
+                <p className="text-xs text-slate-400">Sin observaciones de texto adicionales.</p>
               )}
 
-              {/* Inspección por zonas si hay daños marcados */}
               {selectedHistoryJob.checklist?.carDamages && (() => {
                 const damagedZones = Object.entries(selectedHistoryJob.checklist.carDamages)
                   .filter(([_, d]) => d && d.status && d.status !== 'ok');
                 if (damagedZones.length === 0) return null;
                 return (
                   <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
-                    <p className="text-[9px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider">
+                    <p className="text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400 tracking-wider">
                       Inspección de Daños:
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {damagedZones.map(([zone, d]) => (
-                        <div key={zone} className="bg-white dark:bg-slate-950 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 flex items-start justify-between gap-2">
+                        <div key={zone} className="bg-white dark:bg-slate-900 p-2.5 rounded border border-slate-200 dark:border-slate-800 flex items-start justify-between gap-2">
                           <div>
-                            <span className="text-[10px] font-black uppercase text-red-600 dark:text-red-400 block">
+                            <span className="text-[11px] font-semibold uppercase text-red-600 dark:text-red-400 block">
                               {zone}: {d.status}
                             </span>
                             {d.notes && (
-                              <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 italic block mt-0.5">
+                              <span className="text-xs text-slate-600 dark:text-slate-300 block mt-0.5">
                                 "{d.notes}"
                               </span>
                             )}
@@ -393,7 +392,7 @@ export default function HistoryModal({
                             <button
                               type="button"
                               onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(d.photo); }}
-                              className="shrink-0 text-[9px] font-black uppercase text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded border border-blue-200 dark:border-blue-800"
+                              className="shrink-0 text-[10px] font-semibold uppercase text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-1 rounded border border-blue-200 dark:border-blue-800/60"
                             >
                               Ver Foto
                             </button>
@@ -409,10 +408,10 @@ export default function HistoryModal({
 
           {/* EQUIPAMIENTO VERIFICADO */}
           {(selectedHistoryJob.checklist?.equipment || selectedHistoryJob.checklist?.hasEquipment) && (
-            <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-xl shadow-sm mb-4">
+            <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 p-4 rounded-md mb-4">
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-[10px] font-black uppercase text-amber-600 dark:text-amber-400 tracking-widest flex items-center gap-1.5">
-                  <CheckSquare className="w-4 h-4 text-amber-500" /> Equipamiento Verificado
+                <h4 className="text-[11px] font-semibold uppercase text-slate-700 dark:text-slate-300 tracking-wider flex items-center gap-1.5">
+                  <CheckSquare className="w-4 h-4 text-blue-600 dark:text-blue-400" /> Equipamiento Verificado
                 </h4>
                 {(() => {
                   const eq = selectedHistoryJob.checklist?.equipment || {};
@@ -420,7 +419,7 @@ export default function HistoryModal({
                   const totalCount = Object.keys(eq).length;
                   if (!totalCount) return null;
                   return (
-                    <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300">
+                    <span className="text-[10px] font-mono font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                       {verifiedCount} de {totalCount} presentes
                     </span>
                   );
@@ -432,7 +431,7 @@ export default function HistoryModal({
                 const entries = Object.entries(eq);
                 if (entries.length === 0) {
                   return (
-                    <p className="text-xs font-medium text-slate-400 italic">
+                    <p className="text-xs text-slate-400">
                       Sin registro de ítems de equipamiento.
                     </p>
                   );
@@ -442,18 +441,18 @@ export default function HistoryModal({
                     {entries.map(([item, isChecked]) => (
                       <div
                         key={item}
-                        className={`p-2.5 rounded-xl border flex items-center gap-2 text-xs font-black transition-all ${isChecked
-                            ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 shadow-sm'
-                            : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 opacity-60'
+                        className={`p-2 rounded border flex items-center gap-2 text-xs font-medium ${isChecked
+                          ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300'
+                          : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500'
                           }`}
                       >
                         <div
                           className={`w-4 h-4 rounded flex items-center justify-center shrink-0 ${isChecked
-                              ? 'bg-emerald-500 text-white'
-                              : 'border border-slate-300 dark:border-slate-600'
+                            ? 'bg-emerald-600 text-white'
+                            : 'border border-slate-300 dark:border-slate-600'
                             }`}
                         >
-                          {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                          {isChecked && <Check className="w-3 h-3" />}
                         </div>
                         <span className="truncate">{item}</span>
                       </div>
@@ -464,10 +463,10 @@ export default function HistoryModal({
 
               {selectedHistoryJob.checklist?.equipmentDetails && (
                 <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-                  <p className="text-[9px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider mb-1 flex items-center gap-1">
-                    <Wrench className="w-3 h-3 text-amber-500" /> Detalle de Equipamiento / Accesorios Extra:
+                  <p className="text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400 tracking-wider mb-1 flex items-center gap-1">
+                    <Wrench className="w-3 h-3 text-slate-500" /> Detalle de Equipamiento / Accesorios Extra:
                   </p>
-                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-950 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 italic">
+                  <p className="text-xs font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 p-2.5 rounded border border-slate-200 dark:border-slate-800">
                     "{selectedHistoryJob.checklist.equipmentDetails}"
                   </p>
                 </div>
@@ -477,24 +476,24 @@ export default function HistoryModal({
 
           {/* GASTOS ASOCIADOS AL TRASLADO */}
           {selectedHistoryJob.expenses && selectedHistoryJob.expenses.length > 0 && (
-            <div className="bg-emerald-50/50 dark:bg-emerald-950/20 border-2 border-emerald-500/30 dark:border-emerald-700/40 p-4 rounded-2xl shadow-sm mb-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-3 border-b border-emerald-200 dark:border-emerald-800/40 gap-2">
+            <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 p-4 rounded-md mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-3 border-b border-slate-200 dark:border-slate-800 gap-2">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 bg-emerald-500 text-white rounded-xl shadow-sm">
+                  <div className="p-2 bg-emerald-600 text-white rounded-md">
                     <Receipt className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
                       Gastos Asociados al Traslado
                     </h4>
-                    <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
                       {selectedHistoryJob.expenses.length} registro{selectedHistoryJob.expenses.length > 1 ? 's' : ''} ingresado{selectedHistoryJob.expenses.length > 1 ? 's' : ''}
                     </p>
                   </div>
                 </div>
-                <div className="bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-800 px-3 py-1.5 rounded-xl flex items-center gap-2 self-start sm:self-auto shadow-sm">
-                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Total Gastos:</span>
-                  <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-md flex items-center gap-2 self-start sm:self-auto">
+                  <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Total Gastos:</span>
+                  <span className="text-sm font-mono font-bold text-emerald-700 dark:text-emerald-400">
                     ${selectedHistoryJob.expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0).toLocaleString('es-CL')}
                   </span>
                 </div>
@@ -504,31 +503,31 @@ export default function HistoryModal({
                 {selectedHistoryJob.expenses.map((exp, idx) => (
                   <div
                     key={exp.id || idx}
-                    className="bg-white dark:bg-slate-900/90 border border-emerald-100 dark:border-emerald-900/40 rounded-xl p-3 shadow-sm flex flex-col justify-between"
+                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md p-3 flex flex-col justify-between"
                   >
                     <div>
                       <div className="flex justify-between items-start mb-2 gap-2">
-                        <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider ${exp.type === 'fuel'
-                            ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
-                            : 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800'
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider flex items-center gap-1 ${exp.type === 'fuel'
+                          ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60'
+                          : 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60'
                           }`}>
-                          {exp.type === 'fuel' ? '⛽ Combustible' : `💳 ${exp.category || 'Otro Gasto'}`}
+                          {exp.type === 'fuel' ? <><Fuel className="w-3 h-3" /> Combustible</> : <><Receipt className="w-3 h-3" /> {exp.category || 'Otro Gasto'}</>}
                         </span>
-                        <span className="text-sm font-black text-slate-800 dark:text-white">
+                        <span className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100">
                           ${(Number(exp.amount) || 0).toLocaleString('es-CL')}
                         </span>
                       </div>
 
                       {exp.motivo && (
-                        <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2 italic">
+                        <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-2">
                           "{exp.motivo}"
                         </p>
                       )}
 
-                      <div className="text-[10px] text-slate-500 dark:text-slate-400 space-y-0.5 mb-3">
-                        <p>👤 <span className="font-bold">{exp.registeredByName || exp.registeredByEmail || 'Conductor'}</span></p>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 space-y-0.5 mb-3">
+                        <p className="flex items-center gap-1"><User className="w-3 h-3" /> <span className="font-medium">{exp.registeredByName || exp.registeredByEmail || 'Conductor'}</span></p>
                         {exp.createdAt && (
-                          <p>🕒 {new Date(exp.createdAt).toLocaleString('es-CL')}</p>
+                          <p className="flex items-center gap-1 font-mono text-[10px]"><Clock className="w-3 h-3" /> {new Date(exp.createdAt).toLocaleString('es-CL')}</p>
                         )}
                       </div>
                     </div>
@@ -539,18 +538,18 @@ export default function HistoryModal({
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(exp.fuelGaugeUrl); }}
-                          className="flex-1 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 py-1.5 px-2 rounded-lg text-[10px] font-black flex items-center justify-center gap-1 transition-colors"
+                          className="flex-1 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 py-1.5 px-2 rounded text-[10px] font-semibold flex items-center justify-center gap-1 transition-colors"
                         >
-                          📸 Estanque
+                          <Camera className="w-3 h-3" /> Estanque
                         </button>
                       )}
                       {exp.receiptUrl && (
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(exp.receiptUrl); }}
-                          className="flex-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 py-1.5 px-2 rounded-lg text-[10px] font-black flex items-center justify-center gap-1 transition-colors"
+                          className="flex-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 py-1.5 px-2 rounded text-[10px] font-semibold flex items-center justify-center gap-1 transition-colors"
                         >
-                          🧾 Boleta
+                          <Receipt className="w-3 h-3" /> Boleta
                         </button>
                       )}
                     </div>
@@ -563,36 +562,36 @@ export default function HistoryModal({
           {/* 4. RECEPCIÓN */}
           {selectedHistoryJob.checklist && (
             <div>
-              <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 dark:border-slate-800 pb-1">4. Recepción</h4>
-              <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row gap-4 justify-between items-center">
+              <h4 className="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400 tracking-wider mb-2 border-b border-slate-200 dark:border-slate-800 pb-1">4. Recepción</h4>
+              <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-md border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row gap-4 justify-between items-center">
                 <div className="flex-1 text-center sm:text-left w-full">
-                  <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Recibido por</p>
-                  <p className="text-sm font-black text-slate-800 dark:text-slate-200">{selectedHistoryJob.checklist.noReception ? 'Sin Recepción Formal' : (selectedHistoryJob.checklist.receiverName || selectedHistoryJob.receiverName || 'No registrado')}</p>
-                  {(selectedHistoryJob.checklist.receiverRut || selectedHistoryJob.receiverRut) && <p className="text-xs font-bold text-slate-500 dark:text-slate-400">RUT: {selectedHistoryJob.checklist.receiverRut || selectedHistoryJob.receiverRut}</p>}
+                  <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Recibido por</p>
+                  <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{selectedHistoryJob.checklist.noReception ? 'Sin Recepción Formal' : (selectedHistoryJob.checklist.receiverName || selectedHistoryJob.receiverName || 'No registrado')}</p>
+                  {(selectedHistoryJob.checklist.receiverRut || selectedHistoryJob.receiverRut) && <p className="text-xs font-mono text-slate-500 dark:text-slate-400">RUT: {selectedHistoryJob.checklist.receiverRut || selectedHistoryJob.receiverRut}</p>}
 
                   {(selectedHistoryJob.checklist.clientComments || selectedHistoryJob.clientComments) && (
-                    <div className="mt-2 bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-100 dark:border-slate-800 shadow-sm">
-                      <p className="text-[9px] font-bold text-slate-400 uppercase">Comentarios</p>
-                      <p className="text-xs font-bold text-slate-700 dark:text-slate-300 italic">"{(selectedHistoryJob.checklist.clientComments || selectedHistoryJob.clientComments)}"</p>
+                    <div className="mt-2 bg-white dark:bg-slate-900 p-2.5 rounded border border-slate-200 dark:border-slate-800">
+                      <p className="text-[10px] font-semibold text-slate-400 uppercase">Comentarios</p>
+                      <p className="text-xs font-medium text-slate-700 dark:text-slate-300">"{(selectedHistoryJob.checklist.clientComments || selectedHistoryJob.clientComments)}"</p>
                     </div>
                   )}
                 </div>
 
                 {!selectedHistoryJob.checklist.noReception && (
-                  <div className="p-2 rounded-xl border-2 border-slate-200 dark:border-slate-700 shrink-0 flex flex-col items-center justify-center min-w-[140px] min-h-[80px] w-full sm:w-auto shadow-inner" style={{ backgroundColor: '#ffffff' }}>
+                  <div className="p-2 rounded-md border border-slate-200 dark:border-slate-700 shrink-0 flex flex-col items-center justify-center min-w-[140px] min-h-[80px] w-full sm:w-auto" style={{ backgroundColor: '#ffffff' }}>
                     {(selectedHistoryJob.checklist.signatureData || selectedHistoryJob.signatureData) ? (
-                      <img src={selectedHistoryJob.checklist.signatureData || selectedHistoryJob.signatureData} alt="Firma" className="h-16 sm:h-20 object-contain drop-shadow-sm" />
+                      <img src={selectedHistoryJob.checklist.signatureData || selectedHistoryJob.signatureData} alt="Firma" className="h-16 sm:h-20 object-contain" />
                     ) : (
-                      <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#94a3b8' }}>Firma no registrada</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#94a3b8' }}>Firma no registrada</span>
                     )}
-                    <p className="text-[8px] font-black uppercase mt-1 tracking-widest" style={{ color: '#cbd5e1' }}>Firma Digital</p>
+                    <p className="text-[9px] font-semibold uppercase mt-1 tracking-wider" style={{ color: '#94a3b8' }}>Firma Digital</p>
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* 5. GALERÍA DE FOTOS (CON DEDUPLICACIÓN INTELIGENTE DE FOTOS Y ALIASES) */}
+          {/* 5. GALERÍA DE FOTOS */}
           {(() => {
             const ident = getJobIdentifier(selectedHistoryJob);
             const v = (vehicles && ident && ident !== 'S/N') ? vehicles.find(x => x.plate === ident.toUpperCase()) : null;
@@ -665,7 +664,6 @@ export default function HistoryModal({
               pickupOdometer: 50, arrivalOdometer: 50, pickupFuel: 50, arrivalFuel: 50, dashboardInitial: 40
             };
 
-            // DEDUPLICACIÓN: Mapear por URL única para evitar mostrar la misma foto repetida por aliases
             const uniquePhotosMap = new Map();
             for (const [k, url] of Object.entries(allPhotos)) {
               if (typeof url !== 'string' || !url.startsWith('http')) continue;
@@ -689,23 +687,23 @@ export default function HistoryModal({
 
             return (
               <div>
-                <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 border-b border-slate-100 dark:border-slate-800 pb-1">5. Galería Fotográfica</h4>
+                <h4 className="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400 tracking-wider mb-2 border-b border-slate-200 dark:border-slate-800 pb-1">5. Galería Fotográfica</h4>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {uniquePhotosList.map(({ key: k, url: v, label }) => {
                     return (
-                      <div key={v} className="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 aspect-square cursor-pointer" onClick={() => setFullScreenPhoto(v)}>
-                        <img src={v} alt={label} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
-                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                          <p className="text-white text-[9px] font-black uppercase truncate">{label}</p>
+                      <div key={v} className="relative group rounded-md overflow-hidden border border-slate-200 dark:border-slate-700 aspect-square cursor-pointer" onClick={() => setFullScreenPhoto(v)}>
+                        <img src={v} alt={label} className="w-full h-full object-cover" />
+                        <div className="absolute inset-x-0 bottom-0 bg-slate-950/80 p-1.5">
+                          <p className="text-white text-[10px] font-semibold uppercase truncate">{label}</p>
                         </div>
                         {k === 'fuelGauge' && selectedHistoryJob.checklist?.photos?.fuelGaugeLocation && (
-                          <a href={`https://maps.google.com/?q=${selectedHistoryJob.checklist.photos.fuelGaugeLocation.lat},${selectedHistoryJob.checklist.photos.fuelGaugeLocation.lng}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="absolute top-1.5 right-1.5 bg-slate-900/80 hover:bg-blue-600 text-white px-2 py-1 rounded-md text-[9px] font-bold shadow-md transition-colors">📍 Mapa</a>
+                          <a href={`https://maps.google.com/?q=${selectedHistoryJob.checklist.photos.fuelGaugeLocation.lat},${selectedHistoryJob.checklist.photos.fuelGaugeLocation.lng}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="absolute top-1.5 right-1.5 bg-slate-900 hover:bg-blue-600 text-white px-2 py-0.5 rounded text-[10px] font-semibold transition-colors flex items-center gap-1"><MapPin className="w-2.5 h-2.5" /> Mapa</a>
                         )}
                         {k === 'mileage' && selectedHistoryJob.checklist?.photos?.mileageLocation && (
-                          <a href={`https://maps.google.com/?q=${selectedHistoryJob.checklist.photos.mileageLocation.lat},${selectedHistoryJob.checklist.photos.mileageLocation.lng}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="absolute top-1.5 right-1.5 bg-slate-900/80 hover:bg-blue-600 text-white px-2 py-1 rounded-md text-[9px] font-bold shadow-md transition-colors">📍 Mapa</a>
+                          <a href={`https://maps.google.com/?q=${selectedHistoryJob.checklist.photos.mileageLocation.lat},${selectedHistoryJob.checklist.photos.mileageLocation.lng}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="absolute top-1.5 right-1.5 bg-slate-900 hover:bg-blue-600 text-white px-2 py-0.5 rounded text-[10px] font-semibold transition-colors flex items-center gap-1"><MapPin className="w-2.5 h-2.5" /> Mapa</a>
                         )}
                         {k === 'odometer' && selectedHistoryJob.checklist?.photos?.odometerLocation && (
-                          <a href={`https://maps.google.com/?q=${selectedHistoryJob.checklist.photos.odometerLocation.lat},${selectedHistoryJob.checklist.photos.odometerLocation.lng}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="absolute top-1.5 right-1.5 bg-slate-900/80 hover:bg-blue-600 text-white px-2 py-1 rounded-md text-[9px] font-bold shadow-md transition-colors">📍 Mapa</a>
+                          <a href={`https://maps.google.com/?q=${selectedHistoryJob.checklist.photos.odometerLocation.lat},${selectedHistoryJob.checklist.photos.odometerLocation.lng}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="absolute top-1.5 right-1.5 bg-slate-900 hover:bg-blue-600 text-white px-2 py-0.5 rounded text-[10px] font-semibold transition-colors flex items-center gap-1"><MapPin className="w-2.5 h-2.5" /> Mapa</a>
                         )}
                       </div>
                     );

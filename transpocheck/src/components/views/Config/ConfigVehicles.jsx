@@ -87,7 +87,7 @@ export default function ConfigVehicles({ allClientsList, vehicles, db, showAlert
             console.error("Error guardando vehículo:", error); 
             showAlert("❌ Error al guardar el vehículo."); 
         } 
-      }} className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-4 w-full min-w-0">
+      }} className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-4 w-full min-w-0">
         <h3 className="font-extrabold flex items-center gap-2"><Truck className="text-blue-600 dark:text-blue-400"/> {editingVehicle ? 'Editar Vehículo' : 'Nuevo Vehículo'}</h3>
         <select name="client" defaultValue={editingVehicle?.client || ''} className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-semibold outline-none focus:border-blue-500 bg-white dark:bg-slate-900">
           <option value="">Cliente...</option>
@@ -105,17 +105,17 @@ export default function ConfigVehicles({ allClientsList, vehicles, db, showAlert
         <input name="plate" defaultValue={editingVehicle?.plate} placeholder="Patente" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm uppercase outline-none focus:border-blue-500 font-bold text-slate-800 dark:text-slate-200 bg-transparent"/>
         <input name="vin" defaultValue={editingVehicle?.vin} placeholder="VIN (Opcional)" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm uppercase outline-none focus:border-blue-500 font-bold text-slate-800 dark:text-slate-200 bg-transparent"/>
         <select name="vehicleType" defaultValue={editingVehicle?.vehicleType || 'auto'} className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 text-sm rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900">
-           <option value="auto">🚙 Auto / SUV</option>
-           <option value="camioneta">🛻 Camioneta</option>
-           <option value="furgon_pequeno">🚐 Furgón Pequeño</option>
-           <option value="furgon_grande">🚐 Furgón Grande</option>
-           <option value="camion">🚚 Camión Simple</option>
-           <option value="camion_doble">🚚 Camión Doble Cabina</option>
-           <option value="camion_2ejes">🚛 Camión (2 Ejes traseros)</option>
-           <option value="camion_3ejes">🚛 Camión (3 Ejes traseros)</option>
-           <option value="camion_8x4">🚚 Camión Rigid (8x4)</option>
-           <option value="carro_arrastre">🛒 Carro Arrastre</option>
-           <option value="maquinaria">🚜 Maquinaria</option>
+           <option value="auto">Auto / SUV</option>
+           <option value="camioneta">Camioneta</option>
+           <option value="furgon_pequeno">Furgón Pequeño</option>
+           <option value="furgon_grande">Furgón Grande</option>
+           <option value="camion">Camión Simple</option>
+           <option value="camion_doble">Camión Doble Cabina</option>
+           <option value="camion_2ejes">Camión (2 Ejes traseros)</option>
+           <option value="camion_3ejes">Camión (3 Ejes traseros)</option>
+           <option value="camion_8x4">Camión Rígido (8x4)</option>
+           <option value="carro_arrastre">Carro Arrastre</option>
+           <option value="maquinaria">Maquinaria</option>
         </select>
         <div className="flex gap-2">
           {editingVehicle && <button type="button" onClick={()=>setEditingVehicle(null)} className="bg-slate-100 dark:bg-slate-800 p-3 rounded-xl font-bold text-sm w-1/3 hover:bg-slate-200 dark:bg-slate-700 transition-colors">Cancelar</button>}
@@ -123,7 +123,7 @@ export default function ConfigVehicles({ allClientsList, vehicles, db, showAlert
         </div>
       </form>
 
-      <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 w-full min-w-0 flex flex-col">
+      <div className="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 w-full min-w-0 flex flex-col">
         <div className="flex justify-between items-center mb-4 gap-2 flex-wrap">
           <h3 className="font-extrabold text-slate-800 dark:text-slate-200 whitespace-nowrap">Base Flota Agrupada</h3>
           <button onClick={handleBulkClean} className="bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-400 border border-red-200 dark:border-red-800/50 px-3 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-colors">
@@ -136,7 +136,7 @@ export default function ConfigVehicles({ allClientsList, vehicles, db, showAlert
              const clientVehicles = groupedVehicles[clientName];
              
              return (
-               <div key={clientName} className="border-2 border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden bg-slate-50 dark:bg-slate-800/50">
+               <div key={clientName} className="border-2 border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-50 dark:bg-slate-800/50">
                   <div className="w-full flex justify-between items-center p-4 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                     <button 
                       type="button"

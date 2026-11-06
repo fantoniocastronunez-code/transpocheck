@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CloudUpload, Receipt } from 'lucide-react';
+import { CloudUpload, Receipt, MessageSquare, Phone, Camera } from 'lucide-react';
 
 const renderVehicle = (vType, wheelClass, wheelFill, isChassisCab) => {
   const type = (vType || '').toLowerCase();
@@ -156,7 +156,7 @@ const StatusAnimation = ({ type, vehicleType, isChassisCab, origin, destination,
                   {d.name && (
                     <foreignObject x={cx - 45} y="52" width="90" height="18">
                       <div xmlns="http://www.w3.org/1999/xhtml" className="w-full text-center">
-                        <span className="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase truncate block px-1 leading-tight">{d.name.split(' ')[0]}</span>
+                        <span className="text-[8px] sm:text-[9px] text-slate-500 font-semibold uppercase truncate block px-1 leading-tight">{d.name.split(' ')[0]}</span>
                       </div>
                     </foreignObject>
                   )}
@@ -165,8 +165,8 @@ const StatusAnimation = ({ type, vehicleType, isChassisCab, origin, destination,
             })}
           </g>
           <g className="lupa" transform="translate(10, 5)">
-            <circle cx="20" cy="20" r="15" fill="none" stroke="#3B82F6" strokeWidth="4" />
-            <line x1="30" y1="30" x2="45" y2="45" stroke="#3B82F6" strokeWidth="6" strokeLinecap="round" />
+            <circle cx="20" cy="20" r="15" fill="none" stroke="#2563EB" strokeWidth="3.5" />
+            <line x1="30" y1="30" x2="45" y2="45" stroke="#2563EB" strokeWidth="5" strokeLinecap="round" />
           </g>
         </svg>
       );
@@ -187,7 +187,7 @@ const StatusAnimation = ({ type, vehicleType, isChassisCab, origin, destination,
           <g transform="translate(150, 0)" fill="currentColor" className="text-slate-300 dark:text-slate-600">
             {renderVehicle(vehicleType, "text-slate-400 dark:text-slate-500", undefined, isChassisCab)}
           </g>
-          <g className="personIn" fill="#3B82F6">
+          <g className="personIn" fill="#2563EB">
             <circle cx="10" cy="25" r="5" />
             <path d="M 5 32 C 5 28, 15 28, 15 32 L 15 50 L 5 50 Z" />
           </g>
@@ -207,21 +207,17 @@ const StatusAnimation = ({ type, vehicleType, isChassisCab, origin, destination,
               }
               .cameraFlash { animation: realFlashAnim 3s infinite; }
             `}</style>
-            <linearGradient id="flashGrad" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="white" stopOpacity="0.9" />
-              <stop offset="100%" stopColor="white" stopOpacity="0" />
-            </linearGradient>
           </defs>
           <g transform="translate(150, 0)" fill="currentColor" className="text-slate-300 dark:text-slate-600">
             {renderVehicle(vehicleType, "text-slate-400 dark:text-slate-500", undefined, isChassisCab)}
           </g>
-          <g transform="translate(115, 0)" fill="#3B82F6">
+          <g transform="translate(115, 0)" fill="#2563EB">
             <circle cx="10" cy="25" r="5" />
             <path d="M 5 32 C 5 28, 15 28, 15 32 L 15 50 L 5 50 Z" />
-            <path d="M 5 32 L 15 32 L 20 28" stroke="#3B82F6" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M 5 32 L 15 32 L 20 28" stroke="#2563EB" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
             <rect x="18" y="24" width="4" height="6" rx="1" fill="#1E293B" />
           </g>
-          <polygon className="cameraFlash" points="135,27 220,-10 220,60" fill="url(#flashGrad)" />
+          <polygon className="cameraFlash" points="135,27 220,-10 220,60" fill="rgba(59, 130, 246, 0.22)" />
         </svg>
       );
     case 'transit':
@@ -243,26 +239,26 @@ const StatusAnimation = ({ type, vehicleType, isChassisCab, origin, destination,
           </defs>
           <foreignObject x="0" y="8" width="90" height="42">
             <div xmlns="http://www.w3.org/1999/xhtml" className="flex flex-col items-center w-full h-full">
-              <div className="bg-slate-700 dark:bg-slate-600 w-full rounded-md px-1.5 py-1.5 border-b-[3px] border-slate-900 dark:border-slate-800 shadow-sm flex items-center justify-center shrink-0">
-                <span className="text-[10px] text-white font-black uppercase truncate leading-tight w-full text-center">{origin ? origin.split(',')[0] : 'Origen'}</span>
+              <div className="bg-slate-700 dark:bg-slate-600 w-full rounded px-1.5 py-1.5 border-b-2 border-slate-900 dark:border-slate-800 flex items-center justify-center shrink-0">
+                <span className="text-[10px] text-white font-semibold uppercase truncate leading-tight w-full text-center">{origin ? origin.split(',')[0] : 'Origen'}</span>
               </div>
-              <div className="w-2.5 flex-1 bg-slate-400 dark:bg-slate-500 rounded-b-sm"></div>
+              <div className="w-2 flex-1 bg-slate-400 dark:bg-slate-500 rounded-b-sm"></div>
             </div>
           </foreignObject>
 
           <foreignObject x="210" y="8" width="90" height="42">
             <div xmlns="http://www.w3.org/1999/xhtml" className="flex flex-col items-center w-full h-full">
-              <div className="bg-blue-600 dark:bg-blue-700 w-full rounded-md px-1.5 py-1.5 border-b-[3px] border-blue-900 dark:border-blue-900 shadow-sm flex items-center justify-center shrink-0">
-                <span className="text-[10px] text-white font-black uppercase truncate leading-tight w-full text-center">{destination ? destination.split(',')[0] : 'Destino'}</span>
+              <div className="bg-blue-600 dark:bg-blue-700 w-full rounded px-1.5 py-1.5 border-b-2 border-blue-900 flex items-center justify-center shrink-0">
+                <span className="text-[10px] text-white font-semibold uppercase truncate leading-tight w-full text-center">{destination ? destination.split(',')[0] : 'Destino'}</span>
               </div>
-              <div className="w-2.5 flex-1 bg-slate-400 dark:bg-slate-500 rounded-b-sm"></div>
+              <div className="w-2 flex-1 bg-slate-400 dark:bg-slate-500 rounded-b-sm"></div>
             </div>
           </foreignObject>
 
           <g stroke="currentColor" className="text-slate-300 dark:text-slate-600" strokeWidth="2" strokeDasharray="10 10">
             <line x1="0" y1="50" x2="320" y2="50" className="streetDash" />
           </g>
-          <g className="carMov" fill="#3B82F6">
+          <g className="carMov" fill="#2563EB">
             {renderVehicle(vehicleType, undefined, "#1E293B", isChassisCab)}
           </g>
         </svg>
@@ -287,7 +283,7 @@ const StatusAnimation = ({ type, vehicleType, isChassisCab, origin, destination,
             <rect x="17" y="27" width="8" height="8" fill="currentColor" className="text-slate-200 dark:text-slate-700" />
             <path d="M -5 10 L 15 -5 L 35 10 Z" fill="currentColor" className="text-slate-500 dark:text-slate-400" />
           </g>
-          <g className="carIn" fill="#3B82F6">
+          <g className="carIn" fill="#2563EB">
             {renderVehicle(vehicleType, undefined, "#1E293B", isChassisCab)}
           </g>
         </svg>
@@ -317,7 +313,7 @@ const StatusAnimation = ({ type, vehicleType, isChassisCab, origin, destination,
             <line x1="10" y1="35" x2="30" y2="35" stroke="currentColor" className="text-slate-300 dark:text-slate-500" strokeWidth="2" />
           </g>
           <g className="checkPop" transform="translate(140, 20)">
-            <circle cx="10" cy="10" r="16" fill="#22C55E" />
+            <circle cx="10" cy="10" r="16" fill="#059669" />
             <path d="M 4 10 L 8 14 L 16 6" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
           </g>
         </svg>
@@ -347,7 +343,7 @@ const StatusAnimation = ({ type, vehicleType, isChassisCab, origin, destination,
             <line x1="10" y1="35" x2="30" y2="35" stroke="currentColor" className="text-slate-300 dark:text-slate-500" strokeWidth="2" />
           </g>
           <g className="crossPop" transform="translate(140, 20)">
-            <circle cx="10" cy="10" r="16" fill="#EF4444" />
+            <circle cx="10" cy="10" r="16" fill="#DC2626" />
             <line x1="4" y1="4" x2="16" y2="16" stroke="white" strokeWidth="3" strokeLinecap="round" />
             <line x1="16" y1="4" x2="4" y2="16" stroke="white" strokeWidth="3" strokeLinecap="round" />
           </g>
@@ -360,7 +356,7 @@ const StatusAnimation = ({ type, vehicleType, isChassisCab, origin, destination,
             <style>{`
               @keyframes bounceCompleteAnim {
                 0%, 100% { transform: translateY(0); }
-                50% { transform: translateY(-10px); }
+                50% { transform: translateY(-6px); }
               }
               @keyframes appearStarsAnim {
                 0% { opacity: 0; transform: scale(0.5); }
@@ -372,14 +368,14 @@ const StatusAnimation = ({ type, vehicleType, isChassisCab, origin, destination,
           </defs>
           <g transform="translate(135, 10)">
             <g className="starGroup">
-              <circle cx="-20" cy="10" r="2" fill="#F59E0B" />
-              <circle cx="40" cy="5" r="3" fill="#F59E0B" />
-              <circle cx="30" cy="35" r="2" fill="#F59E0B" />
-              <circle cx="-10" cy="40" r="2.5" fill="#F59E0B" />
+              <circle cx="-20" cy="10" r="2" fill="#D97706" />
+              <circle cx="40" cy="5" r="3" fill="#D97706" />
+              <circle cx="30" cy="35" r="2" fill="#D97706" />
+              <circle cx="-10" cy="40" r="2.5" fill="#D97706" />
             </g>
             <g className="flagBounce">
               <path d="M 5 45 L 5 5" stroke="currentColor" className="text-slate-700 dark:text-slate-300" strokeWidth="3" strokeLinecap="round" />
-              <path d="M 5 5 L 25 12 L 5 20 Z" fill="#22C55E" />
+              <path d="M 5 5 L 25 12 L 5 20 Z" fill="#059669" />
             </g>
           </g>
         </svg>
@@ -401,7 +397,7 @@ export default function JobCard({ j, ...props }) {
   const activeSyncTask = syncQueue?.find(t => t.jobId === j.id && t.status === 'syncing');
   const isUploading = Boolean(activeSyncTask);
 
-  // NUEVO: Motor de Alertas y Fotos de Documentos del Vehículo
+  // Motor de Alertas y Fotos de Documentos del Vehículo
   let expiringDocs = [];
   let vehicleDocPhotos = {};
   if (vehicles && ident && ident !== 'S/N' && j.tripType !== 'simple') {
@@ -410,7 +406,7 @@ export default function JobCard({ j, ...props }) {
       if (v.docsPhotos) vehicleDocPhotos = v.docsPhotos;
       if (v.docsExpiry) {
         const today = new Date(); today.setHours(0, 0, 0, 0);
-        const limit = new Date(); limit.setDate(today.getDate() + 30); // Aviso 30 días antes
+        const limit = new Date(); limit.setDate(today.getDate() + 30);
         const docNames = { soap: 'SOAP', permiso: 'Permiso Circ.', revTecnica: 'Rev. Técnica', gases: 'Gases' };
 
         for (const [key, dateStr] of Object.entries(v.docsExpiry)) {
@@ -418,9 +414,9 @@ export default function JobCard({ j, ...props }) {
           const [year, month, day] = dateStr.split('-');
           const expDate = new Date(year, month - 1, day);
           if (expDate < today) {
-            expiringDocs.push(`🔴 ${docNames[key]} Vencido (${day}/${month}/${year})`);
+            expiringDocs.push(`[VENCIDO] ${docNames[key]} (${day}/${month}/${year})`);
           } else if (expDate <= limit) {
-            expiringDocs.push(`🟠 ${docNames[key]} vence el ${day}/${month}/${year}`);
+            expiringDocs.push(`[POR VENCER] ${docNames[key]} (${day}/${month}/${year})`);
           }
         }
       }
@@ -430,72 +426,63 @@ export default function JobCard({ j, ...props }) {
   const availableDocPhotoKeys = Object.keys(combinedDocPhotos).filter(k => typeof combinedDocPhotos[k] === 'string' && combinedDocPhotos[k].startsWith('http'));
 
   return (
-    // --- OPTIMIZACIÓN: Quitamos el overflow-hidden del padre para que el menú no se corte ---
-    // Además, si la tarjeta tiene el menú abierto, elevamos su z-index. Si está subiendo, se estiliza con borde esmeralda y efecto esmerilado.
     <div
       key={j.id}
-      className={`bg-white/90 dark:bg-[#1e293b]/60 backdrop-blur-2xl rounded-[1.5rem] border p-3 sm:p-4 flex flex-col shadow-2xl relative ${!isUploading ? 'hover:-translate-y-1 active:scale-[0.98]' : 'select-none'} transition-all duration-300 cursor-default group ${isUploading
-          ? 'border-emerald-500/80 ring-4 ring-emerald-500/30 shadow-[0_0_35px_rgba(16,185,129,0.3)]'
-          : (j.isUrgent ? 'border-red-400/50 ring-2 ring-red-400/30' : (j.fleetGroup ? 'border-indigo-400/50' : 'border-slate-200/80 dark:border-slate-700/50'))
+      className={`bg-white dark:bg-slate-900 rounded-lg border p-3.5 sm:p-4 flex flex-col shadow-xs relative ${!isUploading ? 'hover:border-slate-300 dark:hover:border-slate-700' : 'select-none'} transition-colors cursor-default group ${isUploading
+        ? 'border-emerald-600'
+        : (j.isUrgent ? 'border-red-500/80 dark:border-red-600/70' : 'border-slate-200 dark:border-slate-800')
         } ${menuOpenId === j.id ? 'z-50' : 'z-10'}`}
     >
 
-      {/* OVERLAY VIDRIO ESMERILADO DE SUBIDA EN SEGUNDO PLANO */}
+      {/* OVERLAY DE SUBIDA EN SEGUNDO PLANO */}
       {isUploading && (
-        <div className="absolute inset-0 z-40 rounded-[1.5rem] bg-slate-950/85 backdrop-blur-md flex flex-col items-center justify-center p-4 text-center select-none pointer-events-auto cursor-wait border-2 border-emerald-500/70 shadow-[0_0_35px_rgba(16,185,129,0.35)] animate-in fade-in zoom-in-95 duration-300">
+        <div className="absolute inset-0 z-40 rounded-lg bg-slate-950/90 flex flex-col items-center justify-center p-4 text-center select-none pointer-events-auto cursor-wait border border-emerald-600">
           <div className="relative mb-3 flex items-center justify-center">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 border-2 border-emerald-500/50 flex items-center justify-center text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.4)]">
-              <CloudUpload className="w-7 h-7 animate-bounce text-emerald-400" />
+            <div className="w-12 h-12 rounded-md bg-emerald-950 border border-emerald-700 flex items-center justify-center text-emerald-400">
+              <CloudUpload className="w-6 h-6 text-emerald-400" />
             </div>
-            <span className="absolute -top-1 -right-1 flex h-4 w-4">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 border-2 border-slate-900"></span>
-            </span>
           </div>
 
-          <span className="text-emerald-400 font-black tracking-[0.25em] text-base sm:text-lg uppercase drop-shadow-[0_0_12px_rgba(16,185,129,0.6)] animate-pulse">
+          <span className="text-emerald-400 font-mono font-bold tracking-widest text-sm uppercase">
             SUBIENDO
           </span>
 
-          <p className="text-xs font-bold text-slate-200 mt-1 max-w-[230px] leading-relaxed">
+          <p className="text-xs font-medium text-slate-300 mt-1 max-w-[230px] leading-relaxed">
             Sincronizando fotos y checklist con la nube...
           </p>
 
           {activeSyncTask?.progressText && (
-            <div className="mt-2.5 px-3 py-1 rounded-full bg-emerald-950/90 border border-emerald-500/50 text-[10px] sm:text-[11px] font-mono font-bold text-emerald-300 flex items-center gap-1.5 shadow-inner">
+            <div className="mt-2.5 px-3 py-1 rounded bg-slate-900 border border-slate-700 text-[11px] font-mono text-emerald-400 flex items-center gap-1.5">
               <Clock className="w-3 h-3 animate-spin text-emerald-400 shrink-0" />
               <span className="truncate max-w-[200px]">{activeSyncTask.progressText}</span>
             </div>
           )}
 
-          <span className="text-[10px] text-slate-400 font-medium mt-2">
+          <span className="text-[11px] text-slate-400 mt-2">
             No cierres la app mientras se completa la subida
           </span>
         </div>
       )}
 
-      {/* --- OPTIMIZACIÓN: Los fondos decorativos ahora viven en un contenedor con overflow-hidden para no salirse de los bordes redondeados --- */}
-      <div className="absolute inset-0 rounded-[2rem] overflow-hidden pointer-events-none">
-        {/* Efecto de luz ambiental en la esquina */}
-        <div className={`absolute -right-16 -top-16 w-40 h-40 rounded-full blur-3xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none ${isRequested ? 'bg-pink-500' : (isPending ? 'bg-amber-500' : 'bg-blue-500')}`}></div>
-        {/* Borde izquierdo iluminado con gradiente */}
-        <div className={`absolute top-0 left-0 bottom-0 w-1.5 transition-all ${isRequested ? 'bg-gradient-to-b from-pink-400 to-pink-600' : (isPending ? 'bg-gradient-to-b from-amber-300 to-amber-500' : 'bg-gradient-to-b from-blue-400 to-blue-600 shadow-[0_0_8px_rgba(59,130,246,0.5)]')}`}></div>
+      {/* Indicador lateral de estado (sólido, sin degradados ni brillos) */}
+      <div className="absolute inset-0 rounded-lg overflow-hidden pointer-events-none">
+        <div className={`absolute top-0 left-0 bottom-0 w-1 ${isRequested ? 'bg-slate-500' : (isPending ? 'bg-amber-500' : 'bg-blue-600')}`}></div>
       </div>
 
-      <div className="flex justify-between items-start mb-3 border-b border-slate-200/80 dark:border-white/10 pb-3 pl-1 relative z-20">
+      <div className="flex justify-between items-start mb-3 border-b border-slate-200 dark:border-slate-800 pb-3 pl-1.5 relative z-20">
         <div className="flex flex-col gap-2 w-full">
           <div className="flex justify-between items-start w-full gap-2">
-            <div className="shrink-0 relative z-10 flex flex-col items-end gap-1">
+            <div className="shrink-0 relative z-10 flex flex-col items-start gap-1">
               {j.isUrgent && (
-                <span className="bg-red-500 text-white border border-red-600 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm max-w-[150px] text-center leading-tight mb-1 flex items-center gap-1 animate-pulse">
+                <span className="bg-red-600 text-white px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" /> URGENTE
                 </span>
               )}
               {j.tripType === 'simple' && (
-                <span className="bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800/50 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm max-w-[150px] text-center leading-tight mb-1">SERVICIO</span>
+                <span className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider">SERVICIO</span>
               )}
               {ident !== 'S/N' && (
-                <div className="transform scale-[0.80] origin-top-left mb-0.5">
+                <div className="transform scale-[0.82] origin-top-left mb-0.5">
                   <LicensePlateBadge text={ident} />
                   {j.vin && ident !== j.vin && (
                     <div className="mr-1 mt-1"><VinPlateBadge vin={j.vin} /></div>
@@ -503,7 +490,7 @@ export default function JobCard({ j, ...props }) {
                 </div>
               )}
               {(j.checklist?.transitNotes || j.draft?.formData?.transitNotes) && (
-                <span className="bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800/50 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm max-w-[150px] text-center leading-tight mb-1 flex items-center gap-1 animate-pulse">
+                <span className="bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" /> NOTA EN RUTA
                 </span>
               )}
@@ -511,7 +498,7 @@ export default function JobCard({ j, ...props }) {
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setExpenseModalJob && setExpenseModalJob(j); }}
-                  className="bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm text-center leading-tight mb-1 flex items-center gap-1 cursor-pointer hover:bg-emerald-200 dark:hover:bg-emerald-900/80 transition-colors"
+                  className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase tracking-wider flex items-center gap-1 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors"
                   title="Ver / registrar gastos"
                 >
                   <Receipt className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
@@ -521,59 +508,53 @@ export default function JobCard({ j, ...props }) {
             </div>
 
             <div className="flex items-center gap-1 relative shrink-0 z-50">
-              {isAdminView && <button onClick={() => onEditJob(j)} className="p-2 bg-white/40 dark:bg-black/40 text-blue-600 dark:text-blue-400 hover:bg-white/60 dark:hover:bg-black/60 rounded-xl transition-colors backdrop-blur-sm border border-white/20 shadow-sm"><Edit2 className="w-5 h-5" /></button>}
-              <button onClick={() => setMenuOpenId(menuOpenId === j.id ? null : j.id)} className="p-2 bg-white/40 dark:bg-black/40 text-slate-700 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-black/60 rounded-xl transition-colors backdrop-blur-sm border border-white/20 shadow-sm"><MoreVertical className="w-5 h-5" /></button>
-              {/* --- OPTIMIZACIÓN: z-[999] para aplastar cualquier capa inferior --- */}
+              {isAdminView && <button onClick={() => onEditJob(j)} className="p-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-colors border border-slate-200 dark:border-slate-700"><Edit2 className="w-4 h-4" /></button>}
+              <button onClick={() => setMenuOpenId(menuOpenId === j.id ? null : j.id)} className="p-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-colors border border-slate-200 dark:border-slate-700"><MoreVertical className="w-4 h-4" /></button>
               {menuOpenId === j.id && (
-                <div className="absolute right-0 top-10 bg-white/20 dark:bg-black/50 backdrop-blur-lg border border-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.3)] rounded-xl w-56 z-[999] overflow-hidden text-xs dark:text-slate-200">
+                <div className="absolute right-0 top-9 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-lg rounded-lg w-56 z-[999] overflow-hidden text-xs text-slate-700 dark:text-slate-200 divide-y divide-slate-100 dark:divide-slate-800">
                   <button onClick={() => {
                     const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
-                    // FIX iOS Clipboard: \r\n instead of \n
                     const textToShare = `📍 Sigue en tiempo real todos los traslados de ${j.client || 'tu empresa'} aquí:\r\n${url}`;
                     const textArea = document.createElement("textarea");
                     textArea.value = textToShare; textArea.style.position = "fixed"; document.body.appendChild(textArea);
                     textArea.focus(); textArea.select();
                     try { document.execCommand('copy'); showAlert("✅ Portal de Cliente copiado. ¡Pégalo en WhatsApp!"); } catch (e) { }
                     document.body.removeChild(textArea); setMenuOpenId(null);
-                  }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"><Navigation className="w-4 h-4" /> Portal Cliente</button>
+                  }} className="w-full text-left px-3 py-2.5 font-semibold flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-blue-600 dark:text-blue-400"><Navigation className="w-4 h-4" /> Portal Cliente</button>
 
                   {isAccepted && (
                     <button onClick={() => {
                       const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
-                      // FIX iOS WhatsApp: \r\n instead of \n
                       const textToShare = `📍 Hola! El vehículo ${ident} va en camino a ${j.destination || 'su destino'}. Puedes seguir el traslado en tiempo real aquí:\r\n${url}`;
                       window.open(`https://wa.me/?text=${encodeURIComponent(textToShare)}`, '_blank');
                       setMenuOpenId(null);
-                    }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-t border-slate-50 dark:border-slate-700/50"><Share2 className="w-4 h-4" /> Notificar Receptor</button>
+                    }} className="w-full text-left px-3 py-2.5 font-semibold flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-emerald-600 dark:text-emerald-400"><Share2 className="w-4 h-4" /> Notificar Receptor</button>
                   )}
 
                   {cpyWapp && (
-                    <button onClick={() => { cpyWapp(j); setMenuOpenId(null); }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-t border-slate-50 dark:border-slate-700/50">
+                    <button onClick={() => { cpyWapp(j); setMenuOpenId(null); }} className="w-full text-left px-3 py-2.5 font-semibold flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">
                       <Copy className="w-4 h-4" /> Copiar Resumen WhatsApp
                     </button>
                   )}
 
                   {(isAccepted || isAdminView) && (
-                    <button onClick={() => { setExpenseModalJob && setExpenseModalJob(j); setMenuOpenId(null); }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-t border-slate-50 dark:border-slate-700/50">
+                    <button onClick={() => { setExpenseModalJob && setExpenseModalJob(j); setMenuOpenId(null); }} className="w-full text-left px-3 py-2.5 font-semibold flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-emerald-600 dark:text-emerald-400">
                       <Receipt className="w-4 h-4" /> Ingreso de Gastos
                     </button>
                   )}
 
-
-                  {/* NUEVO BOTÓN: DESHACER PASO */}
                   {isAccepted && j.phase && j.phase !== 'claimed' && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
-                    <button onClick={() => handleUndoPhase(j)} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-t border-slate-50 dark:border-slate-700/50">
+                    <button onClick={() => handleUndoPhase(j)} className="w-full text-left px-3 py-2.5 font-semibold flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-amber-600 dark:text-amber-400">
                       <RefreshCw className="w-4 h-4" /> Deshacer último paso
                     </button>
                   )}
 
-                  {/* El botón de traspaso solo es visible para el dueño del trabajo o un admin */}
                   {isAccepted && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
-                    <button onClick={() => { setRelayPromptJob(j); setMenuOpenId(null); }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-t border-slate-50 dark:border-slate-700/50"><Users className="w-4 h-4" /> Traspaso a Compañero</button>
+                    <button onClick={() => { setRelayPromptJob(j); setMenuOpenId(null); }} className="w-full text-left px-3 py-2.5 font-semibold flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"><Users className="w-4 h-4" /> Traspaso a Compañero</button>
                   )}
 
                   {isAdminView && (
-                    <button onClick={() => { setForceCloseJob(j); setMenuOpenId(null); }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-t border-slate-50 dark:border-slate-700/50">
+                    <button onClick={() => { setForceCloseJob(j); setMenuOpenId(null); }} className="w-full text-left px-3 py-2.5 font-semibold flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-emerald-600 dark:text-emerald-400">
                       <CheckCircle className="w-4 h-4" /> Forzar Cierre
                     </button>
                   )}
@@ -583,27 +564,26 @@ export default function JobCard({ j, ...props }) {
                       showConfirm("¿Quitar este vehículo del grupo de flota?", async () => {
                         try { await updateDoc(doc(db, 'transport_jobs', j.id), { fleetGroup: deleteField() }); setMenuOpenId(null); showAlert("Vehículo removido de la flota."); } catch (e) { showAlert("Error al desagrupar."); }
                       });
-                    }} className="w-full text-left p-3 font-bold flex gap-2 hover:bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border-t border-slate-50 dark:border-slate-700/50">
+                    }} className="w-full text-left px-3 py-2.5 font-semibold flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300">
                       <Truck className="w-4 h-4" /> Quitar de Flota
                     </button>
                   )}
 
                   {isAccepted && (!j.phase || j.phase === 'claimed' || j.phase === 'arrived_pickup') && (isAdminView || j.acceptedByEmail === currentUserEmail) && (
-                    <button onClick={() => { showConfirm("¿Deseas cancelar la aceptación?", async () => { try { await updateDoc(doc(db, 'transport_jobs', j.id), { status: 'pending', acceptedByEmail: deleteField(), phase: deleteField(), liveLocation: deleteField(), arrivedPickupAt: deleteField(), waitTimeMinutes: deleteField() }); setMenuOpenId(null); showAlert("✅ Traslado liberado."); } catch (err) { showAlert("Error al liberar."); } }); }} className="w-full text-left p-3 font-bold flex gap-2 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:bg-amber-900/30 border-t border-slate-50 dark:border-slate-700/50">
+                    <button onClick={() => { showConfirm("¿Deseas cancelar la aceptación?", async () => { try { await updateDoc(doc(db, 'transport_jobs', j.id), { status: 'pending', acceptedByEmail: deleteField(), phase: deleteField(), liveLocation: deleteField(), arrivedPickupAt: deleteField(), waitTimeMinutes: deleteField() }); setMenuOpenId(null); showAlert("✅ Traslado liberado."); } catch (err) { showAlert("Error al liberar."); } }); }} className="w-full text-left px-3 py-2.5 font-semibold flex items-center gap-2 text-amber-600 dark:text-amber-400 hover:bg-slate-50 dark:hover:bg-slate-800">
                       <X className="w-4 h-4" /> Cancelar Aceptación (Soltar)
                     </button>
                   )}
 
                   {(isAdminView || j.acceptedByEmail === currentUserEmail) && (
-                    <button onClick={() => { setJobToFail(j); setMenuOpenId(null); }} className="w-full text-left p-3 font-bold flex gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-900/30 border-t border-slate-50 dark:border-slate-700/50"><XCircle className="w-4 h-4" /> Cancelar / Falló</button>
+                    <button onClick={() => { setJobToFail(j); setMenuOpenId(null); }} className="w-full text-left px-3 py-2.5 font-semibold flex items-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"><XCircle className="w-4 h-4" /> Cancelar / Falló</button>
                   )}
                 </div>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* NUEVO: Miniatura con inteligencia histórica (Busca la foto actual o la última registrada) */}
+          <div className="flex items-center gap-2.5">
             {(() => {
               const displayPhoto = j.checklist?.photos?.front || j.draft?.formData?.photos?.front || latestVehiclePhotos[ident];
               if (!displayPhoto) return null;
@@ -612,43 +592,41 @@ export default function JobCard({ j, ...props }) {
                   src={displayPhoto}
                   alt="Frente"
                   onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(displayPhoto); }}
-                  className="w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer hover:opacity-80 transition-opacity shrink-0"
+                  className="w-10 h-10 rounded-md object-cover border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity shrink-0"
                 />
               );
             })()}
             <div>
               {j.tripType === 'simple' ? (
-                <p className="text-lg font-bold text-purple-700 dark:text-purple-300 leading-tight mt-1 break-words pr-2">{j.description || 'Servicio en Terreno'}</p>
+                <p className="text-base font-bold text-slate-900 dark:text-slate-100 leading-tight mt-0.5 break-words pr-2">{j.description || 'Servicio en Terreno'}</p>
               ) : (
-                <p className="text-lg font-bold text-slate-800 dark:text-white leading-tight mt-1 break-words pr-2 tracking-tight">{j.brand} {j.model}</p>
+                <p className="text-base font-bold text-slate-900 dark:text-slate-100 leading-tight mt-0.5 break-words pr-2 tracking-tight">{j.brand} {j.model}</p>
               )}
-              <p className="text-[12px] font-semibold text-slate-600 dark:text-slate-400 mt-0.5 uppercase tracking-wider flex items-center flex-wrap gap-2">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5 uppercase tracking-wider flex items-center flex-wrap gap-2">
                 {j.client}
-                {j.fleetGroup && <span className="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 px-1.5 py-0.5 rounded text-[9px] font-black border border-indigo-200 dark:border-indigo-800/50">EN FLOTA (CONVOY)</span>}
+                {j.fleetGroup && <span className="bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded text-[10px] font-semibold border border-blue-200 dark:border-blue-800/60">EN FLOTA (CONVOY)</span>}
               </p>
               {j.createdBy && (
-                <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">Creado por: {j.createdBy}</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Creado por: {j.createdBy}</p>
               )}
             </div>
           </div>
         </div>
       </div>
 
-      <div className="mt-2 relative z-10 flex flex-col pt-1 pb-1">
+      <div className="mt-1 relative z-10 flex flex-col pt-1 pb-1 pl-1.5">
         {/* TIMELINE SECTION */}
-        <div className="relative pl-[26px] flex flex-col gap-4">
+        <div className="relative pl-6 flex flex-col gap-3.5">
 
           {/* Continuous Timeline Line */}
           {(j.destination || j.tripType !== 'simple') && (
-            <div className="absolute left-[7.5px] top-[14px] bottom-[14px] w-[1px] bg-slate-300 dark:bg-slate-500/50 z-10"></div>
+            <div className="absolute left-[7px] top-[12px] bottom-[12px] w-px bg-slate-300 dark:bg-slate-700 z-10"></div>
           )}
 
-          {/* Floating Date Badge (Right Side) */}
+          {/* Date Badge (Right Side) */}
           {j.scheduledDate && (
-            <div className="absolute right-0 -top-2 bg-[#3b82f6] rounded-xl w-[55px] h-[50px] flex flex-col items-center justify-center shadow-[0_4px_10px_rgba(59,130,246,0.3)] z-30 border border-blue-400/30">
-              <div className="absolute -top-1.5 left-[10px] w-1.5 h-3 bg-slate-200 rounded-full shadow-sm"></div>
-              <div className="absolute -top-1.5 right-[10px] w-1.5 h-3 bg-slate-200 rounded-full shadow-sm"></div>
-              <span className="text-[8px] font-black text-blue-100 uppercase tracking-widest leading-none mt-1">
+            <div className="absolute right-0 -top-1 bg-slate-100 dark:bg-slate-800 rounded-md px-2.5 py-1.5 flex flex-col items-center justify-center z-30 border border-slate-200 dark:border-slate-700">
+              <span className="text-[9px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-none">
                 {(() => {
                   const today = new Date(); today.setHours(0, 0, 0, 0);
                   const [y, m, d] = j.scheduledDate.split('-');
@@ -659,43 +637,40 @@ export default function JobCard({ j, ...props }) {
                   return `${d}/${m}`;
                 })()}
               </span>
-              <span className="text-[13px] font-black text-white mt-1 leading-none">{j.scheduledTime || '--:--'}</span>
+              <span className="text-xs font-mono font-bold text-slate-800 dark:text-slate-200 mt-1 leading-none">{j.scheduledTime || '--:--'}</span>
             </div>
           )}
 
           {/* Origin */}
           <div className="relative">
-            <div className="absolute -left-[24px] top-1.5 w-3 h-3 rounded-full bg-slate-400 dark:bg-slate-300 z-20 shadow-sm"></div>
+            <div className="absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full bg-slate-400 dark:bg-slate-500 z-20"></div>
 
-            <div className="flex items-center gap-1.5 mb-0.5">
-              <p className="text-[12px] text-slate-500 dark:text-slate-400 font-semibold">{j.tripType === 'simple' ? 'Lugar:' : 'Desde:'}</p>
-              <p className="text-[15px] font-bold text-slate-800 dark:text-white pr-20 leading-snug uppercase">{j.origin || 'Por definir'}</p>
+            <div className="flex items-baseline gap-1.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium shrink-0">{j.tripType === 'simple' ? 'Lugar:' : 'Desde:'}</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 pr-16 leading-snug uppercase">{j.origin || 'Por definir'}</p>
             </div>
           </div>
 
           {/* Intermediate Tags (PRT, Regiones, Waypoints) */}
           {(j.tripType !== 'simple' || j.waypoints?.length > 0) && (
-            <div className="relative z-20 py-1 flex flex-col items-start gap-3">
+            <div className="relative z-20 py-0.5 flex flex-col items-start gap-2">
               {j.tripType === 'revision' && (
-                <div className="relative inline-block bg-[#2a261c] border border-amber-600/30 px-3 py-1 rounded-full">
-                  <div className="absolute -left-[18.5px] top-1/2 w-[18px] h-[1px] bg-slate-500/50 -translate-y-1/2 z-0"></div>
-                  <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest shadow-sm relative z-10">
+                <div className="relative inline-block bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 px-2.5 py-0.5 rounded">
+                  <p className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
                     1RA PARADA: {j.destination ? j.destination.split(' -> ')[0] : 'PRT'}
                   </p>
                 </div>
               )}
               {j.tripType === 'viaje' && (
-                <div className="relative inline-block bg-[#1c2235] border border-indigo-500/30 px-3 py-1 rounded-full">
-                  <div className="absolute -left-[18.5px] top-1/2 w-[18px] h-[1px] bg-slate-500/50 -translate-y-1/2 z-0"></div>
-                  <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest shadow-sm relative z-10">
+                <div className="relative inline-block bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 px-2.5 py-0.5 rounded">
+                  <p className="text-[10px] font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wider">
                     A REGIONES
                   </p>
                 </div>
               )}
               {j.waypoints && j.waypoints.length > 0 && (
-                <div className="relative inline-block bg-[#2a261c] border border-amber-600/30 px-3 py-1 rounded-full">
-                  <div className="absolute -left-[18.5px] top-1/2 w-[18px] h-[1px] bg-slate-500/50 -translate-y-1/2 z-0"></div>
-                  <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest shadow-sm relative z-10">
+                <div className="relative inline-block bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 px-2.5 py-0.5 rounded">
+                  <p className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
                     {j.waypoints.length} PARADA{j.waypoints.length > 1 ? 'S' : ''} INTERMEDIA{j.waypoints.length > 1 ? 'S' : ''}
                   </p>
                 </div>
@@ -706,24 +681,24 @@ export default function JobCard({ j, ...props }) {
           {/* Destination */}
           {(j.destination || j.tripType !== 'simple') && (
             <div className="relative">
-              <div className="absolute -left-[24px] top-1.5 w-3 h-3 rounded-full bg-[#60a5fa] z-20 shadow-sm"></div>
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <p className="text-[12px] text-blue-600 dark:text-blue-400 font-semibold">Hasta:</p>
-                <p className="text-[15px] font-bold text-blue-700 dark:text-blue-200 pr-20 leading-snug uppercase">{j.tripType === 'revision' ? getRtFinalDestination(j) : (j.destination || 'Por definir')}</p>
+              <div className="absolute -left-[21px] top-1.5 w-2.5 h-2.5 rounded-full bg-blue-600 z-20"></div>
+              <div className="flex items-baseline gap-1.5">
+                <p className="text-xs text-blue-600 dark:text-blue-400 font-medium shrink-0">Hasta:</p>
+                <p className="text-sm font-semibold text-blue-700 dark:text-blue-300 pr-16 leading-snug uppercase">{j.tripType === 'revision' ? getRtFinalDestination(j) : (j.destination || 'Por definir')}</p>
               </div>
             </div>
           )}
         </div>
 
-        {/* Contacts & Info Pill Button */}
+        {/* Contacts & Info Button */}
         {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone || j.originAddress || j.originCommune || j.destContactName || j.destContactPhone || j.destAddress || j.destCommune || (j.waypoints && j.waypoints.length > 0)) && (
-          <div className="mt-4 mb-1 flex">
+          <div className="mt-3.5 mb-1 flex">
             <button
               onClick={() => setShowDetails(!showDetails)}
-              className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-transparent dark:hover:bg-slate-800/50 border border-slate-300 dark:border-slate-500/50 rounded-full px-3 py-1.5 transition-colors"
+              className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-md px-2.5 py-1 transition-colors"
             >
               <MapPin className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
-              <span className="text-[11px] font-bold text-slate-700 dark:text-white tracking-wide">
+              <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-200">
                 {showDetails ? 'Ocultar Detalles' : 'Contactos y Waze'}
               </span>
             </button>
@@ -731,33 +706,33 @@ export default function JobCard({ j, ...props }) {
         )}
 
         {showDetails && (
-          <div className="mt-3 mb-4 space-y-2 animate-in fade-in slide-in-from-top-2 duration-300 relative z-20">
+          <div className="mt-3 mb-3 space-y-2 relative z-20">
             {/* BLOQUE ORIGEN */}
             {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone || j.originAddress || j.originCommune) && (
-              <div className="pt-3 border-t border-slate-200 dark:border-slate-700/50 flex flex-col gap-2">
+              <div className="pt-2.5 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-2">
                 {(j.originContactName || j.contactName || j.originContactPhone || j.contactPhone) && (
-                  <div className="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/50">
+                  <div className="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-md border border-slate-200 dark:border-slate-800">
                     <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                      <div className="bg-emerald-100 dark:bg-emerald-900/40 p-2 rounded-lg shrink-0 border border-emerald-200 dark:border-emerald-800/50"><Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /></div>
+                      <div className="bg-emerald-50 dark:bg-emerald-950/40 p-1.5 rounded shrink-0 border border-emerald-200 dark:border-emerald-800/60"><Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /></div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-0.5 truncate">Encargado Origen</p>
-                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{j.originContactName || j.contactName || 'No especificado'}</p>
+                        <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">Encargado Origen</p>
+                        <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{j.originContactName || j.contactName || 'No especificado'}</p>
                       </div>
                     </div>
                     {(j.originContactPhone || j.contactPhone) && (
                       <div className="flex gap-1.5 shrink-0">
-                        <a href={`https://wa.me/${(j.originContactPhone || j.contactPhone).replace(/[^\d]/g, '')}?text=${encodeURIComponent('Hola ' + (j.originContactName || j.contactName || '') + ', soy de LogisticAPP y voy a retirar el vehículo.')}`} target="_blank" rel="noopener noreferrer" className="bg-emerald-600 hover:bg-emerald-500 text-white w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm active:scale-95 text-sm">💬</a>
-                        <a href={`tel:${(j.originContactPhone || j.contactPhone).replace(/[^\d+]/g, '')}`} className="bg-slate-700 hover:bg-slate-600 text-white w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm active:scale-95 text-sm">📞</a>
+                        <a href={`https://wa.me/${(j.originContactPhone || j.contactPhone).replace(/[^\d]/g, '')}?text=${encodeURIComponent('Hola ' + (j.originContactName || j.contactName || '') + ', soy de LogisticAPP y voy a retirar el vehículo.')}`} target="_blank" rel="noopener noreferrer" className="bg-emerald-600 hover:bg-emerald-700 text-white w-8 h-8 rounded-md flex items-center justify-center transition-colors" title="WhatsApp"><MessageSquare className="w-3.5 h-3.5" /></a>
+                        <a href={`tel:${(j.originContactPhone || j.contactPhone).replace(/[^\d+]/g, '')}`} className="bg-slate-700 hover:bg-slate-800 text-white w-8 h-8 rounded-md flex items-center justify-center transition-colors" title="Llamar"><Phone className="w-3.5 h-3.5" /></a>
                       </div>
                     )}
                   </div>
                 )}
 
                 {(j.originAddress || j.originCommune) && (
-                  <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/30 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/50 mt-1">
-                    <p className="text-[11px] font-medium text-slate-600 dark:text-slate-300 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-slate-500" />{j.originAddress}{j.originAddress && j.originCommune ? ', ' : ''}{j.originCommune}</p>
+                  <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/40 p-2 rounded-md border border-slate-200 dark:border-slate-800">
+                    <p className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate mr-2"><MapPin className="w-3.5 h-3.5 inline mr-1 text-slate-400" />{j.originAddress}{j.originAddress && j.originCommune ? ', ' : ''}{j.originCommune}</p>
                     {isAccepted && (
-                      <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.originAddress || ''} ${j.originCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 dark:hover:bg-blue-800/50 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition-colors border border-blue-200 dark:border-blue-800/50"><Navigation className="w-3 h-3" /> Waze</a>
+                      <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.originAddress || ''} ${j.originCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1 shrink-0 transition-colors border border-blue-200 dark:border-blue-800/60"><Navigation className="w-3 h-3" /> Waze</a>
                     )}
                   </div>
                 )}
@@ -766,30 +741,30 @@ export default function JobCard({ j, ...props }) {
 
             {/* BLOQUE DESTINO */}
             {(j.destContactName || j.destContactPhone || j.destAddress || j.destCommune) && (
-              <div className="pt-2 border-t border-slate-200 dark:border-slate-700/50 flex flex-col gap-2">
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-2">
                 {(j.destContactName || j.destContactPhone) && (
-                  <div className="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700/50">
+                  <div className="flex items-center justify-between gap-2 bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-md border border-slate-200 dark:border-slate-800">
                     <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                      <div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-lg shrink-0 border border-blue-200 dark:border-blue-800/50"><Users className="w-4 h-4 text-blue-600 dark:text-blue-400" /></div>
+                      <div className="bg-blue-50 dark:bg-blue-950/50 p-1.5 rounded shrink-0 border border-blue-200 dark:border-blue-800/60"><Users className="w-4 h-4 text-blue-600 dark:text-blue-400" /></div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-0.5 truncate">Encargado Destino</p>
-                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{j.destContactName || 'No especificado'}</p>
+                        <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">Encargado Destino</p>
+                        <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{j.destContactName || 'No especificado'}</p>
                       </div>
                     </div>
                     {j.destContactPhone && (
                       <div className="flex gap-1.5 shrink-0">
-                        <a href={`https://wa.me/${j.destContactPhone.replace(/[^\d]/g, '')}?text=${encodeURIComponent('Hola ' + (j.destContactName || '') + ', soy de LogisticAPP y voy en camino al destino con el vehículo.')}`} target="_blank" rel="noopener noreferrer" className="bg-emerald-600 hover:bg-emerald-500 text-white w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm active:scale-95 text-sm">💬</a>
-                        <a href={`tel:${j.destContactPhone.replace(/[^\d+]/g, '')}`} className="bg-slate-700 hover:bg-slate-600 text-white w-8 h-8 rounded-lg flex items-center justify-center transition-all shadow-sm active:scale-95 text-sm">📞</a>
+                        <a href={`https://wa.me/${j.destContactPhone.replace(/[^\d]/g, '')}?text=${encodeURIComponent('Hola ' + (j.destContactName || '') + ', soy de LogisticAPP y voy en camino al destino con el vehículo.')}`} target="_blank" rel="noopener noreferrer" className="bg-emerald-600 hover:bg-emerald-700 text-white w-8 h-8 rounded-md flex items-center justify-center transition-colors" title="WhatsApp"><MessageSquare className="w-3.5 h-3.5" /></a>
+                        <a href={`tel:${j.destContactPhone.replace(/[^\d+]/g, '')}`} className="bg-slate-700 hover:bg-slate-800 text-white w-8 h-8 rounded-md flex items-center justify-center transition-colors" title="Llamar"><Phone className="w-3.5 h-3.5" /></a>
                       </div>
                     )}
                   </div>
                 )}
 
                 {(j.destAddress || j.destCommune) && (
-                  <div className="flex justify-between items-center bg-blue-50 dark:bg-blue-900/20 p-2.5 rounded-xl border border-blue-200 dark:border-blue-800/40 mt-1">
-                    <p className="text-[11px] font-medium text-blue-800 dark:text-blue-300 truncate mr-2 ml-1"><MapPin className="w-3 h-3 inline mr-1 text-blue-500" />{j.destAddress}{j.destAddress && j.destCommune ? ', ' : ''}{j.destCommune}</p>
+                  <div className="flex justify-between items-center bg-blue-50/60 dark:bg-blue-950/30 p-2 rounded-md border border-blue-200 dark:border-blue-800/60">
+                    <p className="text-xs font-medium text-blue-800 dark:text-blue-300 truncate mr-2"><MapPin className="w-3.5 h-3.5 inline mr-1 text-blue-500" />{j.destAddress}{j.destAddress && j.destCommune ? ', ' : ''}{j.destCommune}</p>
                     {isAccepted && (
-                      <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.destAddress || ''} ${j.destCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shrink-0 shadow-md transition-colors"><Navigation className="w-3 h-3" /> Waze</a>
+                      <a href={`https://waze.com/ul?q=${encodeURIComponent(`${j.destAddress || ''} ${j.destCommune || ''}`)}&navigate=yes`} target="_blank" rel="noopener noreferrer" className="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1 shrink-0 transition-colors"><Navigation className="w-3 h-3" /> Waze</a>
                     )}
                   </div>
                 )}
@@ -799,11 +774,11 @@ export default function JobCard({ j, ...props }) {
         )}
 
         {j.waypoints && j.waypoints.length > 0 && showDetails && (
-          <div className="mb-4 pt-2 border-t border-slate-200 dark:border-slate-700/50">
-            <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest mb-1.5 flex items-center gap-1"><MapPin className="w-3 h-3" /> Ruta intermedia:</p>
+          <div className="mb-3 pt-2 border-t border-slate-200 dark:border-slate-800">
+            <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-1.5 flex items-center gap-1"><MapPin className="w-3 h-3" /> Ruta intermedia:</p>
             <div className="flex flex-col gap-1">
               {j.waypoints.map((wp, i) => (
-                <span key={i} className="text-[11px] font-bold text-slate-700 dark:text-slate-300 leading-snug break-words"><span className="font-black mr-1 text-slate-500">{i + 1}.</span> {wp}</span>
+                <span key={i} className="text-xs font-medium text-slate-700 dark:text-slate-300 leading-snug break-words"><span className="font-mono font-semibold mr-1 text-slate-500">{i + 1}.</span> {wp}</span>
               ))}
             </div>
           </div>
@@ -811,37 +786,31 @@ export default function JobCard({ j, ...props }) {
 
         {/* STATUS AND ANIMATION */}
         {(() => {
-          let statusIcon = <CheckCircle className="w-4 h-4 text-blue-500" />;
+          let statusIcon = <CheckCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />;
           let statusTitle = isAccepted ? (j.assignedDrivers?.find(d => d.email === j.acceptedByEmail)?.name || "Conductor") : "Buscando conductor";
           let statusSub = isAccepted ? (j.tripType === 'simple' ? `Asignado a ${j.origin}` : `Retira en ${j.origin}`) : `Para ${j.origin}`;
-          let highlight = false;
           let animationType = 'searching';
 
           if (j.tripType === 'revision' && step4Done) {
             statusTitle = j.prt_result === 'rechazado' ? 'Revisión Rechazada' : 'Revisión Aprobada';
-            statusIcon = <CheckCircle className={`w-4 h-4 ${j.prt_result === 'rechazado' ? 'text-red-500' : 'text-green-500'}`} />;
+            statusIcon = <CheckCircle className={`w-4 h-4 ${j.prt_result === 'rechazado' ? 'text-red-500' : 'text-emerald-600'}`} />;
             statusSub = `En camino a: ${getRtFinalDestination(j)}`;
-            highlight = true;
             animationType = j.prt_result === 'rechazado' ? 'prt_rejected' : 'prt_approved';
           } else if (step3Done || j.phase === 'arrived_destination') {
             statusTitle = j.tripType === 'simple' ? 'Trabajo Terminado' : (j.tripType === 'revision' ? 'En PRT' : 'Llegué a destino');
             statusSub = j.tripType === 'simple' ? (j.destination || '') : (j.tripType === 'revision' ? 'Planta' : j.destination);
-            highlight = true;
             animationType = (j.tripType === 'simple' || j.phase === 'arrived_destination' || step4Done) ? 'completed' : 'arrived';
           } else if (j.phase === 'arrived_waypoint') {
             statusTitle = 'En Parada Intermedia';
             statusSub = (j.waypoints && j.waypoints[0]) || '';
-            highlight = true;
             animationType = 'arrived';
           } else if (j.phase === 'departed_waypoint' || j.phase === 'picked_up' || step2Done) {
             statusTitle = j.phase === 'departed_waypoint' ? 'Camino a Destino Final' : (j.tripType === 'simple' ? 'Realizando Trabajo' : (j.waypoints?.length > 0 ? 'Camino a 1ra Parada' : 'Vehículo en ruta'));
             statusSub = '';
-            highlight = true;
             animationType = 'transit';
           } else if (j.phase === 'arrived_pickup') {
             statusTitle = j.tripType === 'simple' ? 'En Lugar' : 'Vehículo en mi poder';
             statusSub = '';
-            highlight = true;
             animationType = 'picked_up';
           } else if (isAccepted) {
             const driverName = j.assignedDrivers?.find(d => d.email === j.acceptedByEmail)?.name;
@@ -849,27 +818,25 @@ export default function JobCard({ j, ...props }) {
             animationType = 'assigned';
           }
 
-          // NUEVO DISEÑO PARA LA SECCIÓN DE ANIMACIÓN:
           return (
-            <div className="mt-2 pt-4 flex flex-col border-t border-slate-200 dark:border-slate-700/50">
+            <div className="mt-2 pt-3 flex flex-col border-t border-slate-200 dark:border-slate-800">
               {animationType === 'searching' ? (
-                <div className="flex items-center justify-center gap-2 mb-3 mt-1">
-                  <Search className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                  <p className="text-[15px] font-bold text-slate-800 dark:text-white tracking-wide">{statusTitle}</p>
+                <div className="flex items-center justify-center gap-2 mb-2 mt-0.5">
+                  <Search className="w-3.5 h-3.5 text-slate-400" />
+                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">{statusTitle}</p>
                 </div>
               ) : (
-                <div className="flex items-center gap-3 w-full bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 shadow-inner mb-3">
-                  <div className="p-1 shrink-0 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="flex items-center gap-2.5 w-full bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-md border border-slate-200 dark:border-slate-800 mb-2">
+                  <div className="p-1 shrink-0 bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-700">
                     {statusIcon}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm text-slate-800 dark:text-white truncate">{statusTitle}</p>
-                    {statusSub && <p className="text-[11px] font-medium text-slate-600 dark:text-slate-400 truncate">{statusSub}</p>}
+                    <p className="font-semibold text-xs text-slate-800 dark:text-slate-100 truncate">{statusTitle}</p>
+                    {statusSub && <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{statusSub}</p>}
                   </div>
                 </div>
               )}
 
-              {/* Solo mostramos la animación gigante si NO estamos en "Buscando conductor" */}
               {animationType !== 'searching' && (
                 <div className="scale-75 origin-top mb-[-2rem]">
                   <StatusAnimation type={animationType} vehicleType={j.vehicleType} isChassisCab={j.isChassisCab} origin={j.origin} destination={j.tripType === 'revision' ? getRtFinalDestination(j) : j.destination} assignedDrivers={j.assignedDrivers} />
@@ -881,7 +848,7 @@ export default function JobCard({ j, ...props }) {
       </div>
 
       {j.phase === 'arrived_pickup' && j.arrivedPickupAt && (
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-3 pl-1.5">
           <div className="flex-1">
             <WaitTimerBadge arrivedAt={j.arrivedPickupAt} role={role} />
           </div>
@@ -894,35 +861,34 @@ export default function JobCard({ j, ...props }) {
                 showAlert("✅ Tiempo de espera cancelado.");
               } catch (e) { showAlert("Error al cancelar."); }
             });
-          }} className="bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 p-2.5 rounded-xl border border-red-200 dark:border-red-800/50 shadow-sm active:scale-95 transition-all flex items-center justify-center shrink-0" title="Cancelar Timer">
-            <XCircle className="w-5 h-5" />
+          }} className="bg-red-50 dark:bg-red-950/30 hover:bg-red-100 text-red-600 dark:text-red-400 p-2.5 rounded-md border border-red-200 dark:border-red-900/50 transition-colors flex items-center justify-center shrink-0" title="Cancelar Timer">
+            <XCircle className="w-4 h-4" />
           </button>
         </div>
       )}
 
-
-      {/* NUEVO: PANEL DE ALERTA DE DOCUMENTOS VENCIDOS O POR VENCER */}
+      {/* PANEL DE ALERTA DE DOCUMENTOS VENCIDOS O POR VENCER */}
       {expiringDocs.length > 0 && (
-        <div className="mb-2 mt-3 bg-red-50 dark:bg-red-900/30 border-2 border-red-200 dark:border-red-800/50 p-3 rounded-xl shadow-sm animate-in fade-in">
-          <p className="text-[10px] font-black text-red-600 dark:text-red-400 uppercase tracking-widest flex items-center gap-1.5 mb-1.5">
-            <AlertCircle className="w-4 h-4" /> Alerta de Documentos
+        <div className="mb-2 mt-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 p-3 rounded-md pl-3.5">
+          <p className="text-[10px] font-semibold text-red-700 dark:text-red-400 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
+            <AlertCircle className="w-3.5 h-3.5" /> Alerta de Documentos
           </p>
-          <ul className="text-xs font-bold text-red-800 dark:text-red-300 space-y-1">
+          <ul className="text-xs font-mono font-medium text-red-800 dark:text-red-300 space-y-1">
             {expiringDocs.map((docAlert, idx) => (
-              <li key={idx} className="bg-white dark:bg-slate-900 px-2 py-1 rounded-md border border-red-100 dark:border-red-800/50">{docAlert}</li>
+              <li key={idx} className="bg-white dark:bg-slate-900 px-2 py-1 rounded border border-red-200 dark:border-red-900/50">{docAlert}</li>
             ))}
           </ul>
         </div>
       )}
 
       {availableDocPhotoKeys.length > 0 && (
-        <div className="mt-2 mb-1">
+        <div className="mt-2 mb-1 pl-1.5">
           <button
             type="button"
             onClick={() => setShowDocsModal(true)}
-            className="w-full bg-blue-950/40 hover:bg-blue-900/50 text-blue-300 border border-blue-500/30 font-bold py-2.5 px-3 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-2"
+            className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-semibold py-2 px-3 rounded-md text-xs transition-colors flex justify-center items-center gap-2"
           >
-            <FileText className="w-4 h-4 text-blue-400" />
+            <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             <span>Ver Fotos Documentos del Vehículo ({availableDocPhotoKeys.length})</span>
           </button>
         </div>
@@ -932,8 +898,8 @@ export default function JobCard({ j, ...props }) {
         const activeDocHref = j.guideLink || j.guideUrl || j.docLink || j.docUrl || j.rtLink || j.rtDoc || (j.rtData && j.rtData.link) || j.pdfUrl || j.fileUrl || j.checklist?.guiaDespachoPdf || j.checklist?.guiaDespachoLink;
         if (activeDocHref) {
           return (
-            <div className="mt-3">
-              <a href={activeDocHref} target="_blank" rel="noreferrer" className="w-full bg-cyan-50 dark:bg-cyan-900/30 border border-cyan-200 dark:border-cyan-800/50 text-cyan-700 dark:text-cyan-400 hover:bg-cyan-100 dark:bg-cyan-900/40 font-bold py-2.5 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-2">
+            <div className="mt-2 pl-1.5">
+              <a href={activeDocHref} target="_blank" rel="noreferrer" className="w-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 font-semibold py-2 rounded-md text-xs transition-colors flex justify-center items-center gap-2">
                 <FileText className="w-4 h-4" /> Ver Doc. Adjunto (Guía / RT)
               </a>
             </div>
@@ -942,29 +908,29 @@ export default function JobCard({ j, ...props }) {
         return null;
       })()}
 
-      <div className="mt-auto pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2">
+      <div className="mt-auto pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2 pl-1.5">
         {isRequested && (
           <>
             {isAdminView ? (
               <div className="flex gap-2">
-                <button onClick={() => handleApproveRequest(j)} disabled={processingId === `${j.id}-approve`} className="flex-1 bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-1 disabled:opacity-50">
+                <button onClick={() => handleApproveRequest(j)} disabled={processingId === `${j.id}-approve`} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-md text-xs transition-colors flex justify-center items-center gap-1.5 disabled:opacity-50">
                   {processingId === `${j.id}-approve` ? <Clock className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />} {processingId === `${j.id}-approve` ? 'Procesando...' : 'Aprobar'}
                 </button>
-                <button onClick={() => handleRejectRequest(j)} className="flex-1 bg-red-100 dark:bg-red-900/40 hover:bg-red-200 text-red-700 dark:text-red-400 font-bold py-3 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-1">
+                <button onClick={() => handleRejectRequest(j)} className="flex-1 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/50 font-semibold py-2.5 rounded-md text-xs transition-colors flex justify-center items-center gap-1.5">
                   <XCircle className="w-4 h-4" /> Rechazar
                 </button>
               </div>
             ) : (
-              <div className="bg-pink-50 dark:bg-pink-900/30 border border-pink-200 dark:border-pink-800/50 text-pink-700 dark:text-pink-400 text-xs font-bold text-center py-3 rounded-xl flex items-center justify-center gap-2">
+              <div className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold text-center py-2.5 rounded-md flex items-center justify-center gap-2">
                 <Clock className="w-4 h-4" /> Pendiente de Aprobación
               </div>
             )}
           </>
         )}
         {isAdminView && j.photoOverrideRequested && !j.photoOverrideApproved && (
-          <div className="mb-2 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl">
-            <p className="text-xs font-bold text-orange-700 dark:text-orange-400 mb-2">📸 Conductor solicita omitir fotos de llegada</p>
-            <button onClick={() => handleApprovePhotoOverride(j)} disabled={processingId === `${j.id}-approve-photo`} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded-lg text-xs shadow-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+          <div className="mb-1 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-md">
+            <p className="text-xs font-semibold text-amber-800 dark:text-amber-300 mb-2 flex items-center gap-1.5"><Camera className="w-3.5 h-3.5" /> Conductor solicita omitir fotos de llegada</p>
+            <button onClick={() => handleApprovePhotoOverride(j)} disabled={processingId === `${j.id}-approve-photo`} className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2 rounded text-xs transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
               {processingId === `${j.id}-approve-photo` ? <Clock className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />} Aprobar Omisión
             </button>
           </div>
@@ -972,17 +938,17 @@ export default function JobCard({ j, ...props }) {
 
         {(!isRequested && (j.status === 'accepted' || j.status === 'pending_guide') && j.acceptedByEmail !== currentUserEmail) ? (
           <div className="flex flex-col gap-2">
-            <div className="bg-white/10 dark:bg-black/30 backdrop-blur-sm border border-white/20 text-slate-600 dark:text-slate-300 text-xs font-bold text-center py-3 rounded-xl">Vehículo a cargo de un compañero.</div>
+            <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 text-xs font-medium text-center py-2.5 rounded-md">Vehículo a cargo de un compañero.</div>
             {isAdminView && (
               <button
                 type="button"
                 onClick={() => setExpenseModalJob && setExpenseModalJob(j)}
-                className="w-full bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black py-2.5 px-3 rounded-xl text-xs shadow-md transition-all flex items-center justify-center gap-2 active:scale-95"
+                className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-2 px-3 rounded-md text-xs transition-colors flex items-center justify-center gap-2"
               >
                 <Receipt className="w-4 h-4 text-emerald-200" />
                 <span>Ingreso de Gastos</span>
                 {j.expenses && j.expenses.length > 0 && (
-                  <span className="ml-1 bg-white/20 text-white px-2 py-0.5 rounded-full text-[10px] font-black border border-white/20">
+                  <span className="ml-1 bg-emerald-900/60 text-white px-2 py-0.5 rounded font-mono text-[10px] font-semibold">
                     {j.expenses.length} (${j.expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0).toLocaleString('es-CL')})
                   </span>
                 )}
@@ -999,21 +965,21 @@ export default function JobCard({ j, ...props }) {
               <>
                 {isPendingGuide ? (
                   <div className="flex flex-col gap-2">
-                    <div className="bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800/50 text-orange-700 dark:text-orange-400 text-[11px] font-black text-center py-3 rounded-xl animate-pulse flex items-center justify-center gap-1.5 shadow-sm">
+                    <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300 text-[11px] font-semibold text-center py-2.5 rounded-md flex items-center justify-center gap-1.5">
                       <Clock className="w-4 h-4" /> A ESPERA DE GUÍA DE DESPACHO
                     </div>
-                    <button onClick={() => { setGuideUploadJob(j); setGuideLink(''); setGuideFileBase64(null); }} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-3.5 rounded-xl text-sm shadow-md transition-colors flex justify-center items-center gap-2">
-                      <FileText className="w-5 h-5" /> Subir Guía y Finalizar
+                    <button onClick={() => { setGuideUploadJob(j); setGuideLink(''); setGuideFileBase64(null); }} className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2.5 rounded-md text-xs transition-colors flex justify-center items-center gap-2">
+                      <FileText className="w-4 h-4" /> Subir Guía y Finalizar
                     </button>
                     <button
                       type="button"
                       onClick={() => setExpenseModalJob && setExpenseModalJob(j)}
-                      className="w-full bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black py-2.5 px-3 rounded-xl text-xs shadow-md transition-all flex items-center justify-center gap-2 active:scale-95"
+                      className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-2 px-3 rounded-md text-xs transition-colors flex items-center justify-center gap-2"
                     >
                       <Receipt className="w-4 h-4 text-emerald-200" />
                       <span>Ingreso de Gastos</span>
                       {j.expenses && j.expenses.length > 0 && (
-                        <span className="ml-1 bg-white/20 text-white px-2 py-0.5 rounded-full text-[10px] font-black border border-white/20">
+                        <span className="ml-1 bg-emerald-900/60 text-white px-2 py-0.5 rounded font-mono text-[10px] font-semibold">
                           {j.expenses.length} (${j.expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0).toLocaleString('es-CL')})
                         </span>
                       )}
@@ -1021,36 +987,36 @@ export default function JobCard({ j, ...props }) {
                   </div>
                 ) : (
                   <>
-                    {(!j.phase || j.phase === 'claimed') && <SwipeButton key={`btn-pickup-${j.id}`} onConfirm={() => updatePhase(j, 'arrived_pickup', { arrivedPickupAt: Date.now() })} text={j.tripType === 'simple' ? "Desliza: Llegué al lugar" : "Desliza: Llegué a retirar"} icon={<MapPin className="w-4 h-4" />} colorClass="bg-amber-500" isProcessing={processingId === `${j.id}-arrived_pickup`} />}
+                    {(!j.phase || j.phase === 'claimed') && <SwipeButton key={`btn-pickup-${j.id}`} onConfirm={() => updatePhase(j, 'arrived_pickup', { arrivedPickupAt: Date.now() })} text={j.tripType === 'simple' ? "Desliza: Llegué al lugar" : "Desliza: Llegué a retirar"} icon={<MapPin className="w-4 h-4" />} colorClass="bg-amber-600" isProcessing={processingId === `${j.id}-arrived_pickup`} />}
 
                     {j.phase === 'arrived_pickup' && <SwipeButton key={`btn-power-${j.id}`} onConfirm={() => {
                       const waitMins = j.arrivedPickupAt ? Math.floor((Date.now() - j.arrivedPickupAt) / 60000) : 0;
                       setPickupPromptJob(j);
-                    }} text={j.tripType === 'simple' ? "Desliza: Iniciar Trabajo" : "Desliza: Vehículo en mi poder"} icon={j.tripType === 'simple' ? <Clock className="w-4 h-4" /> : <Car className="w-4 h-4" />} colorClass="bg-indigo-600" isProcessing={processingId === `${j.id}-picked_up`} />}
+                    }} text={j.tripType === 'simple' ? "Desliza: Iniciar Trabajo" : "Desliza: Vehículo en mi poder"} icon={j.tripType === 'simple' ? <Clock className="w-4 h-4" /> : <Car className="w-4 h-4" />} colorClass="bg-blue-600" isProcessing={processingId === `${j.id}-picked_up`} />}
 
                     {j.phase === 'picked_up' && j.tripType !== 'revision' && (!j.waypoints || j.waypoints.length === 0) && <SwipeButton key={`btn-dest-${j.id}`} onConfirm={() => {
                       setArrivalPromptJob(j);
                       setArrivalMileage('');
                       setArrivalPhoto(null);
                       setMenuOpenId(null);
-                    }} text={j.tripType === 'simple' ? "Desliza: Finalizar Trabajo" : "Desliza: Llegué a Destino"} icon={<MapPin className="w-4 h-4" />} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />}
+                    }} text={j.tripType === 'simple' ? "Desliza: Finalizar Trabajo" : "Desliza: Llegué a Destino"} icon={<MapPin className="w-4 h-4" />} colorClass="bg-blue-700" isProcessing={processingId === `${j.id}-arrived_destination`} />}
 
                     {j.phase === 'picked_up' && j.tripType !== 'revision' && j.waypoints && j.waypoints.length > 0 && <SwipeButton key={`btn-wp1-${j.id}`} onConfirm={() => {
                       updatePhase(j, 'arrived_waypoint', { arrivedWaypointAt: Date.now() });
-                    }} text="Desliza: Llegué a 1ra Parada" icon={<MapPin className="w-4 h-4" />} colorClass="bg-indigo-600" isProcessing={processingId === `${j.id}-arrived_waypoint`} />}
+                    }} text="Desliza: Llegué a 1ra Parada" icon={<MapPin className="w-4 h-4" />} colorClass="bg-blue-600" isProcessing={processingId === `${j.id}-arrived_waypoint`} />}
 
                     {j.phase === 'arrived_waypoint' && <SwipeButton key={`btn-wp2-${j.id}`} onConfirm={() => {
                       updatePhase(j, 'departed_waypoint', { departedWaypointAt: Date.now() });
-                    }} text="Desliza: Camino a Destino Final" icon={<Car className="w-4 h-4" />} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-departed_waypoint`} />}
+                    }} text="Desliza: Camino a Destino Final" icon={<Car className="w-4 h-4" />} colorClass="bg-blue-700" isProcessing={processingId === `${j.id}-departed_waypoint`} />}
 
                     {j.phase === 'departed_waypoint' && <SwipeButton key={`btn-dest-final-${j.id}`} onConfirm={() => {
                       setArrivalPromptJob(j);
                       setArrivalMileage('');
                       setArrivalPhoto(null);
                       setMenuOpenId(null);
-                    }} text="Desliza: Llegué a Destino Final" icon={<MapPin className="w-4 h-4" />} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />}
+                    }} text="Desliza: Llegué a Destino Final" icon={<MapPin className="w-4 h-4" />} colorClass="bg-blue-700" isProcessing={processingId === `${j.id}-arrived_destination`} />}
 
-                    {j.phase === 'picked_up' && j.tripType === 'revision' && <SwipeButton key={`btn-prt-${j.id}`} onConfirm={() => updatePhase(j, 'arrived_prt')} text="Desliza: Llegué a PRT" icon={<MapPin className="w-4 h-4" />} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_prt`} />}
+                    {j.phase === 'picked_up' && j.tripType === 'revision' && <SwipeButton key={`btn-prt-${j.id}`} onConfirm={() => updatePhase(j, 'arrived_prt')} text="Desliza: Llegué a PRT" icon={<MapPin className="w-4 h-4" />} colorClass="bg-blue-700" isProcessing={processingId === `${j.id}-arrived_prt`} />}
 
                     {j.phase === 'arrived_prt' && (() => {
                       const assigned = (j.destination || '').includes('->')
@@ -1068,15 +1034,15 @@ export default function JobCard({ j, ...props }) {
                               setPrtReturnDest('');
                             }
                             setPrtApprovePromptJob(j);
-                          }} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors flex justify-center items-center gap-1 disabled:opacity-50 cursor-pointer">
-                            {processingId === `${j.id}-prt_done` ? <Clock className="w-3 h-3 animate-spin" /> : '✅'} {processingId === `${j.id}-prt_done` ? 'Procesando...' : 'Aprobado'}
+                          }} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 rounded-md text-xs transition-colors flex justify-center items-center gap-1.5 disabled:opacity-50 cursor-pointer">
+                            {processingId === `${j.id}-prt_done` ? <Clock className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />} {processingId === `${j.id}-prt_done` ? 'Procesando...' : 'Aprobado'}
                           </button>
                           <button onClick={() => {
                             setPrtReturnOpt('origin');
                             setPrtReturnDest('');
                             setPrtPromptJob(j);
-                          }} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-xl text-xs shadow-sm transition-colors disabled:opacity-50 flex justify-center items-center gap-1 cursor-pointer">
-                            {processingId === `${j.id}-prt_done` ? <Clock className="w-3 h-3 animate-spin" /> : '❌'} {processingId === `${j.id}-prt_done` ? 'Procesando...' : 'Rechazado'}
+                          }} disabled={processingId === `${j.id}-prt_done`} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-md text-xs transition-colors disabled:opacity-50 flex justify-center items-center gap-1.5 cursor-pointer">
+                            {processingId === `${j.id}-prt_done` ? <Clock className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />} {processingId === `${j.id}-prt_done` ? 'Procesando...' : 'Rechazado'}
                           </button>
                         </div>
                       );
@@ -1091,27 +1057,27 @@ export default function JobCard({ j, ...props }) {
                           setArrivalMileage('');
                           setArrivalPhoto(null);
                           setMenuOpenId(null);
-                        }} text={`Desliza: Llegué a ${displayDest}`} icon={<MapPin className="w-4 h-4" />} colorClass="bg-purple-600" isProcessing={processingId === `${j.id}-arrived_destination`} />
+                        }} text={`Desliza: Llegué a ${displayDest}`} icon={<MapPin className="w-4 h-4" />} colorClass="bg-blue-700" isProcessing={processingId === `${j.id}-arrived_destination`} />
                       );
                     })()}
 
-                    {/* BOTÓN IMPORTANTE: INGRESO DE GASTOS */}
+                    {/* BOTÓN: INGRESO DE GASTOS */}
                     <button
                       type="button"
                       onClick={() => setExpenseModalJob && setExpenseModalJob(j)}
-                      className="w-full bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black py-2.5 px-3 rounded-xl text-xs shadow-md shadow-emerald-900/20 transition-all flex items-center justify-center gap-2 active:scale-95 border border-emerald-400/30"
+                      className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-2 px-3 rounded-md text-xs transition-colors flex items-center justify-center gap-2"
                     >
                       <Receipt className="w-4 h-4 text-emerald-200" />
                       <span>Ingreso de Gastos</span>
                       {j.expenses && j.expenses.length > 0 && (
-                        <span className="ml-1 bg-white/20 text-white px-2 py-0.5 rounded-full text-[10px] font-black border border-white/20">
+                        <span className="ml-1 bg-emerald-900/60 text-white px-2 py-0.5 rounded font-mono text-[10px] font-semibold">
                           {j.expenses.length} (${j.expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0).toLocaleString('es-CL')})
                         </span>
                       )}
                     </button>
 
-                    <button onClick={() => onStartChecklist(j)} className={`w-full font-bold py-2 rounded-xl text-xs shadow-sm transition-colors ${(j.phase === 'arrived_destination') ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'}`}>
-                      📸 {(j.phase === 'arrived_destination') ? (j.tripType === 'simple' ? 'Cerrar Acta de Servicio' : 'Cerrar Checklist') : (j.tripType === 'simple' ? 'Pre-llenar Acta' : 'Pre-llenar Checklist')}
+                    <button onClick={() => onStartChecklist(j)} className={`w-full font-semibold py-2 rounded-md text-xs transition-colors flex items-center justify-center gap-1.5 ${(j.phase === 'arrived_destination') ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'}`}>
+                      <Camera className="w-3.5 h-3.5" /> {(j.phase === 'arrived_destination') ? (j.tripType === 'simple' ? 'Cerrar Acta de Servicio' : 'Cerrar Checklist') : (j.tripType === 'simple' ? 'Pre-llenar Acta' : 'Pre-llenar Checklist')}
                     </button>
                   </>
                 )}
@@ -1123,20 +1089,20 @@ export default function JobCard({ j, ...props }) {
 
       {/* MODAL DE FOTOS DE DOCUMENTOS DEL VEHÍCULO */}
       {showDocsModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4 cursor-default animate-in fade-in" onClick={() => setShowDocsModal(false)}>
-          <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-md p-5 flex flex-col shadow-2xl relative" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center pb-3 border-b border-slate-800">
-              <div className="flex items-center gap-2 text-white">
-                <div className="p-2 bg-blue-600/20 text-blue-400 rounded-xl">
-                  <FileText className="w-5 h-5" />
+        <div className="fixed inset-0 bg-slate-950/80 z-[9999] flex items-center justify-center p-4 cursor-default" onClick={() => setShowDocsModal(false)}>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg w-full max-w-md p-5 flex flex-col shadow-lg relative" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2.5 text-slate-900 dark:text-slate-100">
+                <div className="p-2 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 rounded-md border border-blue-200 dark:border-blue-800/60">
+                  <FileText className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-black text-sm uppercase">Documentos del Vehículo</h3>
-                  <p className="text-[10px] text-slate-400 font-bold">{ident}</p>
+                  <h3 className="font-bold text-sm uppercase">Documentos del Vehículo</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">{ident}</p>
                 </div>
               </div>
-              <button onClick={() => setShowDocsModal(false)} className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-full transition-colors">
-                <X className="w-5 h-5" />
+              <button onClick={() => setShowDocsModal(false)} className="p-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-md transition-colors">
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -1153,22 +1119,22 @@ export default function JobCard({ j, ...props }) {
                   <div
                     key={docItem.id}
                     onClick={() => { setShowDocsModal(false); setFullScreenPhoto(url); }}
-                    className="bg-slate-800/80 hover:bg-slate-800 border border-slate-700 hover:border-blue-500 rounded-2xl p-2.5 flex flex-col items-center gap-2 cursor-pointer transition-all shadow-sm group"
+                    className="bg-slate-50 dark:bg-slate-800/60 hover:border-blue-500 border border-slate-200 dark:border-slate-700 rounded-md p-2 flex flex-col items-center gap-1.5 cursor-pointer transition-colors group"
                   >
-                    <div className="w-full aspect-[4/3] rounded-xl overflow-hidden bg-black/40 border border-slate-700 flex items-center justify-center">
-                      <img src={url} alt={docItem.label} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                    <div className="w-full aspect-[4/3] rounded overflow-hidden bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                      <img src={url} alt={docItem.label} className="w-full h-full object-cover" />
                     </div>
-                    <span className="text-[10px] font-black uppercase text-slate-200 text-center truncate w-full">{docItem.label}</span>
-                    <span className="text-[9px] font-bold text-blue-400 flex items-center gap-1">🔍 Toca para ampliar</span>
+                    <span className="text-[11px] font-semibold text-slate-800 dark:text-slate-200 text-center truncate w-full">{docItem.label}</span>
+                    <span className="text-[10px] font-medium text-blue-600 dark:text-blue-400 flex items-center gap-1"><Search className="w-3 h-3" /> Ver documento</span>
                   </div>
                 );
               })}
             </div>
 
-            <div className="mt-4 pt-3 border-t border-slate-800 text-center">
+            <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 text-center">
               <button
                 onClick={() => setShowDocsModal(false)}
-                className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2 rounded-xl text-xs transition-colors"
+                className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold py-2 rounded-md text-xs transition-colors"
               >
                 Cerrar
               </button>

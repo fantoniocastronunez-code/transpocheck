@@ -231,7 +231,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
         <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500 pb-10">
             
             {/* ENCABEZADO */}
-            <div className="bg-gradient-to-r from-blue-700 to-indigo-800 p-6 sm:p-8 rounded-3xl shadow-lg text-white relative overflow-hidden">
+            <div className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-xl shadow-lg text-white relative overflow-hidden">
                 <BarChart3 className="absolute -right-6 -top-6 w-32 h-32 opacity-10 pointer-events-none" />
                 
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 relative z-10 mb-6">
@@ -247,7 +247,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                     
                     <div className="flex flex-wrap items-center gap-2">
                         {/* CONTROLADOR DE MESES */}
-                        <div className="flex items-center gap-3 bg-white/10 dark:bg-slate-900/40 p-1.5 rounded-2xl backdrop-blur-md border border-white/20 dark:border-slate-800/20 shrink-0">
+                        <div className="flex items-center gap-3 bg-white/10 dark:bg-slate-900/40 p-1.5 rounded-xl border border-white/20 dark:border-slate-800/20 shrink-0">
                             <button 
                                 onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))} 
                                 className="p-2 hover:bg-white/20 dark:hover:bg-slate-800 rounded-xl transition-colors active:scale-95"
@@ -277,7 +277,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                         <button 
                             onClick={handleManualSync} 
                             disabled={isSyncing}
-                            className="p-3 bg-white/10 hover:bg-white/20 active:scale-95 text-white border border-white/20 rounded-2xl transition-all shadow-sm flex items-center gap-2"
+                            className="p-3 bg-white/10 hover:bg-white/20 active:scale-95 text-white border border-white/20 rounded-xl transition-all shadow-sm flex items-center gap-2"
                             title="Actualizar y verificar sincronización de datos independientes"
                         >
                             <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin text-amber-300' : 'text-blue-200'}`} />
@@ -289,7 +289,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                 </div>
 
                 {/* BANNER INFORMATIVO DE PERSISTENCIA */}
-                <div className="bg-white/10 dark:bg-slate-900/40 backdrop-blur-md border border-white/20 dark:border-slate-800/10 p-3 rounded-2xl mb-6 relative z-10 flex flex-col sm:flex-row justify-between items-center gap-2 text-center sm:text-left">
+                <div className="bg-white/10 dark:bg-slate-900/40 border border-white/20 dark:border-slate-800/10 p-3 rounded-xl mb-6 relative z-10 flex flex-col sm:flex-row justify-between items-center gap-2 text-center sm:text-left">
                     <p className="text-xs font-bold text-blue-100 flex items-center gap-1.5">
                         <Shield className="w-4 h-4 text-emerald-300 shrink-0" />
                         <span>
@@ -297,17 +297,17 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                         </span>
                     </p>
                     <span className="text-[11px] font-medium text-blue-200 bg-white/5 px-2.5 py-1 rounded-xl border border-white/10">
-                        🛡️ Resguardo activo: Si eliminas traslados de la lista, sus datos numéricos permanecen aquí.
+                        Resguardo activo: Si eliminas traslados de la lista, sus datos numéricos permanecen aquí.
                     </span>
                 </div>
                 
                 {/* TARJETAS PRINCIPALES */}
                 <div className="flex flex-wrap gap-4 relative z-10">
-                    <div className="bg-white/10 dark:bg-slate-900/40 backdrop-blur-md border border-white/20 dark:border-slate-800/20 p-4 rounded-2xl flex-1 min-w-[120px]">
+                    <div className="bg-white/10 dark:bg-slate-900/40 border border-white/20 dark:border-slate-800/20 p-4 rounded-xl flex-1 min-w-[120px]">
                         <p className="text-[10px] font-black uppercase tracking-widest text-blue-200 mb-1">Total Traslados</p>
                         <p className="text-3xl font-black">{stats.totalJobs || 0}</p>
                     </div>
-                    <div className="bg-white/10 dark:bg-slate-900/40 backdrop-blur-md border border-white/20 dark:border-slate-800/20 p-4 rounded-2xl flex-1 min-w-[120px]">
+                    <div className="bg-white/10 dark:bg-slate-900/40 border border-white/20 dark:border-slate-800/20 p-4 rounded-xl flex-1 min-w-[120px]">
                         <p className="text-[10px] font-black uppercase tracking-widest text-emerald-200 mb-1 flex items-center gap-1">
                             <MapIcon className="w-3 h-3" /> KM del Período
                         </p>
@@ -315,7 +315,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                             {Number(stats.totalKm || 0).toLocaleString('es-CL')} <span className="text-sm font-bold text-emerald-100">km</span>
                         </p>
                     </div>
-                    <div className="bg-white/10 dark:bg-slate-900/40 backdrop-blur-md border border-white/20 dark:border-slate-800/20 p-4 rounded-2xl flex-1 min-w-[120px]">
+                    <div className="bg-white/10 dark:bg-slate-900/40 border border-white/20 dark:border-slate-800/20 p-4 rounded-xl flex-1 min-w-[120px]">
                         <p className="text-[10px] font-black uppercase tracking-widest text-amber-200 mb-1 flex items-center gap-1">
                             <DollarSign className="w-3 h-3" /> Ingresos Totales
                         </p>
@@ -331,7 +331,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
                 {/* 1. TOP CLIENTES */}
-                <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
                     <div className="flex items-center gap-2 mb-4 border-b border-slate-50 dark:border-slate-800 pb-3">
                         <div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-xl"><Users className="w-4 h-4 text-blue-600 dark:text-blue-400"/></div>
                         <h3 className="font-extrabold text-slate-800 dark:text-slate-200">Top Clientes del Período</h3>
@@ -359,7 +359,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                 </div>
 
                 {/* 2. INGRESOS POR CLIENTE */}
-                <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
                     <div className="flex items-center gap-2 mb-4 border-b border-slate-50 dark:border-slate-800 pb-3">
                         <div className="bg-emerald-100 dark:bg-emerald-900/40 p-2 rounded-xl"><DollarSign className="w-4 h-4 text-emerald-600 dark:text-emerald-400"/></div>
                         <h3 className="font-extrabold text-slate-800 dark:text-slate-200">Ingresos por Cliente</h3>
@@ -384,7 +384,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                 </div>
 
                 {/* 3. RENDIMIENTO PRT */}
-                <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
                     <div className="flex items-center justify-between mb-4 border-b border-slate-50 dark:border-slate-800 pb-3">
                         <div className="flex items-center gap-2">
                             <div className="bg-amber-100 dark:bg-amber-900/40 p-2 rounded-xl"><CheckCircle className="w-4 h-4 text-amber-600 dark:text-amber-400"/></div>
@@ -424,9 +424,9 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                 </div>
 
                 {/* 4. KILÓMETROS POR CONDUCTOR */}
-                <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
                     <div className="flex items-center gap-2 mb-4 border-b border-slate-50 dark:border-slate-800 pb-3">
-                        <div className="bg-indigo-100 dark:bg-indigo-900/40 p-2 rounded-xl"><MapIcon className="w-4 h-4 text-indigo-600 dark:text-indigo-400"/></div>
+                        <div className="bg-sky-100 dark:bg-sky-900/40 p-2 rounded-xl"><MapIcon className="w-4 h-4 text-sky-600 dark:text-sky-400"/></div>
                         <h3 className="font-extrabold text-slate-800 dark:text-slate-200">Kilómetros por Conductor</h3>
                     </div>
                     
@@ -454,8 +454,8 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                                                 <p className="text-xs font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">{name}</p>
                                             </td>
                                             <td className="py-2.5 pl-1 border-b border-slate-50 dark:border-slate-800 text-right rounded-r-xl pr-2">
-                                                <span className="text-xs font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded-md">
-                                                    {Math.round(km).toLocaleString('es-CL')} <span className="text-[9px] text-indigo-400 uppercase tracking-widest ml-0.5">km</span>
+                                                <span className="text-xs font-black text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/30 px-2 py-1 rounded-md">
+                                                    {Math.round(km).toLocaleString('es-CL')} <span className="text-[9px] text-sky-400 uppercase tracking-widest ml-0.5">km</span>
                                                 </span>
                                             </td>
                                         </tr>
@@ -467,7 +467,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                 </div>
 
                 {/* 5. LÍDERES POR VEHÍCULO */}
-                <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
                     <div className="flex items-center gap-2 mb-4 border-b border-slate-50 dark:border-slate-800 pb-3">
                         <div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-xl"><Car className="w-4 h-4 text-blue-600 dark:text-blue-400"/></div>
                         <h3 className="font-extrabold text-slate-800 dark:text-slate-200">Líderes por Vehículo</h3>
@@ -511,7 +511,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                 </div>
 
                 {/* 6. VEHÍCULOS FRECUENTES */}
-                <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm md:col-span-2">
+                <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm md:col-span-2">
                     <div className="flex items-center gap-2 mb-4 border-b border-slate-50 dark:border-slate-800 pb-3">
                         <div className="bg-rose-100 dark:bg-rose-900/40 p-2 rounded-xl"><Repeat className="w-4 h-4 text-rose-600 dark:text-rose-400"/></div>
                         <h3 className="font-extrabold text-slate-800 dark:text-slate-200">Vehículos Frecuentes del Mes</h3>
@@ -542,8 +542,8 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
 
             {/* MODAL DE DETALLES: Registros resguardados e independientes */}
             {modalData && (
-                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col animate-in zoom-in-95 duration-200 border border-slate-200 dark:border-slate-700">
+                <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-[9999] p-4 animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg w-full max-w-lg max-h-[85vh] flex flex-col animate-in zoom-in-95 duration-200 border border-slate-200 dark:border-slate-700">
                         
                         <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 rounded-t-3xl">
                             <div className="min-w-0 pr-4">
@@ -578,7 +578,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                                 <p className="text-center text-slate-400 font-bold py-6 text-sm">No se encontraron registros activos en este grupo.</p>
                             ) : (
                                 modalData.jobs.map(j => (
-                                    <div key={j.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                                    <div key={j.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
                                         <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500 group-hover:bg-blue-600 transition-colors"></div>
                                         
                                         {/* CABECERA: FECHA, CLIENTE, VEHÍCULO Y PATENTE */}
@@ -615,7 +615,7 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                                             {(j.operationMode === 'servicio' || !!j.description) ? (
                                                 <>
                                                     <div className="flex items-start gap-2.5">
-                                                        <div className="bg-purple-100 dark:bg-purple-900/40 p-1.5 rounded-full shrink-0"><Settings className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400"/></div>
+                                                        <div className="bg-sky-100 dark:bg-sky-900/40 p-1.5 rounded-full shrink-0"><Settings className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400"/></div>
                                                         <div className="flex-1 min-w-0 pt-0.5">
                                                             <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest leading-none mb-0.5">Servicio Realizado</p>
                                                             <p className="text-xs font-bold text-slate-700 dark:text-slate-300 leading-snug line-clamp-2">{j.description || 'Servicio no especificado'}</p>
@@ -657,8 +657,8 @@ export default function StatsView({ jobs = [], drivers = [], vehicles = [], allC
                                             </p>
                                             <div className="flex items-center gap-2">
                                                 {(j.km > 0 || j.drivenDistance) && (
-                                                    <span className="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest border border-indigo-100 dark:border-indigo-800/50">
-                                                        <MapIcon className="w-3 h-3 text-indigo-500 shrink-0"/> 
+                                                    <span className="flex items-center gap-1 bg-sky-50 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest border border-sky-100 dark:border-sky-800/50">
+                                                        <MapIcon className="w-3 h-3 text-sky-500 shrink-0"/> 
                                                         {j.drivenDistance || `${j.km} km`}
                                                     </span>
                                                 )}

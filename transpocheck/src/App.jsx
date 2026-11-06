@@ -36,7 +36,7 @@ const lazyWithRetry = (componentImport) =>
       try { window.localStorage.setItem('page-has-been-force-refreshed', 'false'); } catch (e) { }
       return component;
     } catch (error) {
-      console.error("🔥 ERROR EN LAZY LOAD:", error);
+      console.error("Error en lazy load:", error);
       if (!pageHasAlreadyBeenForceRefreshed) {
         try { window.localStorage.setItem('page-has-been-force-refreshed', 'true'); } catch (e) { }
         try { window.sessionStorage.setItem('page-has-been-force-refreshed', 'true'); } catch (e) { }
@@ -65,12 +65,12 @@ const lazyWithRetry = (componentImport) =>
             }, []);
 
             return (
-              <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex flex-col items-center justify-center z-[9999] p-4">
-                <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl max-w-sm w-full text-center shadow-2xl animate-in zoom-in-95 border border-slate-200 dark:border-slate-800">
-                  <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-5 relative">
-                    <svg className="w-8 h-8 text-blue-600 dark:text-blue-400 absolute" fill="none" viewBox="0 0 24 24"><circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    <svg className="w-8 h-8 text-blue-600 dark:text-blue-400 animate-spin absolute" fill="none" viewBox="0 0 24 24"><circle className="opacity-0" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-100" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              <div className="fixed inset-0 bg-slate-950/75 flex flex-col items-center justify-center z-[9999] p-4">
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-lg max-w-sm w-full text-center shadow-lg border border-slate-200 dark:border-slate-800">
+                  <div className="w-12 h-12 bg-blue-50 dark:bg-blue-950/50 rounded-md flex items-center justify-center mx-auto mb-3 relative">
+                    <svg className="w-6 h-6 text-blue-600 dark:text-blue-400 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"></circle><path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                   </div>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Actualizando versión...</p>
                 </div>
               </div>
             );
@@ -112,7 +112,7 @@ function LogisticApp() {
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
   const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
-  const APP_VERSION = "v1.2.89"; // IMPORTANT: Update this version string when making changes.
+  const APP_VERSION = "v1.2.90"; // IMPORTANT: Update this version string when making changes.
 
   // VARIABLES MÁGICAS: Atrapan lo que Android nos comparte desde CamScanner o Adobe Scan
   const sharedText = searchParams.get('shared_text');
@@ -242,7 +242,7 @@ function LogisticApp() {
 
   const showConfirm = (message, onConfirm) => setDialogConfig({ type: 'confirm', message, onConfirm });
 
-  // 🚀 LA MAGIA: EL HOOK QUE HACE TODO EL TRABAJO SUCIO
+  // EL HOOK QUE HACE TODO EL TRABAJO SUCIO
   const {
     user, actualUserEmail, currentUserEmail, isRealAdmin, isSuperAdmin, isQuoter, isPartTime,
     adminPermissions,
@@ -278,7 +278,7 @@ function LogisticApp() {
         }).then(() => {
           showAlert("✅ Link recibido desde otra App y guardado en tu Bandeja.");
           setMainTab('inbox');
-          navigate('/', { replace: true }); // Limpia la URL para evitar que se duplique al recargar
+          navigate('/', { replace: true }); // Limpia la URL para evitar que se duplicar al recargar
         });
       });
     }
@@ -305,7 +305,7 @@ function LogisticApp() {
       // Solo si la app quedó abierta de madrugada (3:00 AM - 4:59 AM)
       if ((currentHour === 3 || currentHour === 4) && lastUpdate !== dateString) {
         localStorage.setItem('last_daily_refresh', dateString);
-        console.log("⏰ Ejecutando actualización programada de madrugada...");
+        console.log("Ejecutando actualización programada de madrugada...");
         setTimeout(() => window.location.reload(), 1000);
       }
     };
@@ -349,7 +349,7 @@ function LogisticApp() {
 
           // El seguro "!= null" evita que el celular se recargue la primera vez que instala la app
           if (lastGlobalRefresh !== null) {
-            console.log("⚠️ ¡Orden de actualización global recibida desde la central!");
+            console.log("Orden de actualización global recibida desde la central.");
             if ('caches' in window) caches.keys().then(names => names.forEach(n => caches.delete(n)));
             if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
             setTimeout(() => window.location.reload(true), 1000);
@@ -409,51 +409,7 @@ function LogisticApp() {
   // NUEVO: Detector de Part-Time. Si el usuario no existe en la DB de conductores pero SÍ tiene un trabajo asignado, lo dejamos entrar sin pedir fotos.
   const isPartTimeAssigned = user && !myDriver && jobs.some(j => j.assignedEmails && j.assignedEmails.includes(currentUserEmail));
 
-  const globalStyles = (
-    <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Alfa+Slab+One&display=swap');
-      
-      @font-face {
-        font-family: 'FE-Font';
-        src: url('https://cdn.jsdelivr.net/gh/TVLuke/kennzeichen_buch/EuroPlate.ttf') format('truetype'),
-             url('https://cdn.jsdelivr.net/gh/niklaswa/license-plate-generator/public/fonts/EuroPlate.ttf') format('truetype');
-        font-weight: normal;
-        font-style: normal;
-      }
-      }
-      
-      body { 
-        font-family: 'Nunito', sans-serif; 
-        background-color: transparent;
-        transition: background-color 0.3s; 
-        
-        /* MAGIA APP NATIVA */
-        overscroll-behavior-y: none;
-        touch-action: manipulation;
-        -webkit-tap-highlight-color: transparent;
-      }
-      
-      .font-alfa { font-family: 'Alfa Slab One', serif; font-weight: 400; }
-      
-
-
-      /* CLASE CUSTOM PARA CONGELAR LA BARRA DE NAVEGACIÓN SIN REBOTE */
-      .fixed-nav-bar {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        z-index: 50 !important;
-      }
-
-      /* PREVENIR AUTO-ZOOM EN iPHONE (IOS SAFARI) AL ESCRIBIR EN INPUTS */
-      @media screen and (max-width: 768px) {
-        input, select, textarea { 
-          font-size: 16px !important; 
-        }
-      }
-    `}</style>
-  );
+  const globalStyles = null;
 
   // --- NUEVO: SI HAY UN CLIENTE EN LA URL, MOSTRAR PORTAL DE CLIENTE ---
   if (clientTrack) {
@@ -516,19 +472,20 @@ function LogisticApp() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-[var(--bg-canvas)] flex flex-col items-center justify-center p-4">
         {globalStyles}
-        <div className="bg-white/10 dark:bg-black/40 backdrop-blur-md p-8 sm:p-10 rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.3)] w-full max-w-md text-center border border-white/20">
+        <div className="bg-white dark:bg-slate-900 p-8 sm:p-10 rounded-lg shadow-sm w-full max-w-md text-center border border-slate-200 dark:border-slate-800">
           <div className="flex justify-center items-center gap-6 mb-6">
-            <img src="/LogoLogistica.png" alt="Logistica TS" className="h-24 w-auto object-contain drop-shadow-md hover:scale-105 transition-transform" />
-            <div className="w-px h-16 bg-slate-200 dark:bg-slate-700"></div>
-            <img src="/logo.png" alt="LogisticAPP" className="h-20 w-auto object-contain drop-shadow-md hover:scale-105 transition-transform" />
+            <img src="/LogoLogistica.png" alt="Logistica TS" className="h-16 w-auto object-contain" />
+            <div className="w-px h-12 bg-slate-200 dark:bg-slate-700"></div>
+            <img src="/logo.png" alt="LogisticAPP" className="h-14 w-auto object-contain" />
           </div>
-          <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white mb-2 tracking-tight">LogisticAPP</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-1 tracking-tight">LogisticAPP</h1>
+          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Plataforma de Gestión y Control Operativo</p>
 
           {/* SECCIÓN 1: ACCESO DIRECTO PARA CLIENTES */}
-          <div className="mt-8 mb-8">
-            <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Portal de Clientes</p>
+          <div className="mt-8 mb-6">
+            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5 text-left">Portal de Clientes</p>
             <form onSubmit={async (e) => {
               e.preventDefault();
               const btn = e.nativeEvent.submitter;
@@ -573,17 +530,17 @@ function LogisticApp() {
                 type="email"
                 placeholder="Ingresa tu correo autorizado..."
                 required
-                className="w-full border-2 border-slate-200 dark:border-slate-700 p-4 rounded-2xl text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500 text-center transition-colors shadow-inner"
+                className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3.5 py-2.5 rounded-md text-sm font-medium text-slate-800 dark:text-slate-200 outline-none focus:border-blue-600 transition-colors"
               />
-              <button type="submit" className="w-full bg-slate-800 hover:bg-slate-900 text-white font-black py-4 rounded-2xl shadow-lg transition-colors text-sm flex items-center justify-center gap-2 disabled:opacity-70">
-                <Search className="w-5 h-5" /> Ingresar a mi portal
+              <button type="submit" className="w-full bg-slate-900 hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-semibold py-2.5 rounded-md transition-colors text-sm flex items-center justify-center gap-2 disabled:opacity-70">
+                <Search className="w-4 h-4" /> Ingresar a mi portal
               </button>
             </form>
           </div>
 
           {/* SECCIÓN 2: ACCESO EQUIPO INTERNO */}
-          <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
-            <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Equipo Interno</p>
+          <div className="pt-6 border-t border-slate-200 dark:border-slate-800">
+            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5 text-left">Equipo Interno</p>
             <button
               disabled={isGoogleLoading}
               onClick={async () => {
@@ -599,9 +556,9 @@ function LogisticApp() {
                   setIsGoogleLoading(false);
                 }
               }}
-              className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold py-3.5 px-4 rounded-2xl shadow-sm hover:bg-slate-50 dark:bg-slate-900 flex items-center justify-center gap-3 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-semibold py-2.5 px-4 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-center gap-2.5 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isGoogleLoading ? <Clock className="w-5 h-5 animate-spin text-slate-500" /> : <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-5 h-5" />}
+              {isGoogleLoading ? <Clock className="w-4 h-4 animate-spin text-slate-500" /> : <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-4 h-4" />}
               {isGoogleLoading ? 'Conectando...' : 'Ingresar con Google'}
             </button>
           </div>
@@ -612,11 +569,11 @@ function LogisticApp() {
   // NUEVO: Pantalla de carga global mientras Firebase descarga la base de datos
   if (!dataLoaded) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-[var(--bg-canvas)] flex flex-col items-center justify-center p-4">
         {globalStyles}
-        <div className="w-16 h-16 border-4 border-blue-200 dark:border-blue-800/50 border-t-blue-600 rounded-full animate-spin mb-4 shadow-sm"></div>
-        <p className="text-lg font-extrabold text-slate-700 dark:text-slate-300 tracking-tight">Sincronizando datos...</p>
-        <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">LogisticAPP</p>
+        <div className="w-10 h-10 border-2 border-slate-200 dark:border-slate-800 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Sincronizando datos...</p>
+        <p className="text-xs font-mono text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">LogisticAPP</p>
       </div>
     );
   }
@@ -655,35 +612,35 @@ function LogisticApp() {
   // EXCEPCIÓN: Conductores con rol part_time o asignados temporalmente entran directo a trabajar.
   if (activeRole === 'driver' && !isPartTimeAssigned && myDriver?.role !== 'part_time' && (needsOnboarding || !myDriver)) {
     return (
-      <div className="min-h-screen text-slate-800 dark:text-slate-200 font-sans pb-10 transition-colors duration-300">
+      <div className="min-h-screen bg-[var(--bg-canvas)] text-slate-800 dark:text-slate-200 font-sans pb-10">
         {globalStyles}
-        <header className="fixed-nav-bar bg-black/40 backdrop-blur-md border-b border-white/10 text-white p-4 shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors">
+        <header className="fixed-nav-bar bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 px-4 flex justify-between items-center h-16">
           <div className="flex items-center gap-3">
-            <div className="bg-white dark:bg-slate-900 p-1.5 rounded-xl"><img src="/logo.png" className="w-8 h-8 object-contain" /></div>
-            <h1 className="font-alfa text-xl text-white">Verificación Obligatoria</h1>
+            <div className="bg-slate-50 dark:bg-slate-800 p-1.5 rounded-md border border-slate-200 dark:border-slate-700"><img src="/logo.png" className="w-7 h-7 object-contain" alt="Logo" /></div>
+            <h1 className="font-semibold text-base tracking-tight">Verificación Obligatoria</h1>
           </div>
           {isRealAdmin ? (
-            <button onClick={() => { setActiveRole('admin'); setRoleMenuOpen(false); }} className="bg-white dark:bg-slate-900 hover:bg-white dark:bg-slate-900 p-2.5 rounded-xl text-white transition-colors flex items-center gap-2 text-xs font-bold">
-              <LogOut className="w-4 h-4" /> Salir a Admin
+            <button onClick={() => { setActiveRole('admin'); setRoleMenuOpen(false); }} className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-1.5 rounded-md text-slate-700 dark:text-slate-200 transition-colors flex items-center gap-1.5 text-xs font-semibold border border-slate-200 dark:border-slate-700">
+              <LogOut className="w-3.5 h-3.5" /> Salir a Admin
             </button>
           ) : (
-            <button onClick={() => signOut(auth)} className="bg-white dark:bg-slate-900 hover:bg-white dark:bg-slate-900 p-2.5 rounded-xl text-white transition-colors flex items-center gap-2 text-xs font-bold">
-              <LogOut className="w-4 h-4" /> Salir
+            <button onClick={() => signOut(auth)} className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-1.5 rounded-md text-slate-700 dark:text-slate-200 transition-colors flex items-center gap-1.5 text-xs font-semibold border border-slate-200 dark:border-slate-700">
+              <LogOut className="w-3.5 h-3.5" /> Salir
             </button>
           )}
         </header>
-        <main className="max-w-md mx-auto p-4 pt-24 sm:pt-28 pb-10">
+        <main className="max-w-md mx-auto p-4 pt-20 pb-10">
           {myDriver ? (
             <DriverOnboarding driver={myDriver} db={db} uploadImageToStorage={uploadImageToStorage} />
           ) : (
-            <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border text-center space-y-5 shadow-lg border-slate-100 dark:border-slate-800">
-              <div className="relative w-20 h-20 mx-auto">
-                <div className="absolute inset-0 border-4 border-blue-100 dark:border-blue-900/50 rounded-full"></div>
-                <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
-                <User className="absolute inset-0 m-auto w-8 h-8 text-blue-600 dark:text-blue-400" />
+            <div className="bg-white dark:bg-slate-900 p-8 rounded-lg border text-center space-y-4 shadow-xs border-slate-200 dark:border-slate-800">
+              <div className="relative w-14 h-14 mx-auto">
+                <div className="absolute inset-0 border-2 border-slate-200 dark:border-slate-800 rounded-full"></div>
+                <div className="absolute inset-0 border-2 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+                <User className="absolute inset-0 m-auto w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
-              <p className="font-black text-slate-800 dark:text-slate-100 text-xl">Creando credenciales...</p>
-              <p className="text-xs font-bold text-slate-400 dark:text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-relaxed">Estableciendo conexión segura con la central logística</p>
+              <p className="font-semibold text-slate-800 dark:text-slate-100 text-base">Creando credenciales...</p>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Estableciendo conexión segura con la central logística</p>
             </div>
           )}
         </main>
@@ -693,82 +650,53 @@ function LogisticApp() {
   // -----------------------------------------------------------------
 
   return (
-    <div className="min-h-screen text-slate-800 dark:text-slate-200 font-sans pb-32 transition-colors duration-300 mx-auto relative w-full z-0">
-
-      {/* Fondo Fijo Unificado */}
-      <div
-        className="fixed inset-0 z-[-3] bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/bg_desert_light.jpg')" }}
-      />
-
-      {/* Overlay Claro (Animado por opacidad) */}
-      <div
-        className={`fixed inset-0 z-[-2] pointer-events-none transition-opacity duration-700 ease-in-out`}
-        style={{
-          background: 'linear-gradient(to bottom, rgba(248, 250, 252, 0.85), rgba(241, 245, 249, 0.94))',
-          backdropFilter: 'blur(3px)',
-          WebkitBackdropFilter: 'blur(3px)',
-          opacity: darkMode ? 0 : 1
-        }}
-      />
-
-      {/* Overlay Oscuro (Animado por opacidad) */}
-      <div
-        className={`fixed inset-0 z-[-1] pointer-events-none transition-opacity duration-700 ease-in-out`}
-        style={{
-          background: 'linear-gradient(to bottom, rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.98))',
-          opacity: darkMode ? 1 : 0
-        }}
-      />
+    <div className="min-h-screen bg-[var(--bg-canvas)] text-slate-800 dark:text-slate-200 font-sans pb-28 mx-auto relative w-full z-0">
 
       {globalStyles}
-      <header className="fixed-nav-bar bg-white/85 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200/80 dark:border-white/10 text-slate-800 dark:text-white p-4 shadow-sm dark:shadow-lg flex justify-between items-center h-16 sm:h-20 transition-colors duration-300">
-        <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
-          {/* Logo de la app más pequeño en móvil */}
-          <div className="bg-white/90 dark:bg-slate-900 p-1 sm:p-1.5 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-800 flex items-center justify-center shrink-0">
-            <img src="/logo.png" alt="Logo App" className="w-7 h-7 sm:w-12 sm:h-12 object-contain" />
+      <header className="fixed-nav-bar bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 px-4 flex justify-between items-center h-14 sm:h-16">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="bg-slate-50 dark:bg-slate-800 p-1 rounded-md border border-slate-200 dark:border-slate-700 flex items-center justify-center shrink-0">
+            <img src="/logo.png" alt="Logo App" className="w-6 h-6 sm:w-8 sm:h-8 object-contain" />
           </div>
 
-          {/* Nombre de la aplicación adaptado para no chocar */}
-          <h1 className="font-alfa text-lg sm:text-3xl tracking-wide shrink-0 text-slate-800 dark:text-white" style={{ paddingTop: '2px' }}>
+          <h1 className="font-bold text-base sm:text-lg tracking-tight shrink-0 text-slate-900 dark:text-slate-100">
             LogisticAPP
           </h1>
 
-          {/* Logo Logística TS SpA ajustado al nuevo tamaño */}
-          <div className="bg-white/90 dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200/60 dark:border-slate-800 flex items-center justify-center shrink-0 ml-0.5 sm:ml-1 overflow-hidden">
-            <img src="/LogoLogistica.png" alt="Logística TS SpA" className="h-8 sm:h-15 object-contain" />
+          <div className="bg-slate-50 dark:bg-slate-800 px-1.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 flex items-center justify-center shrink-0 ml-0.5 overflow-hidden">
+            <img src="/LogoLogistica.png" alt="Logística TS SpA" className="h-6 sm:h-8 object-contain" />
           </div>
         </div>
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-2">
 
-          {/* NUEVO: BOTÓN TUERCA (AJUSTES) */}
+          {/* BOTÓN TUERCA (AJUSTES) */}
           <div className="relative">
             <button
               onClick={() => {
                 setSettingsOpen(!settingsOpen);
-                setRoleMenuOpen(false); // <-- NUEVO: Cierra el ojo al abrir la tuerca
+                setRoleMenuOpen(false);
               }}
-              className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700 rounded-xl transition-colors shadow-sm border border-slate-200 dark:border-slate-700 backdrop-blur-md"
+              className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-md transition-colors border border-slate-200 dark:border-slate-700"
             >
-              <Settings className="w-5 h-5 text-slate-700 dark:text-slate-200" />
+              <Settings className="w-4 h-4 text-slate-700 dark:text-slate-200" />
             </button>
 
             {settingsOpen && (
-              <div className="absolute right-0 top-12 mt-1 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2">
-                <div className="p-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
-                  <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider text-center">Ajustes de App</p>
+              <div className="absolute right-0 top-11 mt-1 w-64 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-200 dark:border-slate-800 overflow-hidden z-[100]">
+                <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                  <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Ajustes de App</p>
                 </div>
 
                 {/* PANEL DE COLA DE SUBIDAS MOVIDO A LA TUERCA */}
                 {syncQueue.length > 0 && (
-                  <div className="p-3 bg-slate-800 text-white border-b border-slate-700">
-                    <p className="text-[10px] font-black uppercase tracking-widest mb-2 flex items-center gap-1.5"><CloudOff className="w-3.5 h-3.5 text-blue-400" /> Cola en Segundo Plano</p>
+                  <div className="p-3 bg-slate-900 text-white border-b border-slate-800">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5"><CloudOff className="w-3.5 h-3.5 text-blue-400" /> Cola en Segundo Plano</p>
                     <div className="space-y-1.5 max-h-32 overflow-y-auto scrollbar-none">
                       {syncQueue.map(task => (
-                        <div key={task.id} className="flex justify-between items-center bg-slate-700 p-2 rounded-lg text-xs border border-slate-600">
-                          <span className="font-bold truncate mr-2">{task.name}</span>
+                        <div key={task.id} className="flex justify-between items-center bg-slate-800 p-2 rounded-md text-xs border border-slate-700">
+                          <span className="font-medium truncate mr-2">{task.name}</span>
                           {task.status === 'syncing' && <Clock className="w-3.5 h-3.5 text-blue-400 animate-spin shrink-0" />}
-                          {task.status === 'done' && <CheckCircle className="w-3.5 h-3.5 text-green-400 shrink-0" />}
+                          {task.status === 'done' && <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
                           {task.status === 'error' && <XCircle className="w-3.5 h-3.5 text-red-400 shrink-0" title={task.error} />}
                         </div>
                       ))}
@@ -776,37 +704,37 @@ function LogisticApp() {
                   </div>
                 )}
 
-                <div className="p-4 space-y-5">
+                <div className="p-3.5 space-y-3.5">
                   {/* Estado de Red */}
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Señal de Red</span>
-                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-black tracking-widest uppercase shadow-sm border transition-all duration-300 ${isOnline ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700/50' : 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 border-red-300 dark:border-red-700/50 animate-pulse'}`}>
-                      {isOnline ? <><Wifi className="w-4 h-4" /> EN LÍNEA</> : <><CloudOff className="w-4 h-4" /> SIN CONEXIÓN</>}
+                    <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Señal de Red</span>
+                    <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold uppercase border ${isOnline ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60' : 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800/60'}`}>
+                      {isOnline ? <><Wifi className="w-3.5 h-3.5" /> En línea</> : <><CloudOff className="w-3.5 h-3.5" /> Sin conexión</>}
                     </div>
                   </div>
                   {/* Switch Modo Oscuro */}
-                  <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-4">
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                      {darkMode ? <Moon className="w-4 h-4 text-blue-600 dark:text-blue-400" /> : <Sun className="w-4 h-4 text-amber-500" />} Modo Oscuro
+                  <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-3">
+                    <span className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                      {darkMode ? <Moon className="w-4 h-4 text-blue-500" /> : <Sun className="w-4 h-4 text-amber-500" />} Modo Oscuro
                     </span>
-                    <button onClick={() => setDarkMode(!darkMode)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shadow-inner ${darkMode ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-600'}`}>
-                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white dark:bg-slate-900 shadow-sm transition-transform ${darkMode ? 'translate-x-6' : 'translate-x-1'}`} />
+                    <button onClick={() => setDarkMode(!darkMode)} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${darkMode ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'}`}>
+                      <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${darkMode ? 'translate-x-4' : 'translate-x-1'}`} />
                     </button>
                   </div>
                   {/* Permisos de Notificaciones */}
-                  <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-4">
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                      <Bell className={`w-4 h-4 ${notificationsEnabled ? 'text-green-500' : 'text-amber-500 animate-pulse'}`} /> Notificaciones
+                  <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-3">
+                    <span className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                      <Bell className={`w-4 h-4 ${notificationsEnabled ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-500'}`} /> Notificaciones
                     </span>
                     {!notificationsEnabled ? (
-                      <button onClick={requestNotificationPermission} className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-white rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm transition-colors">Activar</button>
+                      <button onClick={requestNotificationPermission} className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-[11px] font-semibold transition-colors">Activar</button>
                     ) : (
-                      <span className="px-2.5 py-1 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 rounded-lg text-[10px] font-black uppercase tracking-wider">Activas</span>
+                      <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 rounded text-[11px] font-semibold">Activas</span>
                     )}
                   </div>
 
                   {/* --- SÚPER BOTÓN MATA-CACHÉ (SOLUCIÓN DEFINITIVA XIAOMI/PWA) --- */}
-                  <div className="border-t pt-3 mt-1 w-full">
+                  <div className="border-t border-slate-100 dark:border-slate-800 pt-3 w-full">
                     <button onClick={() => {
                       if ('caches' in window) {
                         caches.keys().then((names) => {
@@ -828,16 +756,16 @@ function LogisticApp() {
                         });
                       }
                       setTimeout(() => window.location.reload(true), 300);
-                    }} className="w-full py-2 bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 text-blue-700 dark:text-blue-400 rounded-xl text-xs font-black uppercase tracking-wider shadow-sm transition-colors active:bg-blue-300 flex justify-center items-center gap-2">
-                      ACTUALIZAR APP
+                    }} className="w-full py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-md text-xs font-semibold border border-slate-200 dark:border-slate-700 transition-colors flex justify-center items-center gap-2">
+                      Actualizar App
                     </button>
                   </div>
 
                   {/* --- MATA-CACHÉ GLOBAL (SÓLO PARA ADMINISTRADORES) --- */}
                   {activeRole === 'admin' && (
-                    <div className="border-t pt-3 mt-1 w-full">
+                    <div className="pt-1 w-full">
                       <button onClick={() => {
-                        showConfirm("⚠️ ¿Forzar a todos los celulares de la flota a recargarse y actualizarse en este mismo instante?", async () => {
+                        showConfirm("¿Forzar a todos los celulares de la flota a recargarse y actualizarse en este mismo instante?", async () => {
                           try {
                             await setDoc(doc(db, 'system_config', 'force_refresh'), { timestamp: Date.now() });
                             showAlert("✅ Orden de actualización enviada a toda la flota.");
@@ -846,39 +774,38 @@ function LogisticApp() {
                             showAlert("Error al enviar la orden.");
                           }
                         });
-                      }} className="w-full py-2 bg-purple-100 dark:bg-purple-900/40 hover:bg-purple-200 text-purple-700 dark:text-purple-400 rounded-xl text-xs font-black uppercase tracking-wider shadow-sm transition-colors active:bg-purple-300 flex justify-center items-center gap-2">
-                        ACTUALIZAR A TODOS
+                      }} className="w-full py-2 bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60 rounded-md text-xs font-semibold transition-colors flex justify-center items-center gap-2">
+                        Actualizar a Todos
                       </button>
                     </div>
                   )}
 
                   {/* --- BOTÓN CERRAR SESIÓN --- */}
-                  <div className="border-t border-slate-100 dark:border-slate-800 pt-4 mt-2">
-                    <p className="text-[10px] text-center font-bold text-slate-400 mb-2 truncate">Sesión: {currentUserEmail}</p>
-                    <button onClick={() => signOut(auth)} className="w-full py-2.5 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-colors border border-red-100 dark:border-red-800/50 shadow-sm active:scale-95">
-                      <LogOut className="w-4 h-4" /> Cerrar Sesión
+                  <div className="border-t border-slate-100 dark:border-slate-800 pt-3">
+                    <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400 mb-2 truncate">{currentUserEmail}</p>
+                    <button onClick={() => signOut(auth)} className="w-full py-2 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/50 text-red-700 dark:text-red-400 rounded-md text-xs font-semibold flex items-center justify-center gap-2 transition-colors border border-red-200 dark:border-red-900/50">
+                      <LogOut className="w-3.5 h-3.5" /> Cerrar Sesión
                     </button>
                   </div>
 
                 </div>
                 {/* VERSIÓN DE LA APP */}
-                <div className="bg-slate-50 dark:bg-slate-900 p-2.5 text-center border-t border-slate-100 dark:border-slate-800">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">LogisticAPP {APP_VERSION}</p>
+                <div className="bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-center border-t border-slate-200 dark:border-slate-800">
+                  <p className="text-[11px] font-mono font-medium text-slate-500 dark:text-slate-400">LogisticAPP {APP_VERSION}</p>
                 </div>
               </div>
             )}
           </div>
           {isRealAdmin && (
             <div className="relative">
-              {/* Botón dinámico inteligente: se vuelve morado y parpadea si estás asistiendo a un conductor */}
               <button
                 onClick={() => {
                   setRoleMenuOpen(!roleMenuOpen);
-                  setSettingsOpen(false); // <-- NUEVO: Cierra la tuerca al abrir el ojo
+                  setSettingsOpen(false);
                 }}
-                className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700 px-3 py-2 rounded-xl transition-colors shadow-sm border border-slate-200 dark:border-slate-700 backdrop-blur-md text-slate-700 dark:text-slate-200"
+                className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-1.5 rounded-md transition-colors border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200"
               >
-                <Eye className="w-5 h-5 text-slate-700 dark:text-slate-200" />
+                <Eye className="w-4 h-4 text-slate-600 dark:text-slate-300" />
                 <span className="hidden md:inline">
                   {activeRole === 'admin' ? 'Modo: Admin' : activeRole === 'driver' ? (
                     simulatedDriverEmail
@@ -888,39 +815,36 @@ function LogisticApp() {
                 </span>
               </button>
               {roleMenuOpen && (
-                <div className="absolute right-0 top-12 mt-1 w-72 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 text-slate-800 dark:text-slate-200">
-                  <div className="p-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800"><p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider text-center">Panel de Control General</p></div>
+                <div className="absolute right-0 top-11 mt-1 w-72 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-200 dark:border-slate-800 overflow-hidden z-[100] text-slate-800 dark:text-slate-200">
+                  <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50"><p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Panel de Control General</p></div>
 
-
-                  <button onClick={() => { setActiveRole('admin'); setMainTab('jobs'); setSimulatedDriverEmail(''); setRoleMenuOpen(false); }} className={`w-full text-left px-4 py-3 text-sm font-bold hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors ${activeRole === 'admin' ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30' : 'text-slate-600 dark:text-slate-300'}`}>
+                  <button onClick={() => { setActiveRole('admin'); setMainTab('jobs'); setSimulatedDriverEmail(''); setRoleMenuOpen(false); }} className={`w-full text-left px-3.5 py-2.5 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors ${activeRole === 'admin' ? 'text-blue-700 dark:text-blue-400 bg-blue-50/60 dark:bg-blue-950/40' : 'text-slate-700 dark:text-slate-300'}`}>
                     <Users className="w-4 h-4" /> Volver a Administrador
                   </button>
 
-                  {/* NUEVA SECCIÓN: ASISTIR/SIMULAR CONDUCTOR (DISEÑO MEJORADO Y RÁPIDO) */}
-                  <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 dark:bg-slate-800">
-                    <p className="text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 mb-2"><Car className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Entrar como Conductor</p>
+                  {/* SECCIÓN: ASISTIR/SIMULAR CONDUCTOR */}
+                  <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900">
+                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-2"><Car className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Entrar como Conductor</p>
 
                     {/* BOTÓN RÁPIDO DE FAVORITO */}
                     {favDriverEmail && drivers.find(d => d.email === favDriverEmail) && (
-                      <button onClick={() => { setSimulatedDriverEmail(favDriverEmail); setActiveRole('driver'); setMainTab('jobs'); setRoleMenuOpen(false); }} className="w-full bg-gradient-to-r from-amber-100 to-yellow-50 dark:from-amber-900/40 dark:to-yellow-900/20 border border-amber-200 dark:border-amber-700 hover:from-amber-200 dark:hover:from-amber-900/60 text-amber-800 dark:text-amber-400 p-2.5 rounded-xl text-xs font-black flex justify-between items-center transition-colors shadow-sm mb-3">
-                        <div className="flex items-center gap-2"><Star className="w-4 h-4 fill-amber-500 text-amber-500" /> Entrar como {drivers.find(d => d.email === favDriverEmail).name.split(' ')[0]}</div>
-                        <ChevronRight className="w-4 h-4 text-amber-500" />
+                      <button onClick={() => { setSimulatedDriverEmail(favDriverEmail); setActiveRole('driver'); setMainTab('jobs'); setRoleMenuOpen(false); }} className="w-full bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 hover:bg-amber-100/70 dark:hover:bg-amber-950/50 text-amber-800 dark:text-amber-300 p-2 rounded-md text-xs font-semibold flex justify-between items-center transition-colors mb-2.5">
+                        <div className="flex items-center gap-2"><Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" /> Entrar como {drivers.find(d => d.email === favDriverEmail).name.split(' ')[0]}</div>
+                        <ChevronRight className="w-3.5 h-3.5 text-amber-600" />
                       </button>
                     )}
 
                     {/* LISTA SCROLLEABLE INTERNA DE CONDUCTORES */}
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl max-h-40 overflow-y-auto shadow-inner divide-y divide-slate-50 dark:divide-slate-800/50">
+                    <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md max-h-40 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
                       {drivers.filter(d => !d.isHidden).sort((a, b) => a.name.localeCompare(b.name)).map(d => {
                         const isCurrentActive = activeRole === 'driver' && simulatedDriverEmail === d.email;
                         return (
-                          <div key={d.id} className={`flex items-center justify-between p-1 transition-colors group ${isCurrentActive ? 'bg-purple-50 dark:bg-purple-900/30 border-l-4 border-purple-500' : 'hover:bg-blue-50 dark:bg-blue-900/30 dark:hover:bg-blue-900/20'}`}>
-                            {/* Al tocar el nombre, entras directo */}
-                            <button onClick={() => { setSimulatedDriverEmail(d.email); setActiveRole('driver'); setMainTab('jobs'); setRoleMenuOpen(false); }} className={`flex-1 text-left px-2 py-2 text-xs truncate transition-colors ${isCurrentActive ? 'text-purple-700 dark:text-purple-400 font-black' : 'text-slate-700 dark:text-slate-300 font-bold group-hover:text-blue-800 dark:text-blue-300 dark:group-hover:text-blue-300'}`}>
-                              {d.name} {isCurrentActive && <span className="text-[9px] bg-purple-200 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded ml-1 animate-pulse">ACTIVO</span>}
+                          <div key={d.id} className={`flex items-center justify-between p-1 transition-colors group ${isCurrentActive ? 'bg-blue-50/70 dark:bg-blue-950/40 border-l-2 border-blue-600' : 'hover:bg-slate-50 dark:hover:bg-slate-900'}`}>
+                            <button onClick={() => { setSimulatedDriverEmail(d.email); setActiveRole('driver'); setMainTab('jobs'); setRoleMenuOpen(false); }} className={`flex-1 text-left px-2 py-1.5 text-xs truncate transition-colors ${isCurrentActive ? 'text-blue-700 dark:text-blue-400 font-semibold' : 'text-slate-700 dark:text-slate-300 font-medium'}`}>
+                              {d.name} {isCurrentActive && <span className="text-[10px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded ml-1 font-mono">ACTIVO</span>}
                             </button>
-                            {/* Estrella para fijarlo como favorito arriba */}
-                            <button onClick={(e) => { e.stopPropagation(); setFavDriverEmail(d.email); localStorage.setItem('favDriverEmail', d.email); }} className="p-2 rounded-lg hover:bg-amber-100 dark:bg-amber-900/40 dark:hover:bg-amber-900/30 transition-colors" title="Fijar como Favorito">
-                              <Star className={`w-4 h-4 transition-colors ${favDriverEmail === d.email ? 'fill-amber-400 text-amber-400' : 'text-slate-300 dark:text-slate-600 dark:text-slate-400 group-hover:text-amber-400 hover:text-amber-500'}`} />
+                            <button onClick={(e) => { e.stopPropagation(); setFavDriverEmail(d.email); localStorage.setItem('favDriverEmail', d.email); }} className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="Fijar como Favorito">
+                              <Star className={`w-3.5 h-3.5 transition-colors ${favDriverEmail === d.email ? 'fill-amber-500 text-amber-500' : 'text-slate-300 dark:text-slate-600 hover:text-amber-500'}`} />
                             </button>
                           </div>
                         );
@@ -929,13 +853,13 @@ function LogisticApp() {
                   </div>
 
                   {/* SECCIÓN EXISTENTE: SIMULAR CLIENTE */}
-                  <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 space-y-2">
-                    <p className="text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5"><Eye className="w-3.5 h-3.5 text-slate-800 dark:text-slate-400" /> Ver Portal de Cliente</p>
-                    <select value={simulatedClient} onChange={(e) => setSimulatedClient(e.target.value)} className="w-full border-2 border-slate-200 dark:border-slate-700 p-2.5 rounded-xl text-xs font-bold outline-none focus:border-slate-400 dark:focus:border-slate-500 bg-white dark:bg-slate-900 dark:text-slate-200">
+                  <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900 space-y-2">
+                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5"><Eye className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" /> Ver Portal de Cliente</p>
+                    <select value={simulatedClient} onChange={(e) => setSimulatedClient(e.target.value)} className="w-full border border-slate-300 dark:border-slate-700 p-2 rounded-md text-xs font-medium outline-none focus:border-blue-600 bg-white dark:bg-slate-950 dark:text-slate-200">
                       <option value="">Seleccionar Cliente...</option>
                       {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
-                    <button onClick={() => { if (simulatedClient) { setActiveRole('client'); setRoleMenuOpen(false); } else { showAlert("Selecciona un cliente de la lista primero"); } }} className="w-full bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white text-xs font-bold py-2.5 rounded-xl transition-colors shadow-sm">Entrar a la vista Cliente</button>
+                    <button onClick={() => { if (simulatedClient) { setActiveRole('client'); setRoleMenuOpen(false); } else { showAlert("Selecciona un cliente de la lista primero"); } }} className="w-full bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-500 text-white text-xs font-semibold py-2 rounded-md transition-colors">Entrar a la vista Cliente</button>
                   </div>
                 </div>
               )}
@@ -949,30 +873,30 @@ function LogisticApp() {
         <Route path="*" element={
           <>
             {mainTab === 'jobs' && (
-              <main className="max-w-5xl mx-auto p-4 pt-20 sm:pt-24">
+              <main className="max-w-5xl mx-auto p-4 pt-20 sm:pt-22">
                 {activeRole === 'admin' ? (
                   <>
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-6 bg-white dark:bg-slate-900 p-2 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
-                      <button onClick={() => { setAdminTab('dashboard'); setEditingJob(null); }} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab === 'dashboard' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/50'}`}><ClipboardList className="w-4 h-4 sm:w-5 sm:h-5" /> Monitor</button>
+                    <div className="flex flex-wrap gap-1.5 mb-6 bg-white dark:bg-slate-900 p-1.5 rounded-lg border border-slate-200 dark:border-slate-800">
+                      <button onClick={() => { setAdminTab('dashboard'); setEditingJob(null); }} className={`flex-1 flex justify-center items-center gap-1.5 px-3 py-2 rounded-md text-xs sm:text-sm font-semibold transition-colors ${adminTab === 'dashboard' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}><ClipboardList className="w-4 h-4" /> Monitor</button>
                       {adminPermissions?.create_jobs !== false && (
-                        <button onClick={() => { setAdminTab('newJob'); setEditingJob(null); }} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab === 'newJob' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/50'}`}><Plus className="w-4 h-4 sm:w-5 sm:h-5" /> Crear</button>
+                        <button onClick={() => { setAdminTab('newJob'); setEditingJob(null); }} className={`flex-1 flex justify-center items-center gap-1.5 px-3 py-2 rounded-md text-xs sm:text-sm font-semibold transition-colors ${adminTab === 'newJob' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}><Plus className="w-4 h-4" /> Crear</button>
                       )}
                       {adminPermissions?.manage_stats !== false && (
-                        <button onClick={() => setAdminTab('stats')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab === 'stats' ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/50'}`}><Activity className="w-4 h-4 sm:w-5 sm:h-5" /> Estadísticas</button>
+                        <button onClick={() => setAdminTab('stats')} className={`flex-1 flex justify-center items-center gap-1.5 px-3 py-2 rounded-md text-xs sm:text-sm font-semibold transition-colors ${adminTab === 'stats' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}><Activity className="w-4 h-4" /> Estadísticas</button>
                       )}
                       {(isSuperAdmin || adminPermissions?.manage_users || adminPermissions?.manage_clients || adminPermissions?.manage_vehicles || adminPermissions?.manage_directory || adminPermissions?.manage_tolls || adminPermissions?.manage_equipment) && (
-                        <button onClick={() => setAdminTab('config')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab === 'config' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/50'}`}><Truck className="w-4 h-4 sm:w-5 sm:h-5" /> Config</button>
+                        <button onClick={() => setAdminTab('config')} className={`flex-1 flex justify-center items-center gap-1.5 px-3 py-2 rounded-md text-xs sm:text-sm font-semibold transition-colors ${adminTab === 'config' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}><Truck className="w-4 h-4" /> Config</button>
                       )}
                       {adminPermissions?.manage_history !== false && (
-                        <button onClick={() => setAdminTab('history')} className={`flex-1 flex justify-center items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2.5 rounded-xl text-[11px] sm:text-sm font-extrabold transition-colors ${adminTab === 'history' ? 'bg-slate-800 dark:bg-slate-700 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/50'}`}><ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" /> Peritaje</button>
+                        <button onClick={() => setAdminTab('history')} className={`flex-1 flex justify-center items-center gap-1.5 px-3 py-2 rounded-md text-xs sm:text-sm font-semibold transition-colors ${adminTab === 'history' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}><ShieldCheck className="w-4 h-4" /> Peritaje</button>
                       )}
                     </div>
 
                     {adminTab === 'dashboard' && (
-                      <div className="space-y-6">
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                          <h2 className="text-2xl font-extrabold text-slate-800 dark:text-slate-200">Monitor de Trabajos</h2>
-                          <button onClick={exportToExcel} className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex justify-center items-center gap-2 shadow-lg shadow-green-200 transition-colors"><Download className="w-5 h-5" /> Exportar Excel</button>
+                      <div className="space-y-5">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Monitor de Trabajos</h2>
+                          <button onClick={exportToExcel} className="w-full sm:w-auto bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-md text-xs font-semibold flex justify-center items-center gap-2 transition-colors"><Download className="w-4 h-4" /> Exportar Excel</button>
                         </div>
                         <JobsList
                           jobs={jobs} drivers={drivers} vehicles={vehicles} role="admin"
@@ -986,17 +910,17 @@ function LogisticApp() {
                       </div>
                     )}
 
-                    {adminTab === 'newJob' && <div className="animate-in zoom-in-[0.98] slide-in-from-bottom-8 duration-500 ease-out"><NewJobForm key={editingJob ? editingJob.id : 'new'} jobToEdit={editingJob} onCancelEdit={() => { setEditingJob(null); setAdminTab('dashboard'); }} allClientsList={allClientsList} vehicles={vehicles} vehicleModels={vehicleModels} drivers={drivers.filter(d => !d.isHidden)} db={db} showAlert={showAlert} onSuccess={() => setAdminTab('dashboard')} pushSyncTask={pushSyncTask} myDriver={myDriver} user={user} /></div>}
+                    {adminTab === 'newJob' && <div><NewJobForm key={editingJob ? editingJob.id : 'new'} jobToEdit={editingJob} onCancelEdit={() => { setEditingJob(null); setAdminTab('dashboard'); }} allClientsList={allClientsList} vehicles={vehicles} vehicleModels={vehicleModels} drivers={drivers.filter(d => !d.isHidden)} db={db} showAlert={showAlert} onSuccess={() => setAdminTab('dashboard')} pushSyncTask={pushSyncTask} myDriver={myDriver} user={user} /></div>}
 
-                    {adminTab === 'history' && <div className="animate-in zoom-in-[0.98] duration-300"><VehicleHistoryView db={db} showAlert={showAlert} /></div>}
+                    {adminTab === 'history' && <div><VehicleHistoryView db={db} showAlert={showAlert} /></div>}
 
-                    {adminTab === 'stats' && <div className="animate-in zoom-in-[0.98] duration-300"><StatsView jobs={jobs} drivers={drivers} vehicles={vehicles} allClientsList={allClientsList} db={db} showAlert={showAlert} showConfirm={showConfirm} /></div>}
+                    {adminTab === 'stats' && <div><StatsView jobs={jobs} drivers={drivers} vehicles={vehicles} allClientsList={allClientsList} db={db} showAlert={showAlert} showConfirm={showConfirm} /></div>}
 
-                    {isSuperAdmin && adminTab === 'config' && <div className="animate-in zoom-in-[0.98] duration-300"><ConfigView currentUserEmail={currentUserEmail} allClientsList={allClientsList} customClients={customClients} vehicles={vehicles} vehicleModels={vehicleModels} drivers={drivers} db={db} showAlert={showAlert} showConfirm={showConfirm} isSuperAdmin={isSuperAdmin} adminPermissions={adminPermissions} /></div>}
+                    {isSuperAdmin && adminTab === 'config' && <div><ConfigView currentUserEmail={currentUserEmail} allClientsList={allClientsList} customClients={customClients} vehicles={vehicles} vehicleModels={vehicleModels} drivers={drivers} db={db} showAlert={showAlert} showConfirm={showConfirm} isSuperAdmin={isSuperAdmin} adminPermissions={adminPermissions} /></div>}
                   </>
                 ) : (
-                  <div className="space-y-6">
-                    <h2 className="text-2xl font-extrabold text-slate-800 dark:text-slate-200">Mis Trabajos Asignados</h2>
+                  <div className="space-y-5">
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Mis Trabajos Asignados</h2>
                     <JobsList
                       jobs={jobs} drivers={drivers} vehicles={vehicles} role="driver"
                       onStartChecklist={(j) => { setSelectedJob(j); navigate('/checklist') }}
@@ -1017,16 +941,13 @@ function LogisticApp() {
             {mainTab === 'quotes' && <ChecklistAnalyticsView jobs={jobs} drivers={drivers} currentUserEmail={currentUserEmail} activeRole={activeRole} />}
 
             {mainTab === 'inbox' && (
-              <main className="max-w-2xl mx-auto p-4 pt-20 sm:pt-24 pb-32 animate-in fade-in duration-300">
-                <div className="bg-indigo-600 text-white p-6 rounded-3xl shadow-lg mb-6 relative overflow-hidden">
-                  <div className="relative z-10">
-                    <h2 className="text-2xl font-black mb-1">Bandeja de Entrada</h2>
-                    <p className="text-xs font-bold text-indigo-200 leading-relaxed">Sube aquí los PDFs o fotos de otras apps (CamScanner, etc) para enlazarlos directamente a tus traslados.</p>
-                  </div>
-                  <FileDown className="w-24 h-24 absolute -bottom-4 -right-2 text-white opacity-10 transform -rotate-12" />
+              <main className="max-w-2xl mx-auto p-4 pt-20 pb-32">
+                <div className="bg-slate-900 dark:bg-slate-800 text-white p-5 rounded-lg border border-slate-800 dark:border-slate-700 mb-5">
+                  <h2 className="text-lg font-bold mb-1">Bandeja de Entrada</h2>
+                  <p className="text-xs text-slate-300 leading-relaxed">Sube aquí los PDFs o fotos de otras apps (CamScanner, etc) para enlazarlos directamente a tus traslados.</p>
                 </div>
 
-                <label className="w-full bg-white dark:bg-slate-900 border-2 border-dashed border-indigo-300 dark:border-indigo-700/50 hover:bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 p-6 rounded-3xl font-black text-sm flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm mb-6">
+                <label className="w-full bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-500 text-slate-700 dark:text-slate-300 p-5 rounded-lg font-semibold text-xs flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors mb-5">
                   <input type="file" accept="application/pdf,image/*" className="hidden" onChange={async (e) => {
                     const f = e.target.files[0];
                     if (!f) return;
@@ -1072,35 +993,35 @@ function LogisticApp() {
                       showAlert("❌ Error al leer el documento.");
                     }
                   }} />
-                  <div className="bg-indigo-100 dark:bg-indigo-900/40 p-3 rounded-full mb-1"><Plus className="w-6 h-6 text-indigo-600 dark:text-indigo-400" /></div>
+                  <div className="bg-blue-50 dark:bg-blue-950/50 p-2.5 rounded-md"><Plus className="w-5 h-5 text-blue-600 dark:text-blue-400" /></div>
                   SUBIR NUEVO ARCHIVO
                 </label>
 
-                <div className="space-y-4">
-                  <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest px-2">Archivos Pendientes ({inboxDocs.length})</h3>
+                <div className="space-y-3">
+                  <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-1">Archivos Pendientes ({inboxDocs.length})</h3>
                   {inboxDocs.length === 0 ? (
-                    <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-8 text-center shadow-sm">
-                      <FileText className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-                      <p className="text-sm font-bold text-slate-500 dark:text-slate-400">No tienes documentos sin asignar.</p>
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-8 text-center">
+                      <FileText className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">No tienes documentos sin asignar.</p>
                     </div>
                   ) : (
                     inboxDocs.map(docItem => (
-                      <div key={docItem.id} className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border-2 border-slate-100 dark:border-slate-800 flex flex-col gap-4 relative overflow-hidden">
+                      <div key={docItem.id} className="bg-white dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800 flex flex-col gap-3">
                         <div className="flex items-center gap-3">
-                          <div className="bg-indigo-50 dark:bg-indigo-900/30 p-3 rounded-xl border border-indigo-100 dark:border-indigo-800/50"><FileText className="w-6 h-6 text-indigo-600 dark:text-indigo-400" /></div>
+                          <div className="bg-slate-100 dark:bg-slate-800 p-2.5 rounded-md border border-slate-200 dark:border-slate-700"><FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" /></div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-black text-slate-800 dark:text-slate-200 truncate">{docItem.fileName}</p>
-                            <p className="text-[10px] font-bold text-slate-400 mt-0.5">{new Date(docItem.createdAt).toLocaleString()}</p>
+                            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{docItem.fileName}</p>
+                            <p className="text-[11px] font-mono text-slate-400 mt-0.5">{new Date(docItem.createdAt).toLocaleString()}</p>
                           </div>
                           <button onClick={async () => {
                             const { deleteDoc, doc } = await import('firebase/firestore');
                             showConfirm("¿Eliminar este documento?", () => deleteDoc(doc(db, 'inbox', docItem.id)));
-                          }} className="p-2.5 bg-red-50 dark:bg-red-900/30 text-red-500 rounded-xl hover:bg-red-100 dark:bg-red-900/40 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                          }} className="p-2 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 rounded-md hover:bg-red-100 transition-colors border border-red-200 dark:border-red-900/50"><Trash2 className="w-4 h-4" /></button>
                         </div>
-                        <div className="flex gap-2 bg-slate-50 dark:bg-slate-900 p-2 rounded-xl border border-slate-100 dark:border-slate-800">
+                        <div className="flex gap-2 bg-slate-50 dark:bg-slate-800/50 p-2 rounded-md border border-slate-200 dark:border-slate-800">
 
-                          <a href={docItem.url} target="_blank" rel="noopener noreferrer" className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 py-2.5 rounded-lg text-xs font-black flex items-center justify-center gap-1.5 shadow-sm hover:bg-slate-50 dark:bg-slate-900">
-                            <Eye className="w-4 h-4" /> VER
+                          <a href={docItem.url} target="_blank" rel="noopener noreferrer" className="flex-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 py-2 rounded text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-50">
+                            <Eye className="w-3.5 h-3.5" /> VER
                           </a>
 
                           <select onChange={async (e) => {
@@ -1143,7 +1064,7 @@ function LogisticApp() {
                             } catch (err) {
                               showAlert("❌ Error al asignar el documento.");
                             }
-                          }} className="flex-[2] bg-indigo-600 text-white py-2.5 px-3 rounded-lg text-xs font-black outline-none cursor-pointer shadow-sm shadow-indigo-200 text-center appearance-none">
+                          }} className="flex-[2] bg-blue-600 text-white py-2 px-3 rounded text-xs font-semibold outline-none cursor-pointer text-center appearance-none">
                             <option value="" className="text-center">AÑADIR A TRABAJO...</option>
                             {jobs.filter(j => j.status === 'accepted' && j.acceptedByEmail === currentUserEmail).map(j => (
                               <option key={j.id} value={j.id}>{j.plate || j.vin || 'S/N'} - {j.brand}</option>
@@ -1157,44 +1078,44 @@ function LogisticApp() {
               </main>
             )}
 
-            <nav className="fixed bottom-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-around items-center pt-2 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] z-40 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+            <nav className="fixed bottom-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-around items-center pt-1.5 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] z-40">
               {activeRole === 'quoter' ? (
-                <button onClick={() => setMainTab('quotes')} className="flex flex-col items-center text-purple-600 dark:text-purple-400 transition-colors flex-1">
-                  <div className="bg-purple-100 dark:bg-purple-900/40 p-2 rounded-xl mb-1"><ShieldCheck className="w-5 h-5" /></div>
-                  <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Análisis</span>
+                <button onClick={() => setMainTab('quotes')} className="flex flex-col items-center text-blue-600 dark:text-blue-400 transition-colors flex-1">
+                  <div className="bg-blue-50 dark:bg-blue-950/50 p-1.5 rounded-md mb-0.5"><ShieldCheck className="w-4 h-4" /></div>
+                  <span className="text-[10px] font-semibold">Análisis</span>
                 </button>
               ) : (
                 <>
                   {activeRole === 'admin' ? (
-                    <button onClick={() => setMainTab('quotes')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'quotes' ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:text-purple-400 dark:hover:text-purple-400'}`}>
-                      <div className={`${mainTab === 'quotes' ? 'bg-purple-100 dark:bg-purple-900/40' : 'bg-slate-100 dark:bg-slate-800'} p-2 rounded-xl mb-1`}><ShieldCheck className="w-5 h-5" /></div>
-                      <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Análisis</span>
+                    <button onClick={() => setMainTab('quotes')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'quotes' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}>
+                      <div className={`${mainTab === 'quotes' ? 'bg-blue-50 dark:bg-blue-950/50' : 'bg-transparent'} p-1.5 rounded-md mb-0.5`}><ShieldCheck className="w-4 h-4" /></div>
+                      <span className="text-[10px] font-semibold">Análisis</span>
                     </button>
                   ) : (
-                    <button onClick={() => setShowRequestJob('traslado')} className="flex flex-col items-center text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-400 transition-colors flex-1">
-                      <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded-xl mb-1"><Plus className="w-5 h-5" /></div>
-                      <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Solicitar</span>
+                    <button onClick={() => setShowRequestJob('traslado')} className="flex flex-col items-center text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-1">
+                      <div className="bg-slate-100 dark:bg-slate-800 p-1.5 rounded-md mb-0.5"><Plus className="w-4 h-4" /></div>
+                      <span className="text-[10px] font-semibold">Solicitar</span>
                     </button>
                   )}
-                  <button onClick={() => setMainTab('jobs')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'jobs' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-400'}`}>
-                    <div className={`${mainTab === 'jobs' ? 'bg-blue-100 dark:bg-blue-900/40' : 'bg-transparent'} p-2 rounded-xl mb-1`}><ClipboardList className="w-5 h-5" /></div>
-                    <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Trabajos</span>
+                  <button onClick={() => setMainTab('jobs')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'jobs' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}>
+                    <div className={`${mainTab === 'jobs' ? 'bg-blue-50 dark:bg-blue-950/50' : 'bg-transparent'} p-1.5 rounded-md mb-0.5`}><ClipboardList className="w-4 h-4" /></div>
+                    <span className="text-[10px] font-semibold">Trabajos</span>
                   </button>
-                  <button onClick={() => setMainTab('ranking')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'ranking' ? 'text-yellow-600 dark:text-yellow-500' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-yellow-600 dark:text-yellow-400 dark:hover:text-yellow-500'}`}>
-                    <div className={`${mainTab === 'ranking' ? 'bg-yellow-100 dark:bg-yellow-900/40' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Trophy className="w-5 h-5" /></div>
-                    <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Ranking</span>
+                  <button onClick={() => setMainTab('ranking')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'ranking' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}>
+                    <div className={`${mainTab === 'ranking' ? 'bg-blue-50 dark:bg-blue-950/50' : 'bg-transparent'} p-1.5 rounded-md mb-0.5`}><Trophy className="w-4 h-4" /></div>
+                    <span className="text-[10px] font-semibold">Ranking</span>
                   </button>
 
                   {(activeRole !== 'admin' || adminPermissions?.manage_expenses !== false) && (
-                    <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'expenses' ? 'text-emerald-600 dark:text-emerald-500' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:text-emerald-400 dark:hover:text-emerald-500'}`}>
-                      <div className={`${mainTab === 'expenses' ? 'bg-emerald-100 dark:bg-emerald-900/40' : 'bg-transparent'} p-2 rounded-xl mb-1`}><Wallet className="w-5 h-5" /></div>
-                      <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Gastos</span>
+                    <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'expenses' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}>
+                      <div className={`${mainTab === 'expenses' ? 'bg-blue-50 dark:bg-blue-950/50' : 'bg-transparent'} p-1.5 rounded-md mb-0.5`}><Wallet className="w-4 h-4" /></div>
+                      <span className="text-[10px] font-semibold">Gastos</span>
                     </button>
                   )}
                   {activeRole === 'driver' && (
-                    <button onClick={() => setMainTab('profile')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'profile' ? 'text-violet-600 dark:text-violet-500' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-violet-600 dark:text-violet-400 dark:hover:text-violet-500'}`}>
-                      <div className={`${mainTab === 'profile' ? 'bg-violet-100 dark:bg-violet-900/40' : 'bg-transparent'} p-2 rounded-xl mb-1`}><User className="w-5 h-5" /></div>
-                      <span className="text-[9px] sm:text-[10px] font-extrabold tracking-wide">Perfil</span>
+                    <button onClick={() => setMainTab('profile')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'profile' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}>
+                      <div className={`${mainTab === 'profile' ? 'bg-blue-50 dark:bg-blue-950/50' : 'bg-transparent'} p-1.5 rounded-md mb-0.5`}><User className="w-4 h-4" /></div>
+                      <span className="text-[10px] font-semibold">Perfil</span>
                     </button>
                   )}
                 </>
@@ -1205,7 +1126,7 @@ function LogisticApp() {
 
         <Route path="/checklist" element={
           selectedJob ? (
-            <main className="max-w-2xl mx-auto p-4 pt-20 sm:pt-24 pb-24 animate-in zoom-in-[0.98] slide-in-from-bottom-8 duration-500 ease-out">
+            <main className="max-w-2xl mx-auto p-4 pt-20 pb-24">
               <ChecklistForm
                 job={selectedJob} db={db} currentUserEmail={currentUserEmail}
                 allClientsList={allClientsList}
@@ -1240,17 +1161,16 @@ function LogisticApp() {
         } />
       </Routes>
 
-      {/* NUEVO: Bandeja Flotante de Trabajo Offline (Idea 3) */}
+      {/* Bandeja Flotante de Trabajo Offline */}
       {!isOnline && user && (
-        <div className="fixed bottom-[88px] sm:bottom-[92px] left-1/2 transform -translate-x-1/2 z-[100] w-[92%] max-w-sm animate-in slide-in-from-bottom-5 duration-500">
-          <div className="bg-slate-800 text-white p-3.5 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-3">
-            <div className="bg-slate-700 p-2.5 rounded-full relative shrink-0">
-              <CloudOff className="w-5 h-5 text-amber-400" />
-              <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-amber-500 rounded-full animate-ping"></span>
+        <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-[100] w-[92%] max-w-sm">
+          <div className="bg-slate-900 text-white p-3.5 rounded-lg shadow-lg border border-slate-700 flex items-center gap-3">
+            <div className="bg-amber-950/60 border border-amber-700/60 p-2 rounded-md relative shrink-0">
+              <CloudOff className="w-4 h-4 text-amber-400" />
             </div>
             <div>
-              <p className="text-[11px] font-black uppercase tracking-widest text-amber-400 mb-0.5">Modo Sin Conexión</p>
-              <p className="text-[10px] font-bold text-slate-300 leading-tight">Trabajando con memoria caché local. Se sincronizará automáticamente al volver la red.</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-400 mb-0.5">Modo Sin Conexión</p>
+              <p className="text-[11px] text-slate-300 leading-tight">Trabajando con memoria caché local. Se sincronizará automáticamente al volver la red.</p>
             </div>
           </div>
         </div>
@@ -1258,7 +1178,7 @@ function LogisticApp() {
 
       {/* MODAL: SOLICITAR TRASLADO CON AUTOCOMPLETADO Y WAZE */}
       {showRequestJob && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+        <div className="fixed inset-0 bg-slate-950/65 flex items-center justify-center z-[9999] p-4">
           <form onSubmit={async (e) => {
             e.preventDefault();
             const fd = new FormData(e.target);
@@ -1319,26 +1239,26 @@ function LogisticApp() {
             } catch (err) {
               showAlert("Error al crear la solicitud.");
             }
-          }} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl relative animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
-            <button type="button" onClick={() => setShowRequestJob(false)} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"><X className="w-4 h-4 text-slate-700 dark:text-slate-300" /></button>
+          }} className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-5 w-full max-w-sm shadow-lg relative max-h-[90vh] overflow-y-auto">
+            <button type="button" onClick={() => setShowRequestJob(false)} className="absolute top-4 right-4 p-1.5 bg-slate-100 dark:bg-slate-800 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"><X className="w-4 h-4 text-slate-600 dark:text-slate-300" /></button>
 
-            <div className="flex items-center gap-3 mb-4 border-b border-slate-100 dark:border-slate-800 pb-3">
-              <div className="bg-blue-100 dark:bg-blue-900/40 p-2.5 rounded-full"><Plus className="w-6 h-6 text-blue-600 dark:text-blue-400" /></div>
-              <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 leading-tight">Solicitar<br />Trabajo</h3>
+            <div className="flex items-center gap-3 mb-4 border-b border-slate-200 dark:border-slate-800 pb-3">
+              <div className="bg-blue-50 dark:bg-blue-950/50 p-2 rounded-md border border-blue-200 dark:border-blue-800/60"><Plus className="w-5 h-5 text-blue-600 dark:text-blue-400" /></div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Solicitar Trabajo</h3>
             </div>
 
             {/* SELECTOR DE TIPO DE TRABAJO (4 OPCIONES) */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl mb-5 gap-1 shadow-inner">
-              <button type="button" onClick={() => setShowRequestJob('traslado')} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'traslado' || showRequestJob === true ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700'}`}><Car className="w-3.5 h-3.5" /> Local</button>
-              <button type="button" onClick={() => setShowRequestJob('simple')} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'simple' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700'}`}><FileText className="w-3.5 h-3.5" /> Servicio</button>
-              <button type="button" onClick={() => setShowRequestJob('viaje')} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'viaje' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700'}`}><MapPin className="w-3.5 h-3.5" /> Regiones</button>
-              <button type="button" onClick={() => setShowRequestJob('revision')} className={`flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-extrabold transition-all ${showRequestJob === 'revision' ? 'bg-amber-500 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700'}`}><CheckCircle className="w-3.5 h-3.5" /> PRT</button>
+            <div className="grid grid-cols-2 sm:grid-cols-4 bg-slate-100 dark:bg-slate-800 p-1 rounded-md mb-4 gap-1">
+              <button type="button" onClick={() => setShowRequestJob('traslado')} className={`flex items-center justify-center gap-1.5 py-2 rounded text-xs font-semibold transition-colors ${showRequestJob === 'traslado' || showRequestJob === true ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}><Car className="w-3.5 h-3.5" /> Local</button>
+              <button type="button" onClick={() => setShowRequestJob('simple')} className={`flex items-center justify-center gap-1.5 py-2 rounded text-xs font-semibold transition-colors ${showRequestJob === 'simple' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}><FileText className="w-3.5 h-3.5" /> Servicio</button>
+              <button type="button" onClick={() => setShowRequestJob('viaje')} className={`flex items-center justify-center gap-1.5 py-2 rounded text-xs font-semibold transition-colors ${showRequestJob === 'viaje' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}><MapPin className="w-3.5 h-3.5" /> Regiones</button>
+              <button type="button" onClick={() => setShowRequestJob('revision')} className={`flex items-center justify-center gap-1.5 py-2 rounded text-xs font-semibold transition-colors ${showRequestJob === 'revision' ? 'bg-blue-600 text-white' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}><CheckCircle className="w-3.5 h-3.5" /> PRT</button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3.5">
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Empresa / Cliente</label>
-                <select name="client" required className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500 bg-white dark:bg-slate-900">
+                <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Empresa / Cliente</label>
+                <select name="client" required className="w-full border border-slate-300 dark:border-slate-700 rounded-md p-2.5 text-sm font-medium text-slate-800 dark:text-slate-200 outline-none focus:border-blue-600 bg-white dark:bg-slate-950">
                   <option value="">Selecciona un cliente...</option>
                   {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
@@ -1347,55 +1267,52 @@ function LogisticApp() {
               {showRequestJob === 'simple' ? (
                 <>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black text-purple-400 uppercase tracking-widest ml-1">Descripción del Servicio</label>
-                    <input name="description" required placeholder="Ej: Instalación de GPS, Batería..." className="w-full border-2 border-purple-200 dark:border-purple-800/50 bg-purple-50 dark:bg-purple-900/30 rounded-xl p-3 text-sm font-bold text-purple-900 dark:text-purple-300 outline-none focus:border-purple-500" />
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Descripción del Servicio</label>
+                    <input name="description" required placeholder="Ej: Instalación de GPS, Batería..." className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-md p-2.5 text-sm font-medium text-slate-800 dark:text-slate-200 outline-none focus:border-blue-600" />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Patente / VIN (Opcional)</label>
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Patente / VIN (Opcional)</label>
                     <input name="plateOrVin" maxLength="17" placeholder="Ej: ABCD12 (Si aplica)" onChange={(e) => {
                       const val = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-                      e.target.value = val; // Fuerza mayúsculas visualmente y limpia basura
+                      e.target.value = val;
                       if (val.length >= 5 && vehicles) {
                         const found = vehicles.find(v => v.plate === val || (v.vin && v.vin === val));
                         if (found && e.target.form.client && found.client) {
-                          // Valida que el cliente exista en las opciones del selector
                           const exists = Array.from(e.target.form.client.options).some(opt => opt.value === found.client);
                           if (exists) e.target.form.client.value = found.client;
                         }
                       }
-                    }} className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-black uppercase text-slate-800 dark:text-slate-200 outline-none focus:border-purple-500" />
+                    }} className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-md p-2.5 text-sm font-mono font-semibold uppercase text-slate-800 dark:text-slate-200 outline-none focus:border-blue-600" />
                   </div>
                 </>
               ) : (
                 <>
                   <div className="grid grid-cols-2 gap-3">
-                    {/* NUEVO: Autocompletado Relacional Inteligente */}
                     <datalist id="request-brands-list">
                       {[...new Set(vehicles?.map(v => v.brand?.toUpperCase().trim()).filter(Boolean) || [])].sort().map((b, i) => (
                         <option key={i} value={b} />
                       ))}
                     </datalist>
                     <datalist id="request-models-list">
-                      {/* Nota: El filtro de modelo usa el valor actual de la marca desde el formulario */}
                       {[...new Set(vehicles?.map(v => v.model?.toUpperCase().trim()).filter(Boolean) || [])].sort().map((m, i) => (
                         <option key={i} value={m} />
                       ))}
                     </datalist>
 
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Marca</label>
-                      <input name="brand" list="request-brands-list" required placeholder="Ej: CHEVROLET" onChange={(e) => e.target.value = e.target.value.toUpperCase()} className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500 uppercase" />
+                      <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Marca</label>
+                      <input name="brand" list="request-brands-list" required placeholder="Ej: CHEVROLET" onChange={(e) => e.target.value = e.target.value.toUpperCase()} className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-md p-2.5 text-sm font-medium text-slate-800 dark:text-slate-200 outline-none focus:border-blue-600 uppercase" />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Modelo</label>
-                      <input name="model" list="request-models-list" required placeholder="Ej: SPARK" onChange={(e) => e.target.value = e.target.value.toUpperCase()} className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500 uppercase" />
+                      <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Modelo</label>
+                      <input name="model" list="request-models-list" required placeholder="Ej: SPARK" onChange={(e) => e.target.value = e.target.value.toUpperCase()} className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-md p-2.5 text-sm font-medium text-slate-800 dark:text-slate-200 outline-none focus:border-blue-600 uppercase" />
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Patente o VIN</label>
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Patente o VIN</label>
                     <input name="plateOrVin" required maxLength="17" placeholder="Ej: ABCD12" onChange={(e) => {
                       const val = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-                      e.target.value = val; // Fuerza mayúsculas visualmente y limpia basura
+                      e.target.value = val;
                       if (val.length >= 5 && vehicles) {
                         const found = vehicles.find(v => v.plate === val || (v.vin && v.vin === val));
                         if (found) {
@@ -1403,56 +1320,63 @@ function LogisticApp() {
                           if (form.brand && found.brand) form.brand.value = found.brand;
                           if (form.model && found.model) form.model.value = found.model;
                           if (form.client && found.client) {
-                            // Evitamos romper el select verificando si la empresa existe en el listado
                             const exists = Array.from(form.client.options).some(opt => opt.value === found.client);
                             if (exists) form.client.value = found.client;
                           }
                         }
                       }
-                    }} className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-black uppercase text-slate-800 dark:text-slate-200 outline-none focus:border-blue-500" />
+                    }} className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-md p-2.5 text-sm font-mono font-semibold uppercase text-slate-800 dark:text-slate-200 outline-none focus:border-blue-600" />
                   </div>
                 </>
               )}
 
-              {/* LA MAGIA VISUAL: Datalist con todos los lugares guardados */}
               <datalist id="directory-places">
                 {directoryList.map((d, i) => <option key={i} value={d.placeName} />)}
               </datalist>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Desde (Origen)</label>
-                <input name="origin" list="directory-places" required placeholder="Toca para buscar o escribe..." className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500" />
+                <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Desde (Origen)</label>
+                <input name="origin" list="directory-places" required placeholder="Toca para buscar o escribe..." className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-md p-2.5 text-sm font-medium text-slate-800 dark:text-slate-200 outline-none focus:border-blue-600" />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Hasta (Destino)</label>
+                <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Hasta (Destino)</label>
                 {showRequestJob === 'revision' ? (
-                  <select name="destination" required className="w-full border-2 border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl p-3 text-sm font-bold text-emerald-800 dark:text-emerald-300 outline-none focus:border-emerald-500 cursor-pointer">
+                  <select name="destination" required className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-md p-2.5 text-sm font-medium text-slate-800 dark:text-slate-200 outline-none focus:border-blue-600 cursor-pointer">
                     <option value="">Selecciona la Planta PRT...</option>
                     {prtList.map((p, i) => <option key={i} value={p.name}>{p.name}</option>)}
                   </select>
                 ) : (
-                  <input name="destination" list="directory-places" required placeholder="Toca para buscar o escribe..." className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500" />
+                  <input name="destination" list="directory-places" required placeholder="Toca para buscar o escribe..." className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-md p-2.5 text-sm font-medium text-slate-800 dark:text-slate-200 outline-none focus:border-blue-600" />
                 )}
               </div>
 
-              <label className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800/50 rounded-xl mt-3 cursor-pointer">
-                <input type="checkbox" name="autoAssign" defaultChecked className="w-5 h-5 accent-blue-600 rounded cursor-pointer" />
-                <span className="text-xs font-bold text-blue-800 dark:text-blue-300">Asignarme este traslado a mí automáticamente</span>
+              <label className="flex items-center gap-2.5 p-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 rounded-md mt-2 cursor-pointer">
+                <input type="checkbox" name="autoAssign" defaultChecked className="w-4 h-4 accent-blue-600 rounded cursor-pointer" />
+                <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Asignarme este traslado a mí automáticamente</span>
               </label>
             </div>
-            <button type="submit" className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg shadow-blue-200 transition-colors text-sm">Crear Solicitud</button>
+            <button type="submit" className="w-full mt-5 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-md transition-colors text-sm">Crear Solicitud</button>
           </form>
         </div>
       )}
 
       {dialogConfig && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-sm p-6 transform transition-all animate-in zoom-in-95 duration-150">
-            <div className="flex items-center gap-3 mb-4"><div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-full">{dialogConfig.type === 'confirm' ? <AlertCircle className="w-6 h-6 text-blue-600 dark:text-blue-400" /> : <Bell className="w-6 h-6 text-blue-600 dark:text-blue-400" />}</div><h3 className="text-xl font-extrabold">LogisticAPP</h3></div>
-            <p className="text-slate-600 dark:text-slate-400 font-bold mb-6 text-sm">{dialogConfig.message}</p>
-            <div className="flex gap-3">
-              {dialogConfig.type === 'confirm' && <button onClick={closeDialog} className="flex-1 py-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold text-sm">Cancelar</button>}
-              <button onClick={() => { if (dialogConfig.onConfirm) dialogConfig.onConfirm(); closeDialog(); }} className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm">Confirmar</button>
+        <div className="fixed inset-0 bg-slate-950/65 flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 shadow-lg w-full max-w-sm p-5">
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="bg-blue-50 dark:bg-blue-950/50 p-2 rounded-md border border-blue-200 dark:border-blue-800/60">
+                {dialogConfig.type === 'confirm' ? <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" /> : <Bell className="w-5 h-5 text-blue-600 dark:text-blue-400" />}
+              </div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">LogisticAPP</h3>
+            </div>
+            <p className="text-slate-600 dark:text-slate-300 font-medium mb-5 text-sm leading-relaxed">
+              {typeof dialogConfig.message === 'string'
+                ? dialogConfig.message.replace(/^[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]\uFE0F?\s*/gu, '')
+                : dialogConfig.message}
+            </p>
+            <div className="flex gap-2.5">
+              {dialogConfig.type === 'confirm' && <button onClick={closeDialog} className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-md font-semibold text-xs border border-slate-200 dark:border-slate-700 transition-colors">Cancelar</button>}
+              <button onClick={() => { if (dialogConfig.onConfirm) dialogConfig.onConfirm(); closeDialog(); }} className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-semibold text-xs transition-colors">Confirmar</button>
             </div>
           </div>
         </div>
@@ -1460,7 +1384,7 @@ function LogisticApp() {
 
       {/* --- MODAL ADMIN: CREAR ANUNCIO --- */}
       {showBroadcastAdmin && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+        <div className="fixed inset-0 bg-slate-950/65 flex items-center justify-center z-[9999] p-4">
           <form onSubmit={async (e) => {
             e.preventDefault();
             const msg = e.target.message.value.trim();
@@ -1470,53 +1394,51 @@ function LogisticApp() {
               setShowBroadcastAdmin(false);
               showAlert("✅ Anuncio enviado exitosamente a toda la flota.");
             } catch (err) { console.error(err); showAlert("Error enviando anuncio."); }
-          }} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl relative animate-in zoom-in-95">
-            <button type="button" onClick={() => setShowBroadcastAdmin(false)} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"><X className="w-4 h-4 text-slate-700 dark:text-slate-300" /></button>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="bg-purple-100 dark:bg-purple-900/40 p-2.5 rounded-full"><Megaphone className="w-6 h-6 text-purple-600 dark:text-purple-400" /></div>
-              <h3 className="text-xl font-black text-slate-800 dark:text-slate-200">Pop-up Global</h3>
+          }} className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-5 w-full max-w-sm shadow-lg relative">
+            <button type="button" onClick={() => setShowBroadcastAdmin(false)} className="absolute top-4 right-4 p-1.5 bg-slate-100 dark:bg-slate-800 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"><X className="w-4 h-4 text-slate-600 dark:text-slate-300" /></button>
+            <div className="flex items-center gap-2.5 mb-2">
+              <div className="bg-blue-50 dark:bg-blue-950/50 p-2 rounded-md border border-blue-200 dark:border-blue-800/60"><Megaphone className="w-5 h-5 text-blue-600 dark:text-blue-400" /></div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Comunicado Global</h3>
             </div>
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-5 leading-relaxed">Envía una alerta urgente que aparecerá obligatoriamente en medio de la pantalla de todos los conductores al abrir la app.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">Envía un aviso que aparecerá en la pantalla de todos los conductores al abrir la aplicación.</p>
 
             {broadcast?.active && (
-              <div className="mb-5 bg-purple-50 dark:bg-purple-900/30 p-4 rounded-2xl border border-purple-200 dark:border-purple-800/50 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-1.5 h-full bg-purple-500"></div>
-                <p className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase mb-1.5 tracking-widest">Anuncio Activo Actual:</p>
-                <p className="text-sm font-bold text-slate-700 dark:text-slate-300 italic leading-snug">"{broadcast.message}"</p>
+              <div className="mb-4 bg-slate-50 dark:bg-slate-800/50 p-3.5 rounded-md border border-slate-200 dark:border-slate-700 relative">
+                <p className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 uppercase mb-1 tracking-wider">Anuncio Activo Actual:</p>
+                <p className="text-xs font-medium text-slate-700 dark:text-slate-300">"{broadcast.message}"</p>
                 <button type="button" onClick={async () => {
                   await setDoc(doc(db, 'system_config', 'broadcast'), { active: false }, { merge: true });
                   showAlert("Anuncio apagado. Ya no le saldrá a nadie.");
-                }} className="mt-3 text-[10px] font-black uppercase text-red-500 hover:text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/40 px-3 py-1.5 rounded-lg transition-colors border border-red-200 dark:border-red-800/50">Apagar Anuncio</button>
+                }} className="mt-2.5 text-[11px] font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 px-2.5 py-1 rounded transition-colors border border-red-200 dark:border-red-900/50">Apagar Anuncio</button>
               </div>
             )}
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Escribir Nuevo Mensaje</label>
-              <textarea name="message" rows="4" required placeholder="Ej: Muchachos, recuerden tomar fotografías claras a los comprobantes de peaje..." className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 resize-none"></textarea>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Escribir Nuevo Mensaje</label>
+              <textarea name="message" rows="4" required placeholder="Ej: Recuerden tomar fotografías claras a los comprobantes de peaje..." className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-md p-2.5 text-sm font-medium text-slate-800 dark:text-slate-200 outline-none focus:border-blue-600 resize-none"></textarea>
             </div>
-            <button type="submit" className="w-full mt-4 bg-purple-600 hover:bg-purple-700 text-white font-black py-3.5 rounded-xl shadow-lg shadow-purple-200 transition-colors text-sm">Emitir a toda la flota</button>
+            <button type="submit" className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-md transition-colors text-xs">Emitir a toda la flota</button>
           </form>
         </div>
       )}
 
       {/* --- POP-UP CONDUCTORES: MOSTRAR ANUNCIO --- */}
       {user && broadcast?.active && broadcast.timestamp.toString() !== localDismissed && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-300 border-4 border-purple-500 flex flex-col">
-            <div className="bg-purple-600 p-6 text-center relative overflow-hidden">
-              <div className="absolute -top-10 -right-10 opacity-10"><Megaphone className="w-40 h-40 text-white" /></div>
-              <div className="w-16 h-16 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl relative z-10">
-                <Megaphone className="w-8 h-8 text-purple-600 dark:text-purple-400 animate-pulse" />
+        <div className="fixed inset-0 bg-slate-950/75 flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg w-full max-w-sm overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col">
+            <div className="bg-slate-900 dark:bg-slate-800 p-5 text-center border-b border-slate-800">
+              <div className="w-12 h-12 bg-blue-600 rounded-md flex items-center justify-center mx-auto mb-3">
+                <Megaphone className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-2xl font-black text-white relative z-10 tracking-wide">¡Aviso Importante!</h3>
+              <h3 className="text-lg font-bold text-white tracking-tight">Aviso Importante</h3>
             </div>
-            <div className="p-6 text-center flex-1 flex flex-col justify-center bg-slate-50 dark:bg-slate-900">
-              <p className="text-base font-extrabold text-slate-700 dark:text-slate-300 mb-8 leading-relaxed whitespace-pre-wrap">{broadcast.message}</p>
+            <div className="p-5 text-center flex-1 flex flex-col justify-center bg-white dark:bg-slate-900">
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-6 leading-relaxed whitespace-pre-wrap">{broadcast.message}</p>
               <button onClick={() => {
                 localStorage.setItem('dismissedBroadcast', broadcast.timestamp.toString());
                 setLocalDismissed(broadcast.timestamp.toString());
-              }} className="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-black shadow-lg shadow-purple-200 transition-all text-lg active:scale-95">
-                ¡Entendido!
+              }} className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-semibold transition-colors text-sm">
+                Confirmar lectura
               </button>
             </div>
           </div>
@@ -1529,16 +1451,15 @@ function LogisticApp() {
 }
 
 // --- ENVOLTORIO MAESTRO DE NAVEGACIÓN ---
-// Esto convierte tu aplicación entera en una Single Page Application (SPA) ultra veloz
 export default function App() {
   return (
     <Router>
       {/* ENVUELVE LA APP PARA ATRAPAR LAS CARGAS DIFERIDAS DE LAS VISTAS */}
       <React.Suspense fallback={
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center p-4">
-          <div className="w-16 h-16 border-4 border-blue-200 dark:border-blue-800/50 border-t-blue-600 rounded-full animate-spin mb-4 shadow-sm"></div>
-          <p className="text-lg font-extrabold text-slate-700 dark:text-slate-300 tracking-tight animate-pulse">Cargando aplicación...</p>
-          <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest">LogisticAPP</p>
+        <div className="min-h-screen bg-[var(--bg-canvas)] flex flex-col items-center justify-center p-4">
+          <div className="w-10 h-10 border-2 border-slate-200 dark:border-slate-800 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+          <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Cargando aplicación...</p>
+          <p className="text-xs font-mono text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">LogisticAPP</p>
         </div>
       }>
         <LogisticApp />
@@ -1546,15 +1467,3 @@ export default function App() {
     </Router>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-

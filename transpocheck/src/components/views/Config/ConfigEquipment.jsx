@@ -25,7 +25,7 @@ export default function ConfigEquipment({ db, showAlert, showConfirm }) {
   }, [db]);
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 w-full min-w-0 animate-in fade-in">
+    <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 w-full min-w-0 animate-in fade-in">
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-extrabold flex items-center gap-2 text-slate-800 dark:text-slate-200"><CheckCircle className="text-amber-500 w-5 h-5"/> Lista de Equipamiento</h3>
       </div>

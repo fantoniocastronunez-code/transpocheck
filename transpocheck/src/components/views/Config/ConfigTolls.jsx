@@ -51,7 +51,7 @@ export default function ConfigTolls({ db, showAlert, showConfirm }) {
             setTollsList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
             e.target.reset();
          } catch (err) { showAlert("❌ Error al guardar peaje."); }
-      }} className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-4">
+      }} className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-4">
          <div className="flex justify-between items-center">
             <h3 className="font-extrabold flex items-center gap-2 text-slate-800 dark:text-slate-200"><Ticket className="text-emerald-600 dark:text-emerald-400 w-5 h-5"/> {editingToll ? 'Editar Peaje' : 'Nuevo Peaje'}</h3>
             {editingToll && <button type="button" onClick={()=>setEditingToll(null)} className="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg uppercase transition-colors hover:bg-slate-200 dark:bg-slate-700">Cancelar</button>}
@@ -68,7 +68,7 @@ export default function ConfigTolls({ db, showAlert, showConfirm }) {
             <input name="route" defaultValue={editingToll?.route} placeholder="Ej: Ruta 5 Norte" autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm outline-none focus:border-emerald-500 font-bold bg-transparent"/>
          </div>
 
-         <div className="grid grid-cols-2 gap-3 bg-emerald-50 dark:bg-emerald-900/30 p-3 rounded-2xl border border-emerald-100 dark:border-emerald-800/50">
+         <div className="grid grid-cols-2 gap-3 bg-emerald-50 dark:bg-emerald-900/30 p-3 rounded-xl border border-emerald-100 dark:border-emerald-800/50">
             <div className="col-span-2 text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest border-b border-emerald-200 dark:border-emerald-800/50/50 pb-1 mb-1">Valores por Categoría de Vehículo</div>
             <div className="space-y-1">
                <label className="text-[10px] font-bold text-slate-600 dark:text-slate-400 ml-1">Auto / SUV ($)</label>
@@ -117,7 +117,7 @@ export default function ConfigTolls({ db, showAlert, showConfirm }) {
          </button>
       </form>
 
-      <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 max-h-[85vh] flex flex-col">
+      <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 max-h-[85vh] flex flex-col">
          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 shrink-0 border-b border-slate-100 dark:border-slate-800 pb-4">
            <h3 className="font-extrabold text-slate-800 dark:text-slate-200">Base de Peajes</h3>
            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">Total: {tollsList.length}</span>
@@ -129,16 +129,16 @@ export default function ConfigTolls({ db, showAlert, showConfirm }) {
                  <p className="text-sm font-extrabold text-slate-800 dark:text-slate-200 truncate">{t.name}</p>
                  {t.route && <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 truncate">{t.route}</p>}
                  <div className="flex gap-1.5 mt-1.5 flex-wrap">
-                    <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">🚙 Auto: ${t.prices?.['Auto / SUV'] || 0}</span>
-                    <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">🛻 Camioneta: ${t.prices?.['Camioneta'] || 0}</span>
-                    <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">🚐 Furgón P: ${t.prices?.['Furgón Pequeño'] || 0}</span>
-                    <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">🚐 Furgón G: ${t.prices?.['Furgón Grande'] || 0}</span>
-                    <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">🚚 Camión S: ${t.prices?.['Camión Simple'] || 0}</span>
-                    <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">🚚 Camión DC: ${t.prices?.['Camión Doble Cabina'] || 0}</span>
-                    <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">🚛 Camión 2E: ${t.prices?.['Camión (2 Ejes traseros)'] || 0}</span>
-                    <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">🚛 Camión 3E: ${t.prices?.['Camión (3 Ejes traseros)'] || 0}</span>
-                    <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">🚚 Camión 8x4: ${t.prices?.['Camión Rigid (8x4)'] || 0}</span>
-                    <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">🛒 Carro: ${t.prices?.['Carro Arrastre'] || 0}</span>
+                    <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">Auto: ${t.prices?.['Auto / SUV'] || 0}</span>
+                    <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">Camioneta: ${t.prices?.['Camioneta'] || 0}</span>
+                    <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">Furgón P: ${t.prices?.['Furgón Pequeño'] || 0}</span>
+                    <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">Furgón G: ${t.prices?.['Furgón Grande'] || 0}</span>
+                    <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">Camión S: ${t.prices?.['Camión Simple'] || 0}</span>
+                    <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">Camión DC: ${t.prices?.['Camión Doble Cabina'] || 0}</span>
+                    <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">Camión 2E: ${t.prices?.['Camión (2 Ejes traseros)'] || 0}</span>
+                    <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">Camión 3E: ${t.prices?.['Camión (3 Ejes traseros)'] || 0}</span>
+                    <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">Camión 8x4: ${t.prices?.['Camión Rigid (8x4)'] || 0}</span>
+                    <span className="text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded">Carro: ${t.prices?.['Carro Arrastre'] || 0}</span>
                  </div>
                </div>
                <div className="flex flex-col gap-1.5 shrink-0 ml-2">

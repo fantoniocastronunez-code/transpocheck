@@ -66,7 +66,7 @@ export default function ConfigDirectory({ db, showAlert, showConfirm }) {
             setDirectoryList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
             e.target.reset(); 
          } catch (err) { showAlert("Error al guardar."); } 
-      }} className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-4 w-full lg:w-1/2 min-w-0">
+      }} className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-4 w-full lg:w-1/2 min-w-0">
         <div className="flex justify-between items-center">
            <h3 className="font-extrabold flex items-center gap-2 text-slate-800 dark:text-slate-200"><BookOpen className="text-blue-600 dark:text-blue-400 w-5 h-5"/> {editingDir ? 'Editar Destino' : 'Nuevo Destino'}</h3>
            {editingDir && <button type="button" onClick={()=>setEditingDir(null)} className="text-[10px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg uppercase">Cancelar</button>}
@@ -109,7 +109,7 @@ export default function ConfigDirectory({ db, showAlert, showConfirm }) {
         </button>
       </form>
 
-      <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 max-h-[85vh] flex flex-col w-full lg:w-1/2 min-w-0">
+      <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 max-h-[85vh] flex flex-col w-full lg:w-1/2 min-w-0">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 shrink-0 border-b border-slate-100 dark:border-slate-800 pb-4">
           <h3 className="font-extrabold text-slate-800 dark:text-slate-200">Destinos Guardados</h3>
           <div className="relative w-full sm:w-72 shrink-0 min-w-0">

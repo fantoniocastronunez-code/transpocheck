@@ -1,185 +1,366 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 @variant dark (&:where(.dark, .dark *));
 
-/* === TRANSPOCHECK THEME VARIABLES & TYPOGRAPHY === */
+/* ==========================================================================
+   TRANSPOCHECK / LOGISTICAPP — SISTEMA CENTRALIZADO DE TOKENS DE DISEÑO
+   Dirección Visual: Precisión Operativa / Industrial Editorial
+   ========================================================================== */
+
+@font-face {
+  font-family: 'FE-Font';
+  src: url('https://cdn.jsdelivr.net/gh/TVLuke/kennzeichen_buch/EuroPlate.ttf') format('truetype'),
+       url('https://cdn.jsdelivr.net/gh/niklaswa/license-plate-generator/public/fonts/EuroPlate.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Radios sobrios y moderados en toda la escala */
+  --radius-xs: 4px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+  --radius-2xl: 10px;
+  --radius-3xl: 12px;
+
+  /* Sombras mínimas y técnicas (sin difuminados exagerados) */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 20, 28, 0.04);
+  --shadow-sm: 0 1px 2px 0 rgba(15, 20, 28, 0.05);
+  --shadow-md: 0 2px 6px -1px rgba(15, 20, 28, 0.07), 0 1px 2px -1px rgba(15, 20, 28, 0.04);
+  --shadow-lg: 0 4px 12px -2px rgba(15, 20, 28, 0.08), 0 2px 4px -2px rgba(15, 20, 28, 0.04);
+  --shadow-xl: 0 8px 20px -4px rgba(15, 20, 28, 0.10), 0 2px 6px -2px rgba(15, 20, 28, 0.05);
+  --shadow-2xl: 0 12px 28px -6px rgba(15, 20, 28, 0.14), 0 4px 8px -3px rgba(15, 20, 28, 0.06);
+}
 
 :root {
-  --flat-blue: #2563eb;
-  --flat-blue-hover: #3b82f6;
-  --flat-green: #10b981;
-  --flat-green-hover: #34d399;
-  
-  --bg-color: #f8fafc;
-  --card-bg: #ffffff;
-  --border-color: #cbd5e1;
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
+  /* 1. Esquema de color nativo del navegador */
+  color-scheme: light dark;
+
+  /* 2. Tipografía y Escala Tipográfica */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-plate: 'FE-Font', 'JetBrains Mono', monospace;
+
+  --text-xs: 0.6875rem;    /* 11px */
+  --text-sm: 0.8125rem;    /* 13px */
+  --text-base: 0.875rem;   /* 14px */
+  --text-md: 1rem;         /* 16px */
+  --text-lg: 1.25rem;      /* 20px */
+  --text-xl: 1.75rem;      /* 28px */
+  --text-2xl: 2.25rem;     /* 36px */
+
+  /* 3. Sistema de Espaciado (Base 4/8px) */
+  --space-1: 0.25rem;      /* 4px */
+  --space-2: 0.5rem;       /* 8px */
+  --space-3: 0.75rem;      /* 12px */
+  --space-4: 1rem;         /* 16px */
+  --space-5: 1.25rem;      /* 20px */
+  --space-6: 1.5rem;       /* 24px */
+  --space-8: 2rem;         /* 32px */
+  --space-10: 2.5rem;      /* 40px */
+
+  /* 4. Radios de Borde */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* 5. Transiciones Funcionales (120-200ms) */
+  --transition-fast: 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-base: 160ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* 6. Paleta Modo Claro (Pizarra Industrial + Azul Cobalto Técnico) */
+  --bg-canvas: #F4F5F7;
+  --bg-surface: #FFFFFF;
+  --bg-subtle: #ECEEF2;
+  --bg-elevated: #FFFFFF;
+  --bg-overlay: rgba(15, 20, 28, 0.65);
+
+  --border-subtle: #E2E5EC;
+  --border-default: #CBD0DC;
+  --border-strong: #949DB0;
+
+  --text-primary: #0F141C;
+  --text-secondary: #475263;
+  --text-muted: #5E6A7E;
+  --text-inverse: #FFFFFF;
+
+  --accent: #1D4ED8;
+  --accent-hover: #1E40AF;
+  --accent-active: #1E3A8A;
+  --accent-subtle: #EFF6FF;
+  --accent-border: #BFDBFE;
+  --accent-text: #1E40AF;
+
+  /* Colores Semánticos Discretos (WCAG AA+) */
+  --status-success: #15803D;
+  --status-success-bg: #F0FDF4;
+  --status-success-border: #BBF7D0;
+
+  --status-warning: #B45309;
+  --status-warning-bg: #FFFBEB;
+  --status-warning-border: #FDE68A;
+
+  --status-danger: #B91C1C;
+  --status-danger-bg: #FEF2F2;
+  --status-danger-border: #FECACA;
+
+  --status-info: #1D4ED8;
+  --status-info-bg: #EFF6FF;
+  --status-info-border: #BFDBFE;
+
+  /* Compatibilidad con variables previas */
+  --flat-blue: var(--accent);
+  --flat-blue-hover: var(--accent-hover);
+  --flat-green: var(--status-success);
+  --flat-green-hover: #166534;
+  --bg-color: var(--bg-canvas);
+  --card-bg: var(--bg-surface);
+  --border-color: var(--border-default);
+
+  /* Scrollbars y controles nativos */
+  --scrollbar-track: #ECEEF2;
+  --scrollbar-thumb: #949DB0;
+  accent-color: var(--accent);
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  scrollbar-width: thin;
+}
+
+html:not(.dark) {
+  color-scheme: light;
+  --color-slate-400: #5E6A7E;
+  --color-slate-500: #475263;
+  --color-gray-400: #5E6A7E;
+  --color-gray-500: #475263;
+  --color-zinc-400: #5E6A7E;
+  --color-zinc-500: #475263;
 }
 
 .dark {
-  --flat-blue: #3b82f6;
-  --flat-blue-hover: #60a5fa;
-  --flat-green: #10b981;
-  --flat-green-hover: #34d399;
+  color-scheme: dark;
 
-  --bg-color: #0b1120;
-  --card-bg: #1e293b;
-  --border-color: #334155;
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
+  /* Paleta Modo Oscuro (Pizarra Profunda Calibrada) */
+  --bg-canvas: #0B0D11;
+  --bg-surface: #12161F;
+  --bg-subtle: #1A202C;
+  --bg-elevated: #1E2534;
+  --bg-overlay: rgba(5, 7, 11, 0.78);
+
+  --border-subtle: #232A38;
+  --border-default: #2E3748;
+  --border-strong: #4A5568;
+
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --text-inverse: #0F141C;
+
+  --accent: #3B82F6;
+  --accent-hover: #60A5FA;
+  --accent-active: #2563EB;
+  --accent-subtle: #172554;
+  --accent-border: #1E3A8A;
+  --accent-text: #93C5FD;
+
+  --status-success: #4ADE80;
+  --status-success-bg: #052E16;
+  --status-success-border: #14532D;
+
+  --status-warning: #FBBF24;
+  --status-warning-bg: #451A03;
+  --status-warning-border: #78350F;
+
+  --status-danger: #F87171;
+  --status-danger-bg: #450A0A;
+  --status-danger-border: #7F1D1D;
+
+  --status-info: #60A5FA;
+  --status-info-bg: #172554;
+  --status-info-border: #1E3A8A;
+
+  --scrollbar-track: #12161F;
+  --scrollbar-thumb: #334155;
 }
+
+/* Soporte para Modo de Contraste Forzado (Windows High Contrast) */
+@media (forced-colors: active) {
+  :root,
+  .dark {
+    --bg-canvas: Canvas;
+    --bg-surface: Canvas;
+    --bg-subtle: Canvas;
+    --bg-elevated: Canvas;
+    --text-primary: CanvasText;
+    --text-secondary: CanvasText;
+    --text-muted: GrayText;
+    --border-subtle: ButtonBorder;
+    --border-default: ButtonBorder;
+    --border-strong: Highlight;
+    --accent: Highlight;
+    --accent-text: Highlight;
+  }
+}
+
+/* Fallback legacy de scrollbars para motores sin soporte de scrollbar-color */
+@supports not (scrollbar-color: auto) {
+  body::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  body::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+  }
+  body::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+}
+
+/* ==========================================================================
+   BASE & TIPOGRAFÍA
+   ========================================================================== */
 
 body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: var(--font-sans);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-canvas);
   color: var(--text-primary);
   min-height: 100vh;
+  overscroll-behavior-y: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--transition-base), color var(--transition-base);
 }
 
-/* === REFUERZO DE CONTRASTE PARA MODO CLARO (TEXTOS GRISES / SECUNDARIOS) === */
-/* En modo claro, los grises claros (slate-400 y slate-500) se convierten en tonos pizarra oscuros, */
-/* nítidos y con ratio de contraste accesible (WCAG AAA >= 7:1) para máxima legibilidad. */
-html:not(.dark) {
-  --color-slate-400: #475569;
-  --color-slate-500: #334155;
-  --color-gray-400: #4b5563;
-  --color-gray-500: #374151;
-  --color-zinc-400: #52525b;
-  --color-zinc-500: #3f3f46;
+/* Reemplazo limpio de la antigua clase .font-alfa por tipografía de interfaz sobria */
+.font-alfa {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  letter-spacing: -0.025em;
 }
 
-@supports (color: color(display-p3 0 0 0)) {
-  html:not(.dark) {
-    --color-slate-400: #475569;
-    --color-slate-500: #334155;
-    --color-gray-400: #4b5563;
-    --color-gray-500: #374151;
-    --color-zinc-400: #52525b;
-    --color-zinc-500: #3f3f46;
-  }
+/* Utilidad para datos técnicos tabulares (patentes, VIN, km, montos, horas) */
+.font-mono,
+.tabular-nums {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
-@supports (color: lab(0% 0 0)) {
-  html:not(.dark) {
-    --color-slate-400: #475569;
-    --color-slate-500: #334155;
-    --color-gray-400: #4b5563;
-    --color-gray-500: #374151;
-    --color-zinc-400: #52525b;
-    --color-zinc-500: #3f3f46;
-  }
+/* ==========================================================================
+   ESTADOS DE INTERACCIÓN Y FORMULARIOS UNIFICADOS
+   ========================================================================== */
+
+button,
+a,
+input,
+select,
+textarea {
+  transition: background-color var(--transition-fast),
+              border-color var(--transition-fast),
+              color var(--transition-fast),
+              box-shadow var(--transition-fast),
+              opacity var(--transition-fast);
 }
 
-/* Para elementos dentro de contenedores explícitamente oscuros o en modo oscuro, */
-/* se preserva la legibilidad con tonos claros */
-.dark,
-[class*="bg-slate-900"],
-[class*="bg-slate-950"],
-[class*="bg-slate-800"],
-[class*="bg-gray-900"],
-[class*="bg-black"],
-[class*="from-slate-800"],
-[class*="from-slate-900"] {
-  --color-slate-400: #94a3b8;
-  --color-slate-500: #64748b;
-  --color-gray-400: #9ca3af;
-  --color-gray-500: #6b7280;
-  --color-zinc-400: #a1a1aa;
-  --color-zinc-500: #71717a;
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
-/* Reglas directas con especificidad para garantizar que ningún texto gris sea pálido en modo claro */
-html:not(.dark) .text-slate-400,
-html:not(.dark) .text-gray-400,
-html:not(.dark) .text-zinc-400 {
-  color: #475569;
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
-html:not(.dark) .text-slate-500,
-html:not(.dark) .text-gray-500,
-html:not(.dark) .text-zinc-500 {
-  color: #334155;
+/* Contraste garantizado en modo claro para textos secundarios */
+html:not(.dark) :where(.text-slate-400, .text-gray-400, .text-zinc-400) {
+  color: var(--text-muted);
 }
 
-/* Excepciones para textos dentro de bloques oscuros cuando la app está en modo claro */
-html:not(.dark) [class*="bg-slate-900"] .text-slate-400,
-html:not(.dark) [class*="bg-slate-950"] .text-slate-400,
-html:not(.dark) [class*="bg-slate-800"] .text-slate-400,
-html:not(.dark) [class*="bg-black"] .text-slate-400,
-html:not(.dark) [class*="from-slate-800"] .text-slate-400,
-html:not(.dark) [class*="from-slate-900"] .text-slate-400 {
-  color: #94a3b8;
+html:not(.dark) :where(.text-slate-500, .text-gray-500, .text-zinc-500) {
+  color: var(--text-secondary);
 }
 
-html:not(.dark) [class*="bg-slate-900"] .text-slate-500,
-html:not(.dark) [class*="bg-slate-950"] .text-slate-500,
-html:not(.dark) [class*="bg-slate-800"] .text-slate-500,
-html:not(.dark) [class*="bg-black"] .text-slate-500,
-html:not(.dark) [class*="from-slate-800"] .text-slate-500,
-html:not(.dark) [class*="from-slate-900"] .text-slate-500 {
-  color: #cbd5e1;
+html:not(.dark) :where([class*="bg-slate-900"], [class*="bg-slate-950"], [class*="bg-slate-800"], [class*="bg-black"]) .text-slate-400 {
+  color: #94A3B8;
 }
 
-/* Placeholders nítidos y legibles en modo claro */
-html:not(.dark) input::placeholder,
-html:not(.dark) textarea::placeholder {
-  color: #64748b !important;
+html:not(.dark) :where([class*="bg-slate-900"], [class*="bg-slate-950"], [class*="bg-slate-800"], [class*="bg-black"]) .text-slate-500 {
+  color: #CBD5E1;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
   opacity: 1;
 }
 
-/* Glass card support */
-.glass-card {
-  background-color: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(203, 213, 225, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  color: #0f172a;
-}
-.dark .glass-card {
-  background-color: rgba(30, 41, 59, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #f1f5f9;
-}
-
-/* Inputs en modo oscuro para fallback consistente */
-.dark input:not([type="checkbox"]):not([type="radio"]), 
-.dark select, 
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark select,
 .dark textarea {
-  background-color: #0f172a;
-  color: #f8fafc;
-  border-color: #334155;
+  background-color: var(--bg-subtle);
+  color: var(--text-primary);
+  border-color: var(--border-default);
 }
 
-/* Modales */
-.fixed.inset-0.bg-black\/50, .bg-slate-900\/80 {
-  background-color: rgba(0, 0, 0, 0.75) !important;
+/* Reemplazo de .glass-card por superficie sólida con borde técnico */
+.glass-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-xs);
 }
 
-/* === UTILIDADES PARA SAFE AREA DE IPHONE (NOTCH, DYNAMIC ISLAND & HOME BAR) === */
+/* ==========================================================================
+   SAFE AREA & NAVEGACIÓN FIJA (iOS / ANDROID PWA)
+   ========================================================================== */
+
+.fixed-nav-bar {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 50 !important;
+}
+
 .safe-top-header {
-  padding-top: calc(0.75rem + env(safe-area-inset-top, 0px)) !important;
+  padding-top: calc(var(--space-3) + env(safe-area-inset-top, 0px)) !important;
 }
 
 .safe-bottom-bar {
-  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px)) !important;
+  padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px)) !important;
 }
 
 @supports (padding-top: env(safe-area-inset-top)) {
-  /* Header de barra fija principal */
   .fixed-nav-bar {
-    padding-top: calc(0.75rem + env(safe-area-inset-top)) !important;
-    height: calc(4.25rem + env(safe-area-inset-top)) !important;
+    padding-top: calc(0.5rem + env(safe-area-inset-top)) !important;
+    height: calc(3.75rem + env(safe-area-inset-top)) !important;
   }
-  /* Padding general para las vistas (etiqueta main) */
   main {
-    padding-top: calc(5rem + env(safe-area-inset-top)) !important;
+    padding-top: calc(4.75rem + env(safe-area-inset-top)) !important;
   }
   @media (min-width: 640px) {
     .fixed-nav-bar {
-      height: calc(5rem + env(safe-area-inset-top)) !important;
+      height: calc(4.25rem + env(safe-area-inset-top)) !important;
     }
     main {
-      padding-top: calc(6rem + env(safe-area-inset-top)) !important;
+      padding-top: calc(5.25rem + env(safe-area-inset-top)) !important;
     }
+  }
+}
+
+/* Prevenir auto-zoom en iOS Safari al enfocar controles */
+@media screen and (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
   }
 }

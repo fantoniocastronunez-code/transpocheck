@@ -6,46 +6,44 @@ const WaitTimerBadge = ({ arrivedAt, role = 'client' }) => {
   const [time, setTime] = useState(0);
 
   useEffect(() => {
-    // Calculamos la diferencia inicial y luego cada segundo
     const updateTimer = () => {
       const diffInSeconds = Math.max(0, Math.floor((Date.now() - arrivedAt) / 1000));
       setTime(diffInSeconds);
     };
     
-    updateTimer(); // Disparo inicial para evitar el lag de 1 segundo
+    updateTimer();
     const int = setInterval(updateTimer, 1000);
     return () => clearInterval(int);
   }, [arrivedAt]);
 
-  // Cálculos matemáticos seguros
   const hours = Math.floor(time / 3600);
   const mins = Math.floor((time % 3600) / 60);
   const secs = time % 60;
   
-  // Si hay horas, mostramos formato HH:MM:SS, si no, MM:SS
   const timeString = hours > 0 
     ? `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
     : `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   
-  // Total de minutos brutos para evaluar las advertencias lógicas
   const totalMins = Math.floor(time / 60);
 
   if (role === 'client' && totalMins < 20) return null;
 
   const isWarning = totalMins >= 15;
-  const bgClass = isWarning ? 'bg-red-50 border-red-500' : 'bg-amber-50 border-amber-400';
-  const iconClass = isWarning ? 'text-red-600' : 'text-amber-500';
-  const textClass = isWarning ? 'text-red-800' : 'text-amber-800';
-  const timeClass = isWarning ? 'text-red-600' : 'text-amber-600';
+  const bgClass = isWarning
+    ? 'bg-red-50 dark:bg-red-950/50 border-red-300 dark:border-red-800'
+    : 'bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800';
+  const iconClass = isWarning ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400';
+  const textClass = isWarning ? 'text-red-800 dark:text-red-300' : 'text-amber-800 dark:text-amber-300';
+  const timeClass = isWarning ? 'text-red-700 dark:text-red-400' : 'text-amber-700 dark:text-amber-400';
 
   return (
-    <div className={`mt-4 mb-2 border-2 p-4 rounded-2xl flex items-center gap-4 animate-in zoom-in shadow-sm transition-colors duration-500 ${bgClass}`}>
-      <Clock className={`w-8 h-8 shrink-0 ${iconClass} animate-pulse`}/>
+    <div className={`mt-3 mb-2 border p-3 rounded-md flex items-center gap-3 transition-colors ${bgClass}`}>
+      <Clock className={`w-6 h-6 shrink-0 ${iconClass}`}/>
       <div className="flex-1">
-        <p className={`text-[10px] font-extrabold uppercase tracking-widest ${textClass}`}>
+        <p className={`text-[11px] font-semibold uppercase tracking-wider ${textClass}`}>
           {role === 'driver' ? 'Llevas esperando:' : role === 'admin' ? 'Conductor esperando:' : 'El conductor te espera hace:'}
         </p>
-        <p className={`font-black text-3xl ${timeClass} font-mono tracking-widest leading-none mt-1`}>
+        <p className={`font-bold text-2xl ${timeClass} font-mono tabular-nums tracking-wider leading-none mt-1`}>
           {timeString}
         </p>
       </div>

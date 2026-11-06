@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Loader2, Save, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, CheckCircle, Camera } from 'lucide-react';
 import { ChecklistProvider, useChecklist } from './ChecklistContext';
 import InAppCamera from '../../ui/InAppCamera';
 
@@ -97,7 +97,7 @@ const ChecklistInner = ({ openCamera }) => {
     if (formData.photos?.front) earned += 1;
     if (formData.photos?.back) earned += 1;
 
-    // Laterales (Soporta formato cabina+carrocería para camiones o laterales estándar)
+    // Laterales (Soporta cabina+carrocería para camiones o laterales estándar)
     if (isCamion) {
       if (formData.photos?.left_cab || formData.photos?.left) earned += 1;
       if (formData.photos?.left_body || formData.photos?.left) earned += 1;
@@ -360,26 +360,26 @@ const ChecklistInner = ({ openCamera }) => {
   const isSimple = job?.tripType === 'simple' || isQuick;
 
   return (
-    <div className="fixed inset-0 bg-slate-50 dark:bg-slate-950 z-50 flex flex-col h-[100dvh] overflow-hidden animate-in slide-in-from-bottom-full duration-300">
+    <div className="fixed inset-0 bg-slate-50 dark:bg-slate-950 z-50 flex flex-col h-[100dvh] overflow-hidden animate-in slide-in-from-bottom-full duration-200">
 
       {/* HEADER PRINCIPAL */}
-      <div className="safe-top-header flex justify-between items-center bg-white dark:bg-slate-900 px-4 pb-3 sm:pb-4 shadow-sm relative z-50 border-b border-slate-200 dark:border-slate-800 shrink-0">
+      <div className="safe-top-header flex justify-between items-center bg-white dark:bg-slate-900 px-4 pb-3 sm:pb-4 shadow-xs relative z-50 border-b border-slate-200 dark:border-slate-800 shrink-0">
         <button
           onClick={async () => {
             try { if (flushDraft) await flushDraft(); } catch (e) { console.warn('[ERR-CANCEL-FLUSH-01]', e); }
             onCancel();
           }}
-          className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 bg-slate-100 dark:bg-slate-800 p-2 sm:p-2.5 rounded-xl transition-all active:scale-95 border border-slate-200 dark:border-slate-700"
+          className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 bg-slate-100 dark:bg-slate-800 p-2 sm:p-2.5 rounded-lg transition-colors border border-slate-200 dark:border-slate-700"
         >
           <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
 
         <div className="text-center flex-1 mx-2 overflow-hidden">
-          <h2 className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 truncate">
+          <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 truncate">
             {isQuick ? 'Checklist Rápido' : 'Checklist Digital'}
           </h2>
           {!isQuick && (
-            <p className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 truncate">
+            <p className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400 truncate font-mono">
               {job?.plate || job?.vin || 'Vehículo'} • {job?.client || 'Cliente'}
             </p>
           )}
@@ -389,14 +389,14 @@ const ChecklistInner = ({ openCamera }) => {
 
       {/* BARRA DE PROGRESO */}
       {!isSimple && (
-        <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900 border-b border-slate-200/50 dark:border-slate-800/50 shrink-0">
+        <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shrink-0">
           <div className="flex justify-between items-center mb-1.5">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Progreso del Checklist</span>
-            <span className="text-[10px] font-black text-blue-600 dark:text-blue-400">{calculateProgress()}% Completado</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Progreso del Checklist</span>
+            <span className="text-[10px] font-bold font-mono text-sky-600 dark:text-sky-400">{calculateProgress()}% Completado</span>
           </div>
-          <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden shadow-inner">
+          <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
             <div 
-              className="bg-blue-500 h-1.5 rounded-full transition-all duration-500 ease-out shadow-[0_0_10px_rgba(59,130,246,0.5)]" 
+              className="bg-sky-600 h-1.5 rounded-full transition-all duration-300 ease-out" 
               style={{ width: `${calculateProgress()}%` }}
             ></div>
           </div>
@@ -410,7 +410,7 @@ const ChecklistInner = ({ openCamera }) => {
         {isSimple ? (
           <FastTrackView openCamera={openCamera} />
         ) : (
-          <div className="px-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="px-4 animate-in fade-in duration-150">
             {step === 1 && <StepData />}
             {step === 2 && <StepDocs openCamera={openCamera} />}
             {step === 3 && <StepNotes />}
@@ -421,15 +421,15 @@ const ChecklistInner = ({ openCamera }) => {
       </div>
 
       {/* BARRA INFERIOR (NAVEGACIÓN Y GUARDAR) */}
-      <div className="safe-bottom-bar absolute bottom-0 left-0 right-0 p-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800/80 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.1)] z-50 flex flex-col gap-3">
+      <div className="safe-bottom-bar absolute bottom-0 left-0 right-0 p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex flex-col gap-2.5">
 
-        <div className="flex gap-3">
+        <div className="flex gap-2.5">
           <button
             onClick={() => setStep(Math.max(1, step - 1))}
             disabled={step === 1 || isSubmitting}
-            className={`flex-1 font-black py-3 rounded-2xl border-2 flex items-center justify-center gap-2 uppercase tracking-widest text-xs sm:text-sm transition-all active:scale-95 ${step === 1 || isSubmitting
-                ? 'border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'
-                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+            className={`flex-1 font-bold py-2.5 rounded-lg border flex items-center justify-center gap-2 uppercase tracking-wider text-xs sm:text-sm transition-colors ${step === 1 || isSubmitting
+                ? 'border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-600 cursor-not-allowed'
+                : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
               }`}
           >
             <ArrowLeft className="w-4 h-4" /> Atrás
@@ -437,9 +437,9 @@ const ChecklistInner = ({ openCamera }) => {
           <button
             onClick={() => setStep(Math.min(isSimple ? 3 : 5, step + 1))}
             disabled={step === (isSimple ? 3 : 5) || isSubmitting}
-            className={`flex-1 font-black py-3 rounded-2xl border-2 flex items-center justify-center gap-2 uppercase tracking-widest text-xs sm:text-sm transition-all active:scale-95 ${step === (isSimple ? 3 : 5) || isSubmitting
-                ? 'border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'
-                : 'border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40'
+            className={`flex-1 font-bold py-2.5 rounded-lg border flex items-center justify-center gap-2 uppercase tracking-wider text-xs sm:text-sm transition-colors ${step === (isSimple ? 3 : 5) || isSubmitting
+                ? 'border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-600 cursor-not-allowed'
+                : 'border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-900/40'
               }`}
           >
             Siguiente <ArrowLeft className="w-4 h-4 rotate-180" />
@@ -449,9 +449,9 @@ const ChecklistInner = ({ openCamera }) => {
         <button
           onClick={handlePreSubmit}
           disabled={isSubmitting}
-          className={`w-full font-black py-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 uppercase tracking-widest text-xs sm:text-sm transition-all active:scale-95 ${isSubmitting
-              ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed shadow-none'
-              : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white shadow-blue-500/30'
+          className={`w-full font-bold py-3.5 rounded-lg flex items-center justify-center gap-2 uppercase tracking-wider text-xs sm:text-sm transition-colors ${isSubmitting
+              ? 'bg-slate-300 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed'
+              : 'bg-sky-600 hover:bg-sky-700 text-white shadow-xs'
             }`}
         >
           {isSubmitting ? (
@@ -464,22 +464,19 @@ const ChecklistInner = ({ openCamera }) => {
 
       {/* Overlay de Carga Principal */}
       {showFinalModal && !uploadProgress.active && (
-        <div className="absolute inset-0 bg-[#060b19]/90 backdrop-blur-xl z-[90] flex flex-col items-center justify-center p-4 sm:p-8 animate-in fade-in">
-          <div className="bg-slate-900/60 p-6 rounded-[2.5rem] shadow-[0_0_50px_rgba(59,130,246,0.15)] w-full max-w-sm flex flex-col relative overflow-hidden border border-slate-700/50 backdrop-blur-3xl pb-8">
-            {/* Glows */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-8 bg-blue-500/50 rounded-full blur-[40px] pointer-events-none" />
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-64 h-12 bg-blue-500/30 rounded-full blur-[40px] pointer-events-none" />
+        <div className="absolute inset-0 bg-slate-950/85 z-[90] flex flex-col items-center justify-center p-4 sm:p-8 animate-in fade-in">
+          <div className="bg-slate-900 p-6 rounded-xl shadow-lg w-full max-w-sm flex flex-col relative overflow-hidden border border-slate-800 pb-6">
 
-            <h3 className="text-lg font-bold text-white mb-6 mt-2 tracking-wide text-center">
+            <h3 className="text-base font-bold text-white mb-5 mt-1 tracking-tight text-center">
               Combustible y Kilometraje
             </h3>
 
-            <div className="space-y-6 relative z-10 flex-1">
+            <div className="space-y-5 relative z-10 flex-1">
               {/* Odómetro */}
               <div className="flex flex-col gap-1">
-                <div className="flex justify-between items-end mb-1 px-4">
-                   <label className="text-xs text-slate-300 font-medium tracking-wide">Odómetro Actual</label>
-                   <span className="text-xs text-slate-500 font-medium">Km</span>
+                <div className="flex justify-between items-end mb-1 px-2">
+                   <label className="text-xs text-slate-300 font-medium">Odómetro Actual</label>
+                   <span className="text-xs text-slate-500 font-mono">Km</span>
                 </div>
                 <div className="relative">
                   <input
@@ -487,10 +484,10 @@ const ChecklistInner = ({ openCamera }) => {
                     placeholder="0"
                     value={formData.mileage || ''}
                     onChange={e => setFormData(p => ({ ...p, mileage: e.target.value }))}
-                    className="w-full bg-[#131b2e] border border-slate-700/50 p-4 rounded-[1.5rem] text-center text-3xl font-black text-white outline-none focus:border-blue-500/50 focus:shadow-[0_0_20px_rgba(59,130,246,0.2)] transition-all shadow-inner"
+                    className="w-full bg-slate-950 border border-slate-700 p-3.5 rounded-lg text-center text-2xl font-bold font-mono text-white outline-none focus:border-sky-500 transition-colors"
                   />
                 </div>
-                <p className="text-center text-[10px] text-slate-500 mt-2 font-medium tracking-wide uppercase">Ingresa el Kilometraje</p>
+                <p className="text-center text-[10px] text-slate-400 mt-1.5 font-medium uppercase tracking-wider">Ingresa el Kilometraje</p>
               </div>
 
               {/* Medidor Combustible Visual */}
@@ -506,50 +503,43 @@ const ChecklistInner = ({ openCamera }) => {
                     onPointerDown={(e) => { setIsDraggingFuel(true); updateFuelFromEvent(e); e.currentTarget.setPointerCapture(e.pointerId); }}
                     onPointerMove={(e) => { if(isDraggingFuel) updateFuelFromEvent(e); }}
                     onPointerUp={(e) => { setIsDraggingFuel(false); e.currentTarget.releasePointerCapture(e.pointerId); }}
-                    onPointerCancel={(e) => { setIsDraggingFuel(false); }}
+                    onPointerCancel={() => { setIsDraggingFuel(false); }}
                  >
                     {/* Fondo del arco */}
                     <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#1e293b" strokeWidth="12" strokeLinecap="round" />
                     
-                    {/* Arco con gradiente */}
+                    {/* Arco sólido */}
                     <path 
                       d="M 20 100 A 80 80 0 0 1 180 100" 
                       fill="none" 
-                      stroke="url(#fuelGradient)" 
+                      stroke="#0284c7" 
                       strokeWidth="12" 
                       strokeLinecap="round" 
                       strokeDasharray={`${Math.PI * 80 * fuelDec} ${Math.PI * 80}`}
-                      style={{ transition: isDraggingFuel ? 'none' : 'stroke-dasharray 0.3s ease-out' }}
+                      style={{ transition: isDraggingFuel ? 'none' : 'stroke-dasharray 0.2s ease-out' }}
                     />
-                    <defs>
-                      <linearGradient id="fuelGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#ec4899" />
-                        <stop offset="50%" stopColor="#8b5cf6" />
-                        <stop offset="100%" stopColor="#06b6d4" />
-                      </linearGradient>
-                    </defs>
 
                     {/* Aguja */}
-                    <g transform={`translate(100, 100) rotate(${-90 + (fuelDec * 180)})`} style={{ transition: isDraggingFuel ? 'none' : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
-                      <circle cx="0" cy="0" r="8" fill="#3b82f6" className="shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+                    <g transform={`translate(100, 100) rotate(${-90 + (fuelDec * 180)})`} style={{ transition: isDraggingFuel ? 'none' : 'transform 0.2s ease-out' }}>
+                      <circle cx="0" cy="0" r="8" fill="#0284c7" />
                       <circle cx="0" cy="0" r="4" fill="#0f172a" />
-                      <path d="M -3 -8 L 0 -65 L 3 -8 Z" fill="#3b82f6" />
+                      <path d="M -3 -8 L 0 -65 L 3 -8 Z" fill="#0284c7" />
                     </g>
 
                     {/* Textos centrales */}
                     <text x="100" y="65" textAnchor="middle" fill="white" fontSize="18" fontWeight="bold">
                       {fuelDec === 0 ? 'Vacío' : fuelDec === 1 ? 'Full' : `${Math.round(fuelDec * 100)}%`}
                     </text>
-                    <text x="100" y="80" textAnchor="middle" fill="#64748b" fontSize="10">remaining</text>
+                    <text x="100" y="80" textAnchor="middle" fill="#64748b" fontSize="10">nivel</text>
                     
-                    <text x="15" y="115" textAnchor="middle" fill="#ec4899" fontSize="12" fontWeight="bold">E</text>
-                    <text x="185" y="115" textAnchor="middle" fill="#06b6d4" fontSize="12" fontWeight="bold">F</text>
+                    <text x="15" y="115" textAnchor="middle" fill="#ef4444" fontSize="12" fontWeight="bold">E</text>
+                    <text x="185" y="115" textAnchor="middle" fill="#10b981" fontSize="12" fontWeight="bold">F</text>
                  </svg>
                  );})()}
               </div>
 
               {/* Botones de fotos */}
-              <div className="flex flex-col gap-3 mt-4">
+              <div className="flex flex-col gap-2.5 mt-4">
                 <button
                    type="button"
                    onClick={() => openCamera('Kilometraje', async f => {
@@ -568,9 +558,9 @@ const ChecklistInner = ({ openCamera }) => {
                         showAlert("Error al procesar la foto [ERR-FINAL-ODO-01].");
                       }
                    })}
-                   className={`relative overflow-hidden w-full py-3.5 rounded-[1.25rem] flex items-center justify-center gap-2 border transition-all ${formData.photos?.odometer ? 'border-green-500/50 bg-green-900/30 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'border-blue-500/30 bg-gradient-to-b from-blue-600/20 to-blue-900/40 text-blue-300 hover:from-blue-500/30 hover:to-blue-800/50 shadow-[0_0_15px_rgba(59,130,246,0.15)]'}`}
+                   className={`relative overflow-hidden w-full py-3 rounded-lg flex items-center justify-center gap-2 border transition-colors ${formData.photos?.odometer ? 'border-emerald-600 bg-emerald-950/40 text-emerald-400' : 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
                 >
-                   <Camera className="w-5 h-5" />
+                   <Camera className="w-4 h-4" />
                    <span className="text-xs font-bold tracking-wider uppercase">
                       {formData.photos?.odometer ? 'Foto Odómetro (OK)' : 'Subir Foto Odómetro'}
                    </span>
@@ -594,9 +584,9 @@ const ChecklistInner = ({ openCamera }) => {
                         showAlert("Error al procesar la foto [ERR-FINAL-FUEL-01].");
                       }
                    })}
-                   className={`relative overflow-hidden w-full py-3.5 rounded-[1.25rem] flex items-center justify-center gap-2 border transition-all ${formData.photos?.fuelGauge ? 'border-green-500/50 bg-green-900/30 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.2)]' : 'border-blue-500/30 bg-gradient-to-b from-blue-600/20 to-blue-900/40 text-blue-300 hover:from-blue-500/30 hover:to-blue-800/50 shadow-[0_0_15px_rgba(59,130,246,0.15)]'}`}
+                   className={`relative overflow-hidden w-full py-3 rounded-lg flex items-center justify-center gap-2 border transition-colors ${formData.photos?.fuelGauge ? 'border-emerald-600 bg-emerald-950/40 text-emerald-400' : 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
                 >
-                   <Camera className="w-5 h-5" />
+                   <Camera className="w-4 h-4" />
                    <span className="text-xs font-bold tracking-wider uppercase">
                       {formData.photos?.fuelGauge ? 'Foto Recibo/Tablero (OK)' : 'Subir Foto Recibo'}
                    </span>
@@ -605,18 +595,18 @@ const ChecklistInner = ({ openCamera }) => {
 
             </div>
 
-            {/* Navegación inferior tipo mockup */}
-            <div className="flex justify-between items-center mt-8 relative z-10 px-2">
+            {/* Navegación inferior */}
+            <div className="flex justify-between items-center mt-6 relative z-10 px-2">
               <button
                 onClick={() => setShowFinalModal(false)}
-                className="w-12 h-12 rounded-full bg-[#131b2e] border border-slate-700/50 text-slate-400 flex items-center justify-center hover:bg-slate-800 transition-colors shadow-[0_0_15px_rgba(0,0,0,0.5)]"
+                className="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 flex items-center justify-center hover:bg-slate-700 transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
               
               <div className="flex gap-2">
-                 <div className="w-2 h-2 rounded-full bg-slate-600"></div>
-                 <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"></div>
+                 <div className="w-2 h-2 rounded-full bg-slate-700"></div>
+                 <div className="w-2 h-2 rounded-full bg-sky-500"></div>
               </div>
 
               <button
@@ -627,7 +617,7 @@ const ChecklistInner = ({ openCamera }) => {
                   if (!formData.photos?.fuelGauge) return showAlert("⚠️ Toma la foto del medidor de combustible.");
                   handleSubmitFinal();
                 }}
-                className="w-12 h-12 rounded-full bg-[#131b2e] border border-blue-500/30 text-blue-400 flex items-center justify-center hover:bg-slate-800 transition-colors shadow-[0_0_15px_rgba(59,130,246,0.2)]"
+                className="w-10 h-10 rounded-lg bg-sky-600 text-white flex items-center justify-center hover:bg-sky-700 transition-colors"
               >
                 <ArrowLeft className="w-5 h-5 rotate-180" />
               </button>
@@ -639,15 +629,15 @@ const ChecklistInner = ({ openCamera }) => {
 
       {/* Overlay de Carga Principal */}
       {uploadProgress.active && (
-        <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex flex-col items-center justify-center p-8 animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-2xl flex flex-col items-center max-w-xs w-full">
-            <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />
-            <h3 className="font-black text-slate-800 dark:text-slate-100 text-lg mb-2">Sincronizando</h3>
-            <p className="text-slate-500 dark:text-slate-400 text-sm font-bold text-center mb-4">{uploadProgress.text}</p>
-            <div className="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-              <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${(uploadProgress.current / (uploadProgress.total || 1)) * 100}%` }} />
+        <div className="absolute inset-0 bg-slate-950/80 z-[100] flex flex-col items-center justify-center p-8 animate-in fade-in">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-lg flex flex-col items-center max-w-xs w-full">
+            <Loader2 className="w-10 h-10 text-sky-600 animate-spin mb-4" />
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base mb-1">Sincronizando</h3>
+            <p className="text-slate-500 dark:text-slate-400 text-xs font-medium text-center mb-4">{uploadProgress.text}</p>
+            <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div className="h-full bg-sky-600 transition-all duration-200" style={{ width: `${(uploadProgress.current / (uploadProgress.total || 1)) * 100}%` }} />
             </div>
-            <p className="text-xs font-black text-blue-500 mt-2">{uploadProgress.current} de {uploadProgress.total}</p>
+            <p className="text-xs font-bold font-mono text-sky-600 dark:text-sky-400 mt-2">{uploadProgress.current} de {uploadProgress.total}</p>
           </div>
         </div>
       )}

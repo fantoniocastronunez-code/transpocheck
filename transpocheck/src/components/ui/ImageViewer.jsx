@@ -64,64 +64,64 @@ export const ImageViewer = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black z-[100] flex flex-col animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 bg-slate-950 z-[100] flex flex-col">
       {/* HEADER */}
-      <div className="bg-gradient-to-b from-black/80 to-transparent px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] flex justify-between items-center absolute top-0 left-0 right-0 z-10">
+      <div className="bg-slate-900 border-b border-slate-800 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] flex justify-between items-center z-10">
         <button
           onClick={() => { setImgData(null); setCurrentUrl(null); }}
-          className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center backdrop-blur-md text-white transition-colors active:scale-95"
+          className="w-9 h-9 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-md flex items-center justify-center text-slate-200 transition-colors"
         >
-          <X className="w-6 h-6" />
+          <X className="w-5 h-5" />
         </button>
-        <span className="text-white font-black tracking-widest text-sm drop-shadow-md truncate max-w-[55%]">
+        <span className="text-slate-100 font-semibold tracking-wider uppercase text-xs truncate max-w-[55%]">
           {imgData.label || 'VISTA PREVIA'}
         </span>
         <button
           onClick={handleRotate}
           disabled={isRotating}
           title="Girar imagen 90°"
-          className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center backdrop-blur-md text-amber-300 transition-colors active:scale-95"
+          className="w-9 h-9 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-md flex items-center justify-center text-amber-400 transition-colors"
         >
-          <RotateCw className={`w-5 h-5 ${isRotating ? 'animate-spin' : ''}`} />
+          <RotateCw className={`w-4 h-4 ${isRotating ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
       {/* IMAGEN */}
-      <div className="flex-1 flex items-center justify-center p-4 overflow-hidden">
+      <div className="flex-1 flex items-center justify-center p-4 overflow-hidden bg-slate-950">
         <img
           src={currentUrl || imgData.url}
           alt={imgData.label}
           style={{
             transform: `rotate(${rotationAngle}deg)`,
-            transition: isRotating ? 'transform 0.25s ease' : 'none'
+            transition: isRotating ? 'transform 0.2s ease' : 'none'
           }}
-          className="max-w-full max-h-full object-contain drop-shadow-2xl rounded-lg"
+          className="max-w-full max-h-full object-contain rounded border border-slate-800"
         />
       </div>
 
       {/* FOOTER ACTIONS */}
-      <div className="bg-gradient-to-t from-black/90 via-black/50 to-transparent p-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] flex justify-center gap-3 sm:gap-6 absolute bottom-0 left-0 right-0">
+      <div className="bg-slate-900 border-t border-slate-800 p-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] flex justify-center gap-3">
         <button
           onClick={handleDelete}
-          className="flex-1 max-w-[120px] bg-red-500/20 hover:bg-red-500/40 border border-red-500/50 text-red-100 py-3 rounded-2xl flex flex-col items-center justify-center gap-1 backdrop-blur-md transition-all active:scale-95 shadow-lg"
+          className="flex-1 max-w-[130px] bg-red-950/60 hover:bg-red-900/60 border border-red-800 text-red-200 py-2.5 rounded-md flex flex-col items-center justify-center gap-1 transition-colors"
         >
-          <Trash2 className="w-5 h-5 text-red-400" />
-          <span className="text-[10px] font-bold uppercase tracking-wider">Eliminar</span>
+          <Trash2 className="w-4 h-4 text-red-400" />
+          <span className="text-[11px] font-semibold uppercase tracking-wider">Eliminar</span>
         </button>
         <button
           onClick={handleRotate}
           disabled={isRotating}
-          className="flex-1 max-w-[120px] bg-amber-500/20 hover:bg-amber-500/40 border border-amber-500/50 text-amber-100 py-3 rounded-2xl flex flex-col items-center justify-center gap-1 backdrop-blur-md transition-all active:scale-95 shadow-lg"
+          className="flex-1 max-w-[130px] bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 py-2.5 rounded-md flex flex-col items-center justify-center gap-1 transition-colors"
         >
-          <RotateCw className={`w-5 h-5 text-amber-400 ${isRotating ? 'animate-spin' : ''}`} />
-          <span className="text-[10px] font-bold uppercase tracking-wider">Girar 90°</span>
+          <RotateCw className={`w-4 h-4 text-amber-400 ${isRotating ? 'animate-spin' : ''}`} />
+          <span className="text-[11px] font-semibold uppercase tracking-wider">Girar 90°</span>
         </button>
         <button
           onClick={handleRetake}
-          className="flex-1 max-w-[120px] bg-blue-500/20 hover:bg-blue-500/40 border border-blue-500/50 text-blue-100 py-3 rounded-2xl flex flex-col items-center justify-center gap-1 backdrop-blur-md transition-all active:scale-95 shadow-lg"
+          className="flex-1 max-w-[130px] bg-blue-700 hover:bg-blue-600 border border-blue-600 text-white py-2.5 rounded-md flex flex-col items-center justify-center gap-1 transition-colors"
         >
-          <Camera className="w-5 h-5 text-blue-400" />
-          <span className="text-[10px] font-bold uppercase tracking-wider">Re-tomar</span>
+          <Camera className="w-4 h-4 text-white" />
+          <span className="text-[11px] font-semibold uppercase tracking-wider">Re-tomar</span>
         </button>
       </div>
     </div>

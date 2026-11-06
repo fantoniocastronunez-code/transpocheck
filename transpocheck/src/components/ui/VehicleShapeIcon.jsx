@@ -51,8 +51,10 @@ const heavyTruckShape = (
     <div className="w-full h-[25%] bg-white rounded-t-xl rounded-b-sm border-4 border-slate-500 p-1 flex flex-col justify-end shadow-inner z-10 relative">
       <div className="w-full h-1/2 bg-slate-800/50 rounded-t-md rounded-b-sm mb-1"></div>
     </div>
-    <div className="w-full h-[75%] mx-auto bg-slate-200 dark:bg-slate-700 border-4 border-slate-500 rounded-sm mt-1 relative overflow-hidden shadow-inner z-10">
-       <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_5px,#94a3b8_5px,#94a3b8_8px)] opacity-60"></div>
+    <div className="w-full h-[75%] mx-auto bg-slate-200 dark:bg-slate-700 border-4 border-slate-500 rounded-sm mt-1 relative overflow-hidden shadow-inner z-10 flex flex-col justify-evenly py-1">
+       <div className="w-full h-0.5 bg-slate-400/60"></div>
+       <div className="w-full h-0.5 bg-slate-400/60"></div>
+       <div className="w-full h-0.5 bg-slate-400/60"></div>
     </div>
   </div>
 );

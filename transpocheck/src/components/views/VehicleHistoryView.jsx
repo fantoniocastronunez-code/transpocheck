@@ -74,7 +74,7 @@ export default function VehicleHistoryView({ db, showAlert }) {
         {validPhotos.map(([key, url]) => (
           <div key={key} onClick={() => setFullScreenImage(url)} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity shadow-sm group">
             <img src={url} alt={`Evidencia ${key}`} className="w-full h-full object-cover" />
-            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-900/90 to-transparent p-2 pt-4">
+            <div className="absolute inset-x-0 bottom-0 bg-slate-950/85 p-2 pt-4">
               <p className="text-[9px] text-white font-black uppercase text-center truncate tracking-wider">
                 {labels[key] || key.replace('det', 'Daño ')}
               </p>
@@ -92,7 +92,7 @@ export default function VehicleHistoryView({ db, showAlert }) {
     <div className="space-y-6 animate-in fade-in duration-300">
       
       {/* Encabezado y Buscador */}
-      <div className="bg-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+      <div className="bg-slate-800 rounded-xl p-6 shadow-md relative overflow-hidden">
         <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
            <ShieldCheck className="w-48 h-48 text-white transform rotate-12" />
         </div>
@@ -115,11 +115,11 @@ export default function VehicleHistoryView({ db, showAlert }) {
                 value={searchTerm} 
                 onChange={(e) => setSearchTerm(e.target.value)} 
                 placeholder="Ingresa Patente o VIN..." 
-                className="w-full pl-11 pr-4 py-4 bg-white dark:bg-slate-900 border-2 border-transparent rounded-2xl text-sm font-black uppercase text-slate-800 dark:text-slate-200 outline-none focus:border-blue-400 shadow-inner transition-colors"
+                className="w-full pl-11 pr-4 py-4 bg-white dark:bg-slate-900 border-2 border-transparent rounded-xl text-sm font-black uppercase text-slate-800 dark:text-slate-200 outline-none focus:border-blue-400 shadow-inner transition-colors"
                 required
               />
             </div>
-            <button type="submit" disabled={isSearching} className="bg-blue-500 hover:bg-blue-400 text-white px-6 py-4 rounded-2xl font-black text-sm transition-colors shadow-lg disabled:opacity-50 flex items-center gap-2">
+            <button type="submit" disabled={isSearching} className="bg-blue-500 hover:bg-blue-400 text-white px-6 py-4 rounded-xl font-black text-sm transition-colors shadow-lg disabled:opacity-50 flex items-center gap-2">
               {isSearching ? <><Clock className="w-5 h-5 animate-spin" /> Buscando...</> : 'Buscar'}
             </button>
           </form>
@@ -128,7 +128,7 @@ export default function VehicleHistoryView({ db, showAlert }) {
 
       {/* Resultados */}
       {hasSearched && !isSearching && results.length === 0 && (
-        <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-700 text-center shadow-sm">
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-xl border border-slate-200 dark:border-slate-700 text-center shadow-sm">
           <AlertTriangle className="w-12 h-12 text-amber-400 mx-auto mb-3" />
           <h3 className="text-lg font-black text-slate-800 dark:text-slate-200">Sin Resultados</h3>
           <p className="text-slate-500 dark:text-slate-400 font-bold text-sm mt-1">No se encontró ningún traslado histórico para la patente/VIN: <span className="text-slate-800 dark:text-slate-200 uppercase">{searchTerm}</span></p>
@@ -152,17 +152,17 @@ export default function VehicleHistoryView({ db, showAlert }) {
             if (allPins.length === 0) return null;
 
             return (
-              <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
                 <h3 className="font-extrabold text-slate-700 dark:text-slate-300 flex items-center gap-2 mb-4">
                   <Activity className="w-5 h-5 text-red-500" /> Mapa de Calor de Daños ({allPins.length} incidentes históricos)
                 </h3>
-                <div className="relative w-full max-w-xs mx-auto aspect-[1/2] bg-slate-100 dark:bg-slate-800 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center p-4">
+                <div className="relative w-full max-w-xs mx-auto aspect-[1/2] bg-slate-100 dark:bg-slate-800 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center p-4">
                   <div className="relative w-full h-full pointer-events-none">
                     <VehicleShapeIcon type={vehicleType} />
                     {allPins.map((pin, i) => (
                       <div 
                         key={i} 
-                        className="absolute w-8 h-8 -ml-4 -mt-4 bg-red-500 rounded-full blur-md mix-blend-multiply dark:mix-blend-screen animate-pulse"
+                        className="absolute w-8 h-8 -ml-4 -mt-4 bg-red-500 rounded-full opacity-40 mix-blend-multiply dark:mix-blend-screen"
                         style={{ 
                           left: `${pin.x}%`, 
                           top: `${pin.y}%`, 
@@ -204,7 +204,7 @@ export default function VehicleHistoryView({ db, showAlert }) {
                     <div className="w-1.5 h-1.5 bg-white dark:bg-slate-900 rounded-full"></div>
                   </div>
 
-                  <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                  <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
                     
                     {/* Cabecera del Acta */}
                     <div className="bg-slate-50 dark:bg-slate-900 p-4 sm:p-5 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -219,11 +219,11 @@ export default function VehicleHistoryView({ db, showAlert }) {
                            <span className="text-slate-700 dark:text-slate-300">{job.origin}</span>
                            {(job.destination || job.tripType !== 'simple') && (
                               <>
-                                <span className="text-slate-300 font-black mx-1">➔</span>
+                                <span className="text-slate-300 font-black mx-1">-</span>
                                 {job.waypoints && job.waypoints.length > 0 && (
                                    <span className="text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800/50 text-xs">+{job.waypoints.length} paradas</span>
                                 )}
-                                {job.waypoints && job.waypoints.length > 0 && <span className="text-slate-300 font-black mx-1">➔</span>}
+                                {job.waypoints && job.waypoints.length > 0 && <span className="text-slate-300 font-black mx-1">-</span>}
                                 <span className="text-blue-600 dark:text-blue-400">{job.tripType === 'revision' ? 'PRT' : job.destination}</span>
                               </>
                            )}
@@ -334,11 +334,11 @@ export default function VehicleHistoryView({ db, showAlert }) {
 
       {/* Modal de Imagen a Pantalla Completa */}
       {fullScreenImage && (
-        <div className="fixed inset-0 bg-slate-900/95 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm cursor-zoom-out animate-in fade-in duration-200" onClick={() => setFullScreenImage(null)}>
+        <div className="fixed inset-0 bg-slate-900/95 z-[9999] flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in duration-200" onClick={() => setFullScreenImage(null)}>
           <button onClick={() => setFullScreenImage(null)} className="absolute top-[calc(1rem+env(safe-area-inset-top))] right-4 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 p-2 rounded-full text-slate-800 dark:text-white transition-colors shadow-lg">
             <X className="w-6 h-6" />
           </button>
-          <img src={fullScreenImage} alt="Evidencia Ampliada" className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
+          <img src={fullScreenImage} alt="Evidencia Ampliada" className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-lg" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
 

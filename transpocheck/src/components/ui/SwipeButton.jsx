@@ -28,8 +28,8 @@ const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600", isProc
 
   if (isProcessing) {
     return (
-      <button disabled className={`w-full h-12 rounded-xl flex items-center justify-center gap-2 font-extrabold text-white opacity-70 cursor-not-allowed ${colorClass}`}>
-        <Clock className="w-5 h-5 animate-spin"/> Procesando...
+      <button disabled className={`w-full h-11 rounded-md flex items-center justify-center gap-2 font-semibold text-sm text-white opacity-70 cursor-not-allowed ${colorClass}`}>
+        <Clock className="w-4 h-4 animate-spin"/> Procesando...
       </button>
     );
   }
@@ -57,7 +57,7 @@ const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600", isProc
 
     currentLeft.current = newLeft;
 
-    // Actualización DIRECTA al DOM (¡60 FPS sin re-renderizar React!)
+    // Actualización DIRECTA al DOM (60 FPS sin re-renderizar React)
     if (buttonRef.current) buttonRef.current.style.transform = `translateX(${newLeft}px)`;
     if (fillRef.current) fillRef.current.style.width = `${newLeft + 48}px`;
 
@@ -74,8 +74,8 @@ const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600", isProc
     const maxLeft = containerRef.current.offsetWidth - 48;
     
     // Devolver las transiciones CSS para que vuelva (o complete) suavemente
-    if (buttonRef.current) buttonRef.current.style.transition = 'transform 0.3s ease-out';
-    if (fillRef.current) fillRef.current.style.transition = 'width 0.3s ease-out';
+    if (buttonRef.current) buttonRef.current.style.transition = 'transform 0.2s ease-out';
+    if (fillRef.current) fillRef.current.style.transition = 'width 0.2s ease-out';
 
     // Si soltó el dedo después de la mitad, confirmar. Si no, devolver a 0.
     if (currentLeft.current > maxLeft * 0.60) { 
@@ -98,26 +98,26 @@ const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600", isProc
   };
 
   return (
-    <div ref={containerRef} className="relative w-full h-12 bg-white rounded-[1.5rem] overflow-hidden shadow-sm select-none" style={{ touchAction: 'none' }}>
+    <div ref={containerRef} className="relative w-full h-11 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md overflow-hidden select-none" style={{ touchAction: 'none' }}>
       
       {/* Texto de fondo */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-         <span className={`text-[13px] font-extrabold transition-colors duration-300 ${isConfirmed ? 'text-white z-10' : 'text-slate-800'}`}>
-            {isConfirmed ? '¡Confirmado!' : text}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none pl-8">
+         <span className={`text-[13px] font-semibold tracking-tight transition-colors duration-150 ${isConfirmed ? 'text-white z-10' : 'text-slate-800 dark:text-slate-200'}`}>
+            {isConfirmed ? 'Confirmado' : text}
          </span>
       </div>
 
       {/* Relleno de color que crece */}
       <div 
         ref={fillRef}
-        className={`absolute top-0 left-0 h-full rounded-full transition-opacity ${colorClass}`} 
-        style={{ width: '48px', opacity: isConfirmed ? 1 : 1 }} 
+        className={`absolute top-0 left-0 h-full rounded transition-opacity ${colorClass}`} 
+        style={{ width: '48px', opacity: 1 }} 
       />
 
       {/* Botón arrastrable */}
       <div 
         ref={buttonRef}
-        className={`absolute top-1 bottom-1 left-1 w-10 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing shadow-sm z-10 ${isConfirmed ? 'bg-white text-green-600' : `${colorClass} text-white`}`}
+        className={`absolute top-1 bottom-1 left-1 w-10 rounded flex items-center justify-center cursor-grab active:cursor-grabbing z-10 ${isConfirmed ? 'bg-white text-emerald-700' : `${colorClass} text-white`}`}
         style={{ transform: 'translateX(0px)' }}
         onTouchStart={e => { e.stopPropagation(); handleStart(e.touches[0].clientX); }}
         onTouchMove={e => { e.stopPropagation(); handleMove(e.touches[0].clientX); }}
@@ -128,7 +128,7 @@ const SwipeButton = ({ onConfirm, text, icon, colorClass = "bg-blue-600", isProc
         onMouseUp={handleEnd}
         onMouseLeave={handleEnd}
       >
-        {isConfirmed ? <CheckCircle className="w-5 h-5 animate-in zoom-in"/> : (icon || <ArrowRight className="w-5 h-5"/>)}
+        {isConfirmed ? <CheckCircle className="w-4 h-4"/> : (icon || <ArrowRight className="w-4 h-4"/>)}
       </div>
     </div>
   );

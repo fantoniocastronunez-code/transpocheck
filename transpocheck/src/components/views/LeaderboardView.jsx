@@ -185,7 +185,7 @@ export default function LeaderboardView({ jobs = [], drivers = [], isAdminView, 
       </div>
 
       {/* Tarjeta Informativa de Reglas del Ranking */}
-      <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 mb-4 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300">
+      <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl p-3 mb-4 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300">
         <div className="flex items-center gap-2">
           <Archive className="w-4 h-4 text-emerald-500 shrink-0" />
           <span>
@@ -194,7 +194,7 @@ export default function LeaderboardView({ jobs = [], drivers = [], isAdminView, 
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 p-2 sm:p-4 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 p-2 sm:p-4 shadow-sm">
         {ranking.length === 0 ? (
           <p className="text-center py-8 text-sm font-bold text-slate-400">Sin datos de traslados este mes.</p>
         ) : (
@@ -247,8 +247,8 @@ export default function LeaderboardView({ jobs = [], drivers = [], isAdminView, 
 
       {/* Modal de Historial Detallado para Administrador */}
       {activeModalData && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex justify-center items-center z-[100] p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-lg max-h-[85vh] flex flex-col p-4 shadow-2xl border border-slate-200 dark:border-slate-800">
+        <div className="fixed inset-0 bg-slate-900/50 flex justify-center items-center z-[100] p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-xl w-full max-w-lg max-h-[85vh] flex flex-col p-4 shadow-lg border border-slate-200 dark:border-slate-800">
             <div className="p-2 border-b flex justify-between items-center">
               <div>
                 <h2 className="text-lg font-extrabold text-slate-800 dark:text-slate-200">{activeModalData.name}</h2>
@@ -276,7 +276,7 @@ export default function LeaderboardView({ jobs = [], drivers = [], isAdminView, 
                       <div className={`absolute left-0 top-0 bottom-0 w-1 ${j.status === 'failed' ? 'bg-red-500' : isScoring ? 'bg-green-500' : 'bg-slate-400'}`}></div>
                       
                       <div className="flex justify-between items-start mb-1 pl-2 gap-2">
-                        <p className={`font-extrabold text-sm flex items-center gap-1.5 flex-wrap ${j.tripType === 'simple' ? 'text-purple-800 dark:text-purple-300' : 'text-slate-800 dark:text-slate-200'}`}>
+                        <p className={`font-extrabold text-sm flex items-center gap-1.5 flex-wrap ${j.tripType === 'simple' ? 'text-sky-800 dark:text-sky-300' : 'text-slate-800 dark:text-slate-200'}`}>
                           {j.tripType === 'simple' ? (j.description || 'Servicio en Terreno') : `${j.brand || ''} ${j.model || ''}`.trim() || 'Vehículo'}
                           {j.status === 'failed' && (
                             <span className="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 text-[9px] px-1.5 py-0.5 rounded uppercase shrink-0 font-bold">
@@ -291,7 +291,7 @@ export default function LeaderboardView({ jobs = [], drivers = [], isAdminView, 
                         </p>
 
                         {j.tripType === 'simple' ? (
-                          <span className="bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800/50 px-1.5 py-0.5 rounded text-[9px] uppercase font-black shrink-0 shadow-sm">
+                          <span className="bg-sky-100 dark:bg-sky-900/40 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800/50 px-1.5 py-0.5 rounded text-[9px] uppercase font-black shrink-0 shadow-sm">
                             SERVICIO
                           </span>
                         ) : (
@@ -308,7 +308,7 @@ export default function LeaderboardView({ jobs = [], drivers = [], isAdminView, 
                         </span>
                         {(j.destination || j.tripType !== 'simple') && (
                           <span className="flex items-center">
-                            <span className="text-slate-300 mx-1 text-[10px] font-black">➔</span> 
+                            <span className="text-slate-300 mx-1 text-[10px] font-black">-</span> 
                             <Navigation className="w-3 h-3 mr-1 text-blue-400" /> 
                             <span className="truncate max-w-[120px]">{j.tripType === 'revision' ? 'PRT' : (j.destination || '-')}</span>
                           </span>
@@ -331,9 +331,9 @@ export default function LeaderboardView({ jobs = [], drivers = [], isAdminView, 
                             title="Excluir o Incluir en el conteo del ranking"
                           >
                             {isScoring ? (
-                              <EyeOff className={`w-3.5 h-3.5 ${isProcessing ? 'animate-pulse' : ''}`} />
+                              <EyeOff className={`w-3.5 h-3.5 ${isProcessing ? '' : ''}`} />
                             ) : (
-                              <Eye className={`w-3.5 h-3.5 ${isProcessing ? 'animate-pulse' : ''}`} />
+                              <Eye className={`w-3.5 h-3.5 ${isProcessing ? '' : ''}`} />
                             )}
                             {isProcessing ? 'Actualizando...' : (isScoring ? 'Quitar del Ranking' : 'Sumar al Ranking')}
                           </button>

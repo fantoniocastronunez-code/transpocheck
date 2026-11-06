@@ -84,12 +84,12 @@ export default function FirebaseStorageMetrics({ db, storage, vehicles, showAler
   const usagePercent = Math.min(100, Math.max(0, ((totalBytes / FREE_TIER_BYTES) * 100))).toFixed(1);
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200 dark:border-slate-800 space-y-6 animate-in fade-in duration-300">
+    <div className="bg-white dark:bg-slate-900 rounded-xl p-5 sm:p-6 shadow-sm border border-slate-200 dark:border-slate-800 space-y-6 animate-in fade-in duration-300">
       
       {/* HEADER DE STORAGE */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
         <div className="flex items-start gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20 shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-sky-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20 shrink-0">
             <Cloud className="w-6 h-6" />
           </div>
           <div>
@@ -113,7 +113,7 @@ export default function FirebaseStorageMetrics({ db, storage, vehicles, showAler
             type="button"
             onClick={handleScan}
             disabled={scanning || purging}
-            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-extrabold transition-all active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-extrabold transition-all active:scale-95 disabled:opacity-50"
             title="Escanear Storage y actualizar métricas"
           >
             <RefreshCw className={`w-4 h-4 text-blue-500 ${scanning ? 'animate-spin' : ''}`} />
@@ -124,10 +124,10 @@ export default function FirebaseStorageMetrics({ db, storage, vehicles, showAler
             type="button"
             onClick={handlePurge}
             disabled={scanning || purging}
-            className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl text-xs font-extrabold transition-all active:scale-95 disabled:opacity-50 ${
+            className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-extrabold transition-all active:scale-95 disabled:opacity-50 ${
               (metrics?.orphanFiles || 0) > 0
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-md shadow-purple-500/20'
-                : 'bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/40'
+                ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-md shadow-sky-500/20'
+                : 'bg-sky-50 dark:bg-sky-900/20 hover:bg-sky-100 dark:hover:bg-sky-900/40 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800/40'
             }`}
             title="Eliminar fotos de viajes antiguos sin tocar documentos"
           >
@@ -139,7 +139,7 @@ export default function FirebaseStorageMetrics({ db, storage, vehicles, showAler
 
       {/* MENSAJE DE PROGRESO */}
       {(scanning || purging) && (
-        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800/60 p-3.5 rounded-2xl flex items-center gap-3 animate-in fade-in">
+        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800/60 p-3.5 rounded-xl flex items-center gap-3 animate-in fade-in">
           <RefreshCw className="w-5 h-5 text-blue-600 dark:text-blue-400 animate-spin shrink-0" />
           <p className="text-xs font-bold text-blue-900 dark:text-blue-200">
             {progressMsg || 'Procesando en Firebase Storage...'}
@@ -148,7 +148,7 @@ export default function FirebaseStorageMetrics({ db, storage, vehicles, showAler
       )}
 
       {/* BARRA DE CUOTA DE STORAGE */}
-      <div className="space-y-2 bg-slate-50 dark:bg-slate-950/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+      <div className="space-y-2 bg-slate-50 dark:bg-slate-950/40 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
         <div className="flex justify-between items-center text-xs">
           <div className="flex items-center gap-1.5 font-extrabold text-slate-700 dark:text-slate-300">
             <HardDrive className="w-4 h-4 text-slate-400" />
@@ -167,10 +167,10 @@ export default function FirebaseStorageMetrics({ db, storage, vehicles, showAler
           <div 
             className={`h-full rounded-full transition-all duration-700 ${
               Number(usagePercent) > 80 
-                ? 'bg-gradient-to-r from-red-500 to-rose-600' 
+                ? 'bg-red-600' 
                 : Number(usagePercent) > 50 
-                  ? 'bg-gradient-to-r from-amber-400 to-orange-500' 
-                  : 'bg-gradient-to-r from-blue-500 to-indigo-600'
+                  ? 'bg-amber-500' 
+                  : 'bg-sky-600'
             }`}
             style={{ width: `${Math.max(2, Math.min(100, Number(usagePercent)))}%` }}
           />
@@ -181,7 +181,7 @@ export default function FirebaseStorageMetrics({ db, storage, vehicles, showAler
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         
         {/* 1. TOTAL FOTOS */}
-        <div className="bg-slate-50 dark:bg-slate-950/60 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
+        <div className="bg-slate-50 dark:bg-slate-950/60 p-4 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Total en Storage</span>
             <div className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400">
@@ -199,7 +199,7 @@ export default function FirebaseStorageMetrics({ db, storage, vehicles, showAler
         </div>
 
         {/* 2. TRASLADOS ACTIVOS */}
-        <div className="bg-slate-50 dark:bg-slate-950/60 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
+        <div className="bg-slate-50 dark:bg-slate-950/60 p-4 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Traslados Activos</span>
             <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
@@ -217,7 +217,7 @@ export default function FirebaseStorageMetrics({ db, storage, vehicles, showAler
         </div>
 
         {/* 3. DOCUMENTOS VEHICULARES */}
-        <div className="bg-slate-50 dark:bg-slate-950/60 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
+        <div className="bg-slate-50 dark:bg-slate-950/60 p-4 rounded-xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Documentos Vehiculares</span>
             <div className="w-7 h-7 rounded-lg bg-cyan-100 dark:bg-cyan-900/40 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
@@ -235,16 +235,16 @@ export default function FirebaseStorageMetrics({ db, storage, vehicles, showAler
         </div>
 
         {/* 4. FOTOS HUÉRFANAS */}
-        <div className={`p-4 rounded-2xl border flex flex-col justify-between transition-colors ${
+        <div className={`p-4 rounded-xl border flex flex-col justify-between transition-colors ${
           (metrics?.orphanFiles || 0) > 0
-            ? 'bg-purple-50/70 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800/50'
+            ? 'bg-sky-50/70 dark:bg-sky-900/20 border-sky-200 dark:border-sky-800/50'
             : 'bg-slate-50 dark:bg-slate-950/60 border-slate-100 dark:border-slate-800'
         }`}>
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Fotos Huérfanas</span>
             <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
               (metrics?.orphanFiles || 0) > 0
-                ? 'bg-purple-100 dark:bg-purple-800/50 text-purple-600 dark:text-purple-300'
+                ? 'bg-sky-100 dark:bg-sky-800/50 text-sky-600 dark:text-sky-300'
                 : 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400'
             }`}>
               {(metrics?.orphanFiles || 0) > 0 ? <AlertTriangle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
@@ -253,7 +253,7 @@ export default function FirebaseStorageMetrics({ db, storage, vehicles, showAler
           <div>
             <p className={`text-xl font-black leading-tight ${
               (metrics?.orphanFiles || 0) > 0
-                ? 'text-purple-700 dark:text-purple-300'
+                ? 'text-sky-700 dark:text-sky-300'
                 : 'text-slate-800 dark:text-slate-200'
             }`}>
               {formatBytes(metrics?.orphanBytes || 0)}

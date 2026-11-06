@@ -171,12 +171,12 @@ export default function ChecklistAnalyticsView({ jobs, drivers, currentUserEmail
   return (
     <main className="max-w-4xl mx-auto p-4 pt-20 sm:pt-24 pb-32 animate-in fade-in duration-300">
       
-      <div className="bg-gradient-to-br from-indigo-600 to-purple-700 text-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-indigo-200/50 mb-6 relative overflow-hidden">
+      <div className="bg-slate-900 border border-slate-800 text-white p-6 sm:p-8 rounded-xl shadow-md shadow-sky-200/50 mb-6 relative overflow-hidden">
          <div className="relative z-10">
             <h2 className="text-2xl sm:text-3xl font-black mb-1 flex items-center gap-2">
               <ShieldAlert className="w-6 h-6 sm:w-8 sm:h-8" /> Análisis de Checklist
             </h2>
-            <p className="text-sm font-bold text-indigo-100 leading-relaxed max-w-lg">
+            <p className="text-sm font-bold text-sky-100 leading-relaxed max-w-lg">
               Monitoreo de calidad en llenado de formularios, rendimientos por conductor y alertas automáticas de malas prácticas o fraudes en ruta.
             </p>
          </div>
@@ -184,7 +184,7 @@ export default function ChecklistAnalyticsView({ jobs, drivers, currentUserEmail
       </div>
 
       {analytics.totalChecklists === 0 ? (
-         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 text-center shadow-sm">
+         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-8 text-center shadow-sm">
             <AlertCircle className="w-12 h-12 text-slate-300 mx-auto mb-3" />
             <p className="text-sm font-bold text-slate-500">No hay trabajos completados suficientes para analizar.</p>
          </div>
@@ -193,11 +193,11 @@ export default function ChecklistAnalyticsView({ jobs, drivers, currentUserEmail
             
             {/* GLOBAL STATS */}
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
-               <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-center items-center text-center">
+               <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-center items-center text-center">
                   <span className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Total Analizados</span>
                   <p className="text-3xl sm:text-4xl font-black text-slate-800 dark:text-slate-200">{analytics.totalChecklists}</p>
                </div>
-               <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-center items-center text-center">
+               <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col justify-center items-center text-center">
                   <span className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Completitud Global</span>
                   <div className="flex items-center gap-2 mt-1">
                      <p className={`text-3xl sm:text-4xl font-black ${analytics.avgCompletion >= 80 ? 'text-emerald-500' : 'text-amber-500'}`}>
@@ -212,7 +212,7 @@ export default function ChecklistAnalyticsView({ jobs, drivers, currentUserEmail
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                
                {/* MEJOR CONDUCTOR */}
-               <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 p-4 rounded-3xl shadow-sm relative overflow-hidden">
+               <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/50 p-4 rounded-xl shadow-sm relative overflow-hidden">
                   <div className="relative z-10">
                      <div className="flex items-center gap-1.5 mb-2">
                         <Trophy className="w-4 h-4 text-emerald-600" />
@@ -231,7 +231,7 @@ export default function ChecklistAnalyticsView({ jobs, drivers, currentUserEmail
                </div>
 
                {/* MAS DOCUMENTOS */}
-               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 p-4 rounded-3xl shadow-sm relative overflow-hidden">
+               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 p-4 rounded-xl shadow-sm relative overflow-hidden">
                   <div className="relative z-10">
                      <div className="flex items-center gap-1.5 mb-2">
                         <FileText className="w-4 h-4 text-blue-600" />
@@ -249,17 +249,17 @@ export default function ChecklistAnalyticsView({ jobs, drivers, currentUserEmail
                </div>
 
                {/* MEJOR EN FECHAS VENCIMIENTO */}
-               <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800/50 p-4 rounded-3xl shadow-sm relative overflow-hidden">
+               <div className="bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800/50 p-4 rounded-xl shadow-sm relative overflow-hidden">
                   <div className="relative z-10">
                      <div className="flex items-center gap-1.5 mb-2">
-                        <Calendar className="w-4 h-4 text-purple-600" />
-                        <span className="text-[10px] font-black text-purple-700 uppercase tracking-widest">Experto en Fechas</span>
+                        <Calendar className="w-4 h-4 text-sky-600" />
+                        <span className="text-[10px] font-black text-sky-700 uppercase tracking-widest">Experto en Fechas</span>
                      </div>
-                     <p className="text-lg font-black text-purple-900 dark:text-purple-100 leading-tight">
+                     <p className="text-lg font-black text-sky-900 dark:text-sky-100 leading-tight">
                         {analytics.bestExpiryDriver?.name || 'N/A'}
                      </p>
                      {analytics.bestExpiryDriver && (
-                        <p className="text-xs font-bold text-purple-600 mt-1">
+                        <p className="text-xs font-bold text-sky-600 mt-1">
                            {analytics.bestExpiryDriver.expiryDatesFilled} fechas registradas
                         </p>
                      )}
@@ -271,7 +271,7 @@ export default function ChecklistAnalyticsView({ jobs, drivers, currentUserEmail
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                {/* PEOR CONDUCTOR */}
-               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 p-4 rounded-3xl shadow-sm relative">
+               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 p-4 rounded-xl shadow-sm relative">
                   <div className="flex items-center gap-1.5 mb-2">
                      <UserX className="w-4 h-4 text-red-600" />
                      <span className="text-[10px] font-black text-red-700 uppercase tracking-widest">Alerta de Calidad</span>
@@ -293,7 +293,7 @@ export default function ChecklistAnalyticsView({ jobs, drivers, currentUserEmail
                </div>
 
                {/* TRASLADOS SOSPECHOSAMENTE RAPIDOS */}
-               <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800/50 p-4 rounded-3xl shadow-sm">
+               <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800/50 p-4 rounded-xl shadow-sm">
                   <div className="flex items-center justify-between mb-2">
                      <div className="flex items-center gap-1.5">
                         <Clock className="w-4 h-4 text-orange-600" />
@@ -326,7 +326,7 @@ export default function ChecklistAnalyticsView({ jobs, drivers, currentUserEmail
 
             <h3 className="text-lg font-black text-slate-800 dark:text-slate-200 pt-6 border-b border-slate-100 dark:border-slate-800 pb-2">Tabla de Calificaciones</h3>
             
-            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
+            <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
                <div className="divide-y divide-slate-100 dark:divide-slate-800">
                   {allDriversNotes.map((d, i) => (
                      <div key={i} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">

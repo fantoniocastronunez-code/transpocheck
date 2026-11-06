@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { X, Camera, Bug, Megaphone, Smartphone, Settings } from 'lucide-react';
+import { X, Camera, Bug, Megaphone, Smartphone } from 'lucide-react';
 import { ImageViewer } from './ImageViewer';
-import InAppCamera from './InAppCamera'; // Intento por defecto, sino nombrada
+import InAppCamera from './InAppCamera';
 
-// Fix for named/default imports
 const CameraComponent = InAppCamera || require('./InAppCamera').InAppCamera;
 
 export const DevMenu = () => {
@@ -33,62 +32,60 @@ export const DevMenu = () => {
 
   return (
     <>
-
-
       {isOpen && (
-        <div className="fixed inset-0 bg-black/60 z-[991] flex items-end sm:items-center justify-center p-4 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 animate-in slide-in-from-bottom-10 sm:zoom-in-95">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-black text-xl flex items-center gap-2 text-slate-800 dark:text-white">
-                <Bug className="w-5 h-5 text-emerald-500" />
+        <div className="fixed inset-0 bg-slate-950/70 z-[991] flex items-end sm:items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-lg p-5 shadow-lg border border-slate-200 dark:border-slate-800">
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
+              <h3 className="font-semibold text-base flex items-center gap-2 text-slate-900 dark:text-white">
+                <Bug className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 Herramientas de Prueba
               </h3>
-              <button onClick={() => setIsOpen(false)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors">
-                <X className="w-5 h-5" />
+              <button onClick={() => setIsOpen(false)} className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-md text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors">
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-bold mb-4">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-4">
               Usa estas opciones para probar las funciones de la app sin necesidad de un viaje activo.
             </p>
 
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               <button 
                 onClick={testPhotoPopup}
-                className="w-full flex items-center gap-3 p-4 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800 rounded-2xl transition-all active:scale-95 text-left border border-slate-200 dark:border-slate-700 shadow-sm"
+                className="w-full flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 rounded-md transition-colors text-left border border-slate-200 dark:border-slate-700"
               >
-                <div className="bg-blue-100 dark:bg-blue-900/40 p-3 rounded-xl text-blue-600 dark:text-blue-400">
-                  <Camera className="w-6 h-6" />
+                <div className="bg-blue-50 dark:bg-blue-950/60 p-2.5 rounded-md text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+                  <Camera className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="text-slate-800 dark:text-slate-200 font-black text-sm">Probar Pop-up de Tablero</div>
-                  <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Simula el visor de fotos</div>
+                  <div className="text-slate-900 dark:text-slate-100 font-semibold text-sm">Probar Pop-up de Tablero</div>
+                  <div className="text-[11px] text-slate-500 font-medium">Simula el visor de fotos</div>
                 </div>
               </button>
 
               <button 
                 onClick={testCamera}
-                className="w-full flex items-center gap-3 p-4 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800 rounded-2xl transition-all active:scale-95 text-left border border-slate-200 dark:border-slate-700 shadow-sm"
+                className="w-full flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 rounded-md transition-colors text-left border border-slate-200 dark:border-slate-700"
               >
-                <div className="bg-emerald-100 dark:bg-emerald-900/40 p-3 rounded-xl text-emerald-600 dark:text-emerald-400">
-                  <Smartphone className="w-6 h-6" />
+                <div className="bg-emerald-50 dark:bg-emerald-950/60 p-2.5 rounded-md text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                  <Smartphone className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="text-slate-800 dark:text-slate-200 font-black text-sm">Probar Cámara</div>
-                  <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Simula la toma de foto</div>
+                  <div className="text-slate-900 dark:text-slate-100 font-semibold text-sm">Probar Cámara</div>
+                  <div className="text-[11px] text-slate-500 font-medium">Simula la toma de foto</div>
                 </div>
               </button>
               
               <button 
                 onClick={testLocalBroadcast}
-                className="w-full flex items-center gap-3 p-4 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800 rounded-2xl transition-all active:scale-95 text-left border border-slate-200 dark:border-slate-700 shadow-sm"
+                className="w-full flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 rounded-md transition-colors text-left border border-slate-200 dark:border-slate-700"
               >
-                <div className="bg-purple-100 dark:bg-purple-900/40 p-3 rounded-xl text-purple-600 dark:text-purple-400">
-                  <Megaphone className="w-6 h-6" />
+                <div className="bg-slate-100 dark:bg-slate-800 p-2.5 rounded-md text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                  <Megaphone className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="text-slate-800 dark:text-slate-200 font-black text-sm">Probar Notificaciones</div>
-                  <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Ver avisos a conductores</div>
+                  <div className="text-slate-900 dark:text-slate-100 font-semibold text-sm">Probar Notificaciones</div>
+                  <div className="text-[11px] text-slate-500 font-medium">Ver avisos a conductores</div>
                 </div>
               </button>
             </div>

@@ -155,15 +155,15 @@ export const FastTrackView = ({ openCamera }) => {
   }, [setF, setFormData, formData.photos]);
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 pb-40">
+    <div className="animate-in fade-in duration-150 pb-40">
       {step === 1 && (
         <div className="space-y-4 px-4">
-          <div className="bg-purple-50/50 dark:bg-purple-900/10 p-5 rounded-3xl border border-purple-200/50 dark:border-purple-800/30 shadow-sm space-y-3">
-             <h3 className="text-[11px] font-black text-purple-800 dark:text-purple-300 uppercase tracking-widest flex items-center gap-2">
-               <FileText className="w-4 h-4" /> Detalles del Servicio
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+             <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-2">
+               <FileText className="w-4 h-4 text-sky-600 dark:text-sky-400" /> Detalles del Servicio
              </h3>
              <textarea 
-               className="w-full border-2 border-purple-200 dark:border-purple-800/50 p-4 rounded-2xl text-sm font-bold text-purple-900 dark:text-purple-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900 shadow-inner min-h-[120px] resize-none transition-colors" 
+               className="w-full border border-slate-300 dark:border-slate-700 p-3.5 rounded-lg text-sm font-medium text-slate-900 dark:text-slate-100 outline-none focus:border-sky-600 bg-slate-50 dark:bg-slate-950 min-h-[120px] resize-none transition-colors" 
                placeholder="Anota cualquier detalle relevante, estado de la carga, personas que reciben, etc." 
                value={formData.observations || ''} 
                onChange={(e) => setF('observations', e.target.value)} 
@@ -172,16 +172,16 @@ export const FastTrackView = ({ openCamera }) => {
           
           {/* Monto Asignado */}
           {assignedAmount > 0 && (
-            <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-3xl border border-emerald-200/60 dark:border-emerald-800/60 shadow-sm flex items-center justify-between animate-in fade-in zoom-in-95">
+            <div className="bg-emerald-50 dark:bg-emerald-950/30 p-4 rounded-xl border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-800 flex items-center justify-center shrink-0">
-                  <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center shrink-0">
+                  <DollarSign className="w-5 h-5 text-emerald-700 dark:text-emerald-400" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-emerald-600/80 dark:text-emerald-400/80 uppercase tracking-widest leading-none mb-1">
+                  <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider leading-none mb-1">
                     Fondo para este vehículo
                   </p>
-                  <p className="text-xl font-extrabold text-emerald-800 dark:text-emerald-300 leading-none">
+                  <p className="text-lg font-bold font-mono text-emerald-900 dark:text-emerald-200 leading-none">
                     ${assignedAmount.toLocaleString('es-CL')}
                   </p>
                 </div>
@@ -194,11 +194,11 @@ export const FastTrackView = ({ openCamera }) => {
 
       {step === 2 && (
         <div className="space-y-4 px-4">
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 shadow-sm space-y-4">
-             <h3 className="text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest text-center">
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+             <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider text-center">
                Registro Fotográfico
              </h3>
-             <p className="text-[11px] font-bold text-slate-500 text-center mb-4">
+             <p className="text-xs font-medium text-slate-500 text-center mb-4">
                {isPintura 
                  ? `Debes subir al menos ${requeridas} fotos para los servicios solicitados.` 
                  : 'Sube una foto de respaldo (guía, vehículo, carga, etc).'}
@@ -213,18 +213,18 @@ export const FastTrackView = ({ openCamera }) => {
                      key={id} 
                      type="button" 
                      onClick={() => handlePhotoClick(id)} 
-                     className={`w-full h-32 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-sm relative overflow-hidden bg-white dark:bg-slate-900 transition-all active:scale-95
-                     ${hasPic ? 'border-purple-400 ring-2 ring-purple-100' : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                     className={`w-full h-32 rounded-lg border flex flex-col items-center justify-center cursor-pointer relative overflow-hidden bg-slate-50 dark:bg-slate-950 transition-colors
+                     ${hasPic ? 'border-emerald-500' : 'border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
                    >
                      {hasPic ? (
                        <>
-                         <img src={formData.photos[id]} className="absolute inset-0 w-full h-full object-cover opacity-60" />
-                         <CheckCircle className="w-8 h-8 text-purple-500 relative z-10 bg-white dark:bg-slate-900 rounded-full" />
+                         <img src={formData.photos[id]} className="absolute inset-0 w-full h-full object-cover opacity-60" alt="" />
+                         <CheckCircle className="w-7 h-7 text-emerald-600 dark:text-emerald-400 relative z-10 bg-white dark:bg-slate-900 rounded-full" />
                        </>
                      ) : (
                        <>
-                         <Camera className="w-6 h-6 text-slate-400 mb-1" />
-                         <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 tracking-wider">FOTO {i+1}</span>
+                         <Camera className="w-5 h-5 text-slate-400 mb-1" />
+                         <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 tracking-wider">FOTO {i+1}</span>
                        </>
                      )}
                    </button>

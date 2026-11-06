@@ -166,9 +166,9 @@ export default function DriverDashboardView({ myDriver, jobs = [], expenses = []
 
   // --- RANKING MEDAL ---
   const getRankIcon = (pos) => {
-    if (pos === 1) return '🥇';
-    if (pos === 2) return '🥈';
-    if (pos === 3) return '🥉';
+    if (pos === 1) return '#1';
+    if (pos === 2) return '#2';
+    if (pos === 3) return '#3';
     return `#${pos}`;
   };
 
@@ -178,16 +178,16 @@ export default function DriverDashboardView({ myDriver, jobs = [], expenses = []
       {/* ═══════════════════════════════════════════════════════ */}
       {/* SECCIÓN 1: HERO CARD DEL CONDUCTOR                    */}
       {/* ═══════════════════════════════════════════════════════ */}
-      <div className="relative bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 rounded-3xl overflow-hidden shadow-2xl mb-6">
+      <div className="relative bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-lg mb-6">
         {/* Patrón decorativo de fondo */}
-        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '24px 24px' }} />
-        <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl -translate-y-12 translate-x-12" />
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl translate-y-8 -translate-x-8" />
+        <div className="absolute inset-0 opacity-[0.04]"  />
+        <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full -translate-y-12 translate-x-12" />
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/10 rounded-full translate-y-8 -translate-x-8" />
         
         <div className="relative p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-5">
           {/* Avatar */}
           <div className="relative shrink-0">
-            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden border-[3px] border-white/20 shadow-xl ring-4 ring-white/5">
+            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden border-[3px] border-white/20 shadow-md ring-4 ring-white/5">
               {myDriver?.photo ? (
                 <img src={myDriver.photo} alt="Foto" className="w-full h-full object-cover" />
               ) : (
@@ -206,7 +206,7 @@ export default function DriverDashboardView({ myDriver, jobs = [], expenses = []
             
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-3">
               {memberSince && (
-                <span className="bg-white/10 backdrop-blur-sm text-white/70 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border border-white/10">
+                <span className="bg-white/10 text-white/70 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border border-white/10">
                   Desde {memberSince}
                 </span>
               )}
@@ -235,7 +235,7 @@ export default function DriverDashboardView({ myDriver, jobs = [], expenses = []
         
 
         {/* Trabajos del Mes */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group hover:shadow-md transition-shadow">
+        <div className="bg-white dark:bg-slate-900 rounded-xl p-4 shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group hover:shadow-md transition-shadow">
           <div className="absolute top-0 right-0 w-20 h-20 bg-blue-400/5 dark:bg-blue-400/10 rounded-full -translate-y-6 translate-x-6 group-hover:scale-125 transition-transform" />
           <div className="relative">
             <div className="flex items-center gap-2 mb-2">
@@ -248,7 +248,7 @@ export default function DriverDashboardView({ myDriver, jobs = [], expenses = []
         </div>
 
         {/* Kilometraje */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group hover:shadow-md transition-shadow">
+        <div className="bg-white dark:bg-slate-900 rounded-xl p-4 shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group hover:shadow-md transition-shadow">
           <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-400/5 dark:bg-emerald-400/10 rounded-full -translate-y-6 translate-x-6 group-hover:scale-125 transition-transform" />
           <div className="relative">
             <div className="flex items-center gap-2 mb-2">
@@ -261,11 +261,11 @@ export default function DriverDashboardView({ myDriver, jobs = [], expenses = []
         </div>
 
         {/* Balance */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group hover:shadow-md transition-shadow col-span-2">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-violet-400/5 dark:bg-violet-400/10 rounded-full -translate-y-6 translate-x-6 group-hover:scale-125 transition-transform" />
+        <div className="bg-white dark:bg-slate-900 rounded-xl p-4 shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden group hover:shadow-md transition-shadow col-span-2">
+          <div className="absolute top-0 right-0 w-20 h-20 bg-sky-400/5 dark:bg-sky-400/10 rounded-full -translate-y-6 translate-x-6 group-hover:scale-125 transition-transform" />
           <div className="relative">
             <div className="flex items-center gap-2 mb-2">
-              <div className="bg-violet-100 dark:bg-violet-900/40 p-2 rounded-xl"><Wallet className="w-4 h-4 text-violet-600 dark:text-violet-400" /></div>
+              <div className="bg-sky-100 dark:bg-sky-900/40 p-2 rounded-xl"><Wallet className="w-4 h-4 text-sky-600 dark:text-sky-400" /></div>
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Saldo</span>
             </div>
             <p className={`text-2xl font-black ${(myDriver?.balance || 0) >= 0 ? 'text-slate-800 dark:text-slate-100' : 'text-red-600 dark:text-red-400'}`}>
@@ -279,7 +279,7 @@ export default function DriverDashboardView({ myDriver, jobs = [], expenses = []
       {/* ═══════════════════════════════════════════════════════ */}
       {/* SECCIÓN 3: ESTADO DE DOCUMENTOS                       */}
       {/* ═══════════════════════════════════════════════════════ */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden mb-6">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden mb-6">
         <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
           <h3 className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center gap-2">
             <Shield className="w-4 h-4 text-blue-500" /> Mis Documentos
@@ -291,8 +291,8 @@ export default function DriverDashboardView({ myDriver, jobs = [], expenses = []
             <div className="flex items-center gap-3">
               <div className={`w-3 h-3 rounded-full shrink-0 ${
                 licenseStatus.color === 'green' ? 'bg-green-500 shadow-sm shadow-green-500/30' :
-                licenseStatus.color === 'amber' ? 'bg-amber-500 shadow-sm shadow-amber-500/30 animate-pulse' :
-                licenseStatus.color === 'red' ? 'bg-red-500 shadow-sm shadow-red-500/30 animate-pulse' :
+                licenseStatus.color === 'amber' ? 'bg-amber-500 shadow-sm shadow-amber-500/30' :
+                licenseStatus.color === 'red' ? 'bg-red-500 shadow-sm shadow-red-500/30' :
                 'bg-slate-300 dark:bg-slate-600'
               }`} />
               <div>
@@ -318,7 +318,7 @@ export default function DriverDashboardView({ myDriver, jobs = [], expenses = []
               <div className={`w-3 h-3 rounded-full shrink-0 ${
                 myDriver?.photo && myDriver?.idFront && myDriver?.idBack && myDriver?.licenseFront && myDriver?.licenseBack
                   ? 'bg-green-500 shadow-sm shadow-green-500/30'
-                  : 'bg-amber-500 shadow-sm shadow-amber-500/30 animate-pulse'
+                  : 'bg-amber-500 shadow-sm shadow-amber-500/30'
               }`} />
               <div>
                 <p className="text-xs font-black text-slate-700 dark:text-slate-300">Documentos Fotográficos</p>
@@ -341,7 +341,7 @@ export default function DriverDashboardView({ myDriver, jobs = [], expenses = []
       {/* ═══════════════════════════════════════════════════════ */}
       {/* SECCIÓN 4: DESGLOSE MENSUAL POR TIPO                  */}
       {/* ═══════════════════════════════════════════════════════ */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden mb-6">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden mb-6">
         <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
           <h3 className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-emerald-500" /> Rendimiento — {currentMonthName} {currentYear}
@@ -358,7 +358,7 @@ export default function DriverDashboardView({ myDriver, jobs = [], expenses = []
             </div>
             <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-3 overflow-hidden">
               <div 
-                className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full transition-all duration-1000 ease-out shadow-inner"
+                className="h-full bg-emerald-600 rounded-full transition-all duration-1000 ease-out shadow-inner"
                 style={{ width: `${Math.max((stats.breakdown.traslados / maxBreakdown) * 100, stats.breakdown.traslados > 0 ? 8 : 0)}%` }}
               />
             </div>
@@ -374,7 +374,7 @@ export default function DriverDashboardView({ myDriver, jobs = [], expenses = []
             </div>
             <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-3 overflow-hidden">
               <div 
-                className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-1000 ease-out shadow-inner"
+                className="h-full bg-amber-500 rounded-full transition-all duration-1000 ease-out shadow-inner"
                 style={{ width: `${Math.max((stats.breakdown.prt / maxBreakdown) * 100, stats.breakdown.prt > 0 ? 8 : 0)}%` }}
               />
             </div>
@@ -390,7 +390,7 @@ export default function DriverDashboardView({ myDriver, jobs = [], expenses = []
             </div>
             <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-3 overflow-hidden">
               <div 
-                className="h-full bg-gradient-to-r from-blue-400 to-blue-500 rounded-full transition-all duration-1000 ease-out shadow-inner"
+                className="h-full bg-sky-600 rounded-full transition-all duration-1000 ease-out shadow-inner"
                 style={{ width: `${Math.max((stats.breakdown.viajes / maxBreakdown) * 100, stats.breakdown.viajes > 0 ? 8 : 0)}%` }}
               />
             </div>
@@ -400,13 +400,13 @@ export default function DriverDashboardView({ myDriver, jobs = [], expenses = []
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-xs font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5 text-purple-500" /> Servicios en Terreno
+                <Zap className="w-3.5 h-3.5 text-sky-500" /> Servicios en Terreno
               </span>
               <span className="text-sm font-black text-slate-800 dark:text-slate-200">{stats.breakdown.servicios}</span>
             </div>
             <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-3 overflow-hidden">
               <div 
-                className="h-full bg-gradient-to-r from-purple-400 to-purple-500 rounded-full transition-all duration-1000 ease-out shadow-inner"
+                className="h-full bg-slate-600 rounded-full transition-all duration-1000 ease-out shadow-inner"
                 style={{ width: `${Math.max((stats.breakdown.servicios / maxBreakdown) * 100, stats.breakdown.servicios > 0 ? 8 : 0)}%` }}
               />
             </div>
@@ -422,13 +422,13 @@ export default function DriverDashboardView({ myDriver, jobs = [], expenses = []
       {/* ═══════════════════════════════════════════════════════ */}
       {/* SECCIÓN 5: ACTIVIDAD RECIENTE                         */}
       {/* ═══════════════════════════════════════════════════════ */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
         <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between">
           <h3 className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center gap-2">
             <Clock className="w-4 h-4 text-slate-500" /> Actividad Reciente
           </h3>
           {stats.activeJobs > 0 && (
-            <span className="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider animate-pulse border border-blue-200 dark:border-blue-800/50">
+            <span className="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider border border-blue-200 dark:border-blue-800/50">
               {stats.activeJobs} {stats.activeJobs === 1 ? 'activo' : 'activos'}
             </span>
           )}
@@ -453,12 +453,12 @@ export default function DriverDashboardView({ myDriver, jobs = [], expenses = []
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${
                     isFailed ? 'bg-red-100 dark:bg-red-900/30' :
                     isPRT ? 'bg-amber-100 dark:bg-amber-900/30' :
-                    isService ? 'bg-purple-100 dark:bg-purple-900/30' :
+                    isService ? 'bg-sky-100 dark:bg-sky-900/30' :
                     'bg-emerald-100 dark:bg-emerald-900/30'
                   }`}>
                     {isFailed ? <AlertTriangle className="w-5 h-5 text-red-500" /> :
                      isPRT ? <FileText className="w-5 h-5 text-amber-600 dark:text-amber-400" /> :
-                     isService ? <Zap className="w-5 h-5 text-purple-600 dark:text-purple-400" /> :
+                     isService ? <Zap className="w-5 h-5 text-sky-600 dark:text-sky-400" /> :
                      <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />}
                   </div>
 

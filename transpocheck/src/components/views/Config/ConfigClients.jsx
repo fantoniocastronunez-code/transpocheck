@@ -209,7 +209,7 @@ export default function ConfigClients({ customClients, db, showAlert, showConfir
   return (
     <div className="w-full min-w-0 flex flex-col gap-6">
       {!editingProfile ? (
-        <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 max-h-[85vh] overflow-y-auto">
+        <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 max-h-[85vh] overflow-y-auto">
            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-slate-100 dark:border-slate-800 pb-5">
               <div>
                  <h3 className="font-extrabold text-xl text-slate-800 dark:text-slate-200">Directorio de Clientes</h3>
@@ -222,7 +222,7 @@ export default function ConfigClients({ customClients, db, showAlert, showConfir
            
            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {clientProfiles.filter(p => !p.isEmptyCompany).map(profile => (
-                 <div key={profile.id} className="flex flex-col p-4 sm:p-5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl hover:border-blue-200 dark:border-blue-800/50 hover:shadow-md transition-all group relative overflow-hidden">
+                 <div key={profile.id} className="flex flex-col p-4 sm:p-5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl hover:border-blue-200 dark:border-blue-800/50 hover:shadow-md transition-all group relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
                     <div className="flex justify-between items-start mb-4 pl-2">
                        <div className="flex items-center gap-3 w-full min-w-0 pr-2">
@@ -247,7 +247,7 @@ export default function ConfigClients({ customClients, db, showAlert, showConfir
               ))}
               
               {clientProfiles.filter(p => p.isEmptyCompany).map(profile => (
-                 <div key={profile.id} className="flex flex-col p-4 sm:p-5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl hover:border-slate-300 dark:border-slate-600 transition-all opacity-60">
+                 <div key={profile.id} className="flex flex-col p-4 sm:p-5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl hover:border-slate-300 dark:border-slate-600 transition-all opacity-60">
                     <div className="flex justify-between items-center">
                        <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-center overflow-hidden shrink-0">
@@ -264,7 +264,7 @@ export default function ConfigClients({ customClients, db, showAlert, showConfir
               ))}
 
               {clientProfiles.length === 0 && (
-                 <div className="col-span-full py-10 text-center border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-3xl bg-slate-50 dark:bg-slate-900">
+                 <div className="col-span-full py-10 text-center border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900">
                     <div className="w-16 h-16 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center shadow-sm mx-auto mb-3"><User className="w-8 h-8 text-slate-300"/></div>
                     <p className="text-sm font-black text-slate-600 dark:text-slate-400">Aún no hay perfiles en la base de datos.</p>
                     <p className="text-xs font-bold text-slate-400 mt-1">Crea el primer perfil para empezar a operar.</p>
@@ -273,7 +273,7 @@ export default function ConfigClients({ customClients, db, showAlert, showConfir
            </div>
         </div>
       ) : (
-        <form onSubmit={handleSaveProfile} className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-8 animate-in fade-in zoom-in-95 max-w-3xl mx-auto w-full relative">
+        <form onSubmit={handleSaveProfile} className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-8 animate-in fade-in zoom-in-95 max-w-3xl mx-auto w-full relative">
            <div className="absolute top-0 left-0 w-full h-2 bg-blue-600 rounded-t-3xl"></div>
            
            <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-5 pt-2">
@@ -308,12 +308,12 @@ export default function ConfigClients({ customClients, db, showAlert, showConfir
                  <select name="empresa" value={selectedCompanyId} onChange={(e) => { setSelectedCompanyId(e.target.value); if (e.target.value === 'NEW') { setClientLogo(null); } else { const comp = customClients.find(c => c.id === e.target.value); if (comp) setClientLogo(comp.logo || null); } }} required className="w-full bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-4 rounded-xl text-sm font-black text-slate-800 dark:text-slate-200 outline-none focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 transition-colors shadow-sm cursor-pointer">
                     <option value="" disabled>Selecciona a qué empresa pertenece...</option>
                     {customClients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    <option value="NEW">✨ + Crear y asociar a Nueva Empresa</option>
+                    <option value="NEW">+ Crear y asociar a Nueva Empresa</option>
                  </select>
               </div>
 
               {selectedCompanyId === 'NEW' && (
-                 <div className="p-5 bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-100 dark:border-blue-800/50 rounded-2xl space-y-4 animate-in fade-in slide-in-from-top-2">
+                 <div className="p-5 bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-100 dark:border-blue-800/50 rounded-xl space-y-4 animate-in fade-in slide-in-from-top-2">
                     <div>
                        <label className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1.5 block ml-1">Nombre de la Nueva Empresa</label>
                        <input name="nuevaEmpresa" placeholder="Ej. Automotora Kovacs" required autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full border-2 border-blue-200 dark:border-blue-800/50 bg-white dark:bg-slate-900 p-3.5 rounded-xl text-sm font-black text-blue-900 dark:text-blue-300 outline-none focus:border-blue-500 shadow-sm" />
@@ -336,7 +336,7 @@ export default function ConfigClients({ customClients, db, showAlert, showConfir
 
            <div className="space-y-4 pt-5 border-t border-slate-100 dark:border-slate-800">
               <h4 className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest flex items-center gap-1.5"><Clock className="w-4 h-4"/> 3. Preferencias de Notificación</h4>
-              <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
+              <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 rounded-xl shadow-sm">
                  <p className="text-xs font-bold text-slate-600 dark:text-slate-400 mb-4 leading-tight">Selecciona qué correos llegarán a este cliente.</p>
                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                     {[ 
@@ -353,7 +353,7 @@ export default function ConfigClients({ customClients, db, showAlert, showConfir
                     ].map(notif => {
                        const isActive = clientNotifs[notif.id];
                        return (
-                         <button key={notif.id} type="button" onClick={() => setClientNotifs({...clientNotifs, [notif.id]: !isActive})} className={`py-4 px-2 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 border-2 flex flex-col items-center justify-center gap-2 select-none ${ isActive ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200 scale-100' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-blue-300 dark:border-blue-700/50 hover:text-blue-500 hover:bg-blue-50 dark:bg-blue-900/30 scale-[0.98]' }`}>
+                         <button key={notif.id} type="button" onClick={() => setClientNotifs({...clientNotifs, [notif.id]: !isActive})} className={`py-4 px-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 border-2 flex flex-col items-center justify-center gap-2 select-none ${ isActive ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200 scale-100' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-blue-300 dark:border-blue-700/50 hover:text-blue-500 hover:bg-blue-50 dark:bg-blue-900/30 scale-[0.98]' }`}>
                             {isActive ? <CheckCircle className="w-5 h-5 animate-in zoom-in duration-200" /> : <div className="w-5 h-5 rounded-full border-2 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900"></div>}
                             <span className="text-center leading-tight">{notif.label}</span>
                          </button>
@@ -364,51 +364,51 @@ export default function ConfigClients({ customClients, db, showAlert, showConfir
            </div>
 
            <div className="space-y-4 pt-5 border-t border-slate-100 dark:border-slate-800">
-              <h4 className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest flex items-center gap-1.5"><Wallet className="w-4 h-4"/> 4. Tarifas Predefinidas (Solo Admin)</h4>
-              <div className="bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800/50 p-5 rounded-2xl shadow-sm">
+              <h4 className="text-[10px] font-black text-sky-600 dark:text-sky-400 uppercase tracking-widest flex items-center gap-1.5"><Wallet className="w-4 h-4"/> 4. Tarifas Predefinidas (Solo Admin)</h4>
+              <div className="bg-sky-50 dark:bg-sky-900/30 border border-sky-100 dark:border-sky-800/50 p-5 rounded-xl shadow-sm">
                  <p className="text-xs font-bold text-slate-600 dark:text-slate-400 mb-4 leading-tight">Define los valores a cobrar para automatizar los ingresos en cada trabajo de esta empresa. Los viajes a Regiones se cobran manualmente.</p>
                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                     <div>
                        <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Local ($)</label>
-                       <input type="number" value={clientPrices.local || ''} onChange={(e) => setClientPrices({...clientPrices, local: e.target.value})} placeholder="15000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                       <input type="number" value={clientPrices.local || ''} onChange={(e) => setClientPrices({...clientPrices, local: e.target.value})} placeholder="15000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-sky-500 transition-colors shadow-sm"/>
                     </div>
                     <div>
                        <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Otros Serv. ($)</label>
-                       <input type="number" value={clientPrices.servicio || ''} onChange={(e) => setClientPrices({...clientPrices, servicio: e.target.value})} placeholder="10000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                       <input type="number" value={clientPrices.servicio || ''} onChange={(e) => setClientPrices({...clientPrices, servicio: e.target.value})} placeholder="10000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-sky-500 transition-colors shadow-sm"/>
                     </div>
-                    <div className="col-span-full border-b border-indigo-200 dark:border-indigo-800/50/50 mt-2 mb-1"></div>
+                    <div className="col-span-full border-b border-sky-200 dark:border-sky-800/50/50 mt-2 mb-1"></div>
                     <div>
                        <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">RT Clase A ($)</label>
-                       <input type="number" value={clientPrices.prt || ''} onChange={(e) => setClientPrices({...clientPrices, prt: e.target.value})} placeholder="25000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                       <input type="number" value={clientPrices.prt || ''} onChange={(e) => setClientPrices({...clientPrices, prt: e.target.value})} placeholder="25000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-sky-500 transition-colors shadow-sm"/>
                     </div>
                     <div>
                        <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Ayuda Clase A ($)</label>
-                       <input type="number" value={clientPrices.prtAyuda || ''} onChange={(e) => setClientPrices({...clientPrices, prtAyuda: e.target.value})} placeholder="35000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                       <input type="number" value={clientPrices.prtAyuda || ''} onChange={(e) => setClientPrices({...clientPrices, prtAyuda: e.target.value})} placeholder="35000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-sky-500 transition-colors shadow-sm"/>
                     </div>
                     <div>
                        <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Insp. Visual A ($)</label>
-                       <input type="number" value={clientPrices.inspVisualA || ''} onChange={(e) => setClientPrices({...clientPrices, inspVisualA: e.target.value})} placeholder="12000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                       <input type="number" value={clientPrices.inspVisualA || ''} onChange={(e) => setClientPrices({...clientPrices, inspVisualA: e.target.value})} placeholder="12000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-sky-500 transition-colors shadow-sm"/>
                     </div>
                     <div>
                        <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Cert. Frenos ($)</label>
-                       <input type="number" value={clientPrices.frenosA || ''} onChange={(e) => setClientPrices({...clientPrices, frenosA: e.target.value})} placeholder="15000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                       <input type="number" value={clientPrices.frenosA || ''} onChange={(e) => setClientPrices({...clientPrices, frenosA: e.target.value})} placeholder="15000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-sky-500 transition-colors shadow-sm"/>
                     </div>
-                    <div className="col-span-full border-b border-indigo-200 dark:border-indigo-800/50/50 mt-2 mb-1"></div>
+                    <div className="col-span-full border-b border-sky-200 dark:border-sky-800/50/50 mt-2 mb-1"></div>
                     <div>
                        <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">RT Clase B ($)</label>
-                       <input type="number" value={clientPrices.prtB || ''} onChange={(e) => setClientPrices({...clientPrices, prtB: e.target.value})} placeholder="20000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                       <input type="number" value={clientPrices.prtB || ''} onChange={(e) => setClientPrices({...clientPrices, prtB: e.target.value})} placeholder="20000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-sky-500 transition-colors shadow-sm"/>
                     </div>
                     <div>
                        <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Ayuda Clase B ($)</label>
-                       <input type="number" value={clientPrices.prtAyudaB || ''} onChange={(e) => setClientPrices({...clientPrices, prtAyudaB: e.target.value})} placeholder="25000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                       <input type="number" value={clientPrices.prtAyudaB || ''} onChange={(e) => setClientPrices({...clientPrices, prtAyudaB: e.target.value})} placeholder="25000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-sky-500 transition-colors shadow-sm"/>
                     </div>
                     <div>
                        <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Insp. Visual B ($)</label>
-                       <input type="number" value={clientPrices.inspVisualB || ''} onChange={(e) => setClientPrices({...clientPrices, inspVisualB: e.target.value})} placeholder="10000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                       <input type="number" value={clientPrices.inspVisualB || ''} onChange={(e) => setClientPrices({...clientPrices, inspVisualB: e.target.value})} placeholder="10000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-sky-500 transition-colors shadow-sm"/>
                     </div>
                     <div>
                        <label className="text-[11px] font-black uppercase text-slate-400 mb-1.5 block tracking-wider ml-1">Solo Gases B ($)</label>
-                       <input type="number" value={clientPrices.soloGasesB || ''} onChange={(e) => setClientPrices({...clientPrices, soloGasesB: e.target.value})} placeholder="12000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 transition-colors shadow-sm"/>
+                       <input type="number" value={clientPrices.soloGasesB || ''} onChange={(e) => setClientPrices({...clientPrices, soloGasesB: e.target.value})} placeholder="12000" className="w-full bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-sky-500 transition-colors shadow-sm"/>
                     </div>
                  </div>
               </div>

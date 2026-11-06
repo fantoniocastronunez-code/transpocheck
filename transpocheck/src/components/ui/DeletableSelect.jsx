@@ -40,16 +40,16 @@ export default function DeletableSelect({
         className={`${className} flex items-center justify-between gap-2 text-left`}
       >
         <span className={`truncate ${value ? '' : 'text-slate-400 dark:text-slate-500'}`}>{value || placeholder}</span>
-        <ChevronDown className={`w-4 h-4 shrink-0 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-4 h-4 shrink-0 text-slate-400 transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
         <ul
           role="listbox"
-          className="absolute z-[100] w-full mt-1 bg-white dark:bg-slate-800 border-2 border-blue-200 dark:border-blue-800/50 rounded-xl shadow-xl max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-1"
+          className="absolute z-[100] w-full mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md shadow-md max-h-60 overflow-y-auto"
         >
           {options.length === 0 ? (
-            <li className="px-4 py-3 text-sm font-bold text-slate-400 dark:text-slate-500 italic">{emptyText}</li>
+            <li className="px-3 py-2.5 text-xs font-medium text-slate-400 dark:text-slate-500">{emptyText}</li>
           ) : (
             options.map((opt) => {
               const isSelected = opt.name === value;
@@ -58,14 +58,14 @@ export default function DeletableSelect({
                   key={opt.id || opt.name}
                   role="option"
                   aria-selected={isSelected}
-                  className={`flex items-center gap-2 border-b border-slate-100 dark:border-slate-700/50 last:border-0 ${isSelected ? 'bg-blue-50/70 dark:bg-blue-900/20' : ''}`}
+                  className={`flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 last:border-0 ${isSelected ? 'bg-blue-50 dark:bg-blue-950/40' : ''}`}
                 >
                   <button
                     type="button"
                     onClick={() => { onChange(opt.name); setIsOpen(false); }}
-                    className="flex-1 min-w-0 flex items-center gap-2 px-4 py-3 text-left font-bold text-sm text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                    className="flex-1 min-w-0 flex items-center gap-2 px-3 py-2.5 text-left font-medium text-sm text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                   >
-                    {isSelected ? <Check className="w-4 h-4 shrink-0 text-blue-500" /> : <span className="w-4 h-4 shrink-0" />}
+                    {isSelected ? <Check className="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400" /> : <span className="w-4 h-4 shrink-0" />}
                     <span className="truncate">{opt.name}</span>
                   </button>
                   {onDeleteOption && (
@@ -74,9 +74,9 @@ export default function DeletableSelect({
                       onClick={(e) => { e.stopPropagation(); onDeleteOption(opt); }}
                       title="Eliminar de la lista"
                       aria-label={`Eliminar ${opt.name}`}
-                      className="mr-2 p-1.5 shrink-0 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
+                      className="mr-2 p-1 shrink-0 rounded bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3.5 h-3.5" />
                     </button>
                   )}
                 </li>

@@ -173,19 +173,19 @@ export default function SignaturePad({ initialData, onSave, onClear, onChange })
 
   return (
     <>
-      {/* Fondo borroso cuando está en pantalla completa */}
-      {isFullscreen && <div className="fixed inset-0 bg-slate-900/90 z-[9998] backdrop-blur-sm transition-opacity"></div>}
+      {/* Fondo oscuro cuando está en pantalla completa */}
+      {isFullscreen && <div className="fixed inset-0 bg-slate-950/85 z-[9998] transition-opacity"></div>}
 
       <div className={
         isFullscreen
-          ? "fixed inset-x-4 top-1/2 -translate-y-1/2 h-[75vh] z-[9999] border-2 border-slate-300 rounded-3xl bg-white overflow-hidden shadow-2xl touch-none flex flex-col animate-in zoom-in-95"
-          : "relative border-2 border-dashed border-slate-300 rounded-2xl bg-white overflow-hidden shadow-sm touch-none h-32"
+          ? "fixed inset-x-4 top-1/2 -translate-y-1/2 h-[75vh] z-[9999] border border-slate-300 dark:border-slate-700 rounded-lg bg-white overflow-hidden shadow-lg touch-none flex flex-col"
+          : "relative border border-dashed border-slate-300 dark:border-slate-700 rounded-md bg-white overflow-hidden touch-none h-32"
       }>
         
         {isFullscreen && (
            <div className="bg-slate-100 border-b border-slate-200 p-3 flex justify-between items-center shrink-0">
-             <span className="text-xs font-black text-slate-500 uppercase tracking-widest pl-2">Dibuja tu firma</span>
-             <button onClick={closeFullscreen} className="bg-white p-1.5 rounded-lg shadow-sm border border-slate-200 text-slate-600 hover:bg-blue-50 transition-colors">
+             <span className="text-xs font-semibold text-slate-600 uppercase tracking-wider pl-1">Dibuja tu firma</span>
+             <button onClick={closeFullscreen} className="bg-white p-1.5 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
                 <Minimize className="w-4 h-4"/>
              </button>
            </div>
@@ -204,11 +204,11 @@ export default function SignaturePad({ initialData, onSave, onClear, onChange })
 
         {/* Controles Flotantes (Solo en vista normal) */}
         {!isFullscreen && (
-          <div className="absolute flex gap-2 top-2 right-2">
+          <div className="absolute flex gap-1.5 top-2 right-2">
             <button 
               type="button" 
               onClick={() => setIsFullscreen(true)}
-              className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 text-slate-600 p-1.5 rounded-lg shadow-sm transition-colors border border-slate-200"
+              className="bg-slate-100 hover:bg-slate-200 text-slate-700 p-1.5 rounded transition-colors border border-slate-300"
               title="Pantalla Completa"
             >
               <Maximize className="w-4 h-4"/>
@@ -216,7 +216,7 @@ export default function SignaturePad({ initialData, onSave, onClear, onChange })
             <button 
               type="button" 
               onClick={clearPad} 
-              className="bg-red-50 hover:bg-red-100 text-red-500 p-1.5 rounded-lg shadow-sm transition-colors border border-red-200"
+              className="bg-red-50 hover:bg-red-100 text-red-600 p-1.5 rounded transition-colors border border-red-200"
               title="Borrar Firma"
             >
               <Eraser className="w-4 h-4"/>
@@ -224,7 +224,7 @@ export default function SignaturePad({ initialData, onSave, onClear, onChange })
             <button 
               type="button" 
               onClick={handleSave} 
-              className="bg-green-50 hover:bg-green-100 text-green-600 p-1.5 rounded-lg shadow-sm transition-colors border border-green-200"
+              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 p-1.5 rounded transition-colors border border-emerald-200"
               title="Guardar Firma"
             >
               <CheckCircle className="w-4 h-4"/>
@@ -234,12 +234,12 @@ export default function SignaturePad({ initialData, onSave, onClear, onChange })
         
         {/* Controles Inferiores (Solo en pantalla completa) */}
         {isFullscreen && (
-           <div className="bg-white p-4 border-t border-slate-200 flex justify-between items-center gap-3 shrink-0">
-              <button type="button" onClick={clearPad} className="flex-1 bg-red-50 text-red-600 py-3 rounded-xl font-bold text-sm flex justify-center items-center gap-2 border border-red-200 active:scale-95 transition-all">
-                <Eraser className="w-5 h-5"/> Borrar
+           <div className="bg-slate-50 p-3 border-t border-slate-200 flex justify-between items-center gap-3 shrink-0">
+              <button type="button" onClick={clearPad} className="flex-1 bg-white hover:bg-red-50 text-red-600 py-2.5 rounded-md font-semibold text-sm flex justify-center items-center gap-2 border border-red-200 transition-colors">
+                <Eraser className="w-4 h-4"/> Borrar
               </button>
-              <button type="button" onClick={handleSave} className="flex-1 bg-green-500 text-white py-3 rounded-xl font-bold text-sm flex justify-center items-center gap-2 shadow-md shadow-green-500/30 active:scale-95 transition-all">
-                <CheckCircle className="w-5 h-5"/> Guardar
+              <button type="button" onClick={handleSave} className="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white py-2.5 rounded-md font-semibold text-sm flex justify-center items-center gap-2 transition-colors">
+                <CheckCircle className="w-4 h-4"/> Guardar
               </button>
            </div>
         )}

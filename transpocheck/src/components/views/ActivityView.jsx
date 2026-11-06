@@ -33,7 +33,7 @@ const ActorAvatar = ({ actor, size = 'md' }) => {
   }
   
   return (
-    <div className={`${sizes[size]} rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 dark:from-slate-600 dark:to-slate-800 flex items-center justify-center font-black text-white border-2 border-white dark:border-slate-800 shadow-sm shrink-0`}>
+    <div className={`${sizes[size]} rounded-xl bg-slate-800 dark:bg-slate-700 flex items-center justify-center font-black text-white border-2 border-white dark:border-slate-800 shadow-sm shrink-0`}>
       {actor?.initials || '??'}
     </div>
   );
@@ -52,12 +52,12 @@ const ActivityCard = ({ activity, isLast }) => {
       {/* LÍNEA VERTICAL CONECTORA */}
       <div className="flex flex-col items-center shrink-0 relative">
         {/* Dot con icono */}
-        <div className={`relative z-10 w-10 h-10 rounded-2xl ${activity.type.bgLight} flex items-center justify-center shadow-sm border border-white/50 dark:border-slate-700/50 transition-all duration-300 group-hover:scale-110 group-hover:shadow-md ${isRecent ? 'ring-2 ring-offset-2 dark:ring-offset-slate-900 ring-blue-400/50 animate-pulse' : ''}`}>
+        <div className={`relative z-10 w-10 h-10 rounded-xl ${activity.type.bgLight} flex items-center justify-center shadow-sm border border-white/50 dark:border-slate-700/50 transition-all duration-300 group-hover:scale-110 group-hover:shadow-md ${isRecent ? 'ring-2 ring-offset-2 dark:ring-offset-slate-900 ring-blue-400/50' : ''}`}>
           <IconComponent className={`w-4.5 h-4.5 ${activity.type.textColor}`} />
         </div>
         {/* Línea conectora vertical */}
         {!isLast && (
-          <div className="w-0.5 flex-1 bg-gradient-to-b from-slate-200 dark:from-slate-700 to-transparent min-h-[20px]" />
+          <div className="w-0.5 flex-1 bg-slate-200 dark:bg-slate-800 min-h-[20px]" />
         )}
       </div>
 
@@ -66,7 +66,7 @@ const ActivityCard = ({ activity, isLast }) => {
         className="flex-1 mb-4 cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className={`bg-white dark:bg-slate-900/80 backdrop-blur-sm rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group-hover:border-slate-200 dark:group-hover:border-slate-700 ${isRecent ? 'border-l-[3px] ' + activity.type.borderColor : ''}`}>
+        <div className={`bg-white dark:bg-slate-900/80 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden group-hover:border-slate-200 dark:group-hover:border-slate-700 ${isRecent ? 'border-l-[3px] ' + activity.type.borderColor : ''}`}>
           <div className="p-3.5 sm:p-4">
             {/* Fila superior: Actor + Timestamp */}
             <div className="flex items-center justify-between mb-2">
@@ -79,7 +79,7 @@ const ActivityCard = ({ activity, isLast }) => {
               <div className="flex items-center gap-1.5 shrink-0 ml-2">
                 {isRecent && (
                   <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className=" absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                   </span>
                 )}
@@ -160,7 +160,7 @@ const TimeGroup = ({ group }) => {
         }`}>
           {isLive && (
             <span className="relative flex h-1.5 w-1.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+              <span className=" absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-600"></span>
             </span>
           )}
@@ -299,18 +299,18 @@ export default function ActivityView({ jobs, drivers, expenses, currentUserEmail
       {/* ═══════════════════════════════════════════════════ */}
       {/* HERO BANNER — STATS EN VIVO                       */}
       {/* ═══════════════════════════════════════════════════ */}
-      <div className="relative bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 rounded-3xl overflow-hidden shadow-2xl mb-6">
+      <div className="relative bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-lg mb-6">
         {/* Patrón decorativo */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '20px 20px' }} />
-        <div className="absolute top-0 right-0 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl -translate-y-10 translate-x-10" />
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl translate-y-8 -translate-x-8" />
-        <div className="absolute top-1/2 left-1/2 w-48 h-48 bg-purple-500/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute inset-0 opacity-[0.03]"  />
+        <div className="absolute top-0 right-0 w-40 h-40 bg-blue-500/10 rounded-full -translate-y-10 translate-x-10" />
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/10 rounded-full translate-y-8 -translate-x-8" />
+        <div className="absolute top-1/2 left-1/2 w-48 h-48 bg-sky-500/5 rounded-full -translate-x-1/2 -translate-y-1/2" />
 
         <div className="relative p-6 sm:p-7">
           {/* Header */}
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
-              <div className="bg-white/10 backdrop-blur-md p-2.5 rounded-xl border border-white/10">
+              <div className="bg-white/10 p-2.5 rounded-xl border border-white/10">
                 <Activity className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -318,9 +318,9 @@ export default function ActivityView({ jobs, drivers, expenses, currentUserEmail
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Centro de Actividad</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 bg-emerald-500/20 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-emerald-400/20">
+            <div className="flex items-center gap-2 bg-emerald-500/20 px-3 py-1.5 rounded-xl border border-emerald-400/20">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className=" absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
               <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">En Vivo</span>
@@ -329,18 +329,18 @@ export default function ActivityView({ jobs, drivers, expenses, currentUserEmail
 
           {/* Stats Grid */}
           <div className="grid grid-cols-3 gap-3">
-            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-3.5 border border-white/5 hover:bg-white/10 transition-colors">
+            <div className="bg-white/5 rounded-xl p-3.5 border border-white/5 hover:bg-white/10 transition-colors">
               <p className="text-2xl sm:text-3xl font-black text-white tabular-nums">{liveStats.todayEvents}</p>
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Eventos Hoy</p>
             </div>
-            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-3.5 border border-white/5 hover:bg-white/10 transition-colors">
+            <div className="bg-white/5 rounded-xl p-3.5 border border-white/5 hover:bg-white/10 transition-colors">
               <div className="flex items-baseline gap-1">
                 <p className="text-2xl sm:text-3xl font-black text-emerald-400 tabular-nums">{liveStats.activeDrivers}</p>
-                {liveStats.activeDrivers > 0 && <span className="text-[9px] font-bold text-emerald-600 animate-pulse">●</span>}
+                {liveStats.activeDrivers > 0 && <span className="text-[9px] font-bold text-emerald-600">●</span>}
               </div>
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">En Ruta</p>
             </div>
-            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-3.5 border border-white/5 hover:bg-white/10 transition-colors">
+            <div className="bg-white/5 rounded-xl p-3.5 border border-white/5 hover:bg-white/10 transition-colors">
               <p className="text-2xl sm:text-3xl font-black text-blue-400 tabular-nums">{liveStats.todayJobs}</p>
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Trabajos</p>
             </div>
@@ -409,7 +409,7 @@ export default function ActivityView({ jobs, drivers, expenses, currentUserEmail
 
         {/* Filtros avanzados (expandibles) */}
         {showFilters && (
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-200 dark:border-slate-800 p-4 space-y-4 animate-in slide-in-from-top-3 duration-300 shadow-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-xl border-2 border-slate-200 dark:border-slate-800 p-4 space-y-4 animate-in slide-in-from-top-3 duration-300 shadow-sm">
             {/* Filtro por Conductor */}
             <div>
               <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 block">Filtrar por Conductor</label>
@@ -492,8 +492,8 @@ export default function ActivityView({ jobs, drivers, expenses, currentUserEmail
         </div>
       ) : (
         /* Empty State */
-        <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800 p-10 text-center shadow-sm">
-          <div className="bg-slate-100 dark:bg-slate-800 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <div className="bg-white dark:bg-slate-900 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-800 p-10 text-center shadow-sm">
+          <div className="bg-slate-100 dark:bg-slate-800 w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4">
             <Activity className="w-8 h-8 text-slate-300 dark:text-slate-600" />
           </div>
           <h3 className="text-lg font-extrabold text-slate-800 dark:text-slate-300 mb-1">Sin actividad</h3>
@@ -511,7 +511,7 @@ export default function ActivityView({ jobs, drivers, expenses, currentUserEmail
       {hasMore && (
         <button
           onClick={() => setDisplayLimit(prev => prev + 50)}
-          className="w-full mt-6 py-3.5 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-extrabold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm flex items-center justify-center gap-2"
+          className="w-full mt-6 py-3.5 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl text-sm font-extrabold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm flex items-center justify-center gap-2"
         >
           <RefreshCw className="w-4 h-4" />
           Cargar más ({filteredActivities.length - displayLimit} restantes)

@@ -642,27 +642,27 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
 
   const modalContent = cameraError ? (
     <div className="fixed inset-0 w-full h-[100dvh] bg-slate-950 z-[99999] flex flex-col justify-center items-center p-6 text-white text-center">
-      <div className="bg-slate-900 border border-red-500/30 p-6 rounded-3xl max-w-sm w-full flex flex-col items-center gap-4 shadow-2xl">
-        <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500">
-          <AlertCircle className="w-8 h-8" />
+      <div className="bg-slate-900 border border-slate-800 p-6 rounded-lg max-w-sm w-full flex flex-col items-center gap-4 shadow-lg">
+        <div className="w-12 h-12 rounded-md bg-red-950/60 border border-red-800 flex items-center justify-center text-red-400">
+          <AlertCircle className="w-6 h-6" />
         </div>
         <div className="space-y-1">
-          <h3 className="font-black text-lg text-white">Error de Cámara</h3>
-          <span className="text-[11px] font-mono font-bold text-red-400 bg-red-950/60 px-2 py-0.5 rounded border border-red-800/40">
+          <h3 className="font-semibold text-base text-white">Error de Cámara</h3>
+          <span className="text-[11px] font-mono font-semibold text-red-400 bg-red-950/60 px-2 py-0.5 rounded border border-red-800">
             {cameraError.code}
           </span>
         </div>
-        <p className="text-slate-300 text-sm leading-relaxed">{cameraError.message}</p>
+        <p className="text-slate-300 text-xs leading-relaxed">{cameraError.message}</p>
         <div className="flex flex-col w-full gap-2 pt-2">
           <button
             onClick={() => startCamera(true)}
-            className="w-full bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30"
+            className="w-full bg-blue-700 hover:bg-blue-600 text-white font-semibold py-2.5 rounded-md flex items-center justify-center gap-2 text-sm transition-colors"
           >
             <RefreshCw className="w-4 h-4" /> Reintentar
           </button>
           <button
             onClick={onClose}
-            className="w-full bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 font-bold py-3 rounded-xl transition-all"
+            className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2.5 rounded-md text-sm border border-slate-700 transition-colors"
           >
             Cerrar
           </button>
@@ -670,18 +670,18 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
       </div>
     </div>
   ) : previewImage ? (
-    <div className="fixed inset-0 w-full h-[100dvh] bg-black z-[99999] flex flex-col animate-in fade-in duration-200">
-      <div className="bg-black text-white px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] flex justify-between items-center z-10 shadow-md border-b border-slate-800">
-        <h3 className="font-black text-sm uppercase tracking-widest flex items-center gap-2 truncate max-w-[50%]">
-          <Edit3 className="w-5 h-5 text-red-400 shrink-0" /> Marcar Daños
+    <div className="fixed inset-0 w-full h-[100dvh] bg-slate-950 z-[99999] flex flex-col">
+      <div className="bg-slate-900 text-white px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] flex justify-between items-center z-10 border-b border-slate-800">
+        <h3 className="font-semibold text-xs uppercase tracking-wider flex items-center gap-2 truncate max-w-[50%]">
+          <Edit3 className="w-4 h-4 text-red-400 shrink-0" /> Marcar Daños
         </h3>
-        <button onClick={onClose} className="bg-white/10 p-2 rounded-full text-white hover:bg-white/20 transition-colors">
-          <X className="w-5 h-5" />
+        <button onClick={onClose} className="bg-slate-800 p-2 rounded-md text-slate-200 hover:bg-slate-700 border border-slate-700 transition-colors">
+          <X className="w-4 h-4" />
         </button>
       </div>
 
-      <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden touch-none">
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md px-4 py-2 rounded-full text-white text-xs font-bold pointer-events-none z-20 border border-white/10">
+      <div className="flex-1 relative bg-slate-950 flex items-center justify-center overflow-hidden touch-none">
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-900 px-3 py-1.5 rounded-md text-slate-200 text-xs font-medium pointer-events-none z-20 border border-slate-700">
           Dibuja con tu dedo para marcar zonas
         </div>
 
@@ -699,18 +699,18 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
         />
       </div>
 
-      <div className="bg-slate-900 pt-4 px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] flex flex-col gap-3 z-10 rounded-t-3xl shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
-        <div className="flex gap-3">
+      <div className="bg-slate-900 pt-4 px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] flex flex-col gap-3 z-10 border-t border-slate-800">
+        <div className="flex gap-2.5">
           <button
             onClick={retryPhoto}
-            className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-3.5 rounded-2xl font-black text-sm flex justify-center items-center gap-2 border border-slate-700 active:scale-95 transition-all"
+            className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-100 py-2.5 rounded-md font-semibold text-xs flex justify-center items-center gap-2 border border-slate-700 transition-colors"
           >
             <RefreshCw className="w-4 h-4" /> Reintentar
           </button>
           {hasDrawing && (
             <button
               onClick={clearAnnotation}
-              className="flex-1 bg-red-900/40 hover:bg-red-900/60 text-red-300 py-3.5 rounded-2xl font-black text-sm flex justify-center items-center gap-2 border border-red-900/50 active:scale-95 transition-all"
+              className="flex-1 bg-red-950/60 hover:bg-red-900/60 text-red-300 py-2.5 rounded-md font-semibold text-xs flex justify-center items-center gap-2 border border-red-800 transition-colors"
             >
               <X className="w-4 h-4" /> Borrar Trazo
             </button>
@@ -719,24 +719,24 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
 
         <button
           onClick={confirmAnnotation}
-          className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-black text-lg flex justify-center items-center gap-3 shadow-[0_0_20px_rgba(37,99,235,0.4)] active:scale-95 transition-all mt-1"
+          className="w-full bg-blue-700 hover:bg-blue-600 text-white py-3 rounded-md font-semibold text-sm flex justify-center items-center gap-2 transition-colors"
         >
-          <CheckCircle className="w-6 h-6" /> Confirmar y Guardar
+          <CheckCircle className="w-5 h-5" /> Confirmar y Guardar
         </button>
       </div>
     </div>
   ) : (
-    <div className="fixed inset-0 w-full h-[100dvh] bg-black z-[99999] flex flex-col animate-in fade-in duration-200">
-      <div className="bg-black text-white px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] flex justify-between items-center z-10 shadow-md border-b border-slate-800">
-        <h3 className="font-black text-sm uppercase tracking-widest flex items-center gap-2 truncate max-w-[40%]">
-          <Camera className="w-5 h-5 text-blue-400 shrink-0" /> {title}
+    <div className="fixed inset-0 w-full h-[100dvh] bg-slate-950 z-[99999] flex flex-col">
+      <div className="bg-slate-900 text-white px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] flex justify-between items-center z-10 border-b border-slate-800">
+        <h3 className="font-semibold text-xs uppercase tracking-wider flex items-center gap-2 truncate max-w-[55%]">
+          <Camera className="w-4 h-4 text-blue-400 shrink-0" /> {title}
         </h3>
-        <div className="flex items-center gap-3">
-          <button onClick={toggleOrientation} className="bg-slate-800 p-2 rounded-full text-white hover:bg-slate-700 transition-colors shadow-sm">
-            <RefreshCw className="w-5 h-5" />
+        <div className="flex items-center gap-2">
+          <button onClick={toggleOrientation} className="bg-slate-800 p-2 rounded-md text-slate-200 hover:bg-slate-700 border border-slate-700 transition-colors">
+            <RefreshCw className="w-4 h-4" />
           </button>
-          <button onClick={onClose} className="bg-white/10 p-2 rounded-full text-white hover:bg-white/20 transition-colors">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="bg-slate-800 p-2 rounded-md text-slate-200 hover:bg-slate-700 border border-slate-700 transition-colors">
+            <X className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -746,71 +746,70 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
           ref={videoRef}
           playsInline
           autoPlay
-          className="w-full h-full object-cover transition-transform duration-300"
+          className="w-full h-full object-cover transition-transform duration-150"
           style={{ transform: `scale(${digitalZoom})` }}
         />
 
         {/* Notificación Toast Nativa */}
         {toastMessage && (
-          <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-slate-900/90 text-amber-300 text-xs px-4 py-2 rounded-full shadow-2xl z-50 backdrop-blur-md border border-amber-500/30 font-bold max-w-[90%] text-center animate-in fade-in slide-in-from-top-2 flex items-center gap-2">
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-slate-900 text-amber-300 text-xs px-3.5 py-2 rounded-md shadow-md z-50 border border-amber-700 font-medium max-w-[90%] text-center flex items-center gap-2">
             <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
             <span>{toastMessage}</span>
           </div>
         )}
 
-        <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur-md px-5 py-2.5 rounded-full text-white text-center font-bold text-[13px] shadow-xl border border-white/20 z-40 w-[85%] max-w-xs flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-4">
-          📸 Fotografiar: <span className="text-blue-400 truncate">{title}</span>
+        <div className="absolute top-5 left-1/2 -translate-x-1/2 bg-slate-900/95 px-4 py-2 rounded-md text-white text-center font-medium text-xs shadow-md border border-slate-700 z-40 w-[85%] max-w-xs flex items-center justify-center gap-2">
+          <Camera className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+          <span>Fotografiar:</span> <span className="text-blue-400 font-semibold truncate">{title}</span>
         </div>
 
         {landscapeAngle !== 0 && (
           <div
-            className="absolute top-1/2 left-1/2 bg-green-600/90 backdrop-blur-md text-white px-6 py-3 rounded-full font-black text-sm uppercase tracking-widest flex items-center gap-2 z-50 border border-green-400 shadow-[0_0_30px_rgba(34,197,94,0.6)] transition-all duration-300"
+            className="absolute top-1/2 left-1/2 bg-emerald-700 text-white px-4 py-2 rounded-md font-semibold text-xs uppercase tracking-wider flex items-center gap-2 z-50 border border-emerald-500 shadow-md transition-transform duration-150"
             style={{
               transform: `translate(-50%, -50%) rotate(${landscapeAngle}deg)`,
               transformOrigin: 'center center'
             }}
           >
-            <CheckCircle className="w-5 h-5" /> Apaisado Activo
+            <CheckCircle className="w-4 h-4" /> Apaisado Activo
           </div>
         )}
 
         {/* Controles de Lente / Zoom Inteligente */}
-        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-1 bg-black/60 backdrop-blur-md p-1.5 rounded-full border border-white/20 z-20 shadow-xl">
+        <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 flex gap-1 bg-slate-900/95 p-1 rounded-md border border-slate-700 z-20 shadow-md">
           <button
             onClick={() => setZoomLevel(0.5)}
             disabled={isSwitchingLens}
-            className={`w-11 h-11 rounded-full text-sm font-black transition-all duration-300 ${activeZoomLabel === 0.5 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)] scale-105' : 'text-slate-300 hover:text-white active:scale-95'}`}
+            className={`w-10 h-9 rounded font-mono text-xs font-semibold transition-colors ${activeZoomLabel === 0.5 ? 'bg-blue-700 text-white' : 'text-slate-300 hover:text-white'}`}
           >
             0.5x
           </button>
           <button
             onClick={() => setZoomLevel(1)}
             disabled={isSwitchingLens}
-            className={`w-11 h-11 rounded-full text-sm font-black transition-all duration-300 ${activeZoomLabel === 1 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)] scale-105' : 'text-slate-300 hover:text-white active:scale-95'}`}
+            className={`w-10 h-9 rounded font-mono text-xs font-semibold transition-colors ${activeZoomLabel === 1 ? 'bg-blue-700 text-white' : 'text-slate-300 hover:text-white'}`}
           >
             1x
           </button>
           <button
             onClick={() => setZoomLevel(2)}
             disabled={isSwitchingLens}
-            className={`w-11 h-11 rounded-full text-sm font-black transition-all duration-300 ${activeZoomLabel === 2 ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.5)] scale-105' : 'text-slate-300 hover:text-white active:scale-95'}`}
+            className={`w-10 h-9 rounded font-mono text-xs font-semibold transition-colors ${activeZoomLabel === 2 ? 'bg-blue-700 text-white' : 'text-slate-300 hover:text-white'}`}
           >
             2x
           </button>
         </div>
       </div>
 
-      <div className="bg-slate-900 pt-5 px-6 pb-[calc(2rem+env(safe-area-inset-bottom))] flex flex-col gap-4 z-10 rounded-t-3xl shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+      <div className="bg-slate-900 pt-4 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] flex flex-col gap-3 z-10 border-t border-slate-800">
         <button
           onClick={takeInAppPhoto}
-          className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-black text-lg flex justify-center items-center gap-3 shadow-[0_0_20px_rgba(37,99,235,0.4)] active:scale-95 transition-all"
+          className="w-full bg-blue-700 hover:bg-blue-600 text-white py-3.5 rounded-md font-semibold text-sm flex justify-center items-center gap-2.5 transition-colors"
         >
-          <div className="w-8 h-8 rounded-full border-4 border-white flex items-center justify-center">
-            <div className="w-3 h-3 bg-white rounded-full"></div>
-          </div>
+          <Camera className="w-5 h-5" />
           TOMAR FOTO AHORA
         </button>
-        <label className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-3.5 rounded-xl font-bold text-sm flex justify-center items-center gap-2 cursor-pointer transition-colors border border-slate-700 active:scale-95">
+        <label className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-3 rounded-md font-medium text-xs flex justify-center items-center gap-2 cursor-pointer transition-colors border border-slate-700">
           <input
             type="file"
             accept="image/*"
@@ -832,7 +831,7 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
               }
             }}
           />
-          🖼️ O elegir una de tu Galería
+          Elegir imagen desde la galería
         </label>
       </div>
     </div>

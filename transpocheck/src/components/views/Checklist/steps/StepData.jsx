@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Clock, MapPin, CheckCircle, DollarSign } from 'lucide-react';
+import { Search, Clock, MapPin, CheckCircle } from 'lucide-react';
 import { useChecklist } from '../ChecklistContext';
 import { useDejaVu } from '../hooks/useDejaVu';
 import { db } from '../../../../firebase';
-import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import DejaVuModal from '../components/DejaVuModal';
 
 export const StepData = () => {
@@ -36,17 +36,17 @@ export const StepData = () => {
   }, [formData.prtArrivalTime, formData.rtStatus]);
 
   return (
-    <div className="space-y-5 animate-in fade-in duration-300">
+    <div className="space-y-4 animate-in fade-in duration-150 pt-3">
 
       {/* Selector de Cliente */}
       {isQuick ? (
-        <div className="space-y-2">
-          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Cliente</label>
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Cliente</label>
           <div className="relative">
             <select
               value={formData.client}
               onChange={(e) => setF('client', e.target.value)}
-              className="w-full border-2 border-slate-200 dark:border-slate-700 p-3.5 rounded-2xl font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 outline-none focus:border-blue-500 appearance-none shadow-sm transition-all"
+              className="w-full border border-slate-300 dark:border-slate-700 p-3 rounded-lg font-semibold text-sm text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 outline-none focus:border-sky-600 appearance-none transition-colors"
             >
               <option value="">Selecciona el Cliente...</option>
               {allClientsList.map(c => <option key={c} value={c}>{c}</option>)}
@@ -59,59 +59,58 @@ export const StepData = () => {
               onChange={e => setF('manualClient', e.target.value)}
               placeholder="Escribe el nombre del cliente"
               autoComplete="off" autoCorrect="off" spellCheck="false"
-              className="w-full border-2 border-slate-200 dark:border-slate-700 p-3.5 rounded-2xl font-bold text-slate-700 dark:text-slate-300 mt-2 shadow-sm focus:border-blue-500 outline-none transition-all"
+              className="w-full border border-slate-300 dark:border-slate-700 p-3 rounded-lg font-semibold text-sm text-slate-800 dark:text-slate-200 mt-2 focus:border-sky-600 outline-none transition-colors bg-white dark:bg-slate-900"
             />
           )}
         </div>
       ) : (
         <div className="space-y-1">
-          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Cliente Asignado</label>
+          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Cliente Asignado</label>
           <input
             value={formData.client}
             readOnly
-            className="w-full border border-slate-200/60 dark:border-slate-700/50 p-3.5 rounded-2xl font-bold text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900/50 cursor-not-allowed"
+            className="w-full border border-slate-200 dark:border-slate-800 p-3 rounded-lg font-semibold text-sm text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-900/60 cursor-not-allowed"
           />
         </div>
       )}
 
       {/* Datos del Vehículo */}
-      <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 shadow-sm space-y-4 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 dark:bg-blue-900/20 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4 relative overflow-hidden">
 
-        <h3 className="text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest flex items-center gap-2 relative z-10">
+        <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-2">
           Vehículo
         </h3>
 
-        <div className="relative z-10">
-          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 absolute -top-2 left-3 bg-white dark:bg-slate-900 px-1 z-10">Patente o VIN</label>
+        <div className="relative">
+          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1 block mb-1">Patente o VIN</label>
           <input
             value={formData.plateOrVin}
             onChange={e => setF('plateOrVin', e.target.value)}
             placeholder="XX-YY-11"
             autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters"
-            className="w-full border-2 border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 p-4 rounded-2xl font-black text-lg uppercase text-slate-800 dark:text-slate-200 shadow-inner text-center tracking-[0.2em] focus:border-blue-500 outline-none transition-all relative"
+            className="w-full border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3.5 rounded-lg font-bold font-mono text-lg uppercase text-slate-900 dark:text-slate-100 text-center tracking-[0.15em] focus:border-sky-600 outline-none transition-colors"
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 relative z-10">
+        <div className="grid grid-cols-2 gap-3">
           <input
             value={formData.brand}
             onChange={e => setF('brand', e.target.value)}
             placeholder="Marca"
             autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters"
-            className="w-full border-2 border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 p-3.5 rounded-2xl font-bold text-slate-800 dark:text-slate-200 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 outline-none transition-all shadow-inner"
+            className="w-full border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3 rounded-lg font-semibold text-sm text-slate-800 dark:text-slate-200 focus:border-sky-600 focus:bg-white dark:focus:bg-slate-900 outline-none transition-colors"
           />
           <input
             value={formData.model}
             onChange={e => setF('model', e.target.value)}
             placeholder="Modelo"
             autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters"
-            className="w-full border-2 border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 p-3.5 rounded-2xl font-bold text-slate-800 dark:text-slate-200 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 outline-none transition-all shadow-inner"
+            className="w-full border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 p-3 rounded-lg font-semibold text-sm text-slate-800 dark:text-slate-200 focus:border-sky-600 focus:bg-white dark:focus:bg-slate-900 outline-none transition-colors"
           />
         </div>
 
         {/* Checkbox Vehículo Nuevo */}
-        <label className="flex items-center gap-3 mt-4 relative z-10 cursor-pointer bg-slate-50 dark:bg-slate-800/50 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 transition-colors">
+        <label className="flex items-center gap-3 mt-3 cursor-pointer bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-sky-500 transition-colors">
           <div className="relative flex items-center">
             <input
               type="checkbox"
@@ -119,12 +118,12 @@ export const StepData = () => {
               onChange={e => setF('isNewVehicle', e.target.checked)}
               className="sr-only"
             />
-            <div className={`w-6 h-6 border-2 rounded-lg transition-all flex items-center justify-center shadow-inner ${formData.isNewVehicle ? 'bg-blue-500 border-blue-500' : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600'}`}>
-              <CheckCircle className={`w-4 h-4 text-white transition-transform ${formData.isNewVehicle ? 'scale-100' : 'scale-0'}`} />
+            <div className={`w-5 h-5 border rounded-md transition-colors flex items-center justify-center ${formData.isNewVehicle ? 'bg-sky-600 border-sky-600' : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600'}`}>
+              <CheckCircle className={`w-3.5 h-3.5 text-white transition-transform ${formData.isNewVehicle ? 'scale-100' : 'scale-0'}`} />
             </div>
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-bold text-slate-700 dark:text-slate-200 leading-tight">Vehículo Nuevo</span>
+            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-tight">Vehículo Nuevo</span>
             <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">No cuenta con documentación (no suma puntos)</span>
           </div>
         </label>
@@ -132,22 +131,21 @@ export const StepData = () => {
 
       {/* ALERTA DÉJÀ VU PERICIAL */}
       {dejaVuData && (
-        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 border-2 border-purple-200 dark:border-purple-800/50 p-4 rounded-3xl shadow-sm animate-in zoom-in-95 flex items-start gap-3 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-1.5 h-full bg-purple-500" />
-          <div className="bg-purple-200/50 dark:bg-purple-800/50 p-2.5 rounded-full text-purple-700 dark:text-purple-300 shrink-0">
-            <Search className="w-5 h-5 animate-pulse" />
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 p-4 rounded-xl flex items-start gap-3 relative overflow-hidden">
+          <div className="bg-amber-100 dark:bg-amber-900/50 p-2 rounded-lg text-amber-700 dark:text-amber-400 shrink-0">
+            <Search className="w-4 h-4" />
           </div>
           <div className="flex-1">
-            <h4 className="text-[11px] font-black text-purple-800 dark:text-purple-300 uppercase tracking-widest mb-1">
+            <h4 className="text-xs font-bold text-amber-900 dark:text-amber-300 uppercase tracking-wider mb-1">
               Déjà Vu Pericial
             </h4>
-            <p className="text-[12px] font-bold text-purple-600/90 dark:text-purple-400/90 leading-snug mb-3">
+            <p className="text-xs font-medium text-amber-800 dark:text-amber-400 leading-snug mb-3">
               Hay registros de daños previos en este vehículo (Traslado del {new Date(dejaVuData.completedAt).toLocaleDateString()}).
             </p>
             <button
               type="button"
               onClick={() => setShowDejaVuModal(true)}
-              className="bg-purple-600 hover:bg-purple-700 text-white text-[11px] px-4 py-2.5 rounded-xl font-black uppercase transition-colors shadow-md shadow-purple-500/20 w-full active:scale-95"
+              className="bg-amber-600 hover:bg-amber-700 text-white text-xs px-4 py-2 rounded-lg font-bold uppercase tracking-wider transition-colors w-full"
             >
               Ver Daños Anteriores
             </button>
@@ -157,8 +155,8 @@ export const StepData = () => {
 
       {/* Tiempos de Planta (Solo para revisiones) */}
       {job?.tripType === 'revision' && (
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 shadow-sm space-y-4">
-          <h3 className="text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+          <h3 className="text-xs font-bold text-sky-600 dark:text-sky-400 uppercase tracking-wider flex items-center gap-2 mb-2">
             <Clock className="w-4 h-4" /> Tiempo en Planta (PRT)
           </h3>
 
@@ -175,21 +173,21 @@ export const StepData = () => {
                   }
                 }
               }}
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black py-4 rounded-2xl shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 transition-all active:scale-95"
+              className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3.5 rounded-lg flex items-center justify-center gap-2 transition-colors text-xs uppercase tracking-wider"
             >
-              <MapPin className="w-5 h-5" /> LLEGUÉ A LA PRT (Iniciar Tiempo)
+              <MapPin className="w-4 h-4" /> Llegué a la PRT (Iniciar Tiempo)
             </button>
           )}
 
           {formData.prtArrivalTime && (
-            <div className="bg-blue-50/50 dark:bg-blue-900/20 border-2 border-blue-200/50 dark:border-blue-800/30 p-4 rounded-2xl flex justify-between items-center shadow-inner">
-              <div className="flex items-center gap-3.5">
-                <div className={`p-2.5 rounded-full ${formData.rtStatus === 'pendiente' ? 'bg-blue-200 dark:bg-blue-800/50 text-blue-700 dark:text-blue-300 animate-spin-slow' : 'bg-green-200 dark:bg-green-800/50 text-green-700 dark:text-green-300'}`}>
-                  {formData.rtStatus === 'pendiente' ? <Clock className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
+            <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800/50 p-3.5 rounded-lg flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${formData.rtStatus === 'pendiente' ? 'bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300' : 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300'}`}>
+                  {formData.rtStatus === 'pendiente' ? <Clock className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-blue-800/60 dark:text-blue-300/60 uppercase tracking-widest">Cronómetro</p>
-                  <p className="text-sm font-bold text-blue-700 dark:text-blue-400 mt-0.5">
+                  <p className="text-[10px] font-bold text-sky-800/70 dark:text-sky-300/70 uppercase tracking-wider">Cronómetro</p>
+                  <p className="text-sm font-bold font-mono text-sky-700 dark:text-sky-400 mt-0.5">
                     {formData.rtStatus === 'pendiente'
                       ? `${Math.floor((nowTick - formData.prtArrivalTime) / 60000)} minutos en trámite...`
                       : `${Math.floor(((formData.prtFinishTime || Date.now()) - formData.prtArrivalTime) / 60000)} min en total`}
@@ -200,8 +198,8 @@ export const StepData = () => {
           )}
 
           {(formData.prtArrivalTime || formData.rtStatus !== 'pendiente') && (
-            <div className="animate-in fade-in slide-in-from-top-2 duration-300 pt-3 border-t border-slate-100 dark:border-slate-800">
-              <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-3">Resultado de la Revisión</h3>
+            <div className="animate-in fade-in duration-150 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Resultado de la Revisión</h3>
               <select
                 value={formData.rtStatus}
                 onChange={e => {
@@ -210,20 +208,20 @@ export const StepData = () => {
                     setF('prtFinishTime', Date.now());
                   }
                 }}
-                className={`w-full border-2 p-4 rounded-2xl outline-none font-black text-sm appearance-none shadow-sm transition-all
+                className={`w-full border p-3.5 rounded-lg outline-none font-bold text-xs uppercase tracking-wider appearance-none transition-colors
                 ${formData.rtStatus === 'pendiente'
-                    ? 'border-blue-300 dark:border-blue-700/50 bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-400'
+                    ? 'border-sky-300 dark:border-sky-700 bg-white dark:bg-slate-900 text-sky-700 dark:text-sky-400'
                     : formData.rtStatus === 'aprobado'
-                      ? 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 shadow-green-500/10'
+                      ? 'border-emerald-400 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400'
                       : formData.rtStatus === 'aprobado_ayuda'
-                        ? 'border-amber-400 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 shadow-amber-500/10'
-                        : 'border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 shadow-red-500/10'
+                        ? 'border-amber-400 dark:border-amber-600 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400'
+                        : 'border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400'
                   }`}
               >
-                <option value="pendiente" disabled>⏳ TRÁMITE EN CURSO...</option>
-                <option value="aprobado">✅ APROBADO</option>
-                <option value="aprobado_ayuda">🤝 APROBADO CON AYUDA</option>
-                <option value="rechazado">❌ RECHAZADO</option>
+                <option value="pendiente" disabled>TRÁMITE EN CURSO...</option>
+                <option value="aprobado">APROBADO</option>
+                <option value="aprobado_ayuda">APROBADO CON AYUDA</option>
+                <option value="rechazado">RECHAZADO</option>
               </select>
             </div>
           )}
@@ -236,22 +234,22 @@ export const StepData = () => {
                 placeholder="¿Cuál fue la razón del rechazo?"
                 required
                 autoComplete="off" autoCorrect="off" spellCheck="false"
-                className="w-full border-2 border-red-300 dark:border-red-700/50 p-3.5 rounded-2xl outline-none focus:border-red-500 font-bold text-red-900 dark:text-red-300 bg-white dark:bg-slate-900 mt-3 shadow-inner"
+                className="w-full border border-red-300 dark:border-red-700 p-3 rounded-lg outline-none focus:border-red-500 font-semibold text-sm text-red-900 dark:text-red-300 bg-white dark:bg-slate-900 mt-2"
               />
-              <div className="p-4 border border-red-200 dark:border-red-800/50 bg-red-50/30 dark:bg-red-900/10 rounded-2xl space-y-3">
-                <p className="text-[11px] font-black text-red-800 dark:text-red-400 uppercase tracking-widest">¿Destino tras rechazo?</p>
+              <div className="p-3.5 border border-red-200 dark:border-red-800/50 bg-red-50/40 dark:bg-red-950/20 rounded-lg space-y-2.5">
+                <p className="text-[10px] font-bold text-red-800 dark:text-red-400 uppercase tracking-wider">¿Destino tras rechazo?</p>
                 <div className="flex flex-wrap gap-4">
                   {assignedDest && (
-                    <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-red-700 dark:text-red-300 select-none">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-red-700 dark:text-red-300 select-none">
                       <input type="radio" name="rtReturnOptionRej" value="destination" checked={formData.rtReturnOption === 'destination'} onChange={() => { setF('rtReturnOption', 'destination'); setF('rtReturnDestination', assignedDest); }} className="w-4 h-4 accent-red-600" />
                       Continuar a {assignedDest}
                     </label>
                   )}
-                  <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-red-700 dark:text-red-300 select-none">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-red-700 dark:text-red-300 select-none">
                     <input type="radio" name="rtReturnOptionRej" value="origin" checked={formData.rtReturnOption === 'origin'} onChange={() => { setF('rtReturnOption', 'origin'); setF('rtReturnDestination', ''); }} className="w-4 h-4 accent-red-600" />
                     Volver al Origen
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-red-700 dark:text-red-300 select-none">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-red-700 dark:text-red-300 select-none">
                     <input type="radio" name="rtReturnOptionRej" value="other" checked={formData.rtReturnOption === 'other'} onChange={() => { setF('rtReturnOption', 'other'); setF('rtReturnDestination', ''); }} className="w-4 h-4 accent-red-600" />
                     Otro Destino
                   </label>
@@ -263,7 +261,7 @@ export const StepData = () => {
                     placeholder="Especifique el destino final tras rechazo..."
                     required
                     autoComplete="off" autoCorrect="off" spellCheck="false"
-                    className="w-full border-2 border-red-300 dark:border-red-700/50 p-3 rounded-xl outline-none focus:border-red-500 font-bold text-red-900 dark:text-red-300 bg-white dark:bg-slate-900 mt-2 shadow-inner"
+                    className="w-full border border-red-300 dark:border-red-700 p-3 rounded-lg outline-none focus:border-red-500 font-semibold text-sm text-red-900 dark:text-red-300 bg-white dark:bg-slate-900 mt-2"
                   />
                 )}
               </div>
@@ -271,21 +269,21 @@ export const StepData = () => {
           )}
 
           {(formData.rtStatus === 'aprobado' || formData.rtStatus === 'aprobado_ayuda') && (
-            <div className="mt-3 p-4 border border-green-200 dark:border-green-800/50 bg-green-50/30 dark:bg-green-900/10 rounded-2xl space-y-3 animate-in fade-in">
-              <p className="text-[11px] font-black text-green-800 dark:text-green-400 uppercase tracking-widest">¿Destino tras aprobar?</p>
+            <div className="mt-3 p-3.5 border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/40 dark:bg-emerald-950/20 rounded-lg space-y-2.5 animate-in fade-in">
+              <p className="text-[10px] font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider">¿Destino tras aprobar?</p>
               <div className="flex flex-wrap gap-4">
                 {assignedDest && (
-                  <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-green-700 dark:text-green-300 select-none">
-                    <input type="radio" name="rtReturnOption" value="destination" checked={formData.rtReturnOption === 'destination'} onChange={() => { setF('rtReturnOption', 'destination'); setF('rtReturnDestination', assignedDest); }} className="w-4 h-4 accent-green-600" />
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-emerald-700 dark:text-emerald-300 select-none">
+                    <input type="radio" name="rtReturnOption" value="destination" checked={formData.rtReturnOption === 'destination'} onChange={() => { setF('rtReturnOption', 'destination'); setF('rtReturnDestination', assignedDest); }} className="w-4 h-4 accent-emerald-600" />
                     Continuar a {assignedDest}
                   </label>
                 )}
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-green-700 dark:text-green-300 select-none">
-                  <input type="radio" name="rtReturnOption" value="origin" checked={formData.rtReturnOption === 'origin'} onChange={() => { setF('rtReturnOption', 'origin'); setF('rtReturnDestination', ''); }} className="w-4 h-4 accent-green-600" />
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-emerald-700 dark:text-emerald-300 select-none">
+                  <input type="radio" name="rtReturnOption" value="origin" checked={formData.rtReturnOption === 'origin'} onChange={() => { setF('rtReturnOption', 'origin'); setF('rtReturnDestination', ''); }} className="w-4 h-4 accent-emerald-600" />
                   Volver al Origen
                 </label>
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-green-700 dark:text-green-300 select-none">
-                  <input type="radio" name="rtReturnOption" value="other" checked={formData.rtReturnOption === 'other'} onChange={() => { setF('rtReturnOption', 'other'); setF('rtReturnDestination', ''); }} className="w-4 h-4 accent-green-600" />
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-emerald-700 dark:text-emerald-300 select-none">
+                  <input type="radio" name="rtReturnOption" value="other" checked={formData.rtReturnOption === 'other'} onChange={() => { setF('rtReturnOption', 'other'); setF('rtReturnDestination', ''); }} className="w-4 h-4 accent-emerald-600" />
                   Otro Destino
                 </label>
               </div>
@@ -296,7 +294,7 @@ export const StepData = () => {
                   placeholder="Especifique el destino final..."
                   required
                   autoComplete="off" autoCorrect="off" spellCheck="false"
-                  className="w-full border-2 border-green-300 dark:border-green-700/50 p-3 rounded-xl outline-none focus:border-green-500 font-bold text-green-900 dark:text-green-300 bg-white dark:bg-slate-900 mt-2 shadow-inner"
+                  className="w-full border border-emerald-300 dark:border-emerald-700 p-3 rounded-lg outline-none focus:border-emerald-500 font-semibold text-sm text-emerald-900 dark:text-emerald-300 bg-white dark:bg-slate-900 mt-2"
                 />
               )}
             </div>

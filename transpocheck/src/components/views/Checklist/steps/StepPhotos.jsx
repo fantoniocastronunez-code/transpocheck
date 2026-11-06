@@ -166,48 +166,48 @@ export const StepPhotos = ({ openCamera }) => {
 
 
   return (
-    <div className="space-y-5 animate-in fade-in duration-300">
+    <div className="space-y-4 animate-in fade-in duration-150 pt-3">
       
       {/* Vehiculo Sucio Checkbox */}
-      <div className="border-b border-slate-100 dark:border-slate-800 pb-4 mb-2">
-        <label className="flex items-start gap-3 cursor-pointer group bg-orange-50 dark:bg-orange-900/20 p-3 rounded-xl border border-orange-100 dark:border-orange-800/30 hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors">
+      <div className="border-b border-slate-200 dark:border-slate-800 pb-4 mb-2">
+        <label className="flex items-start gap-3 cursor-pointer group bg-amber-50 dark:bg-amber-950/30 p-3 rounded-lg border border-amber-200 dark:border-amber-800/50 hover:bg-amber-100/70 dark:hover:bg-amber-900/40 transition-colors">
           <div className="relative flex items-center justify-center mt-0.5">
             <input 
               type="checkbox" 
               checked={formData.isDirtyVehicle || false}
               onChange={e => setF('isDirtyVehicle', e.target.checked)}
-              className="appearance-none w-5 h-5 border-2 border-orange-300 dark:border-orange-700 rounded-md checked:bg-orange-500 checked:border-orange-500 transition-colors cursor-pointer"
+              className="appearance-none w-5 h-5 border border-amber-400 dark:border-amber-700 rounded-md checked:bg-amber-600 checked:border-amber-600 transition-colors cursor-pointer"
             />
             {formData.isDirtyVehicle && <CheckCircle className="w-3.5 h-3.5 text-white absolute pointer-events-none" />}
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-bold text-orange-800 dark:text-orange-300">Vehículo sucio</span>
-            <span className="text-[10px] font-medium text-orange-600 dark:text-orange-400/80 mt-0.5 leading-tight">Al marcar esto aceptas que puede incluir rayas, piquetes o daños que no se muestren en las fotos.</span>
+            <span className="text-xs font-bold text-amber-900 dark:text-amber-300">Vehículo sucio</span>
+            <span className="text-[10px] font-medium text-amber-700 dark:text-amber-400/90 mt-0.5 leading-tight">Al marcar esto aceptas que puede incluir rayas, piquetes o daños que no se muestren en las fotos.</span>
           </div>
         </label>
       </div>
 
       {/* Header y Selector de Vehículo */}
-      <div className="flex flex-col gap-2 border-b border-slate-100 dark:border-slate-800 pb-3 mb-2">
-        <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+      <div className="flex flex-col gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 mb-2">
+        <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
           Croquis Pericial de Daños
         </h3>
         <select 
           value={formData.vehicleType || 'auto'} 
           onChange={e => setF('vehicleType', e.target.value)} 
-          className="bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-[10px] font-bold p-2 rounded-xl outline-none text-slate-700 dark:text-slate-300 cursor-pointer w-full focus:border-blue-500 transition-colors shadow-sm"
+          className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs font-semibold p-2.5 rounded-lg outline-none text-slate-800 dark:text-slate-200 cursor-pointer w-full focus:border-sky-600 transition-colors"
         >
-          <option value="auto">🚙 Auto/SUV</option>
-          <option value="camioneta">🛻 Camioneta</option>
-          <option value="furgon_pequeno">🚐 Furgón Peq.</option>
-          <option value="furgon_grande">🚐 Furgón Grande</option>
-          <option value="camion">🚚 Camión Simple</option>
-          <option value="camion_doble">🚚 Camión Doble Cab.</option>
-          <option value="camion_2ejes">🚛 Camión (2 Ejes)</option>
-          <option value="camion_3ejes">🚛 Camión (3 Ejes)</option>
-          <option value="camion_8x4">🚚 Camión Rigid (8x4)</option>
-          <option value="carro_arrastre">🔗 Carro Arrastre</option>
-          <option value="maquinaria">🚜 Maquinaria</option>
+          <option value="auto">Auto / SUV</option>
+          <option value="camioneta">Camioneta</option>
+          <option value="furgon_pequeno">Furgón Peq.</option>
+          <option value="furgon_grande">Furgón Grande</option>
+          <option value="camion">Camión Simple</option>
+          <option value="camion_doble">Camión Doble Cab.</option>
+          <option value="camion_2ejes">Camión (2 Ejes)</option>
+          <option value="camion_3ejes">Camión (3 Ejes)</option>
+          <option value="camion_8x4">Camión Rígido (8x4)</option>
+          <option value="carro_arrastre">Carro Arrastre</option>
+          <option value="maquinaria">Maquinaria</option>
         </select>
       </div>
 
@@ -220,7 +220,7 @@ export const StepPhotos = ({ openCamera }) => {
       </div>
 
       {/* Otras Fotos (Extras) */}
-      <div className="grid grid-cols-2 gap-3 mt-0 pt-4 border-t border-slate-100 dark:border-slate-800">
+      <div className="grid grid-cols-2 gap-3 mt-0 pt-4 border-t border-slate-200 dark:border-slate-800">
         {(() => {
           const extraPhotos = [
             { id: 'tire', l: 'Repuesto' }, 
@@ -235,12 +235,12 @@ export const StepPhotos = ({ openCamera }) => {
           return extraPhotos.map(p => (
             <div 
               key={p.id} 
-              className={`w-full h-14 rounded-2xl border-2 flex items-center justify-between px-2.5 cursor-pointer relative overflow-hidden bg-white dark:bg-slate-900 shadow-sm transition-all 
+              className={`w-full h-14 rounded-lg border flex items-center justify-between px-3 cursor-pointer relative overflow-hidden bg-white dark:bg-slate-900 transition-colors 
               ${formData.photos[p.id] 
-                ? 'border-green-400 ring-2 ring-green-100 dark:ring-green-900/30' 
+                ? 'border-emerald-500' 
                 : (p.id === 'vin' 
-                  ? 'border-dashed border-red-300 dark:border-red-700/50 hover:bg-red-50 dark:hover:bg-red-900/30' 
-                  : 'border-dashed border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800')
+                  ? 'border-dashed border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-950/30' 
+                  : 'border-dashed border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800')
               }`}
             >
               {formData.photos[p.id] ? (
@@ -249,13 +249,14 @@ export const StepPhotos = ({ openCamera }) => {
                     src={formData.photos[p.id]} 
                     className="absolute inset-0 w-full h-full object-cover opacity-25 cursor-pointer" 
                     onClick={() => handlePhotoClick(p.id, p.l)}
+                    alt=""
                   />
                   <div 
                     className="flex items-center gap-1.5 flex-1 truncate z-10 mr-1 cursor-pointer"
                     onClick={() => handlePhotoClick(p.id, p.l)}
                   >
-                    <CheckCircle className="w-4 h-4 text-green-500 shrink-0 bg-white dark:bg-slate-900 rounded-full" />
-                    <span className="text-[10px] font-black text-green-800 dark:text-green-300 truncate">{p.l}</span>
+                    <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 bg-white dark:bg-slate-900 rounded-full" />
+                    <span className="text-xs font-bold text-emerald-900 dark:text-emerald-300 truncate">{p.l}</span>
                   </div>
                   <button
                     type="button"
@@ -264,7 +265,7 @@ export const StepPhotos = ({ openCamera }) => {
                       e.stopPropagation();
                       handleRotateInline(p.id);
                     }}
-                    className="relative z-20 w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-slate-700 transition-colors active:scale-90 shrink-0"
+                    className="relative z-20 w-7 h-7 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-colors shrink-0"
                   >
                     <RotateCw className="w-3.5 h-3.5" />
                   </button>
@@ -274,8 +275,8 @@ export const StepPhotos = ({ openCamera }) => {
                   onClick={() => handlePhotoClick(p.id, p.l)}
                   className="w-full h-full flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <Camera className={`w-4 h-4 ${p.id === 'vin' ? 'text-red-400 animate-pulse' : 'text-slate-400'}`} />
-                  <span className={`text-[10px] font-black uppercase ${p.id === 'vin' ? 'text-red-500 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'}`}>{p.l}</span>
+                  <Camera className={`w-4 h-4 ${p.id === 'vin' ? 'text-red-500' : 'text-slate-400'}`} />
+                  <span className={`text-[10px] font-bold uppercase ${p.id === 'vin' ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'}`}>{p.l}</span>
                 </div>
               )}
             </div>

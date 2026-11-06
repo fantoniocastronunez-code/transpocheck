@@ -9,9 +9,9 @@ export default function FullScreenPhotoModal({
   if (!fullScreenPhoto) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-[99999] flex flex-col p-2 sm:p-4" onClick={() => setFullScreenPhoto(null)}>
-       {/* BARRA DE HERRAMIENTAS FLOTANTE SUPERIOR */}
-       <div className="absolute top-[calc(1rem+env(safe-area-inset-top))] right-4 flex gap-3 z-[100000]" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-slate-950/95 z-[99999] flex flex-col p-2 sm:p-4" onClick={() => setFullScreenPhoto(null)}>
+       {/* BARRA DE HERRAMIENTAS SUPERIOR */}
+       <div className="absolute top-[calc(1rem+env(safe-area-inset-top))] right-4 flex gap-2.5 z-[100000]" onClick={(e) => e.stopPropagation()}>
          <button 
            onClick={async (e) => {
              e.stopPropagation();
@@ -30,17 +30,17 @@ export default function FullScreenPhotoModal({
                window.open(fullScreenPhoto, '_blank');
              }
            }} 
-           className="bg-slate-800/90 hover:bg-slate-700 text-white p-3 rounded-full transition-colors shadow-2xl backdrop-blur-xl flex items-center justify-center border border-slate-600/50"
+           className="bg-slate-800 hover:bg-slate-700 text-white p-2.5 rounded-md transition-colors flex items-center justify-center border border-slate-700"
            title="Descargar Imagen"
          >
-           <FileDown className="w-6 h-6"/>
+           <FileDown className="w-5 h-5"/>
          </button>
          <button 
            onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(null); }} 
-           className="bg-rose-600/90 hover:bg-rose-500 text-white p-3 rounded-full transition-colors shadow-2xl backdrop-blur-xl flex items-center justify-center border border-rose-500/50" 
+           className="bg-red-600 hover:bg-red-700 text-white p-2.5 rounded-md transition-colors flex items-center justify-center border border-red-500" 
            title="Cerrar"
          >
-            <X className="w-6 h-6"/>
+            <X className="w-5 h-5"/>
          </button>
        </div>
 
@@ -68,17 +68,17 @@ export default function FullScreenPhotoModal({
                         src={fullScreenPhoto} 
                         alt="Ampliación" 
                         draggable={false}
-                        className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl select-none" 
+                        className="max-w-full max-h-[90vh] object-contain rounded-md select-none" 
                      />
                   </TransformComponent>
                   
                   {/* Controles de Zoom Inferiores */}
-                  <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 p-2 rounded-full shadow-2xl z-[100000]">
-                     <button onClick={() => zoomOut()} className="p-3 text-white hover:bg-slate-800 rounded-full transition-colors" title="Alejar"><ZoomOut className="w-5 h-5"/></button>
-                     <div className="w-px h-8 bg-slate-700/80 mx-1"></div>
-                     <button onClick={() => resetTransform()} className="px-4 py-2 text-white hover:bg-slate-800 rounded-full transition-colors font-black text-[11px] uppercase tracking-widest" title="Restablecer">100%</button>
-                     <div className="w-px h-8 bg-slate-700/80 mx-1"></div>
-                     <button onClick={() => zoomIn()} className="p-3 text-white hover:bg-slate-800 rounded-full transition-colors" title="Acercar"><ZoomIn className="w-5 h-5"/></button>
+                  <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-slate-900 border border-slate-700 p-1.5 rounded-md shadow-lg z-[100000]">
+                     <button onClick={() => zoomOut()} className="p-2 text-white hover:bg-slate-800 rounded transition-colors" title="Alejar"><ZoomOut className="w-4 h-4"/></button>
+                     <div className="w-px h-6 bg-slate-700 mx-0.5"></div>
+                     <button onClick={() => resetTransform()} className="px-3 py-1.5 text-white hover:bg-slate-800 rounded transition-colors font-mono font-semibold text-xs" title="Restablecer">100%</button>
+                     <div className="w-px h-6 bg-slate-700 mx-0.5"></div>
+                     <button onClick={() => zoomIn()} className="p-2 text-white hover:bg-slate-800 rounded transition-colors" title="Acercar"><ZoomIn className="w-4 h-4"/></button>
                   </div>
                </React.Fragment>
             )}

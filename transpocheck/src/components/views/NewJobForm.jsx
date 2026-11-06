@@ -780,7 +780,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   ].filter(Boolean);
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-8 rounded-3xl mb-28">
+    <div className="max-w-4xl mx-auto p-4 sm:p-8 rounded-xl mb-28">
 
       {/* HEADER: Title & Urgency */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
@@ -788,7 +788,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
         
         <div className="flex items-center gap-4">
           <label className={`flex items-center gap-2 cursor-pointer px-4 py-2 rounded-xl border-2 transition-all shadow-sm ${isUrgent ? 'bg-red-500/10 border-red-500 text-red-500' : 'bg-transparent border-slate-300 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
-            <AlertCircle className={`w-5 h-5 ${isUrgent ? 'animate-pulse text-red-500' : 'text-slate-400'}`} />
+            <AlertCircle className={`w-5 h-5 ${isUrgent ? ' text-red-500' : 'text-slate-400'}`} />
             <span className="font-extrabold text-xs uppercase tracking-wider">{isUrgent ? 'Urgente' : 'Marcar Urgente'}</span>
             <div className="relative flex items-center ml-2">
               <input type="checkbox" className="sr-only" checked={isUrgent} onChange={(e) => setIsUrgent(e.target.checked)} />
@@ -803,18 +803,18 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
       <form onSubmit={handleCreateOrUpdateJob} className="space-y-6">
         
         {/* GLASSMORPHISM MAIN CARD */}
-        <div className="bg-slate-50/50 dark:bg-[#131b2f]/80 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 p-6 sm:p-10 rounded-3xl shadow-2xl relative space-y-12">
+        <div className="bg-slate-50/50 dark:bg-[#131b2f]/80 border border-slate-200/50 dark:border-slate-700/50 p-6 sm:p-10 rounded-xl shadow-lg relative space-y-12">
            
            {/* STEP 1: TIPO DE SERVICIO */}
            <div className="animate-in fade-in slide-in-from-right-8 duration-500 space-y-6">
-                <div className="flex justify-center mb-8 bg-slate-200/50 dark:bg-slate-800/50 p-1.5 rounded-2xl max-w-md mx-auto">
-                  <button type="button" onClick={() => setOperationMode('traslado')} className={`flex-1 py-3 text-xs sm:text-sm font-black rounded-xl transition-all duration-300 ${operationMode === 'traslado' ? 'bg-white dark:bg-slate-900 text-blue-500 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'}`}>🚚 Traslado de Vehículo</button>
-                  <button type="button" onClick={() => setOperationMode('servicio')} className={`flex-1 py-3 text-xs sm:text-sm font-black rounded-xl transition-all duration-300 ${operationMode === 'servicio' ? 'bg-white dark:bg-slate-900 text-purple-500 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'}`}>🛠️ Servicio en Terreno</button>
+                <div className="flex justify-center mb-8 bg-slate-200/50 dark:bg-slate-800/50 p-1.5 rounded-xl max-w-md mx-auto">
+                  <button type="button" onClick={() => setOperationMode('traslado')} className={`flex-1 py-3 text-xs sm:text-sm font-black rounded-xl transition-all duration-300 ${operationMode === 'traslado' ? 'bg-white dark:bg-slate-900 text-blue-500 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'}`}>Traslado de Vehículo</button>
+                  <button type="button" onClick={() => setOperationMode('servicio')} className={`flex-1 py-3 text-xs sm:text-sm font-black rounded-xl transition-all duration-300 ${operationMode === 'servicio' ? 'bg-white dark:bg-slate-900 text-sky-500 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'}`}>Servicio en Terreno</button>
                 </div>
 
                 {operationMode === 'traslado' ? (
                    <>
-                     <div className="flex flex-col sm:flex-row justify-center bg-slate-200/50 dark:bg-slate-800/50 p-1.5 rounded-2xl max-w-2xl mx-auto gap-1 sm:gap-0">
+                     <div className="flex flex-col sm:flex-row justify-center bg-slate-200/50 dark:bg-slate-800/50 p-1.5 rounded-xl max-w-2xl mx-auto gap-1 sm:gap-0">
                         <button type="button" onClick={() => setTripType('traslado')} className={`flex-1 py-3 flex justify-center items-center gap-2 text-xs sm:text-sm font-black rounded-xl transition-all duration-300 ${tripType === 'traslado' ? 'bg-white dark:bg-slate-900 text-blue-500 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'}`}>
                            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
                            <span>Traslado Local</span>
@@ -829,7 +829,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                         </button>
                      </div>
                      {tripType === 'revision' && (
-                        <div className="mt-6 p-6 bg-white/50 dark:bg-[#0f172a]/50 rounded-2xl border border-blue-500/20 animate-in fade-in slide-in-from-top-4">
+                        <div className="mt-6 p-6 bg-white/50 dark:bg-[#0f172a]/50 rounded-xl border border-blue-500/20 animate-in fade-in slide-in-from-top-4">
                            <h4 className="text-xs font-extrabold text-blue-500 uppercase tracking-widest mb-4">Detalles de la Revisión</h4>
                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <select value={revType} onChange={e=>setRevType(e.target.value)} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700 dark:text-slate-200 transition-colors">
@@ -866,7 +866,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                    </>
                 ) : (
                    <div className="flex flex-col items-center justify-center p-8 text-center text-slate-500 dark:text-slate-400">
-                      <div className="w-20 h-20 bg-purple-500/10 text-purple-500 rounded-full flex items-center justify-center mb-4">
+                      <div className="w-20 h-20 bg-sky-500/10 text-sky-500 rounded-full flex items-center justify-center mb-4">
                         <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                       </div>
                       <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 mb-2">Servicio en Terreno seleccionado</h3>
@@ -882,13 +882,13 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200/50 dark:border-slate-700/50 pb-3">
                       <div className="flex items-center gap-4">
                          {vehiclePhoto && (
-                            <img src={vehiclePhoto} alt="Perfil" className="w-14 h-14 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shadow-md animate-in zoom-in" />
+                            <img src={vehiclePhoto} alt="Perfil" className="w-14 h-14 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shadow-md animate-in zoom-in" />
                          )}
                          <div>
                             <h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-100">Datos del Vehículo</h3>
                             <div className="flex items-center gap-2 flex-wrap">
                               <p className="text-xs text-blue-500 font-bold">Escribe Patente o VIN para autocompletar</p>
-                              {isSearchingVehicle && <span className="text-xs font-black text-blue-400 animate-pulse">· Buscando coincidencia...</span>}
+                              {isSearchingVehicle && <span className="text-xs font-black text-blue-400">· Buscando coincidencia...</span>}
                               {vehicleFoundStatus === 'found' && !isSearchingVehicle && <span className="text-xs font-black text-green-400">· ¡Encontrado en tu historial!</span>}
                             </div>
                          </div>
@@ -907,7 +907,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
 
                        {/* Acceso Rápido: Vehículos Frecuentes */}
                        {favoriteModels.length > 0 && (
-                          <div className="sm:col-span-2 p-3 bg-amber-500/10 dark:bg-amber-950/20 rounded-2xl border border-amber-500/20 space-y-2">
+                          <div className="sm:col-span-2 p-3 bg-amber-500/10 dark:bg-amber-950/20 rounded-xl border border-amber-500/20 space-y-2">
                              <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-extrabold text-[11px] uppercase tracking-wider">
                                 <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
                                 <span>Vehículos Frecuentes (1 Toque):</span>
@@ -954,17 +954,17 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                        <div className="space-y-1 sm:col-span-2">
                           <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider ml-1">Categoría</label>
                           <select value={vehicleType} onChange={e=>setVehicleType(e.target.value)} className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none font-bold text-slate-800 dark:text-slate-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer">
-                            <option value="auto">🚙 Auto / SUV</option>
-                            <option value="camioneta">🛻 Camioneta</option>
-                            <option value="furgon_pequeno">🚐 Furgón Pequeño</option>
-                            <option value="furgon_grande">🚐 Furgón Grande</option>
-                            <option value="camion">🚚 Camión Simple</option>
-                            <option value="camion_doble">🚚 Camión Doble Cabina</option>
-                            <option value="camion_2ejes">🚛 Camión (2 Ejes traseros)</option>
-                            <option value="camion_3ejes">🚛 Camión (3 Ejes traseros)</option>
-                            <option value="camion_8x4">🚚 Camión Rigid (8x4)</option>
-                            <option value="carro_arrastre">🛒 Carro Arrastre</option>
-                            <option value="maquinaria">🚜 Maquinaria</option>
+                            <option value="auto">Auto / SUV</option>
+                            <option value="camioneta">Camioneta</option>
+                            <option value="furgon_pequeno">Furgón Pequeño</option>
+                            <option value="furgon_grande">Furgón Grande</option>
+                            <option value="camion">Camión Simple</option>
+                            <option value="camion_doble">Camión Doble Cabina</option>
+                            <option value="camion_2ejes">Camión (2 Ejes traseros)</option>
+                            <option value="camion_3ejes">Camión (3 Ejes traseros)</option>
+                            <option value="camion_8x4">Camión Rígido (8x4)</option>
+                            <option value="carro_arrastre">Carro Arrastre</option>
+                            <option value="maquinaria">Maquinaria</option>
                           </select>
                        </div>
                     </div>
@@ -999,36 +999,36 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                  </div>
                ) : (
                  <div className="space-y-6">
-                    <h3 className="text-xl font-extrabold text-purple-500">Detalles del Servicio</h3>
+                    <h3 className="text-xl font-extrabold text-sky-500">Detalles del Servicio</h3>
                     <div className="space-y-1">
                       <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider ml-1">Descripción de la Tarea</label>
-                      <textarea value={description} onChange={e=>setDescription(e.target.value)} required={!(isPintura || isGrabado)} rows="3" placeholder={(isPintura || isGrabado) ? "Opcional." : "Ej: Trámites, retiros, reparaciones..."} className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all resize-none" />
+                      <textarea value={description} onChange={e=>setDescription(e.target.value)} required={!(isPintura || isGrabado)} rows="3" placeholder={(isPintura || isGrabado) ? "Opcional." : "Ej: Trámites, retiros, reparaciones..."} className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all resize-none" />
                     </div>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                       <div className="bg-white/40 dark:bg-slate-900/40 border border-purple-500/20 p-4 rounded-2xl flex flex-col gap-3">
+                       <div className="bg-white/40 dark:bg-slate-900/40 border border-sky-500/20 p-4 rounded-xl flex flex-col gap-3">
                            <label className="flex items-center gap-2 cursor-pointer group">
-                             <input type="checkbox" checked={isPintura} onChange={(e) => setIsPintura(e.target.checked)} className="w-5 h-5 accent-purple-500 rounded" />
-                             <span className="text-sm font-extrabold text-slate-700 dark:text-slate-200 group-hover:text-purple-500 transition-colors">🎨 Pintura de Patentes</span>
+                             <input type="checkbox" checked={isPintura} onChange={(e) => setIsPintura(e.target.checked)} className="w-5 h-5 accent-sky-500 rounded" />
+                             <span className="text-sm font-extrabold text-slate-700 dark:text-slate-200 group-hover:text-sky-500 transition-colors">Pintura de Patentes</span>
                            </label>
                            {isPintura && (
-                              <div className="flex items-center gap-3 bg-purple-500/10 p-2.5 rounded-xl border border-purple-500/20 animate-in fade-in">
-                                 <span className="text-xs font-bold text-purple-600 dark:text-purple-400">Cant:</span>
-                                 <button type="button" onClick={() => setQtyPintura(2)} className={`px-3 py-1 rounded-lg text-sm font-black transition-colors ${Number(qtyPintura) === 2 ? 'bg-purple-500 text-white shadow-md' : 'bg-white/50 dark:bg-slate-800 text-purple-500'}`}>2</button>
-                                 <input type="number" min="1" max="10" value={qtyPintura} onChange={(e) => setQtyPintura(e.target.value)} className="w-14 text-center bg-white dark:bg-slate-900 border-none p-1 rounded-lg font-black text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-purple-500" />
+                              <div className="flex items-center gap-3 bg-sky-500/10 p-2.5 rounded-xl border border-sky-500/20 animate-in fade-in">
+                                 <span className="text-xs font-bold text-sky-600 dark:text-sky-400">Cant:</span>
+                                 <button type="button" onClick={() => setQtyPintura(2)} className={`px-3 py-1 rounded-lg text-sm font-black transition-colors ${Number(qtyPintura) === 2 ? 'bg-sky-500 text-white shadow-md' : 'bg-white/50 dark:bg-slate-800 text-sky-500'}`}>2</button>
+                                 <input type="number" min="1" max="10" value={qtyPintura} onChange={(e) => setQtyPintura(e.target.value)} className="w-14 text-center bg-white dark:bg-slate-900 border-none p-1 rounded-lg font-black text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-sky-500" />
                               </div>
                            )}
                        </div>
-                       <div className="bg-white/40 dark:bg-slate-900/40 border border-purple-500/20 p-4 rounded-2xl flex flex-col gap-3">
+                       <div className="bg-white/40 dark:bg-slate-900/40 border border-sky-500/20 p-4 rounded-xl flex flex-col gap-3">
                            <label className="flex items-center gap-2 cursor-pointer group">
-                             <input type="checkbox" checked={isGrabado} onChange={(e) => setIsGrabado(e.target.checked)} className="w-5 h-5 accent-purple-500 rounded" />
-                             <span className="text-sm font-extrabold text-slate-700 dark:text-slate-200 group-hover:text-purple-500 transition-colors">🪟 Grabado de Vidrios</span>
+                             <input type="checkbox" checked={isGrabado} onChange={(e) => setIsGrabado(e.target.checked)} className="w-5 h-5 accent-sky-500 rounded" />
+                             <span className="text-sm font-extrabold text-slate-700 dark:text-slate-200 group-hover:text-sky-500 transition-colors">Grabado de Vidrios</span>
                            </label>
                            {isGrabado && (
-                              <div className="flex items-center gap-3 bg-purple-500/10 p-2.5 rounded-xl border border-purple-500/20 animate-in fade-in">
-                                 <span className="text-xs font-bold text-purple-600 dark:text-purple-400">Cant:</span>
-                                 <button type="button" onClick={() => setQtyGrabado(3)} className={`px-3 py-1 rounded-lg text-sm font-black transition-colors ${Number(qtyGrabado) === 3 ? 'bg-purple-500 text-white shadow-md' : 'bg-white/50 dark:bg-slate-800 text-purple-500'}`}>3</button>
-                                 <input type="number" min="1" max="20" value={qtyGrabado} onChange={(e) => setQtyGrabado(e.target.value)} className="w-14 text-center bg-white dark:bg-slate-900 border-none p-1 rounded-lg font-black text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-purple-500" />
+                              <div className="flex items-center gap-3 bg-sky-500/10 p-2.5 rounded-xl border border-sky-500/20 animate-in fade-in">
+                                 <span className="text-xs font-bold text-sky-600 dark:text-sky-400">Cant:</span>
+                                 <button type="button" onClick={() => setQtyGrabado(3)} className={`px-3 py-1 rounded-lg text-sm font-black transition-colors ${Number(qtyGrabado) === 3 ? 'bg-sky-500 text-white shadow-md' : 'bg-white/50 dark:bg-slate-800 text-sky-500'}`}>3</button>
+                                 <input type="number" min="1" max="20" value={qtyGrabado} onChange={(e) => setQtyGrabado(e.target.value)} className="w-14 text-center bg-white dark:bg-slate-900 border-none p-1 rounded-lg font-black text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-sky-500" />
                               </div>
                            )}
                        </div>
@@ -1036,7 +1036,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                     
                     {(isPintura || isGrabado) && (
                        <div className="animate-in fade-in slide-in-from-top-2 pt-2">
-                          <label className="text-[10px] font-extrabold text-purple-500 uppercase tracking-wider ml-1 mb-1 block">Asociar a Vehículo Activo</label>
+                          <label className="text-[10px] font-extrabold text-sky-500 uppercase tracking-wider ml-1 mb-1 block">Asociar a Vehículo Activo</label>
                           <select value={associatedJobId} onChange={(e) => {
                                const newId = e.target.value; setAssociatedJobId(newId);
                                if (newId) {
@@ -1046,7 +1046,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                                      else { setSelectedClient('OTRO'); setManualClient(matchJob.client); }
                                   }
                                }
-                             }} className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-purple-500/30 p-3.5 text-sm rounded-xl outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 font-bold text-slate-800 dark:text-slate-200 cursor-pointer transition-all">
+                             }} className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-sky-500/30 p-3.5 text-sm rounded-xl outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 font-bold text-slate-800 dark:text-slate-200 cursor-pointer transition-all">
                              <option value="">-- Opcional --</option>
                              {activeJobsList.filter(j => j.tripType !== 'simple').map(j => <option key={j.id} value={j.id}>{j.plate || j.vin || 'S/N'} - {j.brand} {j.model} ({j.client})</option>)}
                           </select>
@@ -1083,7 +1083,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                      </div>
                      
                      {operationMode === 'traslado' && tripType === 'revision' ? (
-                        <div className="bg-blue-500/5 p-4 rounded-2xl border border-blue-500/20 space-y-3 relative z-[800]">
+                        <div className="bg-blue-500/5 p-4 rounded-xl border border-blue-500/20 space-y-3 relative z-[800]">
                            <div className="space-y-1">
                               <label className="text-[10px] font-extrabold text-blue-500 uppercase tracking-wider ml-1">Planta de Revisión</label>
                               <DeletableSelect
@@ -1141,13 +1141,13 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                            return (
                            <label key={d.id} className="relative flex cursor-pointer group">
                              <input type="checkbox" name="assignedDriverId" value={d.id} checked={isSelected} onChange={() => setSelectedDriversUI(prev => prev.includes(d.id) ? prev.filter(id => id !== d.id) : [...prev, d.id])} className="sr-only" />
-                             <div className={`w-full flex items-center p-3 bg-white/50 dark:bg-[#0f172a]/50 border-2 rounded-2xl transition-all duration-300 ${isSelected ? 'border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)] bg-blue-500/10' : 'border-slate-200 dark:border-slate-700 hover:border-blue-400/50 hover:bg-white dark:hover:bg-[#0f172a]'}`}>
+                             <div className={`w-full flex items-center p-3 bg-white dark:bg-[#171E29] border rounded-lg transition-colors duration-150 ${isSelected ? 'border-sky-600 bg-sky-50/60 dark:bg-sky-950/30' : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'}`}>
                                <div className="ml-2 flex-1 overflow-hidden">
-                                 <span className={`block text-sm font-black truncate ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-slate-800 dark:text-slate-200'}`}>{d.name}</span>
-                                 <span className="block text-[10px] font-bold text-slate-400 truncate">{d.email}</span>
+                                 <span className={`block text-sm font-semibold truncate ${isSelected ? 'text-sky-700 dark:text-sky-400' : 'text-slate-800 dark:text-slate-200'}`}>{d.name}</span>
+                                 <span className="block text-[10px] font-medium text-slate-400 truncate font-mono">{d.email}</span>
                                </div>
-                               <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ml-2 transition-colors ${isSelected ? 'bg-blue-500 border-blue-500 text-white' : 'border-slate-300 dark:border-slate-600 text-transparent'}`}>
-                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                               <div className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ml-2 transition-colors ${isSelected ? 'bg-sky-600 border-sky-600 text-white' : 'border-slate-300 dark:border-slate-600 text-transparent'}`}>
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
                                </div>
                              </div>
                            </label>
@@ -1155,18 +1155,18 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                      })()}
                   </div>
 
-                  <div className="bg-slate-500/5 border border-slate-200/50 dark:border-slate-700/50 p-5 rounded-2xl">
-                     <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-2 block">Conductor Externo (Spot / Única Vez)</label>
-                     <input type="email" value={spotDriverEmail} onChange={(e) => setSpotDriverEmail(e.target.value)} placeholder="correo@ejemplo.com" className="w-full bg-white/60 dark:bg-[#0f172a]/60 border border-slate-200 dark:border-slate-700 p-3.5 text-sm rounded-xl outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-800 dark:text-slate-100 transition-all placeholder:text-slate-400" />
+                  <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 p-4 rounded-lg">
+                     <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5 block">Conductor Externo (Spot / Única Vez)</label>
+                     <input type="email" value={spotDriverEmail} onChange={(e) => setSpotDriverEmail(e.target.value)} placeholder="correo@ejemplo.com" className="w-full bg-white dark:bg-[#171E29] border border-slate-200 dark:border-slate-800 px-3 py-2.5 text-sm rounded-md outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-600/20 font-medium text-slate-800 dark:text-slate-100 transition-colors placeholder:text-slate-400 font-mono" />
                   </div>
                 </div>
              </div>
 
            {/* SUBMIT BUTTON */}
-           <div className="mt-10 pt-6 border-t border-slate-200/50 dark:border-slate-700/50 flex justify-end items-center relative z-20">
-               <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 px-8 py-3 rounded-2xl font-extrabold text-white bg-green-500 hover:bg-green-600 shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all transform hover:scale-105 disabled:opacity-50 disabled:hover:scale-100">
+           <div className="mt-8 pt-5 border-t border-slate-200 dark:border-slate-800 flex justify-end items-center relative z-20">
+               <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 px-6 py-2.5 rounded-md font-semibold text-sm text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs transition-colors duration-150 disabled:opacity-50">
                   {isSubmitting ? 'Procesando...' : (jobToEdit ? 'Actualizar Trabajo' : 'Guardar y Asignar')}
-                  {!isSubmitting && <CheckCircle className="w-5 h-5"/>}
+                  {!isSubmitting && <CheckCircle className="w-4 h-4"/>}
                </button>
            </div>
 
@@ -1178,8 +1178,8 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
 
       {/* NUEVO: Modal de Confirmación Nativo */}
       {confirmModal && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[500] p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl flex flex-col animate-in zoom-in-95 border-t-8 border-orange-500">
+        <div className="fixed inset-0 bg-slate-900/80 flex items-center justify-center z-[500] p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-6 w-full max-w-sm shadow-lg flex flex-col animate-in zoom-in-95 border-t-8 border-orange-500">
             <h3 className="text-lg font-black text-slate-800 dark:text-slate-200 flex items-center gap-2 mb-3 leading-tight">
               <AlertCircle className="w-5 h-5 text-orange-500 shrink-0" /> {confirmModal.title}
             </h3>

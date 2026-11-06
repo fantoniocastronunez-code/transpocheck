@@ -84,8 +84,8 @@ export default function RelayAcceptView({ jobId, db, currentUserEmail, drivers }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center p-4 text-center">
-      <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-xl max-w-sm w-full border-t-8 border-purple-500 animate-in zoom-in-95">
-        <Users className="w-16 h-16 text-purple-500 mx-auto mb-4"/>
+      <div className="bg-white dark:bg-slate-900 p-8 rounded-xl shadow-md max-w-sm w-full border-t-8 border-sky-500 animate-in zoom-in-95">
+        <Users className="w-16 h-16 text-sky-500 mx-auto mb-4"/>
         <h2 className="text-2xl font-black text-slate-800 dark:text-slate-200 mb-1">Relevo de Vehículo</h2>
         <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">Estás a punto de tomar el control de este traslado.</p>
         
@@ -100,10 +100,10 @@ export default function RelayAcceptView({ jobId, db, currentUserEmail, drivers }
           <p className="font-extrabold text-red-600 dark:text-red-400 mb-2">{previousDriverName}</p>
 
           <p className="text-[10px] font-black text-slate-400 uppercase">Ruta restante</p>
-          <p className="font-bold text-slate-700 dark:text-slate-300 text-xs">{job.origin} ➔ {job.destination}</p>
+          <p className="font-bold text-slate-700 dark:text-slate-300 text-xs">{job.origin} → {job.destination}</p>
         </div>
 
-        <button onClick={handleAcceptRelay} disabled={!!statusMsg} className="w-full bg-purple-600 hover:bg-purple-700 text-white font-black py-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+        <button onClick={handleAcceptRelay} disabled={!!statusMsg} className="w-full bg-sky-600 hover:bg-sky-700 text-white font-black py-4 rounded-xl shadow-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
           {statusMsg || 'Aceptar y Tomar Control'}
         </button>
         <button onClick={() => navigate('/')} className="w-full mt-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 font-bold py-3 rounded-xl transition-colors">

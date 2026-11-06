@@ -58,7 +58,7 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
-      <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const enableNotifications = Object.values(driverNotifs).some(v => v); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), role: fd.get('role'), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry'), enableNotifications, notifications: driverNotifs, permissions: driverPermissions, ...driverDocs }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); setDriverPermissions(defaultPermissions); showAlert("Perfil actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); setDriverPermissions(defaultPermissions); showAlert("Usuario creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-4 relative">
+      <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const enableNotifications = Object.values(driverNotifs).some(v => v); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), role: fd.get('role'), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry'), enableNotifications, notifications: driverNotifs, permissions: driverPermissions, ...driverDocs }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); setDriverPermissions(defaultPermissions); showAlert("Perfil actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); setDriverPermissions(defaultPermissions); showAlert("Usuario creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-4 relative">
         
 
 
@@ -92,7 +92,7 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
         <div className="grid grid-cols-1 gap-3">
           <div className="space-y-1">
              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Rol en el Sistema</label>
-             <select name="role" defaultValue={editingDriver?.role || 'driver'} className="w-full border-2 border-purple-200 dark:border-purple-800/50 bg-purple-50 dark:bg-purple-900/30 p-3 rounded-xl text-sm font-black text-purple-900 dark:text-purple-300 outline-none focus:border-purple-500">
+             <select name="role" defaultValue={editingDriver?.role || 'driver'} className="w-full border-2 border-sky-200 dark:border-sky-800/50 bg-sky-50 dark:bg-sky-900/30 p-3 rounded-xl text-sm font-black text-sky-900 dark:text-sky-300 outline-none focus:border-sky-500">
                 <option value="driver" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Conductor Titular (Con documentos)</option>
                 <option value="driver_regions" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Conductor Regiones</option>
                 <option value="part_time" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Conductor Part-Time (Sin validación docs)</option>
@@ -150,7 +150,7 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
                      key={notif.id}
                      type="button"
                      onClick={() => setDriverNotifs({...driverNotifs, [notif.id]: !isActive})}
-                     className={`py-3 px-1.5 rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all duration-200 border-2 flex flex-col items-center justify-center gap-1.5 select-none ${
+                     className={`py-3 px-1.5 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider transition-all duration-200 border-2 flex flex-col items-center justify-center gap-1.5 select-none ${
                        isActive
                          ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-200 scale-100'
                          : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-blue-300 dark:border-blue-700/50 hover:text-blue-500 hover:bg-blue-50 dark:bg-blue-900/30 scale-[0.98]'
@@ -165,10 +165,10 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
         </div>
 
         {isSuperAdmin && (
-          <div className="bg-purple-50 dark:bg-purple-900/30 border border-purple-100 dark:border-purple-800/50 p-4 rounded-xl shadow-sm space-y-3 mt-4">
-             <div className="border-b border-purple-200 dark:border-purple-800/50 pb-2">
-                <p className="text-xs font-extrabold text-purple-900 dark:text-purple-300 flex items-center gap-1.5">Permisos de Acceso (Super Admin)</p>
-                <p className="text-[10px] font-bold text-purple-600 dark:text-purple-400 mt-0.5 leading-tight">Activa o desactiva módulos para este usuario.</p>
+          <div className="bg-sky-50 dark:bg-sky-900/30 border border-sky-100 dark:border-sky-800/50 p-4 rounded-xl shadow-sm space-y-3 mt-4">
+             <div className="border-b border-sky-200 dark:border-sky-800/50 pb-2">
+                <p className="text-xs font-extrabold text-sky-900 dark:text-sky-300 flex items-center gap-1.5">Permisos de Acceso (Super Admin)</p>
+                <p className="text-[10px] font-bold text-sky-600 dark:text-sky-400 mt-0.5 leading-tight">Activa o desactiva módulos para este usuario.</p>
              </div>
 
              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
@@ -192,8 +192,8 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
                        onClick={() => setDriverPermissions({...driverPermissions, [perm.id]: !isActive})}
                        className={`py-2 px-1.5 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all duration-200 border-2 flex flex-col items-center justify-center gap-1.5 select-none ${
                          isActive
-                           ? 'bg-purple-600 border-purple-600 text-white shadow-sm scale-100'
-                           : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-purple-300 dark:border-purple-700/50 hover:text-purple-500 hover:bg-purple-50 dark:bg-purple-900/30 scale-[0.98]'
+                           ? 'bg-sky-600 border-sky-600 text-white shadow-sm scale-100'
+                           : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400 hover:border-sky-300 dark:border-sky-700/50 hover:text-sky-500 hover:bg-sky-50 dark:bg-sky-900/30 scale-[0.98]'
                        }`}
                      >
                        {isActive ? <CheckCircle className="w-4 h-4 mb-0.5 animate-in zoom-in duration-200" /> : <div className="w-4 h-4 mb-0.5 rounded-full border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900"></div>}
@@ -211,11 +211,11 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
         </div>
       </form>
       
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 max-h-[85vh] overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 max-h-[85vh] overflow-y-auto">
         <h3 className="font-extrabold text-slate-800 dark:text-slate-200 mb-4">Gestión de Usuarios</h3>
         <div className="space-y-2">
           {drivers.length === 0 ? <p className="text-sm font-semibold text-slate-400">Directorio vacío</p> : drivers.map(d=>(
-            <div key={d.id} className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border rounded-2xl group transition-all ${d.isHidden ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 opacity-75' : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800'}`}>
+            <div key={d.id} className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border rounded-xl group transition-all ${d.isHidden ? 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 opacity-75' : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800'}`}>
               <div className="flex items-start sm:items-center gap-3 overflow-hidden w-full">
                 <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden shrink-0 border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex items-center justify-center shadow-sm relative mt-1 sm:mt-0">
                   {d.photo ? (
@@ -236,7 +236,7 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
                   <div className="flex flex-wrap items-center gap-2 mt-1">
                     <span className={`text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider border ${
                        d.role === 'super_admin' ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/50' :
-                       d.role === 'admin' ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800/50' :
+                       d.role === 'admin' ? 'bg-sky-50 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-800/50' :
                        d.role === 'quoter' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800/50' :
                        d.role === 'driver_regions' ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800/50' :
                        d.role === 'part_time' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800/50' :

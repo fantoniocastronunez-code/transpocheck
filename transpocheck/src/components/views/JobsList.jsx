@@ -1822,12 +1822,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   return (
     <div className="pb-16">
       {!isAdminView && (
-        <div className="mb-6 bg-gradient-to-br from-indigo-800 to-blue-600 rounded-[2rem] p-6 sm:p-8 text-white shadow-xl flex items-center justify-between relative overflow-hidden">
+        <div className="mb-6 bg-slate-900 border border-slate-800 rounded-xl p-6 sm:p-8 text-white shadow-md flex items-center justify-between relative overflow-hidden">
           <div className="absolute right-[-10%] top-[-20%] bottom-0 opacity-10 pointer-events-none">
             <MapIcon className="w-48 h-48" />
           </div>
           <div className="relative z-10">
-            <p className="text-[10px] font-black uppercase tracking-widest text-indigo-200 mb-1 flex items-center gap-1.5"><MapPin className="w-3 h-3" /> Rendimiento Mensual</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-sky-200 mb-1 flex items-center gap-1.5"><MapPin className="w-3 h-3" /> Rendimiento Mensual</p>
             <p className="text-2xl sm:text-3xl font-black leading-tight">Este mes has conducido <span className="text-amber-400">{myMonthlyKm.toLocaleString('es-CL')} km</span></p>
           </div>
         </div>
@@ -1835,44 +1835,44 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       <div className="flex flex-col sm:flex-row gap-3 mb-6 relative z-10">
         <div className="relative flex-1">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Search className="w-5 h-5 text-slate-400" /></div>
-          <input type="text" placeholder="Buscar patente, marca, cliente, origen o destino..." autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="none" className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-blue-500 transition-colors" value={localSearchTerm} onChange={(e) => setLocalSearchTerm(e.target.value)} />
+          <input type="text" placeholder="Buscar patente, marca, cliente, origen o destino..." autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="none" className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-blue-500 transition-colors" value={localSearchTerm} onChange={(e) => setLocalSearchTerm(e.target.value)} />
         </div>
         <div className="flex gap-2 shrink-0 overflow-x-auto pb-1 sm:pb-0 scrollbar-none items-center">
           {isAdminView && (
-            <label className="flex items-center gap-2 cursor-pointer bg-white dark:bg-slate-900 px-4 py-3.5 rounded-2xl border-2 border-slate-200 dark:border-slate-800 shadow-sm hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 transition-colors shrink-0">
-              <span className={`text-xs font-black uppercase tracking-widest ${auditMode ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400'}`}>Modo Auditoría</span>
+            <label className="flex items-center gap-2 cursor-pointer bg-white dark:bg-slate-900 px-4 py-3.5 rounded-xl border-2 border-slate-200 dark:border-slate-800 shadow-sm hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 transition-colors shrink-0">
+              <span className={`text-xs font-black uppercase tracking-widest ${auditMode ? 'text-sky-600 dark:text-sky-400' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400'}`}>Modo Auditoría</span>
               <div className="relative flex items-center">
                 <input type="checkbox" className="sr-only" checked={auditMode} onChange={() => setAuditMode(!auditMode)} />
-                <div className={`block w-8 h-4 rounded-full transition-colors ${auditMode ? 'bg-purple-500' : 'bg-slate-300 dark:bg-slate-700'}`}></div>
+                <div className={`block w-8 h-4 rounded-full transition-colors ${auditMode ? 'bg-sky-500' : 'bg-slate-300 dark:bg-slate-700'}`}></div>
                 <div className={`absolute left-0.5 top-0.5 bg-white dark:bg-slate-900 w-3 h-3 rounded-full transition-transform ${auditMode ? 'transform translate-x-4' : ''}`}></div>
               </div>
             </label>
           )}
 
           {canBulkSign && (
-            <button onClick={() => { setBulkSelectedIds([]); setBulkReceiverName(''); setBulkReceiverRut(''); setBulkSignature(null); setShowBulkSign(true); }} className="group bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-md shrink-0">
+            <button onClick={() => { setBulkSelectedIds([]); setBulkReceiverName(''); setBulkReceiverRut(''); setBulkSignature(null); setShowBulkSign(true); }} className="group bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-md shrink-0">
               <PenTool className="w-5 h-5" /> Firma Masiva
             </button>
           )}
           {isAdminView && (
             <>
-              <button type="button" onClick={() => setShowFleetMenu(true)} className="group bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-md shrink-0">
+              <button type="button" onClick={() => setShowFleetMenu(true)} className="group bg-sky-600 hover:bg-sky-700 text-white px-5 py-3 rounded-xl text-sm font-extrabold flex items-center justify-center gap-2 shadow-md shrink-0">
                 <Truck className="w-5 h-5" /> Flotas
               </button>
               {auditMode && (
                 <>
-                  <button type="button" onClick={handlePurgeOldJobs} className="group bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 transition-colors">
+                  <button type="button" onClick={handlePurgeOldJobs} className="group bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50 px-4 py-3 rounded-xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 transition-colors">
                     <Trash2 className="w-5 h-5" /> Limpiar DB
                   </button>
 
-                  <button type="button" onClick={handlePurgeOrphanPhotos} className="group bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/50 px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 transition-colors" title="Escanear y eliminar fotos en Storage de traslados eliminados">
+                  <button type="button" onClick={handlePurgeOrphanPhotos} className="group bg-sky-50 dark:bg-sky-900/30 hover:bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800/50 px-4 py-3 rounded-xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 transition-colors" title="Escanear y eliminar fotos en Storage de traslados eliminados">
                     <HardDrive className="w-5 h-5" /> Fotos Huérfanas
                   </button>
 
-                  <button type="button" onClick={handleDownloadAllZIP} className="group bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 transition-colors">
+                  <button type="button" onClick={handleDownloadAllZIP} className="group bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 transition-colors">
                     <FileDown className="w-5 h-5" /> ZIP
                   </button>
-                  <button type="button" onClick={() => setShowKovacsModal(true)} className="group bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 shadow-md transition-colors">
+                  <button type="button" onClick={() => setShowKovacsModal(true)} className="group bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-xl text-sm font-extrabold flex items-center justify-center gap-2 shrink-0 shadow-md transition-colors">
                     <FileText className="w-5 h-5" /> Facturación Kovacs
                   </button>
                 </>
@@ -1886,13 +1886,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
         {/* COLUMNA SOLICITUDES (NUEVO) */}
         {requestedJobsList.length > 0 && (
-          <div className="w-full lg:flex-1 flex flex-col overflow-hidden border-2 border-pink-100 dark:border-pink-800/50 bg-pink-50 dark:bg-pink-900/30 rounded-3xl shadow-sm">
+          <div className="w-full lg:flex-1 flex flex-col overflow-hidden border-2 border-amber-100 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/30 rounded-xl shadow-sm">
             <button onClick={() => setIsRequestedOpen(!isRequestedOpen)} className="w-full flex justify-between items-center p-4">
               <div className="flex flex-col items-start">
-                <h3 className="font-extrabold text-pink-600 dark:text-pink-400 flex items-center gap-2"><CheckCircle className="w-5 h-5" /> Por Aprobar ({requestedJobsList.length})</h3>
-                {isRequestedOpen && requestedJobsList.length > 1 && <span className="text-[11px] font-bold text-pink-500/80 dark:text-pink-400/80 flex items-center gap-1 mt-1 lg:hidden animate-pulse">👉 Desliza para ver más</span>}
+                <h3 className="font-extrabold text-amber-600 dark:text-amber-400 flex items-center gap-2"><CheckCircle className="w-5 h-5" /> Por Aprobar ({requestedJobsList.length})</h3>
+                {isRequestedOpen && requestedJobsList.length > 1 && <span className="text-[11px] font-bold text-amber-500/80 dark:text-amber-400/80 flex items-center gap-1 mt-1 lg:hidden">Desliza para ver más</span>}
               </div>
-              {isRequestedOpen ? <ChevronUp className="w-5 h-5 text-pink-600 dark:text-pink-400 shrink-0" /> : <ChevronDown className="w-5 h-5 text-pink-600 dark:text-pink-400 shrink-0" />}
+              {isRequestedOpen ? <ChevronUp className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" /> : <ChevronDown className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />}
             </button>
             {isRequestedOpen && (
               <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 px-4 pb-8 pt-2 -mx-4 lg:mx-0 lg:px-4 lg:flex-col lg:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -1911,7 +1911,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           <button onClick={() => setIsInProgressOpen(!isInProgressOpen)} className="w-full flex justify-between items-center p-4">
             <div className="flex flex-col items-start">
               <h3 className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-2"><Navigation className="w-5 h-5 text-blue-600 dark:text-blue-400" /> En Curso ({inProgressJobsList.length})</h3>
-              {isInProgressOpen && inProgressJobsList.length > 1 && <span className="text-[11px] font-bold text-blue-500/80 dark:text-blue-400/80 flex items-center gap-1 mt-1 lg:hidden animate-pulse">👉 Desliza para ver más</span>}
+              {isInProgressOpen && inProgressJobsList.length > 1 && <span className="text-[11px] font-bold text-blue-500/80 dark:text-blue-400/80 flex items-center gap-1 mt-1 lg:hidden">Desliza para ver más</span>}
             </div>
             {isInProgressOpen ? <ChevronUp className="w-5 h-5 shrink-0" /> : <ChevronDown className="w-5 h-5 shrink-0" />}
           </button>
@@ -1931,7 +1931,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           <button onClick={() => setIsPendingOpen(!isPendingOpen)} className="w-full flex justify-between items-center p-4">
             <div className="flex flex-col items-start">
               <h3 className="font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-2"><Clock className="w-5 h-5 text-amber-500" /> Pendientes ({pendingJobsList.length})</h3>
-              {isPendingOpen && pendingJobsList.length > 1 && <span className="text-[11px] font-bold text-amber-500/80 flex items-center gap-1 mt-1 lg:hidden animate-pulse">👉 Desliza para ver más</span>}
+              {isPendingOpen && pendingJobsList.length > 1 && <span className="text-[11px] font-bold text-amber-500/80 flex items-center gap-1 mt-1 lg:hidden">Desliza para ver más</span>}
             </div>
             {isPendingOpen ? <ChevronUp className="w-5 h-5 shrink-0" /> : <ChevronDown className="w-5 h-5 shrink-0" />}
           </button>
@@ -1954,7 +1954,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       </div>
 
       {olderHistoryJobs.length > 0 && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden mb-8">
+        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden mb-8">
           <div className="bg-slate-50 dark:bg-slate-900 p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center flex-wrap gap-3">
             <div className="flex items-center gap-3">
               <h4 className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Historial Anterior</h4>
@@ -1974,20 +1974,20 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                       <div className="flex flex-col min-w-0">
                         <div className="flex items-center gap-2">
                           {j.tripType === 'simple' ? (
-                            <p className="text-xs font-black text-purple-800 dark:text-purple-300 truncate">{j.description || 'Servicio en Terreno'}</p>
+                            <p className="text-xs font-black text-sky-800 dark:text-sky-300 truncate">{j.description || 'Servicio en Terreno'}</p>
                           ) : (
                             <p className="text-xs font-black text-slate-800 dark:text-slate-200 truncate">{j.brand} {j.model}</p>
                           )}
                           {j.tripType === 'simple' ? (
-                            <span className="text-[9px] bg-purple-100 dark:bg-purple-900/40 border border-purple-200 dark:border-purple-800/50 text-purple-800 dark:text-purple-300 px-1.5 py-0.5 rounded font-black uppercase shadow-sm">SERVICIO</span>
+                            <span className="text-[9px] bg-sky-100 dark:bg-sky-900/40 border border-sky-200 dark:border-sky-800/50 text-sky-800 dark:text-sky-300 px-1.5 py-0.5 rounded font-black uppercase shadow-sm">SERVICIO</span>
                           ) : (
                             <LicensePlateBadge text={ident} />
                           )}
                         </div>
                         <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">
                           {j.origin}
-                          {j.waypoints && j.waypoints.length > 0 ? ` ➔ +${j.waypoints.length} int.` : ''}
-                          {j.destination && j.tripType !== 'simple' ? ` ➔ ${j.destination}` : ''}
+                          {j.waypoints && j.waypoints.length > 0 ? ` -> +${j.waypoints.length} int.` : ''}
+                          {j.destination && j.tripType !== 'simple' ? ` -> ${j.destination}` : ''}
                         </p>
                       </div>
                     </div>
@@ -2001,7 +2001,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                         )}
                       </span>
                       {isAdminView && <button onClick={(e) => { e.stopPropagation(); onEditJob(j); }} className="p-1.5 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:bg-amber-900/40 rounded-md transition-colors" title="Editar Traslado"><Edit2 className="w-3.5 h-3.5" /></button>}
-                      {isAdminView && <button onClick={(e) => { e.stopPropagation(); handleDuplicateJob(j); }} className="p-1.5 bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:bg-purple-900/40 rounded-md transition-colors" title="Repetir Vehículo"><Repeat className="w-3.5 h-3.5" /></button>}
+                      {isAdminView && <button onClick={(e) => { e.stopPropagation(); handleDuplicateJob(j); }} className="p-1.5 bg-sky-50 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 hover:bg-sky-100 dark:bg-sky-900/40 rounded-md transition-colors" title="Repetir Vehículo"><Repeat className="w-3.5 h-3.5" /></button>}
                       <button onClick={(e) => { e.stopPropagation(); cpyWapp(j); }} className="p-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:bg-blue-900/40 rounded-md transition-colors" title="Copiar Resumen"><Copy className="w-3.5 h-3.5" /></button>
 
                       {(() => {
@@ -2185,7 +2185,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       {/* MODALES */}
       {jobToFail && (
         <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[100] p-4">
-          <form onSubmit={(e) => { e.preventDefault(); handleFailJob(jobToFail, e.target.reason.value); }} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm space-y-4">
+          <form onSubmit={(e) => { e.preventDefault(); handleFailJob(jobToFail, e.target.reason.value); }} className="bg-white dark:bg-slate-900 rounded-xl p-6 w-full max-w-sm space-y-4">
             <h3 className="text-lg font-extrabold">¿Motivo del fallo?</h3>
             <textarea name="reason" required autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 p-3 rounded-xl font-bold text-sm" rows="3"></textarea>
             <div className="flex gap-3"><button type="button" onClick={() => setJobToFail(null)} className="flex-1 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl">Volver</button><button type="submit" className="flex-[2] py-2 bg-red-600 text-white rounded-xl">Confirmar</button></div>
@@ -2196,7 +2196,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       {prtPromptJob && (() => {
         const assignedDest = getAssignedJobDestination(prtPromptJob);
         return (
-          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[100] p-4">
             <form onSubmit={(e) => {
               e.preventDefault();
               if (prtReturnOpt === 'other' && !prtReturnDest.trim()) return showAlert("[ERR-RT-DEST-01] Debes ingresar el nuevo destino para continuar.");
@@ -2274,7 +2274,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
               updatePhase(prtPromptJob, 'prt_done', extraUpdates);
               setPrtPromptJob(null);
-            }} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-xl border-t-8 border-red-500 animate-in zoom-in-95 flex flex-col max-h-[90vh]">
+            }} className="bg-white dark:bg-slate-900 rounded-xl p-6 w-full max-w-sm shadow-md border-t-8 border-red-500 animate-in zoom-in-95 flex flex-col max-h-[90vh]">
 
               <div className="flex justify-between items-center mb-4 shrink-0">
                 <h3 className="text-lg font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1.5"><XCircle className="text-red-500 w-5 h-5" /> Rechazo PRT</h3>
@@ -2364,7 +2364,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       {prtApprovePromptJob && (() => {
         const assignedDest = getAssignedJobDestination(prtApprovePromptJob);
         return (
-          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[100] p-4">
             <form onSubmit={(e) => {
               e.preventDefault();
               let finalReturnOpt = prtReturnOpt;
@@ -2435,7 +2435,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
               updatePhase(prtApprovePromptJob, 'prt_done', extraUpdates);
               setPrtApprovePromptJob(null);
-            }} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-xl border-t-8 border-green-500 animate-in zoom-in-95 flex flex-col max-h-[90vh]">
+            }} className="bg-white dark:bg-slate-900 rounded-xl p-6 w-full max-w-sm shadow-md border-t-8 border-green-500 animate-in zoom-in-95 flex flex-col max-h-[90vh]">
               <div className="flex justify-between items-center mb-4 shrink-0">
                 <h3 className="text-lg font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1.5"><CheckCircle className="text-green-500 w-5 h-5" /> Aprobación PRT</h3>
                 <button type="button" onClick={() => setPrtApprovePromptJob(null)} className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"><X className="w-4 h-4 text-slate-600 dark:text-slate-400" /></button>
@@ -2445,8 +2445,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                 <div className="space-y-2.5">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">1. Tipo de Aprobación</label>
                   <div className="flex gap-2">
-                    <button type="button" onClick={() => setPrtApproveType('aprobado')} className={`flex-1 py-3 rounded-xl font-black text-xs transition-all border-2 ${prtApproveType === 'aprobado' ? 'bg-green-50 dark:bg-green-900/30 border-green-500 text-green-700 dark:text-green-400 shadow-sm' : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>✅ Legal</button>
-                    <button type="button" onClick={() => setPrtApproveType('aprobado_ayuda')} className={`flex-1 py-3 rounded-xl font-black text-xs transition-all border-2 ${prtApproveType === 'aprobado_ayuda' ? 'bg-amber-50 dark:bg-amber-900/30 border-amber-500 text-amber-700 dark:text-amber-400 shadow-sm' : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>🤝 Con Ayuda</button>
+                    <button type="button" onClick={() => setPrtApproveType('aprobado')} className={`flex-1 py-3 rounded-xl font-black text-xs transition-all border-2 ${prtApproveType === 'aprobado' ? 'bg-green-50 dark:bg-green-900/30 border-green-500 text-green-700 dark:text-green-400 shadow-sm' : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Legal</button>
+                    <button type="button" onClick={() => setPrtApproveType('aprobado_ayuda')} className={`flex-1 py-3 rounded-xl font-black text-xs transition-all border-2 ${prtApproveType === 'aprobado_ayuda' ? 'bg-amber-50 dark:bg-amber-900/30 border-amber-500 text-amber-700 dark:text-amber-400 shadow-sm' : 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800'}`}>Con Ayuda</button>
                   </div>
                 </div>
 
@@ -2513,13 +2513,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       })()}
 
       {relayPromptJob && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-6 sm:p-8 max-w-sm w-full text-center relative animate-in zoom-in-95 border border-slate-100 dark:border-slate-800">
+        <div className="fixed inset-0 bg-slate-900/80 flex items-center justify-center z-[200] p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg p-6 sm:p-8 max-w-sm w-full text-center relative animate-in zoom-in-95 border border-slate-100 dark:border-slate-800">
             <button type="button" onClick={() => setRelayPromptJob(null)} className="absolute top-4 right-4 bg-slate-100 dark:bg-slate-800 p-2 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"><X className="w-5 h-5 text-slate-700 dark:text-slate-300" /></button>
             <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 mb-1">Traspaso a Compañero</h3>
             <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-5">Pide al otro conductor que escanee este código con la cámara de su celular para entregarle el auto.</p>
 
-            <div className="bg-white dark:bg-slate-900 p-3 rounded-2xl border-4 border-slate-100 dark:border-slate-800 shadow-inner inline-block">
+            <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border-4 border-slate-100 dark:border-slate-800 shadow-inner inline-block">
               <img src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`${window.location.origin}/?relay=${relayPromptJob.id}`)}`} alt="QR Relevo" className="w-48 h-48 mx-auto" />
             </div>
 
@@ -2539,8 +2539,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       )}
 
       {forceCloseJob && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-xl flex flex-col max-h-[80vh] animate-in zoom-in-95">
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[200] p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-6 w-full max-w-sm shadow-md flex flex-col max-h-[80vh] animate-in zoom-in-95">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-2"><CheckCircle className="w-5 h-5 text-emerald-500" /> Asignar y Finalizar</h3>
               <button onClick={() => setForceCloseJob(null)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"><X className="w-4 h-4" /></button>
@@ -2602,22 +2602,22 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       {/* NUEVO MENÚ CENTRAL DE FLOTAS */}
       {showFleetMenu && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-xs shadow-2xl flex flex-col animate-in zoom-in-95 border-t-8 border-indigo-500 relative">
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-[200] p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-6 w-full max-w-xs shadow-lg flex flex-col animate-in zoom-in-95 border-t-8 border-sky-500 relative">
             <button onClick={() => setShowFleetMenu(false)} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"><X className="w-5 h-5 text-slate-700 dark:text-slate-300" /></button>
             <div className="flex items-center gap-3 mb-6">
-              <div className="bg-indigo-100 dark:bg-indigo-900/40 p-2.5 rounded-full"><Truck className="w-6 h-6 text-indigo-600 dark:text-indigo-400" /></div>
+              <div className="bg-sky-100 dark:bg-sky-900/40 p-2.5 rounded-full"><Truck className="w-6 h-6 text-sky-600 dark:text-sky-400" /></div>
               <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 leading-tight">Gestión de<br />Flotas</h3>
             </div>
             <div className="space-y-3">
-              <button onClick={() => { setShowFleetMenu(false); setFleetSelectedIds([]); setShowFleetModal(true); }} className="w-full bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:bg-indigo-900/40 border border-indigo-200 dark:border-indigo-800/50 text-indigo-700 dark:text-indigo-400 font-extrabold py-3.5 rounded-xl transition-colors flex items-center gap-3 px-4 shadow-sm">
+              <button onClick={() => { setShowFleetMenu(false); setFleetSelectedIds([]); setShowFleetModal(true); }} className="w-full bg-sky-50 dark:bg-sky-900/30 hover:bg-sky-100 dark:bg-sky-900/40 border border-sky-200 dark:border-sky-800/50 text-sky-700 dark:text-sky-400 font-extrabold py-3.5 rounded-xl transition-colors flex items-center gap-3 px-4 shadow-sm">
                 <Plus className="w-5 h-5" /> Crear Nueva Flota
               </button>
               <button onClick={() => { setShowFleetMenu(false); setShowActiveFleetsModal(true); }} className="w-full bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-extrabold py-3.5 rounded-xl transition-colors flex items-center gap-3 px-4 shadow-sm">
-                <Edit2 className="w-5 h-5 text-indigo-500" /> Modificar Flotas
+                <Edit2 className="w-5 h-5 text-sky-500" /> Modificar Flotas
               </button>
               <button onClick={() => { setShowFleetMenu(false); setShowActiveFleetsModal(true); }} className="w-full bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-extrabold py-3.5 rounded-xl transition-colors flex items-center gap-3 px-4 shadow-sm">
-                <Navigation className="w-5 h-5 text-indigo-500" /> Flotas Activas
+                <Navigation className="w-5 h-5 text-sky-500" /> Flotas Activas
               </button>
             </div>
           </div>
@@ -2625,10 +2625,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       )}
 
       {showFleetModal && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 w-full max-w-lg shadow-2xl flex flex-col max-h-[95vh] border-t-8 border-indigo-500 animate-in zoom-in-95">
+        <div className="fixed inset-0 bg-slate-900/80 flex items-center justify-center z-[200] p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-5 w-full max-w-lg shadow-lg flex flex-col max-h-[95vh] border-t-8 border-sky-500 animate-in zoom-in-95">
             <div className="flex justify-between mb-4">
-              <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 flex items-center gap-2"><Truck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" /> Agrupar Flota</h3>
+              <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 flex items-center gap-2"><Truck className="w-5 h-5 text-sky-600 dark:text-sky-400" /> Agrupar Flota</h3>
               <button onClick={() => setShowFleetModal(false)} className="bg-slate-100 dark:bg-slate-800 p-2 rounded-full hover:bg-slate-200 dark:bg-slate-700"><X className="w-5 h-5" /></button>
             </div>
             <div className="overflow-y-auto space-y-4 flex-1">
@@ -2640,10 +2640,10 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                   ) : (
                     activeJobs.map(j => (
                       <label key={j.id} className="flex items-center gap-3 p-3 border rounded-xl bg-white dark:bg-slate-900 cursor-pointer hover:bg-slate-50 dark:bg-slate-900">
-                        <input type="checkbox" className="w-4 h-4 accent-indigo-600" checked={fleetSelectedIds.includes(j.id)} onChange={e => e.target.checked ? setFleetSelectedIds([...fleetSelectedIds, j.id]) : setFleetSelectedIds(fleetSelectedIds.filter(id => id !== j.id))} />
+                        <input type="checkbox" className="w-4 h-4 accent-sky-600" checked={fleetSelectedIds.includes(j.id)} onChange={e => e.target.checked ? setFleetSelectedIds([...fleetSelectedIds, j.id]) : setFleetSelectedIds(fleetSelectedIds.filter(id => id !== j.id))} />
                         <div className="text-xs font-black text-slate-700 dark:text-slate-300 flex-1 min-w-0">
                           <div className="truncate">{getJobIdentifier(j)} - {j.tripType === 'simple' ? j.description : `${j.brand} ${j.model}`}</div>
-                          {j.fleetGroup && <span className="text-[9px] bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 px-1 rounded uppercase mt-1 inline-block">Ya en Flota</span>}
+                          {j.fleetGroup && <span className="text-[9px] bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-400 px-1 rounded uppercase mt-1 inline-block">Ya en Flota</span>}
                         </div>
                       </label>
                     ))
@@ -2651,7 +2651,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                 </div>
               </div>
             </div>
-            <button onClick={handleCreateFleet} disabled={processingId === 'create-fleet'} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-xl font-black mt-4 shadow-md transition-colors disabled:opacity-50">
+            <button onClick={handleCreateFleet} disabled={processingId === 'create-fleet'} className="w-full bg-sky-600 hover:bg-sky-700 text-white py-4 rounded-xl font-black mt-4 shadow-md transition-colors disabled:opacity-50">
               {processingId === 'create-fleet' ? 'Creando...' : 'Crear Grupo de Flota'}
             </button>
           </div>
@@ -2660,16 +2660,16 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       {/* NUEVO MODAL: GESTIÓN DE FLOTAS ACTIVAS */}
       {showActiveFleetsModal && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 w-full max-w-lg shadow-2xl flex flex-col max-h-[95vh] border-t-8 border-indigo-500 animate-in zoom-in-95">
+        <div className="fixed inset-0 bg-slate-900/80 flex items-center justify-center z-[200] p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-5 w-full max-w-lg shadow-lg flex flex-col max-h-[95vh] border-t-8 border-sky-500 animate-in zoom-in-95">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 flex items-center gap-2"><Navigation className="w-5 h-5 text-indigo-600 dark:text-indigo-400" /> Flotas Activas</h3>
+              <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 flex items-center gap-2"><Navigation className="w-5 h-5 text-sky-600 dark:text-sky-400" /> Flotas Activas</h3>
               <button onClick={() => setShowActiveFleetsModal(false)} className="bg-slate-100 dark:bg-slate-800 p-2 rounded-full hover:bg-slate-200 dark:bg-slate-700"><X className="w-5 h-5 text-slate-700 dark:text-slate-300" /></button>
             </div>
             <div className="overflow-y-auto space-y-4 flex-1 pr-1">
               <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">Aquí puedes ver los convoyes en ruta, quitar un vehículo específico o disolver flotas enteras.</p>
               {Object.keys(activeJobs.reduce((acc, j) => { if (j.fleetGroup) acc[j.fleetGroup] = true; return acc; }, {})).length === 0 ? (
-                <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-8 text-center flex flex-col items-center">
+                <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl p-8 text-center flex flex-col items-center">
                   <Truck className="w-12 h-12 text-slate-300 mb-3" />
                   <p className="font-extrabold text-slate-500 dark:text-slate-400">No hay ninguna flota activa en este momento.</p>
                 </div>
@@ -2681,18 +2681,18 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                   }
                   return acc;
                 }, {})).map(([fleetId, fleetJobs]) => (
-                  <div key={fleetId} className="bg-white dark:bg-slate-900 border-2 border-indigo-100 dark:border-indigo-800/50 rounded-2xl overflow-hidden shadow-sm mb-3">
-                    <div className="bg-indigo-50 dark:bg-indigo-900/30 p-3 flex justify-between items-center border-b border-indigo-100 dark:border-indigo-800/50">
-                      <p className="font-black text-indigo-800 dark:text-indigo-300 text-sm flex items-center gap-2">
-                        <Truck className="w-4 h-4" /> Convoy: <span className="font-bold text-indigo-500 text-xs">{fleetId.replace('FLT-', '')}</span>
+                  <div key={fleetId} className="bg-white dark:bg-slate-900 border-2 border-sky-100 dark:border-sky-800/50 rounded-xl overflow-hidden shadow-sm mb-3">
+                    <div className="bg-sky-50 dark:bg-sky-900/30 p-3 flex justify-between items-center border-b border-sky-100 dark:border-sky-800/50">
+                      <p className="font-black text-sky-800 dark:text-sky-300 text-sm flex items-center gap-2">
+                        <Truck className="w-4 h-4" /> Convoy: <span className="font-bold text-sky-500 text-xs">{fleetId.replace('FLT-', '')}</span>
                       </p>
-                      <span className="bg-indigo-200 text-indigo-700 dark:text-indigo-400 text-[10px] font-black px-2 py-0.5 rounded-lg">{fleetJobs.length} veh.</span>
+                      <span className="bg-sky-200 text-sky-700 dark:text-sky-400 text-[10px] font-black px-2 py-0.5 rounded-lg">{fleetJobs.length} veh.</span>
                     </div>
                     <div className="p-3 space-y-2">
                       {fleetJobs.map(j => (
                         <div key={j.id} className="flex justify-between items-center bg-slate-50 dark:bg-slate-900 hover:bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 transition-colors">
                           <div className="flex-1 min-w-0 flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full shrink-0"></div>
+                            <div className="w-1.5 h-1.5 bg-sky-400 rounded-full shrink-0"></div>
                             <div className="min-w-0">
                               <p className="font-extrabold text-slate-700 dark:text-slate-300 text-xs truncate flex items-center gap-1.5">
                                 {getJobIdentifier(j)}
@@ -2735,11 +2735,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       )}
 
       {dupPromptJob && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 w-full max-w-md shadow-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 border-t-8 border-purple-500">
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-[200] p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-5 sm:p-6 w-full max-w-md shadow-lg flex flex-col max-h-[90vh] animate-in zoom-in-95 border-t-8 border-sky-500">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 flex items-center gap-2"><Repeat className="w-5 h-5 text-purple-600 dark:text-purple-400" /> Nuevo Traslado</h3>
+                <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 flex items-center gap-2"><Repeat className="w-5 h-5 text-sky-600 dark:text-sky-400" /> Nuevo Traslado</h3>
                 <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">
                   {dupPromptJob.tripType === 'simple' ? dupPromptJob.description : `${dupPromptJob.brand} ${dupPromptJob.model}`} • {getJobIdentifier(dupPromptJob)}
                 </p>
@@ -2753,35 +2753,35 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">¿Qué tipo de ruta hará ahora?</label>
 
-                <button onClick={() => setDupMode('clone')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'clone' ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/30' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-purple-200 dark:border-purple-800/50'}`}>
-                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${dupMode === 'clone' ? 'border-purple-600' : 'border-slate-300 dark:border-slate-600'}`}>
-                    {dupMode === 'clone' && <div className="w-2 h-2 bg-purple-600 rounded-full"></div>}
+                <button onClick={() => setDupMode('clone')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'clone' ? 'border-sky-600 bg-sky-50 dark:bg-sky-900/30' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-sky-200 dark:border-sky-800/50'}`}>
+                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${dupMode === 'clone' ? 'border-sky-600' : 'border-slate-300 dark:border-slate-600'}`}>
+                    {dupMode === 'clone' && <div className="w-2 h-2 bg-sky-600 rounded-full"></div>}
                   </div>
                   <div>
-                    <p className={`font-extrabold text-sm ${dupMode === 'clone' ? 'text-purple-800 dark:text-purple-300' : 'text-slate-700 dark:text-slate-300'}`}>Clonar Exactamente Igual</p>
-                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">{dupPromptJob.origin} ➔ {dupPromptJob.destination || 'Mismo destino'}</p>
+                    <p className={`font-extrabold text-sm ${dupMode === 'clone' ? 'text-sky-800 dark:text-sky-300' : 'text-slate-700 dark:text-slate-300'}`}>Clonar Exactamente Igual</p>
+                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">{dupPromptJob.origin} → {dupPromptJob.destination || 'Mismo destino'}</p>
                   </div>
                 </button>
 
-                <button onClick={() => setDupMode('return')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'return' ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/30' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-purple-200 dark:border-purple-800/50'}`}>
-                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${dupMode === 'return' ? 'border-purple-600' : 'border-slate-300 dark:border-slate-600'}`}>
-                    {dupMode === 'return' && <div className="w-2 h-2 bg-purple-600 rounded-full"></div>}
+                <button onClick={() => setDupMode('return')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'return' ? 'border-sky-600 bg-sky-50 dark:bg-sky-900/30' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-sky-200 dark:border-sky-800/50'}`}>
+                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${dupMode === 'return' ? 'border-sky-600' : 'border-slate-300 dark:border-slate-600'}`}>
+                    {dupMode === 'return' && <div className="w-2 h-2 bg-sky-600 rounded-full"></div>}
                   </div>
                   <div>
-                    <p className={`font-extrabold text-sm ${dupMode === 'return' ? 'text-purple-800 dark:text-purple-300' : 'text-slate-700 dark:text-slate-300'}`}>Retornar al Origen</p>
+                    <p className={`font-extrabold text-sm ${dupMode === 'return' ? 'text-sky-800 dark:text-sky-300' : 'text-slate-700 dark:text-slate-300'}`}>Retornar al Origen</p>
                     <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">{dupPromptJob.tripType === 'revision' ? 'PRT' : (dupPromptJob.destination || dupPromptJob.origin)} ➔ {dupPromptJob.origin}</p>
                   </div>
                 </button>
 
-                <div onClick={() => { if (dupMode !== 'continue') { setDupMode('continue'); setDupDestination(''); } }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 cursor-pointer ${dupMode === 'continue' ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/30' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-purple-200 dark:border-purple-800/50'}`}>
-                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${dupMode === 'continue' ? 'border-purple-600' : 'border-slate-300 dark:border-slate-600'}`}>
-                    {dupMode === 'continue' && <div className="w-2 h-2 bg-purple-600 rounded-full"></div>}
+                <div onClick={() => { if (dupMode !== 'continue') { setDupMode('continue'); setDupDestination(''); } }} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 cursor-pointer ${dupMode === 'continue' ? 'border-sky-600 bg-sky-50 dark:bg-sky-900/30' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-sky-200 dark:border-sky-800/50'}`}>
+                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${dupMode === 'continue' ? 'border-sky-600' : 'border-slate-300 dark:border-slate-600'}`}>
+                    {dupMode === 'continue' && <div className="w-2 h-2 bg-sky-600 rounded-full"></div>}
                   </div>
                   <div className="w-full min-w-0">
-                    <p className={`font-extrabold text-sm ${dupMode === 'continue' ? 'text-purple-800 dark:text-purple-300' : 'text-slate-700 dark:text-slate-300'}`}>Continuar a Otro Destino</p>
+                    <p className={`font-extrabold text-sm ${dupMode === 'continue' ? 'text-sky-800 dark:text-sky-300' : 'text-slate-700 dark:text-slate-300'}`}>Continuar a Otro Destino</p>
                     {dupMode === 'continue' ? (
                       <div className="mt-2 animate-in fade-in slide-in-from-top-1 w-full relative z-[100]">
-                        <AutocompleteInput name="dupDestination" options={destinationOptions} value={dupDestination} onChange={e => setDupDestination(e.target.value.toUpperCase())} placeholder="Escribe el nuevo destino..." className="w-full bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-800/50 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-purple-400 font-bold" />
+                        <AutocompleteInput name="dupDestination" options={destinationOptions} value={dupDestination} onChange={e => setDupDestination(e.target.value.toUpperCase())} placeholder="Escribe el nuevo destino..." className="w-full bg-white dark:bg-slate-900 border border-sky-200 dark:border-sky-800/50 p-2.5 rounded-lg text-xs outline-none focus:ring-2 focus:ring-sky-400 font-bold" />
                       </div>
                     ) : (
                       <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">{dupPromptJob.tripType === 'revision' ? 'PRT' : (dupPromptJob.destination || dupPromptJob.origin)} ➔ ???</p>
@@ -2789,12 +2789,12 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                   </div>
                 </div>
 
-                <button onClick={() => setDupMode('scratch')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'scratch' ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/30' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-purple-200 dark:border-purple-800/50'}`}>
-                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${dupMode === 'scratch' ? 'border-purple-600' : 'border-slate-300 dark:border-slate-600'}`}>
-                    {dupMode === 'scratch' && <div className="w-2 h-2 bg-purple-600 rounded-full"></div>}
+                <button onClick={() => setDupMode('scratch')} className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${dupMode === 'scratch' ? 'border-sky-600 bg-sky-50 dark:bg-sky-900/30' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-sky-200 dark:border-sky-800/50'}`}>
+                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${dupMode === 'scratch' ? 'border-sky-600' : 'border-slate-300 dark:border-slate-600'}`}>
+                    {dupMode === 'scratch' && <div className="w-2 h-2 bg-sky-600 rounded-full"></div>}
                   </div>
                   <div>
-                    <p className={`font-extrabold text-sm ${dupMode === 'scratch' ? 'text-purple-800 dark:text-purple-300' : 'text-slate-700 dark:text-slate-300'}`}>Crear desde 0 con datos de vehículo</p>
+                    <p className={`font-extrabold text-sm ${dupMode === 'scratch' ? 'text-sky-800 dark:text-sky-300' : 'text-slate-700 dark:text-slate-300'}`}>Crear desde 0 con datos de vehículo</p>
                     <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 truncate">Abre el formulario con los datos pre-cargados</p>
                   </div>
                 </button>
@@ -2807,11 +2807,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                   <div className="bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden">
                     <div className="max-h-40 overflow-y-auto p-1.5 space-y-1 scrollbar-none">
 
-                      <div onClick={() => setDupDriverEmails([])} className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${dupDriverEmails.length === 0 ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30' : 'border-transparent hover:bg-slate-100 dark:bg-slate-800'}`}>
-                        <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border-2 transition-colors ${dupDriverEmails.length === 0 ? 'border-purple-600 bg-purple-600' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900'}`}>
+                      <div onClick={() => setDupDriverEmails([])} className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${dupDriverEmails.length === 0 ? 'border-sky-500 bg-sky-50 dark:bg-sky-900/30' : 'border-transparent hover:bg-slate-100 dark:bg-slate-800'}`}>
+                        <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border-2 transition-colors ${dupDriverEmails.length === 0 ? 'border-sky-600 bg-sky-600' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900'}`}>
                           {dupDriverEmails.length === 0 && <CheckCircle className="w-3 h-3 text-white" />}
                         </div>
-                        <span className={`text-xs font-black ${dupDriverEmails.length === 0 ? 'text-purple-800 dark:text-purple-300' : 'text-slate-600 dark:text-slate-400'}`}>Nadie aún (Bolsa de Trabajo)</span>
+                        <span className={`text-xs font-black ${dupDriverEmails.length === 0 ? 'text-sky-800 dark:text-sky-300' : 'text-slate-600 dark:text-slate-400'}`}>Nadie aún (Bolsa de Trabajo)</span>
                       </div>
 
                       {drivers.filter(d => !d.isHidden).map(d => {
@@ -2823,11 +2823,11 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                             } else {
                               setDupDriverEmails([...dupDriverEmails, d.email]);
                             }
-                          }} className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${isSelected ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30' : 'border-transparent hover:bg-slate-100 dark:bg-slate-800'}`}>
-                            <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border-2 transition-colors ${isSelected ? 'border-purple-600 bg-purple-600' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900'}`}>
+                          }} className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${isSelected ? 'border-sky-500 bg-sky-50 dark:bg-sky-900/30' : 'border-transparent hover:bg-slate-100 dark:bg-slate-800'}`}>
+                            <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border-2 transition-colors ${isSelected ? 'border-sky-600 bg-sky-600' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900'}`}>
                               {isSelected && <CheckCircle className="w-3 h-3 text-white" />}
                             </div>
-                            <span className={`text-xs font-black ${isSelected ? 'text-purple-800 dark:text-purple-300' : 'text-slate-700 dark:text-slate-300'}`}>{d.name}</span>
+                            <span className={`text-xs font-black ${isSelected ? 'text-sky-800 dark:text-sky-300' : 'text-slate-700 dark:text-slate-300'}`}>{d.name}</span>
                           </div>
                         );
                       })}
@@ -2841,7 +2841,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
             <div className="flex gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 mt-auto">
               <button onClick={() => setDupPromptJob(null)} className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 py-3.5 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>
-              <button onClick={executeDuplicate} disabled={processingId === `dup-${dupPromptJob.id}`} className="flex-[2] bg-purple-600 hover:bg-purple-700 text-white py-3.5 rounded-xl font-extrabold text-sm transition-colors shadow-lg shadow-purple-200 flex justify-center items-center gap-2 disabled:opacity-50">
+              <button onClick={executeDuplicate} disabled={processingId === `dup-${dupPromptJob.id}`} className="flex-[2] bg-sky-600 hover:bg-sky-700 text-white py-3.5 rounded-xl font-extrabold text-sm transition-colors shadow-lg shadow-sky-200 flex justify-center items-center gap-2 disabled:opacity-50">
                 {processingId === `dup-${dupPromptJob.id}` ? <Clock className="w-5 h-5 animate-spin" /> : 'Crear Traslado'}
               </button>
             </div>
@@ -2851,7 +2851,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       {/* NUEVO MODAL: EDITAR CONDUCTOR DEL TRASLADO */}
       {editDriverJob && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-[200] p-4">
           <form onSubmit={async (e) => {
             e.preventDefault();
             const newDriverEmail = e.target.newDriver.value;
@@ -2884,7 +2884,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             } finally {
               setProcessingId(null);
             }
-          }} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm space-y-5 shadow-2xl border-t-8 border-blue-500 animate-in zoom-in-95">
+          }} className="bg-white dark:bg-slate-900 rounded-xl p-6 w-full max-w-sm space-y-5 shadow-lg border-t-8 border-blue-500 animate-in zoom-in-95">
             <div className="flex justify-between items-center">
               <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
                 <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" /> Cambiar Conductor
@@ -2920,7 +2920,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       {/* NUEVO MODAL: EDITAR FECHA DEL TRASLADO */}
       {editDateJob && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-[200] p-4">
           <form onSubmit={async (e) => {
             e.preventDefault();
             const dateVal = e.target.newDate.value;
@@ -2945,7 +2945,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             } finally {
               setProcessingId(null);
             }
-          }} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm space-y-5 shadow-2xl border-t-8 border-blue-500 animate-in zoom-in-95">
+          }} className="bg-white dark:bg-slate-900 rounded-xl p-6 w-full max-w-sm space-y-5 shadow-lg border-t-8 border-blue-500 animate-in zoom-in-95">
             <div className="flex justify-between items-center">
               <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
                 <Clock className="w-6 h-6 text-blue-600 dark:text-blue-400" /> Corregir Fecha
@@ -2975,7 +2975,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       {/* NUEVO MODAL: EDITAR COBRO DEL TRASLADO */}
       {editPriceJob && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-[200] p-4">
           <form onSubmit={async (e) => {
             e.preventDefault();
             const newPrice = Number(e.target.price.value) || 0;
@@ -2990,7 +2990,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             } finally {
               setProcessingId(null);
             }
-          }} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm space-y-5 shadow-2xl border-t-8 border-emerald-500 animate-in zoom-in-95">
+          }} className="bg-white dark:bg-slate-900 rounded-xl p-6 w-full max-w-sm space-y-5 shadow-lg border-t-8 border-emerald-500 animate-in zoom-in-95">
             <div className="flex justify-between items-center">
               <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
                 <DollarSign className="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Editar Cobro
@@ -3020,7 +3020,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       {/* NUEVO MODAL: EDITAR KILOMETRAJE DEL TRASLADO */}
       {editKmJob && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-[200] p-4">
           <form onSubmit={async (e) => {
             e.preventDefault();
             let rawValue = e.target.kmValue.value.trim();
@@ -3045,7 +3045,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             } finally {
               setProcessingId(null);
             }
-          }} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm space-y-5 shadow-2xl border-t-8 border-emerald-500 animate-in zoom-in-95">
+          }} className="bg-white dark:bg-slate-900 rounded-xl p-6 w-full max-w-sm space-y-5 shadow-lg border-t-8 border-emerald-500 animate-in zoom-in-95">
             <div className="flex justify-between items-center">
               <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
                 <MapIcon className="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Editar Distancia
@@ -3077,8 +3077,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       )}
 
       {showBulkSign && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 w-full max-w-lg shadow-2xl flex flex-col max-h-[95vh] border-t-8 border-emerald-500">
+        <div className="fixed inset-0 bg-slate-900/80 flex items-center justify-center z-[200] p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-5 w-full max-w-lg shadow-lg flex flex-col max-h-[95vh] border-t-8 border-emerald-500">
             <div className="flex justify-between mb-4">
               <h3 className="text-xl font-black text-slate-800 dark:text-slate-200 flex items-center gap-2"><PenTool className="w-5 h-5 text-emerald-600 dark:text-emerald-400" /> Firma Masiva</h3>
               <button onClick={() => setShowBulkSign(false)} className="bg-slate-100 dark:bg-slate-800 p-2 rounded-full hover:bg-slate-200 dark:bg-slate-700"><X className="w-5 h-5" /></button>
@@ -3262,8 +3262,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       {/* NUEVO: Modal de Confirmación para iOS/Safari al Compartir PDF */}
       {pdfReadyToShare && (
-        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl w-full max-w-sm flex flex-col items-center text-center border border-slate-200 dark:border-slate-800 animate-in zoom-in-95">
+        <div className="fixed inset-0 bg-slate-900/90 z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-xl w-full max-w-sm flex flex-col items-center text-center border border-slate-200 dark:border-slate-800 animate-in zoom-in-95">
             <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-4 shadow-inner">
               <FileText className="w-8 h-8" />
             </div>

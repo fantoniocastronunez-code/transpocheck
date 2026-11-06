@@ -287,7 +287,7 @@ export default function ClientSignView({ jobId, db }) {
 
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center p-6 text-center">
-        <div className={`bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-xl max-w-sm w-full border-t-8 transition-colors duration-500 ${isFinished ? 'border-green-500' : 'border-blue-500'}`}>
+        <div className={`bg-white dark:bg-slate-900 p-8 rounded-xl shadow-md max-w-sm w-full border-t-8 transition-colors duration-500 ${isFinished ? 'border-green-500' : 'border-blue-500'}`}>
           {isFinished ? (
             <>
               <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4 animate-in zoom-in"/>
@@ -301,7 +301,7 @@ export default function ClientSignView({ jobId, db }) {
             </>
           ) : (
             <>
-              <Clock className="w-16 h-16 text-blue-500 mx-auto mb-4 animate-pulse"/>
+              <Clock className="w-16 h-16 text-blue-500 mx-auto mb-4"/>
               <h2 className="text-2xl font-black text-slate-800 dark:text-slate-200 mb-2">Firma Recibida</h2>
               <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800/50 rounded-xl p-4 mt-4 mb-4">
                 <p className="text-blue-700 dark:text-blue-400 font-bold text-sm flex items-center justify-center gap-2">
@@ -327,7 +327,7 @@ export default function ClientSignView({ jobId, db }) {
       </header>
 
       <main className="max-w-md mx-auto p-4 pt-6 space-y-6">
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 flex justify-between items-center">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex justify-between items-center">
           <div>
              <p className="text-[10px] font-extrabold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1">Vehículo a recibir</p>
              <h2 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-slate-200">{job.brand} {job.model}</h2>
@@ -336,7 +336,7 @@ export default function ClientSignView({ jobId, db }) {
         </div>
 
         {hasPhotos && (
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
             <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-200 mb-1 flex items-center gap-2"><Camera className="w-4 h-4 text-blue-500"/> Registro Fotográfico</h3>
             <p className="text-[10px] font-bold text-slate-400 mb-3 uppercase tracking-wide">Toca una foto para ampliarla</p>
             <div className="grid grid-cols-3 gap-2">
@@ -348,17 +348,17 @@ export default function ClientSignView({ jobId, db }) {
         )}
 
         {fullScreenImage && (
-          <div className="fixed inset-0 bg-slate-900/95 z-[200] flex items-center justify-center p-4 backdrop-blur-sm cursor-zoom-out animate-in fade-in duration-200" onClick={() => setFullScreenImage(null)}>
+          <div className="fixed inset-0 bg-slate-900/95 z-[200] flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in duration-200" onClick={() => setFullScreenImage(null)}>
             <button onClick={() => setFullScreenImage(null)} className="absolute top-[calc(1rem+env(safe-area-inset-top))] right-4 bg-white dark:bg-slate-900 hover:bg-white dark:bg-slate-900 p-2 rounded-full text-white transition-colors shadow-lg">
               <X className="w-6 h-6" />
             </button>
-            <img src={fullScreenImage} alt="Evidencia Ampliada" className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
+            <img src={fullScreenImage} alt="Evidencia Ampliada" className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-lg" onClick={(e) => e.stopPropagation()} />
           </div>
         )}
 
         {/* Equipamiento Verificado */}
         {(job.checklist?.equipment || job.checklist?.hasEquipment) && (
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-emerald-500" /> Equipamiento Verificado
@@ -414,7 +414,7 @@ export default function ClientSignView({ jobId, db }) {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-900 p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-4">
            <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-200 mb-2 flex items-center gap-2"><User className="w-4 h-4 text-blue-500"/> Tus Datos de Recepción</h3>
            <input required type="text" placeholder="Nombre Completo" value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500" />
            <input required type="text" placeholder="RUT" maxLength="12" value={formData.rut} onChange={(e)=>{ let val = e.target.value.replace(/[^0-9kK]/g, '').toUpperCase(); if (val.length > 1) { const dv = val.slice(-1); const body = val.slice(0, -1); val = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + '-' + dv; } setFormData({...formData, rut: val}); }} className="w-full border-2 border-slate-200 dark:border-slate-700 p-3 rounded-xl font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500" />
@@ -433,13 +433,13 @@ export default function ClientSignView({ jobId, db }) {
       </main>
 
       {alertMessage && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-sm p-6 transform transition-all animate-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg w-full max-w-sm p-6 transform transition-all animate-in zoom-in-95 duration-150">
             <div className="flex items-center gap-3 mb-4">
               <div className="bg-blue-100 dark:bg-blue-900/40 p-2 rounded-full"><AlertCircle className="w-6 h-6 text-blue-600 dark:text-blue-400"/></div>
               <h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-200">LOGISTICAPP / LOGÍSTICA TS</h3>
             </div>
-            <p className="text-slate-600 dark:text-slate-400 font-bold mb-6 text-sm">{alertMessage}</p>
+            <p className="text-slate-600 dark:text-slate-400 font-medium mb-6 text-sm">{typeof alertMessage === 'string' ? alertMessage.replace(/^[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}✅❌⚠️⏳🔄🚨📸]+\s*/u, '') : alertMessage}</p>
             <button onClick={() => setAlertMessage(null)} className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-md transition-colors hover:bg-blue-700">Aceptar</button>
           </div>
         </div>

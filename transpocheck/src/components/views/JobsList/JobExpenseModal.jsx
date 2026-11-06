@@ -134,12 +134,11 @@ export default function JobExpenseModal({
 
     setPendingExpenses(prev => [...prev, newItem]);
     
-    // Limpiamos campos para permitir ingresar de inmediato el siguiente gasto
     setAmount('');
     setMotivo('');
     setReceiptPhoto(null);
     setFuelGaugePhoto(null);
-    setExpenseType('other'); // Facilitar ingresar peajes u otros gastos consecutivamente
+    setExpenseType('other');
   };
 
   const handleRemovePendingExpense = (idxToRemove) => {
@@ -155,7 +154,6 @@ export default function JobExpenseModal({
 
     const allExpensesToProcess = [...pendingExpenses];
 
-    // Si el usuario tiene un gasto en curso en los inputs, validamos y lo sumamos al lote
     if (hasCurrentFormValues) {
       if (!validateFormFields(false)) return;
 
@@ -268,28 +266,28 @@ export default function JobExpenseModal({
   const quickMotivos = ["Peaje", "Estacionamiento", "Lavado", "Reparación / Pinchazo", "Líquido de frenos", "Otro"];
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[200] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 bg-slate-950/75 z-[200] flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg w-full max-w-lg shadow-lg overflow-hidden flex flex-col max-h-[92vh]">
         
         {/* Header */}
-        <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 p-4 sm:p-5 text-white flex justify-between items-center shrink-0 shadow-md">
+        <div className="bg-slate-900 dark:bg-slate-800 p-4 text-white flex justify-between items-center shrink-0 border-b border-slate-800 dark:border-slate-700">
           <div className="flex items-center gap-3">
-            <div className="bg-white/20 p-2.5 rounded-2xl backdrop-blur-sm">
-              <Receipt className="w-6 h-6 text-white" />
+            <div className="bg-slate-800 dark:bg-slate-700 p-2 rounded-md border border-slate-700">
+              <Receipt className="w-5 h-5 text-emerald-400" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-base sm:text-lg font-black leading-tight uppercase tracking-wider">
+                <h3 className="text-base font-bold leading-tight">
                   Ingreso de Gastos
                 </h3>
                 {pendingExpenses.length > 0 && (
-                  <span className="bg-white/25 text-white font-black text-[10px] px-2 py-0.5 rounded-full animate-pulse">
+                  <span className="bg-emerald-600 text-white font-mono font-semibold text-[10px] px-2 py-0.5 rounded">
                     {pendingExpenses.length} en lista
                   </span>
                 )}
               </div>
-              <p className="text-xs text-amber-100 font-bold">
-                {job.brand} {job.model} • <span className="underline">{jobIdent}</span>
+              <p className="text-xs text-slate-300 font-medium">
+                {job.brand} {job.model} • <span className="font-mono font-semibold">{jobIdent}</span>
               </p>
             </div>
           </div>
@@ -297,44 +295,44 @@ export default function JobExpenseModal({
             type="button"
             onClick={onClose}
             disabled={isSaving}
-            className="p-2 bg-black/20 hover:bg-black/30 text-white rounded-full transition-colors disabled:opacity-50"
+            className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md transition-colors disabled:opacity-50"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Contenido scrolleable */}
-        <div className="p-4 sm:p-6 overflow-y-auto space-y-5 flex-1">
+        <div className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1">
 
           {/* LISTA DE GASTOS LISTOS PARA GUARDAR EN LOTE */}
           {pendingExpenses.length > 0 && (
-            <div className="bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-300 dark:border-amber-700/60 rounded-2xl p-3.5 space-y-2.5 animate-in fade-in slide-in-from-top-2">
-              <div className="flex justify-between items-center pb-2 border-b border-amber-200 dark:border-amber-800/40">
-                <span className="text-[11px] font-black uppercase text-amber-800 dark:text-amber-300 tracking-wider flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-md p-3 space-y-2">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-700">
+                <span className="text-[11px] font-semibold uppercase text-slate-700 dark:text-slate-300 tracking-wider flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   Gastos Listos para Guardar ({pendingExpenses.length})
                 </span>
-                <span className="text-xs font-black text-amber-900 dark:text-amber-200 bg-amber-200/60 dark:bg-amber-900/50 px-2.5 py-0.5 rounded-lg">
+                <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/60">
                   Subtotal: ${pendingExpenses.reduce((s, e) => s + e.amount, 0).toLocaleString('es-CL')}
                 </span>
               </div>
 
               <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                 {pendingExpenses.map((pExp, idx) => (
-                  <div key={pExp.id || idx} className="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-amber-200 dark:border-amber-800/50 flex items-center justify-between gap-2 shadow-xs">
+                  <div key={pExp.id || idx} className="bg-white dark:bg-slate-900 p-2.5 rounded border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className={`p-1.5 rounded-lg shrink-0 ${pExp.type === 'fuel' ? 'bg-amber-100 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400'}`}>
+                      <div className={`p-1.5 rounded shrink-0 ${pExp.type === 'fuel' ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400' : 'bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400'}`}>
                         {pExp.type === 'fuel' ? <Fuel className="w-4 h-4" /> : <Receipt className="w-4 h-4" />}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-black text-slate-800 dark:text-slate-200 truncate">
+                        <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
                           {pExp.motivo}
                         </p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400">
+                          <span className="text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400">
                             ${pExp.amount.toLocaleString('es-CL')}
                           </span>
-                          <span className="text-[9px] text-slate-400 font-bold">
+                          <span className="text-[10px] text-slate-400">
                             • {pExp.type === 'fuel' ? 'Boleta + Estanque' : 'Boleta'}
                           </span>
                         </div>
@@ -346,7 +344,7 @@ export default function JobExpenseModal({
                         <img 
                           src={pExp.receiptPhoto} 
                           alt="Boleta" 
-                          className="w-8 h-8 rounded-lg object-cover border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity"
+                          className="w-8 h-8 rounded object-cover border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity"
                           onClick={() => setFullScreenPhoto && setFullScreenPhoto(pExp.receiptPhoto)}
                           title="Ver boleta"
                         />
@@ -355,7 +353,7 @@ export default function JobExpenseModal({
                         <img 
                           src={pExp.fuelGaugePhoto} 
                           alt="Estanque" 
-                          className="w-8 h-8 rounded-lg object-cover border border-amber-300 dark:border-amber-700 cursor-pointer hover:opacity-80 transition-opacity"
+                          className="w-8 h-8 rounded object-cover border border-amber-300 dark:border-amber-700 cursor-pointer hover:opacity-80 transition-opacity"
                           onClick={() => setFullScreenPhoto && setFullScreenPhoto(pExp.fuelGaugePhoto)}
                           title="Ver estanque"
                         />
@@ -363,7 +361,7 @@ export default function JobExpenseModal({
                       <button
                         type="button"
                         onClick={() => handleRemovePendingExpense(idx)}
-                        className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                        className="p-1.5 rounded text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
                         title="Eliminar de la lista"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -378,7 +376,7 @@ export default function JobExpenseModal({
           {/* Encabezado de Sección de Formulario */}
           {pendingExpenses.length > 0 && (
             <div className="flex items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
-              <span className="text-[10px] font-black uppercase text-amber-600 dark:text-amber-400 tracking-wider">
+              <span className="text-[11px] font-semibold uppercase text-blue-600 dark:text-blue-400 tracking-wider">
                 + Añadir Otro Gasto al Mismo Traslado
               </span>
             </div>
@@ -386,33 +384,33 @@ export default function JobExpenseModal({
 
           {/* Selector de Tipo de Gasto */}
           <div>
-            <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest block mb-2">
+            <label className="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-2">
               Tipo de Gasto a Registrar
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2.5">
               <button
                 type="button"
                 onClick={() => setExpenseType('fuel')}
-                className={`py-3.5 px-3 rounded-2xl border-2 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
+                className={`py-2.5 px-3 rounded-md border font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors ${
                   isFuel 
-                    ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 shadow-sm shadow-amber-500/20 ring-2 ring-amber-500/20' 
-                    : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-500 hover:border-slate-300 dark:hover:border-slate-700'
+                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300' 
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-slate-300'
                 }`}
               >
-                <Fuel className="w-4 h-4 text-amber-500" />
+                <Fuel className="w-4 h-4" />
                 <span>Combustible</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setExpenseType('other')}
-                className={`py-3.5 px-3 rounded-2xl border-2 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
+                className={`py-2.5 px-3 rounded-md border font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors ${
                   !isFuel 
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shadow-sm shadow-blue-500/20 ring-2 ring-blue-500/20' 
-                    : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-500 hover:border-slate-300 dark:hover:border-slate-700'
+                    ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300' 
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-slate-300'
                 }`}
               >
-                <Receipt className="w-4 h-4 text-blue-500" />
+                <Receipt className="w-4 h-4" />
                 <span>Otro Gasto</span>
               </button>
             </div>
@@ -420,21 +418,20 @@ export default function JobExpenseModal({
 
           {/* Campo Motivo (si es Otro Gasto) */}
           {!isFuel && (
-            <div className="space-y-2 animate-in fade-in duration-200">
-              <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest block">
+            <div className="space-y-2">
+              <label className="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400 tracking-wider block">
                 Motivo del Gasto *
               </label>
 
-              {/* Botones de selección rápida */}
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {quickMotivos.map((qm) => (
                   <button
                     key={qm}
                     type="button"
                     onClick={() => setMotivo(qm === 'Otro' ? '' : qm)}
-                    className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border transition-all ${
+                    className={`text-[11px] font-semibold px-2.5 py-1 rounded border transition-colors ${
                       motivo === qm 
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-xs' 
+                        ? 'bg-blue-600 text-white border-blue-600' 
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200'
                     }`}
                   >
@@ -448,18 +445,18 @@ export default function JobExpenseModal({
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}
                 placeholder="Ej: Peaje Ruta del Maipo, Estacionamiento terminal..."
-                className="w-full bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 text-xs font-bold text-slate-800 dark:text-slate-100 outline-none focus:border-blue-500 transition-colors shadow-inner"
+                className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md p-2.5 text-xs font-medium text-slate-800 dark:text-slate-100 outline-none focus:border-blue-600 transition-colors"
               />
             </div>
           )}
 
           {/* Monto ($ CLP) */}
           <div>
-            <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest block mb-1">
+            <label className="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400 tracking-wider block mb-1">
               Monto del Gasto ($ CLP) *
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-black text-slate-400">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base font-mono font-bold text-slate-400">
                 $
               </span>
               <input
@@ -471,43 +468,43 @@ export default function JobExpenseModal({
                   setAmount(rawVal);
                 }}
                 placeholder="0"
-                className="w-full bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-2xl py-3.5 pl-9 pr-4 text-xl font-black text-slate-800 dark:text-slate-100 outline-none focus:border-amber-500 transition-colors shadow-inner"
+                className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md py-2.5 pl-8 pr-4 text-lg font-mono font-bold text-slate-900 dark:text-slate-100 outline-none focus:border-blue-600 transition-colors"
               />
             </div>
           </div>
 
           {/* Fotos Requeridas */}
-          <div className="space-y-4 pt-1">
+          <div className="space-y-3 pt-1">
 
             {/* 1. Foto de Estanque después de la carga (SOLO SI ES COMBUSTIBLE) */}
             {isFuel && (
-              <div className="p-4 rounded-2xl border-2 border-amber-200/80 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-950/20 space-y-3 animate-in fade-in">
+              <div className="p-3.5 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-2.5">
                 <div className="flex justify-between items-center">
-                  <span className="text-[11px] font-black uppercase text-amber-800 dark:text-amber-300 flex items-center gap-1.5 tracking-wider">
+                  <span className="text-[11px] font-semibold uppercase text-slate-700 dark:text-slate-300 flex items-center gap-1.5 tracking-wider">
                     <Fuel className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                     Foto del Estanque después de la carga *
                   </span>
                   {fuelGaugePhoto && (
-                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
+                    <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/60">
                       <CheckCircle2 className="w-3 h-3" /> Capturada
                     </span>
                   )}
                 </div>
 
                 {fuelGaugePhoto ? (
-                  <div className="relative rounded-xl overflow-hidden border border-amber-300 dark:border-amber-700 aspect-[16/9] group">
+                  <div className="relative rounded-md overflow-hidden border border-slate-300 dark:border-slate-700 aspect-[16/9] group">
                     <img 
                       src={fuelGaugePhoto} 
                       alt="Estanque después de carga" 
                       className="w-full h-full object-cover cursor-pointer"
                       onClick={() => setFullScreenPhoto && setFullScreenPhoto(fuelGaugePhoto)}
                     />
-                    <div className="absolute inset-x-0 bottom-0 bg-black/60 p-2 flex justify-between items-center">
-                      <span className="text-[10px] text-white font-bold">Toca para ampliar</span>
+                    <div className="absolute inset-x-0 bottom-0 bg-slate-950/80 p-2 flex justify-between items-center">
+                      <span className="text-[10px] text-white font-medium">Toca para ampliar</span>
                       <button
                         type="button"
                         onClick={() => handleCapturePhoto('fuelGauge', 'Foto del Estanque (Después de Cargar)')}
-                        className="text-[10px] font-bold bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded-lg"
+                        className="text-[10px] font-semibold bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded"
                       >
                         Repetir Foto
                       </button>
@@ -518,12 +515,12 @@ export default function JobExpenseModal({
                     <button
                       type="button"
                       onClick={() => handleCapturePhoto('fuelGauge', 'Foto del Estanque (Después de Cargar)')}
-                      className="py-3 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs uppercase flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
+                      className="py-2.5 px-3 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs uppercase flex items-center justify-center gap-2 transition-colors"
                     >
                       <Camera className="w-4 h-4" /> Tomar Foto
                     </button>
 
-                    <label className="py-3 px-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:border-amber-400 text-slate-700 dark:text-slate-300 font-bold text-xs uppercase flex items-center justify-center gap-2 cursor-pointer transition-all shadow-sm">
+                    <label className="py-2.5 px-3 rounded-md bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:border-blue-500 text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase flex items-center justify-center gap-2 cursor-pointer transition-colors">
                       <FileText className="w-4 h-4 text-slate-400" /> Galería
                       <input 
                         type="file" 
@@ -538,33 +535,33 @@ export default function JobExpenseModal({
             )}
 
             {/* 2. Foto de la Boleta o Comprobante (OBLIGATORIA PARA AMBOS) */}
-            <div className="p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 space-y-3">
+            <div className="p-3.5 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-2.5">
               <div className="flex justify-between items-center">
-                <span className="text-[11px] font-black uppercase text-slate-800 dark:text-slate-200 flex items-center gap-1.5 tracking-wider">
-                  <Receipt className="w-4 h-4 text-blue-500" />
+                <span className="text-[11px] font-semibold uppercase text-slate-700 dark:text-slate-300 flex items-center gap-1.5 tracking-wider">
+                  <Receipt className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   Foto de la Boleta o Comprobante *
                 </span>
                 {receiptPhoto && (
-                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
+                  <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/60">
                     <CheckCircle2 className="w-3 h-3" /> Capturada
                   </span>
                 )}
               </div>
 
               {receiptPhoto ? (
-                <div className="relative rounded-xl overflow-hidden border border-slate-300 dark:border-slate-700 aspect-[16/9] group">
+                <div className="relative rounded-md overflow-hidden border border-slate-300 dark:border-slate-700 aspect-[16/9] group">
                   <img 
                     src={receiptPhoto} 
                     alt="Boleta" 
                     className="w-full h-full object-cover cursor-pointer"
                     onClick={() => setFullScreenPhoto && setFullScreenPhoto(receiptPhoto)}
                   />
-                  <div className="absolute inset-x-0 bottom-0 bg-black/60 p-2 flex justify-between items-center">
-                    <span className="text-[10px] text-white font-bold">Toca para ampliar</span>
+                  <div className="absolute inset-x-0 bottom-0 bg-slate-950/80 p-2 flex justify-between items-center">
+                    <span className="text-[10px] text-white font-medium">Toca para ampliar</span>
                     <button
                       type="button"
                       onClick={() => handleCapturePhoto('receipt', 'Foto Boleta / Comprobante')}
-                      className="text-[10px] font-bold bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded-lg"
+                      className="text-[10px] font-semibold bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded"
                     >
                       Repetir Foto
                     </button>
@@ -575,12 +572,12 @@ export default function JobExpenseModal({
                   <button
                     type="button"
                     onClick={() => handleCapturePhoto('receipt', 'Foto Boleta / Comprobante')}
-                    className="py-3 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
+                    className="py-2.5 px-3 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs uppercase flex items-center justify-center gap-2 transition-colors"
                   >
                     <Camera className="w-4 h-4" /> Tomar Boleta
                   </button>
 
-                  <label className="py-3 px-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:border-blue-400 text-slate-700 dark:text-slate-300 font-bold text-xs uppercase flex items-center justify-center gap-2 cursor-pointer transition-all shadow-sm">
+                  <label className="py-2.5 px-3 rounded-md bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:border-blue-500 text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase flex items-center justify-center gap-2 cursor-pointer transition-colors">
                     <FileText className="w-4 h-4 text-slate-400" /> Galería
                     <input 
                       type="file" 
@@ -600,41 +597,41 @@ export default function JobExpenseModal({
             type="button"
             onClick={handleAddExpenseToList}
             disabled={isSaving}
-            className="w-full py-3.5 px-4 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 border-2 border-dashed border-amber-500/50 hover:border-amber-500 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 shadow-xs disabled:opacity-50"
+            className="w-full py-2.5 px-4 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-dashed border-slate-300 dark:border-slate-600 font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
           >
-            <Plus className="w-4 h-4 stroke-[3]" />
+            <Plus className="w-4 h-4" />
             <span>Añadir a la lista para guardar juntos (+)</span>
           </button>
 
           {/* Historial de Gastos ya registrados en este traslado */}
           {existingExpenses.length > 0 && (
             <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
-              <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-widest mb-2 flex items-center justify-between">
+              <p className="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400 tracking-wider mb-2 flex items-center justify-between">
                 <span>Gastos Registrados en este Traslado ({existingExpenses.length})</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-black">
+                <span className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">
                   Total: ${existingExpenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0).toLocaleString('es-CL')}
                 </span>
               </p>
-              <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+              <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
                 {existingExpenses.map((exp, idx) => (
-                  <div key={exp.id || idx} className="bg-slate-50 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 flex justify-between items-center text-xs">
+                  <div key={exp.id || idx} className="bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-md border border-slate-200 dark:border-slate-800 flex justify-between items-center text-xs">
                     <div>
-                      <span className="font-bold text-slate-800 dark:text-slate-200 block">
+                      <span className="font-semibold text-slate-800 dark:text-slate-200 block">
                         {exp.motivo || (exp.type === 'fuel' ? 'Combustible' : 'Otro')}
                       </span>
-                      <span className="text-[10px] text-slate-400">
+                      <span className="text-[10px] font-mono text-slate-400">
                         {exp.createdAt ? new Date(exp.createdAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : ''}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-black text-slate-900 dark:text-slate-100">
+                      <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
                         ${Number(exp.amount || 0).toLocaleString('es-CL')}
                       </span>
                       {exp.receiptUrl && (
                         <button
                           type="button"
                           onClick={() => setFullScreenPhoto && setFullScreenPhoto(exp.receiptUrl)}
-                          className="text-[9px] font-bold bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded border border-blue-200 dark:border-blue-800"
+                          className="text-[10px] font-semibold bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800/60"
                         >
                           Boleta
                         </button>
@@ -649,12 +646,12 @@ export default function JobExpenseModal({
         </div>
 
         {/* Footer / Acciones */}
-        <div className="p-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex gap-3 shrink-0">
+        <div className="p-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex gap-2.5 shrink-0">
           <button
             type="button"
             onClick={onClose}
             disabled={isSaving}
-            className="flex-1 py-3.5 rounded-2xl border-2 border-slate-200 dark:border-slate-800 font-bold text-xs uppercase tracking-wider text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors disabled:opacity-50"
+            className="flex-1 py-2.5 rounded-md border border-slate-300 dark:border-slate-700 font-semibold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
           >
             Cancelar
           </button>
@@ -663,7 +660,7 @@ export default function JobExpenseModal({
             type="button"
             onClick={handleSubmit}
             disabled={isSaving}
-            className="flex-2 py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-amber-500/30 transition-all active:scale-95 disabled:opacity-50"
+            className="flex-2 py-2.5 px-4 rounded-md bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
           >
             {isSaving ? (
               <>
