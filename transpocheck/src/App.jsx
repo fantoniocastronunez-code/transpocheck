@@ -98,6 +98,7 @@ const StatsView = lazyWithRetry(() => import('./components/views/StatsView'));
 const DriverDashboardView = lazyWithRetry(() => import('./components/views/DriverDashboardView'));
 const ActivityView = lazyWithRetry(() => import('./components/views/ActivityView'));
 const ChecklistAnalyticsView = lazyWithRetry(() => import('./components/views/ChecklistAnalyticsView'));
+const QuotesView = lazyWithRetry(() => import('./components/views/QuotesView'));
 
 // EL NUEVO MOTOR (Hook)
 import { auth, db, googleProvider, uploadImageToStorage, useFirebase } from './hooks/useFirebase';
@@ -112,7 +113,7 @@ function LogisticApp() {
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
   const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
-  const APP_VERSION = "v1.2.94"; // IMPORTANT: Update this version string when making changes.
+  const APP_VERSION = "v1.2.95"; // IMPORTANT: Update this version string when making changes.
 
   // VARIABLES MÁGICAS: Atrapan lo que Android nos comparte desde CamScanner o Adobe Scan
   const sharedText = searchParams.get('shared_text');
@@ -938,7 +939,8 @@ function LogisticApp() {
             {mainTab === 'ranking' && <LeaderboardView jobs={jobs} drivers={drivers} isAdminView={activeRole === 'admin'} db={db} />}
             {mainTab === 'expenses' && <ExpensesView role={activeRole} drivers={drivers} jobs={jobs} expenses={expenses} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />}
             {mainTab === 'profile' && <DriverDashboardView myDriver={myDriver} jobs={jobs} expenses={expenses} drivers={drivers} currentUserEmail={currentUserEmail} db={db} />}
-            {mainTab === 'quotes' && <ChecklistAnalyticsView jobs={jobs} drivers={drivers} currentUserEmail={currentUserEmail} activeRole={activeRole} />}
+            {mainTab === 'quotes' && <QuotesView db={db} customClients={customClients} vehicles={vehicles} directoryList={directoryList} showAlert={showAlert} showConfirm={showConfirm} drivers={drivers} currentUserEmail={currentUserEmail} />}
+            {mainTab === 'analytics' && <ChecklistAnalyticsView jobs={jobs} drivers={drivers} currentUserEmail={currentUserEmail} activeRole={activeRole} />}
 
             {mainTab === 'inbox' && (
               <main className="max-w-2xl mx-auto p-4 pt-20 pb-32">
@@ -1081,15 +1083,15 @@ function LogisticApp() {
             <nav className="fixed bottom-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-around items-center pt-1.5 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] z-40">
               {activeRole === 'quoter' ? (
                 <button onClick={() => setMainTab('quotes')} className="flex flex-col items-center text-blue-600 dark:text-blue-400 transition-colors flex-1">
-                  <div className="bg-blue-50 dark:bg-blue-950/50 p-1.5 rounded-md mb-0.5"><ShieldCheck className="w-4 h-4" /></div>
-                  <span className="text-[10px] font-semibold">Análisis</span>
+                  <div className="bg-blue-50 dark:bg-blue-950/50 p-1.5 rounded-md mb-0.5"><Receipt className="w-4 h-4" /></div>
+                  <span className="text-[10px] font-semibold">Cotizar</span>
                 </button>
               ) : (
                 <>
                   {activeRole === 'admin' ? (
                     <button onClick={() => setMainTab('quotes')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'quotes' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}>
-                      <div className={`${mainTab === 'quotes' ? 'bg-blue-50 dark:bg-blue-950/50' : 'bg-transparent'} p-1.5 rounded-md mb-0.5`}><ShieldCheck className="w-4 h-4" /></div>
-                      <span className="text-[10px] font-semibold">Análisis</span>
+                      <div className={`${mainTab === 'quotes' ? 'bg-blue-50 dark:bg-blue-950/50' : 'bg-transparent'} p-1.5 rounded-md mb-0.5`}><Receipt className="w-4 h-4" /></div>
+                      <span className="text-[10px] font-semibold">Cotizar</span>
                     </button>
                   ) : (
                     <button onClick={() => setShowRequestJob('traslado')} className="flex flex-col items-center text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-1">
@@ -1110,6 +1112,12 @@ function LogisticApp() {
                     <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'expenses' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}>
                       <div className={`${mainTab === 'expenses' ? 'bg-blue-50 dark:bg-blue-950/50' : 'bg-transparent'} p-1.5 rounded-md mb-0.5`}><Wallet className="w-4 h-4" /></div>
                       <span className="text-[10px] font-semibold">Gastos</span>
+                    </button>
+                  )}
+                  {activeRole === 'admin' && (
+                    <button onClick={() => setMainTab('analytics')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'analytics' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}>
+                      <div className={`${mainTab === 'analytics' ? 'bg-blue-50 dark:bg-blue-950/50' : 'bg-transparent'} p-1.5 rounded-md mb-0.5`}><ShieldCheck className="w-4 h-4" /></div>
+                      <span className="text-[10px] font-semibold">Análisis</span>
                     </button>
                   )}
                   {activeRole === 'driver' && (

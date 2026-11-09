@@ -541,7 +541,7 @@ export default function JobCard({ j, ...props }) {
                       try {
                         document.execCommand('copy');
                         showAlert("✅ Portal de Cliente copiado. ¡Pégalo en WhatsApp!");
-                      } catch (err) {}
+                      } catch (err) { }
                       document.body.removeChild(textArea);
                     }
                     setMenuOpenId(null);
