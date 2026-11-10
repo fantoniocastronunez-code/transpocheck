@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { formatMoney } from '../../utils/helpers';
 
-export default function QuotesView({ db, customClients = [], vehicles = [], directoryList = [], drivers = [], showAlert, showConfirm, currentUserEmail }) {
+export default function QuotesView({ db, customClients = [], vehicles = [], directoryList = [], drivers = [], showAlert, showConfirm, currentUserEmail, isSuperAdmin = false }) {
   // Modo de Cotizador: 'simple' (Modo Rápido / Celular) o 'full' (Calculadora Detallada)
   const [quoteMode, setQuoteMode] = useState(() => {
     try {
@@ -297,6 +297,9 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   // Guardar o Actualizar Peaje en Firestore
   const handleSaveNewToll = async (e) => {
     e.preventDefault();
+    if (!isSuperAdmin) {
+      return showAlert("🔒 [ERR-AUTH-CFG-05] Acción denegada. Solo el Superadmin puede guardar peajes.");
+    }
     if (!newTollData.name || !newTollData.km) {
       return showAlert("⚠️ [ERR-TOLL-VAL-01] Completa el nombre y el kilómetro del peaje.");
     }
@@ -334,6 +337,9 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   // Guardar Configuración de Correlativo en Firestore
   const handleSaveCorrelativeConfig = async (e) => {
     e.preventDefault();
+    if (!isSuperAdmin) {
+      return showAlert("🔒 [ERR-AUTH-CFG-01] Acción denegada. Solo el Superadmin puede guardar el correlativo.");
+    }
     const num = parseInt(tempConfig.nextNumber, 10);
     if (isNaN(num) || num < 1) {
       return showAlert("⚠️ [ERR-QUOTE-CFG-VAL-01] El número inicial debe ser un entero mayor o igual a 1.");
@@ -362,6 +368,9 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
   // Abrir Modal de Configuración de Correlativo
   const handleOpenConfigModal = () => {
+    if (!isSuperAdmin) {
+      return showAlert("🔒 [ERR-AUTH-QUOTE-01] Solo el Superadmin tiene permiso para configurar el correlativo.");
+    }
     setTempConfig({
       prefix: correlativeConfig.prefix,
       nextNumber: correlativeConfig.nextNumber,
@@ -373,6 +382,9 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
   // Abrir Modal de Configuración de Cliente y Empresa
   const handleOpenClientConfigModal = (clientNameToPreselect) => {
+    if (!isSuperAdmin) {
+      return showAlert("🔒 [ERR-AUTH-QUOTE-02] Solo el Superadmin tiene permiso para configurar clientes o empresas.");
+    }
     setIssuerForm({ ...issuerCompany });
     setClientConfigTab('client');
 
@@ -423,6 +435,9 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
   // Abrir Modal de Configuración Directa de Nuestra Empresa Emisora (Cabecera / Membrete)
   const handleOpenIssuerConfigModal = () => {
+    if (!isSuperAdmin) {
+      return showAlert("🔒 [ERR-AUTH-QUOTE-03] Solo el Superadmin tiene permiso para configurar datos de la empresa emisora.");
+    }
     setIssuerForm({ ...issuerCompany });
     setClientConfigTab('issuer');
     setShowClientConfigModal(true);
@@ -430,6 +445,9 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
   // Abrir Modal de Configuración Directa de Pie de Página y Validez
   const handleOpenFooterConfigModal = () => {
+    if (!isSuperAdmin) {
+      return showAlert("🔒 [ERR-AUTH-QUOTE-04] Solo el Superadmin tiene permiso para configurar el pie de página y validez.");
+    }
     setIssuerForm({ ...issuerCompany });
     setClientConfigTab('footer');
     setShowClientConfigModal(true);
@@ -469,6 +487,9 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   // Guardar Datos del Cliente en Firestore
   const handleSaveClientConfig = async (e) => {
     e.preventDefault();
+    if (!isSuperAdmin) {
+      return showAlert("🔒 [ERR-AUTH-CFG-02] Acción denegada. Solo el Superadmin puede guardar empresas clientes.");
+    }
     if (!clientForm.name?.trim()) {
       return showAlert("⚠️ [ERR-CLIENT-VAL-02] El nombre o razón social de la empresa es obligatorio.");
     }
@@ -530,6 +551,9 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   // Guardar Datos de Nuestra Empresa Emisora en Firestore
   const handleSaveIssuerConfig = async (e) => {
     e.preventDefault();
+    if (!isSuperAdmin) {
+      return showAlert("🔒 [ERR-AUTH-CFG-03] Acción denegada. Solo el Superadmin puede guardar datos de empresa emisora.");
+    }
     if (!issuerForm.companyName?.trim()) {
       return showAlert("⚠️ [ERR-EMPRESA-VAL-01] El nombre de nuestra empresa es obligatorio.");
     }
@@ -559,6 +583,9 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   // Guardar Configuración del Pie de Página y Validez en Firestore
   const handleSaveFooterConfig = async (e) => {
     e.preventDefault();
+    if (!isSuperAdmin) {
+      return showAlert("🔒 [ERR-AUTH-CFG-04] Acción denegada. Solo el Superadmin puede guardar la configuración del pie de página.");
+    }
     try {
       const days = parseInt(issuerForm.validityDays, 10) || 15;
       const payload = {
@@ -1436,44 +1463,46 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
           </div>
         </div>
 
-        {/* BOTONES DE CONFIGURACIÓN SUPERIORES */}
-        <div className="flex items-center gap-2 flex-wrap shrink-0">
-          <button
-            type="button"
-            onClick={handleOpenIssuerConfigModal}
-            className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition-colors shadow-sm shadow-purple-200 dark:shadow-none"
-          >
-            <Building2 className="w-4 h-4" />
-            Configurar Datos de Empresa
-          </button>
+        {/* BOTONES DE CONFIGURACIÓN SUPERIORES (SÓLO SUPERADMIN) */}
+        {isSuperAdmin && (
+          <div className="flex items-center gap-2 flex-wrap shrink-0">
+            <button
+              type="button"
+              onClick={handleOpenIssuerConfigModal}
+              className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition-colors shadow-sm shadow-purple-200 dark:shadow-none"
+            >
+              <Building2 className="w-4 h-4" />
+              Configurar Datos de Empresa
+            </button>
 
-          <button
-            type="button"
-            onClick={handleOpenFooterConfigModal}
-            className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors border border-slate-200 dark:border-slate-700 shadow-sm"
-          >
-            <FileText className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-            Configurar Pie de Página
-          </button>
+            <button
+              type="button"
+              onClick={handleOpenFooterConfigModal}
+              className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors border border-slate-200 dark:border-slate-700 shadow-sm"
+            >
+              <FileText className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+              Configurar Pie de Página
+            </button>
 
-          <button
-            type="button"
-            onClick={handleOpenConfigModal}
-            className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors border border-slate-200 dark:border-slate-700 shadow-sm"
-          >
-            <Settings className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-            Configurar Correlativo
-          </button>
+            <button
+              type="button"
+              onClick={handleOpenConfigModal}
+              className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors border border-slate-200 dark:border-slate-700 shadow-sm"
+            >
+              <Settings className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+              Configurar Correlativo
+            </button>
 
-          <button
-            type="button"
-            onClick={() => handleOpenClientConfigModal(quoteData.client)}
-            className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-bold text-xs transition-colors border border-purple-200 dark:border-purple-800 shadow-sm"
-          >
-            <Briefcase className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-            Configurar Clientes
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => handleOpenClientConfigModal(quoteData.client)}
+              className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-bold text-xs transition-colors border border-purple-200 dark:border-purple-800 shadow-sm"
+            >
+              <Briefcase className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+              Configurar Clientes
+            </button>
+          </div>
+        )}
       </div>
 
       {/* SELECTOR DE MODO Y SWITCH DE COTIZACIÓN DE PRUEBA */}
@@ -1589,24 +1618,26 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
               </div>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={handleOpenIssuerConfigModal}
-                title="Configurar datos y membrete de nuestra empresa"
-                className="text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 border border-slate-200 dark:border-slate-700"
-              >
-                <Building2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> Datos Empresa
-              </button>
+            {isSuperAdmin && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleOpenIssuerConfigModal}
+                  title="Configurar datos y membrete de nuestra empresa"
+                  className="text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 border border-slate-200 dark:border-slate-700"
+                >
+                  <Building2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> Datos Empresa
+                </button>
 
-              <button
-                type="button"
-                onClick={() => handleOpenClientConfigModal()}
-                className="text-xs font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 px-3 py-1.5 rounded-xl hover:bg-purple-200 transition-colors flex items-center gap-1"
-              >
-                <Plus className="w-3.5 h-3.5" /> Nuevo Cliente
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => handleOpenClientConfigModal()}
+                  className="text-xs font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 px-3 py-1.5 rounded-xl hover:bg-purple-200 transition-colors flex items-center gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Nuevo Cliente
+                </button>
+              </div>
+            )}
           </div>
 
           <form onSubmit={handleSaveSimpleQuote} className="space-y-4">
@@ -1617,7 +1648,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                   1. Empresa Cliente *
                 </label>
-                {quoteData.client && (
+                {quoteData.client && isSuperAdmin && (
                   <button
                     type="button"
                     onClick={() => handleOpenClientConfigModal(quoteData.client)}
@@ -1861,24 +1892,26 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Datos de Ruta y Vehículo
                 </h3>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={handleOpenIssuerConfigModal}
-                    title="Configurar datos y membrete de nuestra empresa"
-                    className="text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 border border-slate-200 dark:border-slate-700"
-                  >
-                    <Building2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> Datos Empresa
-                  </button>
+                {isSuperAdmin && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={handleOpenIssuerConfigModal}
+                      title="Configurar datos y membrete de nuestra empresa"
+                      className="text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 border border-slate-200 dark:border-slate-700"
+                    >
+                      <Building2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> Datos Empresa
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleOpenClientConfigModal()}
-                    className="text-xs font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 px-3 py-1.5 rounded-xl hover:bg-purple-200 dark:hover:bg-purple-900/60 transition-colors flex items-center gap-1"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Nuevo Cliente
-                  </button>
-                </div>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenClientConfigModal()}
+                      className="text-xs font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 px-3 py-1.5 rounded-xl hover:bg-purple-200 dark:hover:bg-purple-900/60 transition-colors flex items-center gap-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Nuevo Cliente
+                    </button>
+                  </div>
+                )}
               </div>
 
               <datalist id="quotes-directory-list">
@@ -1924,7 +1957,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                       Empresa Cliente (Para la Cotización)
                     </label>
-                    {quoteData.client && (
+                    {quoteData.client && isSuperAdmin && (
                       <button
                         type="button"
                         onClick={() => handleOpenClientConfigModal(quoteData.client)}
@@ -1968,13 +2001,15 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                             </span>
                           )}
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleOpenClientConfigModal(quoteData.client)}
-                          className="text-[11px] font-bold text-purple-600 dark:text-purple-400 bg-white dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-purple-200 dark:border-purple-800 hover:bg-purple-50 transition-colors"
-                        >
-                          Configurar
-                        </button>
+                        {isSuperAdmin && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenClientConfigModal(quoteData.client)}
+                            className="text-[11px] font-bold text-purple-600 dark:text-purple-400 bg-white dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-purple-200 dark:border-purple-800 hover:bg-purple-50 transition-colors"
+                          >
+                            Configurar
+                          </button>
+                        )}
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-slate-600 dark:text-slate-400 font-medium pt-1 border-t border-purple-100 dark:border-purple-900/30">
@@ -2125,13 +2160,15 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                   <span className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                     Seleccionar Peajes ({tollsList.length})
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => { setEditingTollId(null); setShowNewTollModal(true); }}
-                    className="text-[11px] font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 px-3 py-1.5 rounded-xl hover:bg-purple-200 dark:hover:bg-purple-900/60 transition-colors flex items-center gap-1"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Registrar Nuevo Peaje
-                  </button>
+                  {isSuperAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => { setEditingTollId(null); setShowNewTollModal(true); }}
+                      className="text-[11px] font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 px-3 py-1.5 rounded-xl hover:bg-purple-200 dark:hover:bg-purple-900/60 transition-colors flex items-center gap-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Registrar Nuevo Peaje
+                    </button>
+                  )}
                 </div>
 
                 {tollsList.length === 0 ? (
@@ -2548,8 +2585,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         </div>
       )}
 
-      {/* MODAL: CONFIGURADOR DE CLIENTE Y EMPRESA */}
-      {showClientConfigModal && (
+      {/* MODAL: CONFIGURADOR DE CLIENTE Y EMPRESA (SÓLO SUPERADMIN) */}
+      {showClientConfigModal && isSuperAdmin && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-lg shadow-2xl relative border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
             <button
@@ -2969,8 +3006,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         </div>
       )}
 
-      {/* MODAL: CONFIGURACIÓN DE CORRELATIVO */}
-      {showConfigModal && (
+      {/* MODAL: CONFIGURACIÓN DE CORRELATIVO (SÓLO SUPERADMIN) */}
+      {showConfigModal && isSuperAdmin && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
           <form onSubmit={handleSaveCorrelativeConfig} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-md shadow-2xl relative border border-slate-200 dark:border-slate-800 animate-in zoom-in-95">
             <button
@@ -3076,8 +3113,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         </div>
       )}
 
-      {/* MODAL: NUEVO PEAJE */}
-      {showNewTollModal && (
+      {/* MODAL: NUEVO PEAJE (SÓLO SUPERADMIN) */}
+      {showNewTollModal && isSuperAdmin && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
           <form onSubmit={handleSaveNewToll} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-md shadow-2xl relative border border-slate-200 dark:border-slate-800 animate-in zoom-in-95">
             <button type="button" onClick={() => setShowNewTollModal(false)} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"><X className="w-4 h-4 text-slate-700 dark:text-slate-300" /></button>
