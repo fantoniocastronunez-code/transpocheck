@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CloudUpload, Receipt, MessageSquare, Phone, Camera } from 'lucide-react';
+import { CloudUpload, Receipt, MessageSquare, Phone, Camera, User } from 'lucide-react';
 
 const renderVehicle = (vType, wheelClass, wheelFill, isChassisCab) => {
   const type = (vType || '').toLowerCase();
@@ -388,7 +388,7 @@ const StatusAnimation = ({ type, vehicleType, isChassisCab, origin, destination,
 export default function JobCard({ j, ...props }) {
   const [showDetails, setShowDetails] = useState(false);
   const [showDocsModal, setShowDocsModal] = useState(false);
-  const { analyzeJobStatus, getJobIdentifier, vehicles, menuOpenId, setMenuOpenId, isAdminView, onEditJob, currentUserEmail, setRelayPromptJob, setForceCloseJob, db, updateDoc, deleteField, doc, showAlert, showConfirm, setJobToFail, latestVehiclePhotos, setFullScreenPhoto, role, processingId, setProcessingId, handleApproveRequest, handleRejectRequest, handleApprovePhotoOverride, handleAcceptJob, setTrackingJobId, setGuideUploadJob, setGuideLink, setGuideFileBase64, updatePhase, setPickupPromptJob, setArrivalPromptJob, setArrivalMileage, setArrivalPhoto, setPrtApproveType, setPrtReturnOpt, setPrtReturnDest, setPrtApprovePromptJob, setPrtPromptJob, onStartChecklist, handleUndoPhase, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, WaitTimerBadge, SwipeButton, AlertCircle, Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, Truck, X, XCircle, Clock, Car, MapPin, FileText, RefreshCw, Search, syncQueue, setExpenseModalJob, Copy, cpyWapp } = props;
+  const { jobs, drivers, analyzeJobStatus, getJobIdentifier, vehicles, menuOpenId, setMenuOpenId, isAdminView, onEditJob, currentUserEmail, setRelayPromptJob, setForceCloseJob, db, updateDoc, deleteField, doc, showAlert, showConfirm, setJobToFail, latestVehiclePhotos, setFullScreenPhoto, role, processingId, setProcessingId, handleApproveRequest, handleRejectRequest, handleApprovePhotoOverride, handleAcceptJob, setTrackingJobId, setGuideUploadJob, setGuideLink, setGuideFileBase64, updatePhase, setPickupPromptJob, setArrivalPromptJob, setArrivalMileage, setArrivalPhoto, setPrtApproveType, setPrtReturnOpt, setPrtReturnDest, setPrtApprovePromptJob, setPrtPromptJob, onStartChecklist, handleUndoPhase, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, WaitTimerBadge, SwipeButton, AlertCircle, Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, Truck, X, XCircle, Clock, Car, MapPin, FileText, RefreshCw, Search, syncQueue, setExpenseModalJob, Copy, cpyWapp } = props;
   const { isRequested, isPending, isAccepted, isPendingGuide, step2Done, step3Done, step4Done } = analyzeJobStatus(j);
 
   const ident = getJobIdentifier(j);
@@ -424,6 +424,73 @@ export default function JobCard({ j, ...props }) {
   }
   const combinedDocPhotos = { ...vehicleDocPhotos, ...(j.checklist?.docsPhotos || {}) };
   const availableDocPhotoKeys = Object.keys(combinedDocPhotos).filter(k => typeof combinedDocPhotos[k] === 'string' && combinedDocPhotos[k].startsWith('http'));
+
+  // Buscar último conductor y fecha en que se trasladó este vehículo
+  const lastCompletedTrip = React.useMemo(() => {
+    if (!jobs || !Array.isArray(jobs) || jobs.length === 0) return null;
+
+    const rawPlate = (j.plate && j.plate !== 'S/N') ? j.plate.trim().toUpperCase() : null;
+    const rawVin = (j.vin && j.vin !== 'S/N') ? j.vin.trim().toUpperCase() : null;
+    const identVal = (ident && ident !== 'S/N') ? ident.trim().toUpperCase() : null;
+
+    const validPlate = rawPlate || (identVal && identVal.length !== 17 ? identVal : null);
+    const validVin = rawVin || (identVal && identVal.length === 17 ? identVal : null);
+
+    if (!validPlate && !validVin) return null;
+
+    const matches = jobs.filter(other => {
+      if (!other || other.id === j.id) return false;
+      if (other.status !== 'completed') return false;
+
+      const oPlate = (other.plate && other.plate !== 'S/N') ? other.plate.trim().toUpperCase() : (other.identifier && other.identifier !== 'S/N' ? other.identifier.trim().toUpperCase() : null);
+      const oVin = (other.vin && other.vin !== 'S/N') ? other.vin.trim().toUpperCase() : null;
+
+      const plateMatches = validPlate && (oPlate === validPlate || oVin === validPlate);
+      const vinMatches = validVin && (oVin === validVin || oPlate === validVin);
+
+      return Boolean(plateMatches || vinMatches);
+    });
+
+    if (matches.length === 0) return null;
+
+    matches.sort((a, b) => {
+      const timeA = Number(a.completedAt) || Number(a.arrivedDestinationAt) || Number(a.createdAt) || 0;
+      const timeB = Number(b.completedAt) || Number(b.arrivedDestinationAt) || Number(b.createdAt) || 0;
+      return timeB - timeA;
+    });
+
+    const latest = matches[0];
+    const drv = drivers?.find(d => d.email && latest.acceptedByEmail && d.email.toLowerCase() === latest.acceptedByEmail.toLowerCase());
+    let driverName = drv?.name ||
+      latest.checklist?.assignedDriverName ||
+      latest.assignedDrivers?.find(d => d.email && latest.acceptedByEmail && d.email.toLowerCase() === latest.acceptedByEmail.toLowerCase())?.name ||
+      latest.assignedDrivers?.[0]?.name ||
+      latest.acceptedByEmail ||
+      'Conductor';
+
+    if (driverName.includes('@')) {
+      driverName = driverName.split('@')[0];
+    }
+
+    const dateVal = latest.completedAt || latest.arrivedDestinationAt || latest.createdAt;
+    let dateStr = '';
+    if (dateVal) {
+      try {
+        const dObj = new Date(dateVal);
+        if (!isNaN(dObj.getTime())) {
+          dateStr = dObj.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: '2-digit' });
+        }
+      } catch (e) {
+        dateStr = '';
+      }
+    }
+
+    return {
+      driverName,
+      dateStr,
+      tripId: latest.id
+    };
+  }, [jobs, drivers, j.id, j.plate, j.vin, ident]);
 
   return (
     <div
@@ -621,7 +688,7 @@ export default function JobCard({ j, ...props }) {
                 />
               );
             })()}
-            <div>
+            <div className="min-w-0 flex-1">
               {j.tripType === 'simple' ? (
                 <p className="text-base font-bold text-slate-900 dark:text-slate-100 leading-tight mt-0.5 break-words pr-2">{j.description || 'Servicio en Terreno'}</p>
               ) : (
@@ -632,7 +699,18 @@ export default function JobCard({ j, ...props }) {
                 {j.fleetGroup && <span className="bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 px-1.5 py-0.5 rounded text-[10px] font-semibold border border-blue-200 dark:border-blue-800/60">EN FLOTA (CONVOY)</span>}
               </p>
               {j.createdBy && (
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Creado por: {j.createdBy}</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 truncate">Creado por: {j.createdBy}</p>
+              )}
+              {lastCompletedTrip && (
+                <div
+                  className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-medium bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 px-2 py-0.5 rounded-md w-fit max-w-full"
+                  title={`Último traslado realizado por ${lastCompletedTrip.driverName}${lastCompletedTrip.dateStr ? ` el ${lastCompletedTrip.dateStr}` : ''}`}
+                >
+                  <User className="w-3 h-3 text-slate-400 shrink-0" />
+                  <span className="truncate">
+                    Último traslado: <strong className="text-slate-700 dark:text-slate-200 font-semibold">{lastCompletedTrip.driverName}</strong>{lastCompletedTrip.dateStr ? ` (${lastCompletedTrip.dateStr})` : ''}
+                  </span>
+                </div>
               )}
             </div>
           </div>

@@ -1399,6 +1399,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   };
 
   const jobCardProps = {
+    jobs, drivers,
     analyzeJobStatus, getJobIdentifier, vehicles, menuOpenId, setMenuOpenId, isAdminView, onEditJob, currentUserEmail, setRelayPromptJob, setForceCloseJob, db, updateDoc, deleteField, doc, showAlert, showConfirm, setJobToFail, latestVehiclePhotos, setFullScreenPhoto, role, processingId, setProcessingId, handleApproveRequest, handleRejectRequest, handleApprovePhotoOverride, handleAcceptJob, setGuideUploadJob, setGuideLink, setGuideFileBase64, updatePhase, setPickupPromptJob, setArrivalPromptJob, setArrivalMileage, setArrivalPhoto, setPrtApproveType, setPrtReturnOpt, setPrtReturnDest, setPrtApprovePromptJob, setPrtPromptJob, onStartChecklist, handleUndoPhase, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, WaitTimerBadge, SwipeButton, AlertCircle, Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, Truck, X, XCircle, Clock, Car, MapPin, FileText, RefreshCw, Search,
     // FALTANTES QUE CAUSABAN LA PANTALLA BLANCA AL ABRIR EL MENÚ:
     Copy, Trash2, Repeat, FileDown, cpyWapp, handleDuplicateJob, handleDeleteJob, generatePDF, handleShareWhatsAppPDF,
