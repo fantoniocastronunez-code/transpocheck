@@ -3,7 +3,7 @@ import { addDoc, collection, doc, updateDoc, deleteDoc, setDoc, onSnapshot, getD
 import { 
   Calculator, MapPin, Fuel, DollarSign, Plus, CheckCircle, 
   User, Truck, Receipt, Printer, Send, Save, ArrowRight, X, MessageCircle, Mail, MoreVertical, Calendar, Sparkles,
-  Settings, Sliders, Hash, RotateCcw
+  Settings, Sliders, Hash, RotateCcw, Building2, Briefcase, Phone, Globe, FileText, Check
 } from 'lucide-react';
 import { formatMoney } from '../../utils/helpers';
 
@@ -24,6 +24,33 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     includeYear: false
   });
 
+  // Configuración de Empresa Emisora (Nuestra Empresa)
+  const defaultIssuerCompany = {
+    companyName: 'LogisticAPP - Soluciones Logísticas SpA',
+    rut: '77.842.190-3',
+    giro: 'Transporte de Vehículos y Logística Integral',
+    address: 'Santiago, Chile',
+    phone: '+56 9 8765 4321',
+    email: 'contacto@logisticapp.cl'
+  };
+  const [issuerCompany, setIssuerCompany] = useState(defaultIssuerCompany);
+
+  // Estados del Configurador de Cliente y Empresa
+  const [showClientConfigModal, setShowClientConfigModal] = useState(false);
+  const [clientConfigTab, setClientConfigTab] = useState('client'); // 'client' | 'issuer'
+  const [selectedClientForEdit, setSelectedClientForEdit] = useState('');
+  const [clientForm, setClientForm] = useState({
+    name: '',
+    rut: '',
+    giro: '',
+    address: '',
+    city: '',
+    contactName: '',
+    phone: '',
+    email: ''
+  });
+  const [issuerForm, setIssuerForm] = useState(defaultIssuerCompany);
+
   // Función formateadora de correlativo
   const formatCorrelativeNumber = (cfg, numVal) => {
     const pfx = cfg?.prefix !== undefined ? cfg.prefix : 'COT-';
@@ -37,6 +64,13 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   // Estados de la Cotización
   const [quoteData, setQuoteData] = useState({
     client: '',
+    clientRut: '',
+    clientGiro: '',
+    clientAddress: '',
+    clientCity: '',
+    clientPhone: '',
+    clientEmail: '',
+    clientContact: '',
     origin: '',
     destination: '',
     distanceKm: '',
@@ -98,7 +132,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
   const [isFetchingFuel, setIsFetchingFuel] = useState(false);
 
-  // Cargar Peajes, Cotizaciones y Configuración de Correlativo desde Firestore
+  // Cargar Peajes, Cotizaciones, Correlativo y Empresa Emisora desde Firestore
   useEffect(() => {
     if (!db) return;
 
@@ -134,16 +168,52 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       console.error("[ERR-QUOTE-CFG-FETCH-01] Error escuchando configuración de correlativo:", err);
     });
 
+    // Suscripción a Datos de Nuestra Empresa Emisora
+    const unsubCompany = onSnapshot(doc(db, 'system_config', 'quote_company'), snap => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setIssuerCompany(prev => ({ ...prev, ...data }));
+      }
+    }, err => {
+      console.error("[ERR-COMPANY-FETCH-01] Error escuchando empresa emisora:", err);
+    });
+
     return () => {
       unsubQuotes();
       unsubCorrelative();
+      unsubCompany();
     };
   }, [db]);
 
+  // Manejo de Selección de Cliente en el Formulario Principal
+  const handleClientChange = (e) => {
+    const selectedName = e.target.value;
+    const clientRecord = customClients.find(c => c.name === selectedName);
+    setQuoteData(prev => ({
+      ...prev,
+      client: selectedName,
+      clientRut: clientRecord?.rut || '',
+      clientGiro: clientRecord?.giro || '',
+      clientAddress: clientRecord?.address || '',
+      clientCity: clientRecord?.city || '',
+      clientPhone: clientRecord?.phone || '',
+      clientEmail: clientRecord?.email?.split(',')[0]?.trim() || '',
+      clientContact: clientRecord?.contactName?.split(',')[0]?.trim() || ''
+    }));
+  };
+
   // Cargar Cotización al formulario para modificarla
   const handleEditQuote = (q) => {
+    const clientRecord = customClients.find(c => c.name === q.client);
     setQuoteData({
       client: q.client || '',
+      clientRut: q.clientRut || clientRecord?.rut || '',
+      clientGiro: q.clientGiro || clientRecord?.giro || '',
+      clientAddress: q.clientAddress || clientRecord?.address || '',
+      clientCity: q.clientCity || clientRecord?.city || '',
+      clientPhone: q.clientPhone || clientRecord?.phone || '',
+      clientEmail: q.clientEmail || clientRecord?.email?.split(',')[0]?.trim() || '',
+      clientContact: q.clientContact || clientRecord?.contactName?.split(',')[0]?.trim() || '',
       origin: q.origin || '',
       destination: q.destination || '',
       distanceKm: q.distanceKm || '',
@@ -245,7 +315,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     }
   };
 
-  // Abrir Modal de Configuración inicializando con los valores actuales
+  // Abrir Modal de Configuración de Correlativo
   const handleOpenConfigModal = () => {
     setTempConfig({
       prefix: correlativeConfig.prefix,
@@ -254,6 +324,179 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       includeYear: correlativeConfig.includeYear
     });
     setShowConfigModal(true);
+  };
+
+  // Abrir Modal de Configuración de Cliente y Empresa
+  const handleOpenClientConfigModal = (clientNameToPreselect) => {
+    setIssuerForm({ ...issuerCompany });
+    setClientConfigTab('client');
+    
+    const targetName = clientNameToPreselect || quoteData.client;
+    const found = targetName ? customClients.find(c => c.name?.toLowerCase() === targetName.toLowerCase()) : null;
+
+    if (found) {
+      setSelectedClientForEdit(found.id);
+      setClientForm({
+        name: found.name || '',
+        rut: found.rut || '',
+        giro: found.giro || '',
+        address: found.address || '',
+        city: found.city || '',
+        contactName: found.contactName || '',
+        phone: found.phone || '',
+        email: found.email || ''
+      });
+    } else if (customClients.length > 0) {
+      const first = customClients[0];
+      setSelectedClientForEdit(first.id);
+      setClientForm({
+        name: first.name || '',
+        rut: first.rut || '',
+        giro: first.giro || '',
+        address: first.address || '',
+        city: first.city || '',
+        contactName: first.contactName || '',
+        phone: first.phone || '',
+        email: first.email || ''
+      });
+    } else {
+      setSelectedClientForEdit('NEW');
+      setClientForm({
+        name: '',
+        rut: '',
+        giro: '',
+        address: '',
+        city: '',
+        contactName: '',
+        phone: '',
+        email: ''
+      });
+    }
+
+    setShowClientConfigModal(true);
+  };
+
+  // Cambiar cliente seleccionado para edición dentro del modal
+  const handleSelectClientToEdit = (clientId) => {
+    setSelectedClientForEdit(clientId);
+    if (clientId === 'NEW') {
+      setClientForm({
+        name: '',
+        rut: '',
+        giro: '',
+        address: '',
+        city: '',
+        contactName: '',
+        phone: '',
+        email: ''
+      });
+    } else {
+      const found = customClients.find(c => c.id === clientId);
+      if (found) {
+        setClientForm({
+          name: found.name || '',
+          rut: found.rut || '',
+          giro: found.giro || '',
+          address: found.address || '',
+          city: found.city || '',
+          contactName: found.contactName || '',
+          phone: found.phone || '',
+          email: found.email || ''
+        });
+      }
+    }
+  };
+
+  // Guardar Datos del Cliente en Firestore
+  const handleSaveClientConfig = async (e) => {
+    e.preventDefault();
+    if (!clientForm.name?.trim()) {
+      return showAlert("⚠️ [ERR-CLIENT-VAL-02] El nombre o razón social de la empresa es obligatorio.");
+    }
+
+    try {
+      const payload = {
+        name: clientForm.name.trim(),
+        rut: clientForm.rut?.trim() || '',
+        giro: clientForm.giro?.trim() || '',
+        address: clientForm.address?.trim() || '',
+        city: clientForm.city?.trim() || '',
+        contactName: clientForm.contactName?.trim() || '',
+        phone: clientForm.phone?.trim() || '',
+        email: clientForm.email?.trim() || '',
+        updatedAt: Date.now()
+      };
+
+      if (selectedClientForEdit === 'NEW') {
+        await addDoc(collection(db, 'clients'), {
+          ...payload,
+          createdAt: Date.now()
+        });
+        showAlert(`✅ Nueva empresa "${payload.name}" registrada con éxito.`);
+        // Si aún no había cliente seleccionado en la cotización, se asigna
+        setQuoteData(prev => ({
+          ...prev,
+          client: payload.name,
+          clientRut: payload.rut,
+          clientGiro: payload.giro,
+          clientAddress: payload.address,
+          clientCity: payload.city,
+          clientContact: payload.contactName,
+          clientPhone: payload.phone,
+          clientEmail: payload.email
+        }));
+      } else {
+        await updateDoc(doc(db, 'clients', selectedClientForEdit), payload);
+        showAlert(`✅ Datos de la empresa "${payload.name}" actualizados.`);
+        // Si es el cliente actual de la cotización, actualizamos la vista
+        if (quoteData.client === payload.name) {
+          setQuoteData(prev => ({
+            ...prev,
+            clientRut: payload.rut,
+            clientGiro: payload.giro,
+            clientAddress: payload.address,
+            clientCity: payload.city,
+            clientContact: payload.contactName,
+            clientPhone: payload.phone,
+            clientEmail: payload.email
+          }));
+        }
+      }
+
+      setShowClientConfigModal(false);
+    } catch (err) {
+      console.error("[ERR-CLIENT-SAVE-02]", err);
+      showAlert("❌ [ERR-CLIENT-SAVE-02] Error al guardar datos de la empresa cliente.");
+    }
+  };
+
+  // Guardar Datos de Nuestra Empresa Emisora en Firestore
+  const handleSaveIssuerConfig = async (e) => {
+    e.preventDefault();
+    if (!issuerForm.companyName?.trim()) {
+      return showAlert("⚠️ [ERR-EMPRESA-VAL-01] El nombre de nuestra empresa es obligatorio.");
+    }
+
+    try {
+      const payload = {
+        companyName: issuerForm.companyName.trim(),
+        rut: issuerForm.rut?.trim() || '',
+        giro: issuerForm.giro?.trim() || '',
+        address: issuerForm.address?.trim() || '',
+        phone: issuerForm.phone?.trim() || '',
+        email: issuerForm.email?.trim() || '',
+        updatedAt: Date.now(),
+        updatedBy: currentUserEmail || ''
+      };
+
+      await setDoc(doc(db, 'system_config', 'quote_company'), payload, { merge: true });
+      setIssuerCompany(payload);
+      showAlert("✅ Datos de la empresa emisora actualizados correctamente.");
+      setShowClientConfigModal(false);
+    } catch (err) {
+      console.error("[ERR-EMPRESA-SAVE-01]", err);
+      showAlert("❌ [ERR-EMPRESA-SAVE-01] Error al guardar datos de nuestra empresa.");
+    }
   };
 
   // Auto-cálculo de Peajes al cambiar de vehículo o seleccionar peajes
@@ -407,7 +650,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     }
   };
 
-  // Guardar Nuevo Cliente en Firestore
+  // Guardar Nuevo Cliente Rápido en Firestore
   const handleCreateNewClient = async (e) => {
     e.preventDefault();
     if (!newClientData.name || !newClientData.email) {
@@ -430,7 +673,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     }
   };
 
-  // Guardar o Actualizar Cotización en Firestore con Correlativo Automático o Manual
+  // Guardar o Actualizar Cotización en Firestore
   const handleSaveQuoteStatus = async (status = 'pendiente') => {
     if (!quoteData.client || !quoteData.origin || !quoteData.destination) {
       return showAlert("⚠️ [ERR-QUOTE-VAL-01] Faltan datos obligatorios (Cliente, Origen y Destino).");
@@ -441,6 +684,13 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
       const payload = {
         ...quoteData,
+        clientRut: quoteData.clientRut || '',
+        clientGiro: quoteData.clientGiro || '',
+        clientAddress: quoteData.clientAddress || '',
+        clientCity: quoteData.clientCity || '',
+        clientPhone: quoteData.clientPhone || '',
+        clientEmail: quoteData.clientEmail || '',
+        clientContact: quoteData.clientContact || '',
         quoteNumber: correlativoFinal,
         finalPrice: Math.round(finalPrice),
         netPrice: Math.round(netPrice),
@@ -498,6 +748,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
         const newJob = {
           client: quoteData.client || '',
+          clientRut: quoteData.clientRut || '',
+          clientAddress: quoteData.clientAddress || '',
           origin: quoteData.origin || '',
           destination: quoteData.destination || '',
           originContactName: matchedOrigin?.contactName || '',
@@ -529,7 +781,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         
         // Limpiar formulario
         setQuoteData({
-          client: '', origin: '', destination: '', distanceKm: '', kmPerLiter: '10', 
+          client: '', clientRut: '', clientGiro: '', clientAddress: '', clientCity: '', clientPhone: '', clientEmail: '', clientContact: '',
+          origin: '', destination: '', distanceKm: '', kmPerLiter: '10', 
           fuelPrice: 1050, tollsCost: '', driverFee: '', marginPct: 30, description: '', 
           vehicleType: 'Auto / SUV', brand: '', model: '', plateOrVin: '', quoteNumber: ''
         });
@@ -557,6 +810,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
       const newJob = {
         client: acceptQuoteData.client || '',
+        clientRut: acceptQuoteData.clientRut || '',
         origin: acceptQuoteData.origin || '',
         destination: acceptQuoteData.destination || '',
         originContactName: matchedOrigin?.contactName || '',
@@ -593,9 +847,12 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     }
   };
 
-  // Generador de PDF en Formato A4
+  // Generador de PDF en Formato A4 Formal Corporativo
   const getPDFHtml = () => {
     const correlativo = quoteData.quoteNumber?.trim() || formatCorrelativeNumber(correlativeConfig);
+    const clientFullAddress = [quoteData.clientAddress, quoteData.clientCity].filter(Boolean).join(', ');
+    const issuerFullContact = [issuerCompany.phone, issuerCompany.email].filter(Boolean).join(' • ');
+
     return `
       <html>
         <head>
@@ -609,61 +866,127 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             }
             body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #0f172a; margin: 0; background: #fff; display: block; }
             .page-container { background: #fff; width: 100%; max-width: 800px; margin: 0 auto; padding: 30px; box-sizing: border-box; }
-            .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 4px solid #7c3aed; padding-bottom: 25px; margin-bottom: 30px; }
-            .logo { max-height: 65px; }
+            
+            /* Encabezado con Membrete */
+            .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #7c3aed; padding-bottom: 20px; margin-bottom: 25px; }
+            .company-brand { display: flex; align-items: center; gap: 16px; }
+            .logo { max-height: 60px; }
+            .company-info h2 { margin: 0; color: #1e293b; font-size: 15px; text-transform: uppercase; font-weight: 900; letter-spacing: -0.3px; }
+            .company-info p { margin: 2px 0 0 0; color: #64748b; font-size: 11px; font-weight: 600; line-height: 1.35; }
+            .company-info strong { color: #0f172a; }
+            
             .title { text-align: right; }
-            .title h1 { margin: 0; color: #1e293b; font-size: 28px; text-transform: uppercase; font-weight: 900; letter-spacing: -0.5px; }
-            .title p { margin: 6px 0 0 0; color: #64748b; font-size: 13px; font-weight: 600; }
-            .title p strong { color: #7c3aed; }
-            .section-title { font-size: 12px; font-weight: 800; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; border-bottom: 2px solid #f1f5f9; padding-bottom: 6px; }
-            .info-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px; margin-bottom: 30px; }
-            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-            .info-item h4 { margin: 0 0 4px 0; color: #64748b; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
-            .info-item p { margin: 0; font-size: 14px; font-weight: 800; color: #0f172a; }
-            table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 30px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
-            th { background: #f8fafc; color: #475569; text-align: left; padding: 15px; font-size: 12px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; }
-            td { padding: 15px; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+            .title h1 { margin: 0; color: #7c3aed; font-size: 22px; text-transform: uppercase; font-weight: 900; letter-spacing: -0.5px; }
+            .title .doc-number { margin: 4px 0 0 0; color: #0f172a; font-size: 16px; font-weight: 900; font-family: monospace; }
+            .title p { margin: 3px 0 0 0; color: #64748b; font-size: 11px; font-weight: 600; }
+            
+            .section-title { font-size: 11px; font-weight: 900; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; border-bottom: 2px solid #f1f5f9; padding-bottom: 4px; }
+            .info-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px 20px; border-radius: 12px; margin-bottom: 20px; }
+            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; }
+            .info-item h4 { margin: 0 0 3px 0; color: #64748b; font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800; }
+            .info-item p { margin: 0; font-size: 13px; font-weight: 800; color: #0f172a; word-break: break-word; }
+            
+            table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 25px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+            th { background: #f8fafc; color: #475569; text-align: left; padding: 12px 16px; font-size: 11px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; }
+            td { padding: 14px 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
             td:last-child, th:last-child { text-align: right; }
             tbody tr:last-child td { border-bottom: none; }
-            .totals { width: 350px; margin-left: auto; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
-            .totals-row { display: flex; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid #e2e8f0; font-size: 14px; font-weight: 600; color: #475569; background: #fff; }
+            
+            .totals { width: 330px; margin-left: auto; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
+            .totals-row { display: flex; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; color: #475569; background: #fff; }
             .totals-row:last-child { border-bottom: none; }
-            .totals-row.final { background: #7c3aed; color: white; font-weight: 900; font-size: 18px; border: none; }
-            .footer { margin-top: 50px; text-align: center; color: #94a3b8; font-size: 11px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-weight: 500; }
+            .totals-row.final { background: #7c3aed; color: white; font-weight: 900; font-size: 16px; border: none; }
+            
+            .footer { margin-top: 40px; text-align: center; color: #94a3b8; font-size: 10px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-weight: 600; line-height: 1.5; }
           </style>
         </head>
         <body>
           <div class="page-container">
+            
+            <!-- ENCABEZADO CON MEMBRETE DE NUESTRA EMPRESA -->
             <div class="header">
-              <img src="${window.location.origin}/LogoLogistica.png" class="logo" alt="LogisticAPP Logo" onerror="this.style.display='none'" />
+              <div class="company-brand">
+                <img src="${window.location.origin}/LogoLogistica.png" class="logo" alt="Logo" onerror="this.style.display='none'" />
+                <div class="company-info">
+                  <h2>${issuerCompany.companyName || 'LogisticAPP - Sistema de Gestión Logística'}</h2>
+                  ${issuerCompany.rut ? `<p><strong>RUT:</strong> ${issuerCompany.rut}</p>` : ''}
+                  ${issuerCompany.giro ? `<p><strong>Giro:</strong> ${issuerCompany.giro}</p>` : ''}
+                  ${issuerCompany.address ? `<p>${issuerCompany.address}</p>` : ''}
+                  ${issuerFullContact ? `<p style="color: #7c3aed; font-weight: 700;">${issuerFullContact}</p>` : ''}
+                </div>
+              </div>
+
               <div class="title">
-                <h1>Cotización de Traslado</h1>
-                <p><strong>N° ${correlativo}</strong></p>
-                <p>Fecha: ${new Date().toLocaleDateString()}</p>
+                <h1>Cotización</h1>
+                <p class="doc-number">${correlativo}</p>
+                <p>Fecha de Emisión: ${new Date().toLocaleDateString('es-CL')}</p>
+                <p style="color: #94a3b8; font-size: 10px;">Válida por 15 días corridos</p>
               </div>
             </div>
 
+            <!-- DATOS FORMALES DE LA EMPRESA CLIENTE -->
             <div class="info-box">
-              <div class="section-title">Información de la Ruta y Cliente</div>
-              <div class="info-grid" style="margin-bottom: 15px;">
-                <div class="info-item"><h4>Cliente Empresa</h4><p>${quoteData.client || 'A Quien Corresponda'}</p></div>
-                <div class="info-item"><h4>Distancia Total</h4><p>${quoteData.distanceKm ? quoteData.distanceKm + ' KM' : 'N/A'}</p></div>
-                <div class="info-item"><h4>Origen</h4><p>${quoteData.origin || 'No especificado'}</p></div>
-                <div class="info-item"><h4>Destino</h4><p>${quoteData.destination || 'No especificado'}</p></div>
-              </div>
-
-              <div class="section-title" style="margin-top: 20px;">Detalles del Vehículo y Carga</div>
+              <div class="section-title">Datos de la Empresa Cliente</div>
               <div class="info-grid">
-                <div class="info-item"><h4>Tipo de Vehículo</h4><p>${quoteData.vehicleType || 'No especificado'}</p></div>
-                <div class="info-item"><h4>Marca / Modelo</h4><p>${quoteData.brand || ''} ${quoteData.model || ''}</p></div>
-                <div class="info-item" style="grid-column: span 2;"><h4>Patente / VIN</h4><p>${quoteData.plateOrVin || 'S/N'}</p></div>
+                <div class="info-item">
+                  <h4>Razón Social / Empresa</h4>
+                  <p>${quoteData.client || 'A Quien Corresponda'}</p>
+                </div>
+                <div class="info-item">
+                  <h4>RUT Empresa</h4>
+                  <p>${quoteData.clientRut || 'Sin RUT registrado'}</p>
+                </div>
+                <div class="info-item">
+                  <h4>Giro Comercial</h4>
+                  <p>${quoteData.clientGiro || 'No especificado'}</p>
+                </div>
+                <div class="info-item">
+                  <h4>Dirección Comercial</h4>
+                  <p>${clientFullAddress || 'No especificada'}</p>
+                </div>
+                <div class="info-item">
+                  <h4>Atención a / Contacto</h4>
+                  <p>${quoteData.clientContact || 'Departamento de Adquisiciones'}</p>
+                </div>
+                <div class="info-item">
+                  <h4>Teléfono / Correo</h4>
+                  <p>${[quoteData.clientPhone, quoteData.clientEmail].filter(Boolean).join(' • ') || 'No especificado'}</p>
+                </div>
               </div>
             </div>
 
+            <!-- DETALLES DE LA RUTA Y VEHÍCULO -->
+            <div class="info-box" style="margin-top: -5px;">
+              <div class="section-title">Detalles del Traslado y Carga</div>
+              <div class="info-grid">
+                <div class="info-item">
+                  <h4>Ruta Programada</h4>
+                  <p>${quoteData.origin || 'Origen'} ➔ ${quoteData.destination || 'Destino'}</p>
+                </div>
+                <div class="info-item">
+                  <h4>Distancia Estimada</h4>
+                  <p>${quoteData.distanceKm ? quoteData.distanceKm + ' KM' : 'N/A'}</p>
+                </div>
+                <div class="info-item">
+                  <h4>Tipo de Vehículo</h4>
+                  <p>${quoteData.vehicleType || 'No especificado'}</p>
+                </div>
+                <div class="info-item">
+                  <h4>Vehículo (Marca / Modelo)</h4>
+                  <p>${quoteData.brand || ''} ${quoteData.model || ''}</p>
+                </div>
+                <div class="info-item" style="grid-column: span 2;">
+                  <h4>Patente / Identificador VIN</h4>
+                  <p>${quoteData.plateOrVin || 'S/N'}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- TABLA DE VALORES -->
             <table>
               <thead>
                 <tr>
-                  <th>Descripción del Servicio</th>
+                  <th>Descripción del Servicio Logístico</th>
                   <th>Total Neto</th>
                 </tr>
               </thead>
@@ -671,13 +994,16 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 <tr>
                   <td>
                     <strong>${quoteData.description || 'Servicio de traslado logístico de vehículo'}</strong><br/>
-                    <span style="font-size: 12px; color: #64748b; font-weight: normal; margin-top: 4px; display: inline-block;">Incluye gestión de ruta, peajes, combustible y traslado profesional.</span>
+                    <span style="font-size: 11px; color: #64748b; font-weight: normal; margin-top: 4px; display: inline-block;">
+                      Incluye conducción profesional, gestión integral de peajes y combustible según itinerario.
+                    </span>
                   </td>
                   <td style="font-weight: 800; vertical-align: top; color: #1e293b;">${formatMoney(netPrice)}</td>
                 </tr>
               </tbody>
             </table>
 
+            <!-- RESUMEN FINANCIERO -->
             <div class="totals">
               <div class="totals-row">
                 <span>Subtotal Neto</span>
@@ -693,9 +1019,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
               </div>
             </div>
 
+            <!-- PIE DE PÁGINA -->
             <div class="footer">
-              <p>Esta cotización es válida por 15 días hábiles desde su emisión.</p>
-              <p>Generado automáticamente por LogisticAPP - Sistema de Gestión Logística</p>
+              <p>Esta cotización formal tiene una validez de 15 días corridos a contar de su fecha de emisión.</p>
+              <p>Generado automáticamente a través de LogisticAPP - Sistema Integral de Gestión Logística</p>
             </div>
           </div>
         </body>
@@ -722,13 +1049,17 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     const fileName = `${correlativo}_${quoteData.client.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
     
     const text = `*Cotización de Traslado ${correlativo}*\n\n` +
-                 `🏢 *Cliente:* ${quoteData.client}\n` +
-                 `📍 *Ruta:* ${quoteData.origin} ➔ ${quoteData.destination} (${quoteData.distanceKm || 0} KM)\n` +
-                 `🚘 *Vehículo:* ${quoteData.vehicleType} ${quoteData.brand ? `- ${quoteData.brand} ${quoteData.model}` : ''}\n` +
+                 `🏢 *Empresa Cliente:* ${quoteData.client}${quoteData.clientRut ? ` (RUT: ${quoteData.clientRut})` : ''}\n` +
+                 (quoteData.clientGiro ? `💼 *Giro:* ${quoteData.clientGiro}\n` : '') +
+                 (quoteData.clientAddress ? `📍 *Dirección:* ${quoteData.clientAddress}\n` : '') +
+                 (quoteData.clientContact ? `👤 *Atención:* ${quoteData.clientContact}\n` : '') +
+                 `🛣️ *Ruta:* ${quoteData.origin} ➔ ${quoteData.destination} (${quoteData.distanceKm || 0} KM)\n` +
+                 `🚘 *Vehículo:* ${quoteData.vehicleType} ${quoteData.brand ? `- ${quoteData.brand} ${quoteData.model}` : ''} ${quoteData.plateOrVin ? `[${quoteData.plateOrVin}]` : ''}\n` +
                  `📋 *Servicio:* ${quoteData.description || 'Traslado logístico'}\n\n` +
                  `💰 *Total Neto:* ${formatMoney(netPrice)}\n` +
                  `🧾 *IVA (19%):* ${formatMoney(ivaAmount)}\n` +
                  `✅ *Total a Pagar:* ${formatMoney(finalPrice)}\n\n` +
+                 (issuerCompany.companyName ? `_Emitido por: ${issuerCompany.companyName}${issuerCompany.rut ? ` (RUT: ${issuerCompany.rut})` : ''}_\n` : '') +
                  `_Generado por LogisticAPP_`;
 
     if (method === 'whatsapp') {
@@ -793,7 +1124,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   return (
     <div className="space-y-6 pt-20 md:pt-22 max-w-6xl mx-auto px-4 pb-32 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
-      {/* BANNER SUPERIOR: TÍTULO Y MODO CONFIGURACIÓN DE CORRELATIVO */}
+      {/* BANNER SUPERIOR: TÍTULO, CONFIGURAR CORRELATIVO Y CONFIGURAR EMPRESA/CLIENTES */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="flex items-center gap-3.5">
           <div className="bg-purple-100 dark:bg-purple-900/40 p-3 rounded-2xl text-purple-600 dark:text-purple-400 shrink-0">
@@ -814,14 +1145,26 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
           </div>
         </div>
         
-        <button
-          type="button"
-          onClick={handleOpenConfigModal}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors border border-slate-200 dark:border-slate-700 shadow-sm shrink-0"
-        >
-          <Settings className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-          Configurar Correlativo
-        </button>
+        {/* BOTONES DE CONFIGURACIÓN SUPERIORES */}
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
+          <button
+            type="button"
+            onClick={handleOpenConfigModal}
+            className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors border border-slate-200 dark:border-slate-700 shadow-sm"
+          >
+            <Settings className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            Configurar Correlativo
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleOpenClientConfigModal(quoteData.client)}
+            className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-bold text-xs transition-colors border border-purple-200 dark:border-purple-800 shadow-sm"
+          >
+            <Building2 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            Configurar Cliente / Empresa
+          </button>
+        </div>
       </div>
 
       {/* AVISO DE MODO EDICIÓN */}
@@ -859,7 +1202,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
               </h3>
               <button 
                 type="button" 
-                onClick={() => setShowNewClientForm(true)} 
+                onClick={() => handleOpenClientConfigModal()} 
                 className="text-xs font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 px-3 py-1.5 rounded-xl hover:bg-purple-200 dark:hover:bg-purple-900/60 transition-colors flex items-center gap-1"
               >
                 <Plus className="w-3.5 h-3.5"/> Nuevo Cliente
@@ -903,13 +1246,73 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 </div>
               </div>
 
-              {/* Empresa Cliente */}
-              <div className="space-y-1 sm:col-span-2">
-                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Empresa Cliente</label>
-                 <select name="client" value={quoteData.client} onChange={handleInputChange} className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-slate-50 dark:bg-slate-900">
-                    <option value="">Selecciona un cliente...</option>
-                    {customClients.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+              {/* Empresa Cliente Selector & Ficha Formal */}
+              <div className="space-y-2 sm:col-span-2">
+                 <div className="flex justify-between items-center">
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                     Empresa Cliente (Para la Cotización)
+                   </label>
+                   {quoteData.client && (
+                     <button
+                       type="button"
+                       onClick={() => handleOpenClientConfigModal(quoteData.client)}
+                       className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
+                     >
+                       <Building2 className="w-3 h-3" /> Editar RUT y Datos
+                     </button>
+                   )}
+                 </div>
+
+                 <select 
+                   name="client" 
+                   value={quoteData.client} 
+                   onChange={handleClientChange} 
+                   className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-slate-50 dark:bg-slate-900"
+                 >
+                    <option value="">Selecciona una empresa cliente...</option>
+                    {customClients.map(c => (
+                      <option key={c.id || c.name} value={c.name}>
+                        {c.name} {c.rut ? `(RUT: ${c.rut})` : ''}
+                      </option>
+                    ))}
                  </select>
+
+                 {/* FICHA CORPORATIVA DEL CLIENTE SELECCIONADO */}
+                 {quoteData.client && (
+                   <div className="bg-purple-50/40 dark:bg-purple-950/30 p-3.5 rounded-2xl border border-purple-100 dark:border-purple-900/50 text-xs animate-in fade-in">
+                     <div className="flex justify-between items-start mb-2">
+                       <div>
+                         <span className="font-black text-slate-800 dark:text-slate-200 text-sm flex items-center gap-1.5">
+                           <Building2 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                           {quoteData.client}
+                         </span>
+                         {quoteData.clientRut ? (
+                           <span className="text-[10px] font-mono font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/60 px-2 py-0.5 rounded-md inline-block mt-0.5">
+                             RUT: {quoteData.clientRut}
+                           </span>
+                         ) : (
+                           <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md inline-block mt-0.5">
+                             ⚠️ Sin RUT registrado
+                           </span>
+                         )}
+                       </div>
+                       <button
+                         type="button"
+                         onClick={() => handleOpenClientConfigModal(quoteData.client)}
+                         className="text-[11px] font-bold text-purple-600 dark:text-purple-400 bg-white dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-purple-200 dark:border-purple-800 hover:bg-purple-50 transition-colors"
+                       >
+                         Configurar
+                       </button>
+                     </div>
+
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-slate-600 dark:text-slate-400 font-medium pt-1 border-t border-purple-100 dark:border-purple-900/30">
+                       <p><strong className="text-slate-700 dark:text-slate-300">Giro:</strong> {quoteData.clientGiro || 'No especificado'}</p>
+                       <p><strong className="text-slate-700 dark:text-slate-300">Dirección:</strong> {[quoteData.clientAddress, quoteData.clientCity].filter(Boolean).join(', ') || 'No especificada'}</p>
+                       <p><strong className="text-slate-700 dark:text-slate-300">Contacto:</strong> {quoteData.clientContact || 'No especificado'}</p>
+                       <p><strong className="text-slate-700 dark:text-slate-300">Teléfono:</strong> {quoteData.clientPhone || quoteData.clientEmail || 'No especificado'}</p>
+                     </div>
+                   </div>
+                 )}
               </div>
 
               {/* Origen */}
@@ -988,7 +1391,19 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                            if (found.brand) updated.brand = found.brand;
                            if (found.model) updated.model = found.model;
                            if (found.vehicleType) updated.vehicleType = found.vehicleType;
-                           if (found.client) updated.client = found.client;
+                           if (found.client) {
+                             updated.client = found.client;
+                             const cRec = customClients.find(c => c.name === found.client);
+                             if (cRec) {
+                               updated.clientRut = cRec.rut || '';
+                               updated.clientGiro = cRec.giro || '';
+                               updated.clientAddress = cRec.address || '';
+                               updated.clientCity = cRec.city || '';
+                               updated.clientContact = cRec.contactName || '';
+                               updated.clientPhone = cRec.phone || '';
+                               updated.clientEmail = cRec.email?.split(',')[0]?.trim() || '';
+                             }
+                           }
                          }
                        }
                        return updated;
@@ -1214,9 +1629,12 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 {savedQuotes.map((q, idx) => {
                   const correlativo = q.quoteNumber || `COT-${idx + 1}`;
                   return (
-                    <tr key={q.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <tr key={q.id} className="hover:bg-slate-50 dark:bg-slate-800/50 transition-colors">
                       <td className="p-3 font-black text-purple-700 dark:text-purple-400 font-mono">{correlativo}</td>
-                      <td className="p-3 font-black">{q.client}</td>
+                      <td className="p-3 font-black">
+                        {q.client}
+                        {q.clientRut && <span className="block text-[10px] font-mono font-normal text-slate-400">{q.clientRut}</span>}
+                      </td>
                       <td className="p-3 font-medium">{q.origin} ➔ {q.destination} ({q.distanceKm || 0} KM)</td>
                       <td className="p-3">
                         {q.brand} {q.model} <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded ml-1 font-mono">{q.plateOrVin || 'S/N'}</span>
@@ -1257,6 +1675,316 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
           </div>
         )}
       </div>
+
+      {/* MODAL: CONFIGURADOR DE CLIENTE Y EMPRESA */}
+      {showClientConfigModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-lg shadow-2xl relative border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+            <button 
+              type="button" 
+              onClick={() => setShowClientConfigModal(false)} 
+              className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"
+            >
+              <X className="w-4 h-4 text-slate-700 dark:text-slate-300"/>
+            </button>
+            
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-2 rounded-xl bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400">
+                <Building2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-slate-800 dark:text-slate-200">
+                  Configuración Comercial
+                </h3>
+                <p className="text-[11px] font-bold text-slate-400">
+                  RUT y datos corporativos para cotizaciones formales
+                </p>
+              </div>
+            </div>
+
+            {/* PESTAÑAS: EMPRESAS CLIENTES vs NUESTRA EMPRESA */}
+            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl mb-4 border border-slate-200 dark:border-slate-700">
+              <button
+                type="button"
+                onClick={() => setClientConfigTab('client')}
+                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                  clientConfigTab === 'client'
+                    ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                }`}
+              >
+                <Briefcase className="w-3.5 h-3.5" />
+                Empresa Cliente
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setClientConfigTab('issuer')}
+                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                  clientConfigTab === 'issuer'
+                    ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                }`}
+              >
+                <Building2 className="w-3.5 h-3.5" />
+                Nuestra Empresa (Emisor)
+              </button>
+            </div>
+
+            {/* FORMULARIO 1: EMPRESA CLIENTE */}
+            {clientConfigTab === 'client' && (
+              <form onSubmit={handleSaveClientConfig} className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                    Seleccionar Empresa a Configurar
+                  </label>
+                  <select 
+                    value={selectedClientForEdit} 
+                    onChange={e => handleSelectClientToEdit(e.target.value)}
+                    className="w-full mt-1 border-2 border-purple-200 dark:border-purple-900/60 rounded-xl p-3 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-purple-500 bg-purple-50/20 dark:bg-slate-900"
+                  >
+                    <option value="NEW">+ Registrar Nueva Empresa Cliente...</option>
+                    {customClients.map(c => (
+                      <option key={c.id || c.name} value={c.id}>
+                        {c.name} {c.rut ? `(RUT: ${c.rut})` : '(Sin RUT)'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="sm:col-span-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      Razón Social / Nombre Empresa *
+                    </label>
+                    <input 
+                      type="text" 
+                      required 
+                      value={clientForm.name} 
+                      onChange={e => setClientForm({ ...clientForm, name: e.target.value })} 
+                      placeholder="Ej: Kovacs SpA o Portillo Automotriz" 
+                      className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest ml-1">
+                      RUT de la Empresa
+                    </label>
+                    <input 
+                      type="text" 
+                      value={clientForm.rut} 
+                      onChange={e => setClientForm({ ...clientForm, rut: e.target.value.toUpperCase() })} 
+                      placeholder="Ej: 76.123.456-7" 
+                      className="w-full mt-1 border-2 border-purple-200 dark:border-purple-900/60 rounded-xl p-2.5 text-xs font-black text-purple-700 dark:text-purple-300 outline-none focus:border-purple-500 bg-purple-50/30 dark:bg-purple-950/20 font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      Giro Comercial
+                    </label>
+                    <input 
+                      type="text" 
+                      value={clientForm.giro} 
+                      onChange={e => setClientForm({ ...clientForm, giro: e.target.value })} 
+                      placeholder="Ej: Venta de vehículos y repuestos" 
+                      className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      Dirección Comercial
+                    </label>
+                    <input 
+                      type="text" 
+                      value={clientForm.address} 
+                      onChange={e => setClientForm({ ...clientForm, address: e.target.value })} 
+                      placeholder="Ej: Av. Américo Vespucio 1500" 
+                      className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      Comuna / Ciudad
+                    </label>
+                    <input 
+                      type="text" 
+                      value={clientForm.city} 
+                      onChange={e => setClientForm({ ...clientForm, city: e.target.value })} 
+                      placeholder="Ej: Pudahuel, Santiago" 
+                      className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      Nombre de Contacto / Atención
+                    </label>
+                    <input 
+                      type="text" 
+                      value={clientForm.contactName} 
+                      onChange={e => setClientForm({ ...clientForm, contactName: e.target.value })} 
+                      placeholder="Ej: Felipe Castro" 
+                      className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      Teléfono de Contacto
+                    </label>
+                    <input 
+                      type="text" 
+                      value={clientForm.phone} 
+                      onChange={e => setClientForm({ ...clientForm, phone: e.target.value })} 
+                      placeholder="Ej: +56 9 1234 5678" 
+                      className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      Correo Electrónico de Facturación / Contacto
+                    </label>
+                    <input 
+                      type="email" 
+                      value={clientForm.email} 
+                      onChange={e => setClientForm({ ...clientForm, email: e.target.value })} 
+                      placeholder="Ej: adquisiciones@empresa.cl" 
+                      className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button 
+                    type="button" 
+                    onClick={() => setShowClientConfigModal(false)} 
+                    className="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold py-3 rounded-xl text-xs transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 dark:shadow-none text-xs transition-colors"
+                  >
+                    Guardar Datos del Cliente
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* FORMULARIO 2: NUESTRA EMPRESA (EMISOR) */}
+            {clientConfigTab === 'issuer' && (
+              <form onSubmit={handleSaveIssuerConfig} className="space-y-4">
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed bg-purple-50 dark:bg-purple-950/40 p-3 rounded-2xl border border-purple-200 dark:border-purple-800/50">
+                  Estos datos se imprimirán en el <strong>membrete oficial de las cotizaciones</strong> para que tengan validez y presentación formal ante tus clientes.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="sm:col-span-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      Razón Social de Nuestra Empresa *
+                    </label>
+                    <input 
+                      type="text" 
+                      required 
+                      value={issuerForm.companyName} 
+                      onChange={e => setIssuerForm({ ...issuerForm, companyName: e.target.value })} 
+                      placeholder="Ej: LogisticAPP Soluciones SpA" 
+                      className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest ml-1">
+                      RUT Emisor
+                    </label>
+                    <input 
+                      type="text" 
+                      value={issuerForm.rut} 
+                      onChange={e => setIssuerForm({ ...issuerForm, rut: e.target.value.toUpperCase() })} 
+                      placeholder="Ej: 77.842.190-3" 
+                      className="w-full mt-1 border-2 border-purple-200 dark:border-purple-900/60 rounded-xl p-2.5 text-xs font-black text-purple-700 dark:text-purple-300 outline-none focus:border-purple-500 bg-purple-50/30 dark:bg-purple-950/20 font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      Giro de Nuestra Empresa
+                    </label>
+                    <input 
+                      type="text" 
+                      value={issuerForm.giro} 
+                      onChange={e => setIssuerForm({ ...issuerForm, giro: e.target.value })} 
+                      placeholder="Ej: Transporte de Carga y Logística" 
+                      className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      Dirección Casa Matriz / Ubicación
+                    </label>
+                    <input 
+                      type="text" 
+                      value={issuerForm.address} 
+                      onChange={e => setIssuerForm({ ...issuerForm, address: e.target.value })} 
+                      placeholder="Ej: Santiago, Región Metropolitana" 
+                      className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      Teléfono Comercial
+                    </label>
+                    <input 
+                      type="text" 
+                      value={issuerForm.phone} 
+                      onChange={e => setIssuerForm({ ...issuerForm, phone: e.target.value })} 
+                      placeholder="Ej: +56 9 8765 4321" 
+                      className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      Correo Electrónico
+                    </label>
+                    <input 
+                      type="email" 
+                      value={issuerForm.email} 
+                      onChange={e => setIssuerForm({ ...issuerForm, email: e.target.value })} 
+                      placeholder="Ej: contacto@logisticapp.cl" 
+                      className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button 
+                    type="button" 
+                    onClick={() => setShowClientConfigModal(false)} 
+                    className="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold py-3 rounded-xl text-xs transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 dark:shadow-none text-xs transition-colors"
+                  >
+                    Guardar Datos de Emisor
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* MODAL: CONFIGURACIÓN DE CORRELATIVO */}
       {showConfigModal && (
@@ -1365,7 +2093,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         </div>
       )}
 
-      {/* MODAL: NUEVO CLIENTE */}
+      {/* MODAL: NUEVO CLIENTE RÁPIDO */}
       {showNewClientForm && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
           <form onSubmit={handleCreateNewClient} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl relative border border-slate-200 dark:border-slate-800 animate-in zoom-in-95">
@@ -1408,7 +2136,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
               
               <button 
                 onClick={() => { handleShare('email'); handleSaveQuoteStatus('enviada'); setShowSendModal(false); }}
-                className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-black py-3.5 rounded-2xl transition-colors shadow-sm flex items-center justify-center gap-2 text-sm"
+                className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-black py-3.5 rounded-2xl transition-colors shadow-sm flex items-center justify-center gap-2 text-sm"
               >
                 <Mail className="w-5 h-5 text-slate-500 dark:text-slate-400"/> Enviar por Correo
               </button>
