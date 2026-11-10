@@ -371,6 +371,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       await setDoc(doc(db, 'system_config', 'quotes_correlative'), payload, { merge: true });
       setCorrelativeConfig(payload);
       showAlert(`✅ Configuración de correlativo guardada. Próxima: ${formatCorrelativeNumber(payload, num)}`);
+      setShowClientConfigModal(false);
       setShowConfigModal(false);
     } catch (err) {
       console.error("[ERR-QUOTE-CFG-SAVE-01]", err);
@@ -380,19 +381,30 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     }
   };
 
-  // Abrir Modal de Configuración de Correlativo
-  const handleOpenConfigModal = () => {
+  // Abrir Modal Unificado de Configuración del Cotizador (Superadmin)
+  const handleOpenGeneralConfigModal = (tab = 'issuer') => {
     if (!isSuperAdmin) {
-      return showAlert("🔒 [ERR-AUTH-QUOTE-01] Solo el Superadmin tiene permiso para configurar el correlativo.");
+      return showAlert("🔒 [ERR-AUTH-QUOTE-01] Solo el Superadmin tiene permiso para configurar el cotizador.");
     }
+    setIssuerForm({ ...issuerCompany });
     setTempConfig({
       prefix: correlativeConfig.prefix,
       nextNumber: correlativeConfig.nextNumber,
       minDigits: correlativeConfig.minDigits,
       includeYear: correlativeConfig.includeYear
     });
-    setShowConfigModal(true);
+    setClientConfigTab(tab);
+    setShowClientConfigModal(true);
   };
+
+  // Abrir Modal de Configuración de Correlativo (Redirige a la pestaña correspondiente)
+  const handleOpenConfigModal = () => handleOpenGeneralConfigModal('correlative');
+
+  // Abrir Modal de Configuración Directa de Nuestra Empresa Emisora (Cabecera / Membrete)
+  const handleOpenIssuerConfigModal = () => handleOpenGeneralConfigModal('issuer');
+
+  // Abrir Modal de Configuración Directa de Pie de Página y Validez
+  const handleOpenFooterConfigModal = () => handleOpenGeneralConfigModal('footer');
 
   // Abrir Modal de Configuración de Cliente y Empresa
   const handleOpenClientConfigModal = (clientNameToPreselect) => {
@@ -400,6 +412,12 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       return showAlert("🔒 [ERR-AUTH-QUOTE-02] Solo el Superadmin tiene permiso para configurar clientes o empresas.");
     }
     setIssuerForm({ ...issuerCompany });
+    setTempConfig({
+      prefix: correlativeConfig.prefix,
+      nextNumber: correlativeConfig.nextNumber,
+      minDigits: correlativeConfig.minDigits,
+      includeYear: correlativeConfig.includeYear
+    });
     setClientConfigTab('client');
 
     const targetName = clientNameToPreselect || quoteData.client;
@@ -444,26 +462,6 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       });
     }
 
-    setShowClientConfigModal(true);
-  };
-
-  // Abrir Modal de Configuración Directa de Nuestra Empresa Emisora (Cabecera / Membrete)
-  const handleOpenIssuerConfigModal = () => {
-    if (!isSuperAdmin) {
-      return showAlert("🔒 [ERR-AUTH-QUOTE-03] Solo el Superadmin tiene permiso para configurar datos de la empresa emisora.");
-    }
-    setIssuerForm({ ...issuerCompany });
-    setClientConfigTab('issuer');
-    setShowClientConfigModal(true);
-  };
-
-  // Abrir Modal de Configuración Directa de Pie de Página y Validez
-  const handleOpenFooterConfigModal = () => {
-    if (!isSuperAdmin) {
-      return showAlert("🔒 [ERR-AUTH-QUOTE-04] Solo el Superadmin tiene permiso para configurar el pie de página y validez.");
-    }
-    setIssuerForm({ ...issuerCompany });
-    setClientConfigTab('footer');
     setShowClientConfigModal(true);
   };
 
@@ -1505,43 +1503,16 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
           </div>
         </div>
 
-        {/* BOTONES DE CONFIGURACIÓN SUPERIORES (SÓLO SUPERADMIN) */}
+        {/* BOTÓN UNIFICADO DE CONFIGURACIÓN (SÓLO SUPERADMIN) */}
         {isSuperAdmin && (
           <div className="flex items-center gap-2 flex-wrap shrink-0">
             <button
               type="button"
-              onClick={handleOpenIssuerConfigModal}
-              className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition-colors shadow-sm shadow-purple-200 dark:shadow-none"
+              onClick={() => handleOpenGeneralConfigModal('issuer')}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-black text-xs transition-colors shadow-sm shadow-purple-200 dark:shadow-none"
             >
-              <Building2 className="w-4 h-4" />
-              Configurar Datos de Empresa
-            </button>
-
-            <button
-              type="button"
-              onClick={handleOpenFooterConfigModal}
-              className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors border border-slate-200 dark:border-slate-700 shadow-sm"
-            >
-              <FileText className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-              Configurar Pie de Página
-            </button>
-
-            <button
-              type="button"
-              onClick={handleOpenConfigModal}
-              className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors border border-slate-200 dark:border-slate-700 shadow-sm"
-            >
-              <Settings className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-              Configurar Correlativo
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleOpenClientConfigModal(quoteData.client)}
-              className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-bold text-xs transition-colors border border-purple-200 dark:border-purple-800 shadow-sm"
-            >
-              <Briefcase className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-              Configurar Clientes
+              <Settings className="w-4 h-4" />
+              Configuración
             </button>
           </div>
         )}
@@ -2710,30 +2681,32 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
             <div className="flex items-center gap-2.5 mb-3">
               <div className="p-2.5 rounded-2xl bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400">
-                {clientConfigTab === 'issuer' ? <Building2 className="w-5 h-5" /> : clientConfigTab === 'footer' ? <FileText className="w-5 h-5" /> : <Briefcase className="w-5 h-5" />}
+                {clientConfigTab === 'issuer' ? <Building2 className="w-5 h-5" /> : clientConfigTab === 'footer' ? <FileText className="w-5 h-5" /> : clientConfigTab === 'correlative' ? <Hash className="w-5 h-5" /> : <Briefcase className="w-5 h-5" />}
               </div>
               <div>
                 <h3 className="text-base sm:text-lg font-black text-slate-800 dark:text-slate-200">
-                  {clientConfigTab === 'issuer' ? 'Datos de Nuestra Empresa (Emisor)' : clientConfigTab === 'footer' ? 'Pie de Página y Validez' : 'Configuración de Clientes'}
+                  {clientConfigTab === 'issuer' ? 'Datos de Nuestra Empresa (Emisor)' : clientConfigTab === 'footer' ? 'Pie de Página y Validez' : clientConfigTab === 'correlative' ? 'Configuración de Correlativo' : 'Configuración de Clientes'}
                 </h3>
                 <p className="text-[11px] font-bold text-slate-400">
                   {clientConfigTab === 'issuer'
                     ? 'Membrete, RUT y datos comerciales que aparecen en la cabecera del PDF'
                     : clientConfigTab === 'footer'
                     ? 'Plazo de vigencia, cláusulas de validez y textos al pie del PDF'
+                    : clientConfigTab === 'correlative'
+                    ? 'Prefijo, dígitos y correlativo inicial para la numeración de cotizaciones'
                     : 'RUT y datos corporativos para emisión formal a clientes'}
                 </p>
               </div>
             </div>
 
-            {/* PESTAÑAS: NUESTRA EMPRESA vs PIE DE PÁGINA vs EMPRESAS CLIENTES */}
-            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl mb-4 border border-slate-200 dark:border-slate-700 gap-1">
+            {/* PESTAÑAS: NUESTRA EMPRESA vs PIE DE PÁGINA vs CORRELATIVO vs CLIENTES */}
+            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl mb-4 border border-slate-200 dark:border-slate-700 gap-1 overflow-x-auto">
               <button
                 type="button"
                 onClick={() => setClientConfigTab('issuer')}
-                className={`flex-1 py-2 px-1 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${clientConfigTab === 'issuer'
+                className={`flex-1 py-2 px-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${clientConfigTab === 'issuer'
                   ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
               >
                 <Building2 className="w-3.5 h-3.5" />
@@ -2743,9 +2716,9 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
               <button
                 type="button"
                 onClick={() => setClientConfigTab('footer')}
-                className={`flex-1 py-2 px-1 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${clientConfigTab === 'footer'
+                className={`flex-1 py-2 px-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${clientConfigTab === 'footer'
                   ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
               >
                 <FileText className="w-3.5 h-3.5" />
@@ -2754,10 +2727,30 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
               <button
                 type="button"
-                onClick={() => setClientConfigTab('client')}
-                className={`flex-1 py-2 px-1 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${clientConfigTab === 'client'
+                onClick={() => {
+                  setTempConfig({
+                    prefix: correlativeConfig.prefix,
+                    nextNumber: correlativeConfig.nextNumber,
+                    minDigits: correlativeConfig.minDigits,
+                    includeYear: correlativeConfig.includeYear
+                  });
+                  setClientConfigTab('correlative');
+                }}
+                className={`flex-1 py-2 px-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${clientConfigTab === 'correlative'
                   ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  }`}
+              >
+                <Hash className="w-3.5 h-3.5" />
+                <span className="truncate">Correlativo</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setClientConfigTab('client')}
+                className={`flex-1 py-2 px-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${clientConfigTab === 'client'
+                  ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
               >
                 <Briefcase className="w-3.5 h-3.5" />
@@ -3136,121 +3129,113 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 </div>
               </form>
             )}
-          </div>
-        </div>
-      )}
 
-      {/* MODAL: CONFIGURACIÓN DE CORRELATIVO (SÓLO SUPERADMIN) */}
-      {showConfigModal && isSuperAdmin && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-          <form onSubmit={handleSaveCorrelativeConfig} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-md shadow-2xl relative border border-slate-200 dark:border-slate-800 animate-in zoom-in-95">
-            <button
-              type="button"
-              onClick={() => setShowConfigModal(false)}
-              className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"
-            >
-              <X className="w-4 h-4 text-slate-700 dark:text-slate-300" />
-            </button>
+            {/* FORMULARIO 4: CONFIGURACIÓN DE CORRELATIVO */}
+            {clientConfigTab === 'correlative' && (
+              <form onSubmit={handleSaveCorrelativeConfig} className="space-y-4">
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed bg-purple-50 dark:bg-purple-950/40 p-3 rounded-2xl border border-purple-200 dark:border-purple-800/50">
+                  Personaliza el <strong>prefijo, número inicial y formato</strong> para la emisión correlativa automática de cotizaciones.
+                </p>
 
-            <div className="flex items-center gap-2 mb-1">
-              <div className="p-2 rounded-xl bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400">
-                <Settings className="w-5 h-5" />
-              </div>
-              <h3 className="text-lg font-black text-slate-800 dark:text-slate-200">Configuración de Correlativo</h3>
-            </div>
-            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-5">
-              Personaliza el formato y el número de inicio para las próximas cotizaciones.
-            </p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      Prefijo / Siglas
+                    </label>
+                    <input
+                      type="text"
+                      value={tempConfig.prefix}
+                      onChange={e => setTempConfig({ ...tempConfig, prefix: e.target.value })}
+                      placeholder="Ej: COT- o CTZ-"
+                      className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
+                    />
+                    <span className="text-[10px] text-slate-400 ml-1">Texto que aparece antes del número (ej: COT-, PROP-, CTZ-).</span>
+                  </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Prefijo / Siglas</label>
-                <input
-                  type="text"
-                  value={tempConfig.prefix}
-                  onChange={e => setTempConfig({ ...tempConfig, prefix: e.target.value })}
-                  placeholder="Ej: COT- o CTZ-"
-                  className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
-                />
-                <span className="text-[10px] text-slate-400 ml-1">Texto que aparece antes del número (ej: COT-, PROP-, CTZ-).</span>
-              </div>
+                  <div>
+                    <label className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest ml-1">
+                      Próximo Número / Desde dónde iniciará *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      required
+                      value={tempConfig.nextNumber}
+                      onChange={e => setTempConfig({ ...tempConfig, nextNumber: e.target.value })}
+                      placeholder="Ej: 1 o 1001"
+                      className="w-full mt-1 border-2 border-purple-200 dark:border-purple-900/60 rounded-xl p-2.5 text-xs font-black text-purple-700 dark:text-purple-400 outline-none focus:border-purple-500 bg-purple-50/20 dark:bg-purple-950/20 font-mono"
+                    />
+                    <span className="text-[10px] text-slate-400 ml-1">El valor del contador a partir del cual se emitirá la siguiente cotización.</span>
+                  </div>
 
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Próximo Número / Desde dónde iniciará</label>
-                <input
-                  type="number"
-                  min="1"
-                  required
-                  value={tempConfig.nextNumber}
-                  onChange={e => setTempConfig({ ...tempConfig, nextNumber: e.target.value })}
-                  placeholder="Ej: 1 o 1001"
-                  className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-black text-purple-700 dark:text-purple-400 outline-none focus:border-purple-500 bg-white dark:bg-slate-900 font-mono"
-                />
-                <span className="text-[10px] text-slate-400 ml-1">El valor del contador a partir del cual se emitirá la siguiente cotización.</span>
-              </div>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      Formato de Ceros a la Izquierda
+                    </label>
+                    <select
+                      value={tempConfig.minDigits}
+                      onChange={e => setTempConfig({ ...tempConfig, minDigits: parseInt(e.target.value, 10) })}
+                      className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
+                    >
+                      <option value="0">Sin ceros a la izquierda (ej: 1, 2, 3...)</option>
+                      <option value="3">3 Dígitos (ej: 001, 002...)</option>
+                      <option value="4">4 Dígitos (ej: 0001, 0002...)</option>
+                      <option value="5">5 Dígitos (ej: 00001, 00002...)</option>
+                      <option value="6">6 Dígitos (ej: 000001, 000002...)</option>
+                    </select>
+                  </div>
 
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Formato de Ceros a la Izquierda</label>
-                <select
-                  value={tempConfig.minDigits}
-                  onChange={e => setTempConfig({ ...tempConfig, minDigits: parseInt(e.target.value, 10) })}
-                  className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
-                >
-                  <option value="0">Sin ceros a la izquierda (ej: 1, 2, 3...)</option>
-                  <option value="3">3 Dígitos (ej: 001, 002...)</option>
-                  <option value="4">4 Dígitos (ej: 0001, 0002...)</option>
-                  <option value="5">5 Dígitos (ej: 00001, 00002...)</option>
-                  <option value="6">6 Dígitos (ej: 000001, 000002...)</option>
-                </select>
-              </div>
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                    <div>
+                      <p className="text-xs font-black text-slate-800 dark:text-slate-200">Incluir Año Actual</p>
+                      <p className="text-[10px] font-bold text-slate-400">Agrega el año en curso (ej: {new Date().getFullYear()})</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={tempConfig.includeYear}
+                      onChange={e => setTempConfig({ ...tempConfig, includeYear: e.target.checked })}
+                      className="w-5 h-5 accent-purple-600 rounded cursor-pointer"
+                    />
+                  </div>
 
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                <div>
-                  <p className="text-xs font-black text-slate-800 dark:text-slate-200">Incluir Año Actual</p>
-                  <p className="text-[10px] font-bold text-slate-400">Agrega el año en curso (ej: {new Date().getFullYear()})</p>
+                  {/* Caja de Vista Previa en Vivo */}
+                  <div className="p-3.5 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 text-center">
+                    <p className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest mb-1">
+                      Vista Previa del Próximo Correlativo
+                    </p>
+                    <p className="text-2xl font-black text-purple-900 dark:text-purple-200 font-mono">
+                      {formatCorrelativeNumber(tempConfig, parseInt(tempConfig.nextNumber, 10) || 1)}
+                    </p>
+                  </div>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={tempConfig.includeYear}
-                  onChange={e => setTempConfig({ ...tempConfig, includeYear: e.target.checked })}
-                  className="w-5 h-5 accent-purple-600 rounded cursor-pointer"
-                />
-              </div>
 
-              {/* Caja de Vista Previa en Vivo */}
-              <div className="p-4 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 text-center">
-                <p className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest mb-1">
-                  Vista Previa del Próximo Correlativo
-                </p>
-                <p className="text-2xl font-black text-purple-900 dark:text-purple-200 font-mono">
-                  {formatCorrelativeNumber(tempConfig, parseInt(tempConfig.nextNumber, 10) || 1)}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-2 mt-6">
-              <button
-                type="button"
-                onClick={() => setShowConfigModal(false)}
-                className="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold py-3 rounded-xl text-xs transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={isSavingConfig}
-                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 dark:shadow-none text-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {isSavingConfig ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Guardando...
-                  </>
-                ) : (
-                  'Guardar Configuración'
-                )}
-              </button>
-            </div>
-          </form>
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowClientConfigModal(false)}
+                    className="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold py-3 rounded-xl text-xs transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingConfig}
+                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 dark:shadow-none text-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isSavingConfig ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" /> Guardando...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" /> Guardar Correlativo
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
         </div>
       )}
 
