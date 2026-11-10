@@ -417,6 +417,13 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     setShowClientConfigModal(true);
   };
 
+  // Abrir Modal de Configuración Directa de Nuestra Empresa Emisora (Cabecera / Membrete)
+  const handleOpenIssuerConfigModal = () => {
+    setIssuerForm({ ...issuerCompany });
+    setClientConfigTab('issuer');
+    setShowClientConfigModal(true);
+  };
+
   // Cambiar cliente seleccionado para edición dentro del modal
   const handleSelectClientToEdit = (clientId) => {
     setSelectedClientForEdit(clientId);
@@ -1387,6 +1394,15 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         <div className="flex items-center gap-2 flex-wrap shrink-0">
           <button
             type="button"
+            onClick={handleOpenIssuerConfigModal}
+            className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition-colors shadow-sm shadow-purple-200 dark:shadow-none"
+          >
+            <Building2 className="w-4 h-4" />
+            Configurar Datos de Empresa
+          </button>
+
+          <button
+            type="button"
             onClick={handleOpenConfigModal}
             className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors border border-slate-200 dark:border-slate-700 shadow-sm"
           >
@@ -1399,8 +1415,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             onClick={() => handleOpenClientConfigModal(quoteData.client)}
             className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-bold text-xs transition-colors border border-purple-200 dark:border-purple-800 shadow-sm"
           >
-            <Building2 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-            Configurar Cliente / Empresa
+            <Briefcase className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            Configurar Clientes
           </button>
         </div>
       </div>
@@ -1518,13 +1534,24 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => handleOpenClientConfigModal()}
-              className="text-xs font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 px-3 py-1.5 rounded-xl hover:bg-purple-200 transition-colors flex items-center gap-1"
-            >
-              <Plus className="w-3.5 h-3.5" /> Nuevo Cliente
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={handleOpenIssuerConfigModal}
+                title="Configurar datos y membrete de nuestra empresa"
+                className="text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 border border-slate-200 dark:border-slate-700"
+              >
+                <Building2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> Datos Empresa
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleOpenClientConfigModal()}
+                className="text-xs font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 px-3 py-1.5 rounded-xl hover:bg-purple-200 transition-colors flex items-center gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" /> Nuevo Cliente
+              </button>
+            </div>
           </div>
 
           <form onSubmit={handleSaveSimpleQuote} className="space-y-4">
@@ -1779,13 +1806,24 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Datos de Ruta y Vehículo
                 </h3>
-                <button
-                  type="button"
-                  onClick={() => handleOpenClientConfigModal()}
-                  className="text-xs font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 px-3 py-1.5 rounded-xl hover:bg-purple-200 dark:hover:bg-purple-900/60 transition-colors flex items-center gap-1"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Nuevo Cliente
-                </button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={handleOpenIssuerConfigModal}
+                    title="Configurar datos y membrete de nuestra empresa"
+                    className="text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 border border-slate-200 dark:border-slate-700"
+                  >
+                    <Building2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> Datos Empresa
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenClientConfigModal()}
+                    className="text-xs font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 px-3 py-1.5 rounded-xl hover:bg-purple-200 dark:hover:bg-purple-900/60 transition-colors flex items-center gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Nuevo Cliente
+                  </button>
+                </div>
               </div>
 
               <datalist id="quotes-directory-list">
@@ -2467,16 +2505,18 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
               <X className="w-4 h-4 text-slate-700 dark:text-slate-300" />
             </button>
 
-            <div className="flex items-center gap-2 mb-2">
-              <div className="p-2 rounded-xl bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400">
-                <Building2 className="w-5 h-5" />
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="p-2.5 rounded-2xl bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400">
+                {clientConfigTab === 'issuer' ? <Building2 className="w-5 h-5" /> : <Briefcase className="w-5 h-5" />}
               </div>
               <div>
-                <h3 className="text-lg font-black text-slate-800 dark:text-slate-200">
-                  Configuración Comercial
+                <h3 className="text-base sm:text-lg font-black text-slate-800 dark:text-slate-200">
+                  {clientConfigTab === 'issuer' ? 'Datos de Nuestra Empresa (Emisor)' : 'Configuración de Clientes'}
                 </h3>
                 <p className="text-[11px] font-bold text-slate-400">
-                  RUT y datos corporativos para cotizaciones formales
+                  {clientConfigTab === 'issuer'
+                    ? 'Membrete, RUT y datos comerciales que aparecen en la cabecera del PDF'
+                    : 'RUT y datos corporativos para emisión formal a clientes'}
                 </p>
               </div>
             </div>
