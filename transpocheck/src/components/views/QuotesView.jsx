@@ -54,13 +54,17 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     giro: 'Transporte de Vehículos y Logística Integral',
     address: 'Santiago, Chile',
     phone: '+56 9 8765 4321',
-    email: 'contacto@logisticapp.cl'
+    email: 'contacto@logisticapp.cl',
+    validityDays: 15,
+    validityText: 'Esta cotización formal tiene una validez de 15 días corridos a contar de su fecha de emisión.',
+    footerNote: 'Generado automáticamente a través de LogisticAPP - Sistema Integral de Gestión Logística',
+    additionalTerms: ''
   };
   const [issuerCompany, setIssuerCompany] = useState(defaultIssuerCompany);
 
   // Estados del Configurador de Cliente y Empresa
   const [showClientConfigModal, setShowClientConfigModal] = useState(false);
-  const [clientConfigTab, setClientConfigTab] = useState('client'); // 'client' | 'issuer'
+  const [clientConfigTab, setClientConfigTab] = useState('client'); // 'client' | 'issuer' | 'footer'
   const [selectedClientForEdit, setSelectedClientForEdit] = useState('');
   const [clientForm, setClientForm] = useState({
     name: '',
@@ -424,6 +428,13 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     setShowClientConfigModal(true);
   };
 
+  // Abrir Modal de Configuración Directa de Pie de Página y Validez
+  const handleOpenFooterConfigModal = () => {
+    setIssuerForm({ ...issuerCompany });
+    setClientConfigTab('footer');
+    setShowClientConfigModal(true);
+  };
+
   // Cambiar cliente seleccionado para edición dentro del modal
   const handleSelectClientToEdit = (clientId) => {
     setSelectedClientForEdit(clientId);
@@ -536,12 +547,36 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       };
 
       await setDoc(doc(db, 'system_config', 'quote_company'), payload, { merge: true });
-      setIssuerCompany(payload);
+      setIssuerCompany(prev => ({ ...prev, ...payload }));
       showAlert("✅ Datos de la empresa emisora actualizados correctamente.");
       setShowClientConfigModal(false);
     } catch (err) {
       console.error("[ERR-EMPRESA-SAVE-01]", err);
       showAlert("❌ [ERR-EMPRESA-SAVE-01] Error al guardar datos de nuestra empresa.");
+    }
+  };
+
+  // Guardar Configuración del Pie de Página y Validez en Firestore
+  const handleSaveFooterConfig = async (e) => {
+    e.preventDefault();
+    try {
+      const days = parseInt(issuerForm.validityDays, 10) || 15;
+      const payload = {
+        validityDays: days,
+        validityText: issuerForm.validityText?.trim() || `Esta cotización formal tiene una validez de ${days} días corridos a contar de su fecha de emisión.`,
+        footerNote: issuerForm.footerNote?.trim() || 'Generado automáticamente a través de LogisticAPP - Sistema Integral de Gestión Logística',
+        additionalTerms: issuerForm.additionalTerms?.trim() || '',
+        updatedAt: Date.now(),
+        updatedBy: currentUserEmail || ''
+      };
+
+      await setDoc(doc(db, 'system_config', 'quote_company'), payload, { merge: true });
+      setIssuerCompany(prev => ({ ...prev, ...payload }));
+      showAlert("✅ Configuración de pie de página y validez guardada correctamente.");
+      setShowClientConfigModal(false);
+    } catch (err) {
+      console.error("[ERR-FOOTER-SAVE-01]", err);
+      showAlert("❌ [ERR-FOOTER-SAVE-01] Error al guardar la configuración del pie de página.");
     }
   };
 
@@ -1042,6 +1077,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     const hasIva = qData.ivaAmount > 0;
     const logoSrc = customLogoUrl || `${window.location.origin}/LogoLogistica.png`;
     const vehicleText = [qData.brand, qData.model].filter(Boolean).join(' ');
+    const validityDaysVal = issuerCompany.validityDays || 15;
+    const validityHeader = qData.isTest ? 'Documento de simulación' : `Válida por ${validityDaysVal} días corridos`;
+    const validityFooterText = issuerCompany.validityText || `Esta cotización formal tiene una validez de ${validityDaysVal} días corridos a contar de su fecha de emisión.`;
+    const footerNoteText = issuerCompany.footerNote || 'Generado automáticamente a través de LogisticAPP - Sistema Integral de Gestión Logística';
 
     return `
       <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #0f172a; background: #ffffff; width: 800px; margin: 0; padding: 30px; box-sizing: border-box;">
@@ -1073,7 +1112,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             <h1 style="margin: 0; font-size: 22px; text-transform: uppercase; font-weight: 900; letter-spacing: -0.5px; ${qData.isTest ? 'color: #d97706;' : 'color: #7c3aed;'}">${qData.isTest ? 'Cotización (Prueba)' : 'Cotización'}</h1>
             <p style="margin: 4px 0 0 0; font-size: 16px; font-weight: 900; font-family: monospace; ${qData.isTest ? 'color: #d97706;' : 'color: #0f172a;'}">${correlativo}</p>
             <p style="margin: 3px 0 0 0; color: #64748b; font-size: 11px; font-weight: 600;">Fecha de Emisión: ${new Date(qData.createdAt || Date.now()).toLocaleDateString('es-CL')}</p>
-            <p style="margin: 3px 0 0 0; color: #94a3b8; font-size: 10px;">${qData.isTest ? 'Documento de simulación' : 'Válida por 15 días corridos'}</p>
+            <p style="margin: 3px 0 0 0; color: #94a3b8; font-size: 10px;">${validityHeader}</p>
           </div>
         </div>
 
@@ -1191,9 +1230,15 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         </div>
 
         <!-- PIE DE PÁGINA -->
-        <div style="margin-top: 40px; text-align: center; color: #94a3b8; font-size: 10px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-weight: 600; line-height: 1.5;">
-          <p style="margin: 0 0 4px 0;">Esta cotización formal tiene una validez de 15 días corridos a contar de su fecha de emisión.</p>
-          <p style="margin: 0;">Generado automáticamente a través de LogisticAPP - Sistema Integral de Gestión Logística</p>
+        <div style="margin-top: 35px; text-align: center; color: #94a3b8; font-size: 10px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-weight: 600; line-height: 1.5;">
+          ${issuerCompany.additionalTerms ? `
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 10px; color: #475569; text-align: left; font-weight: 500; white-space: pre-line;">
+              <strong style="color: #1e293b; text-transform: uppercase; font-size: 9px; letter-spacing: 0.5px; display: block; margin-bottom: 3px;">Términos y Observaciones:</strong>
+              ${issuerCompany.additionalTerms}
+            </div>
+          ` : ''}
+          <p style="margin: 0 0 4px 0; color: #64748b; font-weight: 700;">${validityFooterText}</p>
+          <p style="margin: 0; color: #94a3b8;">${footerNoteText}</p>
         </div>
       </div>
     `;
@@ -1287,6 +1332,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         `🧾 *IVA (19%):* ${formatMoney(qData.ivaAmount)}\n`
       ) : '') +
       `✅ *Total a Pagar:* ${formatMoney(qData.finalPrice)}${qData.ivaAmount === 0 ? ' (Exento/Sin IVA)' : ''}\n\n` +
+      `⏳ _Validez: ${issuerCompany.validityDays || 15} días corridos_\n` +
       (issuerCompany.companyName ? `_Emitido por: ${issuerCompany.companyName}${issuerCompany.rut ? ` (RUT: ${issuerCompany.rut})` : ''}_\n` : '') +
       `_Generado por LogisticAPP_`;
 
@@ -1399,6 +1445,15 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
           >
             <Building2 className="w-4 h-4" />
             Configurar Datos de Empresa
+          </button>
+
+          <button
+            type="button"
+            onClick={handleOpenFooterConfigModal}
+            className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors border border-slate-200 dark:border-slate-700 shadow-sm"
+          >
+            <FileText className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            Configurar Pie de Página
           </button>
 
           <button
@@ -2507,44 +2562,58 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
             <div className="flex items-center gap-2.5 mb-3">
               <div className="p-2.5 rounded-2xl bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400">
-                {clientConfigTab === 'issuer' ? <Building2 className="w-5 h-5" /> : <Briefcase className="w-5 h-5" />}
+                {clientConfigTab === 'issuer' ? <Building2 className="w-5 h-5" /> : clientConfigTab === 'footer' ? <FileText className="w-5 h-5" /> : <Briefcase className="w-5 h-5" />}
               </div>
               <div>
                 <h3 className="text-base sm:text-lg font-black text-slate-800 dark:text-slate-200">
-                  {clientConfigTab === 'issuer' ? 'Datos de Nuestra Empresa (Emisor)' : 'Configuración de Clientes'}
+                  {clientConfigTab === 'issuer' ? 'Datos de Nuestra Empresa (Emisor)' : clientConfigTab === 'footer' ? 'Pie de Página y Validez' : 'Configuración de Clientes'}
                 </h3>
                 <p className="text-[11px] font-bold text-slate-400">
                   {clientConfigTab === 'issuer'
                     ? 'Membrete, RUT y datos comerciales que aparecen en la cabecera del PDF'
+                    : clientConfigTab === 'footer'
+                    ? 'Plazo de vigencia, cláusulas de validez y textos al pie del PDF'
                     : 'RUT y datos corporativos para emisión formal a clientes'}
                 </p>
               </div>
             </div>
 
-            {/* PESTAÑAS: EMPRESAS CLIENTES vs NUESTRA EMPRESA */}
-            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl mb-4 border border-slate-200 dark:border-slate-700">
-              <button
-                type="button"
-                onClick={() => setClientConfigTab('client')}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${clientConfigTab === 'client'
-                  ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                  }`}
-              >
-                <Briefcase className="w-3.5 h-3.5" />
-                Empresa Cliente
-              </button>
-
+            {/* PESTAÑAS: NUESTRA EMPRESA vs PIE DE PÁGINA vs EMPRESAS CLIENTES */}
+            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl mb-4 border border-slate-200 dark:border-slate-700 gap-1">
               <button
                 type="button"
                 onClick={() => setClientConfigTab('issuer')}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${clientConfigTab === 'issuer'
+                className={`flex-1 py-2 px-1 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${clientConfigTab === 'issuer'
                   ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                   }`}
               >
                 <Building2 className="w-3.5 h-3.5" />
-                Nuestra Empresa (Emisor)
+                <span className="truncate">Nuestra Empresa</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setClientConfigTab('footer')}
+                className={`flex-1 py-2 px-1 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${clientConfigTab === 'footer'
+                  ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  }`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span className="truncate">Pie de Página</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setClientConfigTab('client')}
+                className={`flex-1 py-2 px-1 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${clientConfigTab === 'client'
+                  ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  }`}
+              >
+                <Briefcase className="w-3.5 h-3.5" />
+                <span className="truncate">Clientes</span>
               </button>
             </div>
 
@@ -2795,6 +2864,103 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 dark:shadow-none text-xs transition-colors"
                   >
                     Guardar Datos de Emisor
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* FORMULARIO 3: PIE DE PÁGINA Y VALIDEZ */}
+            {clientConfigTab === 'footer' && (
+              <form onSubmit={handleSaveFooterConfig} className="space-y-4">
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed bg-purple-50 dark:bg-purple-950/40 p-3 rounded-2xl border border-purple-200 dark:border-purple-800/50">
+                  Configura el <strong>plazo de vigencia y las leyendas legales</strong> que se imprimen al pie de página de cada cotización en PDF.
+                </p>
+
+                {/* Días de validez */}
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center">
+                    <label className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest ml-1">
+                      Días de Validez de la Cotización *
+                    </label>
+                    <span className="text-[10px] font-bold text-slate-400">
+                      Se refleja en cabecera y pie
+                    </span>
+                  </div>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    max="365"
+                    value={issuerForm.validityDays ?? 15}
+                    onChange={e => {
+                      const days = parseInt(e.target.value, 10) || 1;
+                      setIssuerForm(prev => ({
+                        ...prev,
+                        validityDays: days,
+                        validityText: (!prev.validityText || prev.validityText.includes('días corridos a contar de su fecha de emisión'))
+                          ? `Esta cotización formal tiene una validez de ${days} días corridos a contar de su fecha de emisión.`
+                          : prev.validityText
+                      }));
+                    }}
+                    className="w-full border-2 border-purple-200 dark:border-purple-900/60 rounded-xl p-2.5 text-sm font-black text-purple-700 dark:text-purple-300 outline-none focus:border-purple-500 bg-purple-50/20 dark:bg-purple-950/20"
+                  />
+                </div>
+
+                {/* Texto principal de validez */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                    Texto Principal de Validez (Línea 1 del pie)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={issuerForm.validityText || ''}
+                    onChange={e => setIssuerForm({ ...issuerForm, validityText: e.target.value })}
+                    placeholder="Ej: Esta cotización formal tiene una validez de 15 días corridos a contar de su fecha de emisión."
+                    className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900 resize-none"
+                  />
+                </div>
+
+                {/* Texto secundario de pie de página */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                    Texto Secundario / Leyenda (Línea 2 del pie)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={issuerForm.footerNote || ''}
+                    onChange={e => setIssuerForm({ ...issuerForm, footerNote: e.target.value })}
+                    placeholder="Ej: Generado automáticamente a través de LogisticAPP - Sistema Integral de Gestión Logística"
+                    className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900 resize-none"
+                  />
+                </div>
+
+                {/* Términos u observaciones adicionales opcionales */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                    Términos, Datos de Pago u Observaciones (Opcional)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={issuerForm.additionalTerms || ''}
+                    onChange={e => setIssuerForm({ ...issuerForm, additionalTerms: e.target.value })}
+                    placeholder="Ej: Pago contra entrega o transferencia bancaria a Banco Estado Cta Cte..."
+                    className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900 resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowClientConfigModal(false)}
+                    className="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold py-3 rounded-xl text-xs transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 dark:shadow-none text-xs transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <Save className="w-4 h-4" /> Guardar Pie de Página
                   </button>
                 </div>
               </form>
