@@ -1035,196 +1035,147 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     const logoSrc = customLogoUrl || `${window.location.origin}/LogoLogistica.png`;
 
     return `
-      <html>
-        <head>
-          <title>Cotización Logística - ${qData.client || 'Cliente'}</title>
-          <style>
-            @page { margin: 10mm; }
-            @media print {
-              body { margin: 0; background: #fff !important; }
-              .page-container { box-shadow: none !important; border: none !important; padding: 0 !important; width: 100% !important; }
-              * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-            }
-            body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #0f172a; margin: 0; background: #fff; display: block; }
-            .page-container { background: #fff; width: 100%; max-width: 800px; margin: 0 auto; padding: 30px; box-sizing: border-box; }
-            
-            .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #7c3aed; padding-bottom: 20px; margin-bottom: 25px; }
-            .company-brand { display: flex; align-items: center; gap: 16px; }
-            .logo { max-height: 60px; }
-            .company-info h2 { margin: 0; color: #1e293b; font-size: 15px; text-transform: uppercase; font-weight: 900; letter-spacing: -0.3px; }
-            .company-info p { margin: 2px 0 0 0; color: #64748b; font-size: 11px; font-weight: 600; line-height: 1.35; }
-            .company-info strong { color: #0f172a; }
-            
-            .title { text-align: right; }
-            .title h1 { margin: 0; color: #7c3aed; font-size: 22px; text-transform: uppercase; font-weight: 900; letter-spacing: -0.5px; }
-            .title .doc-number { margin: 4px 0 0 0; color: #0f172a; font-size: 16px; font-weight: 900; font-family: monospace; }
-            .title p { margin: 3px 0 0 0; color: #64748b; font-size: 11px; font-weight: 600; }
-            
-            .section-title { font-size: 11px; font-weight: 900; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; border-bottom: 2px solid #f1f5f9; padding-bottom: 4px; }
-            .info-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px 20px; border-radius: 12px; margin-bottom: 20px; }
-            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; }
-            .info-item h4 { margin: 0 0 3px 0; color: #64748b; font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800; }
-            .info-item p { margin: 0; font-size: 13px; font-weight: 800; color: #0f172a; word-break: break-word; }
-            
-            table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 25px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
-            th { background: #f8fafc; color: #475569; text-align: left; padding: 12px 16px; font-size: 11px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; }
-            td { padding: 14px 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
-            td:last-child, th:last-child { text-align: right; }
-            tbody tr:last-child td { border-bottom: none; }
-            
-            .totals { width: 330px; margin-left: auto; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
-            .totals-row { display: flex; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; color: #475569; background: #fff; }
-            .totals-row:last-child { border-bottom: none; }
-            .totals-row.final { background: #7c3aed; color: white; font-weight: 900; font-size: 16px; border: none; }
-            
-            .footer { margin-top: 40px; text-align: center; color: #94a3b8; font-size: 10px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-weight: 600; line-height: 1.5; }
-          </style>
-        </head>
-        <body>
-          <div class="page-container">
-            
-            ${qData.isTest ? `
-              <div style="background: #fffbeb; border: 2px dashed #f59e0b; color: #b45309; padding: 12px 18px; border-radius: 12px; margin-bottom: 22px; text-align: center;">
-                <div style="font-size: 13px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase;">
-                  ⚠️ DOCUMENTO DE PRUEBA / BORRADOR - SIN VALIDEZ TRIBUTARIA
-                </div>
-                <div style="font-size: 10px; font-weight: 600; color: #92400e; margin-top: 3px;">
-                  Esta cotización fue generada con fines de prueba y simulación interna. No constituye un compromiso comercial formal.
-                </div>
-              </div>
-            ` : ''}
-
-            <!-- ENCABEZADO CON MEMBRETE DE NUESTRA EMPRESA -->
-            <div class="header">
-              <div class="company-brand">
-                <img src="${logoSrc}" class="logo" alt="Logo" onerror="this.style.display='none'" />
-                <div class="company-info">
-                  <h2>${issuerCompany.companyName || 'LogisticAPP - Sistema de Gestión Logística'}</h2>
-                  ${issuerCompany.rut ? `<p><strong>RUT:</strong> ${issuerCompany.rut}</p>` : ''}
-                  ${issuerCompany.giro ? `<p><strong>Giro:</strong> ${issuerCompany.giro}</p>` : ''}
-                  ${issuerCompany.address ? `<p>${issuerCompany.address}</p>` : ''}
-                  ${issuerFullContact ? `<p style="color: #7c3aed; font-weight: 700;">${issuerFullContact}</p>` : ''}
-                </div>
-              </div>
-
-              <div class="title">
-                <h1 style="${qData.isTest ? 'color: #d97706;' : ''}">${qData.isTest ? 'Cotización (Prueba)' : 'Cotización'}</h1>
-                <p class="doc-number" style="${qData.isTest ? 'color: #d97706;' : ''}">${correlativo}</p>
-                <p>Fecha de Emisión: ${new Date(qData.createdAt || Date.now()).toLocaleDateString('es-CL')}</p>
-                <p style="color: #94a3b8; font-size: 10px;">${qData.isTest ? 'Documento de simulación' : 'Válida por 15 días corridos'}</p>
-              </div>
+      <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #0f172a; background: #ffffff; width: 800px; margin: 0 auto; padding: 30px; box-sizing: border-box;">
+        ${qData.isTest ? `
+          <div style="background: #fffbeb; border: 2px dashed #f59e0b; color: #b45309; padding: 12px 18px; border-radius: 12px; margin-bottom: 22px; text-align: center;">
+            <div style="font-size: 13px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase;">
+              ⚠️ DOCUMENTO DE PRUEBA / BORRADOR - SIN VALIDEZ TRIBUTARIA
             </div>
-
-            <!-- DATOS FORMALES DE LA EMPRESA CLIENTE -->
-            <div class="info-box">
-              <div class="section-title">Datos de la Empresa Cliente</div>
-              <div class="info-grid">
-                <div class="info-item">
-                  <h4>Razón Social / Empresa</h4>
-                  <p>${qData.client || 'A Quien Corresponda'}</p>
-                </div>
-                <div class="info-item">
-                  <h4>RUT Empresa</h4>
-                  <p>${qData.clientRut || 'Sin RUT registrado'}</p>
-                </div>
-                <div class="info-item">
-                  <h4>Giro Comercial</h4>
-                  <p>${qData.clientGiro || 'No especificado'}</p>
-                </div>
-                <div class="info-item">
-                  <h4>Dirección Comercial</h4>
-                  <p>${clientFullAddress || 'No especificada'}</p>
-                </div>
-                <div class="info-item">
-                  <h4>Atención a / Contacto</h4>
-                  <p>${qData.clientContact || 'Departamento de Adquisiciones'}</p>
-                </div>
-                <div class="info-item">
-                  <h4>Teléfono / Correo</h4>
-                  <p>${[qData.clientPhone, qData.clientEmail].filter(Boolean).join(' • ') || 'No especificado'}</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- DETALLES DE LA RUTA Y VEHÍCULO -->
-            <div class="info-box" style="margin-top: -5px;">
-              <div class="section-title">Detalles del Traslado y Carga</div>
-              <div class="info-grid">
-                <div class="info-item">
-                  <h4>Ruta Programada</h4>
-                  <p>${qData.origin || qData.destination ? `${qData.origin || 'Origen'} ➔ ${qData.destination || 'Destino'}` : 'Según itinerario acordado'}</p>
-                </div>
-                <div class="info-item">
-                  <h4>Distancia Estimada</h4>
-                  <p>${qData.distanceKm ? qData.distanceKm + ' KM' : 'N/A'}</p>
-                </div>
-                <div class="info-item">
-                  <h4>Tipo de Vehículo</h4>
-                  <p>${qData.vehicleType || 'No especificado'}</p>
-                </div>
-                <div class="info-item">
-                  <h4>Vehículo (Marca / Modelo)</h4>
-                  <p>${qData.brand || ''} ${qData.model || ''}</p>
-                </div>
-                <div class="info-item" style="grid-column: span 2;">
-                  <h4>Patente / Identificador VIN</h4>
-                  <p>${qData.plateOrVin || 'S/N'}</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- TABLA DE VALORES -->
-            <table>
-              <thead>
-                <tr>
-                  <th>Descripción del Servicio Logístico</th>
-                  <th>Total Neto</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>
-                    <strong>${qData.description || 'Servicio de traslado logístico de vehículo'}</strong><br/>
-                    <span style="font-size: 11px; color: #64748b; font-weight: normal; margin-top: 4px; display: inline-block;">
-                      Incluye conducción profesional, inspección visual de recepción y entrega segura.
-                    </span>
-                  </td>
-                  <td style="font-weight: 800; vertical-align: top; color: #1e293b;">${formatMoney(qData.netPrice || qData.finalPrice)}</td>
-                </tr>
-              </tbody>
-            </table>
-
-            <!-- RESUMEN FINANCIERO -->
-            <div class="totals">
-              ${hasIva ? `
-                <div class="totals-row">
-                  <span>Subtotal Neto</span>
-                  <span>${formatMoney(qData.netPrice)}</span>
-                </div>
-                <div class="totals-row">
-                  <span>IVA (19%)</span>
-                  <span>${formatMoney(qData.ivaAmount)}</span>
-                </div>
-              ` : `
-                <div class="totals-row">
-                  <span>Régimen Tributario</span>
-                  <span style="color: #64748b; font-weight: 800;">Exento / Sin IVA</span>
-                </div>
-              `}
-              <div class="totals-row final">
-                <span>Total a Pagar</span>
-                <span>${formatMoney(qData.finalPrice)}</span>
-              </div>
-            </div>
-
-            <!-- PIE DE PÁGINA -->
-            <div class="footer">
-              <p>Esta cotización formal tiene una validez de 15 días corridos a contar de su fecha de emisión.</p>
-              <p>Generado automáticamente a través de LogisticAPP - Sistema Integral de Gestión Logística</p>
+            <div style="font-size: 10px; font-weight: 600; color: #92400e; margin-top: 3px;">
+              Esta cotización fue generada con fines de prueba y simulación interna. No constituye un compromiso comercial formal.
             </div>
           </div>
-        </body>
-      </html>
+        ` : ''}
+
+        <!-- ENCABEZADO CON MEMBRETE DE NUESTRA EMPRESA -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #7c3aed; padding-bottom: 20px; margin-bottom: 25px;">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <img src="${logoSrc}" style="max-height: 60px;" alt="Logo" onerror="this.style.display='none'" />
+            <div>
+              <h2 style="margin: 0; color: #1e293b; font-size: 15px; text-transform: uppercase; font-weight: 900; letter-spacing: -0.3px;">${issuerCompany.companyName || 'LogisticAPP - Sistema de Gestión Logística'}</h2>
+              ${issuerCompany.rut ? `<p style="margin: 2px 0 0 0; color: #64748b; font-size: 11px; font-weight: 600;"><strong>RUT:</strong> ${issuerCompany.rut}</p>` : ''}
+              ${issuerCompany.giro ? `<p style="margin: 2px 0 0 0; color: #64748b; font-size: 11px; font-weight: 600;"><strong>Giro:</strong> ${issuerCompany.giro}</p>` : ''}
+              ${issuerCompany.address ? `<p style="margin: 2px 0 0 0; color: #64748b; font-size: 11px; font-weight: 600;">${issuerCompany.address}</p>` : ''}
+              ${issuerFullContact ? `<p style="margin: 2px 0 0 0; color: #7c3aed; font-weight: 700; font-size: 11px;">${issuerFullContact}</p>` : ''}
+            </div>
+          </div>
+
+          <div style="text-align: right;">
+            <h1 style="margin: 0; font-size: 22px; text-transform: uppercase; font-weight: 900; letter-spacing: -0.5px; ${qData.isTest ? 'color: #d97706;' : 'color: #7c3aed;'}">${qData.isTest ? 'Cotización (Prueba)' : 'Cotización'}</h1>
+            <p style="margin: 4px 0 0 0; font-size: 16px; font-weight: 900; font-family: monospace; ${qData.isTest ? 'color: #d97706;' : 'color: #0f172a;'}">${correlativo}</p>
+            <p style="margin: 3px 0 0 0; color: #64748b; font-size: 11px; font-weight: 600;">Fecha de Emisión: ${new Date(qData.createdAt || Date.now()).toLocaleDateString('es-CL')}</p>
+            <p style="margin: 3px 0 0 0; color: #94a3b8; font-size: 10px;">${qData.isTest ? 'Documento de simulación' : 'Válida por 15 días corridos'}</p>
+          </div>
+        </div>
+
+        <!-- DATOS FORMALES DE LA EMPRESA CLIENTE -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px 20px; border-radius: 12px; margin-bottom: 20px;">
+          <div style="font-size: 11px; font-weight: 900; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; border-bottom: 2px solid #f1f5f9; padding-bottom: 4px;">Datos de la Empresa Cliente</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px;">
+            <div>
+              <div style="color: #64748b; font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800; margin-bottom: 3px;">Razón Social / Empresa</div>
+              <div style="font-size: 13px; font-weight: 800; color: #0f172a; word-break: break-word;">${qData.client || 'A Quien Corresponda'}</div>
+            </div>
+            <div>
+              <div style="color: #64748b; font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800; margin-bottom: 3px;">RUT Empresa</div>
+              <div style="font-size: 13px; font-weight: 800; color: #0f172a;">${qData.clientRut || 'Sin RUT registrado'}</div>
+            </div>
+            <div>
+              <div style="color: #64748b; font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800; margin-bottom: 3px;">Giro Comercial</div>
+              <div style="font-size: 13px; font-weight: 800; color: #0f172a;">${qData.clientGiro || 'No especificado'}</div>
+            </div>
+            <div>
+              <div style="color: #64748b; font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800; margin-bottom: 3px;">Dirección Comercial</div>
+              <div style="font-size: 13px; font-weight: 800; color: #0f172a;">${clientFullAddress || 'No especificada'}</div>
+            </div>
+            <div>
+              <div style="color: #64748b; font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800; margin-bottom: 3px;">Atención a / Contacto</div>
+              <div style="font-size: 13px; font-weight: 800; color: #0f172a;">${qData.clientContact || 'Departamento de Adquisiciones'}</div>
+            </div>
+            <div>
+              <div style="color: #64748b; font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800; margin-bottom: 3px;">Teléfono / Correo</div>
+              <div style="font-size: 13px; font-weight: 800; color: #0f172a;">${[qData.clientPhone, qData.clientEmail].filter(Boolean).join(' • ') || 'No especificado'}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DETALLES DE LA RUTA Y VEHÍCULO -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px 20px; border-radius: 12px; margin-bottom: 20px; margin-top: -5px;">
+          <div style="font-size: 11px; font-weight: 900; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; border-bottom: 2px solid #f1f5f9; padding-bottom: 4px;">Detalles del Traslado y Carga</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px;">
+            <div>
+              <div style="color: #64748b; font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800; margin-bottom: 3px;">Ruta Programada</div>
+              <div style="font-size: 13px; font-weight: 800; color: #0f172a;">${qData.origin || qData.destination ? `${qData.origin || 'Origen'} ➔ ${qData.destination || 'Destino'}` : 'Según itinerario acordado'}</div>
+            </div>
+            <div>
+              <div style="color: #64748b; font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800; margin-bottom: 3px;">Distancia Estimada</div>
+              <div style="font-size: 13px; font-weight: 800; color: #0f172a;">${qData.distanceKm ? qData.distanceKm + ' KM' : 'N/A'}</div>
+            </div>
+            <div>
+              <div style="color: #64748b; font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800; margin-bottom: 3px;">Tipo de Vehículo</div>
+              <div style="font-size: 13px; font-weight: 800; color: #0f172a;">${qData.vehicleType || 'No especificado'}</div>
+            </div>
+            <div>
+              <div style="color: #64748b; font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800; margin-bottom: 3px;">Vehículo (Marca / Modelo)</div>
+              <div style="font-size: 13px; font-weight: 800; color: #0f172a;">${qData.brand || ''} ${qData.model || ''}</div>
+            </div>
+            <div style="grid-column: span 2;">
+              <div style="color: #64748b; font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800; margin-bottom: 3px;">Patente / Identificador VIN</div>
+              <div style="font-size: 13px; font-weight: 800; color: #0f172a;">${qData.plateOrVin || 'S/N'}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TABLA DE VALORES -->
+        <table style="width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 25px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+          <thead>
+            <tr>
+              <th style="background: #f8fafc; color: #475569; text-align: left; padding: 12px 16px; font-size: 11px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0;">Descripción del Servicio Logístico</th>
+              <th style="background: #f8fafc; color: #475569; text-align: right; padding: 12px 16px; font-size: 11px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0;">Total Neto</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding: 14px 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px;">
+                <strong>${qData.description || 'Servicio de traslado logístico de vehículo'}</strong><br/>
+                <span style="font-size: 11px; color: #64748b; font-weight: normal; margin-top: 4px; display: inline-block;">
+                  Incluye conducción profesional, inspección visual de recepción y entrega segura.
+                </span>
+              </td>
+              <td style="padding: 14px 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 800; vertical-align: top; text-align: right; color: #1e293b;">${formatMoney(qData.netPrice || qData.finalPrice)}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- RESUMEN FINANCIERO -->
+        <div style="width: 330px; margin-left: auto; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0;">
+          ${hasIva ? `
+            <div style="display: flex; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; color: #475569; background: #fff;">
+              <span>Subtotal Neto</span>
+              <span>${formatMoney(qData.netPrice)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; color: #475569; background: #fff;">
+              <span>IVA (19%)</span>
+              <span>${formatMoney(qData.ivaAmount)}</span>
+            </div>
+          ` : `
+            <div style="display: flex; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 600; color: #475569; background: #fff;">
+              <span>Régimen Tributario</span>
+              <span style="color: #64748b; font-weight: 800;">Exento / Sin IVA</span>
+            </div>
+          `}
+          <div style="display: flex; justify-content: space-between; padding: 10px 16px; font-size: 16px; font-weight: 900; background: #7c3aed; color: #fff;">
+            <span>Total a Pagar</span>
+            <span>${formatMoney(qData.finalPrice)}</span>
+          </div>
+        </div>
+
+        <!-- PIE DE PÁGINA -->
+        <div style="margin-top: 40px; text-align: center; color: #94a3b8; font-size: 10px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-weight: 600; line-height: 1.5;">
+          <p style="margin: 0 0 4px 0;">Esta cotización formal tiene una validez de 15 días corridos a contar de su fecha de emisión.</p>
+          <p style="margin: 0;">Generado automáticamente a través de LogisticAPP - Sistema Integral de Gestión Logística</p>
+        </div>
+      </div>
     `;
   };
 
@@ -1236,23 +1187,13 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     const clientClean = (targetQuote.client || 'Cliente').replace(/[^a-zA-Z0-9]/g, '_');
     const fileName = `${correlativo}_${clientClean}.pdf`;
 
-    let element = null;
     try {
       const [html2pdf, logoDataUrl] = await Promise.all([
         loadHtml2Pdf(),
         getLogoBase64()
       ]);
 
-      element = document.createElement('div');
-      element.style.width = '800px';
-      element.style.position = 'fixed';
-      element.style.top = '0';
-      element.style.left = '0';
-      element.style.zIndex = '-9999';
-      element.style.backgroundColor = '#ffffff';
-      element.style.color = '#0f172a';
-      element.innerHTML = buildQuotePDFHtml(targetQuote, logoDataUrl);
-      document.body.appendChild(element);
+      const htmlContent = buildQuotePDFHtml(targetQuote, logoDataUrl);
 
       const opt = {
         margin: 0,
@@ -1270,7 +1211,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
 
-      await html2pdf().from(element).set(opt).save();
+      await html2pdf().from(htmlContent).set(opt).save();
       showAlert("✅ Archivo PDF descargado correctamente.");
     } catch (err) {
       console.error("[ERR-QUOTE-DL-01]", err);
@@ -1290,10 +1231,6 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       } catch (err2) {
         console.error("[ERR-QUOTE-DL-03]", err2);
         showAlert("❌ [ERR-QUOTE-DL-03] Error al procesar la descarga del PDF.");
-      }
-    } finally {
-      if (element && element.parentNode) {
-        element.parentNode.removeChild(element);
       }
     }
   };
@@ -1347,16 +1284,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
           getLogoBase64()
         ]);
 
-        const element = document.createElement('div');
-        element.style.width = '800px';
-        element.style.position = 'fixed';
-        element.style.top = '0';
-        element.style.left = '0';
-        element.style.zIndex = '-9999';
-        element.style.backgroundColor = '#ffffff';
-        element.style.color = '#0f172a';
-        element.innerHTML = buildQuotePDFHtml(qData, logoDataUrl);
-        document.body.appendChild(element);
+        const htmlContent = buildQuotePDFHtml(qData, logoDataUrl);
 
         const opt = {
           margin: 0,
@@ -1374,14 +1302,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-        let pdfBlob = null;
-        try {
-          pdfBlob = await html2pdf().from(element).set(opt).output('blob');
-        } finally {
-          if (element && element.parentNode) {
-            element.parentNode.removeChild(element);
-          }
-        }
+        const pdfBlob = await html2pdf().from(htmlContent).set(opt).output('blob');
         const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -1392,21 +1313,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
           showAlert("✅ PDF adjunto listo. Pega el texto en el chat.");
         } else {
           showAlert("Abriendo WhatsApp Web... Pega el texto que ya fue copiado.");
-          
-          const saveEl = document.createElement('div');
-          saveEl.style.width = '800px';
-          saveEl.style.position = 'fixed';
-          saveEl.style.top = '0';
-          saveEl.style.left = '0';
-          saveEl.style.zIndex = '-9999';
-          saveEl.style.backgroundColor = '#ffffff';
-          saveEl.innerHTML = buildQuotePDFHtml(qData, logoDataUrl);
-          document.body.appendChild(saveEl);
-          try {
-            await html2pdf().from(saveEl).set(opt).save();
-          } finally {
-            if (saveEl.parentNode) saveEl.parentNode.removeChild(saveEl);
-          }
+          await html2pdf().from(htmlContent).set(opt).save();
 
           setTimeout(() => {
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
@@ -1448,8 +1355,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 Cotizador de Traslados
               </h2>
               <span className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border transition-all ${isTestQuote
-                  ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700'
-                  : 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700'
+                : 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
                 }`}>
                 {isTestQuote ? `🧪 ${previewNextCorrelative}` : `Próximo: ${previewNextCorrelative}`}
               </span>
@@ -1489,8 +1396,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             type="button"
             onClick={() => handleSetQuoteMode('simple')}
             className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${quoteMode === 'simple'
-                ? 'bg-purple-600 text-white shadow-md shadow-purple-300 dark:shadow-none'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              ? 'bg-purple-600 text-white shadow-md shadow-purple-300 dark:shadow-none'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
           >
             <Smartphone className="w-4 h-4" />
@@ -1501,8 +1408,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             type="button"
             onClick={() => handleSetQuoteMode('full')}
             className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${quoteMode === 'full'
-                ? 'bg-purple-600 text-white shadow-md shadow-purple-300 dark:shadow-none'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              ? 'bg-purple-600 text-white shadow-md shadow-purple-300 dark:shadow-none'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
           >
             <Calculator className="w-4 h-4" />
@@ -1512,8 +1419,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
         {/* INTERRUPTOR: COTIZACIÓN DE PRUEBA */}
         <div className={`flex items-center justify-between gap-3 px-4 py-2.5 rounded-2xl border transition-all shadow-sm ${isTestQuote
-            ? 'bg-amber-500/10 border-amber-400 dark:border-amber-500/40 text-amber-900 dark:text-amber-200'
-            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+          ? 'bg-amber-500/10 border-amber-400 dark:border-amber-500/40 text-amber-900 dark:text-amber-200'
+          : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
           }`}>
           <div className="flex items-center gap-2.5">
             <div className={`p-2 rounded-xl shrink-0 ${isTestQuote ? 'bg-amber-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
@@ -1740,8 +1647,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                   type="button"
                   onClick={() => setSimpleData({ ...simpleData, addIva: true })}
                   className={`py-3 px-3 rounded-xl text-xs font-black transition-all border ${simpleData.addIva
-                      ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
-                      : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                    ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
+                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                     }`}
                 >
                   Sí, Sumar IVA (+19%)
@@ -1751,8 +1658,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                   type="button"
                   onClick={() => setSimpleData({ ...simpleData, addIva: false })}
                   className={`py-3 px-3 rounded-xl text-xs font-black transition-all border ${!simpleData.addIva
-                      ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
-                      : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                    ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
+                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                     }`}
                 >
                   No, Valor Final / Exento
@@ -1779,8 +1686,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
             {/* 6. Interruptor de Cotización de Prueba (Modo Rápido) */}
             <div className={`p-3.5 rounded-2xl border transition-all ${isTestQuote
-                ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-700/60'
-                : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700'
+              ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-700/60'
+              : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700'
               }`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
@@ -1823,8 +1730,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             <button
               type="submit"
               className={`w-full text-white font-black py-4 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 text-sm ${isTestQuote
-                  ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-200 dark:shadow-none'
-                  : 'bg-purple-600 hover:bg-purple-700 shadow-purple-200 dark:shadow-none'
+                ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-200 dark:shadow-none'
+                : 'bg-purple-600 hover:bg-purple-700 shadow-purple-200 dark:shadow-none'
                 }`}
             >
               {isTestQuote ? (
@@ -2195,8 +2102,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
             {/* Interruptor: Cotización de Prueba (Calculadora) */}
             <div className={`p-4 rounded-2xl border transition-all ${isTestQuote
-                ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-700/60'
-                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'
+              ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-700/60'
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'
               }`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
@@ -2297,8 +2204,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     type="button"
                     onClick={() => setHistoryFilter('all')}
                     className={`px-2.5 py-1 rounded-lg transition-colors ${historyFilter === 'all'
-                        ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
-                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+                      ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
                       }`}
                   >
                     Todas ({savedQuotes.length})
@@ -2307,8 +2214,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     type="button"
                     onClick={() => setHistoryFilter('official')}
                     className={`px-2.5 py-1 rounded-lg transition-colors ${historyFilter === 'official'
-                        ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
-                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+                      ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
                       }`}
                   >
                     Oficiales ({officialCount})
@@ -2317,8 +2224,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     type="button"
                     onClick={() => setHistoryFilter('test')}
                     className={`px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 ${historyFilter === 'test'
-                        ? 'bg-amber-500 text-white shadow-sm'
-                        : 'text-amber-600 dark:text-amber-400 hover:text-amber-700'
+                      ? 'bg-amber-500 text-white shadow-sm'
+                      : 'text-amber-600 dark:text-amber-400 hover:text-amber-700'
                       }`}
                   >
                     <FlaskConical className="w-3 h-3" />
@@ -2398,7 +2305,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                               </span>
                             ) : (
                               <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${q.status === 'aceptada' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800' :
-                                  q.status === 'enviada' ? 'bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-300 dark:border-blue-800' : 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800'
+                                q.status === 'enviada' ? 'bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-300 dark:border-blue-800' : 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800'
                                 }`}>
                                 {q.status || 'pendiente'}
                               </span>
@@ -2465,8 +2372,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
             <div className="text-center mb-5">
               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-2 ${createdQuoteToShare.isTest
-                  ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400'
-                  : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400'
+                ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400'
+                : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400'
                 }`}>
                 {createdQuoteToShare.isTest ? <FlaskConical className="w-6 h-6" /> : <CheckCircle className="w-6 h-6" />}
               </div>
@@ -2564,8 +2471,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 type="button"
                 onClick={() => setClientConfigTab('client')}
                 className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${clientConfigTab === 'client'
-                    ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                   }`}
               >
                 <Briefcase className="w-3.5 h-3.5" />
@@ -2576,8 +2483,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 type="button"
                 onClick={() => setClientConfigTab('issuer')}
                 className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${clientConfigTab === 'issuer'
-                    ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                   }`}
               >
                 <Building2 className="w-3.5 h-3.5" />
