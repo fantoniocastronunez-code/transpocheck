@@ -1035,7 +1035,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     const logoSrc = customLogoUrl || `${window.location.origin}/LogoLogistica.png`;
 
     return `
-      <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #0f172a; background: #ffffff; width: 800px; margin: 0 auto; padding: 30px; box-sizing: border-box;">
+      <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #0f172a; background: #ffffff; width: 800px; margin: 0; padding: 30px; box-sizing: border-box;">
         ${qData.isTest ? `
           <div style="background: #fffbeb; border: 2px dashed #f59e0b; color: #b45309; padding: 12px 18px; border-radius: 12px; margin-bottom: 22px; text-align: center;">
             <div style="font-size: 13px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase;">
@@ -1205,7 +1205,6 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
           allowTaint: true,
           scrollX: 0,
           scrollY: 0,
-          windowWidth: 800,
           backgroundColor: '#ffffff'
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -1296,7 +1295,6 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             allowTaint: true,
             scrollX: 0,
             scrollY: 0,
-            windowWidth: 800,
             backgroundColor: '#ffffff'
           },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
