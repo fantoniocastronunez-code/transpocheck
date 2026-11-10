@@ -3,7 +3,8 @@ import { addDoc, collection, doc, updateDoc, deleteDoc, setDoc, onSnapshot, getD
 import { 
   Calculator, MapPin, Fuel, DollarSign, Plus, CheckCircle, 
   User, Truck, Receipt, Printer, Send, Save, ArrowRight, X, MessageCircle, Mail, MoreVertical, Calendar, Sparkles,
-  Settings, Sliders, Hash, RotateCcw, Building2, Briefcase, Phone, Globe, FileText, Check, Download, Smartphone
+  Settings, Sliders, Hash, RotateCcw, Building2, Briefcase, Phone, Globe, FileText, Check, Download, Smartphone,
+  FlaskConical, Filter
 } from 'lucide-react';
 import { formatMoney } from '../../utils/helpers';
 
@@ -23,6 +24,12 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       localStorage.setItem('preferred_quote_mode', mode);
     } catch (e) {}
   };
+
+  // Modo Cotización de Prueba (Test / Simulación)
+  const [isTestQuote, setIsTestQuote] = useState(false);
+
+  // Filtro para el Historial de Cotizaciones ('all', 'official', 'test')
+  const [historyFilter, setHistoryFilter] = useState('all');
 
   // Configuración de Correlativo
   const [correlativeConfig, setCorrelativeConfig] = useState({
@@ -263,6 +270,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     }
 
     setSelectedTollIds(q.selectedTollIds || []);
+    setIsTestQuote(!!q.isTest);
     setEditingQuoteId(q.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     showAlert("📝 Cotización cargada para edición.");
@@ -699,7 +707,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     }
 
     try {
-      const correlativoFinal = quoteData.quoteNumber?.trim() || formatCorrelativeNumber(correlativeConfig);
+      const isTest = !!isTestQuote;
+      const correlativoFinal = quoteData.quoteNumber?.trim() || (isTest 
+        ? `TEST-${formatCorrelativeNumber(correlativeConfig)}` 
+        : formatCorrelativeNumber(correlativeConfig));
       const isAddIva = !!simpleData.addIva;
       const netVal = Math.round(amountVal);
       const ivaVal = isAddIva ? Math.round(amountVal * 0.19) : 0;
@@ -727,7 +738,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         finalPrice: finalVal,
         addIva: isAddIva,
         quoteNumber: correlativoFinal,
-        status: 'pendiente',
+        isTest,
+        status: isTest ? 'prueba' : 'pendiente',
         createdAt: Date.now(),
         createdBy: currentUserEmail || '',
         mode: 'simple'
@@ -741,8 +753,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         const docRef = await addDoc(collection(db, 'quotes'), payload);
         quoteId = docRef.id;
 
-        // Avanzar contador de correlativo si fue automático
-        if (!quoteData.quoteNumber?.trim() || quoteData.quoteNumber.trim() === formatCorrelativeNumber(correlativeConfig)) {
+        // Avanzar contador de correlativo SOLO si NO fue de prueba y fue automático
+        if (!isTest && (!quoteData.quoteNumber?.trim() || quoteData.quoteNumber.trim() === formatCorrelativeNumber(correlativeConfig))) {
           try {
             await setDoc(doc(db, 'system_config', 'quotes_correlative'), {
               nextNumber: increment(1),
@@ -756,7 +768,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       }
 
       const savedQuoteObj = { id: quoteId, ...payload };
-      showAlert(`✅ Cotización ${correlativoFinal} generada exitosamente.`);
+      showAlert(isTest 
+        ? `🧪 Cotización de prueba ${correlativoFinal} generada (sin alterar correlativo oficial).` 
+        : `✅ Cotización ${correlativoFinal} generada exitosamente.`
+      );
       
       // Abrir modal de compartir de inmediato con la cotización creada
       setCreatedQuoteToShare(savedQuoteObj);
@@ -785,7 +800,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       return showAlert("⚠️ [ERR-QUOTE-VAL-01] Faltan datos obligatorios (Cliente, Origen y Destino).");
     }
     try {
-      const correlativoFinal = quoteData.quoteNumber?.trim() || formatCorrelativeNumber(correlativeConfig);
+      const isTest = !!isTestQuote;
+      const correlativoFinal = quoteData.quoteNumber?.trim() || (isTest 
+        ? `TEST-${formatCorrelativeNumber(correlativeConfig)}` 
+        : formatCorrelativeNumber(correlativeConfig));
 
       const payload = {
         ...quoteData,
@@ -801,7 +819,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         netPrice: Math.round(netPrice),
         ivaAmount: Math.round(ivaAmount),
         addIva: true,
-        status,
+        isTest,
+        status: isTest ? 'prueba' : status,
         selectedTollIds,
         updatedAt: Date.now(),
         mode: 'full'
@@ -810,7 +829,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       let quoteId = editingQuoteId;
       if (editingQuoteId) {
         await updateDoc(doc(db, 'quotes', editingQuoteId), payload);
-        showAlert(`✅ Cotización ${correlativoFinal} actualizada [${status.toUpperCase()}].`);
+        showAlert(isTest
+          ? `🧪 Cotización de prueba ${correlativoFinal} actualizada.`
+          : `✅ Cotización ${correlativoFinal} actualizada [${status.toUpperCase()}].`
+        );
         setEditingQuoteId(null);
       } else {
         const docRef = await addDoc(collection(db, 'quotes'), {
@@ -820,7 +842,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         });
         quoteId = docRef.id;
 
-        if (!quoteData.quoteNumber?.trim() || quoteData.quoteNumber.trim() === formatCorrelativeNumber(correlativeConfig)) {
+        // Avanzar contador de correlativo SOLO si NO fue de prueba y fue automático
+        if (!isTest && (!quoteData.quoteNumber?.trim() || quoteData.quoteNumber.trim() === formatCorrelativeNumber(correlativeConfig))) {
           try {
             await setDoc(doc(db, 'system_config', 'quotes_correlative'), {
               nextNumber: increment(1),
@@ -832,7 +855,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
           }
         }
 
-        showAlert(`✅ Cotización ${correlativoFinal} guardada [${status.toUpperCase()}].`);
+        showAlert(isTest
+          ? `🧪 Cotización de prueba ${correlativoFinal} guardada (sin alterar correlativo oficial).`
+          : `✅ Cotización ${correlativoFinal} guardada [${status.toUpperCase()}].`
+        );
         setQuoteData(prev => ({ ...prev, quoteNumber: '' }));
       }
 
@@ -1011,6 +1037,17 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         <body>
           <div class="page-container">
             
+            ${qData.isTest ? `
+              <div style="background: #fffbeb; border: 2px dashed #f59e0b; color: #b45309; padding: 12px 18px; border-radius: 12px; margin-bottom: 22px; text-align: center;">
+                <div style="font-size: 13px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase;">
+                  ⚠️ DOCUMENTO DE PRUEBA / BORRADOR - SIN VALIDEZ TRIBUTARIA
+                </div>
+                <div style="font-size: 10px; font-weight: 600; color: #92400e; margin-top: 3px;">
+                  Esta cotización fue generada con fines de prueba y simulación interna. No constituye un compromiso comercial formal.
+                </div>
+              </div>
+            ` : ''}
+
             <!-- ENCABEZADO CON MEMBRETE DE NUESTRA EMPRESA -->
             <div class="header">
               <div class="company-brand">
@@ -1025,10 +1062,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
               </div>
 
               <div class="title">
-                <h1>Cotización</h1>
-                <p class="doc-number">${correlativo}</p>
+                <h1 style="${qData.isTest ? 'color: #d97706;' : ''}">${qData.isTest ? 'Cotización (Prueba)' : 'Cotización'}</h1>
+                <p class="doc-number" style="${qData.isTest ? 'color: #d97706;' : ''}">${correlativo}</p>
                 <p>Fecha de Emisión: ${new Date(qData.createdAt || Date.now()).toLocaleDateString('es-CL')}</p>
-                <p style="color: #94a3b8; font-size: 10px;">Válida por 15 días corridos</p>
+                <p style="color: #94a3b8; font-size: 10px;">${qData.isTest ? 'Documento de simulación' : 'Válida por 15 días corridos'}</p>
               </div>
             </div>
 
@@ -1201,7 +1238,12 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     const correlativo = qData.quoteNumber?.trim() || formatCorrelativeNumber(correlativeConfig);
     const fileName = `${correlativo}_${(qData.client || 'Cliente').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
     
-    const text = `*Cotización de Traslado ${correlativo}*\n\n` +
+    const testHeader = qData.isTest
+      ? `🧪 *[COTIZACIÓN DE PRUEBA / SIMULACIÓN]*\n_Aviso: Este documento es únicamente una prueba sin validez legal ni tributaria._\n\n`
+      : '';
+
+    const text = testHeader +
+                 `*Cotización de Traslado ${correlativo}*\n\n` +
                  `🏢 *Empresa Cliente:* ${qData.client}${qData.clientRut ? ` (RUT: ${qData.clientRut})` : ''}\n` +
                  (qData.clientGiro ? `💼 *Giro:* ${qData.clientGiro}\n` : '') +
                  (qData.clientAddress ? `📍 *Dirección:* ${qData.clientAddress}\n` : '') +
@@ -1281,7 +1323,9 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     }
   };
 
-  const previewNextCorrelative = formatCorrelativeNumber(correlativeConfig);
+  const previewNextCorrelative = isTestQuote 
+    ? `TEST-${formatCorrelativeNumber(correlativeConfig)}` 
+    : formatCorrelativeNumber(correlativeConfig);
 
   return (
     <div className="space-y-6 pt-20 md:pt-22 max-w-6xl mx-auto px-4 pb-32 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -1297,8 +1341,12 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
               <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
                 Cotizador de Traslados
               </h2>
-              <span className="text-[10px] font-mono font-bold bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 px-2.5 py-0.5 rounded-full border border-purple-200 dark:border-purple-800">
-                Próximo: {previewNextCorrelative}
+              <span className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border transition-all ${
+                isTestQuote
+                  ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700'
+                  : 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+              }`}>
+                {isTestQuote ? `🧪 ${previewNextCorrelative}` : `Próximo: ${previewNextCorrelative}`}
               </span>
             </div>
             <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">
@@ -1329,33 +1377,77 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         </div>
       </div>
 
-      {/* SELECTOR DE MODO: MODO RÁPIDO (CELULAR) vs CALCULADORA DETALLADA */}
-      <div className="flex bg-slate-100 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700/80 max-w-md mx-auto sm:mx-0 shadow-sm">
-        <button
-          type="button"
-          onClick={() => handleSetQuoteMode('simple')}
-          className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
-            quoteMode === 'simple'
-              ? 'bg-purple-600 text-white shadow-md shadow-purple-300 dark:shadow-none'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-          }`}
-        >
-          <Smartphone className="w-4 h-4" />
-          Modo Rápido (Celular)
-        </button>
+      {/* SELECTOR DE MODO Y SWITCH DE COTIZACIÓN DE PRUEBA */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex bg-slate-100 dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700/80 w-full sm:max-w-md shadow-sm">
+          <button
+            type="button"
+            onClick={() => handleSetQuoteMode('simple')}
+            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+              quoteMode === 'simple'
+                ? 'bg-purple-600 text-white shadow-md shadow-purple-300 dark:shadow-none'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            <Smartphone className="w-4 h-4" />
+            Modo Rápido (Celular)
+          </button>
 
-        <button
-          type="button"
-          onClick={() => handleSetQuoteMode('full')}
-          className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
-            quoteMode === 'full'
-              ? 'bg-purple-600 text-white shadow-md shadow-purple-300 dark:shadow-none'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-          }`}
-        >
-          <Calculator className="w-4 h-4" />
-          Calculadora de Ruta & Peajes
-        </button>
+          <button
+            type="button"
+            onClick={() => handleSetQuoteMode('full')}
+            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+              quoteMode === 'full'
+                ? 'bg-purple-600 text-white shadow-md shadow-purple-300 dark:shadow-none'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            <Calculator className="w-4 h-4" />
+            Calculadora de Ruta & Peajes
+          </button>
+        </div>
+
+        {/* INTERRUPTOR: COTIZACIÓN DE PRUEBA */}
+        <div className={`flex items-center justify-between gap-3 px-4 py-2.5 rounded-2xl border transition-all shadow-sm ${
+          isTestQuote
+            ? 'bg-amber-500/10 border-amber-400 dark:border-amber-500/40 text-amber-900 dark:text-amber-200'
+            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+        }`}>
+          <div className="flex items-center gap-2.5">
+            <div className={`p-2 rounded-xl shrink-0 ${isTestQuote ? 'bg-amber-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+              <FlaskConical className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-black">Cotización de Prueba</span>
+                {isTestQuote && (
+                  <span className="text-[9px] font-black uppercase px-1.5 py-0.2 bg-amber-500 text-white rounded">
+                    TEST
+                  </span>
+                )}
+              </div>
+              <p className="text-[10px] text-slate-400">
+                {isTestQuote ? 'No alterará correlativo oficial' : 'Simulación sin afectar correlativos'}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isTestQuote}
+            onClick={() => setIsTestQuote(prev => !prev)}
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+              isTestQuote ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-700'
+            }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                isTestQuote ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
+          </button>
+        </div>
       </div>
 
       {/* AVISO DE MODO EDICIÓN */}
@@ -1587,12 +1679,69 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
               )}
             </div>
 
-            {/* 6. Botón de Aceptar y Generar Cotización */}
+            {/* 6. Interruptor de Cotización de Prueba (Modo Rápido) */}
+            <div className={`p-3.5 rounded-2xl border transition-all ${
+              isTestQuote 
+                ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-700/60' 
+                : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700'
+            }`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className={`p-2 rounded-xl ${isTestQuote ? 'bg-amber-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'}`}>
+                    <FlaskConical className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                      ¿Es una cotización de prueba?
+                      {isTestQuote && (
+                        <span className="text-[9px] font-black uppercase px-1.5 py-0.5 bg-amber-500 text-white rounded-full">
+                          Activo
+                        </span>
+                      )}
+                    </span>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                      {isTestQuote 
+                        ? 'No consumirá el correlativo oficial y llevará sello de prueba.' 
+                        : 'Desactivado: usará el correlativo oficial de tu empresa.'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isTestQuote}
+                  onClick={() => setIsTestQuote(prev => !prev)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    isTestQuote ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-700'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                      isTestQuote ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {/* 7. Botón de Aceptar y Generar Cotización */}
             <button 
               type="submit" 
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-black py-4 rounded-2xl shadow-lg shadow-purple-200 dark:shadow-none transition-all flex items-center justify-center gap-2 text-sm"
+              className={`w-full text-white font-black py-4 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 text-sm ${
+                isTestQuote
+                  ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-200 dark:shadow-none'
+                  : 'bg-purple-600 hover:bg-purple-700 shadow-purple-200 dark:shadow-none'
+              }`}
             >
-              <CheckCircle className="w-5 h-5"/> Aceptar y Generar Cotización
+              {isTestQuote ? (
+                <>
+                  <FlaskConical className="w-5 h-5"/> Generar Cotización de Prueba
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-5 h-5"/> Aceptar y Generar Cotización
+                </>
+              )}
             </button>
           </form>
         </div>
@@ -1950,6 +2099,49 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
               </div>
             </div>
 
+            {/* Interruptor: Cotización de Prueba (Calculadora) */}
+            <div className={`p-4 rounded-2xl border transition-all ${
+              isTestQuote 
+                ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-700/60' 
+                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'
+            }`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className={`p-2 rounded-xl ${isTestQuote ? 'bg-amber-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+                    <FlaskConical className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                      Cotización de Prueba
+                      {isTestQuote && (
+                        <span className="text-[9px] font-black uppercase px-1.5 py-0.5 bg-amber-500 text-white rounded-full">
+                          Activo
+                        </span>
+                      )}
+                    </span>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                      {isTestQuote ? 'No consumirá el correlativo oficial.' : 'Simulación de prueba o borrador.'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isTestQuote}
+                  onClick={() => setIsTestQuote(prev => !prev)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    isTestQuote ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-700'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                      isTestQuote ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
             {/* Botones de Acción */}
             <div className="grid grid-cols-1 gap-3">
               <button 
@@ -1991,107 +2183,187 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       )}
 
       {/* HISTORIAL DE COTIZACIONES GUARDADAS */}
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 mt-8">
-        <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-          <h3 className="text-base font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
-            <Receipt className="w-5 h-5 text-purple-600 dark:text-purple-400"/> Historial de Cotizaciones ({savedQuotes.length})
-          </h3>
-          <span className="text-[11px] font-bold text-slate-400">
-            Mostrando las más recientes primero • Descarga directa en un clic
-          </span>
-        </div>
-        
-        {savedQuotes.length === 0 ? (
-          <p className="text-xs font-bold text-slate-400 text-center py-8">No hay cotizaciones registradas aún.</p>
-        ) : (
-          <div className="overflow-x-auto pb-24 min-h-[280px]">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-slate-800/50 text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-800">
-                  <th className="p-3">N° Correlativo</th>
-                  <th className="p-3">Cliente</th>
-                  <th className="p-3">Ruta / Servicio</th>
-                  <th className="p-3">Vehículo / Patente</th>
-                  <th className="p-3">Total</th>
-                  <th className="p-3">Estado</th>
-                  <th className="p-3 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-bold text-slate-700 dark:text-slate-300">
-                {savedQuotes.map((q, idx) => {
-                  const correlativo = q.quoteNumber || `COT-${idx + 1}`;
-                  return (
-                    <tr key={q.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                      <td className="p-3 font-black text-purple-700 dark:text-purple-400 font-mono">{correlativo}</td>
-                      <td className="p-3 font-black">
-                        {q.client}
-                        {q.clientRut && <span className="block text-[10px] font-mono font-normal text-slate-400">{q.clientRut}</span>}
-                      </td>
-                      <td className="p-3 font-medium">
-                        {q.origin && q.destination 
-                          ? `${q.origin} ➔ ${q.destination} ${q.distanceKm ? `(${q.distanceKm} KM)` : ''}`
-                          : (q.description || 'Traslado logístico')
-                        }
-                      </td>
-                      <td className="p-3">
-                        {q.brand} {q.model} <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded ml-1 font-mono">{q.plateOrVin || 'S/N'}</span>
-                      </td>
-                      <td className="p-3 font-black text-slate-900 dark:text-slate-100">
-                        {formatMoney(q.finalPrice)}
-                        {q.ivaAmount === 0 && <span className="block text-[9px] font-normal text-slate-400">Exento</span>}
-                      </td>
-                      <td className="p-3">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                          q.status === 'aceptada' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800' :
-                          q.status === 'enviada' ? 'bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-300 dark:border-blue-800' : 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800'
-                        }`}>
-                          {q.status || 'pendiente'}
-                        </span>
-                      </td>
-                      <td className="p-3 text-right relative">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {/* BOTÓN RÁPIDO DE DESCARGA DIRECTA DE PDF */}
-                          <button
-                            type="button"
-                            onClick={() => handleDownloadPDFForQuote(q)}
-                            title="Descargar PDF de esta cotización"
-                            className="p-2 hover:bg-purple-100 dark:hover:bg-purple-900/50 bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/60 rounded-xl transition-colors shadow-sm"
-                          >
-                            <Download className="w-4 h-4" />
-                          </button>
+      {(() => {
+        const filteredQuotes = savedQuotes.filter(q => {
+          if (historyFilter === 'official') return !q.isTest;
+          if (historyFilter === 'test') return !!q.isTest;
+          return true;
+        });
+        const testCount = savedQuotes.filter(q => q.isTest).length;
+        const officialCount = savedQuotes.length - testCount;
 
-                          {/* MENÚ DE TRES PUNTOS */}
-                          <button 
-                            type="button"
-                            onClick={() => setActiveActionMenu(activeActionMenu === q.id ? null : q.id)} 
-                            className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl transition-colors shadow-sm"
-                          >
-                            <MoreVertical className="w-4 h-4"/>
-                          </button>
-                        </div>
-                        
-                        {/* Menú Desplegable Inteligente */}
-                        {activeActionMenu === q.id && (
-                          <div className={`absolute right-12 ${idx > 0 && idx === savedQuotes.length - 1 ? 'bottom-10' : 'top-10'} bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl rounded-xl w-48 py-2 z-[99] animate-in fade-in zoom-in-95`}>
-                            <button onClick={() => { handleDownloadPDFForQuote(q); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors flex items-center gap-2">
-                              <Download className="w-3.5 h-3.5" /> Descargar PDF
-                            </button>
-                            <button onClick={() => { handleEditQuote(q); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Modificar</button>
-                            <button onClick={() => { setCreatedQuoteToShare(q); setShowShareSuccessModal(true); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors">Enviar Cotización</button>
-                            <button onClick={() => { setAcceptQuoteData(q); setShowAcceptModal(true); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors">Cotización Aceptada</button>
-                            <div className="my-1 border-t border-slate-100 dark:border-slate-800"></div>
-                            <button onClick={() => { handleDeleteQuote(q.id); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">Eliminar</button>
-                          </div>
-                        )}
-                      </td>
+        return (
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 mt-8">
+            <div className="flex justify-between items-center mb-4 flex-wrap gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
+                <h3 className="text-base font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                  <Receipt className="w-5 h-5 text-purple-600 dark:text-purple-400"/> Historial de Cotizaciones
+                </h3>
+
+                {/* FILTRO DE HISTORIAL: TODAS / OFICIALES / PRUEBAS */}
+                <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-[11px] font-bold border border-slate-200 dark:border-slate-700">
+                  <button
+                    type="button"
+                    onClick={() => setHistoryFilter('all')}
+                    className={`px-2.5 py-1 rounded-lg transition-colors ${
+                      historyFilter === 'all' 
+                        ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm' 
+                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    Todas ({savedQuotes.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHistoryFilter('official')}
+                    className={`px-2.5 py-1 rounded-lg transition-colors ${
+                      historyFilter === 'official' 
+                        ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm' 
+                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    Oficiales ({officialCount})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHistoryFilter('test')}
+                    className={`px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 ${
+                      historyFilter === 'test' 
+                        ? 'bg-amber-500 text-white shadow-sm' 
+                        : 'text-amber-600 dark:text-amber-400 hover:text-amber-700'
+                    }`}
+                  >
+                    <FlaskConical className="w-3 h-3" />
+                    Pruebas ({testCount})
+                  </button>
+                </div>
+              </div>
+
+              <span className="text-[11px] font-bold text-slate-400">
+                Mostrando {filteredQuotes.length} de {savedQuotes.length} • Descarga directa en un clic
+              </span>
+            </div>
+            
+            {filteredQuotes.length === 0 ? (
+              <div className="text-center py-12 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+                <p className="text-xs font-bold text-slate-400">
+                  {historyFilter === 'test' 
+                    ? 'No hay cotizaciones de prueba registradas.' 
+                    : historyFilter === 'official' 
+                      ? 'No hay cotizaciones oficiales registradas.' 
+                      : 'No hay cotizaciones registradas aún.'}
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto pb-24 min-h-[280px]">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-800/50 text-slate-400 uppercase tracking-widest border-b border-slate-200 dark:border-slate-800">
+                      <th className="p-3">N° Correlativo</th>
+                      <th className="p-3">Cliente</th>
+                      <th className="p-3">Ruta / Servicio</th>
+                      <th className="p-3">Vehículo / Patente</th>
+                      <th className="p-3">Total</th>
+                      <th className="p-3">Estado</th>
+                      <th className="p-3 text-right">Acciones</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-bold text-slate-700 dark:text-slate-300">
+                    {filteredQuotes.map((q, idx) => {
+                      const correlativo = q.quoteNumber || `COT-${idx + 1}`;
+                      return (
+                        <tr key={q.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${
+                          q.isTest ? 'bg-amber-500/5 dark:bg-amber-500/5' : ''
+                        }`}>
+                          <td className="p-3 font-mono font-black">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className={q.isTest ? 'text-amber-600 dark:text-amber-400' : 'text-purple-700 dark:text-purple-400'}>
+                                {correlativo}
+                              </span>
+                              {q.isTest && (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800 flex items-center gap-0.5 font-extrabold uppercase">
+                                  <FlaskConical className="w-2.5 h-2.5" /> TEST
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-3 font-black">
+                            {q.client}
+                            {q.clientRut && <span className="block text-[10px] font-mono font-normal text-slate-400">{q.clientRut}</span>}
+                          </td>
+                          <td className="p-3 font-medium">
+                            {q.origin && q.destination 
+                              ? `${q.origin} ➔ ${q.destination} ${q.distanceKm ? `(${q.distanceKm} KM)` : ''}`
+                              : (q.description || 'Traslado logístico')
+                            }
+                          </td>
+                          <td className="p-3">
+                            {q.brand} {q.model} <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded ml-1 font-mono">{q.plateOrVin || 'S/N'}</span>
+                          </td>
+                          <td className="p-3 font-black text-slate-900 dark:text-slate-100">
+                            {formatMoney(q.finalPrice)}
+                            {q.ivaAmount === 0 && <span className="block text-[9px] font-normal text-slate-400">Exento</span>}
+                          </td>
+                          <td className="p-3">
+                            {q.isTest ? (
+                              <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800 inline-flex items-center gap-1">
+                                <FlaskConical className="w-3 h-3" /> Prueba
+                              </span>
+                            ) : (
+                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                q.status === 'aceptada' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800' :
+                                q.status === 'enviada' ? 'bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-300 dark:border-blue-800' : 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800'
+                              }`}>
+                                {q.status || 'pendiente'}
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3 text-right relative">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {/* BOTÓN RÁPIDO DE DESCARGA DIRECTA DE PDF */}
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadPDFForQuote(q)}
+                                title="Descargar PDF de esta cotización"
+                                className="p-2 hover:bg-purple-100 dark:hover:bg-purple-900/50 bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/60 rounded-xl transition-colors shadow-sm"
+                              >
+                                <Download className="w-4 h-4" />
+                              </button>
+
+                              {/* MENÚ DE TRES PUNTOS */}
+                              <button 
+                                type="button"
+                                onClick={() => setActiveActionMenu(activeActionMenu === q.id ? null : q.id)} 
+                                className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl transition-colors shadow-sm"
+                              >
+                                <MoreVertical className="w-4 h-4"/>
+                              </button>
+                            </div>
+                            
+                            {/* Menú Desplegable Inteligente */}
+                            {activeActionMenu === q.id && (
+                              <div className={`absolute right-12 ${idx > 0 && idx === filteredQuotes.length - 1 ? 'bottom-10' : 'top-10'} bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl rounded-xl w-48 py-2 z-[99] animate-in fade-in zoom-in-95`}>
+                                <button onClick={() => { handleDownloadPDFForQuote(q); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors flex items-center gap-2">
+                                  <Download className="w-3.5 h-3.5" /> Descargar PDF
+                                </button>
+                                <button onClick={() => { handleEditQuote(q); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Modificar</button>
+                                <button onClick={() => { setCreatedQuoteToShare(q); setShowShareSuccessModal(true); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors">Enviar Cotización</button>
+                                <button onClick={() => { setAcceptQuoteData(q); setShowAcceptModal(true); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors">Cotización Aceptada</button>
+                                <div className="my-1 border-t border-slate-100 dark:border-slate-800"></div>
+                                <button onClick={() => { handleDeleteQuote(q.id); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">Eliminar</button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        );
+      })()}
 
       {/* MODAL: COMPARTIR COTIZACIÓN (WHATSAPP, CORREO O DESCARGAR PDF) */}
       {showShareSuccessModal && createdQuoteToShare && (
@@ -2106,13 +2378,24 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             </button>
             
             <div className="text-center mb-5">
-              <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center mx-auto mb-2">
-                <CheckCircle className="w-6 h-6" />
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-2 ${
+                createdQuoteToShare.isTest
+                  ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400'
+                  : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400'
+              }`}>
+                {createdQuoteToShare.isTest ? <FlaskConical className="w-6 h-6" /> : <CheckCircle className="w-6 h-6" />}
               </div>
               <h3 className="text-lg font-black text-slate-800 dark:text-slate-200">
-                ¡Cotización {createdQuoteToShare.quoteNumber} Lista!
+                {createdQuoteToShare.isTest ? `¡Cotización de Prueba Lista!` : `¡Cotización ${createdQuoteToShare.quoteNumber} Lista!`}
               </h3>
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-0.5">
+              {createdQuoteToShare.isTest && (
+                <div className="mt-1">
+                  <span className="inline-block text-[10px] font-black uppercase tracking-wider px-2 py-0.5 bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 rounded-full border border-amber-300 dark:border-amber-700">
+                    Modo Prueba • Correlativo No Alterado
+                  </span>
+                </div>
+              )}
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">
                 {createdQuoteToShare.client} • {formatMoney(createdQuoteToShare.finalPrice)}
               </p>
             </div>
