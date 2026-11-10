@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { addDoc, collection, doc, updateDoc, deleteDoc, setDoc, onSnapshot, getDocs, increment } from 'firebase/firestore';
-import { 
-  Calculator, MapPin, Fuel, DollarSign, Plus, CheckCircle, 
+import {
+  Calculator, MapPin, Fuel, DollarSign, Plus, CheckCircle,
   User, Truck, Receipt, Printer, Send, Save, ArrowRight, X, MessageCircle, Mail, MoreVertical, Calendar, Sparkles,
   Settings, Sliders, Hash, RotateCcw, Building2, Briefcase, Phone, Globe, FileText, Check, Download, Smartphone,
   FlaskConical, Filter
@@ -22,7 +22,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     setQuoteMode(mode);
     try {
       localStorage.setItem('preferred_quote_mode', mode);
-    } catch (e) {}
+    } catch (e) { }
   };
 
   // Modo Cotización de Prueba (Test / Simulación)
@@ -123,7 +123,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   // Estados para Edición, Menús y Modales
   const [editingQuoteId, setEditingQuoteId] = useState(null);
   const [showSendModal, setShowSendModal] = useState(false);
-  
+
   // Estados del Historial (Menú de 3 puntos y Modal de Traslado)
   const [activeActionMenu, setActiveActionMenu] = useState(null);
   const [showAcceptModal, setShowAcceptModal] = useState(false);
@@ -132,7 +132,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     scheduledDate: new Date().toISOString().split('T')[0],
     assignedDriver: ''
   });
-  
+
   const [showNewTollModal, setShowNewTollModal] = useState(false);
   const [editingTollId, setEditingTollId] = useState(null);
   const [newTollData, setNewTollData] = useState({
@@ -299,7 +299,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     if (newTollData.route === 'Otra Ruta' && !newTollData.customRoute) {
       return showAlert("⚠️ [ERR-TOLL-VAL-02] Escribe el nombre de la ruta manual.");
     }
-    
+
     try {
       const finalRoute = newTollData.route === 'Otra Ruta' ? newTollData.customRoute : newTollData.route;
       const payload = { ...newTollData, route: finalRoute, km: parseFloat(newTollData.km) || 0 };
@@ -371,7 +371,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   const handleOpenClientConfigModal = (clientNameToPreselect) => {
     setIssuerForm({ ...issuerCompany });
     setClientConfigTab('client');
-    
+
     const targetName = clientNameToPreselect || quoteData.client;
     const found = targetName ? customClients.find(c => c.name?.toLowerCase() === targetName.toLowerCase()) : null;
 
@@ -545,7 +545,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       const priceForVehicle = toll?.prices?.[quoteData.vehicleType] || 0;
       return sum + parseFloat(priceForVehicle || 0);
     }, 0);
-    
+
     setQuoteData(q => {
       const newTollsCost = totalTolls > 0 ? totalTolls : '';
       if (q.tollsCost === newTollsCost) return q;
@@ -560,13 +560,13 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   // Memoria Predictiva de Rutas
   useEffect(() => {
     if (!quoteData.origin || !quoteData.destination || savedQuotes.length === 0) return;
-    
+
     const originClean = quoteData.origin.trim().toLowerCase();
     const destClean = quoteData.destination.trim().toLowerCase();
 
     if (originClean.length > 3 && destClean.length > 3 && selectedTollIds.length === 0) {
-      const pastQuote = savedQuotes.find(q => 
-        q.origin?.trim().toLowerCase() === originClean && 
+      const pastQuote = savedQuotes.find(q =>
+        q.origin?.trim().toLowerCase() === originClean &&
         q.destination?.trim().toLowerCase() === destClean &&
         q.selectedTollIds && q.selectedTollIds.length > 0
       );
@@ -595,15 +595,15 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   const distance = parseFloat(quoteData.distanceKm) || 0;
   const kml = parseFloat(quoteData.kmPerLiter) || 1;
   const fuelPrice = parseFloat(quoteData.fuelPrice) || 0;
-  
+
   const totalLiters = distance / kml;
   const fuelCost = totalLiters * fuelPrice;
   const tolls = parseFloat(quoteData.tollsCost) || 0;
   const driver = parseFloat(quoteData.driverFee) || 0;
-  
+
   const subtotalCosts = fuelCost + tolls + driver;
   const marginMultiplier = 1 + ((parseFloat(quoteData.marginPct) || 0) / 100);
-  
+
   const netPrice = Math.round(subtotalCosts * marginMultiplier);
   const ivaAmount = Math.round(netPrice * 0.19);
   const finalPrice = netPrice + ivaAmount;
@@ -624,7 +624,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   const fetchFuelPriceWithAI = async () => {
     setIsFetchingFuel(true);
     try {
-      const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
+      const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
       const prompt = "Busca en internet el precio promedio actual del litro de petróleo Diésel en Chile para este mes. Responde ÚNICAMENTE con el número entero exacto, sin puntos, sin comas y sin texto adicional. Por ejemplo: 1280";
 
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
@@ -636,7 +636,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       });
 
       const data = await res.json();
-      
+
       if (data.candidates && data.candidates.length > 0) {
         const respuestaTexto = data.candidates[0].content.parts[0].text;
         const precioLimpio = parseInt(respuestaTexto.replace(/[^0-9]/g, ''), 10);
@@ -708,8 +708,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
     try {
       const isTest = !!isTestQuote;
-      const correlativoFinal = quoteData.quoteNumber?.trim() || (isTest 
-        ? `TEST-${formatCorrelativeNumber(correlativeConfig)}` 
+      const correlativoFinal = quoteData.quoteNumber?.trim() || (isTest
+        ? `TEST-${formatCorrelativeNumber(correlativeConfig)}`
         : formatCorrelativeNumber(correlativeConfig));
       const isAddIva = !!simpleData.addIva;
       const netVal = Math.round(amountVal);
@@ -768,11 +768,11 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       }
 
       const savedQuoteObj = { id: quoteId, ...payload };
-      showAlert(isTest 
-        ? `🧪 Cotización de prueba ${correlativoFinal} generada (sin alterar correlativo oficial).` 
+      showAlert(isTest
+        ? `🧪 Cotización de prueba ${correlativoFinal} generada (sin alterar correlativo oficial).`
         : `✅ Cotización ${correlativoFinal} generada exitosamente.`
       );
-      
+
       // Abrir modal de compartir de inmediato con la cotización creada
       setCreatedQuoteToShare(savedQuoteObj);
       setShowShareSuccessModal(true);
@@ -801,8 +801,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     }
     try {
       const isTest = !!isTestQuote;
-      const correlativoFinal = quoteData.quoteNumber?.trim() || (isTest 
-        ? `TEST-${formatCorrelativeNumber(correlativeConfig)}` 
+      const correlativoFinal = quoteData.quoteNumber?.trim() || (isTest
+        ? `TEST-${formatCorrelativeNumber(correlativeConfig)}`
         : formatCorrelativeNumber(correlativeConfig));
 
       const payload = {
@@ -903,7 +903,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
           vehicleType: quoteData.vehicleType || 'Auto / SUV',
           plate: quoteData.plateOrVin || 'S/N',
           tripType: 'traslado',
-          status: 'pending', 
+          status: 'pending',
           createdAt: Date.now(),
           scheduledDate: new Date().toISOString().split('T')[0],
           quotedPrice: Math.round(currentPrice || 0),
@@ -980,13 +980,59 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     }
   };
 
+  // Cache para el logo en Base64 para evitar bloqueos por CORS o demoras de carga
+  const getLogoBase64 = async () => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth || img.width;
+          canvas.height = img.naturalHeight || img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        } catch (e) {
+          resolve(`${window.location.origin}/LogoLogistica.png`);
+        }
+      };
+      img.onerror = () => resolve(`${window.location.origin}/LogoLogistica.png`);
+      setTimeout(() => resolve(`${window.location.origin}/LogoLogistica.png`), 1500);
+      img.src = `${window.location.origin}/LogoLogistica.png`;
+    });
+  };
+
+  // Cargador seguro de html2pdf con detección de scripts existentes y timeout
+  const loadHtml2Pdf = () => {
+    return new Promise((resolve, reject) => {
+      if (window.html2pdf) return resolve(window.html2pdf);
+      const existing = document.querySelector('script[src*="html2pdf"]');
+      if (existing) {
+        existing.addEventListener('load', () => resolve(window.html2pdf));
+        existing.addEventListener('error', () => reject(new Error('Failed to load html2pdf script')));
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      script.onload = () => resolve(window.html2pdf);
+      script.onerror = () => reject(new Error('Failed to load html2pdf from CDN'));
+      document.head.appendChild(script);
+      setTimeout(() => {
+        if (window.html2pdf) resolve(window.html2pdf);
+        else reject(new Error('html2pdf script load timeout'));
+      }, 7000);
+    });
+  };
+
   // Generador de HTML para PDF Desacoplado (Sirve para cualquier cotización del historial o del formulario)
-  const buildQuotePDFHtml = (targetQuote) => {
+  const buildQuotePDFHtml = (targetQuote, customLogoUrl) => {
     const qData = targetQuote || quoteData;
     const correlativo = qData.quoteNumber?.trim() || formatCorrelativeNumber(correlativeConfig);
     const clientFullAddress = [qData.clientAddress, qData.clientCity].filter(Boolean).join(', ');
     const issuerFullContact = [issuerCompany.phone, issuerCompany.email].filter(Boolean).join(' • ');
     const hasIva = qData.ivaAmount > 0;
+    const logoSrc = customLogoUrl || `${window.location.origin}/LogoLogistica.png`;
 
     return `
       <html>
@@ -1051,7 +1097,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             <!-- ENCABEZADO CON MEMBRETE DE NUESTRA EMPRESA -->
             <div class="header">
               <div class="company-brand">
-                <img src="${window.location.origin}/LogoLogistica.png" class="logo" alt="Logo" onerror="this.style.display='none'" />
+                <img src="${logoSrc}" class="logo" alt="Logo" onerror="this.style.display='none'" />
                 <div class="company-info">
                   <h2>${issuerCompany.companyName || 'LogisticAPP - Sistema de Gestión Logística'}</h2>
                   ${issuerCompany.rut ? `<p><strong>RUT:</strong> ${issuerCompany.rut}</p>` : ''}
@@ -1190,23 +1236,37 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     const clientClean = (targetQuote.client || 'Cliente').replace(/[^a-zA-Z0-9]/g, '_');
     const fileName = `${correlativo}_${clientClean}.pdf`;
 
+    let element = null;
     try {
-      const html2pdf = await new Promise((resolve) => {
-        if (window.html2pdf) return resolve(window.html2pdf);
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-        script.onload = () => resolve(window.html2pdf);
-        document.body.appendChild(script);
-      });
+      const [html2pdf, logoDataUrl] = await Promise.all([
+        loadHtml2Pdf(),
+        getLogoBase64()
+      ]);
 
-      const element = document.createElement('div');
-      element.innerHTML = buildQuotePDFHtml(targetQuote);
-      
+      element = document.createElement('div');
+      element.style.width = '800px';
+      element.style.position = 'fixed';
+      element.style.top = '0';
+      element.style.left = '0';
+      element.style.zIndex = '-9999';
+      element.style.backgroundColor = '#ffffff';
+      element.style.color = '#0f172a';
+      element.innerHTML = buildQuotePDFHtml(targetQuote, logoDataUrl);
+      document.body.appendChild(element);
+
       const opt = {
         margin: 0,
         filename: fileName,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: 800,
+          backgroundColor: '#ffffff'
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
 
@@ -1215,15 +1275,25 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     } catch (err) {
       console.error("[ERR-QUOTE-DL-01]", err);
       try {
+        const logoDataUrl = await getLogoBase64();
         const printWindow = window.open('', '_blank');
-        printWindow.document.write(buildQuotePDFHtml(targetQuote));
-        printWindow.document.close();
-        setTimeout(() => {
-          printWindow.focus();
-          printWindow.print();
-        }, 500);
+        if (printWindow) {
+          printWindow.document.write(buildQuotePDFHtml(targetQuote, logoDataUrl));
+          printWindow.document.close();
+          setTimeout(() => {
+            printWindow.focus();
+            printWindow.print();
+          }, 500);
+        } else {
+          showAlert("❌ [ERR-QUOTE-DL-02] Bloqueador de popups impidió imprimir el PDF.");
+        }
       } catch (err2) {
-        showAlert("❌ [ERR-QUOTE-DL-02] Error al procesar la descarga del PDF.");
+        console.error("[ERR-QUOTE-DL-03]", err2);
+        showAlert("❌ [ERR-QUOTE-DL-03] Error al procesar la descarga del PDF.");
+      }
+    } finally {
+      if (element && element.parentNode) {
+        element.parentNode.removeChild(element);
       }
     }
   };
@@ -1237,60 +1307,81 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
     const correlativo = qData.quoteNumber?.trim() || formatCorrelativeNumber(correlativeConfig);
     const fileName = `${correlativo}_${(qData.client || 'Cliente').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-    
+
     const testHeader = qData.isTest
       ? `🧪 *[COTIZACIÓN DE PRUEBA / SIMULACIÓN]*\n_Aviso: Este documento es únicamente una prueba sin validez legal ni tributaria._\n\n`
       : '';
 
     const text = testHeader +
-                 `*Cotización de Traslado ${correlativo}*\n\n` +
-                 `🏢 *Empresa Cliente:* ${qData.client}${qData.clientRut ? ` (RUT: ${qData.clientRut})` : ''}\n` +
-                 (qData.clientGiro ? `💼 *Giro:* ${qData.clientGiro}\n` : '') +
-                 (qData.clientAddress ? `📍 *Dirección:* ${qData.clientAddress}\n` : '') +
-                 (qData.clientContact ? `👤 *Atención:* ${qData.clientContact}\n` : '') +
-                 (qData.origin && qData.destination ? `🛣️ *Ruta:* ${qData.origin} ➔ ${qData.destination} ${qData.distanceKm ? `(${qData.distanceKm} KM)` : ''}\n` : '') +
-                 `🚘 *Vehículo:* ${qData.vehicleType || 'Vehículo'} ${qData.brand ? `- ${qData.brand} ${qData.model || ''}` : ''} ${qData.plateOrVin ? `[${qData.plateOrVin}]` : ''}\n` +
-                 `📋 *Servicio:* ${qData.description || 'Traslado logístico'}\n\n` +
-                 (qData.ivaAmount > 0 ? (
-                   `💰 *Subtotal Neto:* ${formatMoney(qData.netPrice)}\n` +
-                   `🧾 *IVA (19%):* ${formatMoney(qData.ivaAmount)}\n`
-                 ) : '') +
-                 `✅ *Total a Pagar:* ${formatMoney(qData.finalPrice)}${qData.ivaAmount === 0 ? ' (Exento/Sin IVA)' : ''}\n\n` +
-                 (issuerCompany.companyName ? `_Emitido por: ${issuerCompany.companyName}${issuerCompany.rut ? ` (RUT: ${issuerCompany.rut})` : ''}_\n` : '') +
-                 `_Generado por LogisticAPP_`;
+      `*Cotización de Traslado ${correlativo}*\n\n` +
+      `🏢 *Empresa Cliente:* ${qData.client}${qData.clientRut ? ` (RUT: ${qData.clientRut})` : ''}\n` +
+      (qData.clientGiro ? `💼 *Giro:* ${qData.clientGiro}\n` : '') +
+      (qData.clientAddress ? `📍 *Dirección:* ${qData.clientAddress}\n` : '') +
+      (qData.clientContact ? `👤 *Atención:* ${qData.clientContact}\n` : '') +
+      (qData.origin && qData.destination ? `🛣️ *Ruta:* ${qData.origin} ➔ ${qData.destination} ${qData.distanceKm ? `(${qData.distanceKm} KM)` : ''}\n` : '') +
+      `🚘 *Vehículo:* ${qData.vehicleType || 'Vehículo'} ${qData.brand ? `- ${qData.brand} ${qData.model || ''}` : ''} ${qData.plateOrVin ? `[${qData.plateOrVin}]` : ''}\n` +
+      `📋 *Servicio:* ${qData.description || 'Traslado logístico'}\n\n` +
+      (qData.ivaAmount > 0 ? (
+        `💰 *Subtotal Neto:* ${formatMoney(qData.netPrice)}\n` +
+        `🧾 *IVA (19%):* ${formatMoney(qData.ivaAmount)}\n`
+      ) : '') +
+      `✅ *Total a Pagar:* ${formatMoney(qData.finalPrice)}${qData.ivaAmount === 0 ? ' (Exento/Sin IVA)' : ''}\n\n` +
+      (issuerCompany.companyName ? `_Emitido por: ${issuerCompany.companyName}${issuerCompany.rut ? ` (RUT: ${issuerCompany.rut})` : ''}_\n` : '') +
+      `_Generado por LogisticAPP_`;
 
     if (method === 'whatsapp') {
       try {
         showAlert("⏳ Preparando documento PDF para WhatsApp...");
-        
+
         const textArea = document.createElement("textarea");
         textArea.value = text;
         textArea.style.position = "fixed";
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
-        try { document.execCommand('copy'); } catch (err) {}
+        try { document.execCommand('copy'); } catch (err) { }
         document.body.removeChild(textArea);
 
-        const html2pdf = await new Promise((resolve) => {
-          if (window.html2pdf) return resolve(window.html2pdf);
-          const script = document.createElement('script');
-          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-          script.onload = () => resolve(window.html2pdf);
-          document.body.appendChild(script);
-        });
+        const [html2pdf, logoDataUrl] = await Promise.all([
+          loadHtml2Pdf(),
+          getLogoBase64()
+        ]);
+
         const element = document.createElement('div');
-        element.innerHTML = buildQuotePDFHtml(qData);
-        
+        element.style.width = '800px';
+        element.style.position = 'fixed';
+        element.style.top = '0';
+        element.style.left = '0';
+        element.style.zIndex = '-9999';
+        element.style.backgroundColor = '#ffffff';
+        element.style.color = '#0f172a';
+        element.innerHTML = buildQuotePDFHtml(qData, logoDataUrl);
+        document.body.appendChild(element);
+
         const opt = {
           margin: 0,
           filename: fileName,
           image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: 800,
+            backgroundColor: '#ffffff'
+          },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-        const pdfBlob = await html2pdf().from(element).set(opt).output('blob');
+        let pdfBlob = null;
+        try {
+          pdfBlob = await html2pdf().from(element).set(opt).output('blob');
+        } finally {
+          if (element && element.parentNode) {
+            element.parentNode.removeChild(element);
+          }
+        }
         const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -1301,14 +1392,29 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
           showAlert("✅ PDF adjunto listo. Pega el texto en el chat.");
         } else {
           showAlert("Abriendo WhatsApp Web... Pega el texto que ya fue copiado.");
-          html2pdf().from(element).set(opt).save();
+          
+          const saveEl = document.createElement('div');
+          saveEl.style.width = '800px';
+          saveEl.style.position = 'fixed';
+          saveEl.style.top = '0';
+          saveEl.style.left = '0';
+          saveEl.style.zIndex = '-9999';
+          saveEl.style.backgroundColor = '#ffffff';
+          saveEl.innerHTML = buildQuotePDFHtml(qData, logoDataUrl);
+          document.body.appendChild(saveEl);
+          try {
+            await html2pdf().from(saveEl).set(opt).save();
+          } finally {
+            if (saveEl.parentNode) saveEl.parentNode.removeChild(saveEl);
+          }
+
           setTimeout(() => {
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
           }, 1500);
         }
 
         if (qData.id) {
-          updateDoc(doc(db, 'quotes', qData.id), { status: 'enviada', updatedAt: Date.now() }).catch(() => {});
+          updateDoc(doc(db, 'quotes', qData.id), { status: 'enviada', updatedAt: Date.now() }).catch(() => { });
         }
       } catch (error) {
         console.error("[ERR-QUOTE-PDF-01]", error);
@@ -1318,18 +1424,18 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       const subject = `Cotización de Traslado ${correlativo} - ${qData.client}`;
       window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`, '_self');
       if (qData.id) {
-        updateDoc(doc(db, 'quotes', qData.id), { status: 'enviada', updatedAt: Date.now() }).catch(() => {});
+        updateDoc(doc(db, 'quotes', qData.id), { status: 'enviada', updatedAt: Date.now() }).catch(() => { });
       }
     }
   };
 
-  const previewNextCorrelative = isTestQuote 
-    ? `TEST-${formatCorrelativeNumber(correlativeConfig)}` 
+  const previewNextCorrelative = isTestQuote
+    ? `TEST-${formatCorrelativeNumber(correlativeConfig)}`
     : formatCorrelativeNumber(correlativeConfig);
 
   return (
     <div className="space-y-6 pt-20 md:pt-22 max-w-6xl mx-auto px-4 pb-32 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      
+
       {/* BANNER SUPERIOR: TÍTULO, CONFIGURAR CORRELATIVO Y CONFIGURAR EMPRESA/CLIENTES */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="flex items-center gap-3.5">
@@ -1341,11 +1447,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
               <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
                 Cotizador de Traslados
               </h2>
-              <span className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border transition-all ${
-                isTestQuote
+              <span className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border transition-all ${isTestQuote
                   ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-700'
                   : 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
-              }`}>
+                }`}>
                 {isTestQuote ? `🧪 ${previewNextCorrelative}` : `Próximo: ${previewNextCorrelative}`}
               </span>
             </div>
@@ -1354,7 +1459,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             </p>
           </div>
         </div>
-        
+
         {/* BOTONES DE CONFIGURACIÓN SUPERIORES */}
         <div className="flex items-center gap-2 flex-wrap shrink-0">
           <button
@@ -1383,11 +1488,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
           <button
             type="button"
             onClick={() => handleSetQuoteMode('simple')}
-            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
-              quoteMode === 'simple'
+            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${quoteMode === 'simple'
                 ? 'bg-purple-600 text-white shadow-md shadow-purple-300 dark:shadow-none'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
+              }`}
           >
             <Smartphone className="w-4 h-4" />
             Modo Rápido (Celular)
@@ -1396,11 +1500,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
           <button
             type="button"
             onClick={() => handleSetQuoteMode('full')}
-            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
-              quoteMode === 'full'
+            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${quoteMode === 'full'
                 ? 'bg-purple-600 text-white shadow-md shadow-purple-300 dark:shadow-none'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
+              }`}
           >
             <Calculator className="w-4 h-4" />
             Calculadora de Ruta & Peajes
@@ -1408,11 +1511,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         </div>
 
         {/* INTERRUPTOR: COTIZACIÓN DE PRUEBA */}
-        <div className={`flex items-center justify-between gap-3 px-4 py-2.5 rounded-2xl border transition-all shadow-sm ${
-          isTestQuote
+        <div className={`flex items-center justify-between gap-3 px-4 py-2.5 rounded-2xl border transition-all shadow-sm ${isTestQuote
             ? 'bg-amber-500/10 border-amber-400 dark:border-amber-500/40 text-amber-900 dark:text-amber-200'
             : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
-        }`}>
+          }`}>
           <div className="flex items-center gap-2.5">
             <div className={`p-2 rounded-xl shrink-0 ${isTestQuote ? 'bg-amber-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
               <FlaskConical className="w-4 h-4" />
@@ -1437,14 +1539,12 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             role="switch"
             aria-checked={isTestQuote}
             onClick={() => setIsTestQuote(prev => !prev)}
-            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-              isTestQuote ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-700'
-            }`}
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isTestQuote ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-700'
+              }`}
           >
             <span
-              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                isTestQuote ? 'translate-x-5' : 'translate-x-0'
-              }`}
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${isTestQuote ? 'translate-x-5' : 'translate-x-0'
+                }`}
             />
           </button>
         </div>
@@ -1459,13 +1559,13 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
               Modificando cotización existente ({quoteData.quoteNumber || 'S/N'}). Los cambios actualizarán el registro actual.
             </p>
           </div>
-          <button 
-            onClick={() => { 
-              setEditingQuoteId(null); 
+          <button
+            onClick={() => {
+              setEditingQuoteId(null);
               setQuoteData(prev => ({ ...prev, quoteNumber: '' }));
               setSimpleData({ amount: '', addIva: true });
-              showAlert("Edición cancelada."); 
-            }} 
+              showAlert("Edición cancelada.");
+            }}
             className="text-xs font-black text-amber-900 dark:text-amber-300 bg-amber-200 hover:bg-amber-300 px-3 py-1 rounded-xl transition-colors"
           >
             Cancelar Edición
@@ -1475,7 +1575,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
       {/* CONTENIDO SEGÚN MODO SELECCIONADO */}
       {quoteMode === 'simple' ? (
-        
+
         /* ========================================================================= */
         /* MODO SIMPLIFICADO (ESPECIAL PARA CELULAR / COTIZACIÓN DIRECTA)             */
         /* ========================================================================= */
@@ -1494,18 +1594,18 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 </p>
               </div>
             </div>
-            
-            <button 
-              type="button" 
-              onClick={() => handleOpenClientConfigModal()} 
+
+            <button
+              type="button"
+              onClick={() => handleOpenClientConfigModal()}
               className="text-xs font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 px-3 py-1.5 rounded-xl hover:bg-purple-200 transition-colors flex items-center gap-1"
             >
-              <Plus className="w-3.5 h-3.5"/> Nuevo Cliente
+              <Plus className="w-3.5 h-3.5" /> Nuevo Cliente
             </button>
           </div>
 
           <form onSubmit={handleSaveSimpleQuote} className="space-y-4">
-            
+
             {/* 1. Empresa Cliente */}
             <div className="space-y-1.5">
               <div className="flex justify-between items-center">
@@ -1522,9 +1622,9 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                   </button>
                 )}
               </div>
-              <select 
-                value={quoteData.client} 
-                onChange={handleClientChange} 
+              <select
+                value={quoteData.client}
+                onChange={handleClientChange}
                 required
                 className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-purple-500 bg-slate-50 dark:bg-slate-900"
               >
@@ -1550,11 +1650,11 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                 2. Descripción del Servicio / Ruta
               </label>
-              <input 
-                type="text" 
-                value={quoteData.description} 
-                onChange={e => setQuoteData({ ...quoteData, description: e.target.value })} 
-                placeholder="Ej: Traslado Santiago a Valparaíso o Traslado por falla mecánica" 
+              <input
+                type="text"
+                value={quoteData.description}
+                onChange={e => setQuoteData({ ...quoteData, description: e.target.value })}
+                placeholder="Ej: Traslado Santiago a Valparaíso o Traslado por falla mecánica"
                 className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
               />
             </div>
@@ -1565,11 +1665,11 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                   Marca
                 </label>
-                <input 
-                  type="text" 
-                  value={quoteData.brand} 
-                  onChange={e => setQuoteData({ ...quoteData, brand: e.target.value })} 
-                  placeholder="Ej: TOYOTA" 
+                <input
+                  type="text"
+                  value={quoteData.brand}
+                  onChange={e => setQuoteData({ ...quoteData, brand: e.target.value })}
+                  placeholder="Ej: TOYOTA"
                   className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 uppercase outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
                 />
               </div>
@@ -1578,11 +1678,11 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                   Modelo
                 </label>
-                <input 
-                  type="text" 
-                  value={quoteData.model} 
-                  onChange={e => setQuoteData({ ...quoteData, model: e.target.value })} 
-                  placeholder="Ej: HILUX" 
+                <input
+                  type="text"
+                  value={quoteData.model}
+                  onChange={e => setQuoteData({ ...quoteData, model: e.target.value })}
+                  placeholder="Ej: HILUX"
                   className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 uppercase outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
                 />
               </div>
@@ -1591,15 +1691,15 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                   Patente o VIN
                 </label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   maxLength="17"
-                  value={quoteData.plateOrVin} 
+                  value={quoteData.plateOrVin}
                   onChange={e => {
                     const val = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
                     setQuoteData(prev => ({ ...prev, plateOrVin: val }));
-                  }} 
-                  placeholder="Ej: ABCD12" 
+                  }}
+                  placeholder="Ej: ABCD12"
                   className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-black text-slate-800 dark:text-slate-200 uppercase outline-none focus:border-purple-500 bg-white dark:bg-slate-900 font-mono"
                 />
               </div>
@@ -1611,13 +1711,13 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 4. Monto a Cobrar ($) *
               </label>
               <div className="relative">
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   required
                   min="1"
-                  value={simpleData.amount} 
-                  onChange={e => setSimpleData({ ...simpleData, amount: e.target.value })} 
-                  placeholder="Ej: 150000" 
+                  value={simpleData.amount}
+                  onChange={e => setSimpleData({ ...simpleData, amount: e.target.value })}
+                  placeholder="Ej: 150000"
                   className="w-full border-2 border-purple-300 dark:border-purple-700 rounded-2xl p-3.5 pl-11 text-lg font-black text-purple-700 dark:text-purple-300 outline-none focus:border-purple-600 bg-purple-50/20 dark:bg-purple-950/30"
                 />
                 <DollarSign className="w-5 h-5 text-purple-600 dark:text-purple-400 absolute left-3.5 top-4" />
@@ -1639,11 +1739,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 <button
                   type="button"
                   onClick={() => setSimpleData({ ...simpleData, addIva: true })}
-                  className={`py-3 px-3 rounded-xl text-xs font-black transition-all border ${
-                    simpleData.addIva
+                  className={`py-3 px-3 rounded-xl text-xs font-black transition-all border ${simpleData.addIva
                       ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
                       : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
-                  }`}
+                    }`}
                 >
                   Sí, Sumar IVA (+19%)
                 </button>
@@ -1651,11 +1750,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 <button
                   type="button"
                   onClick={() => setSimpleData({ ...simpleData, addIva: false })}
-                  className={`py-3 px-3 rounded-xl text-xs font-black transition-all border ${
-                    !simpleData.addIva
+                  className={`py-3 px-3 rounded-xl text-xs font-black transition-all border ${!simpleData.addIva
                       ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
                       : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
-                  }`}
+                    }`}
                 >
                   No, Valor Final / Exento
                 </button>
@@ -1680,11 +1778,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             </div>
 
             {/* 6. Interruptor de Cotización de Prueba (Modo Rápido) */}
-            <div className={`p-3.5 rounded-2xl border transition-all ${
-              isTestQuote 
-                ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-700/60' 
+            <div className={`p-3.5 rounded-2xl border transition-all ${isTestQuote
+                ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-700/60'
                 : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700'
-            }`}>
+              }`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className={`p-2 rounded-xl ${isTestQuote ? 'bg-amber-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'}`}>
@@ -1700,8 +1797,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                       )}
                     </span>
                     <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                      {isTestQuote 
-                        ? 'No consumirá el correlativo oficial y llevará sello de prueba.' 
+                      {isTestQuote
+                        ? 'No consumirá el correlativo oficial y llevará sello de prueba.'
                         : 'Desactivado: usará el correlativo oficial de tu empresa.'}
                     </p>
                   </div>
@@ -1711,35 +1808,32 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                   role="switch"
                   aria-checked={isTestQuote}
                   onClick={() => setIsTestQuote(prev => !prev)}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    isTestQuote ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-700'
-                  }`}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isTestQuote ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-700'
+                    }`}
                 >
                   <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                      isTestQuote ? 'translate-x-5' : 'translate-x-0'
-                    }`}
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${isTestQuote ? 'translate-x-5' : 'translate-x-0'
+                      }`}
                   />
                 </button>
               </div>
             </div>
 
             {/* 7. Botón de Aceptar y Generar Cotización */}
-            <button 
-              type="submit" 
-              className={`w-full text-white font-black py-4 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 text-sm ${
-                isTestQuote
+            <button
+              type="submit"
+              className={`w-full text-white font-black py-4 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 text-sm ${isTestQuote
                   ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-200 dark:shadow-none'
                   : 'bg-purple-600 hover:bg-purple-700 shadow-purple-200 dark:shadow-none'
-              }`}
+                }`}
             >
               {isTestQuote ? (
                 <>
-                  <FlaskConical className="w-5 h-5"/> Generar Cotización de Prueba
+                  <FlaskConical className="w-5 h-5" /> Generar Cotización de Prueba
                 </>
               ) : (
                 <>
-                  <CheckCircle className="w-5 h-5"/> Aceptar y Generar Cotización
+                  <CheckCircle className="w-5 h-5" /> Aceptar y Generar Cotización
                 </>
               )}
             </button>
@@ -1752,37 +1846,37 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         /* MODO CALCULADORA DETALLADA (DISTANCIA, PEAJES, COMBUSTIBLE Y MARGEN)        */
         /* ========================================================================= */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          
+
           {/* COLUMNA IZQUIERDA: FORMULARIO DETALLADO */}
           <div className="lg:col-span-8 space-y-6">
-            
+
             {/* Tarjeta 1: Datos del Traslado y Vehículo */}
             <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800">
               <div className="flex justify-between items-center mb-4 border-b border-slate-100 dark:border-slate-800 pb-3">
                 <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-purple-600 dark:text-purple-400"/> Datos de Ruta y Vehículo
+                  <MapPin className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Datos de Ruta y Vehículo
                 </h3>
-                <button 
-                  type="button" 
-                  onClick={() => handleOpenClientConfigModal()} 
+                <button
+                  type="button"
+                  onClick={() => handleOpenClientConfigModal()}
                   className="text-xs font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 px-3 py-1.5 rounded-xl hover:bg-purple-200 dark:hover:bg-purple-900/60 transition-colors flex items-center gap-1"
                 >
-                  <Plus className="w-3.5 h-3.5"/> Nuevo Cliente
+                  <Plus className="w-3.5 h-3.5" /> Nuevo Cliente
                 </button>
               </div>
-              
+
               <datalist id="quotes-directory-list">
-                 {directoryList.map((d, i) => <option key={i} value={d.placeName} />)}
+                {directoryList.map((d, i) => <option key={i} value={d.placeName} />)}
               </datalist>
               <datalist id="quotes-brands-list">
-                 {[...new Set(vehicles?.map(v => v.brand?.toUpperCase()).filter(Boolean))].map((b, i) => <option key={i} value={b} />)}
+                {[...new Set(vehicles?.map(v => v.brand?.toUpperCase()).filter(Boolean))].map((b, i) => <option key={i} value={b} />)}
               </datalist>
               <datalist id="quotes-models-list">
-                 {[...new Set(vehicles?.map(v => v.model?.toUpperCase()).filter(Boolean))].map((m, i) => <option key={i} value={m} />)}
+                {[...new Set(vehicles?.map(v => v.model?.toUpperCase()).filter(Boolean))].map((m, i) => <option key={i} value={m} />)}
               </datalist>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                
+
                 {/* N° Correlativo */}
                 <div className="space-y-1 sm:col-span-2">
                   <div className="flex justify-between items-center">
@@ -1794,11 +1888,11 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     </span>
                   </div>
                   <div className="relative">
-                    <input 
-                      type="text" 
-                      name="quoteNumber" 
-                      value={quoteData.quoteNumber} 
-                      onChange={handleInputChange} 
+                    <input
+                      type="text"
+                      name="quoteNumber"
+                      value={quoteData.quoteNumber}
+                      onChange={handleInputChange}
                       placeholder={previewNextCorrelative}
                       autoComplete="off"
                       spellCheck="false"
@@ -1810,149 +1904,149 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
                 {/* Empresa Cliente Selector & Ficha Formal */}
                 <div className="space-y-2 sm:col-span-2">
-                   <div className="flex justify-between items-center">
-                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                       Empresa Cliente (Para la Cotización)
-                     </label>
-                     {quoteData.client && (
-                       <button
-                         type="button"
-                         onClick={() => handleOpenClientConfigModal(quoteData.client)}
-                         className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
-                       >
-                         <Building2 className="w-3 h-3" /> Editar RUT y Datos
-                       </button>
-                     )}
-                   </div>
+                  <div className="flex justify-between items-center">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      Empresa Cliente (Para la Cotización)
+                    </label>
+                    {quoteData.client && (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenClientConfigModal(quoteData.client)}
+                        className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
+                      >
+                        <Building2 className="w-3 h-3" /> Editar RUT y Datos
+                      </button>
+                    )}
+                  </div>
 
-                   <select 
-                     name="client" 
-                     value={quoteData.client} 
-                     onChange={handleClientChange} 
-                     className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-slate-50 dark:bg-slate-900"
-                   >
-                      <option value="">Selecciona una empresa cliente...</option>
-                      {customClients.map(c => (
-                        <option key={c.id || c.name} value={c.name}>
-                          {c.name} {c.rut ? `(RUT: ${c.rut})` : ''}
-                        </option>
-                      ))}
-                   </select>
+                  <select
+                    name="client"
+                    value={quoteData.client}
+                    onChange={handleClientChange}
+                    className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-slate-50 dark:bg-slate-900"
+                  >
+                    <option value="">Selecciona una empresa cliente...</option>
+                    {customClients.map(c => (
+                      <option key={c.id || c.name} value={c.name}>
+                        {c.name} {c.rut ? `(RUT: ${c.rut})` : ''}
+                      </option>
+                    ))}
+                  </select>
 
-                   {/* Ficha corporativa */}
-                   {quoteData.client && (
-                     <div className="bg-purple-50/40 dark:bg-purple-950/30 p-3.5 rounded-2xl border border-purple-100 dark:border-purple-900/50 text-xs animate-in fade-in">
-                       <div className="flex justify-between items-start mb-2">
-                         <div>
-                           <span className="font-black text-slate-800 dark:text-slate-200 text-sm flex items-center gap-1.5">
-                             <Building2 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                             {quoteData.client}
-                           </span>
-                           {quoteData.clientRut ? (
-                             <span className="text-[10px] font-mono font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/60 px-2 py-0.5 rounded-md inline-block mt-0.5">
-                               RUT: {quoteData.clientRut}
-                             </span>
-                           ) : (
-                             <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md inline-block mt-0.5">
-                               ⚠️ Sin RUT registrado
-                             </span>
-                           )}
-                         </div>
-                         <button
-                           type="button"
-                           onClick={() => handleOpenClientConfigModal(quoteData.client)}
-                           className="text-[11px] font-bold text-purple-600 dark:text-purple-400 bg-white dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-purple-200 dark:border-purple-800 hover:bg-purple-50 transition-colors"
-                         >
-                           Configurar
-                         </button>
-                       </div>
+                  {/* Ficha corporativa */}
+                  {quoteData.client && (
+                    <div className="bg-purple-50/40 dark:bg-purple-950/30 p-3.5 rounded-2xl border border-purple-100 dark:border-purple-900/50 text-xs animate-in fade-in">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <span className="font-black text-slate-800 dark:text-slate-200 text-sm flex items-center gap-1.5">
+                            <Building2 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                            {quoteData.client}
+                          </span>
+                          {quoteData.clientRut ? (
+                            <span className="text-[10px] font-mono font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/60 px-2 py-0.5 rounded-md inline-block mt-0.5">
+                              RUT: {quoteData.clientRut}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md inline-block mt-0.5">
+                              ⚠️ Sin RUT registrado
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenClientConfigModal(quoteData.client)}
+                          className="text-[11px] font-bold text-purple-600 dark:text-purple-400 bg-white dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-purple-200 dark:border-purple-800 hover:bg-purple-50 transition-colors"
+                        >
+                          Configurar
+                        </button>
+                      </div>
 
-                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-slate-600 dark:text-slate-400 font-medium pt-1 border-t border-purple-100 dark:border-purple-900/30">
-                         <p><strong className="text-slate-700 dark:text-slate-300">Giro:</strong> {quoteData.clientGiro || 'No especificado'}</p>
-                         <p><strong className="text-slate-700 dark:text-slate-300">Dirección:</strong> {[quoteData.clientAddress, quoteData.clientCity].filter(Boolean).join(', ') || 'No especificada'}</p>
-                         <p><strong className="text-slate-700 dark:text-slate-300">Contacto:</strong> {quoteData.clientContact || 'No especificado'}</p>
-                         <p><strong className="text-slate-700 dark:text-slate-300">Teléfono:</strong> {quoteData.clientPhone || quoteData.clientEmail || 'No especificado'}</p>
-                       </div>
-                     </div>
-                   )}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-slate-600 dark:text-slate-400 font-medium pt-1 border-t border-purple-100 dark:border-purple-900/30">
+                        <p><strong className="text-slate-700 dark:text-slate-300">Giro:</strong> {quoteData.clientGiro || 'No especificado'}</p>
+                        <p><strong className="text-slate-700 dark:text-slate-300">Dirección:</strong> {[quoteData.clientAddress, quoteData.clientCity].filter(Boolean).join(', ') || 'No especificada'}</p>
+                        <p><strong className="text-slate-700 dark:text-slate-300">Contacto:</strong> {quoteData.clientContact || 'No especificado'}</p>
+                        <p><strong className="text-slate-700 dark:text-slate-300">Teléfono:</strong> {quoteData.clientPhone || quoteData.clientEmail || 'No especificado'}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Origen */}
                 <div className="space-y-1">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Origen</label>
-                   <input type="text" name="origin" list="quotes-directory-list" value={quoteData.origin} onChange={handleInputChange} placeholder="Desde dónde..." autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"/>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Origen</label>
+                  <input type="text" name="origin" list="quotes-directory-list" value={quoteData.origin} onChange={handleInputChange} placeholder="Desde dónde..." autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900" />
                 </div>
 
                 {/* Destino */}
                 <div className="space-y-1">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Destino</label>
-                   <div className="flex gap-2">
-                     <input type="text" name="destination" list="quotes-directory-list" value={quoteData.destination} onChange={handleInputChange} placeholder="Hasta dónde..." autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"/>
-                     <button type="button" onClick={calculateRouteDistance} disabled={isCalculatingRoute} className="bg-purple-600 hover:bg-purple-700 text-white px-4 rounded-xl text-xs font-black shadow-sm shrink-0 transition-colors disabled:opacity-50" title="Calcular distancia de ruta real por carretera">
-                       {isCalculatingRoute ? '...' : 'Calcular KM'}
-                     </button>
-                   </div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Destino</label>
+                  <div className="flex gap-2">
+                    <input type="text" name="destination" list="quotes-directory-list" value={quoteData.destination} onChange={handleInputChange} placeholder="Hasta dónde..." autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900" />
+                    <button type="button" onClick={calculateRouteDistance} disabled={isCalculatingRoute} className="bg-purple-600 hover:bg-purple-700 text-white px-4 rounded-xl text-xs font-black shadow-sm shrink-0 transition-colors disabled:opacity-50" title="Calcular distancia de ruta real por carretera">
+                      {isCalculatingRoute ? '...' : 'Calcular KM'}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Distancia Total KM */}
                 <div className="space-y-1">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Distancia Total (KM Ruta)</label>
-                   <div className="relative">
-                     <input type="number" name="distanceKm" value={quoteData.distanceKm} onChange={handleInputChange} placeholder="Ej: 120" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 pl-10 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"/>
-                     <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
-                   </div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Distancia Total (KM Ruta)</label>
+                  <div className="relative">
+                    <input type="number" name="distanceKm" value={quoteData.distanceKm} onChange={handleInputChange} placeholder="Ej: 120" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 pl-10 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900" />
+                    <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                  </div>
                 </div>
 
                 {/* Tipo de Vehículo */}
                 <div className="space-y-1">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Vehículo</label>
-                   <select name="vehicleType" value={quoteData.vehicleType} onChange={handleInputChange} className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900">
-                      <option value="Auto / SUV">Auto / SUV</option>
-                      <option value="Camioneta">Camioneta</option>
-                      <option value="Furgón Pequeño">Furgón Pequeño</option>
-                      <option value="Furgón Grande">Furgón Grande</option>
-                      <option value="Camión Simple">Camión Simple</option>
-                      <option value="Camión Doble Cabina">Camión Doble Cabina</option>
-                      <option value="Camión (2 Ejes traseros)">Camión (2 Ejes traseros)</option>
-                      <option value="Camión (3 Ejes traseros)">Camión (3 Ejes traseros)</option>
-                      <option value="Camión Rigid (8x4)">Camión Rigid (8x4)</option>
-                      <option value="Carro Arrastre">Carro Arrastre</option>
-                   </select>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Vehículo</label>
+                  <select name="vehicleType" value={quoteData.vehicleType} onChange={handleInputChange} className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900">
+                    <option value="Auto / SUV">Auto / SUV</option>
+                    <option value="Camioneta">Camioneta</option>
+                    <option value="Furgón Pequeño">Furgón Pequeño</option>
+                    <option value="Furgón Grande">Furgón Grande</option>
+                    <option value="Camión Simple">Camión Simple</option>
+                    <option value="Camión Doble Cabina">Camión Doble Cabina</option>
+                    <option value="Camión (2 Ejes traseros)">Camión (2 Ejes traseros)</option>
+                    <option value="Camión (3 Ejes traseros)">Camión (3 Ejes traseros)</option>
+                    <option value="Camión Rigid (8x4)">Camión Rigid (8x4)</option>
+                    <option value="Carro Arrastre">Carro Arrastre</option>
+                  </select>
                 </div>
 
                 {/* Marca */}
                 <div className="space-y-1">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Marca</label>
-                   <input type="text" name="brand" list="quotes-brands-list" value={quoteData.brand} onChange={handleInputChange} placeholder="Ej: TOYOTA" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 uppercase bg-white dark:bg-slate-900"/>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Marca</label>
+                  <input type="text" name="brand" list="quotes-brands-list" value={quoteData.brand} onChange={handleInputChange} placeholder="Ej: TOYOTA" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 uppercase bg-white dark:bg-slate-900" />
                 </div>
 
                 {/* Modelo */}
                 <div className="space-y-1">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Modelo</label>
-                   <input type="text" name="model" list="quotes-models-list" value={quoteData.model} onChange={handleInputChange} placeholder="Ej: HILUX" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 uppercase bg-white dark:bg-slate-900"/>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Modelo</label>
+                  <input type="text" name="model" list="quotes-models-list" value={quoteData.model} onChange={handleInputChange} placeholder="Ej: HILUX" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="characters" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 uppercase bg-white dark:bg-slate-900" />
                 </div>
 
                 {/* Patente o VIN */}
                 <div className="space-y-1">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Patente o VIN</label>
-                   <input 
-                     type="text" 
-                     name="plateOrVin" 
-                     maxLength="17" 
-                     value={quoteData.plateOrVin} 
-                     onChange={(e) => {
-                       const val = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-                       setQuoteData(prev => ({ ...prev, plateOrVin: val }));
-                     }} 
-                     placeholder="Ej: ABCD12" 
-                     className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-black uppercase text-slate-800 dark:text-slate-200 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Patente o VIN</label>
+                  <input
+                    type="text"
+                    name="plateOrVin"
+                    maxLength="17"
+                    value={quoteData.plateOrVin}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                      setQuoteData(prev => ({ ...prev, plateOrVin: val }));
+                    }}
+                    placeholder="Ej: ABCD12"
+                    className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-black uppercase text-slate-800 dark:text-slate-200 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
                   />
                 </div>
 
                 {/* Descripción */}
                 <div className="space-y-1">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Descripción corta</label>
-                   <input type="text" name="description" value={quoteData.description} onChange={handleInputChange} placeholder="Detalles adicionales..." autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"/>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Descripción corta</label>
+                  <input type="text" name="description" value={quoteData.description} onChange={handleInputChange} placeholder="Detalles adicionales..." autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900" />
                 </div>
               </div>
             </div>
@@ -1960,52 +2054,52 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             {/* Tarjeta 2: Gastos Operativos, Calculadora y Peajes */}
             <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 space-y-5">
               <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-                <DollarSign className="w-4 h-4 text-emerald-600 dark:text-emerald-400"/> Estructura de Costos y Peajes
+                <DollarSign className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Estructura de Costos y Peajes
               </h3>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1">
-                   <label className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest ml-1">Rendimiento (KM/L)</label>
-                   <div className="relative">
-                     <input type="number" step="0.1" name="kmPerLiter" value={quoteData.kmPerLiter} onChange={handleInputChange} placeholder="Ej: 10.5" className="w-full border-2 border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-950/30 rounded-xl p-3 pl-10 text-sm font-black text-emerald-800 dark:text-emerald-300 outline-none focus:border-emerald-500"/>
-                     <Fuel className="w-4 h-4 text-emerald-500 absolute left-3.5 top-3.5" />
-                   </div>
+                  <label className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest ml-1">Rendimiento (KM/L)</label>
+                  <div className="relative">
+                    <input type="number" step="0.1" name="kmPerLiter" value={quoteData.kmPerLiter} onChange={handleInputChange} placeholder="Ej: 10.5" className="w-full border-2 border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-950/30 rounded-xl p-3 pl-10 text-sm font-black text-emerald-800 dark:text-emerald-300 outline-none focus:border-emerald-500" />
+                    <Fuel className="w-4 h-4 text-emerald-500 absolute left-3.5 top-3.5" />
+                  </div>
                 </div>
 
                 <div className="space-y-1">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Precio Combustible ($/L)</label>
-                   <div className="flex gap-2">
-                     <input type="number" name="fuelPrice" value={quoteData.fuelPrice} onChange={handleInputChange} className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"/>
-                     <button type="button" onClick={fetchFuelPriceWithAI} disabled={isFetchingFuel} className="bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 hover:bg-purple-200 px-3 rounded-xl text-xs font-black shadow-sm shrink-0 transition-colors disabled:opacity-50" title="Consultar precio sugerido a Gemini">
-                       <Sparkles className="w-4 h-4" />
-                     </button>
-                   </div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Precio Combustible ($/L)</label>
+                  <div className="flex gap-2">
+                    <input type="number" name="fuelPrice" value={quoteData.fuelPrice} onChange={handleInputChange} className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900" />
+                    <button type="button" onClick={fetchFuelPriceWithAI} disabled={isFetchingFuel} className="bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 hover:bg-purple-200 px-3 rounded-xl text-xs font-black shadow-sm shrink-0 transition-colors disabled:opacity-50" title="Consultar precio sugerido a Gemini">
+                      <Sparkles className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-1">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Honorarios Conductor ($)</label>
-                   <div className="relative">
-                     <input type="number" name="driverFee" value={quoteData.driverFee} onChange={handleInputChange} placeholder="Ej: 35000" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 pl-10 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"/>
-                     <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
-                   </div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Honorarios Conductor ($)</label>
+                  <div className="relative">
+                    <input type="number" name="driverFee" value={quoteData.driverFee} onChange={handleInputChange} placeholder="Ej: 35000" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 pl-10 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900" />
+                    <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                  </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Total Peajes Calculados ($)</label>
-                   <div className="relative">
-                     <input type="number" name="tollsCost" value={quoteData.tollsCost} onChange={handleInputChange} placeholder="Auto o manual..." className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 pl-10 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"/>
-                     <Receipt className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
-                   </div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Total Peajes Calculados ($)</label>
+                  <div className="relative">
+                    <input type="number" name="tollsCost" value={quoteData.tollsCost} onChange={handleInputChange} placeholder="Auto o manual..." className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 pl-10 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900" />
+                    <Receipt className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                  </div>
                 </div>
 
                 <div className="space-y-1">
-                   <label className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest ml-1">Margen de Utilidad (%)</label>
-                   <div className="relative">
-                     <input type="number" name="marginPct" value={quoteData.marginPct} onChange={handleInputChange} placeholder="30" className="w-full border-2 border-purple-200 dark:border-purple-800/60 rounded-xl p-3 pl-10 text-sm font-black text-purple-700 dark:text-purple-300 outline-none focus:border-purple-500 bg-purple-50/30 dark:bg-purple-950/20"/>
-                     <DollarSign className="w-4 h-4 text-purple-500 absolute left-3.5 top-3.5" />
-                   </div>
+                  <label className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest ml-1">Margen de Utilidad (%)</label>
+                  <div className="relative">
+                    <input type="number" name="marginPct" value={quoteData.marginPct} onChange={handleInputChange} placeholder="30" className="w-full border-2 border-purple-200 dark:border-purple-800/60 rounded-xl p-3 pl-10 text-sm font-black text-purple-700 dark:text-purple-300 outline-none focus:border-purple-500 bg-purple-50/30 dark:bg-purple-950/20" />
+                    <DollarSign className="w-4 h-4 text-purple-500 absolute left-3.5 top-3.5" />
+                  </div>
                 </div>
               </div>
 
@@ -2015,12 +2109,12 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                   <span className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                     Seleccionar Peajes ({tollsList.length})
                   </span>
-                  <button 
-                    type="button" 
-                    onClick={() => { setEditingTollId(null); setShowNewTollModal(true); }} 
+                  <button
+                    type="button"
+                    onClick={() => { setEditingTollId(null); setShowNewTollModal(true); }}
                     className="text-[11px] font-bold bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400 px-3 py-1.5 rounded-xl hover:bg-purple-200 dark:hover:bg-purple-900/60 transition-colors flex items-center gap-1"
                   >
-                    <Plus className="w-3.5 h-3.5"/> Registrar Nuevo Peaje
+                    <Plus className="w-3.5 h-3.5" /> Registrar Nuevo Peaje
                   </button>
                 </div>
 
@@ -2036,7 +2130,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                       return (
                         <div key={toll.id} className={`flex items-center justify-between p-2.5 rounded-xl border transition-all ${isChecked ? 'bg-purple-50 dark:bg-purple-900/30 border-purple-300 dark:border-purple-700/50 shadow-sm' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700'}`}>
                           <label className="flex items-center gap-2.5 flex-1 cursor-pointer min-w-0">
-                            <input type="checkbox" checked={isChecked} onChange={() => toggleTollSelection(toll.id)} className="w-4 h-4 accent-purple-600 rounded cursor-pointer shrink-0"/>
+                            <input type="checkbox" checked={isChecked} onChange={() => toggleTollSelection(toll.id)} className="w-4 h-4 accent-purple-600 rounded cursor-pointer shrink-0" />
                             <div className="truncate">
                               <p className="text-xs font-black text-slate-800 dark:text-slate-200 truncate">{toll.name}</p>
                               <p className="text-[10px] font-bold text-slate-400">{toll.route} • KM {toll.km}</p>
@@ -2058,13 +2152,13 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
           {/* COLUMNA DERECHA: RESULTADOS Y ACCIONES MODO COMPLETO */}
           <div className="lg:col-span-4 space-y-6">
-            
+
             {/* Panel de Resultados */}
             <div className="bg-slate-900 dark:bg-slate-950 rounded-3xl p-5 shadow-xl border border-slate-800 text-white">
               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                <Receipt className="w-4 h-4 text-purple-400"/> Resumen Financiero
+                <Receipt className="w-4 h-4 text-purple-400" /> Resumen Financiero
               </h3>
-              
+
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between items-center bg-slate-800/80 p-3 rounded-xl border border-slate-700/60">
                   <span className="text-xs font-bold text-slate-300">Litros Estimados:</span>
@@ -2100,11 +2194,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             </div>
 
             {/* Interruptor: Cotización de Prueba (Calculadora) */}
-            <div className={`p-4 rounded-2xl border transition-all ${
-              isTestQuote 
-                ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-700/60' 
+            <div className={`p-4 rounded-2xl border transition-all ${isTestQuote
+                ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-700/60'
                 : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'
-            }`}>
+              }`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className={`p-2 rounded-xl ${isTestQuote ? 'bg-amber-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
@@ -2129,14 +2222,12 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                   role="switch"
                   aria-checked={isTestQuote}
                   onClick={() => setIsTestQuote(prev => !prev)}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    isTestQuote ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-700'
-                  }`}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isTestQuote ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-700'
+                    }`}
                 >
                   <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                      isTestQuote ? 'translate-x-5' : 'translate-x-0'
-                    }`}
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${isTestQuote ? 'translate-x-5' : 'translate-x-0'
+                      }`}
                   />
                 </button>
               </div>
@@ -2144,15 +2235,15 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
             {/* Botones de Acción */}
             <div className="grid grid-cols-1 gap-3">
-              <button 
+              <button
                 type="button"
                 onClick={() => handleSaveQuoteStatus('pendiente')}
                 className="w-full bg-slate-800 hover:bg-slate-900 text-white font-black py-4 rounded-2xl transition-colors shadow-md flex items-center justify-center gap-2 text-sm border border-slate-700"
               >
-                <Save className="w-5 h-5"/> Guardar como Pendiente
+                <Save className="w-5 h-5" /> Guardar como Pendiente
               </button>
 
-              <button 
+              <button
                 type="button"
                 onClick={() => {
                   setCreatedQuoteToShare({
@@ -2166,15 +2257,15 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 }}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl transition-colors shadow-md shadow-blue-200 dark:shadow-none flex items-center justify-center gap-2 text-sm"
               >
-                <Send className="w-5 h-5"/> Enviar Cotización
+                <Send className="w-5 h-5" /> Enviar Cotización
               </button>
 
-              <button 
+              <button
                 type="button"
                 onClick={handleApproveQuote}
                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl transition-colors shadow-md shadow-emerald-200 dark:shadow-none flex items-center justify-center gap-2 text-sm"
               >
-                <CheckCircle className="w-5 h-5"/> Aprobar y Crear Traslado
+                <CheckCircle className="w-5 h-5" /> Aprobar y Crear Traslado
               </button>
             </div>
 
@@ -2197,7 +2288,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             <div className="flex justify-between items-center mb-4 flex-wrap gap-3">
               <div className="flex items-center gap-3 flex-wrap">
                 <h3 className="text-base font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <Receipt className="w-5 h-5 text-purple-600 dark:text-purple-400"/> Historial de Cotizaciones
+                  <Receipt className="w-5 h-5 text-purple-600 dark:text-purple-400" /> Historial de Cotizaciones
                 </h3>
 
                 {/* FILTRO DE HISTORIAL: TODAS / OFICIALES / PRUEBAS */}
@@ -2205,33 +2296,30 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                   <button
                     type="button"
                     onClick={() => setHistoryFilter('all')}
-                    className={`px-2.5 py-1 rounded-lg transition-colors ${
-                      historyFilter === 'all' 
-                        ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm' 
+                    className={`px-2.5 py-1 rounded-lg transition-colors ${historyFilter === 'all'
+                        ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
                         : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
-                    }`}
+                      }`}
                   >
                     Todas ({savedQuotes.length})
                   </button>
                   <button
                     type="button"
                     onClick={() => setHistoryFilter('official')}
-                    className={`px-2.5 py-1 rounded-lg transition-colors ${
-                      historyFilter === 'official' 
-                        ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm' 
+                    className={`px-2.5 py-1 rounded-lg transition-colors ${historyFilter === 'official'
+                        ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
                         : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
-                    }`}
+                      }`}
                   >
                     Oficiales ({officialCount})
                   </button>
                   <button
                     type="button"
                     onClick={() => setHistoryFilter('test')}
-                    className={`px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 ${
-                      historyFilter === 'test' 
-                        ? 'bg-amber-500 text-white shadow-sm' 
+                    className={`px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 ${historyFilter === 'test'
+                        ? 'bg-amber-500 text-white shadow-sm'
                         : 'text-amber-600 dark:text-amber-400 hover:text-amber-700'
-                    }`}
+                      }`}
                   >
                     <FlaskConical className="w-3 h-3" />
                     Pruebas ({testCount})
@@ -2243,14 +2331,14 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 Mostrando {filteredQuotes.length} de {savedQuotes.length} • Descarga directa en un clic
               </span>
             </div>
-            
+
             {filteredQuotes.length === 0 ? (
               <div className="text-center py-12 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
                 <p className="text-xs font-bold text-slate-400">
-                  {historyFilter === 'test' 
-                    ? 'No hay cotizaciones de prueba registradas.' 
-                    : historyFilter === 'official' 
-                      ? 'No hay cotizaciones oficiales registradas.' 
+                  {historyFilter === 'test'
+                    ? 'No hay cotizaciones de prueba registradas.'
+                    : historyFilter === 'official'
+                      ? 'No hay cotizaciones oficiales registradas.'
                       : 'No hay cotizaciones registradas aún.'}
                 </p>
               </div>
@@ -2272,9 +2360,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     {filteredQuotes.map((q, idx) => {
                       const correlativo = q.quoteNumber || `COT-${idx + 1}`;
                       return (
-                        <tr key={q.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${
-                          q.isTest ? 'bg-amber-500/5 dark:bg-amber-500/5' : ''
-                        }`}>
+                        <tr key={q.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${q.isTest ? 'bg-amber-500/5 dark:bg-amber-500/5' : ''
+                          }`}>
                           <td className="p-3 font-mono font-black">
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className={q.isTest ? 'text-amber-600 dark:text-amber-400' : 'text-purple-700 dark:text-purple-400'}>
@@ -2292,7 +2379,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                             {q.clientRut && <span className="block text-[10px] font-mono font-normal text-slate-400">{q.clientRut}</span>}
                           </td>
                           <td className="p-3 font-medium">
-                            {q.origin && q.destination 
+                            {q.origin && q.destination
                               ? `${q.origin} ➔ ${q.destination} ${q.distanceKm ? `(${q.distanceKm} KM)` : ''}`
                               : (q.description || 'Traslado logístico')
                             }
@@ -2310,10 +2397,9 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                                 <FlaskConical className="w-3 h-3" /> Prueba
                               </span>
                             ) : (
-                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                                q.status === 'aceptada' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800' :
-                                q.status === 'enviada' ? 'bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-300 dark:border-blue-800' : 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800'
-                              }`}>
+                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${q.status === 'aceptada' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800' :
+                                  q.status === 'enviada' ? 'bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-300 dark:border-blue-800' : 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800'
+                                }`}>
                                 {q.status || 'pendiente'}
                               </span>
                             )}
@@ -2331,15 +2417,15 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                               </button>
 
                               {/* MENÚ DE TRES PUNTOS */}
-                              <button 
+                              <button
                                 type="button"
-                                onClick={() => setActiveActionMenu(activeActionMenu === q.id ? null : q.id)} 
+                                onClick={() => setActiveActionMenu(activeActionMenu === q.id ? null : q.id)}
                                 className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl transition-colors shadow-sm"
                               >
-                                <MoreVertical className="w-4 h-4"/>
+                                <MoreVertical className="w-4 h-4" />
                               </button>
                             </div>
-                            
+
                             {/* Menú Desplegable Inteligente */}
                             {activeActionMenu === q.id && (
                               <div className={`absolute right-12 ${idx > 0 && idx === filteredQuotes.length - 1 ? 'bottom-10' : 'top-10'} bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl rounded-xl w-48 py-2 z-[99] animate-in fade-in zoom-in-95`}>
@@ -2369,20 +2455,19 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       {showShareSuccessModal && createdQuoteToShare && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl relative border border-slate-200 dark:border-slate-800 animate-in zoom-in-95">
-            <button 
-              type="button" 
-              onClick={() => setShowShareSuccessModal(false)} 
+            <button
+              type="button"
+              onClick={() => setShowShareSuccessModal(false)}
               className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"
             >
-              <X className="w-4 h-4 text-slate-700 dark:text-slate-300"/>
+              <X className="w-4 h-4 text-slate-700 dark:text-slate-300" />
             </button>
-            
+
             <div className="text-center mb-5">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-2 ${
-                createdQuoteToShare.isTest
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-2 ${createdQuoteToShare.isTest
                   ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400'
                   : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400'
-              }`}>
+                }`}>
                 {createdQuoteToShare.isTest ? <FlaskConical className="w-6 h-6" /> : <CheckCircle className="w-6 h-6" />}
               </div>
               <h3 className="text-lg font-black text-slate-800 dark:text-slate-200">
@@ -2401,25 +2486,25 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             </div>
 
             <div className="space-y-3">
-              <button 
+              <button
                 onClick={() => { handleShareQuote(createdQuoteToShare, 'whatsapp'); }}
                 className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-black py-3.5 rounded-2xl transition-colors shadow-sm flex items-center justify-center gap-2 text-sm"
               >
-                <MessageCircle className="w-5 h-5"/> Enviar por WhatsApp
+                <MessageCircle className="w-5 h-5" /> Enviar por WhatsApp
               </button>
-              
-              <button 
+
+              <button
                 onClick={() => { handleShareQuote(createdQuoteToShare, 'email'); }}
                 className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-black py-3.5 rounded-2xl transition-colors shadow-sm flex items-center justify-center gap-2 text-sm"
               >
-                <Mail className="w-5 h-5 text-slate-500 dark:text-slate-400"/> Enviar por Correo
+                <Mail className="w-5 h-5 text-slate-500 dark:text-slate-400" /> Enviar por Correo
               </button>
-              
-              <button 
+
+              <button
                 onClick={() => { handleDownloadPDFForQuote(createdQuoteToShare); }}
                 className="w-full bg-purple-100 dark:bg-purple-900/40 hover:bg-purple-200 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800/50 text-purple-700 dark:text-purple-300 font-black py-3.5 rounded-2xl transition-colors shadow-sm flex items-center justify-center gap-2 text-sm"
               >
-                <Download className="w-5 h-5"/> Descargar Archivo PDF
+                <Download className="w-5 h-5" /> Descargar Archivo PDF
               </button>
             </div>
 
@@ -2451,14 +2536,14 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       {showClientConfigModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-lg shadow-2xl relative border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
-            <button 
-              type="button" 
-              onClick={() => setShowClientConfigModal(false)} 
+            <button
+              type="button"
+              onClick={() => setShowClientConfigModal(false)}
               className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"
             >
-              <X className="w-4 h-4 text-slate-700 dark:text-slate-300"/>
+              <X className="w-4 h-4 text-slate-700 dark:text-slate-300" />
             </button>
-            
+
             <div className="flex items-center gap-2 mb-2">
               <div className="p-2 rounded-xl bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400">
                 <Building2 className="w-5 h-5" />
@@ -2478,11 +2563,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
               <button
                 type="button"
                 onClick={() => setClientConfigTab('client')}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                  clientConfigTab === 'client'
+                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${clientConfigTab === 'client'
                     ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 <Briefcase className="w-3.5 h-3.5" />
                 Empresa Cliente
@@ -2491,11 +2575,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
               <button
                 type="button"
                 onClick={() => setClientConfigTab('issuer')}
-                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                  clientConfigTab === 'issuer'
+                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${clientConfigTab === 'issuer'
                     ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 <Building2 className="w-3.5 h-3.5" />
                 Nuestra Empresa (Emisor)
@@ -2509,8 +2592,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                     Seleccionar Empresa a Configurar
                   </label>
-                  <select 
-                    value={selectedClientForEdit} 
+                  <select
+                    value={selectedClientForEdit}
                     onChange={e => handleSelectClientToEdit(e.target.value)}
                     className="w-full mt-1 border-2 border-purple-200 dark:border-purple-900/60 rounded-xl p-3 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-purple-500 bg-purple-50/20 dark:bg-slate-900"
                   >
@@ -2528,12 +2611,12 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                       Razón Social / Nombre Empresa *
                     </label>
-                    <input 
-                      type="text" 
-                      required 
-                      value={clientForm.name} 
-                      onChange={e => setClientForm({ ...clientForm, name: e.target.value })} 
-                      placeholder="Ej: Kovacs SpA o Portillo Automotriz" 
+                    <input
+                      type="text"
+                      required
+                      value={clientForm.name}
+                      onChange={e => setClientForm({ ...clientForm, name: e.target.value })}
+                      placeholder="Ej: Kovacs SpA o Portillo Automotriz"
                       className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
                     />
                   </div>
@@ -2542,11 +2625,11 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     <label className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest ml-1">
                       RUT de la Empresa
                     </label>
-                    <input 
-                      type="text" 
-                      value={clientForm.rut} 
-                      onChange={e => setClientForm({ ...clientForm, rut: e.target.value.toUpperCase() })} 
-                      placeholder="Ej: 76.123.456-7" 
+                    <input
+                      type="text"
+                      value={clientForm.rut}
+                      onChange={e => setClientForm({ ...clientForm, rut: e.target.value.toUpperCase() })}
+                      placeholder="Ej: 76.123.456-7"
                       className="w-full mt-1 border-2 border-purple-200 dark:border-purple-900/60 rounded-xl p-2.5 text-xs font-black text-purple-700 dark:text-purple-300 outline-none focus:border-purple-500 bg-purple-50/30 dark:bg-purple-950/20 font-mono"
                     />
                   </div>
@@ -2555,11 +2638,11 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                       Giro Comercial
                     </label>
-                    <input 
-                      type="text" 
-                      value={clientForm.giro} 
-                      onChange={e => setClientForm({ ...clientForm, giro: e.target.value })} 
-                      placeholder="Ej: Venta de vehículos y repuestos" 
+                    <input
+                      type="text"
+                      value={clientForm.giro}
+                      onChange={e => setClientForm({ ...clientForm, giro: e.target.value })}
+                      placeholder="Ej: Venta de vehículos y repuestos"
                       className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
                     />
                   </div>
@@ -2568,11 +2651,11 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                       Dirección Comercial
                     </label>
-                    <input 
-                      type="text" 
-                      value={clientForm.address} 
-                      onChange={e => setClientForm({ ...clientForm, address: e.target.value })} 
-                      placeholder="Ej: Av. Américo Vespucio 1500" 
+                    <input
+                      type="text"
+                      value={clientForm.address}
+                      onChange={e => setClientForm({ ...clientForm, address: e.target.value })}
+                      placeholder="Ej: Av. Américo Vespucio 1500"
                       className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
                     />
                   </div>
@@ -2581,11 +2664,11 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                       Comuna / Ciudad
                     </label>
-                    <input 
-                      type="text" 
-                      value={clientForm.city} 
-                      onChange={e => setClientForm({ ...clientForm, city: e.target.value })} 
-                      placeholder="Ej: Pudahuel, Santiago" 
+                    <input
+                      type="text"
+                      value={clientForm.city}
+                      onChange={e => setClientForm({ ...clientForm, city: e.target.value })}
+                      placeholder="Ej: Pudahuel, Santiago"
                       className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
                     />
                   </div>
@@ -2594,11 +2677,11 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                       Nombre de Contacto / Atención
                     </label>
-                    <input 
-                      type="text" 
-                      value={clientForm.contactName} 
-                      onChange={e => setClientForm({ ...clientForm, contactName: e.target.value })} 
-                      placeholder="Ej: Felipe Castro" 
+                    <input
+                      type="text"
+                      value={clientForm.contactName}
+                      onChange={e => setClientForm({ ...clientForm, contactName: e.target.value })}
+                      placeholder="Ej: Felipe Castro"
                       className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
                     />
                   </div>
@@ -2607,11 +2690,11 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                       Teléfono de Contacto
                     </label>
-                    <input 
-                      type="text" 
-                      value={clientForm.phone} 
-                      onChange={e => setClientForm({ ...clientForm, phone: e.target.value })} 
-                      placeholder="Ej: +56 9 1234 5678" 
+                    <input
+                      type="text"
+                      value={clientForm.phone}
+                      onChange={e => setClientForm({ ...clientForm, phone: e.target.value })}
+                      placeholder="Ej: +56 9 1234 5678"
                       className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
                     />
                   </div>
@@ -2620,26 +2703,26 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                       Correo Electrónico de Facturación / Contacto
                     </label>
-                    <input 
-                      type="email" 
-                      value={clientForm.email} 
-                      onChange={e => setClientForm({ ...clientForm, email: e.target.value })} 
-                      placeholder="Ej: adquisiciones@empresa.cl" 
+                    <input
+                      type="email"
+                      value={clientForm.email}
+                      onChange={e => setClientForm({ ...clientForm, email: e.target.value })}
+                      placeholder="Ej: adquisiciones@empresa.cl"
                       className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
                     />
                   </div>
                 </div>
 
                 <div className="flex gap-2 pt-2">
-                  <button 
-                    type="button" 
-                    onClick={() => setShowClientConfigModal(false)} 
+                  <button
+                    type="button"
+                    onClick={() => setShowClientConfigModal(false)}
                     className="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold py-3 rounded-xl text-xs transition-colors"
                   >
                     Cancelar
                   </button>
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 dark:shadow-none text-xs transition-colors"
                   >
                     Guardar Datos del Cliente
@@ -2660,12 +2743,12 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                       Razón Social de Nuestra Empresa *
                     </label>
-                    <input 
-                      type="text" 
-                      required 
-                      value={issuerForm.companyName} 
-                      onChange={e => setIssuerForm({ ...issuerForm, companyName: e.target.value })} 
-                      placeholder="Ej: LogisticAPP Soluciones SpA" 
+                    <input
+                      type="text"
+                      required
+                      value={issuerForm.companyName}
+                      onChange={e => setIssuerForm({ ...issuerForm, companyName: e.target.value })}
+                      placeholder="Ej: LogisticAPP Soluciones SpA"
                       className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
                     />
                   </div>
@@ -2674,11 +2757,11 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     <label className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest ml-1">
                       RUT Emisor
                     </label>
-                    <input 
-                      type="text" 
-                      value={issuerForm.rut} 
-                      onChange={e => setIssuerForm({ ...issuerForm, rut: e.target.value.toUpperCase() })} 
-                      placeholder="Ej: 77.842.190-3" 
+                    <input
+                      type="text"
+                      value={issuerForm.rut}
+                      onChange={e => setIssuerForm({ ...issuerForm, rut: e.target.value.toUpperCase() })}
+                      placeholder="Ej: 77.842.190-3"
                       className="w-full mt-1 border-2 border-purple-200 dark:border-purple-900/60 rounded-xl p-2.5 text-xs font-black text-purple-700 dark:text-purple-300 outline-none focus:border-purple-500 bg-purple-50/30 dark:bg-purple-950/20 font-mono"
                     />
                   </div>
@@ -2687,11 +2770,11 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                       Giro de Nuestra Empresa
                     </label>
-                    <input 
-                      type="text" 
-                      value={issuerForm.giro} 
-                      onChange={e => setIssuerForm({ ...issuerForm, giro: e.target.value })} 
-                      placeholder="Ej: Transporte de Carga y Logística" 
+                    <input
+                      type="text"
+                      value={issuerForm.giro}
+                      onChange={e => setIssuerForm({ ...issuerForm, giro: e.target.value })}
+                      placeholder="Ej: Transporte de Carga y Logística"
                       className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
                     />
                   </div>
@@ -2700,11 +2783,11 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                       Dirección Casa Matriz / Ubicación
                     </label>
-                    <input 
-                      type="text" 
-                      value={issuerForm.address} 
-                      onChange={e => setIssuerForm({ ...issuerForm, address: e.target.value })} 
-                      placeholder="Ej: Santiago, Región Metropolitana" 
+                    <input
+                      type="text"
+                      value={issuerForm.address}
+                      onChange={e => setIssuerForm({ ...issuerForm, address: e.target.value })}
+                      placeholder="Ej: Santiago, Región Metropolitana"
                       className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
                     />
                   </div>
@@ -2713,11 +2796,11 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                       Teléfono Comercial
                     </label>
-                    <input 
-                      type="text" 
-                      value={issuerForm.phone} 
-                      onChange={e => setIssuerForm({ ...issuerForm, phone: e.target.value })} 
-                      placeholder="Ej: +56 9 8765 4321" 
+                    <input
+                      type="text"
+                      value={issuerForm.phone}
+                      onChange={e => setIssuerForm({ ...issuerForm, phone: e.target.value })}
+                      placeholder="Ej: +56 9 8765 4321"
                       className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
                     />
                   </div>
@@ -2726,26 +2809,26 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                       Correo Electrónico
                     </label>
-                    <input 
-                      type="email" 
-                      value={issuerForm.email} 
-                      onChange={e => setIssuerForm({ ...issuerForm, email: e.target.value })} 
-                      placeholder="Ej: contacto@logisticapp.cl" 
+                    <input
+                      type="email"
+                      value={issuerForm.email}
+                      onChange={e => setIssuerForm({ ...issuerForm, email: e.target.value })}
+                      placeholder="Ej: contacto@logisticapp.cl"
                       className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
                     />
                   </div>
                 </div>
 
                 <div className="flex gap-2 pt-2">
-                  <button 
-                    type="button" 
-                    onClick={() => setShowClientConfigModal(false)} 
+                  <button
+                    type="button"
+                    onClick={() => setShowClientConfigModal(false)}
                     className="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold py-3 rounded-xl text-xs transition-colors"
                   >
                     Cancelar
                   </button>
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 dark:shadow-none text-xs transition-colors"
                   >
                     Guardar Datos de Emisor
@@ -2761,14 +2844,14 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       {showConfigModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
           <form onSubmit={handleSaveCorrelativeConfig} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-md shadow-2xl relative border border-slate-200 dark:border-slate-800 animate-in zoom-in-95">
-            <button 
-              type="button" 
-              onClick={() => setShowConfigModal(false)} 
+            <button
+              type="button"
+              onClick={() => setShowConfigModal(false)}
               className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"
             >
-              <X className="w-4 h-4 text-slate-700 dark:text-slate-300"/>
+              <X className="w-4 h-4 text-slate-700 dark:text-slate-300" />
             </button>
-            
+
             <div className="flex items-center gap-2 mb-1">
               <div className="p-2 rounded-xl bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400">
                 <Settings className="w-5 h-5" />
@@ -2782,11 +2865,11 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             <div className="space-y-4">
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Prefijo / Siglas</label>
-                <input 
-                  type="text" 
-                  value={tempConfig.prefix} 
-                  onChange={e => setTempConfig({ ...tempConfig, prefix: e.target.value })} 
-                  placeholder="Ej: COT- o CTZ-" 
+                <input
+                  type="text"
+                  value={tempConfig.prefix}
+                  onChange={e => setTempConfig({ ...tempConfig, prefix: e.target.value })}
+                  placeholder="Ej: COT- o CTZ-"
                   className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
                 />
                 <span className="text-[10px] text-slate-400 ml-1">Texto que aparece antes del número (ej: COT-, PROP-, CTZ-).</span>
@@ -2794,13 +2877,13 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Próximo Número / Desde dónde iniciará</label>
-                <input 
-                  type="number" 
-                  min="1" 
-                  required 
-                  value={tempConfig.nextNumber} 
-                  onChange={e => setTempConfig({ ...tempConfig, nextNumber: e.target.value })} 
-                  placeholder="Ej: 1 o 1001" 
+                <input
+                  type="number"
+                  min="1"
+                  required
+                  value={tempConfig.nextNumber}
+                  onChange={e => setTempConfig({ ...tempConfig, nextNumber: e.target.value })}
+                  placeholder="Ej: 1 o 1001"
                   className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-black text-purple-700 dark:text-purple-400 outline-none focus:border-purple-500 bg-white dark:bg-slate-900 font-mono"
                 />
                 <span className="text-[10px] text-slate-400 ml-1">El valor del contador a partir del cual se emitirá la siguiente cotización.</span>
@@ -2808,9 +2891,9 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Formato de Ceros a la Izquierda</label>
-                <select 
-                  value={tempConfig.minDigits} 
-                  onChange={e => setTempConfig({ ...tempConfig, minDigits: parseInt(e.target.value, 10) })} 
+                <select
+                  value={tempConfig.minDigits}
+                  onChange={e => setTempConfig({ ...tempConfig, minDigits: parseInt(e.target.value, 10) })}
                   className="w-full mt-1 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
                 >
                   <option value="0">Sin ceros a la izquierda (ej: 1, 2, 3...)</option>
@@ -2826,10 +2909,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                   <p className="text-xs font-black text-slate-800 dark:text-slate-200">Incluir Año Actual</p>
                   <p className="text-[10px] font-bold text-slate-400">Agrega el año en curso (ej: {new Date().getFullYear()})</p>
                 </div>
-                <input 
-                  type="checkbox" 
-                  checked={tempConfig.includeYear} 
-                  onChange={e => setTempConfig({ ...tempConfig, includeYear: e.target.checked })} 
+                <input
+                  type="checkbox"
+                  checked={tempConfig.includeYear}
+                  onChange={e => setTempConfig({ ...tempConfig, includeYear: e.target.checked })}
                   className="w-5 h-5 accent-purple-600 rounded cursor-pointer"
                 />
               </div>
@@ -2846,15 +2929,15 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             </div>
 
             <div className="flex gap-2 mt-6">
-              <button 
-                type="button" 
-                onClick={() => setShowConfigModal(false)} 
+              <button
+                type="button"
+                onClick={() => setShowConfigModal(false)}
                 className="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold py-3 rounded-xl text-xs transition-colors"
               >
                 Cancelar
               </button>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 dark:shadow-none text-xs transition-colors"
               >
                 Guardar Configuración
@@ -2868,21 +2951,21 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       {showNewTollModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
           <form onSubmit={handleSaveNewToll} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-md shadow-2xl relative border border-slate-200 dark:border-slate-800 animate-in zoom-in-95">
-            <button type="button" onClick={() => setShowNewTollModal(false)} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"><X className="w-4 h-4 text-slate-700 dark:text-slate-300"/></button>
+            <button type="button" onClick={() => setShowNewTollModal(false)} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"><X className="w-4 h-4 text-slate-700 dark:text-slate-300" /></button>
             <h3 className="text-lg font-black text-slate-800 dark:text-slate-200 mb-4">{editingTollId ? 'Modificar Peaje' : 'Registrar Nuevo Peaje'}</h3>
-            
+
             <div className="space-y-3">
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase">Nombre del Peaje / Plaza</label>
-                <input type="text" required value={newTollData.name} onChange={e => setNewTollData({...newTollData, name: e.target.value})} placeholder="Ej: Peaje Angostura" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200"/>
+                <input type="text" required value={newTollData.name} onChange={e => setNewTollData({ ...newTollData, name: e.target.value })} placeholder="Ej: Peaje Angostura" autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="words" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200" />
               </div>
 
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase">Ruta / Autopista</label>
                 <div className="space-y-2">
-                  <select 
-                    value={newTollData.route} 
-                    onChange={e => setNewTollData({...newTollData, route: e.target.value})} 
+                  <select
+                    value={newTollData.route}
+                    onChange={e => setNewTollData({ ...newTollData, route: e.target.value })}
                     className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200"
                   >
                     <option value="Ruta 5 Norte">Ruta 5 Norte</option>
@@ -2892,11 +2975,11 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     <option value="Otra Ruta">Otra Ruta (Escribir manual)</option>
                   </select>
                   {newTollData.route === 'Otra Ruta' && (
-                    <input 
-                      type="text" 
-                      value={newTollData.customRoute || ''} 
-                      onChange={e => setNewTollData({...newTollData, customRoute: e.target.value})} 
-                      placeholder="Escribe la ruta aquí..." 
+                    <input
+                      type="text"
+                      value={newTollData.customRoute || ''}
+                      onChange={e => setNewTollData({ ...newTollData, customRoute: e.target.value })}
+                      placeholder="Escribe la ruta aquí..."
                       required
                       autoComplete="off" autoCorrect="off" spellCheck="false"
                       className="w-full mt-2 border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 animate-in fade-in"
@@ -2907,7 +2990,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase">Kilómetro de la Ruta (KM)</label>
-                <input type="number" required value={newTollData.km} onChange={e => setNewTollData({...newTollData, km: e.target.value})} placeholder="Ej: 30" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200"/>
+                <input type="number" required value={newTollData.km} onChange={e => setNewTollData({ ...newTollData, km: e.target.value })} placeholder="Ej: 30" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold outline-none focus:border-purple-500 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200" />
               </div>
 
               <div className="border-t border-slate-100 dark:border-slate-800 pt-3">
@@ -2916,17 +2999,17 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                   {Object.keys(newTollData.prices).map(vType => (
                     <div key={vType} className="bg-slate-50 dark:bg-slate-800/60 p-2 rounded-xl border border-slate-200 dark:border-slate-700">
                       <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400 block truncate">{vType}</label>
-                      <input 
-                        type="number" 
-                        value={newTollData.prices[vType]} 
+                      <input
+                        type="number"
+                        value={newTollData.prices[vType]}
                         onChange={e => {
                           const val = e.target.value;
                           setNewTollData(prev => ({
                             ...prev,
                             prices: { ...prev.prices, [vType]: val }
                           }));
-                        }} 
-                        placeholder="$ Costo" 
+                        }}
+                        placeholder="$ Costo"
                         className="w-full mt-1 border border-slate-300 dark:border-slate-600 rounded-lg p-1.5 text-xs font-black text-purple-700 dark:text-purple-400 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
                       />
                     </div>
@@ -2944,25 +3027,25 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       {showAcceptModal && acceptQuoteData && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
           <form onSubmit={handleConfirmAcceptQuote} className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-2xl relative border border-slate-200 dark:border-slate-800 animate-in zoom-in-95">
-            <button type="button" onClick={() => setShowAcceptModal(false)} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"><X className="w-4 h-4 text-slate-700 dark:text-slate-300"/></button>
+            <button type="button" onClick={() => setShowAcceptModal(false)} className="absolute top-4 right-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-full hover:bg-slate-200 dark:bg-slate-700 transition-colors"><X className="w-4 h-4 text-slate-700 dark:text-slate-300" /></button>
             <h3 className="text-lg font-black text-slate-800 dark:text-slate-200 mb-1">¡Cotización Aceptada! 🎉</h3>
             <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-5">Configura la fecha y el conductor para generar el traslado en el sistema.</p>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Fecha Programada</label>
                 <div className="relative mt-1">
-                  <input type="date" required value={jobDetails.scheduledDate} onChange={e => setJobDetails({...jobDetails, scheduledDate: e.target.value})} className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 pl-10 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 bg-white dark:bg-slate-900"/>
+                  <input type="date" required value={jobDetails.scheduledDate} onChange={e => setJobDetails({ ...jobDetails, scheduledDate: e.target.value })} className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 pl-10 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 bg-white dark:bg-slate-900" />
                   <Calendar className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                 </div>
               </div>
-              
+
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Conductor Asignado (Opcional)</label>
                 <div className="relative mt-1">
-                  <select 
-                    value={jobDetails.assignedDriver} 
-                    onChange={e => setJobDetails({...jobDetails, assignedDriver: e.target.value})} 
+                  <select
+                    value={jobDetails.assignedDriver}
+                    onChange={e => setJobDetails({ ...jobDetails, assignedDriver: e.target.value })}
                     className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 pl-10 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 bg-white dark:bg-slate-900"
                   >
                     <option value="">Sin asignar (Dejar como Pendiente)</option>
@@ -2976,9 +3059,9 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 </div>
               </div>
             </div>
-            
+
             <button type="submit" className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3.5 rounded-xl shadow-lg shadow-emerald-200 dark:shadow-none text-sm transition-colors flex items-center justify-center gap-2">
-              <CheckCircle className="w-5 h-5"/> Generar Traslado
+              <CheckCircle className="w-5 h-5" /> Generar Traslado
             </button>
           </form>
         </div>
