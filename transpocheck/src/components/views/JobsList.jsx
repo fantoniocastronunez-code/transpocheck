@@ -2460,7 +2460,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
             <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">Selecciona al conductor que realizó este traslado. El acta se cerrará automáticamente a su nombre (como entrega sin recepción).</p>
 
             <div className="overflow-y-auto space-y-2 flex-1 pr-1">
-              {drivers.map(d => (
+              {drivers.filter(d => !d.isHidden && d.role !== 'quoter' && !d.email?.toLowerCase().includes('facturacionycobranzas')).map(d => (
                 <button key={d.id} onClick={async () => {
                   showConfirm(`¿Guardar el traslado de la patente ${forceCloseJob.plate || forceCloseJob.vin} a nombre de ${d.name}?`, async () => {
                     try {
@@ -2726,7 +2726,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
                         <span className={`text-xs font-black ${dupDriverEmails.length === 0 ? 'text-sky-800 dark:text-sky-300' : 'text-slate-600 dark:text-slate-400'}`}>Nadie aún (Bolsa de Trabajo)</span>
                       </div>
 
-                      {drivers.filter(d => !d.isHidden).map(d => {
+                      {drivers.filter(d => !d.isHidden && d.role !== 'quoter' && !d.email?.toLowerCase().includes('facturacionycobranzas')).map(d => {
                         const isSelected = dupDriverEmails.includes(d.email);
                         return (
                           <div key={d.id} onClick={() => {
@@ -2817,7 +2817,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               <label className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest ml-1">Nuevo Conductor</label>
               <select name="newDriver" required defaultValue={editDriverJob.acceptedByEmail || ""} className="w-full border-2 border-blue-200 dark:border-blue-800/50 bg-blue-50 dark:bg-blue-900/30 p-3.5 rounded-xl font-black text-sm text-blue-900 dark:text-blue-300 outline-none focus:border-blue-500 mt-1 shadow-sm">
                 <option value="" disabled>Selecciona un conductor...</option>
-                {drivers.map(d => (
+                {drivers.filter(d => !d.isHidden && d.role !== 'quoter' && !d.email?.toLowerCase().includes('facturacionycobranzas')).map(d => (
                   <option key={d.email} value={d.email}>{d.name} ({d.email})</option>
                 ))}
               </select>

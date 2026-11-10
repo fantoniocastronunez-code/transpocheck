@@ -3353,11 +3353,13 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 pl-10 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 bg-white dark:bg-slate-900"
                   >
                     <option value="">Sin asignar (Dejar como Pendiente)</option>
-                    {drivers && drivers.map((driver, idx) => (
-                      <option key={idx} value={driver.name || driver.email}>
-                        {driver.name || driver.email}
-                      </option>
-                    ))}
+                    {drivers && drivers
+                      .filter(driver => !driver.isHidden && driver.role !== 'quoter' && !driver.email?.toLowerCase().includes('facturacionycobranzas'))
+                      .map((driver, idx) => (
+                        <option key={idx} value={driver.name || driver.email}>
+                          {driver.name || driver.email}
+                        </option>
+                      ))}
                   </select>
                   <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
                 </div>

@@ -113,7 +113,7 @@ function LogisticApp() {
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
   const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
-  const APP_VERSION = "v1.3.07"; // IMPORTANT: Update this version string when making changes.
+  const APP_VERSION = "v1.3.08"; // IMPORTANT: Update this version string when making changes.
 
   // VARIABLES MÁGICAS: Atrapan lo que Android nos comparte desde CamScanner o Adobe Scan
   const sharedText = searchParams.get('shared_text');
@@ -837,7 +837,7 @@ function LogisticApp() {
 
                     {/* LISTA SCROLLEABLE INTERNA DE CONDUCTORES */}
                     <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md max-h-40 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
-                      {drivers.filter(d => !d.isHidden).sort((a, b) => a.name.localeCompare(b.name)).map(d => {
+                      {drivers.filter(d => !d.isHidden && d.role !== 'quoter' && !d.email?.toLowerCase().includes('facturacionycobranzas')).sort((a, b) => a.name.localeCompare(b.name)).map(d => {
                         const isCurrentActive = activeRole === 'driver' && simulatedDriverEmail === d.email;
                         return (
                           <div key={d.id} className={`flex items-center justify-between p-1 transition-colors group ${isCurrentActive ? 'bg-blue-50/70 dark:bg-blue-950/40 border-l-2 border-blue-600' : 'hover:bg-slate-50 dark:hover:bg-slate-900'}`}>

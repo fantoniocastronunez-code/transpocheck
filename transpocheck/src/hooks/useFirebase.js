@@ -119,7 +119,7 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
     ? defaultPermissions 
     : (currentUserProfile?.permissions || defaultPermissions);
   
-  const isQuoter = currentUserProfile?.role === 'quoter';
+  const isQuoter = currentUserProfile?.role === 'quoter' || actualUserEmail?.includes('facturacionycobranzas');
   const isPartTime = currentUserProfile?.role === 'part_time';
   
   const currentUserEmail = (activeRole === 'driver' && simulatedDriverEmail) ? simulatedDriverEmail : actualUserEmail;
@@ -237,6 +237,16 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
       })();
     }
   }, [user, activeRole, dataLoaded, currentUserEmail, customClients, isRealAdmin, drivers]);
+
+  // Asegurar que usuarios del equipo de cotización/ventas (ej: facturación y cobranzas) tengan rol 'quoter'
+  useEffect(() => {
+    const quoterDoc = drivers.find(d => d.email?.toLowerCase().includes('facturacionycobranzas'));
+    if (quoterDoc && quoterDoc.role !== 'quoter') {
+      updateDoc(doc(db, 'drivers', quoterDoc.id), { role: 'quoter' }).catch((err) => {
+        console.error("[ERR-UPDATE-QUOTER-ROLE-01]", err);
+      });
+    }
+  }, [drivers]);
 
   // Efecto 4: Recolector de Basura (Garbage Collector)
   useEffect(() => {
