@@ -4,7 +4,7 @@ import {
   Calculator, MapPin, Fuel, DollarSign, Plus, CheckCircle,
   User, Truck, Receipt, Printer, Send, Save, ArrowRight, X, MessageCircle, Mail, MoreVertical, Calendar, Sparkles,
   Settings, Sliders, Hash, RotateCcw, Building2, Briefcase, Phone, Globe, FileText, Check, Download, Smartphone,
-  FlaskConical, Filter
+  FlaskConical, Filter, Loader2
 } from 'lucide-react';
 import { formatMoney } from '../../utils/helpers';
 
@@ -87,6 +87,14 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   // Estado para la cotización recién creada lista para compartir
   const [createdQuoteToShare, setCreatedQuoteToShare] = useState(null);
   const [showShareSuccessModal, setShowShareSuccessModal] = useState(false);
+
+  // Estados de carga (Spinners) para operaciones asíncronas
+  const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
+  const [isSavingStatus, setIsSavingStatus] = useState(null); // 'pendiente' | 'aceptada' | null
+  const [downloadingQuoteId, setDownloadingQuoteId] = useState(null); // ID de cotización o 'modal'
+  const [sharingMethod, setSharingMethod] = useState(null); // 'whatsapp' | 'email' | null
+  const [isApprovingQuote, setIsApprovingQuote] = useState(false);
+  const [isSavingConfig, setIsSavingConfig] = useState(false);
 
   // Función formateadora de correlativo
   const formatCorrelativeNumber = (cfg, numVal) => {
@@ -307,6 +315,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       return showAlert("⚠️ [ERR-TOLL-VAL-02] Escribe el nombre de la ruta manual.");
     }
 
+    setIsSavingConfig(true);
     try {
       const finalRoute = newTollData.route === 'Otra Ruta' ? newTollData.customRoute : newTollData.route;
       const payload = { ...newTollData, route: finalRoute, km: parseFloat(newTollData.km) || 0 };
@@ -331,6 +340,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     } catch (err) {
       console.error("[ERR-TOLL-SAVE-01]", err);
       showAlert("❌ [ERR-TOLL-SAVE-01] Error al guardar peaje.");
+    } finally {
+      setIsSavingConfig(false);
     }
   };
 
@@ -345,6 +356,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       return showAlert("⚠️ [ERR-QUOTE-CFG-VAL-01] El número inicial debe ser un entero mayor o igual a 1.");
     }
 
+    setIsSavingConfig(true);
     try {
       const payload = {
         prefix: tempConfig.prefix?.trim() ?? 'COT-',
@@ -363,6 +375,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     } catch (err) {
       console.error("[ERR-QUOTE-CFG-SAVE-01]", err);
       showAlert("❌ [ERR-QUOTE-CFG-SAVE-01] Error al guardar la configuración del correlativo.");
+    } finally {
+      setIsSavingConfig(false);
     }
   };
 
@@ -494,6 +508,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       return showAlert("⚠️ [ERR-CLIENT-VAL-02] El nombre o razón social de la empresa es obligatorio.");
     }
 
+    setIsSavingConfig(true);
     try {
       const payload = {
         name: clientForm.name.trim(),
@@ -545,6 +560,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     } catch (err) {
       console.error("[ERR-CLIENT-SAVE-02]", err);
       showAlert("❌ [ERR-CLIENT-SAVE-02] Error al guardar datos de la empresa cliente.");
+    } finally {
+      setIsSavingConfig(false);
     }
   };
 
@@ -558,6 +575,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       return showAlert("⚠️ [ERR-EMPRESA-VAL-01] El nombre de nuestra empresa es obligatorio.");
     }
 
+    setIsSavingConfig(true);
     try {
       const payload = {
         companyName: issuerForm.companyName.trim(),
@@ -577,6 +595,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     } catch (err) {
       console.error("[ERR-EMPRESA-SAVE-01]", err);
       showAlert("❌ [ERR-EMPRESA-SAVE-01] Error al guardar datos de nuestra empresa.");
+    } finally {
+      setIsSavingConfig(false);
     }
   };
 
@@ -586,6 +606,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     if (!isSuperAdmin) {
       return showAlert("🔒 [ERR-AUTH-CFG-04] Acción denegada. Solo el Superadmin puede guardar la configuración del pie de página.");
     }
+    setIsSavingConfig(true);
     try {
       const days = parseInt(issuerForm.validityDays, 10) || 15;
       const payload = {
@@ -604,6 +625,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     } catch (err) {
       console.error("[ERR-FOOTER-SAVE-01]", err);
       showAlert("❌ [ERR-FOOTER-SAVE-01] Error al guardar la configuración del pie de página.");
+    } finally {
+      setIsSavingConfig(false);
     }
   };
 
@@ -775,6 +798,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       return showAlert("⚠️ [ERR-SIMPLE-VAL-02] Ingresa el monto a cobrar por el traslado.");
     }
 
+    setIsGeneratingQuote(true);
     try {
       const isTest = !!isTestQuote;
       const correlativoFinal = quoteData.quoteNumber?.trim() || (isTest
@@ -860,6 +884,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     } catch (err) {
       console.error("[ERR-SIMPLE-SAVE-01]", err);
       showAlert("❌ [ERR-SIMPLE-SAVE-01] Error al generar la cotización simplificada.");
+    } finally {
+      setIsGeneratingQuote(false);
     }
   };
 
@@ -868,6 +894,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     if (!quoteData.client || !quoteData.origin || !quoteData.destination) {
       return showAlert("⚠️ [ERR-QUOTE-VAL-01] Faltan datos obligatorios (Cliente, Origen y Destino).");
     }
+    setIsSavingStatus(status);
     try {
       const isTest = !!isTestQuote;
       const correlativoFinal = quoteData.quoteNumber?.trim() || (isTest
@@ -937,6 +964,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     } catch (err) {
       console.error("[ERR-QUOTE-SAVE-01]", err);
       showAlert("❌ [ERR-QUOTE-SAVE-01] Error al guardar cotización.");
+    } finally {
+      setIsSavingStatus(null);
     }
   };
 
@@ -950,6 +979,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     const correlativo = quoteData.quoteNumber?.trim() || formatCorrelativeNumber(correlativeConfig);
 
     showConfirm(`¿Aprobar cotización ${correlativo} por ${formatMoney(currentPrice)} y generar el traslado automáticamente?`, async () => {
+      setIsApprovingQuote(true);
       try {
         const matchedOrigin = directoryList.find(d => d.placeName.toLowerCase() === (quoteData.origin || '').toLowerCase());
         const matchedDest = directoryList.find(d => d.placeName.toLowerCase() === (quoteData.destination || '').toLowerCase());
@@ -992,6 +1022,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       } catch (error) {
         console.error("[ERR-QUOTE-APPROVE-01]", error);
         showAlert("❌ [ERR-QUOTE-APPROVE-01] Hubo un error al generar el traslado.");
+      } finally {
+        setIsApprovingQuote(false);
       }
     });
   };
@@ -1001,6 +1033,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     e.preventDefault();
     if (!acceptQuoteData) return;
 
+    setIsApprovingQuote(true);
     try {
       await updateDoc(doc(db, 'quotes', acceptQuoteData.id), { status: 'aceptada' });
 
@@ -1046,6 +1079,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     } catch (error) {
       console.error("[ERR-QUOTE-ACCEPT-01]", error);
       showAlert("❌ [ERR-QUOTE-ACCEPT-01] Hubo un error al generar el traslado.");
+    } finally {
+      setIsApprovingQuote(false);
     }
   };
 
@@ -1272,8 +1307,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   };
 
   // Descarga Directa de Archivo PDF para cualquier cotización
-  const handleDownloadPDFForQuote = async (targetQuote) => {
+  const handleDownloadPDFForQuote = async (targetQuote, idKey) => {
     if (!targetQuote) return;
+    const downloadKey = idKey || targetQuote.id || 'modal';
+    setDownloadingQuoteId(downloadKey);
     showAlert("⏳ Generando descarga de documento PDF...");
     const correlativo = targetQuote.quoteNumber || 'Cotizacion';
     const clientClean = (targetQuote.client || 'Cliente').replace(/[^a-zA-Z0-9]/g, '_');
@@ -1323,6 +1360,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         console.error("[ERR-QUOTE-DL-03]", err2);
         showAlert("❌ [ERR-QUOTE-DL-03] Error al procesar la descarga del PDF.");
       }
+    } finally {
+      setDownloadingQuoteId(null);
     }
   };
 
@@ -1334,6 +1373,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       return showAlert("⚠️ [ERR-QUOTE-SHARE-VAL-01] Falta la empresa cliente para compartir.");
     }
 
+    setSharingMethod(method);
     const correlativo = qData.quoteNumber?.trim() || formatCorrelativeNumber(correlativeConfig);
     const fileName = `${correlativo}_${(qData.client || 'Cliente').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
 
@@ -1363,8 +1403,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       (issuerCompany.companyName ? `_Emitido por: ${issuerCompany.companyName}${issuerCompany.rut ? ` (RUT: ${issuerCompany.rut})` : ''}_\n` : '') +
       `_Generado por LogisticAPP_`;
 
-    if (method === 'whatsapp') {
-      try {
+    try {
+      if (method === 'whatsapp') {
         showAlert("⏳ Preparando documento PDF para WhatsApp...");
 
         const textArea = document.createElement("textarea");
@@ -1419,16 +1459,18 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         if (qData.id) {
           updateDoc(doc(db, 'quotes', qData.id), { status: 'enviada', updatedAt: Date.now() }).catch(() => { });
         }
-      } catch (error) {
-        console.error("[ERR-QUOTE-PDF-01]", error);
-        showAlert("❌ [ERR-QUOTE-PDF-01] Hubo un error al intentar compartir el PDF.");
+      } else if (method === 'email') {
+        const subject = `Cotización de Traslado ${correlativo} - ${qData.client}`;
+        window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`, '_self');
+        if (qData.id) {
+          updateDoc(doc(db, 'quotes', qData.id), { status: 'enviada', updatedAt: Date.now() }).catch(() => { });
+        }
       }
-    } else if (method === 'email') {
-      const subject = `Cotización de Traslado ${correlativo} - ${qData.client}`;
-      window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`, '_self');
-      if (qData.id) {
-        updateDoc(doc(db, 'quotes', qData.id), { status: 'enviada', updatedAt: Date.now() }).catch(() => { });
-      }
+    } catch (error) {
+      console.error("[ERR-QUOTE-PDF-01]", error);
+      showAlert("❌ [ERR-QUOTE-PDF-01] Hubo un error al intentar compartir el PDF.");
+    } finally {
+      setSharingMethod(null);
     }
   };
 
@@ -1858,12 +1900,18 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             {/* 7. Botón de Aceptar y Generar Cotización */}
             <button
               type="submit"
-              className={`w-full text-white font-black py-4 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 text-sm ${isTestQuote
+              disabled={isGeneratingQuote}
+              className={`w-full text-white font-black py-4 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed ${isTestQuote
                 ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-200 dark:shadow-none'
                 : 'bg-purple-600 hover:bg-purple-700 shadow-purple-200 dark:shadow-none'
                 }`}
             >
-              {isTestQuote ? (
+              {isGeneratingQuote ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>{isTestQuote ? 'Generando Cotización de Prueba...' : 'Generando Cotización...'}</span>
+                </>
+              ) : isTestQuote ? (
                 <>
                   <FlaskConical className="w-5 h-5" /> Generar Cotización de Prueba
                 </>
@@ -2290,14 +2338,24 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             <div className="grid grid-cols-1 gap-3">
               <button
                 type="button"
+                disabled={isSavingStatus !== null || isApprovingQuote}
                 onClick={() => handleSaveQuoteStatus('pendiente')}
-                className="w-full bg-slate-800 hover:bg-slate-900 text-white font-black py-4 rounded-2xl transition-colors shadow-md flex items-center justify-center gap-2 text-sm border border-slate-700"
+                className="w-full bg-slate-800 hover:bg-slate-900 text-white font-black py-4 rounded-2xl transition-colors shadow-md flex items-center justify-center gap-2 text-sm border border-slate-700 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <Save className="w-5 h-5" /> Guardar como Pendiente
+                {isSavingStatus === 'pendiente' ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" /> Guardando como Pendiente...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-5 h-5" /> Guardar como Pendiente
+                  </>
+                )}
               </button>
 
               <button
                 type="button"
+                disabled={isSavingStatus !== null || isApprovingQuote}
                 onClick={() => {
                   setCreatedQuoteToShare({
                     ...quoteData,
@@ -2308,17 +2366,26 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                   });
                   setShowShareSuccessModal(true);
                 }}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl transition-colors shadow-md shadow-blue-200 dark:shadow-none flex items-center justify-center gap-2 text-sm"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl transition-colors shadow-md shadow-blue-200 dark:shadow-none flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <Send className="w-5 h-5" /> Enviar Cotización
               </button>
 
               <button
                 type="button"
+                disabled={isApprovingQuote || isSavingStatus !== null}
                 onClick={handleApproveQuote}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl transition-colors shadow-md shadow-emerald-200 dark:shadow-none flex items-center justify-center gap-2 text-sm"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl transition-colors shadow-md shadow-emerald-200 dark:shadow-none flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <CheckCircle className="w-5 h-5" /> Aprobar y Crear Traslado
+                {isApprovingQuote ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" /> Aprobando y Creando Traslado...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-5 h-5" /> Aprobar y Crear Traslado
+                  </>
+                )}
               </button>
             </div>
 
@@ -2462,11 +2529,16 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                               {/* BOTÓN RÁPIDO DE DESCARGA DIRECTA DE PDF */}
                               <button
                                 type="button"
-                                onClick={() => handleDownloadPDFForQuote(q)}
+                                disabled={downloadingQuoteId === q.id}
+                                onClick={() => handleDownloadPDFForQuote(q, q.id)}
                                 title="Descargar PDF de esta cotización"
-                                className="p-2 hover:bg-purple-100 dark:hover:bg-purple-900/50 bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/60 rounded-xl transition-colors shadow-sm"
+                                className="p-2 hover:bg-purple-100 dark:hover:bg-purple-900/50 bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/60 rounded-xl transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
                               >
-                                <Download className="w-4 h-4" />
+                                {downloadingQuoteId === q.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin text-purple-600 dark:text-purple-400" />
+                                ) : (
+                                  <Download className="w-4 h-4" />
+                                )}
                               </button>
 
                               {/* MENÚ DE TRES PUNTOS */}
@@ -2482,8 +2554,20 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                             {/* Menú Desplegable Inteligente */}
                             {activeActionMenu === q.id && (
                               <div className={`absolute right-12 ${idx > 0 && idx === filteredQuotes.length - 1 ? 'bottom-10' : 'top-10'} bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl rounded-xl w-48 py-2 z-[99] animate-in fade-in zoom-in-95`}>
-                                <button onClick={() => { handleDownloadPDFForQuote(q); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors flex items-center gap-2">
-                                  <Download className="w-3.5 h-3.5" /> Descargar PDF
+                                <button
+                                  onClick={() => { handleDownloadPDFForQuote(q, q.id); setActiveActionMenu(null); }}
+                                  disabled={downloadingQuoteId === q.id}
+                                  className="w-full text-left px-4 py-2.5 text-xs font-bold text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors flex items-center gap-2 disabled:opacity-50"
+                                >
+                                  {downloadingQuoteId === q.id ? (
+                                    <>
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Descargando PDF...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Download className="w-3.5 h-3.5" /> Descargar PDF
+                                    </>
+                                  )}
                                 </button>
                                 <button onClick={() => { handleEditQuote(q); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Modificar</button>
                                 <button onClick={() => { setCreatedQuoteToShare(q); setShowShareSuccessModal(true); setActiveActionMenu(null); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors">Enviar Cotización</button>
@@ -2540,24 +2624,51 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
             <div className="space-y-3">
               <button
+                disabled={sharingMethod === 'whatsapp' || downloadingQuoteId === 'modal'}
                 onClick={() => { handleShareQuote(createdQuoteToShare, 'whatsapp'); }}
-                className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-black py-3.5 rounded-2xl transition-colors shadow-sm flex items-center justify-center gap-2 text-sm"
+                className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-black py-3.5 rounded-2xl transition-colors shadow-sm flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <MessageCircle className="w-5 h-5" /> Enviar por WhatsApp
+                {sharingMethod === 'whatsapp' ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" /> Preparando WhatsApp...
+                  </>
+                ) : (
+                  <>
+                    <MessageCircle className="w-5 h-5" /> Enviar por WhatsApp
+                  </>
+                )}
               </button>
 
               <button
+                disabled={sharingMethod === 'email' || downloadingQuoteId === 'modal'}
                 onClick={() => { handleShareQuote(createdQuoteToShare, 'email'); }}
-                className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-black py-3.5 rounded-2xl transition-colors shadow-sm flex items-center justify-center gap-2 text-sm"
+                className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-black py-3.5 rounded-2xl transition-colors shadow-sm flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <Mail className="w-5 h-5 text-slate-500 dark:text-slate-400" /> Enviar por Correo
+                {sharingMethod === 'email' ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin text-slate-500 dark:text-slate-400" /> Abriendo Correo...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="w-5 h-5 text-slate-500 dark:text-slate-400" /> Enviar por Correo
+                  </>
+                )}
               </button>
 
               <button
-                onClick={() => { handleDownloadPDFForQuote(createdQuoteToShare); }}
-                className="w-full bg-purple-100 dark:bg-purple-900/40 hover:bg-purple-200 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800/50 text-purple-700 dark:text-purple-300 font-black py-3.5 rounded-2xl transition-colors shadow-sm flex items-center justify-center gap-2 text-sm"
+                disabled={downloadingQuoteId === 'modal' || sharingMethod === 'whatsapp'}
+                onClick={() => { handleDownloadPDFForQuote(createdQuoteToShare, 'modal'); }}
+                className="w-full bg-purple-100 dark:bg-purple-900/40 hover:bg-purple-200 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800/50 text-purple-700 dark:text-purple-300 font-black py-3.5 rounded-2xl transition-colors shadow-sm flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <Download className="w-5 h-5" /> Descargar Archivo PDF
+                {downloadingQuoteId === 'modal' ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" /> Descargando Archivo PDF...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-5 h-5" /> Descargar Archivo PDF
+                  </>
+                )}
               </button>
             </div>
 
@@ -2792,9 +2903,16 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 dark:shadow-none text-xs transition-colors"
+                    disabled={isSavingConfig}
+                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 dark:shadow-none text-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    Guardar Datos del Cliente
+                    {isSavingConfig ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" /> Guardando...
+                      </>
+                    ) : (
+                      'Guardar Datos del Cliente'
+                    )}
                   </button>
                 </div>
               </form>
@@ -2898,9 +3016,16 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 dark:shadow-none text-xs transition-colors"
+                    disabled={isSavingConfig}
+                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 dark:shadow-none text-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    Guardar Datos de Emisor
+                    {isSavingConfig ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" /> Guardando...
+                      </>
+                    ) : (
+                      'Guardar Datos de Emisor'
+                    )}
                   </button>
                 </div>
               </form>
@@ -2995,9 +3120,18 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 dark:shadow-none text-xs transition-colors flex items-center justify-center gap-1.5"
+                    disabled={isSavingConfig}
+                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 dark:shadow-none text-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    <Save className="w-4 h-4" /> Guardar Pie de Página
+                    {isSavingConfig ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" /> Guardando...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" /> Guardar Pie de Página
+                      </>
+                    )}
                   </button>
                 </div>
               </form>
@@ -3104,9 +3238,16 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
               </button>
               <button
                 type="submit"
-                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 dark:shadow-none text-xs transition-colors"
+                disabled={isSavingConfig}
+                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 dark:shadow-none text-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Guardar Configuración
+                {isSavingConfig ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Guardando...
+                  </>
+                ) : (
+                  'Guardar Configuración'
+                )}
               </button>
             </div>
           </form>
@@ -3184,7 +3325,19 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
               </div>
             </div>
 
-            <button type="submit" className="w-full mt-5 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 dark:shadow-none text-xs transition-colors">{editingTollId ? 'Actualizar Peaje' : 'Guardar Peaje'}</button>
+            <button
+              type="submit"
+              disabled={isSavingConfig}
+              className="w-full mt-5 bg-purple-600 hover:bg-purple-700 text-white font-black py-3 rounded-xl shadow-lg shadow-purple-200 dark:shadow-none text-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isSavingConfig ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Guardando...
+                </>
+              ) : (
+                editingTollId ? 'Actualizar Peaje' : 'Guardar Peaje'
+              )}
+            </button>
           </form>
         </div>
       )}
@@ -3226,8 +3379,20 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
               </div>
             </div>
 
-            <button type="submit" className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3.5 rounded-xl shadow-lg shadow-emerald-200 dark:shadow-none text-sm transition-colors flex items-center justify-center gap-2">
-              <CheckCircle className="w-5 h-5" /> Generar Traslado
+            <button
+              type="submit"
+              disabled={isApprovingQuote}
+              className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3.5 rounded-xl shadow-lg shadow-emerald-200 dark:shadow-none text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isApprovingQuote ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" /> Generando Traslado...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-5 h-5" /> Generar Traslado
+                </>
+              )}
             </button>
           </form>
         </div>
