@@ -1028,11 +1028,13 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   // Generador de HTML para PDF Desacoplado (Sirve para cualquier cotización del historial o del formulario)
   const buildQuotePDFHtml = (targetQuote, customLogoUrl) => {
     const qData = targetQuote || quoteData;
+    const isSimpleMode = qData.mode === 'simple' || (!targetQuote && quoteMode === 'simple') || (!qData.origin && !qData.destination && qData.mode !== 'full');
     const correlativo = qData.quoteNumber?.trim() || formatCorrelativeNumber(correlativeConfig);
     const clientFullAddress = [qData.clientAddress, qData.clientCity].filter(Boolean).join(', ');
     const issuerFullContact = [issuerCompany.phone, issuerCompany.email].filter(Boolean).join(' • ');
     const hasIva = qData.ivaAmount > 0;
     const logoSrc = customLogoUrl || `${window.location.origin}/LogoLogistica.png`;
+    const vehicleText = [qData.brand, qData.model].filter(Boolean).join(' ');
 
     return `
       <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #0f172a; background: #ffffff; width: 800px; margin: 0; padding: 30px; box-sizing: border-box;">
@@ -1099,7 +1101,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
           </div>
         </div>
 
-        <!-- DETALLES DE LA RUTA Y VEHÍCULO -->
+        <!-- DETALLES DE LA RUTA Y VEHÍCULO (SÓLO MODO COMPLETO / CALCULADORA) -->
+        ${!isSimpleMode ? `
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px 20px; border-radius: 12px; margin-bottom: 20px; margin-top: -5px;">
           <div style="font-size: 11px; font-weight: 900; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; border-bottom: 2px solid #f1f5f9; padding-bottom: 4px;">Detalles del Traslado y Carga</div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px;">
@@ -1125,6 +1128,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             </div>
           </div>
         </div>
+        ` : ''}
 
         <!-- TABLA DE VALORES -->
         <table style="width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 25px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
@@ -1137,8 +1141,17 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
           <tbody>
             <tr>
               <td style="padding: 14px 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px;">
-                <strong>${qData.description || 'Servicio de traslado logístico de vehículo'}</strong><br/>
-                <span style="font-size: 11px; color: #64748b; font-weight: normal; margin-top: 4px; display: inline-block;">
+                <div style="font-weight: 800; font-size: 14px; color: #0f172a; margin-bottom: 4px;">
+                  ${qData.description || 'Servicio de traslado logístico de vehículo'}
+                </div>
+                ${isSimpleMode && (vehicleText || qData.plateOrVin) ? `
+                  <div style="margin: 8px 0 6px 0; padding: 7px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 12px; color: #334155; display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    ${vehicleText ? `<span><strong style="color: #64748b; font-size: 10px; text-transform: uppercase; margin-right: 4px;">Vehículo:</strong><strong>${vehicleText}</strong></span>` : ''}
+                    ${vehicleText && qData.plateOrVin ? `<span style="color: #cbd5e1;">•</span>` : ''}
+                    ${qData.plateOrVin ? `<span><strong style="color: #64748b; font-size: 10px; text-transform: uppercase; margin-right: 4px;">Patente / VIN:</strong><span style="font-family: monospace; font-weight: 800; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #0f172a;">${qData.plateOrVin}</span></span>` : ''}
+                  </div>
+                ` : ''}
+                <span style="font-size: 11px; color: #64748b; font-weight: normal; margin-top: 4px; display: block;">
                   Incluye conducción profesional, inspección visual de recepción y entrega segura.
                 </span>
               </td>
@@ -1237,6 +1250,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   // Compartir por WhatsApp o Correo con PDF Adjunto (Desacoplado)
   const handleShareQuote = async (targetQuote, method) => {
     const qData = targetQuote || quoteData;
+    const isSimpleMode = qData.mode === 'simple' || (!targetQuote && quoteMode === 'simple') || (!qData.origin && !qData.destination && qData.mode !== 'full');
     if (!qData.client) {
       return showAlert("⚠️ [ERR-QUOTE-SHARE-VAL-01] Falta la empresa cliente para compartir.");
     }
@@ -1248,6 +1262,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       ? `🧪 *[COTIZACIÓN DE PRUEBA / SIMULACIÓN]*\n_Aviso: Este documento es únicamente una prueba sin validez legal ni tributaria._\n\n`
       : '';
 
+    const vehicleSummary = isSimpleMode
+      ? [qData.brand, qData.model].filter(Boolean).join(' ') || 'Vehículo'
+      : `${qData.vehicleType || 'Vehículo'}${qData.brand ? ` - ${qData.brand} ${qData.model || ''}` : ''}`;
+
     const text = testHeader +
       `*Cotización de Traslado ${correlativo}*\n\n` +
       `🏢 *Empresa Cliente:* ${qData.client}${qData.clientRut ? ` (RUT: ${qData.clientRut})` : ''}\n` +
@@ -1255,7 +1273,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       (qData.clientAddress ? `📍 *Dirección:* ${qData.clientAddress}\n` : '') +
       (qData.clientContact ? `👤 *Atención:* ${qData.clientContact}\n` : '') +
       (qData.origin && qData.destination ? `🛣️ *Ruta:* ${qData.origin} ➔ ${qData.destination} ${qData.distanceKm ? `(${qData.distanceKm} KM)` : ''}\n` : '') +
-      `🚘 *Vehículo:* ${qData.vehicleType || 'Vehículo'} ${qData.brand ? `- ${qData.brand} ${qData.model || ''}` : ''} ${qData.plateOrVin ? `[${qData.plateOrVin}]` : ''}\n` +
+      `🚘 *Vehículo:* ${vehicleSummary}${qData.plateOrVin ? ` [${qData.plateOrVin}]` : ''}\n` +
       `📋 *Servicio:* ${qData.description || 'Traslado logístico'}\n\n` +
       (qData.ivaAmount > 0 ? (
         `💰 *Subtotal Neto:* ${formatMoney(qData.netPrice)}\n` +
