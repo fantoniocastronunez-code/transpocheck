@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Camera, Bug, Megaphone, Smartphone } from 'lucide-react';
 import InAppCamera from './InAppCamera';
 
-const CameraComponent = InAppCamera || require('./InAppCamera').InAppCamera;
+const CameraComponent = InAppCamera;
 
 export const DevMenu = () => {
   const [isOpen, setIsOpen] = useState(false);

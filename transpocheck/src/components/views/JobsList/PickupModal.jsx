@@ -20,10 +20,10 @@ export default function PickupModal({
   openCamera,
   vehicles = []
 }) {
-  if (!pickupPromptJob) return null;
-
   const [isDragging, setIsDragging] = useState(false);
   const svgRef = useRef(null);
+
+  if (!pickupPromptJob) return null;
 
   const updateFuelFromEvent = (e) => {
     if (!svgRef.current) return;

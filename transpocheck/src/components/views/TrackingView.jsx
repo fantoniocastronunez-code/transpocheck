@@ -4,7 +4,7 @@ import { CheckCircle, Clock, FileDown, Navigation, MapPin, X, Search, LogOut, Su
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import WaitTimerBadge from '../ui/WaitTimerBadge';
 import SignaturePad from '../ui/SignaturePad';
-import { formatDateDisplay } from '../../utils/helpers';
+import { formatDateDisplay, getRtFinalDestination } from '../../utils/helpers';
 
 export default function TrackingView({ clientName, db, onBack, onLogout, darkMode, setDarkMode }) {
   const [jobs, setJobs] = useState([]);

@@ -7,7 +7,7 @@ import { db } from '../../../../firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 
 export const FastTrackView = ({ openCamera }) => {
-  const { job, formData, setF, setFormData, uploadImageToStorage, showAlert, step } = useChecklist();
+  const { job, formData, setF, setFormData, uploadImageToStorage, showAlert, step, saveDraftToIndexedDB, persistStoragePhoto } = useChecklist();
   
   const [assignedAmount, setAssignedAmount] = useState(0);
 

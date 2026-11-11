@@ -21,6 +21,27 @@ import { DevMenu } from './components/ui/DevMenu';
 import { ImageViewer } from './components/ui/ImageViewer';
 import { DEFAULT_CLIENTES, LICENCIAS, formatMoney, formatDateDisplay, resizeImage } from './utils/helpers';
 
+const LazyUpdateFallback = () => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      window.location.reload(true);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <div className="fixed inset-0 bg-slate-950/75 flex flex-col items-center justify-center z-[9999] p-4">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-lg max-w-sm w-full text-center shadow-lg border border-slate-200 dark:border-slate-800">
+        <div className="w-12 h-12 bg-blue-50 dark:bg-blue-950/50 rounded-md flex items-center justify-center mx-auto mb-3 relative">
+          <svg className="w-6 h-6 text-blue-600 dark:text-blue-400 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"></circle><path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        </div>
+        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Actualizando versión...</p>
+        <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400 mt-1">[ERR-APP-CHUNK-01]</p>
+      </div>
+    </div>
+  );
+};
+
 // MAGIA ANTI-CHUNK ERROR: Función que intercepta los fallos de carga en Vercel y recarga la página limpiamente
 const lazyWithRetry = (componentImport) =>
   React.lazy(async () => {
@@ -37,7 +58,7 @@ const lazyWithRetry = (componentImport) =>
       try { window.localStorage.setItem('page-has-been-force-refreshed', 'false'); } catch (e) { }
       return component;
     } catch (error) {
-      console.error("Error en lazy load:", error);
+      console.error("[ERR-APP-CHUNK-01] Error en lazy load:", error);
       if (!pageHasAlreadyBeenForceRefreshed) {
         try { window.localStorage.setItem('page-has-been-force-refreshed', 'true'); } catch (e) { }
         try { window.sessionStorage.setItem('page-has-been-force-refreshed', 'true'); } catch (e) { }
@@ -56,29 +77,9 @@ const lazyWithRetry = (componentImport) =>
           });
         }
         // Mostrar UI nativa y luego recargar
-        return {
-          default: () => {
-            React.useEffect(() => {
-              const timer = setTimeout(() => {
-                window.location.reload(true);
-              }, 2500);
-              return () => clearTimeout(timer);
-            }, []);
-
-            return (
-              <div className="fixed inset-0 bg-slate-950/75 flex flex-col items-center justify-center z-[9999] p-4">
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-lg max-w-sm w-full text-center shadow-lg border border-slate-200 dark:border-slate-800">
-                  <div className="w-12 h-12 bg-blue-50 dark:bg-blue-950/50 rounded-md flex items-center justify-center mx-auto mb-3 relative">
-                    <svg className="w-6 h-6 text-blue-600 dark:text-blue-400 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"></circle><path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                  </div>
-                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Actualizando versión...</p>
-                </div>
-              </div>
-            );
-          }
-        };
+        return { default: LazyUpdateFallback };
       }
-      console.error("El chunk de React sigue fallando tras recargar.");
+      console.error("[ERR-APP-CHUNK-02] El chunk de React sigue fallando tras recargar.");
       throw error;
     }
   });
@@ -114,7 +115,7 @@ function LogisticApp() {
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
   const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
-  const APP_VERSION = "v1.3.12"; // IMPORTANT: Update this version string when making changes.
+  const APP_VERSION = "v1.3.13"; // IMPORTANT: Update this version string when making changes.
 
   // VARIABLES MÁGICAS: Atrapan lo que Android nos comparte desde CamScanner o Adobe Scan
   const sharedText = searchParams.get('shared_text');
@@ -1467,20 +1468,107 @@ function LogisticApp() {
   );
 }
 
+// --- ENVOLTORIO DE ERRORES NATIVO (EVITA PANTALLA NEGRA ANTE ERRORES INESPERADOS) ---
+class AppErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('[ERR-APP-BOUNDARY-01] Error de renderizado capturado:', error, errorInfo);
+  }
+
+  handleReload = () => {
+    window.location.reload();
+  };
+
+  handleResetCacheAndReload = async () => {
+    try {
+      Object.keys(window.localStorage || {}).forEach((key) => {
+        if (key.startsWith('app_cache_') || key === 'page-has-been-force-refreshed') {
+          window.localStorage.removeItem(key);
+        }
+      });
+    } catch (e) { /* Ignorar errores de almacenamiento */ }
+
+    try {
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+      if ('caches' in window) {
+        const names = await caches.keys();
+        await Promise.all(names.map((n) => caches.delete(n)));
+      }
+    } catch (e) { /* Ignorar errores de limpieza PWA */ }
+
+    window.location.reload();
+  };
+
+  render() {
+    if (this.state.hasError) {
+      const errorMsg = this.state.error?.message || 'Error inesperado de visualización';
+      return (
+        <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0B0D11] text-slate-900 dark:text-slate-100 flex flex-col items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#131720] border border-slate-200 dark:border-slate-800 rounded-xl max-w-md w-full p-6 shadow-xl text-center">
+            <div className="w-12 h-12 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
+            </div>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">
+              Ocurrió un problema en la pantalla
+            </h2>
+            <p className="text-xs text-slate-600 dark:text-slate-400 mb-3 leading-relaxed">
+              La aplicación interceptó un error para evitar que la pantalla quede en negro. Puedes recargar para continuar.
+            </p>
+            <div className="bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 mb-5 text-left">
+              <p className="text-[11px] font-mono font-bold text-red-600 dark:text-red-400">[ERR-APP-BOUNDARY-01]</p>
+              <p className="text-[11px] font-mono text-slate-600 dark:text-slate-400 break-words mt-0.5">{errorMsg}</p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={this.handleReload}
+                className="w-full py-2.5 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white text-sm font-semibold transition-all cursor-pointer"
+              >
+                Recargar aplicación
+              </button>
+              <button
+                type="button"
+                onClick={this.handleResetCacheAndReload}
+                className="w-full py-2 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-all cursor-pointer"
+              >
+                Limpiar caché y recargar
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // --- ENVOLTORIO MAESTRO DE NAVEGACIÓN ---
 export default function App() {
   return (
-    <Router>
-      {/* ENVUELVE LA APP PARA ATRAPAR LAS CARGAS DIFERIDAS DE LAS VISTAS */}
-      <React.Suspense fallback={
-        <div className="min-h-screen bg-[var(--bg-canvas)] flex flex-col items-center justify-center p-4">
-          <div className="w-10 h-10 border-2 border-slate-200 dark:border-slate-800 border-t-blue-600 rounded-full animate-spin mb-3"></div>
-          <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Cargando aplicación...</p>
-          <p className="text-xs font-mono text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">LogisticAPP</p>
-        </div>
-      }>
-        <LogisticApp />
-      </React.Suspense>
-    </Router>
+    <AppErrorBoundary>
+      <Router>
+        {/* ENVUELVE LA APP PARA ATRAPAR LAS CARGAS DIFERIDAS DE LAS VISTAS */}
+        <React.Suspense fallback={
+          <div className="min-h-screen bg-[var(--bg-canvas)] flex flex-col items-center justify-center p-4">
+            <div className="w-10 h-10 border-2 border-slate-200 dark:border-slate-800 border-t-blue-600 rounded-full animate-spin mb-3"></div>
+            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Cargando aplicación...</p>
+            <p className="text-xs font-mono text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">LogisticAPP</p>
+          </div>
+        }>
+          <LogisticApp />
+        </React.Suspense>
+      </Router>
+    </AppErrorBoundary>
   );
 }

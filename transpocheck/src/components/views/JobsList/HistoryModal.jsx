@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, X, MapPin, AlertCircle, Loader2, Receipt, CheckSquare, Check, Wrench, Copy, Fuel, User, Clock, Camera } from 'lucide-react';
+import { FileText, X, MapPin, AlertCircle, Loader2, Receipt, CheckSquare, Check, CheckCircle, Wrench, Copy, Fuel, User, Clock, Camera } from 'lucide-react';
 import { db, storage } from '../../../firebase';
 import { ref, listAll, getDownloadURL } from 'firebase/storage';
 import { doc, updateDoc } from 'firebase/firestore';

@@ -20,10 +20,10 @@ export default function ArrivalModal({
   openCamera,
   vehicles = []
 }) {
-  if (!arrivalPromptJob) return null;
-
   const [isDragging, setIsDragging] = useState(false);
   const svgRef = useRef(null);
+
+  if (!arrivalPromptJob) return null;
 
   const updateFuelFromEvent = (e) => {
     if (!svgRef.current) return;

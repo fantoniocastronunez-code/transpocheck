@@ -19,8 +19,6 @@ export default function JobExpenseModal({
   db,
   setFullScreenPhoto
 }) {
-  if (!isOpen || !job) return null;
-
   const [expenseType, setExpenseType] = useState('fuel'); // 'fuel' | 'other'
   const [amount, setAmount] = useState('');
   const [motivo, setMotivo] = useState('');
@@ -31,6 +29,8 @@ export default function JobExpenseModal({
 
   // Cámara nativa in-app
   const [cameraConfig, setCameraConfig] = useState({ isOpen: false, title: '', target: null });
+
+  if (!isOpen || !job) return null;
 
   const isFuel = expenseType === 'fuel';
   const jobIdent = job.plate || job.vin || 'S/N';

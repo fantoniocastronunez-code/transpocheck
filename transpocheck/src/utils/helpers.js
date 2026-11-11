@@ -474,3 +474,29 @@ export const calculateDriverChecklistScore = (jobs, driverEmail, drivers = []) =
 
   return { score: completionPercentage * 100, grade, tips, totalJobs: completedJobs.length };
 };
+
+export const getRtFinalDestination = (job) => {
+  if (!job) return 'Por definir';
+  // 1. Si ya se decidió la RT (en checklist o borrador), esa decisión manda por sobre todo
+  const returnOpt = job.checklist?.rtReturnOption || job.draft?.formData?.rtReturnOption;
+  const returnDest = job.checklist?.rtReturnDestination || job.draft?.formData?.rtReturnDestination;
+
+  if ((returnOpt === 'other' || returnOpt === 'destination') && returnDest) {
+    return returnDest;
+  }
+  if (returnOpt === 'origin') {
+    return job.origin || 'Origen';
+  }
+
+  // 2. Si aún no se decide en RT, tomamos el destino planificado en la creación (con flechas)
+  if (job.destination && job.destination.includes('->')) {
+    const parts = job.destination.split('->');
+    return parts[parts.length - 1].trim();
+  }
+
+  // 3. Fallback final si no hay checklist cerrado ni flechas
+  if (job.destination && !job.destination.toLowerCase().includes('prt')) {
+    return job.destination.trim();
+  }
+  return job.origin || 'Por definir';
+};

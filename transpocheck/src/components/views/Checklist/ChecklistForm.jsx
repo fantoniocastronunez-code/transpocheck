@@ -21,7 +21,7 @@ const ChecklistInner = ({ openCamera }) => {
   const {
     job, isQuick, formData, setFormData, step, setStep, isDraftLoaded, setIsDraftLoaded,
     isSubmitting, setIsSubmitting, processingAction, setProcessingAction,
-    defaultData, matchedVehicle, drivers, currentUserEmail, uploadImageToStorage, pushSyncTask,
+    defaultData, matchedVehicle, vehicles, drivers, currentUserEmail, uploadImageToStorage, pushSyncTask,
     showAlert, showConfirm, onCancel, onComplete, syncFilesToStorage, clearLocalDraft, flushDraft,
     saveDraftToIndexedDB
   } = useChecklist();

@@ -24,7 +24,7 @@ import HistoryModal from './JobsList/HistoryModal';
 import JobExpenseModal from './JobsList/JobExpenseModal';
 import ArrivalModal from './JobsList/ArrivalModal';
 import PickupModal from './JobsList/PickupModal';
-import { formatDateDisplay, analyzeJobStatus, generateStandardFileName, generateWhatsAppText, getRouteStr, resizeImage, resizeAndWatermarkImage, isTrailerVehicle } from '../../utils/helpers';
+import { formatDateDisplay, analyzeJobStatus, generateStandardFileName, generateWhatsAppText, getRouteStr, resizeImage, resizeAndWatermarkImage, isTrailerVehicle, getRtFinalDestination } from '../../utils/helpers';
 import { purgeOrphanStoragePhotos, formatBytes } from '../../utils/storageMetrics';
 import { saveJobToMonthlyStatsBeforeDelete, getMonthKey, extractLightweightJob, calculateStatsFromLightweightJobs } from '../../utils/statsSync';
 
@@ -1375,30 +1375,6 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     return '';
   };
 
-  const getRtFinalDestination = (job) => {
-    // 1. Si ya se decidió la RT (en checklist o borrador), esa decisión manda por sobre todo
-    const returnOpt = job.checklist?.rtReturnOption || job.draft?.formData?.rtReturnOption;
-    const returnDest = job.checklist?.rtReturnDestination || job.draft?.formData?.rtReturnDestination;
-
-    if ((returnOpt === 'other' || returnOpt === 'destination') && returnDest) {
-      return returnDest;
-    }
-    if (returnOpt === 'origin') {
-      return job.origin || 'Origen';
-    }
-
-    // 2. Si aún no se decide en RT, tomamos el destino planificado en la creación (con flechas)
-    if (job.destination && job.destination.includes('->')) {
-      const parts = job.destination.split('->');
-      return parts[parts.length - 1].trim();
-    }
-
-    // 3. Fallback final si no hay checklist cerrado ni flechas
-    if (job.destination && !job.destination.toLowerCase().includes('prt')) {
-      return job.destination.trim();
-    }
-    return job.origin || 'Por definir';
-  };
 
   const jobCardProps = {
     jobs, drivers,
