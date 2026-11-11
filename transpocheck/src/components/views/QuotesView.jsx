@@ -1,12 +1,213 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { addDoc, collection, doc, updateDoc, deleteDoc, setDoc, onSnapshot, getDocs, increment } from 'firebase/firestore';
+import { addDoc, collection, doc, updateDoc, deleteDoc, setDoc, onSnapshot, getDocs, increment, writeBatch } from 'firebase/firestore';
 import {
   Calculator, MapPin, Fuel, DollarSign, Plus, CheckCircle,
   User, Truck, Receipt, Printer, Send, Save, ArrowRight, X, MessageCircle, Mail, MoreVertical, Calendar, Sparkles,
   Settings, Sliders, Hash, RotateCcw, Building2, Briefcase, Phone, Globe, FileText, Check, Download, Smartphone,
-  FlaskConical, Filter, Loader2
+  FlaskConical, Filter, Loader2, FileSpreadsheet
 } from 'lucide-react';
 import { formatMoney } from '../../utils/helpers';
+
+// Helper para limpiar y procesar montos numéricos desde CSV (soporta $, puntos de miles, comas, etc.)
+const cleanAmount = (val) => {
+  if (typeof val === 'number') return val;
+  if (!val) return 0;
+  let s = String(val).trim().replace(/[\$\sA-Za-z]/g, '');
+  if (/\.\d{3},\d{2}$/.test(s)) {
+    s = s.replace(/\./g, '').replace(',', '.');
+  } else if (/,\d{3}\.\d{2}$/.test(s)) {
+    s = s.replace(/,/g, '');
+  } else if (/^\d{1,3}(\.\d{3})+$/.test(s)) {
+    s = s.replace(/\./g, '');
+  } else if (/^\d{1,3}(,\d{3})+$/.test(s)) {
+    s = s.replace(/,/g, '');
+  } else {
+    s = s.replace(/,/g, '.');
+  }
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : Math.round(n);
+};
+
+// Helper para parsear fechas de cotizaciones en múltiples formatos a milisegundos
+const parseDateTimestamp = (dateStr) => {
+  if (!dateStr) return Date.now();
+  const str = String(dateStr).trim();
+
+  // Formato DD/MM/YYYY o DD-MM-YYYY
+  const dmy = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if (dmy) {
+    const d = parseInt(dmy[1], 10);
+    const m = parseInt(dmy[2], 10) - 1;
+    let y = parseInt(dmy[3], 10);
+    if (y < 100) y += 2000;
+    const parsed = new Date(y, m, d, 12, 0, 0);
+    if (!isNaN(parsed.getTime())) return parsed.getTime();
+  }
+
+  // Formato YYYY-MM-DD o YYYY/MM/DD
+  const ymd = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if (ymd) {
+    const y = parseInt(ymd[1], 10);
+    const m = parseInt(ymd[2], 10) - 1;
+    const d = parseInt(ymd[3], 10);
+    const parsed = new Date(y, m, d, 12, 0, 0);
+    if (!isNaN(parsed.getTime())) return parsed.getTime();
+  }
+
+  const t = Date.parse(str);
+  if (!isNaN(t)) return t;
+
+  return Date.now();
+};
+
+// Parser robusto para importar CSV de cotizaciones de otra app
+const parseQuotesCSV = (csvText, currentUserEmail) => {
+  if (!csvText || !csvText.trim()) return [];
+
+  const cleanText = csvText.replace(/^\uFEFF/, '').trim();
+  if (!cleanText) return [];
+
+  const rawLines = [];
+  let curLine = '';
+  let insideQuotes = false;
+
+  for (let i = 0; i < cleanText.length; i++) {
+    const c = cleanText[i];
+    const nextC = cleanText[i + 1];
+
+    if (c === '"') {
+      curLine += '"';
+      if (insideQuotes && nextC === '"') {
+        curLine += '"';
+        i++;
+      } else {
+        insideQuotes = !insideQuotes;
+      }
+    } else if ((c === '\r' || c === '\n') && !insideQuotes) {
+      if (c === '\r' && nextC === '\n') i++;
+      if (curLine.trim()) rawLines.push(curLine);
+      curLine = '';
+    } else {
+      curLine += c;
+    }
+  }
+  if (curLine.trim()) rawLines.push(curLine);
+  if (rawLines.length === 0) return [];
+
+  const headerLine = rawLines[0];
+  let delimiter = ',';
+  const commaCount = (headerLine.match(/,/g) || []).length;
+  const semicolonCount = (headerLine.match(/;/g) || []).length;
+  const tabCount = (headerLine.match(/\t/g) || []).length;
+
+  if (semicolonCount > commaCount && semicolonCount >= tabCount) {
+    delimiter = ';';
+  } else if (tabCount > commaCount && tabCount > semicolonCount) {
+    delimiter = '\t';
+  }
+
+  const splitCells = (line) => {
+    const cells = [];
+    let curCell = '';
+    let inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      const nextCh = line[i + 1];
+
+      if (ch === '"') {
+        if (inQ && nextCh === '"') {
+          curCell += '"';
+          i++;
+        } else {
+          inQ = !inQ;
+        }
+      } else if (ch === delimiter && !inQ) {
+        let trimmed = curCell.trim();
+        if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+          trimmed = trimmed.slice(1, -1).trim();
+        }
+        cells.push(trimmed);
+        curCell = '';
+      } else {
+        curCell += ch;
+      }
+    }
+    let trimmed = curCell.trim();
+    if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+      trimmed = trimmed.slice(1, -1).trim();
+    }
+    cells.push(trimmed);
+    return cells;
+  };
+
+  const parsedRows = rawLines.map(splitCells);
+  if (parsedRows.length === 0) return [];
+
+  const normalize = (str) => (str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+  const firstRow = parsedRows[0].map(normalize);
+  let dateIdx = firstRow.findIndex(h => /^(date|fecha|dia)$/i.test(h) || h.includes('date') || h.includes('fecha'));
+  let quoteIdx = firstRow.findIndex(h => /^(quote|cotizacion|numero|nro|folio|correlativo)$/i.test(h) || h.includes('quote') || h.includes('cotiz'));
+  let customerIdx = firstRow.findIndex(h => /^(costumer|customer|cliente|empresa|contacto)$/i.test(h) || h.includes('costumer') || h.includes('customer') || h.includes('client'));
+  let salespersonIdx = firstRow.findIndex(h => /^(salesperson|vendedor|ejecutivo|emisor|creado por)$/i.test(h) || h.includes('sales') || h.includes('vendedor') || h.includes('ejecut'));
+  let statusIdx = firstRow.findIndex(h => /^(status|estado)$/i.test(h) || h.includes('status') || h.includes('estado'));
+  let amountIdx = firstRow.findIndex(h => /^(amount|monto|total|valor|precio|price)$/i.test(h) || h.includes('amount') || h.includes('monto') || h.includes('total') || h.includes('precio'));
+
+  const hasHeader = (dateIdx !== -1 || quoteIdx !== -1 || customerIdx !== -1 || amountIdx !== -1);
+  const dataRows = hasHeader ? parsedRows.slice(1) : parsedRows;
+
+  // Si no se reconocieron encabezados, usar el orden de columnas por defecto:
+  // "date", "quote", "costumer", "salesperson", "status", "amount"
+  if (dateIdx === -1) dateIdx = 0;
+  if (quoteIdx === -1) quoteIdx = 1;
+  if (customerIdx === -1) customerIdx = 2;
+  if (salespersonIdx === -1) salespersonIdx = 3;
+  if (statusIdx === -1) statusIdx = 4;
+  if (amountIdx === -1) {
+    amountIdx = parsedRows[0].length > 5 ? 5 : (parsedRows[0].length - 1);
+  }
+
+  const results = [];
+  dataRows.forEach((row, idx) => {
+    const quoteRaw = (row[quoteIdx] || '').trim();
+    const customerRaw = (row[customerIdx] || '').trim();
+    const salespersonRaw = salespersonIdx >= 0 ? (row[salespersonIdx] || '').trim() : '';
+    const dateRaw = dateIdx >= 0 ? (row[dateIdx] || '').trim() : '';
+    const amountRaw = amountIdx >= 0 ? row[amountIdx] : 0;
+
+    // Saltar filas completamente vacías o sin datos básicos
+    if (!quoteRaw && !customerRaw && !amountRaw) return;
+
+    const finalAmount = cleanAmount(amountRaw);
+    const createdAtTs = parseDateTimestamp(dateRaw);
+
+    results.push({
+      quoteNumber: quoteRaw || `COT-${idx + 1}`,
+      client: customerRaw || 'Cliente Importado',
+      salesperson: salespersonRaw || '',
+      origin: '',
+      destination: '',
+      distanceKm: '',
+      description: '',
+      brand: '',
+      model: '',
+      plateOrVin: '',
+      finalPrice: finalAmount,
+      netPrice: finalAmount,
+      ivaAmount: 0,
+      addIva: false,
+      status: 'pendiente', // el status del archivo csv se ignora según especificación
+      createdAt: createdAtTs,
+      importedDateStr: dateRaw,
+      isImported: true,
+      importedAt: Date.now(),
+      importedBy: currentUserEmail || '',
+      mode: 'full'
+    });
+  });
+
+  return results;
+};
 
 export default function QuotesView({ db, customClients = [], vehicles = [], directoryList = [], drivers = [], showAlert, showConfirm, currentUserEmail, isSuperAdmin = false }) {
   // Modo de Cotizador: 'simple' (Modo Rápido / Celular) o 'full' (Calculadora Detallada)
@@ -136,6 +337,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   const [editingQuoteId, setEditingQuoteId] = useState(null);
   const [showSendModal, setShowSendModal] = useState(false);
 
+  // Estados para Importación de Cotizaciones vía CSV
+  const [isImportingCSV, setIsImportingCSV] = useState(false);
+  const csvFileInputRef = useRef(null);
+
   // Estados del Historial (Menú de 3 puntos y Modal de Traslado)
   const [activeActionMenu, setActiveActionMenu] = useState(null);
   const [showAcceptModal, setShowAcceptModal] = useState(false);
@@ -246,7 +451,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   };
 
   // Cargar Cotización al formulario para modificarla
-  const handleEditQuote = (q) => {
+  const handleEditQuote = (q, customMsg = null) => {
     const clientRecord = customClients.find(c => c.name === q.client);
     setQuoteData({
       client: q.client || '',
@@ -270,7 +475,9 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       brand: q.brand || '',
       model: q.model || '',
       plateOrVin: q.plateOrVin || '',
-      quoteNumber: q.quoteNumber || ''
+      quoteNumber: q.quoteNumber || '',
+      isImported: !!q.isImported,
+      importedOriginalPrice: q.finalPrice || null
     });
 
     // Si viene de modo simple o tiene precio definido
@@ -284,8 +491,65 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     setSelectedTollIds(q.selectedTollIds || []);
     setIsTestQuote(!!q.isTest);
     setEditingQuoteId(q.id);
+
+    // Si la cotización proviene de importación o no tiene ruta definida, abrir la tabla completa (full)
+    if (q.isImported || (!q.origin && !q.destination)) {
+      handleSetQuoteMode('full');
+    }
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    showAlert("📝 Cotización cargada para edición.");
+    if (customMsg) {
+      showAlert(customMsg);
+    } else {
+      showAlert("📝 Cotización cargada en la tabla completa para edición.");
+    }
+  };
+
+  // Manejo de Importación de Cotizaciones desde archivo .CSV
+  const handleCSVFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Resetear valor para permitir seleccionar el mismo archivo si es necesario
+    e.target.value = '';
+
+    try {
+      const text = await file.text();
+      if (!text || !text.trim()) {
+        return showAlert("⚠️ [ERR-CSV-EMPTY-01] El archivo CSV seleccionado está vacío.");
+      }
+
+      const parsed = parseQuotesCSV(text, currentUserEmail);
+      if (!parsed || parsed.length === 0) {
+        return showAlert("⚠️ [ERR-CSV-PARSE-01] No se encontraron cotizaciones con datos válidos en el archivo CSV.");
+      }
+
+      showConfirm(`¿Confirmas la importación de ${parsed.length} cotizaciones desde "${file.name}" al historial?`, async () => {
+        setIsImportingCSV(true);
+        try {
+          const chunkSize = 400;
+          for (let i = 0; i < parsed.length; i += chunkSize) {
+            const chunk = parsed.slice(i, i + chunkSize);
+            const batch = writeBatch(db);
+            for (const item of chunk) {
+              const docRef = doc(collection(db, 'quotes'));
+              batch.set(docRef, item);
+            }
+            await batch.commit();
+          }
+          showAlert(`✅ [CSV-SUCCESS-01] Se importaron con éxito ${parsed.length} cotizaciones al historial.`);
+        } catch (saveErr) {
+          console.error("[ERR-CSV-SAVE-01] Error al guardar cotizaciones:", saveErr);
+          showAlert("❌ [ERR-CSV-SAVE-01] Error al registrar las cotizaciones en el historial.");
+        } finally {
+          setIsImportingCSV(false);
+        }
+      });
+    } catch (err) {
+      console.error("[ERR-CSV-READ-01] Error al leer archivo CSV:", err);
+      showAlert("❌ [ERR-CSV-READ-01] Error al leer el archivo CSV seleccionado.");
+      setIsImportingCSV(false);
+    }
   };
 
   // Cargar Peaje para modificar sus valores
@@ -831,6 +1095,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         quoteNumber: correlativoFinal,
         isTest,
         status: isTest ? 'prueba' : 'pendiente',
+        isImported: false,
         createdAt: Date.now(),
         createdBy: currentUserEmail || '',
         mode: 'simple'
@@ -916,6 +1181,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         isTest,
         status: isTest ? 'prueba' : status,
         selectedTollIds,
+        isImported: false,
         updatedAt: Date.now(),
         mode: 'full'
       };
@@ -1307,6 +1573,15 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   // Descarga Directa de Archivo PDF para cualquier cotización
   const handleDownloadPDFForQuote = async (targetQuote, idKey) => {
     if (!targetQuote) return;
+
+    // Si la cotización proviene de importación o no tiene ruta ni vehículo definido
+    const isIncomplete = targetQuote.isImported || (!targetQuote.origin && !targetQuote.destination && !targetQuote.brand && !targetQuote.model);
+    if (isIncomplete) {
+      handleSetQuoteMode('full');
+      handleEditQuote(targetQuote, "📋 [INFO-QUOTE-EDIT-01] Esta cotización proviene del CSV importado. Se abrió la tabla completa para que puedas completar ruta, vehículo y costos antes de generar el documento.");
+      return;
+    }
+
     const downloadKey = idKey || targetQuote.id || 'modal';
     setDownloadingQuoteId(downloadKey);
     showAlert("⏳ Generando descarga de documento PDF...");
@@ -1366,6 +1641,15 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   // Compartir por WhatsApp o Correo con PDF Adjunto (Desacoplado)
   const handleShareQuote = async (targetQuote, method) => {
     const qData = targetQuote || quoteData;
+
+    // Si la cotización proviene de importación o no tiene ruta ni vehículo definido
+    const isIncomplete = qData.isImported || (!qData.origin && !qData.destination && !qData.brand && !qData.model);
+    if (isIncomplete) {
+      handleSetQuoteMode('full');
+      handleEditQuote(qData, "📋 [INFO-QUOTE-EDIT-02] Esta cotización proviene del CSV importado. Se abrió la tabla completa para que puedas modificarla y completarla antes de enviar.");
+      return;
+    }
+
     const isSimpleMode = qData.mode === 'simple' || (!targetQuote && quoteMode === 'simple') || (!qData.origin && !qData.destination && qData.mode !== 'full');
     if (!qData.client) {
       return showAlert("⚠️ [ERR-QUOTE-SHARE-VAL-01] Falta la empresa cliente para compartir.");
@@ -1588,17 +1872,26 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
       {/* AVISO DE MODO EDICIÓN */}
       {editingQuoteId && (
-        <div className="bg-amber-50 dark:bg-amber-900/30 border-2 border-amber-300 dark:border-amber-700/50 p-4 rounded-2xl flex justify-between items-center shadow-sm animate-in fade-in">
+        <div className="bg-amber-50 dark:bg-amber-900/30 border-2 border-amber-300 dark:border-amber-700/50 p-4 rounded-2xl flex justify-between items-center shadow-sm animate-in fade-in flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-ping"></span>
-            <p className="text-xs font-black text-amber-800 dark:text-amber-300">
-              Modificando cotización existente ({quoteData.quoteNumber || 'S/N'}). Los cambios actualizarán el registro actual.
-            </p>
+            <div>
+              <p className="text-xs font-black text-amber-800 dark:text-amber-300">
+                {quoteData.isImported
+                  ? `Modificando cotización importada (${quoteData.quoteNumber || 'S/N'}). Completa la ruta, vehículo y costos para crearla como corresponde.`
+                  : `Modificando cotización existente (${quoteData.quoteNumber || 'S/N'}). Los cambios actualizarán el registro actual.`}
+              </p>
+              {quoteData.importedOriginalPrice && (
+                <p className="text-[11px] font-bold text-amber-700 dark:text-amber-400">
+                  Monto importado en historial: {formatMoney(quoteData.importedOriginalPrice)}
+                </p>
+              )}
+            </div>
           </div>
           <button
             onClick={() => {
               setEditingQuoteId(null);
-              setQuoteData(prev => ({ ...prev, quoteNumber: '' }));
+              setQuoteData(prev => ({ ...prev, quoteNumber: '', isImported: false, importedOriginalPrice: null }));
               setSimpleData({ amount: '', addIva: true });
               showAlert("Edición cancelada.");
             }}
@@ -2366,13 +2659,16 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
       {/* HISTORIAL DE COTIZACIONES GUARDADAS */}
       {(() => {
+        const testCount = savedQuotes.filter(q => q.isTest).length;
+        const importedCount = savedQuotes.filter(q => q.isImported).length;
+        const officialCount = savedQuotes.filter(q => !q.isTest && !q.isImported).length;
+
         const filteredQuotes = savedQuotes.filter(q => {
-          if (historyFilter === 'official') return !q.isTest;
+          if (historyFilter === 'official') return !q.isTest && !q.isImported;
           if (historyFilter === 'test') return !!q.isTest;
+          if (historyFilter === 'imported') return !!q.isImported;
           return true;
         });
-        const testCount = savedQuotes.filter(q => q.isTest).length;
-        const officialCount = savedQuotes.length - testCount;
 
         return (
           <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-800 mt-8">
@@ -2382,8 +2678,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                   <Receipt className="w-5 h-5 text-purple-600 dark:text-purple-400" /> Historial de Cotizaciones
                 </h3>
 
-                {/* FILTRO DE HISTORIAL: TODAS / OFICIALES / PRUEBAS */}
-                <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-[11px] font-bold border border-slate-200 dark:border-slate-700">
+                {/* FILTRO DE HISTORIAL: TODAS / OFICIALES / IMPORTADAS / PRUEBAS */}
+                <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-[11px] font-bold border border-slate-200 dark:border-slate-700 flex-wrap gap-1">
                   <button
                     type="button"
                     onClick={() => setHistoryFilter('all')}
@@ -2404,6 +2700,19 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                   >
                     Oficiales ({officialCount})
                   </button>
+                  {importedCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setHistoryFilter('imported')}
+                      className={`px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 ${historyFilter === 'imported'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-blue-600 dark:text-blue-400 hover:text-blue-700'
+                        }`}
+                    >
+                      <FileSpreadsheet className="w-3 h-3" />
+                      Importadas ({importedCount})
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => setHistoryFilter('test')}
@@ -2418,9 +2727,39 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 </div>
               </div>
 
-              <span className="text-[11px] font-bold text-slate-400">
-                Mostrando {filteredQuotes.length} de {savedQuotes.length} • Descarga directa en un clic
-              </span>
+              <div className="flex items-center gap-3 flex-wrap">
+                {/* BOTÓN IMPORTAR CSV */}
+                <input
+                  type="file"
+                  ref={csvFileInputRef}
+                  onChange={handleCSVFileChange}
+                  accept=".csv,text/csv,text/plain"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  disabled={isImportingCSV}
+                  onClick={() => csvFileInputRef.current?.click()}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-black shadow-sm flex items-center gap-2 transition-colors disabled:opacity-50"
+                  title="Importar cotizaciones históricas desde archivo .csv"
+                >
+                  {isImportingCSV ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Importando CSV...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileSpreadsheet className="w-3.5 h-3.5" />
+                      <span>Importar .CSV</span>
+                    </>
+                  )}
+                </button>
+
+                <span className="text-[11px] font-bold text-slate-400">
+                  Mostrando {filteredQuotes.length} de {savedQuotes.length}
+                </span>
+              </div>
             </div>
 
             {filteredQuotes.length === 0 ? (
@@ -2430,7 +2769,9 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     ? 'No hay cotizaciones de prueba registradas.'
                     : historyFilter === 'official'
                       ? 'No hay cotizaciones oficiales registradas.'
-                      : 'No hay cotizaciones registradas aún.'}
+                      : historyFilter === 'imported'
+                        ? 'No hay cotizaciones importadas desde CSV registradas.'
+                        : 'No hay cotizaciones registradas aún.'}
                 </p>
               </div>
             ) : (
@@ -2463,20 +2804,38 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                                   <FlaskConical className="w-2.5 h-2.5" /> TEST
                                 </span>
                               )}
+                              {q.isImported && (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800 flex items-center gap-0.5 font-extrabold uppercase" title="Cotización importada desde archivo CSV">
+                                  CSV
+                                </span>
+                              )}
                             </div>
                           </td>
                           <td className="p-3 font-black">
                             {q.client}
                             {q.clientRut && <span className="block text-[10px] font-mono font-normal text-slate-400">{q.clientRut}</span>}
+                            {q.salesperson && (
+                              <span className="block text-[10px] font-normal text-slate-400">
+                                Vendedor: {q.salesperson}
+                              </span>
+                            )}
                           </td>
                           <td className="p-3 font-medium">
                             {q.origin && q.destination
                               ? `${q.origin} ➔ ${q.destination} ${q.distanceKm ? `(${q.distanceKm} KM)` : ''}`
-                              : (q.description || 'Traslado logístico')
+                              : q.description
+                                ? q.description
+                                : <span className="text-slate-400 font-normal italic">-</span>
                             }
                           </td>
                           <td className="p-3">
-                            {q.brand} {q.model} <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded ml-1 font-mono">{q.plateOrVin || 'S/N'}</span>
+                            {q.brand || q.model || q.plateOrVin ? (
+                              <>
+                                {q.brand} {q.model} <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded ml-1 font-mono">{q.plateOrVin || 'S/N'}</span>
+                              </>
+                            ) : (
+                              <span className="text-slate-400 font-normal italic">-</span>
+                            )}
                           </td>
                           <td className="p-3 font-black text-slate-900 dark:text-slate-100">
                             {formatMoney(q.finalPrice)}

@@ -53,7 +53,7 @@ const ChecklistInner = ({ openCamera }) => {
     const clientX = e.clientX ?? (e.touches && e.touches[0]?.clientX);
     const clientY = e.clientY ?? (e.touches && e.touches[0]?.clientY);
     if (clientX == null || clientY == null) return;
-    
+
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height * (100 / 110);
     const dx = clientX - centerX;
@@ -61,7 +61,7 @@ const ChecklistInner = ({ openCamera }) => {
     let angle = Math.atan2(dx, dy) * (180 / Math.PI);
     if (angle < -90) angle = -90;
     if (angle > 90) angle = 90;
-    
+
     let fuel = (angle + 90) / 180;
     setFormData(prev => ({ ...prev, fuelLevel: fuel }));
   };
@@ -184,7 +184,7 @@ const ChecklistInner = ({ openCamera }) => {
     setIsSubmitting(true);
     setProcessingAction('Iniciando subida...');
 
-    const runBackgroundProcess = async (syncTask = null, setProgress = () => {}) => {
+    const runBackgroundProcess = async (syncTask = null, setProgress = () => { }) => {
       try {
         let finalLocation = null;
         try {
@@ -209,7 +209,7 @@ const ChecklistInner = ({ openCamera }) => {
         }
 
         const formDataWithLocation = { ...cleanedFormData, location: finalLocation || cleanedFormData.location };
-        
+
         // Función para procesar y descontar gastos automáticamente
         const processChecklistExpenses = async (finalData) => {
           const driverObj = drivers?.find(d => d.email === currentUserEmail);
@@ -284,7 +284,7 @@ const ChecklistInner = ({ openCamera }) => {
             driverEmail: currentUserEmail, driverName: driverObj.name, createdAt: Date.now(), completedAt: Date.now(),
             checklist: finalData, tripType: 'simple'
           });
-          
+
           await saveVehicleDocs(finalData);
         } else {
           // Normal Job
@@ -300,7 +300,7 @@ const ChecklistInner = ({ openCamera }) => {
               }
             }
           }
-          
+
           // Guardar draft rápido
           const draftDataForFirestore = JSON.parse(JSON.stringify(formDataWithLocation));
           for (const key in draftDataForFirestore.photos) {
@@ -325,11 +325,11 @@ const ChecklistInner = ({ openCamera }) => {
             }
           }
           updates['draft.formData'] = draftDataForFirestore;
-          try { await updateDoc(doc(db, 'transport_jobs', job.id), updates); } catch(e){}
+          try { await updateDoc(doc(db, 'transport_jobs', job.id), updates); } catch (e) { }
 
           // Subir fotos
           const finalData = await syncFilesToStorage(formDataWithLocation, setProgress);
-          
+
           const finalJobUpdates = {
             checklist: finalData, status: 'completed', completedAt: Date.now(), draft: null
           };
@@ -349,7 +349,7 @@ const ChecklistInner = ({ openCamera }) => {
 
         if (clearLocalDraft) await clearLocalDraft();
         if (syncTask) syncTask.finish();
-      } catch(err) {
+      } catch (err) {
         console.error("[ERR-BG-SYNC-01] Error en background sync:", err);
         if (syncTask) syncTask.error(err);
         else throw err;
@@ -360,7 +360,7 @@ const ChecklistInner = ({ openCamera }) => {
       const syncTask = pushSyncTask(`Sync ${job?.plate || job?.vin || 'Vehículo'}`, { jobId: job?.id });
       showAlert(`✅ ¡Completaste el ${calculateProgress()}% del Checklist! Subida en 2do plano iniciada.`);
       onComplete();
-      
+
       const setBgProgress = (prog) => {
         if (!prog) return;
         const msg = typeof prog === 'string' ? prog : (prog.text || (prog.total ? `Subiendo fotos (${prog.current}/${prog.total})` : 'Subiendo...'));
@@ -374,7 +374,7 @@ const ChecklistInner = ({ openCamera }) => {
         await runBackgroundProcess(null, setUploadProgress);
         showAlert(`✅ ¡Completaste el ${calculateProgress()}% del Checklist! Guardado Correctamente.`);
         onComplete();
-      } catch(err) {
+      } catch (err) {
         console.error("[ERR-SAVE-02] Error global al guardar checklist:", err);
         showAlert(`❌ Error al guardar [ERR-SAVE-02]: ${err.message}`);
       } finally {
@@ -421,8 +421,8 @@ const ChecklistInner = ({ openCamera }) => {
             <span className="text-[10px] font-bold font-mono text-sky-600 dark:text-sky-400">{calculateProgress()}% Completado</span>
           </div>
           <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-            <div 
-              className="bg-sky-600 h-1.5 rounded-full transition-all duration-300 ease-out" 
+            <div
+              className="bg-sky-600 h-1.5 rounded-full transition-all duration-300 ease-out"
               style={{ width: `${calculateProgress()}%` }}
             ></div>
           </div>
@@ -454,8 +454,8 @@ const ChecklistInner = ({ openCamera }) => {
             onClick={() => setStep(Math.max(1, step - 1))}
             disabled={step === 1 || isSubmitting}
             className={`flex-1 font-bold py-2.5 rounded-lg border flex items-center justify-center gap-2 uppercase tracking-wider text-xs sm:text-sm transition-colors ${step === 1 || isSubmitting
-                ? 'border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-600 cursor-not-allowed'
-                : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
+              ? 'border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-600 cursor-not-allowed'
+              : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
               }`}
           >
             <ArrowLeft className="w-4 h-4" /> Atrás
@@ -464,8 +464,8 @@ const ChecklistInner = ({ openCamera }) => {
             onClick={() => setStep(Math.min(isSimple ? 3 : 5, step + 1))}
             disabled={step === (isSimple ? 3 : 5) || isSubmitting}
             className={`flex-1 font-bold py-2.5 rounded-lg border flex items-center justify-center gap-2 uppercase tracking-wider text-xs sm:text-sm transition-colors ${step === (isSimple ? 3 : 5) || isSubmitting
-                ? 'border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-600 cursor-not-allowed'
-                : 'border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-900/40'
+              ? 'border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-600 cursor-not-allowed'
+              : 'border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-900/40'
               }`}
           >
             Siguiente <ArrowLeft className="w-4 h-4 rotate-180" />
@@ -476,8 +476,8 @@ const ChecklistInner = ({ openCamera }) => {
           onClick={handlePreSubmit}
           disabled={isSubmitting}
           className={`w-full font-bold py-3.5 rounded-lg flex items-center justify-center gap-2 uppercase tracking-wider text-xs sm:text-sm transition-colors ${isSubmitting
-              ? 'bg-slate-300 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed'
-              : 'bg-sky-600 hover:bg-sky-700 text-white shadow-xs'
+            ? 'bg-slate-300 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed'
+            : 'bg-sky-600 hover:bg-sky-700 text-white shadow-xs'
             }`}
         >
           {isSubmitting ? (
@@ -501,8 +501,8 @@ const ChecklistInner = ({ openCamera }) => {
               {/* Odómetro */}
               <div className="flex flex-col gap-1">
                 <div className="flex justify-between items-end mb-1 px-2">
-                   <label className="text-xs text-slate-300 font-medium">Odómetro Actual</label>
-                   <span className="text-xs text-slate-500 font-mono">Km</span>
+                  <label className="text-xs text-slate-300 font-medium">Odómetro Actual</label>
+                  <span className="text-xs text-slate-500 font-mono">Km</span>
                 </div>
                 <div className="relative">
                   <input
@@ -519,103 +519,104 @@ const ChecklistInner = ({ openCamera }) => {
               {/* Medidor Combustible Visual */}
               <div className="relative w-full aspect-[2/1] mt-4 flex items-end justify-center">
                 {(() => {
-                   const fLevel = formData.fuelLevel ?? 0;
-                   const fuelDec = fLevel <= 1 && fLevel !== 0 ? fLevel : fLevel / 100;
-                   return (
-                 <svg 
-                    ref={svgFuelRef}
-                    viewBox="0 0 200 110" 
-                    className="w-[90%] overflow-visible touch-none cursor-pointer"
-                    onPointerDown={(e) => { setIsDraggingFuel(true); updateFuelFromEvent(e); e.currentTarget.setPointerCapture(e.pointerId); }}
-                    onPointerMove={(e) => { if(isDraggingFuel) updateFuelFromEvent(e); }}
-                    onPointerUp={(e) => { setIsDraggingFuel(false); e.currentTarget.releasePointerCapture(e.pointerId); }}
-                    onPointerCancel={() => { setIsDraggingFuel(false); }}
-                 >
-                    {/* Fondo del arco */}
-                    <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#1e293b" strokeWidth="12" strokeLinecap="round" />
-                    
-                    {/* Arco sólido */}
-                    <path 
-                      d="M 20 100 A 80 80 0 0 1 180 100" 
-                      fill="none" 
-                      stroke="#0284c7" 
-                      strokeWidth="12" 
-                      strokeLinecap="round" 
-                      strokeDasharray={`${Math.PI * 80 * fuelDec} ${Math.PI * 80}`}
-                      style={{ transition: isDraggingFuel ? 'none' : 'stroke-dasharray 0.2s ease-out' }}
-                    />
+                  const fLevel = formData.fuelLevel ?? 0;
+                  const fuelDec = fLevel <= 1 && fLevel !== 0 ? fLevel : fLevel / 100;
+                  return (
+                    <svg
+                      ref={svgFuelRef}
+                      viewBox="0 0 200 110"
+                      className="w-[90%] overflow-visible touch-none cursor-pointer"
+                      onPointerDown={(e) => { setIsDraggingFuel(true); updateFuelFromEvent(e); e.currentTarget.setPointerCapture(e.pointerId); }}
+                      onPointerMove={(e) => { if (isDraggingFuel) updateFuelFromEvent(e); }}
+                      onPointerUp={(e) => { setIsDraggingFuel(false); e.currentTarget.releasePointerCapture(e.pointerId); }}
+                      onPointerCancel={() => { setIsDraggingFuel(false); }}
+                    >
+                      {/* Fondo del arco */}
+                      <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#1e293b" strokeWidth="12" strokeLinecap="round" />
 
-                    {/* Aguja */}
-                    <g transform={`translate(100, 100) rotate(${-90 + (fuelDec * 180)})`} style={{ transition: isDraggingFuel ? 'none' : 'transform 0.2s ease-out' }}>
-                      <circle cx="0" cy="0" r="8" fill="#0284c7" />
-                      <circle cx="0" cy="0" r="4" fill="#0f172a" />
-                      <path d="M -3 -8 L 0 -65 L 3 -8 Z" fill="#0284c7" />
-                    </g>
+                      {/* Arco sólido */}
+                      <path
+                        d="M 20 100 A 80 80 0 0 1 180 100"
+                        fill="none"
+                        stroke="#0284c7"
+                        strokeWidth="12"
+                        strokeLinecap="round"
+                        strokeDasharray={`${Math.PI * 80 * fuelDec} ${Math.PI * 80}`}
+                        style={{ transition: isDraggingFuel ? 'none' : 'stroke-dasharray 0.2s ease-out' }}
+                      />
 
-                    {/* Textos centrales */}
-                    <text x="100" y="65" textAnchor="middle" fill="white" fontSize="18" fontWeight="bold">
-                      {fuelDec === 0 ? 'Vacío' : fuelDec === 1 ? 'Full' : `${Math.round(fuelDec * 100)}%`}
-                    </text>
-                    <text x="100" y="80" textAnchor="middle" fill="#64748b" fontSize="10">nivel</text>
-                    
-                    <text x="15" y="115" textAnchor="middle" fill="#ef4444" fontSize="12" fontWeight="bold">E</text>
-                    <text x="185" y="115" textAnchor="middle" fill="#10b981" fontSize="12" fontWeight="bold">F</text>
-                 </svg>
-                 );})()}
+                      {/* Aguja */}
+                      <g transform={`translate(100, 100) rotate(${-90 + (fuelDec * 180)})`} style={{ transition: isDraggingFuel ? 'none' : 'transform 0.2s ease-out' }}>
+                        <circle cx="0" cy="0" r="8" fill="#0284c7" />
+                        <circle cx="0" cy="0" r="4" fill="#0f172a" />
+                        <path d="M -3 -8 L 0 -65 L 3 -8 Z" fill="#0284c7" />
+                      </g>
+
+                      {/* Textos centrales */}
+                      <text x="100" y="65" textAnchor="middle" fill="white" fontSize="18" fontWeight="bold">
+                        {fuelDec === 0 ? 'Vacío' : fuelDec === 1 ? 'Full' : `${Math.round(fuelDec * 100)}%`}
+                      </text>
+                      <text x="100" y="80" textAnchor="middle" fill="#64748b" fontSize="10">nivel</text>
+
+                      <text x="15" y="115" textAnchor="middle" fill="#ef4444" fontSize="12" fontWeight="bold">E</text>
+                      <text x="185" y="115" textAnchor="middle" fill="#10b981" fontSize="12" fontWeight="bold">F</text>
+                    </svg>
+                  );
+                })()}
               </div>
 
               {/* Botones de fotos */}
               <div className="flex flex-col gap-2.5 mt-4">
                 <button
-                   type="button"
-                   onClick={() => openCamera('Kilometraje', async f => {
-                      setProcessingAction('Procesando Foto...');
-                      setIsSubmitting(true);
-                      try {
-                        const { resizeImage } = await import('../../../utils/helpers');
-                        const compressed = await resizeImage(f, 1200, 0.6);
-                        setFormData(p => ({ ...p, photos: { ...p.photos, odometer: compressed } }));
-                        setIsSubmitting(false);
-                        setProcessingAction(null);
-                      } catch (e) {
-                        console.error("[ERR-FINAL-ODO-01] Error foto odómetro:", e);
-                        setIsSubmitting(false);
-                        setProcessingAction(null);
-                        showAlert("Error al procesar la foto [ERR-FINAL-ODO-01].");
-                      }
-                   })}
-                   className={`relative overflow-hidden w-full py-3 rounded-lg flex items-center justify-center gap-2 border transition-colors ${formData.photos?.odometer ? 'border-emerald-600 bg-emerald-950/40 text-emerald-400' : 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
+                  type="button"
+                  onClick={() => openCamera('Kilometraje', async f => {
+                    setProcessingAction('Procesando Foto...');
+                    setIsSubmitting(true);
+                    try {
+                      const { resizeImage } = await import('../../../utils/helpers');
+                      const compressed = await resizeImage(f, 1200, 0.6);
+                      setFormData(p => ({ ...p, photos: { ...p.photos, odometer: compressed } }));
+                      setIsSubmitting(false);
+                      setProcessingAction(null);
+                    } catch (e) {
+                      console.error("[ERR-FINAL-ODO-01] Error foto odómetro:", e);
+                      setIsSubmitting(false);
+                      setProcessingAction(null);
+                      showAlert("Error al procesar la foto [ERR-FINAL-ODO-01].");
+                    }
+                  })}
+                  className={`relative overflow-hidden w-full py-3 rounded-lg flex items-center justify-center gap-2 border transition-colors ${formData.photos?.odometer ? 'border-emerald-600 bg-emerald-950/40 text-emerald-400' : 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
                 >
-                   <Camera className="w-4 h-4" />
-                   <span className="text-xs font-bold tracking-wider uppercase">
-                      {formData.photos?.odometer ? 'Foto Odómetro (OK)' : 'Subir Foto Odómetro'}
-                   </span>
+                  <Camera className="w-4 h-4" />
+                  <span className="text-xs font-bold tracking-wider uppercase">
+                    {formData.photos?.odometer ? 'Foto Odómetro (OK)' : 'Subir Foto Odómetro'}
+                  </span>
                 </button>
 
                 <button
-                   type="button"
-                   onClick={() => openCamera('Combustible', async f => {
-                      setProcessingAction('Procesando Foto Combustible...');
-                      setIsSubmitting(true);
-                      try {
-                        const { resizeImage } = await import('../../../utils/helpers');
-                        const compressed = await resizeImage(f, 1200, 0.6);
-                        setFormData(p => ({ ...p, photos: { ...p.photos, fuelGauge: compressed } }));
-                        setIsSubmitting(false);
-                        setProcessingAction(null);
-                      } catch (e) {
-                        console.error("[ERR-FINAL-FUEL-01] Error foto combustible:", e);
-                        setIsSubmitting(false);
-                        setProcessingAction(null);
-                        showAlert("Error al procesar la foto [ERR-FINAL-FUEL-01].");
-                      }
-                   })}
-                   className={`relative overflow-hidden w-full py-3 rounded-lg flex items-center justify-center gap-2 border transition-colors ${formData.photos?.fuelGauge ? 'border-emerald-600 bg-emerald-950/40 text-emerald-400' : 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
+                  type="button"
+                  onClick={() => openCamera('Combustible', async f => {
+                    setProcessingAction('Procesando Foto Combustible...');
+                    setIsSubmitting(true);
+                    try {
+                      const { resizeImage } = await import('../../../utils/helpers');
+                      const compressed = await resizeImage(f, 1200, 0.6);
+                      setFormData(p => ({ ...p, photos: { ...p.photos, fuelGauge: compressed } }));
+                      setIsSubmitting(false);
+                      setProcessingAction(null);
+                    } catch (e) {
+                      console.error("[ERR-FINAL-FUEL-01] Error foto combustible:", e);
+                      setIsSubmitting(false);
+                      setProcessingAction(null);
+                      showAlert("Error al procesar la foto [ERR-FINAL-FUEL-01].");
+                    }
+                  })}
+                  className={`relative overflow-hidden w-full py-3 rounded-lg flex items-center justify-center gap-2 border transition-colors ${formData.photos?.fuelGauge ? 'border-emerald-600 bg-emerald-950/40 text-emerald-400' : 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
                 >
-                   <Camera className="w-4 h-4" />
-                   <span className="text-xs font-bold tracking-wider uppercase">
-                      {formData.photos?.fuelGauge ? 'Foto Recibo/Tablero (OK)' : 'Subir Foto Recibo'}
-                   </span>
+                  <Camera className="w-4 h-4" />
+                  <span className="text-xs font-bold tracking-wider uppercase">
+                    {formData.photos?.fuelGauge ? 'Foto Recibo/Tablero (OK)' : 'Subir Foto Recibo'}
+                  </span>
                 </button>
               </div>
 
@@ -629,10 +630,10 @@ const ChecklistInner = ({ openCamera }) => {
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
-              
+
               <div className="flex gap-2">
-                 <div className="w-2 h-2 rounded-full bg-slate-700"></div>
-                 <div className="w-2 h-2 rounded-full bg-sky-500"></div>
+                <div className="w-2 h-2 rounded-full bg-slate-700"></div>
+                <div className="w-2 h-2 rounded-full bg-sky-500"></div>
               </div>
 
               <button

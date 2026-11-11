@@ -9,11 +9,11 @@ export const DevMenu = () => {
   const [cameraConfig, setCameraConfig] = useState({ isOpen: false, title: '' });
 
   const testPhotoPopup = () => {
-    const evt = new CustomEvent('openFullScreenImage', { 
-      detail: { 
-        url: 'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?w=800&q=80', 
-        id: 'dashboard', 
-        label: 'Foto de Tablero (Prueba)' 
+    const evt = new CustomEvent('openFullScreenImage', {
+      detail: {
+        url: 'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?w=800&q=80',
+        id: 'dashboard',
+        label: 'Foto de Tablero (Prueba)'
       }
     });
     window.dispatchEvent(evt);
@@ -49,7 +49,7 @@ export const DevMenu = () => {
             </p>
 
             <div className="space-y-2.5">
-              <button 
+              <button
                 onClick={testPhotoPopup}
                 className="w-full flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 rounded-md transition-colors text-left border border-slate-200 dark:border-slate-700"
               >
@@ -62,7 +62,7 @@ export const DevMenu = () => {
                 </div>
               </button>
 
-              <button 
+              <button
                 onClick={testCamera}
                 className="w-full flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 rounded-md transition-colors text-left border border-slate-200 dark:border-slate-700"
               >
@@ -74,8 +74,8 @@ export const DevMenu = () => {
                   <div className="text-[11px] text-slate-500 font-medium">Simula la toma de foto</div>
                 </div>
               </button>
-              
-              <button 
+
+              <button
                 onClick={testLocalBroadcast}
                 className="w-full flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800 rounded-md transition-colors text-left border border-slate-200 dark:border-slate-700"
               >
@@ -94,7 +94,7 @@ export const DevMenu = () => {
 
       {/* Camara Global Mock */}
       {CameraComponent && typeof CameraComponent === 'function' ? (
-        <CameraComponent 
+        <CameraComponent
           isOpen={cameraConfig.isOpen}
           title={cameraConfig.title}
           enableAnnotation={false}
