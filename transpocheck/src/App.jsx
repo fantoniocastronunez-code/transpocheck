@@ -18,6 +18,7 @@ import VehicleShapeIcon from './components/ui/VehicleShapeIcon';
 import SwipeButton from './components/ui/SwipeButton';
 import WaitTimerBadge from './components/ui/WaitTimerBadge';
 import { DevMenu } from './components/ui/DevMenu';
+import { ImageViewer } from './components/ui/ImageViewer';
 import { DEFAULT_CLIENTES, LICENCIAS, formatMoney, formatDateDisplay, resizeImage } from './utils/helpers';
 
 // MAGIA ANTI-CHUNK ERROR: Función que intercepta los fallos de carga en Vercel y recarga la página limpiamente
@@ -113,7 +114,7 @@ function LogisticApp() {
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
   const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
-  const APP_VERSION = "v1.3.10"; // IMPORTANT: Update this version string when making changes.
+  const APP_VERSION = "v1.3.11"; // IMPORTANT: Update this version string when making changes.
 
   // VARIABLES MÁGICAS: Atrapan lo que Android nos comparte desde CamScanner o Adobe Scan
   const sharedText = searchParams.get('shared_text');
@@ -1141,7 +1142,10 @@ function LogisticApp() {
                 vehicles={vehicles}
                 drivers={drivers} expenses={expenses}
                 onCancel={() => {
-                  navigate('/');
+                  setSelectedJob(null);
+                  setMainTab('jobs');
+                  setAdminTab('dashboard');
+                  navigate('/', { replace: true });
                 }}
                 onComplete={async () => {
                   try {
@@ -1154,7 +1158,9 @@ function LogisticApp() {
                   } finally {
                     // ESTO ASEGURA QUE LA PANTALLA SE CIERRE PASE LO QUE PASE
                     setSelectedJob(null);
-                    navigate('/');
+                    setMainTab('jobs');
+                    setAdminTab('dashboard');
+                    navigate('/', { replace: true });
                   }
                 }}
                 showAlert={showAlert} showConfirm={showConfirm}
@@ -1452,6 +1458,9 @@ function LogisticApp() {
           </div>
         </div>
       )}
+
+      {/* Visor Global de Imágenes */}
+      <ImageViewer />
 
       <DevMenu />
     </div>

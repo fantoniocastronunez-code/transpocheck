@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { X, Camera, Bug, Megaphone, Smartphone } from 'lucide-react';
-import { ImageViewer } from './ImageViewer';
 import InAppCamera from './InAppCamera';
 
 const CameraComponent = InAppCamera || require('./InAppCamera').InAppCamera;
@@ -93,9 +92,6 @@ export const DevMenu = () => {
         </div>
       )}
 
-      {/* Visor Global */}
-      <ImageViewer />
-      
       {/* Camara Global Mock */}
       {CameraComponent && typeof CameraComponent === 'function' ? (
         <CameraComponent 

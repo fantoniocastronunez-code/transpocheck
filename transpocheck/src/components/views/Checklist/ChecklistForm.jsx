@@ -10,7 +10,6 @@ import { StepData } from './steps/StepData';
 import { StepDocs } from './steps/StepDocs';
 import { StepNotes } from './steps/StepNotes';
 import { StepPhotos } from './steps/StepPhotos';
-import { ImageViewer } from '../../ui/ImageViewer';
 import { StepFuel } from './steps/StepFuel';
 import { StepSignature } from './steps/StepSignature';
 
@@ -23,8 +22,25 @@ const ChecklistInner = ({ openCamera }) => {
     job, isQuick, formData, setFormData, step, setStep, isDraftLoaded, setIsDraftLoaded,
     isSubmitting, setIsSubmitting, processingAction, setProcessingAction,
     defaultData, matchedVehicle, drivers, currentUserEmail, uploadImageToStorage, pushSyncTask,
-    showAlert, showConfirm, onCancel, onComplete, syncFilesToStorage, clearLocalDraft, flushDraft
+    showAlert, showConfirm, onCancel, onComplete, syncFilesToStorage, clearLocalDraft, flushDraft,
+    saveDraftToIndexedDB
   } = useChecklist();
+
+  const handleExitChecklist = () => {
+    try {
+      if (saveDraftToIndexedDB) saveDraftToIndexedDB();
+      if (flushDraft) {
+        flushDraft().catch(e => console.warn('[ERR-CANCEL-FLUSH-01]', e));
+      }
+    } catch (e) {
+      console.warn('[ERR-CANCEL-FLUSH-02]', e);
+    }
+    if (typeof onCancel === 'function') {
+      onCancel();
+    } else {
+      window.location.href = '/';
+    }
+  };
 
   const [uploadProgress, setUploadProgress] = useState({ active: false, current: 0, total: 0, text: '' });
   const [showFinalModal, setShowFinalModal] = useState(false);
@@ -376,11 +392,10 @@ const ChecklistInner = ({ openCamera }) => {
       {/* HEADER PRINCIPAL */}
       <div className="safe-top-header flex justify-between items-center bg-white dark:bg-slate-900 px-4 pb-3 sm:pb-4 shadow-xs relative z-50 border-b border-slate-200 dark:border-slate-800 shrink-0">
         <button
-          onClick={async () => {
-            try { if (flushDraft) await flushDraft(); } catch (e) { console.warn('[ERR-CANCEL-FLUSH-01]', e); }
-            onCancel();
-          }}
-          className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 bg-slate-100 dark:bg-slate-800 p-2 sm:p-2.5 rounded-lg transition-colors border border-slate-200 dark:border-slate-700"
+          type="button"
+          onClick={handleExitChecklist}
+          className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 bg-slate-100 dark:bg-slate-800 p-2 sm:p-2.5 rounded-lg transition-colors border border-slate-200 dark:border-slate-700 active:scale-95 cursor-pointer"
+          title="Volver a los traslados"
         >
           <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
@@ -684,8 +699,6 @@ export const ChecklistForm = (props) => {
           setCameraConfig({ isOpen: false, title: '', onCapture: null, enableAnnotation: false });
         }}
       />
-
-      <ImageViewer />
     </ChecklistProvider>
   );
 };
