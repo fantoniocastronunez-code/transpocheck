@@ -18,6 +18,31 @@ export const getVehicleIdentifierLabel = (val) => {
   return `Patente: ${cleanVal || 'S/N'}`;
 };
 
+export const isTrailerVehicle = (jobOrVehicle, vehiclesList = []) => {
+  if (!jobOrVehicle) return false;
+  const vType = String(
+    jobOrVehicle.vehicleType ||
+    jobOrVehicle.checklist?.vehicleType ||
+    jobOrVehicle.draft?.formData?.vehicleType ||
+    ''
+  ).toLowerCase();
+  if (vType.includes('arrastre')) return true;
+
+  if (vehiclesList && Array.isArray(vehiclesList) && vehiclesList.length > 0) {
+    const rawPlate = jobOrVehicle.plate && jobOrVehicle.plate !== 'S/N' ? String(jobOrVehicle.plate).trim().toUpperCase() : null;
+    const rawVin = jobOrVehicle.vin && jobOrVehicle.vin !== 'S/N' ? String(jobOrVehicle.vin).trim().toUpperCase() : null;
+    const match = vehiclesList.find(v => (rawPlate && v.plate === rawPlate) || (rawVin && v.vin === rawVin));
+    if (match && String(match.vehicleType || '').toLowerCase().includes('arrastre')) {
+      return true;
+    }
+  }
+
+  const desc = String(jobOrVehicle.description || '').toLowerCase();
+  if (desc.includes('carro de arrastre') || desc.includes('carro arrastre')) return true;
+
+  return false;
+};
+
 
 export const resizeAndWatermarkImage = (file, maxWidth = 1920, quality = 0.85) => {
   return new Promise((resolve, reject) => {

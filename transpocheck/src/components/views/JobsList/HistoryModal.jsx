@@ -179,93 +179,102 @@ export default function HistoryModal({
                 </div>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
-                {/* Odómetro Inicio */}
-                <div>
-                  <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Odómetro Inicio</p>
-                  <div className="flex flex-col gap-1.5 mt-0.5">
-                    <p className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100 leading-none">
-                      {selectedHistoryJob.checklist?.mileage || 'No registrado'}
-                    </p>
-                    {pickupOdoImg ? (
-                      <img
-                        src={pickupOdoImg}
-                        alt="Odómetro Inicio"
-                        className="w-16 h-16 object-cover rounded-md border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity"
-                        onClick={() => setFullScreenPhoto ? setFullScreenPhoto(pickupOdoImg) : window.open(pickupOdoImg, '_blank')}
-                      />
-                    ) : loadingPhotos ? (
-                      <div className="w-16 h-16 rounded-md border border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
-                        <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
-                      </div>
-                    ) : null}
+                {String(selectedHistoryJob.vehicleType || selectedHistoryJob.checklist?.vehicleType || '').toLowerCase().includes('arrastre') ? (
+                  <div className="col-span-2 sm:col-span-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 p-2.5 rounded-lg text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Carro de Arrastre: Unidad exenta de registro de kilometraje y combustible</span>
                   </div>
-                </div>
+                ) : (
+                  <>
+                    {/* Odómetro Inicio */}
+                    <div>
+                      <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Odómetro Inicio</p>
+                      <div className="flex flex-col gap-1.5 mt-0.5">
+                        <p className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100 leading-none">
+                          {selectedHistoryJob.checklist?.mileage || 'No registrado'}
+                        </p>
+                        {pickupOdoImg ? (
+                          <img
+                            src={pickupOdoImg}
+                            alt="Odómetro Inicio"
+                            className="w-16 h-16 object-cover rounded-md border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => setFullScreenPhoto ? setFullScreenPhoto(pickupOdoImg) : window.open(pickupOdoImg, '_blank')}
+                          />
+                        ) : loadingPhotos ? (
+                          <div className="w-16 h-16 rounded-md border border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+                            <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
 
-                {/* Odómetro Fin */}
-                <div>
-                  <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Odómetro Fin</p>
-                  <div className="flex flex-col gap-1.5 mt-0.5">
-                    <p className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100 leading-none">
-                      {selectedHistoryJob.checklist?.arrivalMileage || 'No registrado'}
-                    </p>
-                    {arrivalOdoImg ? (
-                      <img
-                        src={arrivalOdoImg}
-                        alt="Odómetro Fin"
-                        className="w-16 h-16 object-cover rounded-md border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity"
-                        onClick={() => setFullScreenPhoto ? setFullScreenPhoto(arrivalOdoImg) : window.open(arrivalOdoImg, '_blank')}
-                      />
-                    ) : loadingPhotos ? (
-                      <div className="w-16 h-16 rounded-md border border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
-                        <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                    {/* Odómetro Fin */}
+                    <div>
+                      <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Odómetro Fin</p>
+                      <div className="flex flex-col gap-1.5 mt-0.5">
+                        <p className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100 leading-none">
+                          {selectedHistoryJob.checklist?.arrivalMileage || 'No registrado'}
+                        </p>
+                        {arrivalOdoImg ? (
+                          <img
+                            src={arrivalOdoImg}
+                            alt="Odómetro Fin"
+                            className="w-16 h-16 object-cover rounded-md border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => setFullScreenPhoto ? setFullScreenPhoto(arrivalOdoImg) : window.open(arrivalOdoImg, '_blank')}
+                          />
+                        ) : loadingPhotos ? (
+                          <div className="w-16 h-16 rounded-md border border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+                            <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                          </div>
+                        ) : null}
                       </div>
-                    ) : null}
-                  </div>
-                </div>
+                    </div>
 
-                {/* Combustible Inicio */}
-                <div>
-                  <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Comb. Inicio</p>
-                  <div className="flex flex-col gap-1.5 mt-0.5">
-                    <p className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100 leading-none">
-                      {selectedHistoryJob.checklist?.fuelLevel !== undefined ? `${Math.round(selectedHistoryJob.checklist.fuelLevel <= 1 && selectedHistoryJob.checklist.fuelLevel !== 0 ? selectedHistoryJob.checklist.fuelLevel * 100 : selectedHistoryJob.checklist.fuelLevel)}%` : 'No registrado'}
-                    </p>
-                    {pickupFuelImg ? (
-                      <img
-                        src={pickupFuelImg}
-                        alt="Combustible Inicio"
-                        className="w-16 h-16 object-cover rounded-md border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity"
-                        onClick={() => setFullScreenPhoto ? setFullScreenPhoto(pickupFuelImg) : window.open(pickupFuelImg, '_blank')}
-                      />
-                    ) : loadingPhotos ? (
-                      <div className="w-16 h-16 rounded-md border border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
-                        <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                    {/* Combustible Inicio */}
+                    <div>
+                      <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Comb. Inicio</p>
+                      <div className="flex flex-col gap-1.5 mt-0.5">
+                        <p className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100 leading-none">
+                          {selectedHistoryJob.checklist?.fuelLevel !== undefined ? `${Math.round(selectedHistoryJob.checklist.fuelLevel <= 1 && selectedHistoryJob.checklist.fuelLevel !== 0 ? selectedHistoryJob.checklist.fuelLevel * 100 : selectedHistoryJob.checklist.fuelLevel)}%` : 'No registrado'}
+                        </p>
+                        {pickupFuelImg ? (
+                          <img
+                            src={pickupFuelImg}
+                            alt="Combustible Inicio"
+                            className="w-16 h-16 object-cover rounded-md border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => setFullScreenPhoto ? setFullScreenPhoto(pickupFuelImg) : window.open(pickupFuelImg, '_blank')}
+                          />
+                        ) : loadingPhotos ? (
+                          <div className="w-16 h-16 rounded-md border border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+                            <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                          </div>
+                        ) : null}
                       </div>
-                    ) : null}
-                  </div>
-                </div>
+                    </div>
 
-                {/* Combustible Fin */}
-                <div>
-                  <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Comb. Fin</p>
-                  <div className="flex flex-col gap-1.5 mt-0.5">
-                    <p className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100 leading-none">
-                      {selectedHistoryJob.checklist?.arrivalFuelLevel !== undefined ? `${Math.round(selectedHistoryJob.checklist.arrivalFuelLevel <= 1 && selectedHistoryJob.checklist.arrivalFuelLevel !== 0 ? selectedHistoryJob.checklist.arrivalFuelLevel * 100 : selectedHistoryJob.checklist.arrivalFuelLevel)}%` : 'No registrado'}
-                    </p>
-                    {arrivalFuelImg ? (
-                      <img
-                        src={arrivalFuelImg}
-                        alt="Combustible Fin"
-                        className="w-16 h-16 object-cover rounded-md border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity"
-                        onClick={() => setFullScreenPhoto ? setFullScreenPhoto(arrivalFuelImg) : window.open(arrivalFuelImg, '_blank')}
-                      />
-                    ) : loadingPhotos ? (
-                      <div className="w-16 h-16 rounded-md border border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
-                        <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                    {/* Combustible Fin */}
+                    <div>
+                      <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Comb. Fin</p>
+                      <div className="flex flex-col gap-1.5 mt-0.5">
+                        <p className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100 leading-none">
+                          {selectedHistoryJob.checklist?.arrivalFuelLevel !== undefined ? `${Math.round(selectedHistoryJob.checklist.arrivalFuelLevel <= 1 && selectedHistoryJob.checklist.arrivalFuelLevel !== 0 ? selectedHistoryJob.checklist.arrivalFuelLevel * 100 : selectedHistoryJob.checklist.arrivalFuelLevel)}%` : 'No registrado'}
+                        </p>
+                        {arrivalFuelImg ? (
+                          <img
+                            src={arrivalFuelImg}
+                            alt="Combustible Fin"
+                            className="w-16 h-16 object-cover rounded-md border border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => setFullScreenPhoto ? setFullScreenPhoto(arrivalFuelImg) : window.open(arrivalFuelImg, '_blank')}
+                          />
+                        ) : loadingPhotos ? (
+                          <div className="w-16 h-16 rounded-md border border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+                            <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                          </div>
+                        ) : null}
                       </div>
-                    ) : null}
-                  </div>
-                </div>
+                    </div>
+                  </>
+                )}
 
                 <div className="col-span-2 mt-2">
                   <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Distancia GPS (Maps)</p>

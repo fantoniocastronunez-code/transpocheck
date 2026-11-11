@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { X, Key, CheckCircle, Clock, Camera, Trash2, ArrowLeft } from 'lucide-react';
 import PointerRange from '../../ui/PointerRange';
+import { isTrailerVehicle } from '../../../utils/helpers';
 
 export default function ArrivalModal({
   arrivalPromptJob,
@@ -16,7 +17,8 @@ export default function ArrivalModal({
   processingId,
   submitArrival,
   handleRequestPhotoOverride,
-  openCamera
+  openCamera,
+  vehicles = []
 }) {
   if (!arrivalPromptJob) return null;
 
@@ -41,13 +43,14 @@ export default function ArrivalModal({
   };
 
   const isServiceJob = arrivalPromptJob?.tripType === 'simple';
+  const isTrailerJob = isTrailerVehicle(arrivalPromptJob, vehicles);
 
   return (
     <div className="fixed inset-0 bg-slate-950/85 flex items-center justify-center z-[200] p-4 overflow-hidden">
       <div className="bg-slate-900 p-5 rounded-lg shadow-lg w-full max-w-sm flex flex-col relative overflow-y-auto max-h-[82vh] border border-slate-800 pb-6 my-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
 
         <h3 className="text-base font-bold text-white mb-5 mt-1 tracking-tight text-center">
-          {isServiceJob ? 'Registro de Llegada' : 'Combustible y Kilometraje'}
+          {isTrailerJob ? 'Registro de Llegada (Carro de Arrastre)' : (isServiceJob ? 'Registro de Llegada' : 'Combustible y Kilometraje')}
         </h3>
 
         {arrivalPromptJob?.photoOverrideApproved && (
@@ -59,7 +62,17 @@ export default function ArrivalModal({
         )}
 
         <div className="space-y-5 relative z-10 flex-1">
-          {!isServiceJob ? (
+          {isTrailerJob ? (
+            <div className="text-center py-6">
+              <div className="w-14 h-14 bg-emerald-950/50 rounded-xl flex items-center justify-center mx-auto mb-3 border border-emerald-800/60 text-emerald-400">
+                <CheckCircle className="w-7 h-7" />
+              </div>
+              <h4 className="text-sm font-bold text-white uppercase tracking-wider">Carro de Arrastre</h4>
+              <p className="text-xs font-medium text-slate-300 mt-1.5 max-w-[260px] mx-auto leading-relaxed">
+                Este vehículo no utiliza kilometraje ni combustible. Presiona confirmar para registrar la llegada a destino.
+              </p>
+            </div>
+          ) : !isServiceJob ? (
             <>
               {/* Odómetro */}
               <div className="flex flex-col gap-1">
@@ -186,7 +199,7 @@ export default function ArrivalModal({
             </div>
           )}
 
-          {!isServiceJob && (!arrivalFuelPhoto || !arrivalPhoto) && !arrivalPromptJob.photoOverrideApproved && (
+          {!isServiceJob && !isTrailerJob && (!arrivalFuelPhoto || !arrivalPhoto) && !arrivalPromptJob.photoOverrideApproved && (
             <button 
               onClick={() => handleRequestPhotoOverride(arrivalPromptJob)} 
               disabled={processingId === 'photo-override'}

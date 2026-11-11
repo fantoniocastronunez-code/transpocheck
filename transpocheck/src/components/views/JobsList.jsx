@@ -24,7 +24,7 @@ import HistoryModal from './JobsList/HistoryModal';
 import JobExpenseModal from './JobsList/JobExpenseModal';
 import ArrivalModal from './JobsList/ArrivalModal';
 import PickupModal from './JobsList/PickupModal';
-import { formatDateDisplay, analyzeJobStatus, generateStandardFileName, generateWhatsAppText, getRouteStr, resizeImage, resizeAndWatermarkImage } from '../../utils/helpers';
+import { formatDateDisplay, analyzeJobStatus, generateStandardFileName, generateWhatsAppText, getRouteStr, resizeImage, resizeAndWatermarkImage, isTrailerVehicle } from '../../utils/helpers';
 import { purgeOrphanStoragePhotos, formatBytes } from '../../utils/storageMetrics';
 import { saveJobToMonthlyStatsBeforeDelete, getMonthKey, extractLightweightJob, calculateStatsFromLightweightJobs } from '../../utils/statsSync';
 
@@ -146,7 +146,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   const submitPickup = async () => {
     try {
       const isServiceJob = pickupPromptJob?.tripType === 'simple';
-      if (!isServiceJob) {
+      const isTrailerJob = isTrailerVehicle(pickupPromptJob, vehicles);
+      if (!isServiceJob && !isTrailerJob) {
         if (!pickupPromptJob.photoOverrideApproved) {
           if (!pickupFuelPhoto) {
             showAlert("Debe adjuntar la foto del medidor de combustible inicial.");
@@ -201,8 +202,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       const updatedDraft = {
         ...currentDraft,
-        mileage: pickupMileage || '',
-        fuelLevel: pickupFuelLevel !== undefined ? pickupFuelLevel : (currentDraft.fuelLevel ?? null)
+        mileage: isTrailerJob ? '' : (pickupMileage || ''),
+        fuelLevel: isTrailerJob ? null : (pickupFuelLevel !== undefined ? pickupFuelLevel : (currentDraft.fuelLevel ?? null))
       };
 
       updatedDraft.photos = { ...currentPhotos };
@@ -216,8 +217,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       const payload = {
         checklist: {
           ...(pickupPromptJob.checklist || {}),
-          mileage: pickupMileage || '',
-          fuelLevel: pickupFuelLevel !== undefined ? pickupFuelLevel : (currentDraft.fuelLevel ?? null),
+          mileage: isTrailerJob ? '' : (pickupMileage || ''),
+          fuelLevel: isTrailerJob ? null : (pickupFuelLevel !== undefined ? pickupFuelLevel : (currentDraft.fuelLevel ?? null)),
           photos: {
             ...(pickupPromptJob.checklist?.photos || {}),
             pickup_odo: false,
@@ -256,7 +257,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
     try {
       const isServiceJob = arrivalPromptJob?.tripType === 'simple';
-      if (!isServiceJob) {
+      const isTrailerJob = isTrailerVehicle(arrivalPromptJob, vehicles);
+      if (!isServiceJob && !isTrailerJob) {
         if (!arrivalPromptJob.photoOverrideApproved) {
           if (!arrivalFuelPhoto) {
             showAlert("Debe adjuntar la foto del medidor de combustible de forma obligatoria.");
@@ -311,8 +313,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
       const updatedDraft = {
         ...currentDraft,
-        arrivalMileage: arrivalMileage || '',
-        arrivalFuelLevel: arrivalFuelLevel !== undefined ? arrivalFuelLevel : (currentDraft.arrivalFuelLevel ?? null),
+        arrivalMileage: isTrailerJob ? '' : (arrivalMileage || ''),
+        arrivalFuelLevel: isTrailerJob ? null : (arrivalFuelLevel !== undefined ? arrivalFuelLevel : (currentDraft.arrivalFuelLevel ?? null)),
         photos: {
           ...(currentPhotos || {}),
           arrival_odo: false,
@@ -328,8 +330,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
       const payload = {
         checklist: {
           ...(arrivalPromptJob.checklist || {}),
-          arrivalMileage: arrivalMileage || '',
-          arrivalFuelLevel: arrivalFuelLevel !== undefined ? arrivalFuelLevel : (currentDraft.arrivalFuelLevel ?? null),
+          arrivalMileage: isTrailerJob ? '' : (arrivalMileage || ''),
+          arrivalFuelLevel: isTrailerJob ? null : (arrivalFuelLevel !== undefined ? arrivalFuelLevel : (currentDraft.arrivalFuelLevel ?? null)),
           photos: {
             ...(arrivalPromptJob.checklist?.photos || {}),
             arrival_odo: false,
@@ -3099,6 +3101,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         submitPickup={submitPickup}
         handleRequestPhotoOverride={handleRequestPhotoOverride}
         openCamera={(title, target) => setCameraConfig({ isOpen: true, title, target })}
+        vehicles={vehicles}
       />
 
       <ArrivalModal
@@ -3116,6 +3119,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         submitArrival={submitArrival}
         handleRequestPhotoOverride={handleRequestPhotoOverride}
         openCamera={(title, target) => setCameraConfig({ isOpen: true, title, target })}
+        vehicles={vehicles}
       />
 
       {/* --- CÁMARA INTERNA NATIVA --- */}

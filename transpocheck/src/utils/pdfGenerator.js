@@ -189,13 +189,19 @@ export const buildPDFDoc = async (job, isPublic = false, drivers = []) => {
           return 8;
         };
 
-        let hFuel = drawFuelMeter(15, currentY + 3, job.checklist?.fuelLevel || 0, "Combustible Inicio:");
-        let hFuelAfter = drawFuelMeter(65, currentY + 3, (job.checklist?.arrivalFuelLevel ?? job.checklist?.fuelLevelAfter ?? job.checklist?.fuelLevel) || 0, "Combustible Final:");
-        currentY += Math.max(hFuel, hFuelAfter) + 6;
+        const isTrailer = (job.vehicleType || job.checklist?.vehicleType || '').toLowerCase().includes('arrastre');
+        if (!isTrailer) {
+          let hFuel = drawFuelMeter(15, currentY + 3, job.checklist?.fuelLevel || 0, "Combustible Inicio:");
+          let hFuelAfter = drawFuelMeter(65, currentY + 3, (job.checklist?.arrivalFuelLevel ?? job.checklist?.fuelLevelAfter ?? job.checklist?.fuelLevel) || 0, "Combustible Final:");
+          currentY += Math.max(hFuel, hFuelAfter) + 6;
 
-        let hKm = drawKV("Odómetro Inicio", `${job.checklist?.mileage || 'No reg.'}`, 15, currentY, 45);
-        let hKmFin = drawKV("Odómetro Final", `${job.checklist?.arrivalMileage || 'No reg.'}`, 65, currentY, 45);
-        currentY += Math.max(hKm, hKmFin) + 6;
+          let hKm = drawKV("Odómetro Inicio", `${job.checklist?.mileage || 'No reg.'}`, 15, currentY, 45);
+          let hKmFin = drawKV("Odómetro Final", `${job.checklist?.arrivalMileage || 'No reg.'}`, 65, currentY, 45);
+          currentY += Math.max(hKm, hKmFin) + 6;
+        } else {
+          let hTrailer = drawKV("Categoría", "Carro de Arrastre (Exento de odómetro y combustible)", 15, currentY, leftColWidth);
+          currentY += hTrailer + 6;
+        }
 
         let hSoap = drawKV("Seguro SOAP", getDocStatus('soap'), 15, currentY, 45);
         let hPerm = drawKV("Permiso Circ.", getDocStatus('permiso'), 65, currentY, 45);

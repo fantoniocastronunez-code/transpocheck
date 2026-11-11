@@ -84,9 +84,12 @@ const ChecklistInner = ({ openCamera }) => {
     }
 
     // 2. Revisión (Kilometraje y Combustible) (2 puntos)
-    total += 2;
-    if (formData.mileage && String(formData.mileage).trim() !== '') earned += 1;
-    if (formData.fuelLevel !== undefined && formData.fuelLevel !== null && formData.fuelLevel !== '') earned += 1;
+    const isTrailer = String(job?.vehicleType || formData.vehicleType || '').toLowerCase().includes('arrastre');
+    if (!isTrailer) {
+      total += 2;
+      if (formData.mileage && String(formData.mileage).trim() !== '') earned += 1;
+      if (formData.fuelLevel !== undefined && formData.fuelLevel !== null && formData.fuelLevel !== '') earned += 1;
+    }
 
     // 3. Fotos del Vehículo
     const isCamion = Boolean(formData.vehicleType && formData.vehicleType.includes('camion'));
@@ -141,8 +144,9 @@ const ChecklistInner = ({ openCamera }) => {
     }
 
     const isGrandleasing = job?.client?.toLowerCase() === 'grandleasing' || formData.client?.toLowerCase() === 'grandleasing';
+    const isTrailer = String(job?.vehicleType || formData.vehicleType || '').toLowerCase().includes('arrastre');
 
-    if (isGrandleasing) {
+    if (isGrandleasing && !isTrailer) {
       setShowFinalModal(true);
     } else {
       handleSubmitFinal();
@@ -181,7 +185,14 @@ const ChecklistInner = ({ openCamera }) => {
           console.warn("GPS Falló al finalizar:", e);
         }
 
-        const formDataWithLocation = { ...formData, location: finalLocation || formData.location };
+        const isTrailer = String(job?.vehicleType || formData.vehicleType || '').toLowerCase().includes('arrastre');
+        const cleanedFormData = { ...formData };
+        if (isTrailer) {
+          cleanedFormData.mileage = '';
+          cleanedFormData.fuelLevel = null;
+        }
+
+        const formDataWithLocation = { ...cleanedFormData, location: finalLocation || cleanedFormData.location };
         
         // Función para procesar y descontar gastos automáticamente
         const processChecklistExpenses = async (finalData) => {
@@ -611,10 +622,13 @@ const ChecklistInner = ({ openCamera }) => {
 
               <button
                 onClick={() => {
-                  if (!formData.mileage) return showAlert("⚠️ Ingresa el kilometraje final.");
-                  if (!formData.photos?.odometer) return showAlert("⚠️ Toma la foto del kilometraje.");
-                  if (formData.fuelLevel === undefined) return showAlert("⚠️ Selecciona el nivel de combustible.");
-                  if (!formData.photos?.fuelGauge) return showAlert("⚠️ Toma la foto del medidor de combustible.");
+                  const isTrailer = String(job?.vehicleType || formData.vehicleType || '').toLowerCase().includes('arrastre');
+                  if (!isTrailer) {
+                    if (!formData.mileage) return showAlert("⚠️ Ingresa el kilometraje final.");
+                    if (!formData.photos?.odometer) return showAlert("⚠️ Toma la foto del kilometraje.");
+                    if (formData.fuelLevel === undefined) return showAlert("⚠️ Selecciona el nivel de combustible.");
+                    if (!formData.photos?.fuelGauge) return showAlert("⚠️ Toma la foto del medidor de combustible.");
+                  }
                   handleSubmitFinal();
                 }}
                 className="w-10 h-10 rounded-lg bg-sky-600 text-white flex items-center justify-center hover:bg-sky-700 transition-colors"
