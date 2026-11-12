@@ -5,6 +5,7 @@ import InAppCamera from '../../ui/InAppCamera';
 
 import { TabsHeader } from './components/TabsHeader';
 import { FastTrackView } from './components/FastTrackView';
+import { EasyModePhotosView } from './components/EasyModePhotosView';
 
 import { StepData } from './steps/StepData';
 import { StepDocs } from './steps/StepDocs';
@@ -19,7 +20,7 @@ import { db } from '../../../firebase'; // Ajustar si es necesario
 // Este es el componente que realmente usa el contexto
 const ChecklistInner = ({ openCamera }) => {
   const {
-    job, isQuick, formData, setFormData, step, setStep, isDraftLoaded, setIsDraftLoaded,
+    job, isQuick, isEasyMode, formData, setFormData, step, setStep, isDraftLoaded, setIsDraftLoaded,
     isSubmitting, setIsSubmitting, processingAction, setProcessingAction,
     defaultData, matchedVehicle, vehicles, drivers, currentUserEmail, uploadImageToStorage, pushSyncTask,
     showAlert, showConfirm, onCancel, onComplete, syncFilesToStorage, clearLocalDraft, flushDraft,
@@ -155,6 +156,15 @@ const ChecklistInner = ({ openCamera }) => {
   };
 
   const handlePreSubmit = () => {
+    if (isEasyMode) {
+      const hasAnyPhoto = Object.values(formData.photos || {}).some(v => typeof v === 'string' && v.trim() !== '');
+      if (!hasAnyPhoto) {
+        return showAlert("⚠️ Sube al menos una foto del vehículo antes de finalizar [ERR-EASY-PHOTO-02].");
+      }
+      handleSubmitFinal();
+      return;
+    }
+
     if (job?.tripType === 'revision' && formData.rtStatus === 'pendiente') {
       return showAlert("⚠️ Debes registrar un resultado final para la Revisión Técnica antes de cerrar.");
     }
@@ -172,8 +182,8 @@ const ChecklistInner = ({ openCamera }) => {
   const handleSubmitFinal = async () => {
     setShowFinalModal(false);
 
-    // Si no está firmado, preguntar.
-    if (!formData.signatureData && !formData.noReception && job?.tripType !== 'simple') {
+    // Si no está firmado, preguntar (omitido en Modo Fácil).
+    if (!isEasyMode && !formData.signatureData && !formData.noReception && job?.tripType !== 'simple') {
       const resp = await new Promise(resolve => {
         showConfirm("No has firmado el acta. ¿Quieres cerrarla de todas formas y dejarla 'Sin Recepción'?", (ok) => resolve(ok));
       });
@@ -206,6 +216,13 @@ const ChecklistInner = ({ openCamera }) => {
         if (isTrailer) {
           cleanedFormData.mileage = '';
           cleanedFormData.fuelLevel = null;
+        }
+        if (isEasyMode) {
+          cleanedFormData.noReception = true;
+          cleanedFormData.easyModeCompleted = true;
+          if (job?.checklist?.fuelLevel === undefined) {
+            delete cleanedFormData.fuelLevel;
+          }
         }
 
         const formDataWithLocation = { ...cleanedFormData, location: finalLocation || cleanedFormData.location };
@@ -249,11 +266,13 @@ const ChecklistInner = ({ openCamera }) => {
             }
 
             if (targetVehicle && targetVehicle.id) {
-              await updateDoc(doc(db, 'vehicles', targetVehicle.id), {
-                docs: finalData.docs || {},
-                docsExpiry: finalData.docsExpiry || {},
-                docsPhotos: finalData.docsPhotos || {}
-              });
+              if (!isEasyMode) {
+                await updateDoc(doc(db, 'vehicles', targetVehicle.id), {
+                  docs: finalData.docs || {},
+                  docsExpiry: finalData.docsExpiry || {},
+                  docsPhotos: finalData.docsPhotos || {}
+                });
+              }
             } else if (cleanIdent && cleanIdent !== 'S/N') {
               await addDoc(collection(db, 'vehicles'), {
                 plate: cleanIdent,
@@ -358,7 +377,11 @@ const ChecklistInner = ({ openCamera }) => {
 
     if (pushSyncTask) {
       const syncTask = pushSyncTask(`Sync ${job?.plate || job?.vin || 'Vehículo'}`, { jobId: job?.id });
-      showAlert(`✅ ¡Completaste el ${calculateProgress()}% del Checklist! Subida en 2do plano iniciada.`);
+      showAlert(
+        isEasyMode
+          ? '✅ ¡Fotos del vehículo enviadas! Subida en segundo plano iniciada.'
+          : `✅ ¡Completaste el ${calculateProgress()}% del Checklist! Subida en 2do plano iniciada.`
+      );
       onComplete();
 
       const setBgProgress = (prog) => {
@@ -372,7 +395,11 @@ const ChecklistInner = ({ openCamera }) => {
     } else {
       try {
         await runBackgroundProcess(null, setUploadProgress);
-        showAlert(`✅ ¡Completaste el ${calculateProgress()}% del Checklist! Guardado Correctamente.`);
+        showAlert(
+          isEasyMode
+            ? '✅ ¡Fotos del vehículo guardadas correctamente!'
+            : `✅ ¡Completaste el ${calculateProgress()}% del Checklist! Guardado Correctamente.`
+        );
         onComplete();
       } catch (err) {
         console.error("[ERR-SAVE-02] Error global al guardar checklist:", err);
@@ -402,7 +429,7 @@ const ChecklistInner = ({ openCamera }) => {
 
         <div className="text-center flex-1 mx-2 overflow-hidden">
           <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 truncate">
-            {isQuick ? 'Checklist Rápido' : 'Checklist Digital'}
+            {isEasyMode ? 'Subir Fotos' : (isQuick ? 'Checklist Rápido' : 'Checklist Digital')}
           </h2>
           {!isQuick && (
             <p className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400 truncate font-mono">
@@ -414,7 +441,7 @@ const ChecklistInner = ({ openCamera }) => {
       </div>
 
       {/* BARRA DE PROGRESO */}
-      {!isSimple && (
+      {!isSimple && !isEasyMode && (
         <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shrink-0">
           <div className="flex justify-between items-center mb-1.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Progreso del Checklist</span>
@@ -429,11 +456,13 @@ const ChecklistInner = ({ openCamera }) => {
         </div>
       )}
 
-      <TabsHeader />
+      {!isEasyMode && <TabsHeader />}
 
       {/* CONTENIDO DESLIZABLE */}
-      <div className="flex-1 overflow-y-auto pb-[calc(11rem+env(safe-area-inset-bottom,0px))] scroll-smooth">
-        {isSimple ? (
+      <div className={`flex-1 overflow-y-auto scroll-smooth ${isEasyMode ? 'pb-[calc(7rem+env(safe-area-inset-bottom,0px))]' : 'pb-[calc(11rem+env(safe-area-inset-bottom,0px))]'}`}>
+        {isEasyMode ? (
+          <EasyModePhotosView openCamera={openCamera} />
+        ) : isSimple ? (
           <FastTrackView openCamera={openCamera} />
         ) : (
           <div className="px-4 animate-in fade-in duration-150">
@@ -449,39 +478,44 @@ const ChecklistInner = ({ openCamera }) => {
       {/* BARRA INFERIOR (NAVEGACIÓN Y GUARDAR) */}
       <div className="safe-bottom-bar absolute bottom-0 left-0 right-0 p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 flex flex-col gap-2.5">
 
-        <div className="flex gap-2.5">
-          <button
-            onClick={() => setStep(Math.max(1, step - 1))}
-            disabled={step === 1 || isSubmitting}
-            className={`flex-1 font-bold py-2.5 rounded-lg border flex items-center justify-center gap-2 uppercase tracking-wider text-xs sm:text-sm transition-colors ${step === 1 || isSubmitting
-              ? 'border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-600 cursor-not-allowed'
-              : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
-              }`}
-          >
-            <ArrowLeft className="w-4 h-4" /> Atrás
-          </button>
-          <button
-            onClick={() => setStep(Math.min(isSimple ? 3 : 5, step + 1))}
-            disabled={step === (isSimple ? 3 : 5) || isSubmitting}
-            className={`flex-1 font-bold py-2.5 rounded-lg border flex items-center justify-center gap-2 uppercase tracking-wider text-xs sm:text-sm transition-colors ${step === (isSimple ? 3 : 5) || isSubmitting
-              ? 'border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-600 cursor-not-allowed'
-              : 'border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-900/40'
-              }`}
-          >
-            Siguiente <ArrowLeft className="w-4 h-4 rotate-180" />
-          </button>
-        </div>
+        {!isEasyMode && (
+          <div className="flex gap-2.5">
+            <button
+              onClick={() => setStep(Math.max(1, step - 1))}
+              disabled={step === 1 || isSubmitting}
+              className={`flex-1 font-bold py-2.5 rounded-lg border flex items-center justify-center gap-2 uppercase tracking-wider text-xs sm:text-sm transition-colors ${step === 1 || isSubmitting
+                ? 'border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-600 cursor-not-allowed'
+                : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
+                }`}
+            >
+              <ArrowLeft className="w-4 h-4" /> Atrás
+            </button>
+            <button
+              onClick={() => setStep(Math.min(isSimple ? 3 : 5, step + 1))}
+              disabled={step === (isSimple ? 3 : 5) || isSubmitting}
+              className={`flex-1 font-bold py-2.5 rounded-lg border flex items-center justify-center gap-2 uppercase tracking-wider text-xs sm:text-sm transition-colors ${step === (isSimple ? 3 : 5) || isSubmitting
+                ? 'border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-600 cursor-not-allowed'
+                : 'border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-900/40'
+                }`}
+            >
+              Siguiente <ArrowLeft className="w-4 h-4 rotate-180" />
+            </button>
+          </div>
+        )}
 
         <button
+          type="button"
           onClick={handlePreSubmit}
           disabled={isSubmitting}
-          className={`w-full font-bold py-3.5 rounded-lg flex items-center justify-center gap-2 uppercase tracking-wider text-xs sm:text-sm transition-colors ${isSubmitting
+          className={`w-full min-h-[52px] font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 uppercase tracking-wider text-xs sm:text-sm transition-colors cursor-pointer ${isSubmitting
             ? 'bg-slate-300 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed'
-            : 'bg-sky-600 hover:bg-sky-700 text-white shadow-xs'
+            : (isEasyMode ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm' : 'bg-sky-600 hover:bg-sky-700 text-white shadow-xs')
             }`}
         >
           {isSubmitting ? (
             <><Loader2 className="w-5 h-5 animate-spin" /> {processingAction || 'Guardando...'}</>
+          ) : isEasyMode ? (
+            <><CheckCircle className="w-5 h-5" /> Enviar Fotos</>
           ) : (
             <><Save className="w-5 h-5" /> Finalizar y Guardar Acta</>
           )}
@@ -489,7 +523,7 @@ const ChecklistInner = ({ openCamera }) => {
       </div>
 
       {/* Overlay de Carga Principal */}
-      {showFinalModal && !uploadProgress.active && (
+      {showFinalModal && !uploadProgress.active && !isEasyMode && (
         <div className="absolute inset-0 bg-slate-950/85 z-[90] flex flex-col items-center justify-center p-4 sm:p-8 animate-in fade-in">
           <div className="bg-slate-900 p-6 rounded-xl shadow-lg w-full max-w-sm flex flex-col relative overflow-hidden border border-slate-800 pb-6">
 

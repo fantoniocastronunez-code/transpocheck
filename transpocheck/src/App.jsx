@@ -115,7 +115,7 @@ function LogisticApp() {
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
   const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
-  const APP_VERSION = "v1.3.18"; // IMPORTANT: Update this version string when making changes.
+  const APP_VERSION = "v1.3.19"; // IMPORTANT: Update this version string when making changes.
 
   // VARIABLES MÁGICAS: Atrapan lo que Android nos comparte desde CamScanner o Adobe Scan
   const sharedText = searchParams.get('shared_text');
@@ -406,7 +406,13 @@ function LogisticApp() {
 
   const allClientsList = customClients.map(c => c.name).sort((a, b) => a.localeCompare(b));
 
-  const myDriver = user ? (drivers.find(d => d.email === currentUserEmail && d.photo) || drivers.find(d => d.email === currentUserEmail)) : null;
+  const normalizedCurrentEmail = (currentUserEmail || '').trim().toLowerCase();
+  const matchingDrivers = user
+    ? drivers.filter(d => (d.email || '').trim().toLowerCase() === normalizedCurrentEmail)
+    : [];
+  const myDriver = user ? (matchingDrivers.find(d => d.photo) || matchingDrivers[0] || null) : null;
+  const isEasyModeDriver = Boolean(matchingDrivers.some(d => d.easyMode));
+  const isEasyMode = activeRole === 'driver' && isEasyModeDriver;
   const loggedClientRecord = user ? customClients.find(c => c.email && c.email.toLowerCase().split(',').map(e => e.trim()).includes(currentUserEmail)) : null;
 
   // NUEVO: Detector de Part-Time. Si el usuario no existe en la DB de conductores pero SÍ tiene un trabajo asignado, lo dejamos entrar sin pedir fotos.
@@ -602,8 +608,8 @@ function LogisticApp() {
   };
 
   // --- CONTROL DE ONBOARDING ESTRICTO ---
-  // Se excluye a los conductores con rol Part-Time de la exigencia de fotos de documentos
-  const needsOnboarding = myDriver && myDriver.role !== 'part_time' && (
+  // Se excluye a los conductores con rol Part-Time o Modo Fácil de la exigencia de fotos de documentos
+  const needsOnboarding = myDriver && myDriver.role !== 'part_time' && !isEasyModeDriver && (
     !myDriver.photo || myDriver.photo === "" ||
     !myDriver.idFront || myDriver.idFront === "" ||
     !myDriver.idBack || myDriver.idBack === "" ||
@@ -612,8 +618,8 @@ function LogisticApp() {
   );
 
   // BLOQUEO ABSOLUTO: Nadie en modo "Conductor" pasa a la app sin sus 5 fotos.
-  // EXCEPCIÓN: Conductores con rol part_time o asignados temporalmente entran directo a trabajar.
-  if (activeRole === 'driver' && !isPartTimeAssigned && myDriver?.role !== 'part_time' && (needsOnboarding || !myDriver)) {
+  // EXCEPCIÓN: Conductores con rol part_time, Modo Fácil o asignados temporalmente entran directo a trabajar.
+  if (activeRole === 'driver' && !isPartTimeAssigned && myDriver?.role !== 'part_time' && !isEasyModeDriver && (needsOnboarding || !myDriver)) {
     return (
       <div className="min-h-screen bg-[var(--bg-canvas)] text-slate-800 dark:text-slate-200 font-sans pb-10">
         {globalStyles}
@@ -844,7 +850,7 @@ function LogisticApp() {
                         return (
                           <div key={d.id} className={`flex items-center justify-between p-1 transition-colors group ${isCurrentActive ? 'bg-blue-50/70 dark:bg-blue-950/40 border-l-2 border-blue-600' : 'hover:bg-slate-50 dark:hover:bg-slate-900'}`}>
                             <button onClick={() => { setSimulatedDriverEmail(d.email); setActiveRole('driver'); setMainTab('jobs'); setRoleMenuOpen(false); }} className={`flex-1 text-left px-2 py-1.5 text-xs truncate transition-colors ${isCurrentActive ? 'text-blue-700 dark:text-blue-400 font-semibold' : 'text-slate-700 dark:text-slate-300 font-medium'}`}>
-                              {d.name} {isCurrentActive && <span className="text-[10px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded ml-1 font-mono">ACTIVO</span>}
+                              {d.name} {d.easyMode && <span className="text-[9px] bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 px-1 py-0.5 rounded ml-1 font-bold uppercase">Fácil</span>} {isCurrentActive && <span className="text-[10px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded ml-1 font-mono">ACTIVO</span>}
                             </button>
                             <button onClick={(e) => { e.stopPropagation(); setFavDriverEmail(d.email); localStorage.setItem('favDriverEmail', d.email); }} className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="Fijar como Favorito">
                               <Star className={`w-3.5 h-3.5 transition-colors ${favDriverEmail === d.email ? 'fill-amber-500 text-amber-500' : 'text-slate-300 dark:text-slate-600 hover:text-amber-500'}`} />
@@ -875,7 +881,7 @@ function LogisticApp() {
         {/* RUTA COMODÍN: Atrapa la raíz (/) y cualquier ruta alterada por Vercel */}
         <Route path="*" element={
           <>
-            {mainTab === 'jobs' && (
+            {(mainTab === 'jobs' || isEasyMode) && (
               <main className="max-w-5xl mx-auto p-4 pt-20 sm:pt-22">
                 {activeRole === 'admin' ? (
                   <>
@@ -923,9 +929,10 @@ function LogisticApp() {
                   </>
                 ) : (
                   <div className="space-y-5">
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Mis Trabajos Asignados</h2>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{isEasyMode ? 'Mis Trabajos' : 'Mis Trabajos Asignados'}</h2>
                     <JobsList
                       jobs={jobs} drivers={drivers} vehicles={vehicles} role="driver"
+                      isEasyMode={isEasyMode}
                       onStartChecklist={(j) => { setSelectedJob(j); navigate('/checklist') }}
                       onNewJob={(type) => setShowRequestJob(type)}
                       db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} allClientsList={allClientsList}
@@ -938,13 +945,13 @@ function LogisticApp() {
             )}
 
 
-            {mainTab === 'ranking' && <LeaderboardView jobs={jobs} drivers={drivers} isAdminView={activeRole === 'admin'} db={db} />}
-            {mainTab === 'expenses' && <ExpensesView role={activeRole} drivers={drivers} jobs={jobs} expenses={expenses} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />}
-            {mainTab === 'profile' && <DriverDashboardView myDriver={myDriver} jobs={jobs} expenses={expenses} drivers={drivers} currentUserEmail={currentUserEmail} db={db} />}
-            {mainTab === 'quotes' && <QuotesView db={db} customClients={customClients} vehicles={vehicles} directoryList={directoryList} showAlert={showAlert} showConfirm={showConfirm} drivers={drivers} currentUserEmail={currentUserEmail} isSuperAdmin={isSuperAdmin} />}
-            {mainTab === 'analytics' && <ChecklistAnalyticsView jobs={jobs} drivers={drivers} currentUserEmail={currentUserEmail} activeRole={activeRole} />}
+            {!isEasyMode && mainTab === 'ranking' && <LeaderboardView jobs={jobs} drivers={drivers} isAdminView={activeRole === 'admin'} db={db} />}
+            {!isEasyMode && mainTab === 'expenses' && <ExpensesView role={activeRole} drivers={drivers} jobs={jobs} expenses={expenses} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />}
+            {!isEasyMode && mainTab === 'profile' && <DriverDashboardView myDriver={myDriver} jobs={jobs} expenses={expenses} drivers={drivers} currentUserEmail={currentUserEmail} db={db} />}
+            {!isEasyMode && mainTab === 'quotes' && <QuotesView db={db} customClients={customClients} vehicles={vehicles} directoryList={directoryList} showAlert={showAlert} showConfirm={showConfirm} drivers={drivers} currentUserEmail={currentUserEmail} isSuperAdmin={isSuperAdmin} />}
+            {!isEasyMode && mainTab === 'analytics' && <ChecklistAnalyticsView jobs={jobs} drivers={drivers} currentUserEmail={currentUserEmail} activeRole={activeRole} />}
 
-            {mainTab === 'inbox' && (
+            {!isEasyMode && mainTab === 'inbox' && (
               <main className="max-w-2xl mx-auto p-4 pt-20 pb-32">
                 <div className="bg-slate-900 dark:bg-slate-800 text-white p-5 rounded-lg border border-slate-800 dark:border-slate-700 mb-5">
                   <h2 className="text-lg font-bold mb-1">Bandeja de Entrada</h2>
@@ -1082,6 +1089,7 @@ function LogisticApp() {
               </main>
             )}
 
+            {!isEasyMode && (
             <nav className="fixed bottom-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-around items-center pt-1.5 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] z-40">
               {activeRole === 'quoter' ? (
                 <button onClick={() => setMainTab('quotes')} className="flex flex-col items-center text-blue-600 dark:text-blue-400 transition-colors flex-1">
@@ -1131,6 +1139,7 @@ function LogisticApp() {
                 </>
               )}
             </nav>
+            )}
           </>
         } />
 
@@ -1139,6 +1148,7 @@ function LogisticApp() {
             <main className="max-w-2xl mx-auto p-4 pt-20 pb-24">
               <ChecklistForm
                 job={selectedJob} db={db} currentUserEmail={currentUserEmail}
+                isEasyMode={isEasyMode}
                 allClientsList={allClientsList}
                 vehicles={vehicles}
                 drivers={drivers} expenses={expenses}

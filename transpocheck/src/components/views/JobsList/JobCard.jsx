@@ -388,7 +388,7 @@ const StatusAnimation = ({ type, vehicleType, isChassisCab, origin, destination,
 export default function JobCard({ j, ...props }) {
   const [showDetails, setShowDetails] = useState(false);
   const [showDocsModal, setShowDocsModal] = useState(false);
-  const { jobs, drivers, analyzeJobStatus, getJobIdentifier, vehicles, menuOpenId, setMenuOpenId, isAdminView, onEditJob, currentUserEmail, setRelayPromptJob, setForceCloseJob, db, updateDoc, deleteField, doc, showAlert, showConfirm, setJobToFail, latestVehiclePhotos, setFullScreenPhoto, role, processingId, setProcessingId, handleApproveRequest, handleRejectRequest, handleApprovePhotoOverride, handleAcceptJob, setTrackingJobId, setGuideUploadJob, setGuideLink, setGuideFileBase64, updatePhase, setPickupPromptJob, setArrivalPromptJob, setArrivalMileage, setArrivalPhoto, setPrtApproveType, setPrtReturnOpt, setPrtReturnDest, setPrtApprovePromptJob, setPrtPromptJob, onStartChecklist, handleUndoPhase, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, WaitTimerBadge, SwipeButton, AlertCircle, Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, Truck, X, XCircle, Clock, Car, MapPin, FileText, RefreshCw, Search, syncQueue, setExpenseModalJob, Copy, cpyWapp } = props;
+  const { jobs, drivers, analyzeJobStatus, getJobIdentifier, vehicles, menuOpenId, setMenuOpenId, isAdminView, isEasyMode, onEasyUpload, onEditJob, currentUserEmail, setRelayPromptJob, setForceCloseJob, db, updateDoc, deleteField, doc, showAlert, showConfirm, setJobToFail, latestVehiclePhotos, setFullScreenPhoto, role, processingId, setProcessingId, handleApproveRequest, handleRejectRequest, handleApprovePhotoOverride, handleAcceptJob, setTrackingJobId, setGuideUploadJob, setGuideLink, setGuideFileBase64, updatePhase, setPickupPromptJob, setArrivalPromptJob, setArrivalMileage, setArrivalPhoto, setPrtApproveType, setPrtReturnOpt, setPrtReturnDest, setPrtApprovePromptJob, setPrtPromptJob, onStartChecklist, handleUndoPhase, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, WaitTimerBadge, SwipeButton, AlertCircle, Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, Truck, X, XCircle, Clock, Car, MapPin, FileText, RefreshCw, Search, syncQueue, setExpenseModalJob, Copy, cpyWapp } = props;
   const { isRequested, isPending, isAccepted, isPendingGuide, step2Done, step3Done, step4Done } = analyzeJobStatus(j);
 
   const ident = getJobIdentifier(j);
@@ -491,6 +491,142 @@ export default function JobCard({ j, ...props }) {
       tripId: latest.id
     };
   }, [jobs, drivers, j.id, j.plate, j.vin, ident]);
+
+  if (isEasyMode && !isAdminView) {
+    const easyPhotosObj = j.draft?.formData?.photos || j.checklist?.photos || {};
+    const draftPhotosCount = Object.values(easyPhotosObj).filter(v => typeof v === 'string' && v.trim() !== '').length;
+    const displayPhoto = j.checklist?.photos?.front || j.draft?.formData?.photos?.front || latestVehiclePhotos[ident];
+
+    let scheduleLabel = '';
+    if (j.scheduledDate) {
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const [y, m, d] = j.scheduledDate.split('-');
+      const schedDate = new Date(y, m - 1, d); schedDate.setHours(0, 0, 0, 0);
+      const diffDays = Math.round((schedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      scheduleLabel = diffDays === 0 ? 'HOY' : (diffDays === 1 ? 'MAÑANA' : `${d}/${m}`);
+    }
+
+    return (
+      <div
+        key={j.id}
+        className={`bg-white dark:bg-slate-900 rounded-xl border p-4 flex flex-col gap-3.5 shadow-xs relative ${
+          isUploading
+            ? 'border-emerald-600 select-none'
+            : (j.isUrgent ? 'border-red-500/80 dark:border-red-600/70' : 'border-slate-200 dark:border-slate-800')
+        }`}
+      >
+        {isUploading && (
+          <div className="absolute inset-0 z-40 rounded-xl bg-slate-950/90 flex flex-col items-center justify-center p-4 text-center select-none pointer-events-auto cursor-wait border border-emerald-600">
+            <div className="w-12 h-12 rounded-md bg-emerald-950 border border-emerald-700 flex items-center justify-center text-emerald-400 mb-3">
+              <CloudUpload className="w-6 h-6 text-emerald-400" />
+            </div>
+            <span className="text-emerald-400 font-mono font-bold tracking-widest text-sm uppercase">
+              SUBIENDO
+            </span>
+            <p className="text-xs font-medium text-slate-300 mt-1 max-w-[230px] leading-relaxed">
+              Sincronizando fotos con la nube...
+            </p>
+            {activeSyncTask?.progressText && (
+              <div className="mt-2.5 px-3 py-1 rounded bg-slate-900 border border-slate-700 text-[11px] font-mono text-emerald-400 flex items-center gap-1.5">
+                <Clock className="w-3 h-3 animate-spin text-emerald-400 shrink-0" />
+                <span className="truncate max-w-[200px]">{activeSyncTask.progressText}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex flex-col items-start gap-1.5 min-w-0">
+            {j.isUrgent && (
+              <span className="bg-red-600 text-white px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" /> URGENTE
+              </span>
+            )}
+            {ident !== 'S/N' && (
+              <div className="transform scale-[0.85] origin-top-left">
+                {j.plate && j.plate !== 'S/N' ? (
+                  <>
+                    <LicensePlateBadge text={j.plate} />
+                    {j.vin && j.vin !== j.plate && (
+                      <div className="mr-1 mt-1"><VinPlateBadge vin={j.vin} compact /></div>
+                    )}
+                  </>
+                ) : (
+                  <VinPlateBadge vin={j.vin || ident} />
+                )}
+              </div>
+            )}
+          </div>
+
+          {j.scheduledDate && (
+            <div className="bg-slate-100 dark:bg-slate-800 rounded-md px-2.5 py-1.5 flex flex-col items-center justify-center border border-slate-200 dark:border-slate-700 shrink-0">
+              <span className="text-[9px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-none">
+                {scheduleLabel}
+              </span>
+              <span className="text-xs font-mono font-bold text-slate-800 dark:text-slate-200 mt-1 leading-none">
+                {j.scheduledTime || '--:--'}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3">
+          {displayPhoto && (
+            <img
+              src={displayPhoto}
+              alt="Vehículo"
+              onClick={(e) => { e.stopPropagation(); setFullScreenPhoto(displayPhoto); }}
+              className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-700 cursor-pointer shrink-0"
+            />
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="text-base font-bold text-slate-900 dark:text-slate-100 leading-tight break-words">
+              {j.tripType === 'simple' ? (j.description || 'Servicio en Terreno') : `${j.brand || ''} ${j.model || ''}`.trim() || 'Vehículo'}
+            </p>
+            {j.client && (
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5 uppercase tracking-wider truncate">
+                {j.client}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {(j.origin || j.destination) && (
+          <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-700 dark:text-slate-300 space-y-1">
+            {j.origin && (
+              <p className="truncate font-semibold uppercase">
+                <span className="text-slate-400 font-medium mr-1">{j.tripType === 'simple' ? 'Lugar:' : 'Origen:'}</span>
+                {j.origin}
+              </p>
+            )}
+            {j.destination && (
+              <p className="truncate font-semibold uppercase text-blue-700 dark:text-blue-400">
+                <span className="text-slate-400 font-medium mr-1">Destino:</span>
+                {j.tripType === 'revision' ? getRtFinalDestination(j) : j.destination}
+              </p>
+            )}
+          </div>
+        )}
+
+        {draftPhotosCount > 0 && (
+          <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 px-2.5 py-1.5 rounded-lg">
+            <CheckCircle className="w-4 h-4 shrink-0" />
+            <span>{draftPhotosCount} {draftPhotosCount === 1 ? 'foto guardada' : 'fotos guardadas'}</span>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={() => (onEasyUpload ? onEasyUpload(j) : onStartChecklist(j))}
+          disabled={processingId === `${j.id}-easy`}
+          className="w-full min-h-[52px] mt-auto bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold py-3 px-4 rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer disabled:opacity-60"
+        >
+          <Camera className="w-5 h-5" />
+          <span>{processingId === `${j.id}-easy` ? 'Abriendo...' : 'Subir Fotos'}</span>
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div

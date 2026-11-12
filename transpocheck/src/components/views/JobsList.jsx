@@ -28,7 +28,7 @@ import { formatDateDisplay, analyzeJobStatus, generateStandardFileName, generate
 import { purgeOrphanStoragePhotos, formatBytes } from '../../utils/storageMetrics';
 import { saveJobToMonthlyStatsBeforeDelete, getMonthKey, extractLightweightJob, calculateStatsFromLightweightJobs } from '../../utils/statsSync';
 
-export default function JobsList({ jobs, drivers, role, onStartChecklist, onEditJob, onNewJob, db, currentUserEmail, showAlert, showConfirm, allClientsList, onLoadMore, vehicles, syncQueue = [] }) {
+export default function JobsList({ jobs, drivers, role, isEasyMode = false, onStartChecklist, onEditJob, onNewJob, db, currentUserEmail, showAlert, showConfirm, allClientsList, onLoadMore, vehicles, syncQueue = [] }) {
   const [menuOpenId, setMenuOpenId] = useState(null);
   const attemptedReschedules = React.useRef(new Set());
   const [auditMode, setAuditMode] = useState(false); // <-- NUEVO: Estado del switch de auditoría
@@ -858,8 +858,30 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
     }
   };
 
+  const handleEasyUploadClick = async (job) => {
+    if (processingId) return;
+    if (job.status === 'pending') {
+      setProcessingId(`${job.id}-easy`);
+      try {
+        await updateDoc(doc(db, 'transport_jobs', job.id), {
+          status: 'accepted',
+          acceptedByEmail: currentUserEmail
+        });
+        onStartChecklist({ ...job, status: 'accepted', acceptedByEmail: currentUserEmail });
+      } catch (e) {
+        console.error('[ERR-EASY-ACCEPT-01] Error al abrir trabajo en Modo Fácil:', e);
+        showAlert('❌ Error al abrir el trabajo [ERR-EASY-ACCEPT-01].');
+      } finally {
+        setProcessingId(null);
+      }
+      return;
+    }
+    onStartChecklist(job);
+  };
+
   const now = new Date();
   const isAdminView = role === 'admin';
+  const isEasyDriverView = Boolean(isEasyMode && !isAdminView);
 
   const myFleetGroups = jobs.filter(j =>
     ((j.status === 'pending' && j.assignedEmails?.includes(currentUserEmail)) ||
@@ -1378,7 +1400,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
   const jobCardProps = {
     jobs, drivers,
-    analyzeJobStatus, getJobIdentifier, vehicles, menuOpenId, setMenuOpenId, isAdminView, onEditJob, currentUserEmail, setRelayPromptJob, setForceCloseJob, db, updateDoc, deleteField, doc, showAlert, showConfirm, setJobToFail, latestVehiclePhotos, setFullScreenPhoto, role, processingId, setProcessingId, handleApproveRequest, handleRejectRequest, handleApprovePhotoOverride, handleAcceptJob, setGuideUploadJob, setGuideLink, setGuideFileBase64, updatePhase, setPickupPromptJob, setArrivalPromptJob, setArrivalMileage, setArrivalPhoto, setPrtApproveType, setPrtReturnOpt, setPrtReturnDest, setPrtApprovePromptJob, setPrtPromptJob, onStartChecklist, handleUndoPhase, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, WaitTimerBadge, SwipeButton, AlertCircle, Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, Truck, X, XCircle, Clock, Car, MapPin, FileText, RefreshCw, Search,
+    analyzeJobStatus, getJobIdentifier, vehicles, menuOpenId, setMenuOpenId, isAdminView, isEasyMode: isEasyDriverView, onEasyUpload: handleEasyUploadClick, onEditJob, currentUserEmail, setRelayPromptJob, setForceCloseJob, db, updateDoc, deleteField, doc, showAlert, showConfirm, setJobToFail, latestVehiclePhotos, setFullScreenPhoto, role, processingId, setProcessingId, handleApproveRequest, handleRejectRequest, handleApprovePhotoOverride, handleAcceptJob, setGuideUploadJob, setGuideLink, setGuideFileBase64, updatePhase, setPickupPromptJob, setArrivalPromptJob, setArrivalMileage, setArrivalPhoto, setPrtApproveType, setPrtReturnOpt, setPrtReturnDest, setPrtApprovePromptJob, setPrtPromptJob, onStartChecklist, handleUndoPhase, getRtFinalDestination, LicensePlateBadge, VinPlateBadge, WaitTimerBadge, SwipeButton, AlertCircle, Edit2, MoreVertical, Navigation, Share2, Users, CheckCircle, Truck, X, XCircle, Clock, Car, MapPin, FileText, RefreshCw, Search,
     // FALTANTES QUE CAUSABAN LA PANTALLA BLANCA AL ABRIR EL MENÚ:
     Copy, Trash2, Repeat, FileDown, cpyWapp, handleDuplicateJob, handleDeleteJob, generatePDF, handleShareWhatsAppPDF,
     syncQueue, setExpenseModalJob
@@ -1694,7 +1716,8 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
   };
 
   if (!isAppReady) return null;
-  const canBulkSign = inProgressJobsList.some(j => j.fleetGroup);
+  const canBulkSign = !isEasyDriverView && inProgressJobsList.some(j => j.fleetGroup);
+  const easyActiveJobs = [...inProgressJobsList, ...pendingJobsList];
 
   // --- LÓGICA DE KILOMETRAJE MENSUAL DEL CONDUCTOR ---
   const parseDist = (str) => {
@@ -1715,7 +1738,7 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
 
   return (
     <div className="pb-16">
-      {!isAdminView && (
+      {!isAdminView && !isEasyDriverView && (
         <div className="mb-6 bg-slate-900 border border-slate-800 rounded-xl p-6 sm:p-8 text-white shadow-md flex items-center justify-between relative overflow-hidden">
           <div className="absolute right-[-10%] top-[-20%] bottom-0 opacity-10 pointer-events-none">
             <MapIcon className="w-48 h-48" />
@@ -1726,12 +1749,13 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
           </div>
         </div>
       )}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6 relative z-10">
-        <div className="relative flex-1">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Search className="w-5 h-5 text-slate-400" /></div>
-          <input type="text" placeholder="Buscar patente, marca, cliente, origen o destino..." autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="none" className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-blue-500 transition-colors" value={localSearchTerm} onChange={(e) => setLocalSearchTerm(e.target.value)} />
-        </div>
-        <div className="flex gap-2 shrink-0 overflow-x-auto pb-1 sm:pb-0 scrollbar-none items-center">
+      {(!isEasyDriverView || easyActiveJobs.length > 3 || localSearchTerm) && (
+        <div className="flex flex-col sm:flex-row gap-3 mb-6 relative z-10">
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none"><Search className="w-5 h-5 text-slate-400" /></div>
+            <input type="text" placeholder="Buscar patente, marca, cliente, origen o destino..." autoComplete="off" autoCorrect="off" spellCheck="false" autoCapitalize="none" className="w-full pl-11 pr-4 py-3.5 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-blue-500 transition-colors" value={localSearchTerm} onChange={(e) => setLocalSearchTerm(e.target.value)} />
+          </div>
+          <div className="flex gap-2 shrink-0 overflow-x-auto pb-1 sm:pb-0 scrollbar-none items-center">
           {isAdminView && (
             <label className="flex items-center gap-2 cursor-pointer bg-white dark:bg-slate-900 px-4 py-3.5 rounded-xl border-2 border-slate-200 dark:border-slate-800 shadow-sm hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 transition-colors shrink-0">
               <span className={`text-xs font-black uppercase tracking-widest ${auditMode ? 'text-sky-600 dark:text-sky-400' : 'text-slate-400 dark:text-slate-500 dark:text-slate-400'}`}>Modo Auditoría</span>
@@ -1770,10 +1794,26 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
               )}
             </>
           )}
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="flex flex-col lg:flex-row gap-6 items-start w-full">
+      {isEasyDriverView ? (
+        <div className="space-y-4">
+          {easyActiveJobs.length === 0 ? (
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-8 text-center shadow-xs">
+              <Car className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-200">No tienes trabajos pendientes</p>
+              <p className="text-xs text-slate-400 mt-1">Cuando te asignen un vehículo aparecerá aquí con el botón "Subir Fotos".</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {easyActiveJobs.map(j => renderActiveJobCard(j))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-col lg:flex-row gap-6 items-start w-full">
 
         {/* COLUMNA SOLICITUDES (NUEVO) */}
         {requestedJobsList.length > 0 && (
@@ -1838,13 +1878,16 @@ export default function JobsList({ jobs, drivers, role, onStartChecklist, onEdit
         </div>
 
       </div>
+      )}
 
-      <div className="mt-10">
-        <h3 className="font-extrabold text-slate-800 dark:text-slate-200 mb-4 border-b-2 border-slate-200/80 dark:border-slate-800/80 pb-2">Finalizados de Hoy ({todayHistoryJobs.length})</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">{todayHistoryJobs.map(j => renderHistoryJobCard(j))}</div>
-      </div>
+      {!isEasyDriverView && (
+        <div className="mt-10">
+          <h3 className="font-extrabold text-slate-800 dark:text-slate-200 mb-4 border-b-2 border-slate-200/80 dark:border-slate-800/80 pb-2">Finalizados de Hoy ({todayHistoryJobs.length})</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">{todayHistoryJobs.map(j => renderHistoryJobCard(j))}</div>
+        </div>
+      )}
 
-      {olderHistoryJobs.length > 0 && (
+      {!isEasyDriverView && olderHistoryJobs.length > 0 && (
         <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden mb-8">
           <div className="bg-slate-50 dark:bg-slate-900 p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center flex-wrap gap-3">
             <div className="flex items-center gap-3">

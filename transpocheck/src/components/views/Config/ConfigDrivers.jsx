@@ -23,6 +23,7 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
     manage_history: true
   };
   const [driverPermissions, setDriverPermissions] = useState(defaultPermissions);
+  const [easyMode, setEasyMode] = useState(false);
 
   const handleDocUpload = async (e, field, size) => {
     const file = e.target.files[0];
@@ -30,7 +31,10 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
     try {
       const dataUrl = await resizeImage(file, size, 0.4);
       setDriverDocs(prev => ({ ...prev, [field]: dataUrl }));
-    } catch (err) { showAlert("Error procesando foto."); }
+    } catch (err) {
+      console.error('[ERR-DRIVER-PHOTO-01] Error procesando foto:', err);
+      showAlert("❌ Error procesando foto [ERR-DRIVER-PHOTO-01].");
+    }
   };
 
   const DocUploader = ({ field, label }) => (
@@ -58,7 +62,47 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
-      <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => { e.preventDefault(); const fd = new FormData(e.target); const enableNotifications = Object.values(driverNotifs).some(v => v); const data = { name: fd.get('driverName'), email: fd.get('driverEmail').toLowerCase(), role: fd.get('role'), licenses: fd.getAll('licenses'), licenseExpiry: fd.get('licenseExpiry'), enableNotifications, notifications: driverNotifs, permissions: driverPermissions, ...driverDocs }; try { if (editingDriver) { await updateDoc(doc(db, 'drivers', editingDriver.id), data); setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); setDriverPermissions(defaultPermissions); showAlert("Perfil actualizado exitosamente."); } else { data.balance = 0; data.createdAt = Date.now(); await addDoc(collection(db, 'drivers'), data); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); setDriverPermissions(defaultPermissions); showAlert("Usuario creado exitosamente."); } e.target.reset(); } catch (err) { console.error(err); } }} className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-4 relative">
+      <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const enableNotifications = Object.values(driverNotifs).some(v => v);
+        const data = {
+          name: fd.get('driverName'),
+          email: fd.get('driverEmail').toLowerCase(),
+          role: fd.get('role'),
+          licenses: fd.getAll('licenses'),
+          licenseExpiry: fd.get('licenseExpiry'),
+          enableNotifications,
+          notifications: driverNotifs,
+          permissions: driverPermissions,
+          easyMode,
+          ...driverDocs
+        };
+        try {
+          if (editingDriver) {
+            await updateDoc(doc(db, 'drivers', editingDriver.id), data);
+            setEditingDriver(null);
+            setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null });
+            setDriverNotifs(defaultDriverNotifs);
+            setDriverPermissions(defaultPermissions);
+            setEasyMode(false);
+            showAlert("Perfil actualizado exitosamente.");
+          } else {
+            data.balance = 0;
+            data.createdAt = Date.now();
+            await addDoc(collection(db, 'drivers'), data);
+            setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null });
+            setDriverNotifs(defaultDriverNotifs);
+            setDriverPermissions(defaultPermissions);
+            setEasyMode(false);
+            showAlert("Usuario creado exitosamente.");
+          }
+          e.target.reset();
+        } catch (err) {
+          console.error('[ERR-DRIVER-SAVE-01] Error al guardar usuario:', err);
+          showAlert(`❌ Error al guardar el perfil [ERR-DRIVER-SAVE-01]: ${err.message || 'Intente nuevamente'}`);
+        }
+      }} className="bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800 space-y-4 relative">
         
 
 
@@ -205,8 +249,40 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
           </div>
         )}
 
+        {/* MODO FÁCIL POR PERFIL */}
+        <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 p-4 rounded-xl shadow-sm mt-4">
+          <label
+            htmlFor="driver-easy-mode"
+            className="flex items-start justify-between gap-3 cursor-pointer min-h-[48px] select-none"
+          >
+            <div className="flex-1">
+              <span className="text-xs font-extrabold text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5">
+                Modo Fácil (Solo Subir Fotos)
+              </span>
+              <span
+                id="easy-mode-desc"
+                className="block text-[10px] font-bold text-emerald-700 dark:text-emerald-400/90 mt-1 leading-snug"
+              >
+                Simplifica al máximo la pantalla de este perfil: solo muestra su tarjeta de trabajo con el botón "Subir Fotos" y pide únicamente fotos del vehículo (sin inicio/fin de traslado, botón deslizante ni checklist completo).
+              </span>
+            </div>
+            <div className="relative flex items-center shrink-0 pt-0.5">
+              <input
+                id="driver-easy-mode"
+                type="checkbox"
+                checked={easyMode}
+                onChange={(e) => setEasyMode(e.target.checked)}
+                aria-describedby="easy-mode-desc"
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-slate-300 dark:bg-slate-700 rounded-full peer-checked:bg-emerald-600 peer-focus-visible:ring-2 peer-focus-visible:ring-emerald-500 peer-focus-visible:ring-offset-2 transition-colors"></div>
+              <div className="absolute left-0.5 top-1 bg-white w-5 h-5 rounded-full shadow-xs transition-transform peer-checked:translate-x-5"></div>
+            </div>
+          </label>
+        </div>
+
         <div className="flex gap-3 pt-2 border-t border-slate-100 dark:border-slate-800 mt-4">
-          {editingDriver && <button type="button" onClick={() => { setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); setDriverPermissions(defaultPermissions); }} className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 py-3 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>}
+          {editingDriver && <button type="button" onClick={() => { setEditingDriver(null); setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null }); setDriverNotifs(defaultDriverNotifs); setDriverPermissions(defaultPermissions); setEasyMode(false); }} className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 py-3 rounded-xl font-extrabold text-sm transition-colors">Cancelar</button>}
           <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold text-sm transition-colors shadow-lg shadow-blue-200">{editingDriver ? 'Guardar Cambios' : 'Guardar Usuario'}</button>
         </div>
       </form>
@@ -230,6 +306,7 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
                   <div className="flex items-center gap-2 flex-wrap mb-0.5">
                      <p className={`text-base sm:text-lg font-extrabold leading-tight break-words ${d.isHidden ? 'text-slate-500 dark:text-slate-400 line-through decoration-slate-400' : 'text-slate-800 dark:text-slate-200'}`}>{d.name}</p>
                      {d.isHidden && <span className="bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-600 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest shrink-0">Oculto</span>}
+                     {d.easyMode && <span className="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest shrink-0">Modo Fácil</span>}
                   </div>
                   <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 break-all leading-tight mb-1.5">{d.email}</p>
                   
@@ -249,26 +326,52 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
                          Licencias: {d.licenses.join(', ')}
                        </span>
                     )}
+                    <button
+                      type="button"
+                      aria-pressed={Boolean(d.easyMode)}
+                      onClick={async () => {
+                        const nextVal = !d.easyMode;
+                        try {
+                          await updateDoc(doc(db, 'drivers', d.id), { easyMode: nextVal });
+                          if (editingDriver?.id === d.id) {
+                            setEasyMode(nextVal);
+                          }
+                        } catch (err) {
+                          console.error('[ERR-DRIVER-EASY-01] Error al cambiar Modo Fácil:', err);
+                          showAlert("❌ Error al cambiar Modo Fácil [ERR-DRIVER-EASY-01].");
+                        }
+                      }}
+                      className={`min-h-[32px] text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider border transition-colors cursor-pointer flex items-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
+                        d.easyMode
+                          ? 'bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700'
+                          : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300'
+                      }`}
+                      title={d.easyMode ? "Desactivar Modo Fácil para este perfil" : "Activar Modo Fácil para este perfil"}
+                    >
+                      {d.easyMode ? <CheckCircle className="w-3 h-3" /> : <div className="w-3 h-3 rounded-full border border-current opacity-60"></div>}
+                      Modo Fácil: {d.easyMode ? 'ON' : 'OFF'}
+                    </button>
                   </div>
                   {d.createdAt && <p className="text-[10px] sm:text-xs font-bold text-slate-400 dark:text-slate-500 mt-2.5 flex items-center gap-1"><Clock className="w-3.5 h-3.5"/> Ingreso: {new Date(d.createdAt).toLocaleDateString('es-CL')}</p>}
                 </div>
               </div>
               
               <div className="flex gap-2 shrink-0 w-full sm:w-auto justify-end mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-0 border-slate-200 dark:border-slate-700/70">
-                 <button onClick={async () => {
+                 <button type="button" onClick={async () => {
                      try { await updateDoc(doc(db, 'drivers', d.id), { isHidden: !d.isHidden }); }
-                     catch (e) { showAlert("Error al cambiar estado."); }
+                     catch (e) { showAlert("❌ Error al cambiar estado [ERR-DRIVER-HIDE-01]."); }
                  }} className={`p-3 sm:p-2.5 flex-1 sm:flex-none flex items-center justify-center rounded-xl transition-colors shadow-sm ${d.isHidden ? 'bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 hover:bg-green-200 border border-green-200 dark:border-green-800/50' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-300 dark:bg-slate-600'}`} title={d.isHidden ? "Restaurar Conductor" : "Ocultar Conductor"}>
                      {d.isHidden ? <Eye className="w-5 h-5"/> : <EyeOff className="w-5 h-5"/>}
                  </button>
-                 <button onClick={() => { 
+                 <button type="button" onClick={() => { 
                    setEditingDriver(d); 
                    setDriverDocs({ photo: d.photo || null, idFront: d.idFront || null, idBack: d.idBack || null, licenseFront: d.licenseFront || null, licenseBack: d.licenseBack || null }); 
                    setDriverNotifs(d.notifications || defaultDriverNotifs);
                    setDriverPermissions(d.permissions || defaultPermissions);
+                   setEasyMode(Boolean(d.easyMode));
                    window.scrollTo({ top: 0, behavior: 'smooth' });
                  }} className={`px-4 py-3 sm:py-2.5 flex-[2] sm:flex-none justify-center rounded-xl transition-colors shadow-sm text-sm font-extrabold flex items-center gap-2 ${d.isHidden ? 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-300 dark:bg-slate-600' : 'bg-blue-600 hover:bg-blue-700 text-white'}`} title="Ver Perfil y Documentos"><User className="w-4.5 h-4.5"/> Perfil</button>
-                 <button onClick={() => showConfirm("¿Eliminar conductor?", async()=>await deleteDoc(doc(db,'drivers',d.id)))} className="p-3 sm:p-2.5 flex-1 sm:flex-none flex items-center justify-center bg-red-100 dark:bg-red-900/40 hover:bg-red-200 text-red-500 rounded-xl transition-colors shadow-sm"><Trash2 className="w-5 h-5"/></button>
+                 <button type="button" onClick={() => showConfirm("¿Eliminar conductor?", async () => { try { await deleteDoc(doc(db, 'drivers', d.id)); } catch (e) { console.error('[ERR-DRIVER-DEL-01]', e); showAlert("❌ Error al eliminar usuario [ERR-DRIVER-DEL-01]."); } })} className="p-3 sm:p-2.5 flex-1 sm:flex-none flex items-center justify-center bg-red-100 dark:bg-red-900/40 hover:bg-red-200 text-red-500 rounded-xl transition-colors shadow-sm" title="Eliminar Usuario"><Trash2 className="w-5 h-5"/></button>
               </div>
             </div>
           ))}

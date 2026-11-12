@@ -7,7 +7,7 @@ const ChecklistContext = createContext();
 
 export const useChecklist = () => useContext(ChecklistContext);
 
-export const ChecklistProvider = ({ children, job, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList, drivers, expenses, vehicles, uploadImageToStorage, pushSyncTask }) => {
+export const ChecklistProvider = ({ children, job, currentUserEmail, onCancel, onComplete, showAlert, showConfirm, allClientsList, drivers, expenses, vehicles, uploadImageToStorage, pushSyncTask, isEasyMode = false }) => {
   const isQuick = job?.id === 'NEW_QUICK_JOB';
   const matchedVehicle = vehicles?.find(v => v.plate === String(job?.plate || job?.vin || '').toUpperCase());
   const initialDocs = matchedVehicle?.docs || { soap: false, permiso: false, revTecnica: false, gases: false };
@@ -80,6 +80,7 @@ export const ChecklistProvider = ({ children, job, currentUserEmail, onCancel, o
     isSubmitting, setIsSubmitting,
     processingAction, setProcessingAction,
     isQuick,
+    isEasyMode: Boolean(isEasyMode),
     defaultData,
     matchedVehicle,
     db,
