@@ -1545,9 +1545,9 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         ` : ''}
 
         <!-- ENCABEZADO CON MEMBRETE DE NUESTRA EMPRESA -->
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #7c3aed; padding-bottom: 20px; margin-bottom: 25px;">
-          <div style="display: flex; align-items: center; gap: 16px;">
-            <img src="${logoSrc}" style="max-height: 60px;" alt="Logo" onerror="this.style.display='none'" />
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; border-bottom: 4px solid #7c3aed; padding-bottom: 20px; margin-bottom: 25px;">
+          <div style="display: flex; align-items: center; gap: 18px;">
+            <img src="${logoSrc}" style="max-height: 120px; width: auto; object-fit: contain; flex-shrink: 0;" alt="Logo" onerror="this.style.display='none'" />
             <div>
               <h2 style="margin: 0; color: #1e293b; font-size: 15px; text-transform: uppercase; font-weight: 900; letter-spacing: -0.3px;">${issuerCompany.companyName || 'LogisticAPP - Sistema de Gestión Logística'}</h2>
               ${issuerCompany.rut ? `<p style="margin: 2px 0 0 0; color: #64748b; font-size: 11px; font-weight: 600;"><strong>RUT:</strong> ${issuerCompany.rut}</p>` : ''}
