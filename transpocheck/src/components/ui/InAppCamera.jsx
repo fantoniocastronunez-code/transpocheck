@@ -67,14 +67,22 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
     const cameras = backCams.length > 0 ? backCams : deviceList.filter(d => d.kind === 'videoinput');
 
     const ultraKeywords = ['ultra', 'gran angular', 'wide-angle', '0.5', '0,5'];
-    const teleKeywords = ['tele', 'telephoto', 'teleobjetivo', 'zoom', '2x', '3x'];
+    const tele3xKeywords = ['3x', '3.0x', 'periscope', 'periscopio', 'telephoto', 'teleobjetivo', 'tele'];
+    const teleFallbackKeywords = ['zoom', '2x'];
+    const teleKeywords = [...tele3xKeywords, ...teleFallbackKeywords];
     const mainKeywords = ['main', 'principal', 'standard', 'estandar', '1x', 'wide'];
 
     // 1. Cámara Ultra Gran Angular (0.5x)
     let ultra = cameras.find(d => ultraKeywords.some(k => d.label.toLowerCase().includes(k)));
 
-    // 2. Cámara Teleobjetivo (2x o más) - Solo si tiene palabras clave explícitas para no abrir sensores macro o ToF de profundidad
-    let tele = cameras.find(d => teleKeywords.some(k => d.label.toLowerCase().includes(k)));
+    // 2. Cámara Teleobjetivo (prioriza 3x óptico / telefoto dedicado sobre 2x) - Solo si tiene palabras clave explícitas para no abrir sensores macro o ToF de profundidad
+    let tele =
+      cameras.find(d => {
+        const l = d.label.toLowerCase();
+        return l.includes('3x') || l.includes('3.0x');
+      }) ||
+      cameras.find(d => tele3xKeywords.some(k => d.label.toLowerCase().includes(k))) ||
+      cameras.find(d => teleFallbackKeywords.some(k => d.label.toLowerCase().includes(k)));
 
     // 3. Cámara Principal (1x)
     let main = cameras.find(d =>
@@ -317,58 +325,95 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
       }
 
       // ==========================================
-      // CASO 2x (Teleobjetivo / Zoom 2x)
+      // CASO 3x (Teleobjetivo Óptico / Zoom 3x)
       // ==========================================
-      if (level === 2) {
-        // Intento 1: Zoom nativo en el sensor actual (la mayoría de teléfonos Android modernos cambian de lente o hacen crop óptico automáticamente)
-        if (hasNativeZoom && caps.zoom.max >= 2.0) {
-          try {
-            await activeTrack.applyConstraints({ advanced: [{ zoom: 2.0 }] });
-            setDigitalZoom(1);
-            setIsSwitchingLens(false);
-            return;
-          } catch (e) {
-            console.warn("[ERR-CAM-ZOOM-2XN] Falló zoom nativo 2.0:", e);
-          }
-        }
-
-        // Intento 2: Si hay una cámara con etiqueta explícita de teleobjetivo ("telephoto", "teleobjetivo")
+      if (level === 3) {
+        // Intento 1: Si existe cámara física teleobjetivo dedicada (3x / telephoto), conmutar directo al lente óptico
         const teleCam = teleCameraRef.current;
-        if (teleCam && teleCam.deviceId && teleCam.deviceId !== currentDeviceIdRef.current) {
-          stopActiveTracks();
-          await new Promise(r => setTimeout(r, 60));
+        if (teleCam && teleCam.deviceId) {
           try {
-            const newStream = await safeGetUserMedia(teleCam.deviceId);
-            const newTrack = newStream.getVideoTracks()[0];
-            const newId = newTrack?.getSettings()?.deviceId || teleCam.deviceId;
-            setCurrentDeviceId(newId);
-            setStream(newStream);
-            setDigitalZoom(1);
+            let teleStream = activeStream;
+            if (teleCam.deviceId !== currentDeviceIdRef.current) {
+              stopActiveTracks();
+              await new Promise(r => setTimeout(r, 60));
+              teleStream = await safeGetUserMedia(teleCam.deviceId);
+              const newTrack = teleStream.getVideoTracks()[0];
+              const newId = newTrack?.getSettings()?.deviceId || teleCam.deviceId;
+              setCurrentDeviceId(newId);
+              setStream(teleStream);
+            }
+
+            const teleTrack = teleStream?.getVideoTracks()[0];
+            const teleCaps = teleTrack && typeof teleTrack.getCapabilities === 'function' ? teleTrack.getCapabilities() : {};
+            const teleLabel = (teleCam.label || '').toLowerCase();
+            const isExplicit2xOnly = teleLabel.includes('2x') && !teleLabel.includes('3x');
+
+            if (isExplicit2xOnly) {
+              // Si el sensor dedicado es 2x, ajustar a 3x con zoom nativo (1.5x) o digital
+              if (teleCaps.zoom && teleCaps.zoom.max >= 1.5) {
+                await teleTrack.applyConstraints({ advanced: [{ zoom: 1.5 }] });
+                setDigitalZoom(1);
+              } else {
+                setDigitalZoom(1.5);
+              }
+            } else {
+              if (teleCaps.zoom) {
+                const targetZ = Math.max(teleCaps.zoom.min, Math.min(1.0, teleCaps.zoom.max));
+                await teleTrack.applyConstraints({ advanced: [{ zoom: targetZ }] });
+              }
+              setDigitalZoom(1);
+            }
+
             setIsSwitchingLens(false);
             return;
           } catch (teleErr) {
-            console.warn("[ERR-CAM-ZOOM-2XSW] Falló cambio a teleobjetivo físico, usando zoom digital 2x:", teleErr);
+            console.warn("[ERR-CAM-ZOOM-3XSW] Falló cambio a teleobjetivo físico, intentando zoom óptico nativo 3x:", teleErr);
           }
         }
 
-        // Intento 3: Asegurar que estamos en la cámara principal (1x) y aplicar Zoom Digital 2x de alta resolución
-        // Este zoom digital nunca falla, no produce errores y captura en alta definición
+        // Intento 2: Asegurar cámara principal (evitar zoom digital sobre el lente 0.5x) y aplicar zoom óptico/nativo 3.0
         const mainCam = mainCameraRef.current;
+        let workingStream = streamRef.current;
         if (mainCam && mainCam.deviceId && mainCam.deviceId !== currentDeviceIdRef.current) {
           stopActiveTracks();
           await new Promise(r => setTimeout(r, 60));
           try {
             const newStream = await safeGetUserMedia(mainCam.deviceId);
+            workingStream = newStream;
             const newTrack = newStream.getVideoTracks()[0];
             const newId = newTrack?.getSettings()?.deviceId || mainCam.deviceId;
             setCurrentDeviceId(newId);
             setStream(newStream);
           } catch (e) {
-            console.warn("[ERR-CAM-ZOOM-2X-MAIN] Error volviendo a principal para zoom 2x:", e);
+            console.warn("[ERR-CAM-ZOOM-3X-MAIN] Error cambiando a cámara principal para zoom 3x:", e);
           }
         }
 
-        setDigitalZoom(2);
+        const currentTrack = workingStream?.getVideoTracks()[0];
+        const currentCaps = currentTrack && typeof currentTrack.getCapabilities === 'function' ? currentTrack.getCapabilities() : {};
+        if (currentCaps.zoom && currentCaps.zoom.max >= 3.0) {
+          try {
+            await currentTrack.applyConstraints({ advanced: [{ zoom: 3.0 }] });
+            setDigitalZoom(1);
+            setIsSwitchingLens(false);
+            return;
+          } catch (e) {
+            console.warn("[ERR-CAM-ZOOM-3XN] Falló zoom nativo 3.0:", e);
+          }
+        } else if (currentCaps.zoom && currentCaps.zoom.max > 1.0) {
+          try {
+            const maxNative = currentCaps.zoom.max;
+            await currentTrack.applyConstraints({ advanced: [{ zoom: maxNative }] });
+            setDigitalZoom(3.0 / maxNative);
+            setIsSwitchingLens(false);
+            return;
+          } catch (e) {
+            console.warn("[ERR-CAM-ZOOM-3XHYB] Falló zoom híbrido hasta 3.0:", e);
+          }
+        }
+
+        // Intento 3: Fallback a Zoom Digital 3x de alta resolución sobre el sensor principal
+        setDigitalZoom(3);
         setIsSwitchingLens(false);
         return;
       }
@@ -792,11 +837,12 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
             1x
           </button>
           <button
-            onClick={() => setZoomLevel(2)}
+            type="button"
+            onClick={() => setZoomLevel(3)}
             disabled={isSwitchingLens}
-            className={`w-10 h-9 rounded font-mono text-xs font-semibold transition-colors ${activeZoomLabel === 2 ? 'bg-blue-700 text-white' : 'text-slate-300 hover:text-white'}`}
+            className={`w-10 h-9 rounded font-mono text-xs font-semibold transition-colors ${activeZoomLabel === 3 ? 'bg-blue-700 text-white' : 'text-slate-300 hover:text-white'}`}
           >
-            2x
+            3x
           </button>
         </div>
       </div>
