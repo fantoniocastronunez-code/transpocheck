@@ -4,7 +4,7 @@ import {
   Calculator, MapPin, Fuel, DollarSign, Plus, CheckCircle,
   User, Truck, Receipt, Printer, Send, Save, ArrowRight, X, MessageCircle, Mail, MoreVertical, Calendar, Sparkles,
   Settings, Sliders, Hash, RotateCcw, Building2, Briefcase, Phone, Globe, FileText, Check, Download, Smartphone,
-  FlaskConical, Filter, Loader2, FileSpreadsheet
+  FlaskConical, Filter, Loader2, FileSpreadsheet, Trash2
 } from 'lucide-react';
 import { formatMoney } from '../../utils/helpers';
 
@@ -209,6 +209,50 @@ const parseQuotesCSV = (csvText, currentUserEmail) => {
   return results;
 };
 
+const escapeHtml = (str) => String(str ?? '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+
+const getValidExtraItems = (items = []) => {
+  if (!Array.isArray(items)) return [];
+  return items
+    .map((item, idx) => ({
+      id: item?.id || `extra-${idx}`,
+      description: String(item?.description || '').trim(),
+      amount: Math.round(parseFloat(item?.amount) || 0)
+    }))
+    .filter(item => item.description || item.amount > 0);
+};
+
+const normalizeExtraItems = (items = []) => {
+  const normalized = [];
+  for (let i = 0; i < items.length; i++) {
+    const desc = String(items[i]?.description || '').trim();
+    const rawAmount = items[i]?.amount;
+    const hasAmountText = rawAmount !== '' && rawAmount !== null && rawAmount !== undefined;
+    const amountNum = parseFloat(rawAmount);
+
+    if (!desc && (!hasAmountText || amountNum === 0)) {
+      continue;
+    }
+    if (!desc) {
+      return { error: `⚠️ [ERR-QUOTE-ITEM-VAL-01] Ingresa una descripción para el detalle adicional #${i + 1}.` };
+    }
+    if (!hasAmountText || isNaN(amountNum) || amountNum <= 0) {
+      return { error: `⚠️ [ERR-QUOTE-ITEM-VAL-02] Ingresa un monto válido mayor a 0 para "${desc}".` };
+    }
+    normalized.push({
+      id: items[i]?.id || `extra-${i}-${Date.now()}`,
+      description: desc,
+      amount: Math.round(amountNum)
+    });
+  }
+  return { items: normalized };
+};
+
 export default function QuotesView({ db, customClients = [], vehicles = [], directoryList = [], drivers = [], showAlert, showConfirm, currentUserEmail, isSuperAdmin = false }) {
   // Modo de Cotizador: 'simple' (Modo Rápido / Celular) o 'full' (Calculadora Detallada)
   const [quoteMode, setQuoteMode] = useState(() => {
@@ -284,6 +328,28 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     amount: '',
     addIva: true
   });
+
+  // Detalles adicionales opcionales (ítems extra que se suman a la cotización)
+  const [extraItems, setExtraItems] = useState([]);
+
+  const handleAddExtraItem = () => {
+    setExtraItems(prev => [
+      ...prev,
+      {
+        id: `item-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        description: '',
+        amount: ''
+      }
+    ]);
+  };
+
+  const handleUpdateExtraItem = (itemId, field, value) => {
+    setExtraItems(prev => prev.map(item => item.id === itemId ? { ...item, [field]: value } : item));
+  };
+
+  const handleRemoveExtraItem = (itemId) => {
+    setExtraItems(prev => prev.filter(item => item.id !== itemId));
+  };
 
   // Estado para la cotización recién creada lista para compartir
   const [createdQuoteToShare, setCreatedQuoteToShare] = useState(null);
@@ -480,10 +546,23 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       importedOriginalPrice: q.finalPrice || null
     });
 
+    const loadedExtraItems = Array.isArray(q.extraItems)
+      ? q.extraItems.map((it, i) => ({
+          id: it.id || `loaded-${i}-${Date.now()}`,
+          description: it.description || '',
+          amount: it.amount !== undefined && it.amount !== null ? String(it.amount) : ''
+        }))
+      : [];
+    setExtraItems(loadedExtraItems);
+
     // Si viene de modo simple o tiene precio definido
-    if (q.finalPrice) {
+    if (q.finalPrice || q.baseNetPrice) {
+      const loadedExtraSum = loadedExtraItems.reduce((sum, it) => sum + (parseFloat(it.amount) || 0), 0);
+      const baseAmount = q.baseNetPrice !== undefined
+        ? q.baseNetPrice
+        : Math.max(0, (q.netPrice ?? q.finalPrice ?? 0) - loadedExtraSum);
       setSimpleData({
-        amount: q.netPrice || q.finalPrice,
+        amount: baseAmount,
         addIva: q.ivaAmount > 0
       });
     }
@@ -492,8 +571,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     setIsTestQuote(!!q.isTest);
     setEditingQuoteId(q.id);
 
-    // Si la cotización proviene de importación o no tiene ruta definida, abrir la tabla completa (full)
-    if (q.isImported || (!q.origin && !q.destination)) {
+    // Si la cotización proviene de importación o no tiene ruta definida (salvo modo rápido), abrir la tabla completa (full)
+    if (q.mode === 'simple' && !q.isImported) {
+      handleSetQuoteMode('simple');
+    } else if (q.isImported || (!q.origin && !q.destination)) {
       handleSetQuoteMode('full');
     }
 
@@ -945,6 +1026,14 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     });
   };
 
+  // Suma de detalles adicionales opcionales
+  const extraItemsTotal = Math.round(
+    extraItems.reduce((sum, item) => sum + Math.max(0, parseFloat(item.amount) || 0), 0)
+  );
+  const activeExtraItemsCount = extraItems.filter(
+    item => item.description.trim() || (parseFloat(item.amount) || 0) > 0
+  ).length;
+
   // Cálculos Automáticos para Modo Completo (Calculadora)
   const distance = parseFloat(quoteData.distanceKm) || 0;
   const kml = parseFloat(quoteData.kmPerLiter) || 1;
@@ -958,15 +1047,17 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   const subtotalCosts = fuelCost + tolls + driver;
   const marginMultiplier = 1 + ((parseFloat(quoteData.marginPct) || 0) / 100);
 
-  const netPrice = Math.round(subtotalCosts * marginMultiplier);
+  const baseNetPrice = Math.round(subtotalCosts * marginMultiplier);
+  const netPrice = baseNetPrice + extraItemsTotal;
   const ivaAmount = Math.round(netPrice * 0.19);
   const finalPrice = netPrice + ivaAmount;
   const profit = netPrice - subtotalCosts;
 
   // Cálculos para Modo Simplificado
   const simpleAmountNum = parseFloat(simpleData.amount) || 0;
-  const simpleNet = Math.round(simpleAmountNum);
-  const simpleIva = simpleData.addIva ? Math.round(simpleAmountNum * 0.19) : 0;
+  const simpleBaseNet = Math.round(simpleAmountNum);
+  const simpleNet = simpleBaseNet + extraItemsTotal;
+  const simpleIva = simpleData.addIva ? Math.round(simpleNet * 0.19) : 0;
   const simpleFinal = simpleNet + simpleIva;
 
   const handleInputChange = (e) => {
@@ -1059,6 +1150,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     if (!amountVal || amountVal <= 0) {
       return showAlert("⚠️ [ERR-SIMPLE-VAL-02] Ingresa el monto a cobrar por el traslado.");
     }
+    const { items: normalizedItems, error: itemsError } = normalizeExtraItems(extraItems);
+    if (itemsError) {
+      return showAlert(itemsError);
+    }
 
     setIsGeneratingQuote(true);
     try {
@@ -1067,8 +1162,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         ? `TEST-${formatCorrelativeNumber(correlativeConfig)}`
         : formatCorrelativeNumber(correlativeConfig));
       const isAddIva = !!simpleData.addIva;
-      const netVal = Math.round(amountVal);
-      const ivaVal = isAddIva ? Math.round(amountVal * 0.19) : 0;
+      const baseNetVal = Math.round(amountVal);
+      const extrasSumVal = normalizedItems.reduce((sum, it) => sum + it.amount, 0);
+      const netVal = baseNetVal + extrasSumVal;
+      const ivaVal = isAddIva ? Math.round(netVal * 0.19) : 0;
       const finalVal = netVal + ivaVal;
 
       const payload = {
@@ -1088,6 +1185,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         model: quoteData.model?.trim() || '',
         plateOrVin: quoteData.plateOrVin?.trim() || '',
         vehicleType: quoteData.vehicleType || 'Auto / SUV',
+        baseNetPrice: baseNetVal,
+        extraItems: normalizedItems,
         netPrice: netVal,
         ivaAmount: ivaVal,
         finalPrice: finalVal,
@@ -1143,6 +1242,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         quoteNumber: ''
       }));
       setSimpleData(prev => ({ ...prev, amount: '' }));
+      setExtraItems([]);
 
     } catch (err) {
       console.error("[ERR-SIMPLE-SAVE-01]", err);
@@ -1156,6 +1256,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   const handleSaveQuoteStatus = async (status = 'pendiente') => {
     if (!quoteData.client || !quoteData.origin || !quoteData.destination) {
       return showAlert("⚠️ [ERR-QUOTE-VAL-01] Faltan datos obligatorios (Cliente, Origen y Destino).");
+    }
+    const { items: normalizedItems, error: itemsError } = normalizeExtraItems(extraItems);
+    if (itemsError) {
+      return showAlert(itemsError);
     }
     setIsSavingStatus(status);
     try {
@@ -1174,6 +1278,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         clientEmail: quoteData.clientEmail || '',
         clientContact: quoteData.clientContact || '',
         quoteNumber: correlativoFinal,
+        baseNetPrice: Math.round(baseNetPrice),
+        extraItems: normalizedItems,
         finalPrice: Math.round(finalPrice),
         netPrice: Math.round(netPrice),
         ivaAmount: Math.round(ivaAmount),
@@ -1238,9 +1344,16 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     if (!quoteData.client) {
       return showAlert("⚠️ [ERR-QUOTE-APPROVE-VAL-01] Selecciona una empresa cliente.");
     }
+    const { items: normalizedItems, error: itemsError } = normalizeExtraItems(extraItems);
+    if (itemsError) {
+      return showAlert(itemsError);
+    }
 
     const currentPrice = quoteMode === 'simple' ? simpleFinal : finalPrice;
     const correlativo = quoteData.quoteNumber?.trim() || formatCorrelativeNumber(correlativeConfig);
+    const extrasNote = normalizedItems.length > 0
+      ? ` | Extras: ${normalizedItems.map(it => `${it.description} (${formatMoney(it.amount)})`).join(', ')}`
+      : '';
 
     showConfirm(`¿Aprobar cotización ${correlativo} por ${formatMoney(currentPrice)} y generar el traslado automáticamente?`, async () => {
       setIsApprovingQuote(true);
@@ -1260,7 +1373,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
           destContactName: matchedDest?.contactName || '',
           destContactPhone: matchedDest?.contactPhone || '',
           destAddress: matchedDest?.address || '',
-          description: `(Cotización ${correlativo}) ${quoteData.description || 'Traslado logístico'}`,
+          description: `(Cotización ${correlativo}) ${quoteData.description || 'Traslado logístico'}${extrasNote}`,
           brand: quoteData.brand || 'Por definir',
           model: quoteData.model || '',
           vehicleType: quoteData.vehicleType || 'Auto / SUV',
@@ -1306,6 +1419,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
       const selectedDriverObj = drivers?.find(d => (d.name || d.email) === jobDetails.assignedDriver);
       const assignedEmails = selectedDriverObj ? [selectedDriverObj.email] : [];
+      const acceptedExtras = getValidExtraItems(acceptQuoteData.extraItems);
+      const acceptedExtrasNote = acceptedExtras.length > 0
+        ? ` | Extras: ${acceptedExtras.map(it => `${it.description} (${formatMoney(it.amount)})`).join(', ')}`
+        : '';
 
       const newJob = {
         client: acceptQuoteData.client || '',
@@ -1318,7 +1435,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         destContactName: matchedDest?.contactName || '',
         destContactPhone: matchedDest?.contactPhone || '',
         destAddress: matchedDest?.address || '',
-        description: `(Cotización ${acceptQuoteData.quoteNumber || 'S/N'}) ${acceptQuoteData.description || 'Traslado logístico'}`,
+        description: `(Cotización ${acceptQuoteData.quoteNumber || 'S/N'}) ${acceptQuoteData.description || 'Traslado logístico'}${acceptedExtrasNote}`,
         brand: acceptQuoteData.brand || 'Por definir',
         model: acceptQuoteData.model || '',
         vehicleType: acceptQuoteData.vehicleType || 'Auto / SUV',
@@ -1407,6 +1524,12 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     const validityHeader = qData.isTest ? 'Documento de simulación' : `Válida por ${validityDaysVal} días corridos`;
     const validityFooterText = issuerCompany.validityText || `Esta cotización formal tiene una validez de ${validityDaysVal} días corridos a contar de su fecha de emisión.`;
     const footerNoteText = issuerCompany.footerNote || 'Generado automáticamente a través de LogisticAPP - Sistema Integral de Gestión Logística';
+    const pdfExtraItems = getValidExtraItems(qData.extraItems ?? (!targetQuote ? extraItems : []));
+    const pdfExtraSum = pdfExtraItems.reduce((sum, it) => sum + it.amount, 0);
+    const pdfNetTotal = qData.netPrice !== undefined ? qData.netPrice : (qData.finalPrice || 0);
+    const pdfBaseNet = qData.baseNetPrice !== undefined
+      ? qData.baseNetPrice
+      : Math.max(0, pdfNetTotal - pdfExtraSum);
 
     return `
       <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #0f172a; background: #ffffff; width: 800px; margin: 0; padding: 30px; box-sizing: border-box;">
@@ -1514,21 +1637,34 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             <tr>
               <td style="padding: 14px 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px;">
                 <div style="font-weight: 800; font-size: 14px; color: #0f172a; margin-bottom: 4px;">
-                  ${qData.description || 'Servicio de traslado logístico de vehículo'}
+                  ${escapeHtml(qData.description || 'Servicio de traslado logístico de vehículo')}
                 </div>
                 ${isSimpleMode && (vehicleText || qData.plateOrVin) ? `
                   <div style="margin: 8px 0 6px 0; padding: 7px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 12px; color: #334155; display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                    ${vehicleText ? `<span><strong style="color: #64748b; font-size: 10px; text-transform: uppercase; margin-right: 4px;">Vehículo:</strong><strong>${vehicleText}</strong></span>` : ''}
+                    ${vehicleText ? `<span><strong style="color: #64748b; font-size: 10px; text-transform: uppercase; margin-right: 4px;">Vehículo:</strong><strong>${escapeHtml(vehicleText)}</strong></span>` : ''}
                     ${vehicleText && qData.plateOrVin ? `<span style="color: #cbd5e1;">•</span>` : ''}
-                    ${qData.plateOrVin ? `<span><strong style="color: #64748b; font-size: 10px; text-transform: uppercase; margin-right: 4px;">Patente / VIN:</strong><span style="font-family: monospace; font-weight: 800; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #0f172a;">${qData.plateOrVin}</span></span>` : ''}
+                    ${qData.plateOrVin ? `<span><strong style="color: #64748b; font-size: 10px; text-transform: uppercase; margin-right: 4px;">Patente / VIN:</strong><span style="font-family: monospace; font-weight: 800; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #0f172a;">${escapeHtml(qData.plateOrVin)}</span></span>` : ''}
                   </div>
                 ` : ''}
                 <span style="font-size: 11px; color: #64748b; font-weight: normal; margin-top: 4px; display: block;">
                   Incluye conducción profesional, inspección visual de recepción y entrega segura.
                 </span>
               </td>
-              <td style="padding: 14px 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 800; vertical-align: top; text-align: right; color: #1e293b;">${formatMoney(qData.netPrice || qData.finalPrice)}</td>
+              <td style="padding: 14px 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 800; vertical-align: top; text-align: right; color: #1e293b;">${formatMoney(pdfBaseNet)}</td>
             </tr>
+            ${pdfExtraItems.map(item => `
+              <tr>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px;">
+                  <div style="font-weight: 700; font-size: 13px; color: #0f172a;">
+                    ${escapeHtml(item.description || 'Detalle adicional')}
+                  </div>
+                  <span style="font-size: 10px; color: #64748b; font-weight: 600; margin-top: 2px; display: block;">
+                    Detalle adicional incluido en la cotización
+                  </span>
+                </td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 800; vertical-align: top; text-align: right; color: #1e293b;">${formatMoney(item.amount)}</td>
+              </tr>
+            `).join('')}
           </tbody>
         </table>
 
@@ -1667,6 +1803,11 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       ? [qData.brand, qData.model].filter(Boolean).join(' ') || 'Vehículo'
       : `${qData.vehicleType || 'Vehículo'}${qData.brand ? ` - ${qData.brand} ${qData.model || ''}` : ''}`;
 
+    const shareExtraItems = getValidExtraItems(qData.extraItems ?? (!targetQuote ? extraItems : []));
+    const shareExtrasText = shareExtraItems.length > 0
+      ? shareExtraItems.map(it => `➕ *${it.description || 'Detalle adicional'}:* ${formatMoney(it.amount)}\n`).join('')
+      : '';
+
     const text = testHeader +
       `*Cotización de Traslado ${correlativo}*\n\n` +
       `🏢 *Empresa Cliente:* ${qData.client}${qData.clientRut ? ` (RUT: ${qData.clientRut})` : ''}\n` +
@@ -1675,7 +1816,9 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       (qData.clientContact ? `👤 *Atención:* ${qData.clientContact}\n` : '') +
       (qData.origin && qData.destination ? `🛣️ *Ruta:* ${qData.origin} ➔ ${qData.destination} ${qData.distanceKm ? `(${qData.distanceKm} KM)` : ''}\n` : '') +
       `🚘 *Vehículo:* ${vehicleSummary}${qData.plateOrVin ? ` [${qData.plateOrVin}]` : ''}\n` +
-      `📋 *Servicio:* ${qData.description || 'Traslado logístico'}\n\n` +
+      `📋 *Servicio:* ${qData.description || 'Traslado logístico'}\n` +
+      shareExtrasText +
+      `\n` +
       (qData.ivaAmount > 0 ? (
         `💰 *Subtotal Neto:* ${formatMoney(qData.netPrice)}\n` +
         `🧾 *IVA (19%):* ${formatMoney(qData.ivaAmount)}\n`
@@ -1759,6 +1902,104 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   const previewNextCorrelative = isTestQuote
     ? `TEST-${formatCorrelativeNumber(correlativeConfig)}`
     : formatCorrelativeNumber(correlativeConfig);
+
+  // Bloque reutilizable para agregar detalles adicionales (ítems extra que se suman a la cotización)
+  const renderExtraItemsSection = (modePrefix) => (
+    <div className="space-y-3">
+      {extraItems.length > 0 && (
+        <fieldset className="p-3.5 rounded-2xl bg-purple-50/40 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800/50 space-y-3">
+          <legend className="text-[10px] font-black text-purple-700 dark:text-purple-300 uppercase tracking-widest px-1.5">
+            Detalles Adicionales ({extraItems.length})
+          </legend>
+
+          <div className="space-y-2.5">
+            {extraItems.map((item, idx) => {
+              const descId = `${modePrefix}-extra-desc-${item.id}`;
+              const amountId = `${modePrefix}-extra-amount-${item.id}`;
+              return (
+                <div
+                  key={item.id}
+                  className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-purple-100 dark:border-slate-700 shadow-sm space-y-2"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-wider">
+                      Detalle #{idx + 1}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveExtraItem(item.id)}
+                      aria-label={`Eliminar detalle ${idx + 1}`}
+                      title="Quitar detalle"
+                      className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 p-1.5 rounded-lg transition-colors flex items-center gap-1 text-[11px] font-bold"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Quitar</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+                    <div className="sm:col-span-7 space-y-1">
+                      <label htmlFor={descId} className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        Descripción del detalle <span aria-hidden="true">*</span>
+                      </label>
+                      <input
+                        id={descId}
+                        name={`${modePrefix}_extra_desc_${idx}`}
+                        type="text"
+                        value={item.description}
+                        onChange={e => handleUpdateExtraItem(item.id, 'description', e.target.value)}
+                        placeholder="Ej: Peaje adicional, espera en planta, seguro..."
+                        className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-5 space-y-1">
+                      <label htmlFor={amountId} className="block text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-wider">
+                        Monto Neto ($) <span aria-hidden="true">*</span>
+                      </label>
+                      <div className="relative">
+                        <input
+                          id={amountId}
+                          name={`${modePrefix}_extra_amount_${idx}`}
+                          type="number"
+                          min="1"
+                          value={item.amount}
+                          onChange={e => handleUpdateExtraItem(item.id, 'amount', e.target.value)}
+                          placeholder="Ej: 25000"
+                          className="w-full border-2 border-purple-200 dark:border-purple-800/60 rounded-xl p-2.5 pl-8 text-xs font-black text-purple-700 dark:text-purple-300 outline-none focus:border-purple-500 bg-purple-50/20 dark:bg-purple-950/20"
+                        />
+                        <DollarSign className="w-3.5 h-3.5 text-purple-500 absolute left-2.5 top-3" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {extraItemsTotal > 0 && (
+            <div className="pt-2 border-t border-purple-200/70 dark:border-purple-800/50 flex justify-between items-center text-xs font-black">
+              <span className="text-purple-700 dark:text-purple-300">
+                Suma detalles adicionales ({activeExtraItemsCount}):
+              </span>
+              <span className="text-purple-800 dark:text-purple-200">
+                +{formatMoney(extraItemsTotal)}
+              </span>
+            </div>
+          )}
+        </fieldset>
+      )}
+
+      <button
+        type="button"
+        onClick={handleAddExtraItem}
+        className="w-full py-2.5 px-3 rounded-xl border-2 border-dashed border-purple-300 dark:border-purple-700/70 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/30 font-black text-xs transition-colors flex items-center justify-center gap-1.5"
+      >
+        <Plus className="w-4 h-4" />
+        Agregar otro detalle (sumar a la cotización)
+      </button>
+    </div>
+  );
 
   return (
     <div className="space-y-6 pt-20 md:pt-22 max-w-6xl mx-auto px-4 pb-32 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -1889,10 +2130,12 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             </div>
           </div>
           <button
+            type="button"
             onClick={() => {
               setEditingQuoteId(null);
               setQuoteData(prev => ({ ...prev, quoteNumber: '', isImported: false, importedOriginalPrice: null }));
               setSimpleData({ amount: '', addIva: true });
+              setExtraItems([]);
               showAlert("Edición cancelada.");
             }}
             className="text-xs font-black text-amber-900 dark:text-amber-300 bg-amber-200 hover:bg-amber-300 px-3 py-1 rounded-xl transition-colors"
@@ -2066,6 +2309,9 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
               </div>
             </div>
 
+            {/* 4b. Detalles adicionales opcionales */}
+            {renderExtraItemsSection('simple')}
+
             {/* 5. Pregunta: ¿Suma IVA o no? */}
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3">
               <div className="flex justify-between items-center">
@@ -2102,19 +2348,27 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
               </div>
 
               {/* Desglose en Vivo */}
-              {simpleAmountNum > 0 && (
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-700/60 text-xs flex justify-between items-center font-bold">
-                  {simpleData.addIva ? (
-                    <>
-                      <span className="text-slate-500">Neto: {formatMoney(simpleNet)} + IVA: {formatMoney(simpleIva)}</span>
-                      <span className="text-sm font-black text-purple-700 dark:text-purple-300">Total: {formatMoney(simpleFinal)}</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-slate-500">Monto Exento</span>
-                      <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">Total Final: {formatMoney(simpleFinal)}</span>
-                    </>
+              {(simpleAmountNum > 0 || extraItemsTotal > 0) && (
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-700/60 text-xs space-y-1 font-bold">
+                  {extraItemsTotal > 0 && (
+                    <div className="flex justify-between items-center text-[11px] text-slate-500 dark:text-slate-400">
+                      <span>Base ({formatMoney(simpleBaseNet)}) + Extras ({formatMoney(extraItemsTotal)})</span>
+                      <span>Subtotal: {formatMoney(simpleNet)}</span>
+                    </div>
                   )}
+                  <div className="flex justify-between items-center">
+                    {simpleData.addIva ? (
+                      <>
+                        <span className="text-slate-500">Neto: {formatMoney(simpleNet)} + IVA: {formatMoney(simpleIva)}</span>
+                        <span className="text-sm font-black text-purple-700 dark:text-purple-300">Total: {formatMoney(simpleFinal)}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-slate-500">Monto Exento</span>
+                        <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">Total Final: {formatMoney(simpleFinal)}</span>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -2511,6 +2765,19 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                   </div>
                 )}
               </div>
+
+              {/* SECCIÓN DE DETALLES ADICIONALES (SUMAR A LA COTIZACIÓN) */}
+              <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
+                <div className="mb-3">
+                  <span className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    Otros Detalles / Ítems Adicionales
+                  </span>
+                  <p className="text-[10px] font-bold text-slate-400 mt-0.5">
+                    Agrega conceptos adicionales (esperas, peajes extra, seguros, etc.) que se sumarán al neto de la cotización.
+                  </p>
+                </div>
+                {renderExtraItemsSection('full')}
+              </div>
             </div>
 
           </div>
@@ -2541,6 +2808,18 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                   <span className="text-xs font-bold text-emerald-400">Ganancia Estimada:</span>
                   <span className="text-sm font-black text-emerald-400">{formatMoney(profit)}</span>
                 </div>
+                {extraItemsTotal > 0 && (
+                  <>
+                    <div className="flex justify-between items-center bg-slate-800/80 p-3 rounded-xl border border-slate-700/60">
+                      <span className="text-xs font-bold text-slate-300">Servicio Base (Neto):</span>
+                      <span className="text-sm font-black text-slate-200">{formatMoney(baseNetPrice)}</span>
+                    </div>
+                    <div className="flex justify-between items-center bg-purple-950/50 p-3 rounded-xl border border-purple-700/60">
+                      <span className="text-xs font-bold text-purple-300">Detalles Adicionales ({activeExtraItemsCount}):</span>
+                      <span className="text-sm font-black text-purple-300">+{formatMoney(extraItemsTotal)}</span>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="bg-purple-600 rounded-2xl p-4 text-center border border-purple-500 shadow-inner">
@@ -2621,8 +2900,14 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 type="button"
                 disabled={isSavingStatus !== null || isApprovingQuote}
                 onClick={() => {
+                  const { items: normalizedItems, error: itemsError } = normalizeExtraItems(extraItems);
+                  if (itemsError) {
+                    return showAlert(itemsError);
+                  }
                   setCreatedQuoteToShare({
                     ...quoteData,
+                    baseNetPrice,
+                    extraItems: normalizedItems,
                     netPrice,
                     ivaAmount,
                     finalPrice,
@@ -2827,6 +3112,11 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                                 ? q.description
                                 : <span className="text-slate-400 font-normal italic">-</span>
                             }
+                            {Array.isArray(q.extraItems) && q.extraItems.length > 0 && (
+                              <span className="block text-[10px] font-bold text-purple-600 dark:text-purple-400 mt-0.5">
+                                + {q.extraItems.length} {q.extraItems.length === 1 ? 'detalle adicional' : 'detalles adicionales'}
+                              </span>
+                            )}
                           </td>
                           <td className="p-3">
                             {q.brand || q.model || q.plateOrVin ? (
