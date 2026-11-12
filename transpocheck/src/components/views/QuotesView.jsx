@@ -222,20 +222,35 @@ const getValidExtraItems = (items = []) => {
     .map((item, idx) => ({
       id: item?.id || `extra-${idx}`,
       description: String(item?.description || '').trim(),
+      brand: String(item?.brand || '').trim().toUpperCase(),
+      model: String(item?.model || '').trim().toUpperCase(),
+      plateOrVin: String(item?.plateOrVin || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase(),
       amount: Math.round(parseFloat(item?.amount) || 0)
     }))
-    .filter(item => item.description || item.amount > 0);
+    .filter(item => item.description || item.brand || item.model || item.plateOrVin || item.amount > 0);
+};
+
+const formatExtraItemsJobNote = (items = []) => {
+  if (!items.length) return '';
+  const summary = items.map(it => {
+    const vehicle = [it.brand, it.model, it.plateOrVin ? `[${it.plateOrVin}]` : ''].filter(Boolean).join(' ');
+    return `${it.description}${vehicle ? ` - ${vehicle}` : ''} (${formatMoney(it.amount)})`;
+  }).join(', ');
+  return ` | Extras: ${summary}`;
 };
 
 const normalizeExtraItems = (items = []) => {
   const normalized = [];
   for (let i = 0; i < items.length; i++) {
     const desc = String(items[i]?.description || '').trim();
+    const brand = String(items[i]?.brand || '').trim().toUpperCase();
+    const model = String(items[i]?.model || '').trim().toUpperCase();
+    const plateOrVin = String(items[i]?.plateOrVin || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
     const rawAmount = items[i]?.amount;
     const hasAmountText = rawAmount !== '' && rawAmount !== null && rawAmount !== undefined;
     const amountNum = parseFloat(rawAmount);
 
-    if (!desc && (!hasAmountText || amountNum === 0)) {
+    if (!desc && !brand && !model && !plateOrVin && (!hasAmountText || amountNum === 0)) {
       continue;
     }
     if (!desc) {
@@ -247,6 +262,9 @@ const normalizeExtraItems = (items = []) => {
     normalized.push({
       id: items[i]?.id || `extra-${i}-${Date.now()}`,
       description: desc,
+      brand,
+      model,
+      plateOrVin,
       amount: Math.round(amountNum)
     });
   }
@@ -338,6 +356,9 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       {
         id: `item-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         description: '',
+        brand: '',
+        model: '',
+        plateOrVin: '',
         amount: ''
       }
     ]);
@@ -550,6 +571,9 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       ? q.extraItems.map((it, i) => ({
           id: it.id || `loaded-${i}-${Date.now()}`,
           description: it.description || '',
+          brand: it.brand || '',
+          model: it.model || '',
+          plateOrVin: it.plateOrVin || '',
           amount: it.amount !== undefined && it.amount !== null ? String(it.amount) : ''
         }))
       : [];
@@ -1032,9 +1056,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   const extraItemsTotal = Math.round(
     extraItems.reduce((sum, item) => sum + Math.max(0, parseFloat(item.amount) || 0), 0)
   );
-  const activeExtraItemsCount = extraItems.filter(
-    item => item.description.trim() || (parseFloat(item.amount) || 0) > 0
-  ).length;
+  const activeExtraItemsCount = getValidExtraItems(extraItems).length;
 
   // Cálculos Automáticos para Modo Completo (Calculadora)
   const distance = parseFloat(quoteData.distanceKm) || 0;
@@ -1353,9 +1375,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
     const currentPrice = quoteMode === 'simple' ? simpleFinal : finalPrice;
     const correlativo = quoteData.quoteNumber?.trim() || formatCorrelativeNumber(correlativeConfig);
-    const extrasNote = normalizedItems.length > 0
-      ? ` | Extras: ${normalizedItems.map(it => `${it.description} (${formatMoney(it.amount)})`).join(', ')}`
-      : '';
+    const extrasNote = formatExtraItemsJobNote(normalizedItems);
 
     showConfirm(`¿Aprobar cotización ${correlativo} por ${formatMoney(currentPrice)} y generar el traslado automáticamente?`, async () => {
       setIsApprovingQuote(true);
@@ -1422,9 +1442,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       const selectedDriverObj = drivers?.find(d => (d.name || d.email) === jobDetails.assignedDriver);
       const assignedEmails = selectedDriverObj ? [selectedDriverObj.email] : [];
       const acceptedExtras = getValidExtraItems(acceptQuoteData.extraItems);
-      const acceptedExtrasNote = acceptedExtras.length > 0
-        ? ` | Extras: ${acceptedExtras.map(it => `${it.description} (${formatMoney(it.amount)})`).join(', ')}`
-        : '';
+      const acceptedExtrasNote = formatExtraItemsJobNote(acceptedExtras);
 
       const newJob = {
         client: acceptQuoteData.client || '',
@@ -1532,6 +1550,18 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     const pdfBaseNet = qData.baseNetPrice !== undefined
       ? qData.baseNetPrice
       : Math.max(0, pdfNetTotal - pdfExtraSum);
+
+    const buildVehicleBadgeHtml = (brandVal, modelVal, plateVal) => {
+      const vText = [brandVal, modelVal].filter(Boolean).join(' ');
+      if (!vText && !plateVal) return '';
+      return `
+        <div style="margin: 8px 0 6px 0; padding: 7px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 12px; color: #334155; display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          ${vText ? `<span><strong style="color: #64748b; font-size: 10px; text-transform: uppercase; margin-right: 4px;">Vehículo:</strong><strong>${escapeHtml(vText)}</strong></span>` : ''}
+          ${vText && plateVal ? `<span style="color: #cbd5e1;">•</span>` : ''}
+          ${plateVal ? `<span><strong style="color: #64748b; font-size: 10px; text-transform: uppercase; margin-right: 4px;">Patente / VIN:</strong><span style="font-family: monospace; font-weight: 800; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #0f172a;">${escapeHtml(plateVal)}</span></span>` : ''}
+        </div>
+      `;
+    };
 
     return `
       <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #0f172a; background: #ffffff; width: 800px; margin: 0; padding: 30px; box-sizing: border-box;">
@@ -1641,13 +1671,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 <div style="font-weight: 800; font-size: 14px; color: #0f172a; margin-bottom: 4px;">
                   ${escapeHtml(qData.description || 'Servicio de traslado logístico de vehículo')}
                 </div>
-                ${isSimpleMode && (vehicleText || qData.plateOrVin) ? `
-                  <div style="margin: 8px 0 6px 0; padding: 7px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 12px; color: #334155; display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                    ${vehicleText ? `<span><strong style="color: #64748b; font-size: 10px; text-transform: uppercase; margin-right: 4px;">Vehículo:</strong><strong>${escapeHtml(vehicleText)}</strong></span>` : ''}
-                    ${vehicleText && qData.plateOrVin ? `<span style="color: #cbd5e1;">•</span>` : ''}
-                    ${qData.plateOrVin ? `<span><strong style="color: #64748b; font-size: 10px; text-transform: uppercase; margin-right: 4px;">Patente / VIN:</strong><span style="font-family: monospace; font-weight: 800; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #0f172a;">${escapeHtml(qData.plateOrVin)}</span></span>` : ''}
-                  </div>
-                ` : ''}
+                ${isSimpleMode ? buildVehicleBadgeHtml(qData.brand, qData.model, qData.plateOrVin) : ''}
                 <span style="font-size: 11px; color: #64748b; font-weight: normal; margin-top: 4px; display: block;">
                   Incluye conducción profesional, inspección visual de recepción y entrega segura.
                 </span>
@@ -1660,6 +1684,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                   <div style="font-weight: 700; font-size: 13px; color: #0f172a;">
                     ${escapeHtml(item.description || 'Detalle adicional')}
                   </div>
+                  ${buildVehicleBadgeHtml(item.brand, item.model, item.plateOrVin)}
                   <span style="font-size: 10px; color: #64748b; font-weight: 600; margin-top: 2px; display: block;">
                     Detalle adicional incluido en la cotización
                   </span>
@@ -1811,7 +1836,11 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
     const shareExtraItems = getValidExtraItems(qData.extraItems ?? (!targetQuote ? extraItems : []));
     const shareExtrasText = shareExtraItems.length > 0
-      ? shareExtraItems.map(it => `➕ *${it.description || 'Detalle adicional'}:* ${formatMoney(it.amount)}\n`).join('')
+      ? shareExtraItems.map(it => {
+          const itemVehicle = [it.brand, it.model].filter(Boolean).join(' ');
+          const itemVehicleInfo = [itemVehicle, it.plateOrVin ? `[${it.plateOrVin}]` : ''].filter(Boolean).join(' ');
+          return `➕ *${it.description || 'Detalle adicional'}:* ${formatMoney(it.amount)}${itemVehicleInfo ? ` (${itemVehicleInfo})` : ''}\n`;
+        }).join('')
       : '';
 
     const text = testHeader +
@@ -1922,10 +1951,13 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             {extraItems.map((item, idx) => {
               const descId = `${modePrefix}-extra-desc-${item.id}`;
               const amountId = `${modePrefix}-extra-amount-${item.id}`;
+              const brandId = `${modePrefix}-extra-brand-${item.id}`;
+              const modelId = `${modePrefix}-extra-model-${item.id}`;
+              const plateId = `${modePrefix}-extra-plate-${item.id}`;
               return (
                 <div
                   key={item.id}
-                  className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-purple-100 dark:border-slate-700 shadow-sm space-y-2"
+                  className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-purple-100 dark:border-slate-700 shadow-sm space-y-2.5"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-wider">
@@ -1954,7 +1986,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                         type="text"
                         value={item.description}
                         onChange={e => handleUpdateExtraItem(item.id, 'description', e.target.value)}
-                        placeholder="Ej: Peaje adicional, espera en planta, seguro..."
+                        placeholder="Ej: Segundo traslado, peaje adicional, espera..."
                         className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
                       />
                     </div>
@@ -1976,6 +2008,64 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                         />
                         <DollarSign className="w-3.5 h-3.5 text-purple-500 absolute left-2.5 top-3" />
                       </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <div className="space-y-1">
+                      <label htmlFor={brandId} className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                        Marca
+                      </label>
+                      <input
+                        id={brandId}
+                        name={`${modePrefix}_extra_brand_${idx}`}
+                        type="text"
+                        value={item.brand || ''}
+                        onChange={e => handleUpdateExtraItem(item.id, 'brand', e.target.value)}
+                        placeholder="Ej: TOYOTA"
+                        autoComplete="off"
+                        autoCapitalize="characters"
+                        className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 uppercase outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label htmlFor={modelId} className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                        Modelo
+                      </label>
+                      <input
+                        id={modelId}
+                        name={`${modePrefix}_extra_model_${idx}`}
+                        type="text"
+                        value={item.model || ''}
+                        onChange={e => handleUpdateExtraItem(item.id, 'model', e.target.value)}
+                        placeholder="Ej: HILUX"
+                        autoComplete="off"
+                        autoCapitalize="characters"
+                        className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 uppercase outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
+                      />
+                    </div>
+
+                    <div className="space-y-1 col-span-2 sm:col-span-1">
+                      <label htmlFor={plateId} className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                        Patente o VIN
+                      </label>
+                      <input
+                        id={plateId}
+                        name={`${modePrefix}_extra_plate_${idx}`}
+                        type="text"
+                        maxLength="17"
+                        value={item.plateOrVin || ''}
+                        onChange={e => {
+                          const val = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                          handleUpdateExtraItem(item.id, 'plateOrVin', val);
+                        }}
+                        placeholder="Ej: ABCD12"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        spellCheck="false"
+                        className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-black text-slate-800 dark:text-slate-200 uppercase outline-none focus:border-purple-500 bg-white dark:bg-slate-900 font-mono"
+                      />
                     </div>
                   </div>
                 </div>
