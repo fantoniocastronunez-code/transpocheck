@@ -582,7 +582,9 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     if (customMsg) {
       showAlert(customMsg);
     } else {
-      showAlert("📝 Cotización cargada en la tabla completa para edición.");
+      showAlert(q.mode === 'simple' && !q.isImported
+        ? "📝 Cotización cargada en Modo Rápido para edición."
+        : "📝 Cotización cargada en la tabla completa para edición.");
     }
   };
 
@@ -1706,15 +1708,23 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     `;
   };
 
+  // Verifica si una cotización importada desde CSV debe completarse antes de generar PDF o enviar
+  const redirectImportedQuoteToEditor = (qData, infoCode, actionText) => {
+    if (!qData?.isImported) return false;
+    setShowShareSuccessModal(false);
+    handleSetQuoteMode('full');
+    handleEditQuote(
+      qData,
+      `📋 [${infoCode}] Esta cotización proviene del CSV importado. Se abrió la tabla completa para que puedas ${actionText}.`
+    );
+    return true;
+  };
+
   // Descarga Directa de Archivo PDF para cualquier cotización
   const handleDownloadPDFForQuote = async (targetQuote, idKey) => {
     if (!targetQuote) return;
 
-    // Si la cotización proviene de importación o no tiene ruta ni vehículo definido
-    const isIncomplete = targetQuote.isImported || (!targetQuote.origin && !targetQuote.destination && !targetQuote.brand && !targetQuote.model);
-    if (isIncomplete) {
-      handleSetQuoteMode('full');
-      handleEditQuote(targetQuote, "📋 [INFO-QUOTE-EDIT-01] Esta cotización proviene del CSV importado. Se abrió la tabla completa para que puedas completar ruta, vehículo y costos antes de generar el documento.");
+    if (redirectImportedQuoteToEditor(targetQuote, 'INFO-QUOTE-EDIT-01', 'completar ruta, vehículo y costos antes de generar el documento')) {
       return;
     }
 
@@ -1778,11 +1788,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   const handleShareQuote = async (targetQuote, method) => {
     const qData = targetQuote || quoteData;
 
-    // Si la cotización proviene de importación o no tiene ruta ni vehículo definido
-    const isIncomplete = qData.isImported || (!qData.origin && !qData.destination && !qData.brand && !qData.model);
-    if (isIncomplete) {
-      handleSetQuoteMode('full');
-      handleEditQuote(qData, "📋 [INFO-QUOTE-EDIT-02] Esta cotización proviene del CSV importado. Se abrió la tabla completa para que puedas modificarla y completarla antes de enviar.");
+    if (redirectImportedQuoteToEditor(qData, 'INFO-QUOTE-EDIT-02', 'modificarla y completarla antes de enviar')) {
       return;
     }
 
