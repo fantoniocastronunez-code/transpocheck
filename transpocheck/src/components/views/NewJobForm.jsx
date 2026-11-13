@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { updateDoc, doc, addDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { X, User, CheckCircle, Plus, AlertCircle, FileText, Loader2, Camera, Star } from 'lucide-react';
 import CustomClientSelector from '../ui/CustomClientSelector';
+import { safeStorageSetJson } from '../../utils/helpers';
 import Tesseract from 'tesseract.js';
 import * as pdfjsLib from 'pdfjs-dist';
 import InAppCamera from '../ui/InAppCamera';
@@ -125,7 +126,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
         revType, revModalidad, revA_gases, revA_revision, revA_inspeccion, revA_frenos, revB_tipo, revB_motivo,
         selectedDriversUI, spotDriverEmail, operationMode, description, waypoints
       };
-      localStorage.setItem('app_newJobDraft', JSON.stringify(currentDraft));
+      safeStorageSetJson('app_newJobDraft', currentDraft);
     }
   }, [selectedClient, manualClient, isPintura, qtyPintura, isGrabado, qtyGrabado, associatedJobId, brand, model, plate, vin, multiVehicles, tripType, vehicleType, isUrgent, revType, revModalidad, revA_gases, revA_revision, revA_inspeccion, revA_frenos, revB_tipo, revB_motivo, selectedDriversUI, spotDriverEmail, operationMode, description, waypoints, jobToEdit]);
 

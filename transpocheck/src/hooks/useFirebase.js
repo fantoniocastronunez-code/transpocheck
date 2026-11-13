@@ -4,6 +4,7 @@ import { collection, addDoc, onSnapshot, updateDoc, doc, getDocs, query, where, 
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { app, auth, db, storage, googleProvider } from '../firebase';
+import { stripHeavyDataForStorage } from '../utils/helpers';
 
 export { auth, db, storage, googleProvider };
 
@@ -279,7 +280,7 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
         const finalJobs = Array.from(jobsMap.values());
         setJobs(finalJobs);
         try {
-          localStorage.setItem('app_cache_jobs', JSON.stringify(finalJobs.slice(0, 50)));
+          localStorage.setItem('app_cache_jobs', JSON.stringify(stripHeavyDataForStorage(finalJobs.slice(0, 50))));
         } catch (e) { /* ignore quota */ }
       };
 
@@ -316,7 +317,7 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
         const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         setExpenses(docs);
         try {
-          localStorage.setItem('app_cache_expenses', JSON.stringify(docs.slice(0, 50)));
+          localStorage.setItem('app_cache_expenses', JSON.stringify(stripHeavyDataForStorage(docs.slice(0, 50))));
         } catch (e) { /* ignore quota */ }
       }, (err) => console.error("[ERR-FB-EXP-01]", err));
       unsubs.push(unsubExpenses);
@@ -345,7 +346,7 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
         const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setJobs(docs);
         try {
-          localStorage.setItem('app_cache_jobs', JSON.stringify(docs.slice(0, 50)));
+          localStorage.setItem('app_cache_jobs', JSON.stringify(stripHeavyDataForStorage(docs.slice(0, 50))));
         } catch (e) { /* ignore quota */ }
         isFirstLoad.current = false;
       }, (err) => console.error("[ERR-FB-JOBS-ADMIN]", err));
@@ -356,7 +357,7 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
         const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         setExpenses(docs);
         try {
-          localStorage.setItem('app_cache_expenses', JSON.stringify(docs.slice(0, 50)));
+          localStorage.setItem('app_cache_expenses', JSON.stringify(stripHeavyDataForStorage(docs.slice(0, 50))));
         } catch (e) { /* ignore quota */ }
       }, (err) => console.error("[ERR-FB-EXP-ADMIN]", err));
       unsubs.push(unsubExpenses);
@@ -376,7 +377,7 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
       const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       setVehicles(docs);
       try {
-        localStorage.setItem('app_cache_vehicles', JSON.stringify(docs));
+        localStorage.setItem('app_cache_vehicles', JSON.stringify(stripHeavyDataForStorage(docs)));
       } catch (e) { /* ignore quota */ }
     }, (err) => console.error("[ERR-FB-VEHICLES]", err));
     unsubs.push(unsubVehicles);

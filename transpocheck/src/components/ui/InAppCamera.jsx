@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Camera, X, CheckCircle, RefreshCw, RefreshCcw, Edit3, AlertCircle, AlertTriangle } from 'lucide-react';
+import { safeStorageSet } from '../../utils/helpers';
 
 export default function InAppCamera({ isOpen, onClose, onCapture, title, enableAnnotation = false }) {
   const [stream, setStream] = useState(null);
@@ -166,7 +167,7 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
 
       // Guardar ultraId si se identificó
       if (ultra?.deviceId) {
-        localStorage.setItem('ultraCameraId', ultra.deviceId);
+        safeStorageSet('ultraCameraId', ultra.deviceId);
       }
 
       // 3. Revisar si el track nativo soporta zoom por hardware

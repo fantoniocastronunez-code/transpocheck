@@ -24,7 +24,7 @@ import HistoryModal from './JobsList/HistoryModal';
 import JobExpenseModal from './JobsList/JobExpenseModal';
 import ArrivalModal from './JobsList/ArrivalModal';
 import PickupModal from './JobsList/PickupModal';
-import { formatDateDisplay, analyzeJobStatus, generateStandardFileName, generateWhatsAppText, getRouteStr, resizeImage, resizeAndWatermarkImage, isTrailerVehicle, getRtFinalDestination } from '../../utils/helpers';
+import { formatDateDisplay, analyzeJobStatus, generateStandardFileName, generateWhatsAppText, getRouteStr, resizeImage, resizeAndWatermarkImage, isTrailerVehicle, getRtFinalDestination, safeStorageSetJson } from '../../utils/helpers';
 import { purgeOrphanStoragePhotos, formatBytes } from '../../utils/storageMetrics';
 import { saveJobToMonthlyStatsBeforeDelete, getMonthKey, extractLightweightJob, calculateStatsFromLightweightJobs } from '../../utils/statsSync';
 
@@ -1042,13 +1042,13 @@ export default function JobsList({ jobs, drivers, role, isEasyMode = false, onSt
 
     try {
       if (dupMode === 'scratch') {
-        localStorage.setItem('app_newJobDraft', JSON.stringify({
+        safeStorageSetJson('app_newJobDraft', {
           brand: dupPromptJob.brand,
           model: dupPromptJob.model,
           plate: dupPromptJob.plate,
           vin: dupPromptJob.vin,
           vehicleType: dupPromptJob.vehicleType
-        }));
+        });
         if (onNewJob) onNewJob('traslado');
         setDupPromptJob(null);
         return;

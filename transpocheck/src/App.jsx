@@ -19,7 +19,7 @@ import SwipeButton from './components/ui/SwipeButton';
 import WaitTimerBadge from './components/ui/WaitTimerBadge';
 import { DevMenu } from './components/ui/DevMenu';
 import { ImageViewer } from './components/ui/ImageViewer';
-import { DEFAULT_CLIENTES, LICENCIAS, formatMoney, formatDateDisplay, resizeImage } from './utils/helpers';
+import { DEFAULT_CLIENTES, LICENCIAS, formatMoney, formatDateDisplay, resizeImage, safeStorageSet, safeStorageRemove, safeStorageSetJson } from './utils/helpers';
 
 const LazyUpdateFallback = () => {
   useEffect(() => {
@@ -115,7 +115,7 @@ function LogisticApp() {
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
   const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
-  const APP_VERSION = "v1.3.19"; // IMPORTANT: Update this version string when making changes.
+  const APP_VERSION = "v1.3.20"; // IMPORTANT: Update this version string when making changes.
 
   // VARIABLES MÁGICAS: Atrapan lo que Android nos comparte desde CamScanner o Adobe Scan
   const sharedText = searchParams.get('shared_text');
@@ -147,26 +147,49 @@ function LogisticApp() {
   const [favDriverEmail, setFavDriverEmail] = useState(() => { try { return localStorage.getItem('favDriverEmail') || ''; } catch (e) { return ''; } });
 
   // NUEVO: Sincronización automática de la memoria cada vez que cambias de vista
-  useEffect(() => { localStorage.setItem('app_adminTab', adminTab); }, [adminTab]);
+  useEffect(() => { safeStorageSet('app_adminTab', adminTab); }, [adminTab]);
   useEffect(() => {
     if (selectedJob) {
-      localStorage.setItem('app_selectedJob', JSON.stringify(selectedJob));
+      safeStorageSetJson('app_selectedJob', selectedJob, (j) => ({
+        id: j.id,
+        plate: j.plate || '',
+        vin: j.vin || '',
+        brand: j.brand || '',
+        model: j.model || '',
+        description: j.description || '',
+        client: j.client || '',
+        origin: j.origin || '',
+        destination: j.destination || '',
+        tripType: j.tripType || '',
+        status: j.status || ''
+      }));
     } else {
-      localStorage.removeItem('app_selectedJob');
+      safeStorageRemove('app_selectedJob');
     }
   }, [selectedJob]);
   useEffect(() => {
     if (editingJob) {
-      localStorage.setItem('app_editingJob', JSON.stringify(editingJob));
+      safeStorageSetJson('app_editingJob', editingJob, (j) => ({
+        id: j.id,
+        plate: j.plate || '',
+        vin: j.vin || '',
+        brand: j.brand || '',
+        model: j.model || '',
+        client: j.client || '',
+        origin: j.origin || '',
+        destination: j.destination || '',
+        tripType: j.tripType || '',
+        status: j.status || ''
+      }));
     } else {
-      localStorage.removeItem('app_editingJob');
+      safeStorageRemove('app_editingJob');
     }
   }, [editingJob]);
-  useEffect(() => { localStorage.setItem('app_currentView', currentView); }, [currentView]);
-  useEffect(() => { localStorage.setItem('app_mainTab', mainTab); }, [mainTab]);
-  useEffect(() => { localStorage.setItem('app_activeRole', activeRole); }, [activeRole]);
-  useEffect(() => { localStorage.setItem('app_simulatedClient', simulatedClient); }, [simulatedClient]);
-  useEffect(() => { localStorage.setItem('app_simulatedDriver', simulatedDriverEmail); }, [simulatedDriverEmail]);
+  useEffect(() => { safeStorageSet('app_currentView', currentView); }, [currentView]);
+  useEffect(() => { safeStorageSet('app_mainTab', mainTab); }, [mainTab]);
+  useEffect(() => { safeStorageSet('app_activeRole', activeRole); }, [activeRole]);
+  useEffect(() => { safeStorageSet('app_simulatedClient', simulatedClient); }, [simulatedClient]);
+  useEffect(() => { safeStorageSet('app_simulatedDriver', simulatedDriverEmail); }, [simulatedDriverEmail]);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -307,7 +330,7 @@ function LogisticApp() {
 
       // Solo si la app quedó abierta de madrugada (3:00 AM - 4:59 AM)
       if ((currentHour === 3 || currentHour === 4) && lastUpdate !== dateString) {
-        localStorage.setItem('last_daily_refresh', dateString);
+        safeStorageSet('last_daily_refresh', dateString);
         console.log("Ejecutando actualización programada de madrugada...");
         setTimeout(() => window.location.reload(), 1000);
       }
@@ -348,7 +371,7 @@ function LogisticApp() {
 
         // Si la marca de tiempo es nueva y diferente a la que el celular tenía guardada
         if (lastGlobalRefresh !== newTimestamp) {
-          localStorage.setItem('last_global_refresh', newTimestamp);
+          safeStorageSet('last_global_refresh', newTimestamp);
 
           // El seguro "!= null" evita que el celular se recargue la primera vez que instala la app
           if (lastGlobalRefresh !== null) {
@@ -367,10 +390,10 @@ function LogisticApp() {
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
-      localStorage.setItem('darkMode', 'true');
+      safeStorageSet('darkMode', 'true');
     } else {
       document.documentElement.classList.remove('dark');
-      localStorage.setItem('darkMode', 'false');
+      safeStorageSet('darkMode', 'false');
     }
   }, [darkMode]);
 
@@ -520,7 +543,7 @@ function LogisticApp() {
 
                 if (foundClient) {
                   // CORRECCIÓN CLAVE: Guardamos el correo en el navegador para que TrackingView sepa quién es y le pida su PIN
-                  localStorage.setItem('logisticapp_user_email', email);
+                  safeStorageSet('logisticapp_user_email', email);
                   navigate(`/?client=${encodeURIComponent(foundClient)}`);
                 } else {
                   alert("El correo no está registrado ni asociado a ninguna empresa. Contacta al administrador.");
@@ -852,7 +875,7 @@ function LogisticApp() {
                             <button onClick={() => { setSimulatedDriverEmail(d.email); setActiveRole('driver'); setMainTab('jobs'); setRoleMenuOpen(false); }} className={`flex-1 text-left px-2 py-1.5 text-xs truncate transition-colors ${isCurrentActive ? 'text-blue-700 dark:text-blue-400 font-semibold' : 'text-slate-700 dark:text-slate-300 font-medium'}`}>
                               {d.name} {d.easyMode && <span className="text-[9px] bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 px-1 py-0.5 rounded ml-1 font-bold uppercase">Fácil</span>} {isCurrentActive && <span className="text-[10px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded ml-1 font-mono">ACTIVO</span>}
                             </button>
-                            <button onClick={(e) => { e.stopPropagation(); setFavDriverEmail(d.email); localStorage.setItem('favDriverEmail', d.email); }} className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="Fijar como Favorito">
+                            <button onClick={(e) => { e.stopPropagation(); setFavDriverEmail(d.email); safeStorageSet('favDriverEmail', d.email); }} className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="Fijar como Favorito">
                               <Star className={`w-3.5 h-3.5 transition-colors ${favDriverEmail === d.email ? 'fill-amber-500 text-amber-500' : 'text-slate-300 dark:text-slate-600 hover:text-amber-500'}`} />
                             </button>
                           </div>
@@ -1147,7 +1170,8 @@ function LogisticApp() {
           selectedJob ? (
             <main className="max-w-2xl mx-auto p-4 pt-20 pb-24">
               <ChecklistForm
-                job={selectedJob} db={db} currentUserEmail={currentUserEmail}
+                job={(selectedJob?.id && selectedJob.id !== 'NEW_QUICK_JOB' && jobs.find(j => j.id === selectedJob.id)) || selectedJob}
+                db={db} currentUserEmail={currentUserEmail}
                 isEasyMode={isEasyMode}
                 allClientsList={allClientsList}
                 vehicles={vehicles}
@@ -1460,7 +1484,7 @@ function LogisticApp() {
             <div className="p-5 text-center flex-1 flex flex-col justify-center bg-white dark:bg-slate-900">
               <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-6 leading-relaxed whitespace-pre-wrap">{broadcast.message}</p>
               <button onClick={() => {
-                localStorage.setItem('dismissedBroadcast', broadcast.timestamp.toString());
+                safeStorageSet('dismissedBroadcast', broadcast.timestamp.toString());
                 setLocalDismissed(broadcast.timestamp.toString());
               }} className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-semibold transition-colors text-sm">
                 Confirmar lectura

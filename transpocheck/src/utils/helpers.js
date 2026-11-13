@@ -500,3 +500,83 @@ export const getRtFinalDestination = (job) => {
   }
   return job.origin || 'Por definir';
 };
+
+const REGENERABLE_CACHE_KEYS = [
+  'app_cache_jobs',
+  'app_cache_expenses',
+  'app_cache_vehicles',
+  'app_cache_drivers',
+  'app_cache_vehicle_models',
+  'app_cache_custom_clients'
+];
+
+/** Clona un valor omitiendo Data URIs extensos (base64) para no saturar localStorage. */
+export const stripHeavyDataForStorage = (value, maxDataUriLen = 512) => {
+  if (value === null || value === undefined) return value;
+  if (typeof value === 'string') {
+    if (value.startsWith('data:') && value.length > maxDataUriLen) {
+      return false;
+    }
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => stripHeavyDataForStorage(item, maxDataUriLen));
+  }
+  if (typeof value === 'object') {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) {
+      if (v === undefined) continue;
+      out[k] = stripHeavyDataForStorage(v, maxDataUriLen);
+    }
+    return out;
+  }
+  return value;
+};
+
+/** Escribe en localStorage de forma segura evitando excepciones QuotaExceededError. */
+export const safeStorageSet = (key, value) => {
+  try {
+    window.localStorage.setItem(key, value);
+    return true;
+  } catch (err) {
+    try {
+      REGENERABLE_CACHE_KEYS.forEach((cacheKey) => {
+        if (cacheKey !== key) {
+          window.localStorage.removeItem(cacheKey);
+        }
+      });
+      window.localStorage.setItem(key, value);
+      return true;
+    } catch (retryErr) {
+      console.warn(`[ERR-STORAGE-QUOTA-01] No se pudo guardar '${key}' en localStorage:`, retryErr || err);
+      return false;
+    }
+  }
+};
+
+/** Elimina una clave de localStorage sin propagar errores de almacenamiento. */
+export const safeStorageRemove = (key) => {
+  try {
+    window.localStorage.removeItem(key);
+    return true;
+  } catch (err) {
+    console.warn(`[ERR-STORAGE-REMOVE-01] No se pudo limpiar '${key}':`, err);
+    return false;
+  }
+};
+
+/** Serializa un objeto removiendo datos pesados y usando fallback mínimo si excede la cuota. */
+export const safeStorageSetJson = (key, value, buildMinimalFallback = null) => {
+  const compact = stripHeavyDataForStorage(value);
+  if (safeStorageSet(key, JSON.stringify(compact))) {
+    return true;
+  }
+  if (typeof buildMinimalFallback === 'function') {
+    try {
+      return safeStorageSet(key, JSON.stringify(buildMinimalFallback(value)));
+    } catch (err) {
+      console.warn(`[ERR-STORAGE-QUOTA-02] Fallback mínimo falló para '${key}':`, err);
+    }
+  }
+  return false;
+};
