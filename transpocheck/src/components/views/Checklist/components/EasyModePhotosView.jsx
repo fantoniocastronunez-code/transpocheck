@@ -348,4 +348,3 @@ export const EasyModePhotosView = ({ openCamera }) => {
 };
 
 export default EasyModePhotosView;
-

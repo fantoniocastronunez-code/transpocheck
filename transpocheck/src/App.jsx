@@ -1090,55 +1090,55 @@ function LogisticApp() {
             )}
 
             {!isEasyMode && (
-            <nav className="fixed bottom-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-around items-center pt-1.5 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] z-40">
-              {activeRole === 'quoter' ? (
-                <button onClick={() => setMainTab('quotes')} className="flex flex-col items-center text-blue-600 dark:text-blue-400 transition-colors flex-1">
-                  <div className="bg-blue-50 dark:bg-blue-950/50 p-1.5 rounded-md mb-0.5"><Receipt className="w-4 h-4" /></div>
-                  <span className="text-[10px] font-semibold">Cotizar</span>
-                </button>
-              ) : (
-                <>
-                  {activeRole === 'admin' ? (
-                    <button onClick={() => setMainTab('quotes')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'quotes' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}>
-                      <div className={`${mainTab === 'quotes' ? 'bg-blue-50 dark:bg-blue-950/50' : 'bg-transparent'} p-1.5 rounded-md mb-0.5`}><Receipt className="w-4 h-4" /></div>
-                      <span className="text-[10px] font-semibold">Cotizar</span>
-                    </button>
-                  ) : (
-                    <button onClick={() => setShowRequestJob('traslado')} className="flex flex-col items-center text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-1">
-                      <div className="bg-slate-100 dark:bg-slate-800 p-1.5 rounded-md mb-0.5"><Plus className="w-4 h-4" /></div>
-                      <span className="text-[10px] font-semibold">Solicitar</span>
-                    </button>
-                  )}
-                  <button onClick={() => setMainTab('jobs')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'jobs' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}>
-                    <div className={`${mainTab === 'jobs' ? 'bg-blue-50 dark:bg-blue-950/50' : 'bg-transparent'} p-1.5 rounded-md mb-0.5`}><ClipboardList className="w-4 h-4" /></div>
-                    <span className="text-[10px] font-semibold">Trabajos</span>
+              <nav className="fixed bottom-0 w-full bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-around items-center pt-1.5 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] z-40">
+                {activeRole === 'quoter' ? (
+                  <button onClick={() => setMainTab('quotes')} className="flex flex-col items-center text-blue-600 dark:text-blue-400 transition-colors flex-1">
+                    <div className="bg-blue-50 dark:bg-blue-950/50 p-1.5 rounded-md mb-0.5"><Receipt className="w-4 h-4" /></div>
+                    <span className="text-[10px] font-semibold">Cotizar</span>
                   </button>
-                  <button onClick={() => setMainTab('ranking')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'ranking' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}>
-                    <div className={`${mainTab === 'ranking' ? 'bg-blue-50 dark:bg-blue-950/50' : 'bg-transparent'} p-1.5 rounded-md mb-0.5`}><Trophy className="w-4 h-4" /></div>
-                    <span className="text-[10px] font-semibold">Ranking</span>
-                  </button>
+                ) : (
+                  <>
+                    {activeRole === 'admin' ? (
+                      <button onClick={() => setMainTab('quotes')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'quotes' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}>
+                        <div className={`${mainTab === 'quotes' ? 'bg-blue-50 dark:bg-blue-950/50' : 'bg-transparent'} p-1.5 rounded-md mb-0.5`}><Receipt className="w-4 h-4" /></div>
+                        <span className="text-[10px] font-semibold">Cotizar</span>
+                      </button>
+                    ) : (
+                      <button onClick={() => setShowRequestJob('traslado')} className="flex flex-col items-center text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex-1">
+                        <div className="bg-slate-100 dark:bg-slate-800 p-1.5 rounded-md mb-0.5"><Plus className="w-4 h-4" /></div>
+                        <span className="text-[10px] font-semibold">Solicitar</span>
+                      </button>
+                    )}
+                    <button onClick={() => setMainTab('jobs')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'jobs' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}>
+                      <div className={`${mainTab === 'jobs' ? 'bg-blue-50 dark:bg-blue-950/50' : 'bg-transparent'} p-1.5 rounded-md mb-0.5`}><ClipboardList className="w-4 h-4" /></div>
+                      <span className="text-[10px] font-semibold">Trabajos</span>
+                    </button>
+                    <button onClick={() => setMainTab('ranking')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'ranking' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}>
+                      <div className={`${mainTab === 'ranking' ? 'bg-blue-50 dark:bg-blue-950/50' : 'bg-transparent'} p-1.5 rounded-md mb-0.5`}><Trophy className="w-4 h-4" /></div>
+                      <span className="text-[10px] font-semibold">Ranking</span>
+                    </button>
 
-                  {(activeRole !== 'admin' || adminPermissions?.manage_expenses !== false) && (
-                    <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'expenses' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}>
-                      <div className={`${mainTab === 'expenses' ? 'bg-blue-50 dark:bg-blue-950/50' : 'bg-transparent'} p-1.5 rounded-md mb-0.5`}><Wallet className="w-4 h-4" /></div>
-                      <span className="text-[10px] font-semibold">Gastos</span>
-                    </button>
-                  )}
-                  {activeRole === 'admin' && (
-                    <button onClick={() => setMainTab('analytics')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'analytics' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}>
-                      <div className={`${mainTab === 'analytics' ? 'bg-blue-50 dark:bg-blue-950/50' : 'bg-transparent'} p-1.5 rounded-md mb-0.5`}><ShieldCheck className="w-4 h-4" /></div>
-                      <span className="text-[10px] font-semibold">Análisis</span>
-                    </button>
-                  )}
-                  {activeRole === 'driver' && (
-                    <button onClick={() => setMainTab('profile')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'profile' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}>
-                      <div className={`${mainTab === 'profile' ? 'bg-blue-50 dark:bg-blue-950/50' : 'bg-transparent'} p-1.5 rounded-md mb-0.5`}><User className="w-4 h-4" /></div>
-                      <span className="text-[10px] font-semibold">Perfil</span>
-                    </button>
-                  )}
-                </>
-              )}
-            </nav>
+                    {(activeRole !== 'admin' || adminPermissions?.manage_expenses !== false) && (
+                      <button onClick={() => setMainTab('expenses')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'expenses' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}>
+                        <div className={`${mainTab === 'expenses' ? 'bg-blue-50 dark:bg-blue-950/50' : 'bg-transparent'} p-1.5 rounded-md mb-0.5`}><Wallet className="w-4 h-4" /></div>
+                        <span className="text-[10px] font-semibold">Gastos</span>
+                      </button>
+                    )}
+                    {activeRole === 'admin' && (
+                      <button onClick={() => setMainTab('analytics')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'analytics' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}>
+                        <div className={`${mainTab === 'analytics' ? 'bg-blue-50 dark:bg-blue-950/50' : 'bg-transparent'} p-1.5 rounded-md mb-0.5`}><ShieldCheck className="w-4 h-4" /></div>
+                        <span className="text-[10px] font-semibold">Análisis</span>
+                      </button>
+                    )}
+                    {activeRole === 'driver' && (
+                      <button onClick={() => setMainTab('profile')} className={`flex flex-col items-center transition-colors flex-1 ${mainTab === 'profile' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}>
+                        <div className={`${mainTab === 'profile' ? 'bg-blue-50 dark:bg-blue-950/50' : 'bg-transparent'} p-1.5 rounded-md mb-0.5`}><User className="w-4 h-4" /></div>
+                        <span className="text-[10px] font-semibold">Perfil</span>
+                      </button>
+                    )}
+                  </>
+                )}
+              </nav>
             )}
           </>
         } />

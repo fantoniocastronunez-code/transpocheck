@@ -509,11 +509,10 @@ export default function JobCard({ j, ...props }) {
     return (
       <div
         key={j.id}
-        className={`bg-white dark:bg-slate-900 rounded-xl border p-4 flex flex-col gap-3.5 shadow-xs relative ${
-          isUploading
+        className={`bg-white dark:bg-slate-900 rounded-xl border p-4 flex flex-col gap-3.5 shadow-xs relative ${isUploading
             ? 'border-emerald-600 select-none'
             : (j.isUrgent ? 'border-red-500/80 dark:border-red-600/70' : 'border-slate-200 dark:border-slate-800')
-        }`}
+          }`}
       >
         {isUploading && (
           <div className="absolute inset-0 z-40 rounded-xl bg-slate-950/90 flex flex-col items-center justify-center p-4 text-center select-none pointer-events-auto cursor-wait border border-emerald-600">
