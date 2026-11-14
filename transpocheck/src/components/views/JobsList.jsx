@@ -99,16 +99,12 @@ export default function JobsList({ jobs, drivers, role, isEasyMode = false, onSt
   const [arrivalPromptJob, setArrivalPromptJob] = useState(null);
   const [arrivalMileage, setArrivalMileage] = useState('');
   const [arrivalPhoto, setArrivalPhoto] = useState(null);
-  const [arrivalPhotoLocation, setArrivalPhotoLocation] = useState(null);
   const [arrivalFuelPhoto, setArrivalFuelPhoto] = useState(null);
-  const [arrivalFuelPhotoLocation, setArrivalFuelPhotoLocation] = useState(null);
   const [arrivalFuelLevel, setArrivalFuelLevel] = useState(undefined);
   const [pickupPromptJob, setPickupPromptJob] = useState(null);
   const [pickupMileage, setPickupMileage] = useState('');
   const [pickupPhoto, setPickupPhoto] = useState(null);
-  const [pickupPhotoLocation, setPickupPhotoLocation] = useState(null);
   const [pickupFuelPhoto, setPickupFuelPhoto] = useState(null);
-  const [pickupFuelPhotoLocation, setPickupFuelPhotoLocation] = useState(null);
   const [pickupFuelLevel, setPickupFuelLevel] = useState(undefined);
 
   const [cameraConfig, setCameraConfig] = useState({ isOpen: false, title: '', target: null });
@@ -207,8 +203,6 @@ export default function JobsList({ jobs, drivers, role, isEasyMode = false, onSt
       };
 
       updatedDraft.photos = { ...currentPhotos };
-      if (pickupPhotoLocation) updatedDraft.photos.mileageLocation = pickupPhotoLocation;
-      if (pickupFuelPhotoLocation) updatedDraft.photos.fuelLocation = pickupFuelPhotoLocation;
 
       // Mapeamos para que la ChecklistForm los encuentre (usamos false temporalmente mientras sube)
       updatedDraft.photos.pickup_odo = false;
@@ -243,8 +237,6 @@ export default function JobsList({ jobs, drivers, role, isEasyMode = false, onSt
       setPickupPhoto(null);
       setPickupFuelPhoto(null);
       setPickupFuelLevel(undefined);
-      setPickupPhotoLocation(null);
-      setPickupFuelPhotoLocation(null);
     } catch (error) {
       console.error(error);
       showAlert("Error al procesar el inicio. [ERR-PICKUP-M]");
@@ -322,11 +314,6 @@ export default function JobsList({ jobs, drivers, role, isEasyMode = false, onSt
         }
       };
 
-      if (arrivalPhoto) {
-        if (arrivalPhotoLocation) updatedDraft.photos.odometerLocation = arrivalPhotoLocation;
-      }
-      if (arrivalFuelPhotoLocation) updatedDraft.photos.fuelGaugeLocation = arrivalFuelPhotoLocation;
-
       const payload = {
         checklist: {
           ...(arrivalPromptJob.checklist || {}),
@@ -356,9 +343,7 @@ export default function JobsList({ jobs, drivers, role, isEasyMode = false, onSt
       setArrivalPromptJob(null);
       setArrivalMileage('');
       setArrivalPhoto(null);
-      setArrivalPhotoLocation(null);
       setArrivalFuelPhoto(null);
-      setArrivalFuelPhotoLocation(null);
     } catch (e) {
       console.error(e);
       showAlert("❌ Error al guardar datos de llegada.");
@@ -3152,33 +3137,21 @@ export default function JobsList({ jobs, drivers, role, isEasyMode = false, onSt
             try {
               const compressed = await resizeAndWatermarkImage(file, 800, 0.5);
               setArrivalPhoto(compressed.base64);
-              if (compressed.lat !== null && compressed.lng !== null) {
-                setArrivalPhotoLocation({ lat: compressed.lat, lng: compressed.lng });
-              }
             } catch (e) { showAlert("❌ Error procesando foto del odómetro. Código: [ERR-PHOTO-ODOMETER]"); }
           } else if (cameraConfig.target === 'arrivalFuelPhoto') {
             try {
               const compressed = await resizeAndWatermarkImage(file, 800, 0.5);
               setArrivalFuelPhoto(compressed.base64);
-              if (compressed.lat !== null && compressed.lng !== null) {
-                setArrivalFuelPhotoLocation({ lat: compressed.lat, lng: compressed.lng });
-              }
             } catch (e) { showAlert("❌ Error procesando foto de combustible. Código: [ERR-PHOTO-FUEL]"); }
           } else if (cameraConfig.target === 'pickupPhoto') {
             try {
               const compressed = await resizeAndWatermarkImage(file, 800, 0.5);
               setPickupPhoto(compressed.base64);
-              if (compressed.lat !== null && compressed.lng !== null) {
-                setPickupPhotoLocation({ lat: compressed.lat, lng: compressed.lng });
-              }
             } catch (e) { showAlert("❌ Error procesando foto del odómetro. Código: [ERR-PHOTO-ODOMETER]"); }
           } else if (cameraConfig.target === 'pickupFuelPhoto') {
             try {
               const compressed = await resizeAndWatermarkImage(file, 800, 0.5);
               setPickupFuelPhoto(compressed.base64);
-              if (compressed.lat !== null && compressed.lng !== null) {
-                setPickupFuelPhotoLocation({ lat: compressed.lat, lng: compressed.lng });
-              }
             } catch (e) { showAlert("❌ Error procesando foto de combustible. Código: [ERR-PHOTO-FUEL]"); }
           }
           setProcessingId(null);

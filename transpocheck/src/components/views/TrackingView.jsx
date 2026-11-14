@@ -443,23 +443,6 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
 
                   {job.phase === 'arrived_pickup' && job.arrivedPickupAt && <WaitTimerBadge arrivedAt={job.arrivedPickupAt} role="client" />}
 
-                  {job.liveLocation && job.phase === 'picked_up' && (
-                    <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-5 animate-in fade-in duration-500">
-                      <div className="flex items-center justify-between mb-3">
-                        <p className="text-xs font-black text-blue-600 dark:text-blue-400 uppercase flex items-center gap-1.5"><Navigation className="w-4 h-4" /> GPS en vivo</p>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1"><span className="w-2 h-2 bg-green-500 rounded-full"></span> Conectado</p>
-                      </div>
-                      <div className="w-full h-48 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden border-2 border-slate-200 dark:border-slate-700 shadow-inner relative pointer-events-none">
-                        <iframe
-                          width="100%"
-                          height="100%"
-                          frameBorder="0"
-                          src={`https://maps.google.com/maps?q=${job.liveLocation.lat},${job.liveLocation.lng}&z=15&output=embed`}
-                        ></iframe>
-                      </div>
-                    </div>
-                  )}
-
                 </div>
               )
             })}
@@ -829,22 +812,9 @@ export default function TrackingView({ clientName, db, onBack, onLogout, darkMod
                     </div>
 
                     <div className="col-span-2 mt-2">
-                      <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Distancia GPS (Maps)</p>
+                      <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Distancia en Ruta (Maps)</p>
                       <p className="text-sm font-black text-blue-600 dark:text-blue-400">{selectedHistoryJob.drivenDistance || 'No calculado'}</p>
                     </div>
-                    {(selectedHistoryJob.checklist?.photos?.fuelGaugeLocation || selectedHistoryJob.checklist?.photos?.odometerLocation || selectedHistoryJob.checklist?.location) && (
-                      <div className="col-span-2 mt-2">
-                        <a
-                          href={`https://maps.google.com/?q=${(selectedHistoryJob.checklist?.photos?.fuelGaugeLocation || selectedHistoryJob.checklist?.photos?.odometerLocation || selectedHistoryJob.checklist?.location).lat},${(selectedHistoryJob.checklist?.photos?.fuelGaugeLocation || selectedHistoryJob.checklist?.photos?.odometerLocation || selectedHistoryJob.checklist?.location).lng}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-3 px-4 rounded-xl font-extrabold text-xs transition-colors border border-slate-200 dark:border-slate-700 shadow-sm w-full text-center"
-                        >
-                          <MapPin className="w-4 h-4 text-red-500 shrink-0" />
-                          <span>Reporte de kilometraje y combustible tomado acá</span>
-                        </a>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>

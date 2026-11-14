@@ -196,21 +196,6 @@ const ChecklistInner = ({ openCamera }) => {
 
     const runBackgroundProcess = async (syncTask = null, setProgress = () => { }) => {
       try {
-        let finalLocation = null;
-        try {
-          if (navigator.geolocation) {
-            finalLocation = await new Promise((resolve) => {
-              navigator.geolocation.getCurrentPosition(
-                (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, timestamp: Date.now() }),
-                () => resolve(null),
-                { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
-              );
-            });
-          }
-        } catch (e) {
-          console.warn("GPS Falló al finalizar:", e);
-        }
-
         const isTrailer = String(job?.vehicleType || formData.vehicleType || '').toLowerCase().includes('arrastre');
         const cleanedFormData = { ...formData };
         if (isTrailer) {
@@ -225,7 +210,7 @@ const ChecklistInner = ({ openCamera }) => {
           }
         }
 
-        const formDataWithLocation = { ...cleanedFormData, location: finalLocation || cleanedFormData.location };
+        const formDataWithLocation = { ...cleanedFormData };
 
         // Función para procesar y descontar gastos automáticamente
         const processChecklistExpenses = async (finalData) => {

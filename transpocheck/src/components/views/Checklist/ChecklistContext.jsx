@@ -39,7 +39,7 @@ export const ChecklistProvider = ({ children, job, currentUserEmail, onCancel, o
     docsPhotos: job?.checklist?.docsPhotos || initialDocsPhotos,
     internalReminders: job?.checklist?.internalReminders || initialReminders,
     carDamages: job?.checklist?.carDamages || {},
-    observations: job?.checklist?.observations || '', transitNotes: job?.checklist?.transitNotes || '', receiverName: '', receiverRut: '', noReception: false, signatureData: null, location: null,
+    observations: job?.checklist?.observations || '', transitNotes: job?.checklist?.transitNotes || '', receiverName: '', receiverRut: '', noReception: false, signatureData: null,
     hasEquipment: job?.checklist?.hasEquipment || false,
     equipment: job?.checklist?.equipment || {},
     equipmentDetails: job?.checklist?.equipmentDetails || '',

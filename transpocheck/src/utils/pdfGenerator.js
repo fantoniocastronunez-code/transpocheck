@@ -308,27 +308,9 @@ export const buildPDFDoc = async (job, isPublic = false, drivers = []) => {
       } 
     }
     
-    let gpsY = currentY + 2;
-    if (job.checklist?.location) {
-      const { lat, lng } = job.checklist.location;
-      docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text(`UBICACION GPS (LLEGADA):`, 15, gpsY); docPDF.setFontSize(9); docPDF.setTextColor(...accentColor); docPDF.textWithLink('Clic aqui para ver mapa', 15, gpsY + 4, { url: `https://maps.google.com/?q=${lat},${lng}` });
-      gpsY += 10;
-    }
-    if (job.checklist?.photos?.mileageLocation) {
-      const { lat, lng } = job.checklist.photos.mileageLocation;
-      docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text(`REPORTE DE INICIO:`, 15, gpsY); docPDF.setFontSize(9); docPDF.setTextColor(...accentColor); docPDF.textWithLink('Reporte de inicio tomado acá', 15, gpsY + 4, { url: `https://maps.google.com/?q=${lat},${lng}` });
-      gpsY += 10;
-    }
-    if (job.checklist?.photos?.odometerLocation) {
-      const { lat, lng } = job.checklist.photos.odometerLocation;
-      docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text(`REPORTE FINAL:`, 15, gpsY); docPDF.setFontSize(9); docPDF.setTextColor(...accentColor); docPDF.textWithLink('Reporte final tomado acá', 15, gpsY + 4, { url: `https://maps.google.com/?q=${lat},${lng}` });
-      gpsY += 10;
-    }
-    currentY = gpsY;
-
     const attachedDocHref = job.guideLink || job.guideUrl || job.docLink || job.docUrl || job.rtLink || job.rtDoc || (job.rtData && job.rtData.link) || job.pdfUrl || job.fileUrl || job.checklist?.guiaDespachoPdf || job.checklist?.guiaDespachoLink;
     if (attachedDocHref) { 
-      currentY += (job.checklist?.location ? 10 : 2);
+      currentY += 2;
       docPDF.setFontSize(8); docPDF.setFont("helvetica", "normal"); docPDF.setTextColor(...secondaryColor); docPDF.text(`DOCUMENTO ADJUNTO (GUIA/RT):`, 15, currentY); 
       docPDF.setFontSize(9); docPDF.setTextColor(...accentColor); docPDF.textWithLink('Clic aqui para abrir documento', 15, currentY + 4, { url: attachedDocHref }); 
     }
@@ -412,7 +394,7 @@ export const buildPDFDoc = async (job, isPublic = false, drivers = []) => {
           
           docPDF.setDrawColor(...borderColor); docPDF.setLineWidth(0.5); docPDF.roundedRect(finalX - 2, photoY - 8, imgW + 4, imgH + 12, 2, 2, 'S'); docPDF.setFillColor(...lightBg); docPDF.rect(finalX - 2, photoY - 8, imgW + 4, 8, 'F'); docPDF.setFontSize(9); docPDF.setFont("helvetica", "bold"); docPDF.setTextColor(...secondaryColor); docPDF.text((labels[key] || fallbackLabel).toUpperCase(), finalX + (imgW/2), photoY - 3, { align: "center" });
           try { docPDF.addImage(base64Img, 'JPEG', finalX, photoY + 2, imgW, imgH); } catch(e) { docPDF.addImage(base64Img, 'PNG', finalX, photoY + 2, imgW, imgH); }
-          if (key === 'fuelGauge' && photos.fuelGaugeLocation) { docPDF.setTextColor(0, 102, 204); docPDF.setFontSize(8); docPDF.text('Ver Mapa', finalX + (imgW/2), photoY + imgH + 5, { align: 'center' }); docPDF.link(finalX, photoY + 2, imgW, imgH + 5, { url: `https://maps.google.com/?q=${photos.fuelGaugeLocation.lat},${photos.fuelGaugeLocation.lng}` }); } else if (typeof photos[key] === 'string' && photos[key].startsWith('http')) { docPDF.link(finalX, photoY + 2, imgW, imgH, { url: photos[key] }); }
+          if (typeof photos[key] === 'string' && photos[key].startsWith('http')) { docPDF.link(finalX, photoY + 2, imgW, imgH, { url: photos[key] }); }
           
           if (currentCol === 1) { currentCol = 2; } else { currentCol = 1; photoY += (imgH > 80 ? imgH : 80) + 20; } 
         } catch (err) { console.error("Error al incrustar la foto:", key, err); } 

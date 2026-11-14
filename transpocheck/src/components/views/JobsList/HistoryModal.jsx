@@ -277,22 +277,9 @@ export default function HistoryModal({
                 )}
 
                 <div className="col-span-2 mt-2">
-                  <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Distancia GPS (Maps)</p>
+                  <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">Distancia en Ruta (Maps)</p>
                   <p className="text-sm font-mono font-bold text-blue-600 dark:text-blue-400">{selectedHistoryJob.drivenDistance || 'No calculado'}</p>
                 </div>
-                {(selectedHistoryJob.checklist?.photos?.fuelGaugeLocation || selectedHistoryJob.checklist?.photos?.odometerLocation || selectedHistoryJob.checklist?.location) && (
-                  <div className="col-span-2 mt-2">
-                    <a
-                      href={`https://maps.google.com/?q=${(selectedHistoryJob.checklist?.photos?.fuelGaugeLocation || selectedHistoryJob.checklist?.photos?.odometerLocation || selectedHistoryJob.checklist?.location).lat},${(selectedHistoryJob.checklist?.photos?.fuelGaugeLocation || selectedHistoryJob.checklist?.photos?.odometerLocation || selectedHistoryJob.checklist?.location).lng}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-2.5 px-3 rounded-md font-semibold text-xs transition-colors border border-slate-200 dark:border-slate-700 w-full text-center"
-                    >
-                      <MapPin className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                      <span>Ver ubicación GPS del reporte</span>
-                    </a>
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -705,15 +692,6 @@ export default function HistoryModal({
                         <div className="absolute inset-x-0 bottom-0 bg-slate-950/80 p-1.5">
                           <p className="text-white text-[10px] font-semibold uppercase truncate">{label}</p>
                         </div>
-                        {k === 'fuelGauge' && selectedHistoryJob.checklist?.photos?.fuelGaugeLocation && (
-                          <a href={`https://maps.google.com/?q=${selectedHistoryJob.checklist.photos.fuelGaugeLocation.lat},${selectedHistoryJob.checklist.photos.fuelGaugeLocation.lng}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="absolute top-1.5 right-1.5 bg-slate-900 hover:bg-blue-600 text-white px-2 py-0.5 rounded text-[10px] font-semibold transition-colors flex items-center gap-1"><MapPin className="w-2.5 h-2.5" /> Mapa</a>
-                        )}
-                        {k === 'mileage' && selectedHistoryJob.checklist?.photos?.mileageLocation && (
-                          <a href={`https://maps.google.com/?q=${selectedHistoryJob.checklist.photos.mileageLocation.lat},${selectedHistoryJob.checklist.photos.mileageLocation.lng}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="absolute top-1.5 right-1.5 bg-slate-900 hover:bg-blue-600 text-white px-2 py-0.5 rounded text-[10px] font-semibold transition-colors flex items-center gap-1"><MapPin className="w-2.5 h-2.5" /> Mapa</a>
-                        )}
-                        {k === 'odometer' && selectedHistoryJob.checklist?.photos?.odometerLocation && (
-                          <a href={`https://maps.google.com/?q=${selectedHistoryJob.checklist.photos.odometerLocation.lat},${selectedHistoryJob.checklist.photos.odometerLocation.lng}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="absolute top-1.5 right-1.5 bg-slate-900 hover:bg-blue-600 text-white px-2 py-0.5 rounded text-[10px] font-semibold transition-colors flex items-center gap-1"><MapPin className="w-2.5 h-2.5" /> Mapa</a>
-                        )}
                       </div>
                     );
                   })}
