@@ -414,6 +414,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     driverFee: '',
     marginPct: 30,
     description: '',
+    includeStandardLegend: true,
     vehicleType: 'Auto / SUV',
     brand: '',
     model: '',
@@ -559,6 +560,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       driverFee: q.driverFee || '',
       marginPct: q.marginPct !== undefined ? q.marginPct : 30,
       description: q.description || '',
+      includeStandardLegend: q.includeStandardLegend !== undefined ? Boolean(q.includeStandardLegend) : true,
       vehicleType: q.vehicleType || 'Auto / SUV',
       brand: q.brand || '',
       model: q.model || '',
@@ -1203,6 +1205,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         clientEmail: quoteData.clientEmail || '',
         clientContact: quoteData.clientContact || '',
         description: quoteData.description?.trim() || 'Servicio de traslado de vehículo',
+        includeStandardLegend: Boolean(quoteData.includeStandardLegend),
         origin: quoteData.origin?.trim() || '',
         destination: quoteData.destination?.trim() || '',
         distanceKm: quoteData.distanceKm || '',
@@ -1302,6 +1305,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         clientPhone: quoteData.clientPhone || '',
         clientEmail: quoteData.clientEmail || '',
         clientContact: quoteData.clientContact || '',
+        includeStandardLegend: Boolean(quoteData.includeStandardLegend),
         quoteNumber: correlativoFinal,
         baseNetPrice: Math.round(baseNetPrice),
         extraItems: normalizedItems,
@@ -1678,9 +1682,10 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                   ${escapeHtml(qData.description || 'Servicio de traslado logístico de vehículo')}
                 </div>
                 ${isSimpleMode ? buildVehicleBadgeHtml(qData.brand, qData.model, qData.plateOrVin) : ''}
+                ${qData.includeStandardLegend !== false ? `
                 <span style="font-size: 11px; color: #64748b; font-weight: normal; margin-top: 4px; display: block;">
                   Incluye conducción profesional, inspección visual de recepción y entrega segura.
-                </span>
+                </span>` : ''}
               </td>
               <td style="padding: 14px 16px; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: 800; vertical-align: top; text-align: right; color: #1e293b;">${formatMoney(pdfBaseNet)}</td>
             </tr>
@@ -2393,6 +2398,17 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 placeholder="Ej: Traslado Santiago a Valparaíso o Traslado por falla mecánica"
                 className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
               />
+              <label className="flex items-center gap-2.5 p-2.5 mt-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={Boolean(quoteData.includeStandardLegend)}
+                  onChange={e => setQuoteData(prev => ({ ...prev, includeStandardLegend: e.target.checked }))}
+                  className="w-4 h-4 accent-purple-600 rounded cursor-pointer shrink-0"
+                />
+                <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 leading-snug">
+                  Incluir texto: &quot;Incluye conducción profesional, inspección visual de recepción y entrega segura.&quot;
+                </span>
+              </label>
             </div>
 
             {/* 3. Datos del Vehículo: Marca, Modelo y Patente */}
@@ -2838,6 +2854,21 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Descripción corta</label>
                   <input type="text" name="description" value={quoteData.description} onChange={handleInputChange} placeholder="Detalles adicionales..." autoComplete="off" autoCorrect="off" spellCheck="false" className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900" />
+                </div>
+
+                {/* Cuadro de verificación: incluir texto estándar en cotización */}
+                <div className="sm:col-span-2">
+                  <label className="flex items-center gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(quoteData.includeStandardLegend)}
+                      onChange={e => setQuoteData(prev => ({ ...prev, includeStandardLegend: e.target.checked }))}
+                      className="w-4 h-4 accent-purple-600 rounded cursor-pointer shrink-0"
+                    />
+                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300 leading-snug">
+                      Incluir texto: &quot;Incluye conducción profesional, inspección visual de recepción y entrega segura.&quot;
+                    </span>
+                  </label>
                 </div>
               </div>
             </div>
