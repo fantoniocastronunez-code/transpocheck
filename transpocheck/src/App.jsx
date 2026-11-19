@@ -115,7 +115,7 @@ function LogisticApp() {
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
   const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
-  const APP_VERSION = "v1.3.21"; // IMPORTANT: Update this version string when making changes.
+  const APP_VERSION = "v1.3.22"; // IMPORTANT: Update this version string when making changes.
 
   // VARIABLES MÁGICAS: Atrapan lo que Android nos comparte desde CamScanner o Adobe Scan
   const sharedText = searchParams.get('shared_text');
@@ -941,7 +941,7 @@ function LogisticApp() {
             {!isEasyMode && mainTab === 'ranking' && <LeaderboardView jobs={jobs} drivers={drivers} isAdminView={activeRole === 'admin'} db={db} />}
             {!isEasyMode && mainTab === 'expenses' && <ExpensesView role={activeRole} drivers={drivers} jobs={jobs} expenses={expenses} db={db} currentUserEmail={currentUserEmail} showAlert={showAlert} showConfirm={showConfirm} />}
             {!isEasyMode && mainTab === 'profile' && <DriverDashboardView myDriver={myDriver} jobs={jobs} expenses={expenses} drivers={drivers} currentUserEmail={currentUserEmail} db={db} />}
-            {!isEasyMode && mainTab === 'quotes' && <QuotesView db={db} customClients={customClients} vehicles={vehicles} directoryList={directoryList} showAlert={showAlert} showConfirm={showConfirm} drivers={drivers} currentUserEmail={currentUserEmail} isSuperAdmin={isSuperAdmin} />}
+            {!isEasyMode && mainTab === 'quotes' && <QuotesView db={db} customClients={customClients} vehicles={vehicles} directoryList={directoryList} showAlert={showAlert} showConfirm={showConfirm} drivers={drivers} currentUserEmail={currentUserEmail} isSuperAdmin={isSuperAdmin} isAdmin={isRealAdmin || activeRole === 'admin'} />}
             {!isEasyMode && mainTab === 'analytics' && <ChecklistAnalyticsView jobs={jobs} drivers={drivers} currentUserEmail={currentUserEmail} activeRole={activeRole} />}
 
             {!isEasyMode && mainTab === 'inbox' && (

@@ -271,7 +271,8 @@ const normalizeExtraItems = (items = []) => {
   return { items: normalized };
 };
 
-export default function QuotesView({ db, customClients = [], vehicles = [], directoryList = [], drivers = [], showAlert, showConfirm, currentUserEmail, isSuperAdmin = false }) {
+export default function QuotesView({ db, customClients = [], vehicles = [], directoryList = [], drivers = [], showAlert, showConfirm, currentUserEmail, isSuperAdmin = false, isAdmin = false }) {
+  const canConfigureClients = Boolean(isSuperAdmin || isAdmin);
   // Modo de Cotizador: 'simple' (Modo Rápido / Celular) o 'full' (Calculadora Detallada)
   const [quoteMode, setQuoteMode] = useState(() => {
     try {
@@ -779,8 +780,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
 
   // Abrir Modal de Configuración de Cliente y Empresa
   const handleOpenClientConfigModal = (clientNameToPreselect) => {
-    if (!isSuperAdmin) {
-      return showAlert("🔒 [ERR-AUTH-QUOTE-02] Solo el Superadmin tiene permiso para configurar clientes o empresas.");
+    if (!canConfigureClients) {
+      return showAlert("🔒 [ERR-AUTH-QUOTE-02] Solo los administradores tienen permiso para configurar clientes.");
     }
     setIssuerForm({ ...issuerCompany });
     setTempConfig({
@@ -870,8 +871,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   // Guardar Datos del Cliente en Firestore
   const handleSaveClientConfig = async (e) => {
     e.preventDefault();
-    if (!isSuperAdmin) {
-      return showAlert("🔒 [ERR-AUTH-CFG-02] Acción denegada. Solo el Superadmin puede guardar empresas clientes.");
+    if (!canConfigureClients) {
+      return showAlert("🔒 [ERR-AUTH-CFG-02] Acción denegada. Solo los administradores pueden guardar empresas clientes.");
     }
     if (!clientForm.name?.trim()) {
       return showAlert("⚠️ [ERR-CLIENT-VAL-02] El nombre o razón social de la empresa es obligatorio.");
@@ -1603,28 +1604,33 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px;">
             <div>
               <div style="color: #64748b; font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800; margin-bottom: 3px;">Razón Social / Empresa</div>
-              <div style="font-size: 13px; font-weight: 800; color: #0f172a; word-break: break-word;">${qData.client || 'A Quien Corresponda'}</div>
+              <div style="font-size: 13px; font-weight: 800; color: #0f172a; word-break: break-word;">${escapeHtml(qData.client || 'A Quien Corresponda')}</div>
             </div>
+            ${qData.clientRut?.trim() ? `
             <div>
               <div style="color: #64748b; font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800; margin-bottom: 3px;">RUT Empresa</div>
-              <div style="font-size: 13px; font-weight: 800; color: #0f172a;">${qData.clientRut || 'Sin RUT registrado'}</div>
-            </div>
+              <div style="font-size: 13px; font-weight: 800; color: #0f172a;">${escapeHtml(qData.clientRut.trim())}</div>
+            </div>` : ''}
+            ${qData.clientGiro?.trim() ? `
             <div>
               <div style="color: #64748b; font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800; margin-bottom: 3px;">Giro Comercial</div>
-              <div style="font-size: 13px; font-weight: 800; color: #0f172a;">${qData.clientGiro || 'No especificado'}</div>
-            </div>
+              <div style="font-size: 13px; font-weight: 800; color: #0f172a;">${escapeHtml(qData.clientGiro.trim())}</div>
+            </div>` : ''}
+            ${clientFullAddress ? `
             <div>
               <div style="color: #64748b; font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800; margin-bottom: 3px;">Dirección Comercial</div>
-              <div style="font-size: 13px; font-weight: 800; color: #0f172a;">${clientFullAddress || 'No especificada'}</div>
-            </div>
+              <div style="font-size: 13px; font-weight: 800; color: #0f172a;">${escapeHtml(clientFullAddress)}</div>
+            </div>` : ''}
+            ${qData.clientContact?.trim() ? `
             <div>
               <div style="color: #64748b; font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800; margin-bottom: 3px;">Atención a / Contacto</div>
-              <div style="font-size: 13px; font-weight: 800; color: #0f172a;">${qData.clientContact || 'Departamento de Adquisiciones'}</div>
-            </div>
+              <div style="font-size: 13px; font-weight: 800; color: #0f172a;">${escapeHtml(qData.clientContact.trim())}</div>
+            </div>` : ''}
+            ${[qData.clientPhone?.trim(), qData.clientEmail?.trim()].filter(Boolean).length > 0 ? `
             <div>
               <div style="color: #64748b; font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 800; margin-bottom: 3px;">Teléfono / Correo</div>
-              <div style="font-size: 13px; font-weight: 800; color: #0f172a;">${[qData.clientPhone, qData.clientEmail].filter(Boolean).join(' • ') || 'No especificado'}</div>
-            </div>
+              <div style="font-size: 13px; font-weight: 800; color: #0f172a;">${escapeHtml([qData.clientPhone?.trim(), qData.clientEmail?.trim()].filter(Boolean).join(' • '))}</div>
+            </div>` : ''}
           </div>
         </div>
 
@@ -1938,6 +1944,12 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
     ? `TEST-${formatCorrelativeNumber(correlativeConfig)}`
     : formatCorrelativeNumber(correlativeConfig);
 
+  const selectedClientRecord = customClients.find(c => c.name === quoteData.client);
+  const selectedClientContacts = (selectedClientRecord?.contactName || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+
   // Bloque reutilizable para agregar detalles adicionales (ítems extra que se suman a la cotización)
   const renderExtraItemsSection = (modePrefix) => (
     <div className="space-y-3">
@@ -2124,17 +2136,27 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
           </div>
         </div>
 
-        {/* BOTÓN UNIFICADO DE CONFIGURACIÓN (SÓLO SUPERADMIN) */}
-        {isSuperAdmin && (
+        {/* BOTÓN DE CONFIGURACIÓN (CLIENTES PARA ADMINS, GENERAL PARA SUPERADMIN) */}
+        {canConfigureClients && (
           <div className="flex items-center gap-2 flex-wrap shrink-0">
             <button
               type="button"
-              onClick={() => handleOpenGeneralConfigModal('issuer')}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-black text-xs transition-colors shadow-sm shadow-purple-200 dark:shadow-none"
+              onClick={() => handleOpenClientConfigModal()}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-purple-100 hover:bg-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-black text-xs transition-colors"
             >
-              <Settings className="w-4 h-4" />
-              Configuración
+              <Briefcase className="w-4 h-4" />
+              Configurar Clientes
             </button>
+            {isSuperAdmin && (
+              <button
+                type="button"
+                onClick={() => handleOpenGeneralConfigModal('issuer')}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-black text-xs transition-colors shadow-sm shadow-purple-200 dark:shadow-none"
+              >
+                <Settings className="w-4 h-4" />
+                Configuración
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -2241,6 +2263,12 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         </div>
       )}
 
+      <datalist id="quote-client-contacts-list">
+        {selectedClientContacts.map((contact, idx) => (
+          <option key={idx} value={contact} />
+        ))}
+      </datalist>
+
       {/* CONTENIDO SEGÚN MODO SELECCIONADO */}
       {quoteMode === 'simple' ? (
 
@@ -2263,16 +2291,18 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
               </div>
             </div>
 
-            {isSuperAdmin && (
+            {canConfigureClients && (
               <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  type="button"
-                  onClick={handleOpenIssuerConfigModal}
-                  title="Configurar datos y membrete de nuestra empresa"
-                  className="text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 border border-slate-200 dark:border-slate-700"
-                >
-                  <Building2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> Datos Empresa
-                </button>
+                {isSuperAdmin && (
+                  <button
+                    type="button"
+                    onClick={handleOpenIssuerConfigModal}
+                    title="Configurar datos y membrete de nuestra empresa"
+                    className="text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 border border-slate-200 dark:border-slate-700"
+                  >
+                    <Building2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> Datos Empresa
+                  </button>
+                )}
 
                 <button
                   type="button"
@@ -2293,13 +2323,13 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                   1. Empresa Cliente *
                 </label>
-                {quoteData.client && isSuperAdmin && (
+                {quoteData.client && canConfigureClients && (
                   <button
                     type="button"
                     onClick={() => handleOpenClientConfigModal(quoteData.client)}
                     className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
                   >
-                    <Building2 className="w-3 h-3" /> Editar RUT
+                    <Building2 className="w-3 h-3" /> Editar RUT y Datos
                   </button>
                 )}
               </div>
@@ -2317,13 +2347,38 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 ))}
               </select>
 
-              {/* Ficha rápida si está seleccionado */}
-              {quoteData.client && (
-                <div className="p-2.5 rounded-xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-100 dark:border-purple-900/40 text-[11px] text-slate-600 dark:text-slate-400 flex items-center justify-between">
-                  <span><strong>RUT:</strong> {quoteData.clientRut || 'Sin RUT'}</span>
-                  <span><strong>Giro:</strong> {quoteData.clientGiro || 'General'}</span>
+              {/* Ficha rápida solo con datos existentes */}
+              {quoteData.client && (quoteData.clientRut?.trim() || quoteData.clientGiro?.trim() || quoteData.clientAddress?.trim() || quoteData.clientCity?.trim() || quoteData.clientPhone?.trim() || quoteData.clientEmail?.trim()) && (
+                <div className="p-2.5 rounded-xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-100 dark:border-purple-900/40 text-[11px] text-slate-600 dark:text-slate-400 flex flex-wrap items-center gap-x-4 gap-y-1">
+                  {quoteData.clientRut?.trim() && <span><strong>RUT:</strong> {quoteData.clientRut.trim()}</span>}
+                  {quoteData.clientGiro?.trim() && <span><strong>Giro:</strong> {quoteData.clientGiro.trim()}</span>}
+                  {(quoteData.clientAddress?.trim() || quoteData.clientCity?.trim()) && (
+                    <span><strong>Dirección:</strong> {[quoteData.clientAddress?.trim(), quoteData.clientCity?.trim()].filter(Boolean).join(', ')}</span>
+                  )}
+                  {(quoteData.clientPhone?.trim() || quoteData.clientEmail?.trim()) && (
+                    <span><strong>Contacto:</strong> {[quoteData.clientPhone?.trim(), quoteData.clientEmail?.trim()].filter(Boolean).join(' • ')}</span>
+                  )}
                 </div>
               )}
+            </div>
+
+            {/* 1b. Atención a (Editable siempre) */}
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                Atención a
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  name="clientContact"
+                  list="quote-client-contacts-list"
+                  value={quoteData.clientContact}
+                  onChange={handleInputChange}
+                  placeholder="Ej: Juan Pérez / Departamento de Adquisiciones"
+                  className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 pl-9 text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
+                />
+                <User className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              </div>
             </div>
 
             {/* 2. Descripción del Servicio */}
@@ -2554,16 +2609,18 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                 <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Datos de Ruta y Vehículo
                 </h3>
-                {isSuperAdmin && (
+                {canConfigureClients && (
                   <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={handleOpenIssuerConfigModal}
-                      title="Configurar datos y membrete de nuestra empresa"
-                      className="text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 border border-slate-200 dark:border-slate-700"
-                    >
-                      <Building2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> Datos Empresa
-                    </button>
+                    {isSuperAdmin && (
+                      <button
+                        type="button"
+                        onClick={handleOpenIssuerConfigModal}
+                        title="Configurar datos y membrete de nuestra empresa"
+                        className="text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 border border-slate-200 dark:border-slate-700"
+                      >
+                        <Building2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" /> Datos Empresa
+                      </button>
+                    )}
 
                     <button
                       type="button"
@@ -2619,7 +2676,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
                       Empresa Cliente (Para la Cotización)
                     </label>
-                    {quoteData.client && isSuperAdmin && (
+                    {quoteData.client && canConfigureClients && (
                       <button
                         type="button"
                         onClick={() => handleOpenClientConfigModal(quoteData.client)}
@@ -2644,26 +2701,22 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     ))}
                   </select>
 
-                  {/* Ficha corporativa */}
+                  {/* Ficha corporativa (oculta datos vacíos) */}
                   {quoteData.client && (
                     <div className="bg-purple-50/40 dark:bg-purple-950/30 p-3.5 rounded-2xl border border-purple-100 dark:border-purple-900/50 text-xs animate-in fade-in">
-                      <div className="flex justify-between items-start mb-2">
+                      <div className="flex justify-between items-start gap-2">
                         <div>
                           <span className="font-black text-slate-800 dark:text-slate-200 text-sm flex items-center gap-1.5">
                             <Building2 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                             {quoteData.client}
                           </span>
-                          {quoteData.clientRut ? (
+                          {quoteData.clientRut?.trim() && (
                             <span className="text-[10px] font-mono font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/60 px-2 py-0.5 rounded-md inline-block mt-0.5">
-                              RUT: {quoteData.clientRut}
-                            </span>
-                          ) : (
-                            <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md inline-block mt-0.5">
-                              ⚠️ Sin RUT registrado
+                              RUT: {quoteData.clientRut.trim()}
                             </span>
                           )}
                         </div>
-                        {isSuperAdmin && (
+                        {canConfigureClients && (
                           <button
                             type="button"
                             onClick={() => handleOpenClientConfigModal(quoteData.client)}
@@ -2674,14 +2727,39 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                         )}
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-slate-600 dark:text-slate-400 font-medium pt-1 border-t border-purple-100 dark:border-purple-900/30">
-                        <p><strong className="text-slate-700 dark:text-slate-300">Giro:</strong> {quoteData.clientGiro || 'No especificado'}</p>
-                        <p><strong className="text-slate-700 dark:text-slate-300">Dirección:</strong> {[quoteData.clientAddress, quoteData.clientCity].filter(Boolean).join(', ') || 'No especificada'}</p>
-                        <p><strong className="text-slate-700 dark:text-slate-300">Contacto:</strong> {quoteData.clientContact || 'No especificado'}</p>
-                        <p><strong className="text-slate-700 dark:text-slate-300">Teléfono:</strong> {quoteData.clientPhone || quoteData.clientEmail || 'No especificado'}</p>
-                      </div>
+                      {(() => {
+                        const fullAddr = [quoteData.clientAddress?.trim(), quoteData.clientCity?.trim()].filter(Boolean).join(', ');
+                        const phoneOrEmail = [quoteData.clientPhone?.trim(), quoteData.clientEmail?.trim()].filter(Boolean).join(' • ');
+                        const hasDetails = Boolean(quoteData.clientGiro?.trim() || fullAddr || quoteData.clientContact?.trim() || phoneOrEmail);
+                        if (!hasDetails) return null;
+                        return (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-slate-600 dark:text-slate-400 font-medium pt-2 mt-2 border-t border-purple-100 dark:border-purple-900/30">
+                            {quoteData.clientGiro?.trim() && <p><strong className="text-slate-700 dark:text-slate-300">Giro:</strong> {quoteData.clientGiro.trim()}</p>}
+                            {fullAddr && <p><strong className="text-slate-700 dark:text-slate-300">Dirección:</strong> {fullAddr}</p>}
+                            {quoteData.clientContact?.trim() && <p><strong className="text-slate-700 dark:text-slate-300">Atención a:</strong> {quoteData.clientContact.trim()}</p>}
+                            {phoneOrEmail && <p><strong className="text-slate-700 dark:text-slate-300">Teléfono / Correo:</strong> {phoneOrEmail}</p>}
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
+                </div>
+
+                {/* Atención a (Siempre editable al crear/editar cotización) */}
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Atención a</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="clientContact"
+                      list="quote-client-contacts-list"
+                      value={quoteData.clientContact}
+                      onChange={handleInputChange}
+                      placeholder="Ej: Juan Pérez / Departamento de Adquisiciones"
+                      className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 pl-10 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-purple-500 bg-white dark:bg-slate-900"
+                    />
+                    <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                  </div>
                 </div>
 
                 {/* Origen */}
@@ -3412,8 +3490,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         </div>
       )}
 
-      {/* MODAL: CONFIGURADOR DE CLIENTE Y EMPRESA (SÓLO SUPERADMIN) */}
-      {showClientConfigModal && isSuperAdmin && (
+      {/* MODAL: CONFIGURADOR DE CLIENTE Y EMPRESA (CLIENTES: ADMINS | RESTO: SUPERADMIN) */}
+      {showClientConfigModal && canConfigureClients && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-lg shadow-2xl relative border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
             <button
@@ -3445,63 +3523,65 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             </div>
 
             {/* PESTAÑAS: NUESTRA EMPRESA vs PIE DE PÁGINA vs CORRELATIVO vs CLIENTES */}
-            <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl mb-4 border border-slate-200 dark:border-slate-700 gap-1 overflow-x-auto">
-              <button
-                type="button"
-                onClick={() => setClientConfigTab('issuer')}
-                className={`flex-1 py-2 px-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${clientConfigTab === 'issuer'
-                  ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                  }`}
-              >
-                <Building2 className="w-3.5 h-3.5" />
-                <span className="truncate">Nuestra Empresa</span>
-              </button>
+            {isSuperAdmin && (
+              <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl mb-4 border border-slate-200 dark:border-slate-700 gap-1 overflow-x-auto">
+                <button
+                  type="button"
+                  onClick={() => setClientConfigTab('issuer')}
+                  className={`flex-1 py-2 px-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${clientConfigTab === 'issuer'
+                    ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                    }`}
+                >
+                  <Building2 className="w-3.5 h-3.5" />
+                  <span className="truncate">Nuestra Empresa</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setClientConfigTab('footer')}
-                className={`flex-1 py-2 px-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${clientConfigTab === 'footer'
-                  ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                  }`}
-              >
-                <FileText className="w-3.5 h-3.5" />
-                <span className="truncate">Pie de Página</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setClientConfigTab('footer')}
+                  className={`flex-1 py-2 px-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${clientConfigTab === 'footer'
+                    ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                    }`}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span className="truncate">Pie de Página</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setTempConfig({
-                    prefix: correlativeConfig.prefix,
-                    nextNumber: correlativeConfig.nextNumber,
-                    minDigits: correlativeConfig.minDigits,
-                    includeYear: correlativeConfig.includeYear
-                  });
-                  setClientConfigTab('correlative');
-                }}
-                className={`flex-1 py-2 px-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${clientConfigTab === 'correlative'
-                  ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                  }`}
-              >
-                <Hash className="w-3.5 h-3.5" />
-                <span className="truncate">Correlativo</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTempConfig({
+                      prefix: correlativeConfig.prefix,
+                      nextNumber: correlativeConfig.nextNumber,
+                      minDigits: correlativeConfig.minDigits,
+                      includeYear: correlativeConfig.includeYear
+                    });
+                    setClientConfigTab('correlative');
+                  }}
+                  className={`flex-1 py-2 px-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${clientConfigTab === 'correlative'
+                    ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                    }`}
+                >
+                  <Hash className="w-3.5 h-3.5" />
+                  <span className="truncate">Correlativo</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setClientConfigTab('client')}
-                className={`flex-1 py-2 px-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${clientConfigTab === 'client'
-                  ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                  }`}
-              >
-                <Briefcase className="w-3.5 h-3.5" />
-                <span className="truncate">Clientes</span>
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => setClientConfigTab('client')}
+                  className={`flex-1 py-2 px-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 whitespace-nowrap ${clientConfigTab === 'client'
+                    ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                    }`}
+                >
+                  <Briefcase className="w-3.5 h-3.5" />
+                  <span className="truncate">Clientes</span>
+                </button>
+              </div>
+            )}
 
             {/* FORMULARIO 1: EMPRESA CLIENTE */}
             {clientConfigTab === 'client' && (
@@ -3657,7 +3737,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             )}
 
             {/* FORMULARIO 2: NUESTRA EMPRESA (EMISOR) */}
-            {clientConfigTab === 'issuer' && (
+            {isSuperAdmin && clientConfigTab === 'issuer' && (
               <form onSubmit={handleSaveIssuerConfig} className="space-y-4">
                 <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed bg-purple-50 dark:bg-purple-950/40 p-3 rounded-2xl border border-purple-200 dark:border-purple-800/50">
                   Estos datos se imprimirán en el <strong>membrete oficial de las cotizaciones</strong> para que tengan validez y presentación formal ante tus clientes.
@@ -3770,7 +3850,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             )}
 
             {/* FORMULARIO 3: PIE DE PÁGINA Y VALIDEZ */}
-            {clientConfigTab === 'footer' && (
+            {isSuperAdmin && clientConfigTab === 'footer' && (
               <form onSubmit={handleSaveFooterConfig} className="space-y-4">
                 <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed bg-purple-50 dark:bg-purple-950/40 p-3 rounded-2xl border border-purple-200 dark:border-purple-800/50">
                   Configura el <strong>plazo de vigencia y las leyendas legales</strong> que se imprimen al pie de página de cada cotización en PDF.
@@ -3876,7 +3956,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
             )}
 
             {/* FORMULARIO 4: CONFIGURACIÓN DE CORRELATIVO */}
-            {clientConfigTab === 'correlative' && (
+            {isSuperAdmin && clientConfigTab === 'correlative' && (
               <form onSubmit={handleSaveCorrelativeConfig} className="space-y-4">
                 <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed bg-purple-50 dark:bg-purple-950/40 p-3 rounded-2xl border border-purple-200 dark:border-purple-800/50">
                   Personaliza el <strong>prefijo, número inicial y formato</strong> para la emisión correlativa automática de cotizaciones.
