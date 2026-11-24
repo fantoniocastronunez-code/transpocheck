@@ -223,22 +223,34 @@ export default function TripExpensesView({
     [items, header.advanceAmount]
   );
 
-  // Trabajos disponibles para asociar rápidamente al viaje (prioriza viajes y trabajos recientes)
+  const isJobAssignedToDriverEmail = (job, targetEmail) => {
+    if (!job || !targetEmail) return false;
+    const cleanTarget = targetEmail.toLowerCase().trim();
+    const acceptedEmail = (job.acceptedByEmail || '').toLowerCase().trim();
+    if (acceptedEmail) {
+      return acceptedEmail === cleanTarget;
+    }
+    const driverEmail = (job.driverEmail || '').toLowerCase().trim();
+    if (driverEmail && driverEmail === cleanTarget) return true;
+    if (Array.isArray(job.assignedEmails) && job.assignedEmails.some(e => (e || '').toLowerCase().trim() === cleanTarget)) {
+      return true;
+    }
+    if (Array.isArray(job.assignedDrivers) && job.assignedDrivers.some(d => (d?.email || '').toLowerCase().trim() === cleanTarget)) {
+      return true;
+    }
+    return false;
+  };
+
+  // Viajes disponibles para vincular: en modo conductor solo muestra viajes (tripType === 'viaje') asignados a su correo
   const selectableJobs = useMemo(() => {
     const list = (Array.isArray(jobs) ? jobs : []).filter(j => {
+      if (j.tripType !== 'viaje') return false;
       if (isAdminView) return true;
-      const acc = (j.acceptedByEmail || '').toLowerCase().trim();
-      const assigned = Array.isArray(j.assignedEmails) && j.assignedEmails.some(e => (e || '').toLowerCase().trim() === normalizedUserEmail);
-      return acc === normalizedUserEmail || assigned;
+      return isJobAssignedToDriverEmail(j, normalizedUserEmail);
     });
     return list
       .slice()
-      .sort((a, b) => {
-        const aViaje = a.tripType === 'viaje' ? 1 : 0;
-        const bViaje = b.tripType === 'viaje' ? 1 : 0;
-        if (aViaje !== bViaje) return bViaje - aViaje;
-        return (b.createdAt || 0) - (a.createdAt || 0);
-      })
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
       .slice(0, 40);
   }, [jobs, isAdminView, normalizedUserEmail]);
 
@@ -271,8 +283,12 @@ export default function TripExpensesView({
     const ident = (found.plate && found.plate !== 'S/N') ? found.plate : (found.vin || '');
     const route = [found.origin, found.destination].filter(Boolean).join(' → ');
     const vehicleDesc = [found.brand, found.model].filter(Boolean).join(' ').trim();
-    const matchedDrv = found.acceptedByEmail
-      ? assignableDrivers.find(d => (d.email || '').toLowerCase().trim() === found.acceptedByEmail.toLowerCase().trim())
+    const jobDriverEmail = (
+      found.acceptedByEmail ||
+      (Array.isArray(found.assignedEmails) && found.assignedEmails.length === 1 ? found.assignedEmails[0] : '')
+    ).toLowerCase().trim();
+    const matchedDrv = isAdminView && jobDriverEmail
+      ? assignableDrivers.find(d => (d.email || '').toLowerCase().trim() === jobDriverEmail)
       : null;
 
     setHeader(prev => ({
@@ -284,9 +300,9 @@ export default function TripExpensesView({
       vehicleInfo: vehicleDesc || found.description || prev.vehicleInfo,
       origin: found.origin || prev.origin,
       destination: found.destination || prev.destination,
-      driverEmail: (matchedDrv?.email || prev.driverEmail || '').toLowerCase().trim(),
-      driverName: matchedDrv?.name || prev.driverName,
-      driverId: matchedDrv?.id || prev.driverId
+      driverEmail: (isAdminView && matchedDrv?.email ? matchedDrv.email : prev.driverEmail || '').toLowerCase().trim(),
+      driverName: (isAdminView && matchedDrv?.name) ? matchedDrv.name : prev.driverName,
+      driverId: (isAdminView && matchedDrv?.id) ? matchedDrv.id : prev.driverId
     }));
   };
 
@@ -774,10 +790,12 @@ export default function TripExpensesView({
               )}
             </div>
 
-            {selectableJobs.length > 0 && (
+            {selectableJobs.length > 0 ? (
               <div>
                 <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
-                  Vincular a Traslado / Viaje Existente (Opcional — autocompleta ruta y patente)
+                  {isAdminView
+                    ? 'Vincular a Viaje Registrado (Opcional — autocompleta ruta y patente)'
+                    : 'Vincular a tu Viaje Asignado (Opcional — autocompleta ruta y patente)'}
                 </label>
                 <select
                   value={header.jobId}
@@ -787,10 +805,14 @@ export default function TripExpensesView({
                   <option value="">Ingreso manual / viaje libre...</option>
                   {selectableJobs.map(j => (
                     <option key={j.id} value={j.id}>
-                      {j.tripType === 'viaje' ? '[VIAJE] ' : ''}{j.client || 'Sin cliente'} · {j.plate || j.vin || 'S/N'} · {j.origin || '?'} → {j.destination || '?'}
+                      [VIAJE] {j.client || 'Sin cliente'} · {j.plate || j.vin || 'S/N'} · {j.origin || '?'} → {j.destination || '?'}
                     </option>
                   ))}
                 </select>
+              </div>
+            ) : !isAdminView && (
+              <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                No tienes viajes asignados actualmente a <span className="font-mono text-slate-700 dark:text-slate-200">{normalizedUserEmail}</span>. Puedes ingresar los datos manualmente.
               </div>
             )}
 

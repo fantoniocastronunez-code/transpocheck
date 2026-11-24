@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { updateDoc, doc, addDoc, collection, deleteDoc } from 'firebase/firestore';
-import { 
-  Wallet, ArrowUpCircle, ArrowDownCircle, CheckCircle, 
-  Clock, X, Edit2, Trash2, Camera, Receipt, ClipboardList, FileSpreadsheet 
+import {
+  Wallet, ArrowUpCircle, ArrowDownCircle, CheckCircle,
+  Clock, X, Edit2, Trash2, Camera, Receipt, ClipboardList, FileSpreadsheet
 } from 'lucide-react';
 import { formatMoney, resizeImage, isQuoterProfile } from '../../utils/helpers';
 import InAppCamera from '../ui/InAppCamera';
@@ -480,11 +480,10 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
       <button
         type="button"
         onClick={() => setExpenseTabMode('wallet')}
-        className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-          expenseTabMode === 'wallet'
-            ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm'
-            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-        }`}
+        className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${expenseTabMode === 'wallet'
+          ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm'
+          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+          }`}
       >
         <Wallet className="w-4 h-4" />
         <span>{isAdminView ? 'Control Viáticos' : 'Billetera Gastos'}</span>
@@ -492,11 +491,10 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
       <button
         type="button"
         onClick={() => setExpenseTabMode('trip_report')}
-        className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-          expenseTabMode === 'trip_report'
-            ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm'
-            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-        }`}
+        className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${expenseTabMode === 'trip_report'
+          ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm'
+          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+          }`}
       >
         <FileSpreadsheet className="w-4 h-4" />
         <span>Rendición de Viaje</span>
