@@ -1,11 +1,68 @@
 rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model & Security Rules
+// ===============================================================
+//
+// Existing Collections (preserved without tightening):
+//   - system_config, clients, transport_jobs, expenses, vehicles,
+//     vehicle_models, drivers, directory, prts, inbox,
+//     historical_stats, quotes, tolls, monthly_stats
+//
+// Collection: trip_expense_reports ("Rendición de Viaje")
+// Document ID: Auto-generated or "trip_{timestamp}_{rand}"
+// Fields:
+//   - id: string or null (optional, <= 100 chars)
+//   - driverEmail: string (required, valid email, <= 150 chars, immutable for non-admins)
+//   - createdByEmail: string (optional, valid email, <= 150 chars, immutable for non-admins)
+//   - createdByName: string or null (optional, <= 150 chars)
+//   - updatedByEmail: string or null (optional, <= 150 chars)
+//   - driverId: string or null (optional, <= 100 chars)
+//   - driverName: string or null (optional, <= 150 chars)
+//   - jobId: string or null (optional, <= 100 chars)
+//   - tripTitle: string (required, 1..200 chars)
+//   - plate: string or null (optional, <= 40 chars)
+//   - vin: string or null (optional, <= 60 chars)
+//   - client: string or null (optional, <= 200 chars)
+//   - vehicleInfo: string or null (optional, <= 200 chars)
+//   - origin: string or null (optional, <= 200 chars)
+//   - destination: string or null (optional, <= 200 chars)
+//   - startDate: string (<= 50 chars), number (>= 0), timestamp, or null (optional)
+//   - endDate: string (<= 50 chars), number (>= 0), timestamp, or null (optional)
+//   - advanceAmount: number (0..100000000) or null (optional)
+//   - totalAmount: number (0..100000000) or null (optional)
+//   - balanceDifference: number (-100000000..100000000) or null (optional)
+//   - itemCount: number (0..500) or null (optional)
+//   - itemsWithPhoto: number (0..500) or null (optional)
+//   - totals: map (optional, category totals map {combustible, peaje, viatico, alojamiento, extra}
+//       or summary map) or null
+//   - items: list of maps (required, <= 150 items; categorized receipts with photo URLs)
+//   - status: string (required, one of 'draft', 'submitted', 'approved', 'observed')
+//   - notes: string or null (optional, <= 2000 chars)
+//   - adminNote: string or null (optional, <= 2000 chars, admin-only modification)
+//   - reviewedBy: string or null (optional, <= 150 chars, admin-only modification)
+//   - reviewedByEmail: string or null (optional, <= 150 chars, admin-only modification)
+//   - reviewedByName: string or null (optional, <= 150 chars, admin-only modification)
+//   - reviewedAt: number (>= 0), timestamp, or null (optional, admin-only modification)
+//   - submittedAt: number (>= 0), timestamp, or null (optional)
+//   - approvedAt: number (>= 0), timestamp, or null (optional, admin-only modification)
+//   - observedAt: number (>= 0), timestamp, or null (optional, admin-only modification)
+//   - createdAt: number (> 0) or timestamp (required, immutable)
+//   - updatedAt: number (>= 0), timestamp, or null (optional)
+//
+// ===============================================================
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
+    // -----------------------------------------------------------------------
+    // 1. HELPER FUNCTIONS (EXISTING + SHARED SECURITY HELPERS)
+    // -----------------------------------------------------------------------
+
     // 1. EL CANDADO MAESTRO: Verificamos los correos desde el servidor seguro de Google
     function isAdmin() {
-      return request.auth != null && 
-             (request.auth.token.email == 'fcastro@logisticats.cl' || 
+      return request.auth != null &&
+             (request.auth.token.email == 'fcastro@logisticats.cl' ||
               request.auth.token.email == 'hcastro@logisticats.cl');
     }
 
@@ -14,8 +71,274 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Excluye usuarios anónimos (ClientSignView usa signInAnonymously sin token.email)
+    function hasTokenEmail() {
+      return isAuthenticated() &&
+             'email' in request.auth.token &&
+             request.auth.token.email is string &&
+             request.auth.token.email.size() >= 3;
+    }
+
+    function tokenEmailLower() {
+      return request.auth.token.email.lower();
+    }
+
+    // Admins de Rendiciones de Viaje (coincide con isRealAdmin de useFirebase.js)
+    function isTripReportAdmin() {
+      return hasTokenEmail() && (
+        tokenEmailLower() == 'fcastro@logisticats.cl' ||
+        tokenEmailLower() == 'hcastro@logisticats.cl' ||
+        tokenEmailLower() == 'gcastronu@gmail.com'
+      );
+    }
+
+    function isEmailMatchingAuth(emailVal) {
+      return emailVal is string && (
+        emailVal == request.auth.token.email ||
+        emailVal == request.auth.token.email.lower() ||
+        emailVal.lower() == tokenEmailLower()
+      );
+    }
+
+    // Dueño de la rendición (conductor asignado o quien la creó)
+    // Incluye comparaciones directas con token.email y token.email.lower() para validar queries where('driverEmail', '==', email)
+    function isTripReportOwner(data) {
+      return hasTokenEmail() && (
+        data.driverEmail == request.auth.token.email ||
+        data.driverEmail == request.auth.token.email.lower() ||
+        ('createdByEmail' in data && (
+          data.createdByEmail == request.auth.token.email ||
+          data.createdByEmail == request.auth.token.email.lower()
+        )) ||
+        (data.driverEmail is string && data.driverEmail.lower() == tokenEmailLower()) ||
+        ('createdByEmail' in data && data.createdByEmail is string && data.createdByEmail.lower() == tokenEmailLower())
+      );
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string &&
+             email.size() <= 150 &&
+             email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidUrl(url) {
+      return url is string &&
+             (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    function isOptionalString(data, field, maxLen) {
+      return !(field in data) ||
+             data[field] == null ||
+             (data[field] is string && data[field].size() <= maxLen);
+    }
+
+    function isOptionalNumberInRange(data, field, minVal, maxVal) {
+      return !(field in data) ||
+             data[field] == null ||
+             (data[field] is number && data[field] >= minVal && data[field] <= maxVal);
+    }
+
+    function isOptionalDateValue(data, field) {
+      return !(field in data) ||
+             data[field] == null ||
+             (data[field] is string && data[field].size() <= 50) ||
+             (data[field] is number && data[field] >= 0) ||
+             data[field] is timestamp;
+    }
+
+    function isOptionalTimestampOrEpoch(data, field) {
+      return !(field in data) ||
+             data[field] == null ||
+             (data[field] is number && data[field] >= 0) ||
+             data[field] is timestamp;
+    }
+
+    function isEmptyOrNull(data, field) {
+      return !(field in data) || data[field] == null || data[field] == '';
+    }
+
     // -----------------------------------------------------------------------
-    // 2. REGLAS POR COLECCIÓN
+    // 2. VALIDATORS FOR trip_expense_reports
+    // -----------------------------------------------------------------------
+
+    function isValidPhotoField(item, field) {
+      return !(field in item) ||
+             item[field] == null ||
+             item[field] == '' ||
+             (item[field] is string && (
+               (item[field].size() <= 2048 && isValidUrl(item[field])) ||
+               (item[field].size() <= 350000 && item[field].matches("^data:image/(jpeg|jpg|png|webp|heic|heif);base64,.*"))
+             ));
+    }
+
+    function isValidOptionalItemMetric(item, field, maxVal) {
+      return !(field in item) ||
+             item[field] == null ||
+             item[field] == '' ||
+             (item[field] is number && item[field] >= 0 && item[field] <= maxVal) ||
+             (item[field] is string && item[field].size() <= 30);
+    }
+
+    function isValidTripExpenseItem(item) {
+      return item is map &&
+             item.keys().hasOnly([
+               'id', 'category', 'date', 'createdAt', 'updatedAt',
+               'description', 'location', 'receiptNumber', 'notes', 'amount',
+               'liters', 'odometerKm', 'nights',
+               'photoUrl', 'receiptPhoto', 'secondaryPhotoUrl', 'secondaryPhoto',
+               'addedByEmail', 'tollId', 'preset', 'paymentMethod'
+             ]) &&
+             ('category' in item && item.category is string &&
+              item.category in ['combustible', 'peaje', 'viatico', 'alojamiento', 'extra']) &&
+             ('amount' in item && item.amount is number && item.amount >= 0 && item.amount <= 50000000) &&
+             (!('id' in item) || item.id == null || (item.id is string && item.id.size() <= 100) || (item.id is number && item.id >= 0)) &&
+             isOptionalDateValue(item, 'date') &&
+             isOptionalDateValue(item, 'createdAt') &&
+             isOptionalDateValue(item, 'updatedAt') &&
+             isOptionalString(item, 'description', 500) &&
+             isOptionalString(item, 'location', 200) &&
+             (!('receiptNumber' in item) || item.receiptNumber == null || (item.receiptNumber is string && item.receiptNumber.size() <= 100) || (item.receiptNumber is number && item.receiptNumber >= 0)) &&
+             isOptionalString(item, 'notes', 500) &&
+             isValidOptionalItemMetric(item, 'liters', 10000) &&
+             isValidOptionalItemMetric(item, 'odometerKm', 5000000) &&
+             isValidOptionalItemMetric(item, 'nights', 365) &&
+             isValidPhotoField(item, 'photoUrl') &&
+             isValidPhotoField(item, 'receiptPhoto') &&
+             isValidPhotoField(item, 'secondaryPhotoUrl') &&
+             isValidPhotoField(item, 'secondaryPhoto') &&
+             (!('addedByEmail' in item) || item.addedByEmail == null || item.addedByEmail == '' || isValidEmail(item.addedByEmail)) &&
+             isOptionalString(item, 'tollId', 100) &&
+             isOptionalString(item, 'preset', 100) &&
+             isOptionalString(item, 'paymentMethod', 100);
+    }
+
+    function isValidTripExpenseItems(items) {
+      return items is list &&
+             items.size() <= 150 &&
+             (items.size() == 0 || isValidTripExpenseItem(items[0])) &&
+             (items.size() <= 1 || isValidTripExpenseItem(items[1])) &&
+             (items.size() <= 2 || isValidTripExpenseItem(items[items.size() - 1]));
+    }
+
+    function isValidTripTotals(totals) {
+      return totals == null || (
+        totals is map &&
+        (
+          (
+            totals.keys().hasOnly(['combustible', 'peaje', 'viatico', 'alojamiento', 'extra']) &&
+            isOptionalNumberInRange(totals, 'combustible', 0, 100000000) &&
+            isOptionalNumberInRange(totals, 'peaje', 0, 100000000) &&
+            isOptionalNumberInRange(totals, 'viatico', 0, 100000000) &&
+            isOptionalNumberInRange(totals, 'alojamiento', 0, 100000000) &&
+            isOptionalNumberInRange(totals, 'extra', 0, 100000000)
+          ) || (
+            totals.keys().hasOnly([
+              'byCategory', 'countsByCategory', 'totalAmount',
+              'advanceAmount', 'balanceDifference', 'itemCount', 'itemsWithPhoto'
+            ]) &&
+            isOptionalNumberInRange(totals, 'totalAmount', 0, 100000000) &&
+            isOptionalNumberInRange(totals, 'advanceAmount', 0, 100000000) &&
+            isOptionalNumberInRange(totals, 'balanceDifference', -100000000, 100000000) &&
+            isOptionalNumberInRange(totals, 'itemCount', 0, 500) &&
+            isOptionalNumberInRange(totals, 'itemsWithPhoto', 0, 500) &&
+            (!('byCategory' in totals) || (totals.byCategory is map && totals.byCategory.keys().size() <= 10)) &&
+            (!('countsByCategory' in totals) || (totals.countsByCategory is map && totals.countsByCategory.keys().size() <= 10))
+          )
+        )
+      );
+    }
+
+    function isValidTripExpenseReport(data) {
+      return hasOnlyAllowedFields([
+               'id', 'driverId', 'driverName', 'driverEmail',
+               'createdByEmail', 'createdByName', 'updatedByEmail',
+               'jobId', 'tripTitle', 'plate', 'vin', 'client', 'vehicleInfo',
+               'origin', 'destination', 'startDate', 'endDate',
+               'advanceAmount', 'totalAmount', 'balanceDifference',
+               'itemCount', 'itemsWithPhoto', 'totals',
+               'items', 'status', 'notes', 'adminNote',
+               'reviewedBy', 'reviewedByEmail', 'reviewedByName', 'reviewedAt',
+               'submittedAt', 'approvedAt', 'observedAt',
+               'createdAt', 'updatedAt'
+             ]) &&
+             hasRequiredFields(['driverEmail', 'tripTitle', 'status', 'items', 'createdAt']) &&
+             isOptionalString(data, 'id', 100) &&
+             isValidEmail(data.driverEmail) &&
+             (!('createdByEmail' in data) || data.createdByEmail == null || isValidEmail(data.createdByEmail)) &&
+             isOptionalString(data, 'createdByName', 150) &&
+             (!('updatedByEmail' in data) || data.updatedByEmail == null || data.updatedByEmail == '' || isValidEmail(data.updatedByEmail)) &&
+             isOptionalString(data, 'driverId', 100) &&
+             isOptionalString(data, 'driverName', 150) &&
+             isOptionalString(data, 'jobId', 100) &&
+             data.tripTitle is string && data.tripTitle.size() >= 1 && data.tripTitle.size() <= 200 &&
+             isOptionalString(data, 'plate', 40) &&
+             isOptionalString(data, 'vin', 60) &&
+             isOptionalString(data, 'client', 200) &&
+             isOptionalString(data, 'vehicleInfo', 200) &&
+             isOptionalString(data, 'origin', 200) &&
+             isOptionalString(data, 'destination', 200) &&
+             isOptionalDateValue(data, 'startDate') &&
+             isOptionalDateValue(data, 'endDate') &&
+             isOptionalNumberInRange(data, 'advanceAmount', 0, 100000000) &&
+             isOptionalNumberInRange(data, 'totalAmount', 0, 100000000) &&
+             isOptionalNumberInRange(data, 'balanceDifference', -100000000, 100000000) &&
+             isOptionalNumberInRange(data, 'itemCount', 0, 500) &&
+             isOptionalNumberInRange(data, 'itemsWithPhoto', 0, 500) &&
+             (!('totals' in data) || isValidTripTotals(data.totals)) &&
+             isValidTripExpenseItems(data.items) &&
+             data.status is string && data.status in ['draft', 'submitted', 'approved', 'observed'] &&
+             isOptionalString(data, 'notes', 2000) &&
+             isOptionalString(data, 'adminNote', 2000) &&
+             isOptionalString(data, 'reviewedBy', 150) &&
+             (!('reviewedByEmail' in data) || data.reviewedByEmail == null || data.reviewedByEmail == '' || isValidEmail(data.reviewedByEmail)) &&
+             isOptionalString(data, 'reviewedByName', 150) &&
+             isOptionalTimestampOrEpoch(data, 'reviewedAt') &&
+             isOptionalTimestampOrEpoch(data, 'submittedAt') &&
+             isOptionalTimestampOrEpoch(data, 'approvedAt') &&
+             isOptionalTimestampOrEpoch(data, 'observedAt') &&
+             ((data.createdAt is number && data.createdAt > 0) || data.createdAt is timestamp) &&
+             isOptionalTimestampOrEpoch(data, 'updatedAt');
+    }
+
+    function isValidDriverCreatedOwnership(data) {
+      return isEmailMatchingAuth(data.driverEmail) &&
+             (!('createdByEmail' in data) || isEmailMatchingAuth(data.createdByEmail));
+    }
+
+    function isDriverReviewFieldsCleanOnCreate(data) {
+      return isEmptyOrNull(data, 'adminNote') &&
+             isEmptyOrNull(data, 'reviewedBy') &&
+             isEmptyOrNull(data, 'reviewedByEmail') &&
+             isEmptyOrNull(data, 'reviewedByName') &&
+             isEmptyOrNull(data, 'reviewedAt') &&
+             isEmptyOrNull(data, 'approvedAt') &&
+             isEmptyOrNull(data, 'observedAt');
+    }
+
+    function isValidDriverStatusTransition(prevData, nextData) {
+      return (prevData.status == 'draft' && nextData.status in ['draft', 'submitted']) ||
+             (prevData.status == 'observed' && nextData.status in ['observed', 'draft', 'submitted']) ||
+             (prevData.status == 'submitted' && nextData.status in ['submitted', 'draft']);
+    }
+
+    // -----------------------------------------------------------------------
+    // 3. REGLAS POR COLECCIÓN
     // -----------------------------------------------------------------------
 
     // A) CONFIGURACIÓN DEL SISTEMA (Avisos Globales Pop-Up)
@@ -28,7 +351,7 @@ service cloud.firestore {
     match /clients/{document=**} {
       allow read: if true; // ABIERTO: Para que el portal valide el correo del cliente sin estar logueado
       allow create, delete: if isAdmin(); // BLOQUEO: Nadie más puede agregar o borrar clientes
-      
+
       // MAGIA: El Admin puede actualizar todo. El cliente anónimo SOLO puede tocar el 'contactPin'.
       allow update: if isAdmin() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['contactPin']);
     }
@@ -38,7 +361,7 @@ service cloud.firestore {
       allow read: if true; // ABIERTO: El cliente debe poder leer sus trabajos para ver el GPS
       allow create: if isLogged(); // Solo conductores/admin pueden crear
       allow delete: if isAdmin(); // Nadie puede borrar un trabajo excepto tú
-      
+
       // MAGIA: El equipo interno actualiza todo. El cliente anónimo SOLO puede actualizar el 'checklist' (para poder firmar).
       allow update: if isLogged() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['checklist']);
     }
@@ -47,7 +370,7 @@ service cloud.firestore {
       allow read, create, update: if isLogged();
       allow delete: if isAdmin(); // Bloqueo contra conductores que quieran borrar viáticos asignados
     }
-    
+
     match /vehicles/{vehicleId} {
       allow read: if true; // ABIERTO: El portal de clientes necesita leer datos del vehículo
       allow create, update: if isLogged();
@@ -60,20 +383,20 @@ service cloud.firestore {
       allow create, update: if isLogged(); // Choferes y administradores pueden añadir o categorizar modelos
       allow delete: if isLogged(); // Administradores y equipo autorizado pueden depurar catálogo
     }
-    
+
     match /drivers/{driverId} {
       allow read: if true; // ABIERTO: El cliente necesita ver el nombre/foto de quien lleva el auto
       allow create, update: if isLogged();
       allow delete: if isAdmin(); // Nadie puede borrar a un compañero del sistema
     }
-    
+
     match /directory/{document=**} {
-      allow read: if true; 
+      allow read: if true;
       allow write: if isLogged();
     }
-    
+
     match /prts/{document=**} {
-      allow read: if true; 
+      allow read: if true;
       allow write: if isLogged();
     }
 
@@ -82,23 +405,63 @@ service cloud.firestore {
       allow read, write: if isLogged(); // Permite a los usuarios logueados subir y eliminar sus propios archivos
     }
 
-   // E) ESTADÍSTICAS HISTÓRICAS CONSOLIDADAS
+    // E) ESTADÍSTICAS HISTÓRICAS CONSOLIDADAS
     match /historical_stats/{document=**} {
       allow read: if isLogged(); // Conductores y Admins pueden ver estadísticas
       allow write: if isAdmin(); // SOLO el Admin puede escribir (guardar/modificar la foto estática)
     }
 
-    // F) COTIZACIONES Y PEAJES (NUEVO)
+    // F) COTIZACIONES Y PEAJES
     match /quotes/{document=**} {
       allow read, write: if isLogged();
     }
-    
+
     match /tolls/{document=**} {
       allow read, write: if isLogged();
     }
-    
+
     match /monthly_stats/{document} {
       allow read, write: if true;
+    }
+
+    // G) RENDICIONES DE VIAJE (trip_expense_reports)
+    match /trip_expense_reports/{reportId} {
+      // Lectura: Admins (allowlist) o dueño (driverEmail / createdByEmail)
+      allow read: if isTripReportAdmin() || isTripReportOwner(resource.data);
+
+      // Creación: Admins (incluso en nombre de conductores) o conductor autenticado para sí mismo en estado 'draft'/'submitted'
+      allow create: if isValidTripExpenseReport(request.resource.data) && (
+        isTripReportAdmin() ||
+        (hasTokenEmail() &&
+         isValidDriverCreatedOwnership(request.resource.data) &&
+         request.resource.data.status in ['draft', 'submitted'] &&
+         isDriverReviewFieldsCleanOnCreate(request.resource.data))
+      );
+
+      // Actualización: Valida esquema completo en ambos caminos; bloquea mutación de createdAt;
+      // conductores no pueden aprobar/observar, modificar aprobadas ni alterar campos de auditoría/propiedad
+      allow update: if isValidTripExpenseReport(request.resource.data) &&
+                    (!('createdAt' in resource.data) || areImmutableFieldsUnchanged(['createdAt'])) && (
+        isTripReportAdmin() ||
+        (isTripReportOwner(resource.data) &&
+         areImmutableFieldsUnchanged([
+           'driverEmail', 'createdByEmail', 'createdAt',
+           'adminNote', 'reviewedBy', 'reviewedByEmail', 'reviewedByName',
+           'reviewedAt', 'approvedAt', 'observedAt'
+         ]) &&
+         isValidDriverStatusTransition(resource.data, request.resource.data))
+      );
+
+      // Eliminación: Admins pueden borrar cualquiera; conductores solo sus propios borradores ('draft')
+      allow delete: if isTripReportAdmin() ||
+                    (isTripReportOwner(resource.data) && resource.data.status == 'draft');
+    }
+
+    // -----------------------------------------------------------------------
+    // 4. DEFAULT DENY (Cualquier otra colección o subcolección no especificada)
+    // -----------------------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
     }
 
   }
