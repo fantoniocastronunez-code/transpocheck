@@ -924,7 +924,7 @@ export default function TripExpensesView({
               </div>
 
               <div>
-                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Anticipo / Viático Entregado ($ Opcional)</label>
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">Monto entregado para viaje ($ Opcional)</label>
                 <div className="relative">
                   <input
                     type="number"

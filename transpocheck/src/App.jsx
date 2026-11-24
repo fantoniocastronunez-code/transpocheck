@@ -116,7 +116,7 @@ function LogisticApp() {
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
   const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
-  const APP_VERSION = "v1.3.29"; // IMPORTANT: Update this version string when making changes.
+  const APP_VERSION = "v1.3.30"; // IMPORTANT: Update this version string when making changes.
   const platformConfig = getPlatformConfig();
 
   // VARIABLES MÁGICAS: Atrapan lo que Android nos comparte desde CamScanner o Adobe Scan

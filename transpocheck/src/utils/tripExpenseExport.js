@@ -294,9 +294,9 @@ export const exportTripReportToExcel = async (report) => {
     { t: 'n', v: totals.totalAmount, f: `SUM(C10:C14)`, z: currencyFmt },
     { t: 'n', v: totals.totalAmount > 0 ? 1 : 0, z: '0.0%' }
   ]);
-  // Fila 16: ANTICIPO / FONDO
+  // Fila 16: MONTO ENTREGADO PARA VIAJE
   summaryRows.push([
-    'FONDO / ANTICIPO ENTREGADO',
+    'MONTO ENTREGADO PARA VIAJE',
     '',
     { t: 'n', v: totals.advanceAmount, z: currencyFmt },
     ''
@@ -415,7 +415,7 @@ export const exportMultipleTripReportsToExcel = async (reports = []) => {
     'Alojamientos ($)',
     'Gastos Extra ($)',
     'Total Rendido ($)',
-    'Anticipo ($)',
+    'Monto Entregado Viaje ($)',
     'Saldo / Diferencia ($)',
     'Fotos Adjuntas'
   ];
