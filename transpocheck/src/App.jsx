@@ -19,7 +19,8 @@ import SwipeButton from './components/ui/SwipeButton';
 import WaitTimerBadge from './components/ui/WaitTimerBadge';
 import { DevMenu } from './components/ui/DevMenu';
 import { ImageViewer } from './components/ui/ImageViewer';
-import { DEFAULT_CLIENTES, LICENCIAS, formatMoney, formatDateDisplay, resizeImage, safeStorageSet, safeStorageRemove, safeStorageSetJson } from './utils/helpers';
+import { DEFAULT_CLIENTES, LICENCIAS, formatMoney, formatDateDisplay, resizeImage, safeStorageSet, safeStorageRemove, safeStorageSetJson, getAssignableDrivers } from './utils/helpers';
+import { getPlatformConfig } from './utils/platformConfig';
 
 const LazyUpdateFallback = () => {
   useEffect(() => {
@@ -115,7 +116,8 @@ function LogisticApp() {
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
   const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
-  const APP_VERSION = "v1.3.25"; // IMPORTANT: Update this version string when making changes.
+  const APP_VERSION = "v1.3.26"; // IMPORTANT: Update this version string when making changes.
+  const platformConfig = getPlatformConfig();
 
   // VARIABLES MÁGICAS: Atrapan lo que Android nos comparte desde CamScanner o Adobe Scan
   const sharedText = searchParams.get('shared_text');
@@ -739,6 +741,13 @@ function LogisticApp() {
                       <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 rounded text-[11px] font-semibold">Activas</span>
                     )}
                   </div>
+                  {/* Perfil de Dispositivo Detectado */}
+                  <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-3">
+                    <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Perfil Dispositivo</span>
+                    <span className={`px-2 py-0.5 rounded text-[11px] font-semibold border ${platformConfig.isIOS ? 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700' : platformConfig.isAndroid ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60' : 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800/60'}`}>
+                      {platformConfig.label}
+                    </span>
+                  </div>
 
                   {/* --- SÚPER BOTÓN MATA-CACHÉ (SOLUCIÓN DEFINITIVA XIAOMI/PWA) --- */}
                   <div className="border-t border-slate-100 dark:border-slate-800 pt-3 w-full">
@@ -849,7 +858,7 @@ function LogisticApp() {
 
                     {/* LISTA SCROLLEABLE INTERNA DE CONDUCTORES */}
                     <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md max-h-40 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
-                      {drivers.filter(d => !d.isHidden && d.role !== 'quoter' && !d.email?.toLowerCase().includes('facturacionycobranzas')).sort((a, b) => a.name.localeCompare(b.name)).map(d => {
+                      {getAssignableDrivers(drivers).sort((a, b) => a.name.localeCompare(b.name)).map(d => {
                         const isCurrentActive = activeRole === 'driver' && simulatedDriverEmail === d.email;
                         return (
                           <div key={d.id} className={`flex items-center justify-between p-1 transition-colors group ${isCurrentActive ? 'bg-blue-50/70 dark:bg-blue-950/40 border-l-2 border-blue-600' : 'hover:bg-slate-50 dark:hover:bg-slate-900'}`}>
@@ -923,7 +932,7 @@ function LogisticApp() {
                       </div>
                     )}
 
-                    {adminTab === 'newJob' && <div><NewJobForm key={editingJob ? editingJob.id : 'new'} jobToEdit={editingJob} onCancelEdit={() => { setEditingJob(null); setAdminTab('dashboard'); }} allClientsList={allClientsList} vehicles={vehicles} vehicleModels={vehicleModels} drivers={drivers.filter(d => !d.isHidden)} db={db} showAlert={showAlert} onSuccess={() => setAdminTab('dashboard')} pushSyncTask={pushSyncTask} myDriver={myDriver} user={user} /></div>}
+                    {adminTab === 'newJob' && <div><NewJobForm key={editingJob ? editingJob.id : 'new'} jobToEdit={editingJob} onCancelEdit={() => { setEditingJob(null); setAdminTab('dashboard'); }} allClientsList={allClientsList} vehicles={vehicles} vehicleModels={vehicleModels} drivers={getAssignableDrivers(drivers)} db={db} showAlert={showAlert} onSuccess={() => setAdminTab('dashboard')} pushSyncTask={pushSyncTask} myDriver={myDriver} user={user} /></div>}
 
                     {adminTab === 'history' && <div><VehicleHistoryView db={db} showAlert={showAlert} /></div>}
 

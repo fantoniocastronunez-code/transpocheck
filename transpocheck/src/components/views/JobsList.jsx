@@ -24,7 +24,8 @@ import HistoryModal from './JobsList/HistoryModal';
 import JobExpenseModal from './JobsList/JobExpenseModal';
 import ArrivalModal from './JobsList/ArrivalModal';
 import PickupModal from './JobsList/PickupModal';
-import { formatDateDisplay, analyzeJobStatus, generateStandardFileName, generateWhatsAppText, getRouteStr, resizeImage, resizeAndWatermarkImage, isTrailerVehicle, getRtFinalDestination, safeStorageSetJson, copyTextToClipboard, isIOSDevice } from '../../utils/helpers';
+import { formatDateDisplay, analyzeJobStatus, generateStandardFileName, generateWhatsAppText, getRouteStr, resizeImage, resizeAndWatermarkImage, isTrailerVehicle, getRtFinalDestination, safeStorageSetJson, copyTextToClipboard, getAssignableDrivers } from '../../utils/helpers';
+import { getPlatformConfig } from '../../utils/platformConfig';
 import { purgeOrphanStoragePhotos, formatBytes } from '../../utils/storageMetrics';
 import { saveJobToMonthlyStatsBeforeDelete, getMonthKey, extractLightweightJob, calculateStatsFromLightweightJobs } from '../../utils/statsSync';
 
@@ -1305,7 +1306,7 @@ export default function JobsList({ jobs, drivers, role, isEasyMode = false, onSt
       const pdfBlob = docPDF.output('blob');
       const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
-      if (isIOSDevice()) {
+      if (getPlatformConfig().share.alwaysUseTwoStepPdfModal) {
         // En iOS/Safari, mostrar el panel de envío garantiza interacción síncrona para navigator.share
         // y ofrece envío directo de texto por WhatsApp (evitando que el comentario de Share Sheet quite saltos de línea).
         showAlert(null);
@@ -2441,7 +2442,7 @@ export default function JobsList({ jobs, drivers, role, isEasyMode = false, onSt
             <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">Selecciona al conductor que realizó este traslado. El acta se cerrará automáticamente a su nombre (como entrega sin recepción).</p>
 
             <div className="overflow-y-auto space-y-2 flex-1 pr-1">
-              {drivers.filter(d => !d.isHidden && d.role !== 'quoter' && !d.email?.toLowerCase().includes('facturacionycobranzas')).map(d => (
+              {getAssignableDrivers(drivers).map(d => (
                 <button key={d.id} onClick={async () => {
                   showConfirm(`¿Guardar el traslado de la patente ${forceCloseJob.plate || forceCloseJob.vin} a nombre de ${d.name}?`, async () => {
                     try {
@@ -2707,7 +2708,7 @@ export default function JobsList({ jobs, drivers, role, isEasyMode = false, onSt
                         <span className={`text-xs font-black ${dupDriverEmails.length === 0 ? 'text-sky-800 dark:text-sky-300' : 'text-slate-600 dark:text-slate-400'}`}>Nadie aún (Bolsa de Trabajo)</span>
                       </div>
 
-                      {drivers.filter(d => !d.isHidden && d.role !== 'quoter' && !d.email?.toLowerCase().includes('facturacionycobranzas')).map(d => {
+                      {getAssignableDrivers(drivers).map(d => {
                         const isSelected = dupDriverEmails.includes(d.email);
                         return (
                           <div key={d.id} onClick={() => {
@@ -2798,7 +2799,7 @@ export default function JobsList({ jobs, drivers, role, isEasyMode = false, onSt
               <label className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest ml-1">Nuevo Conductor</label>
               <select name="newDriver" required defaultValue={editDriverJob.acceptedByEmail || ""} className="w-full border-2 border-blue-200 dark:border-blue-800/50 bg-blue-50 dark:bg-blue-900/30 p-3.5 rounded-xl font-black text-sm text-blue-900 dark:text-blue-300 outline-none focus:border-blue-500 mt-1 shadow-sm">
                 <option value="" disabled>Selecciona un conductor...</option>
-                {drivers.filter(d => !d.isHidden && d.role !== 'quoter' && !d.email?.toLowerCase().includes('facturacionycobranzas')).map(d => (
+                {getAssignableDrivers(drivers).map(d => (
                   <option key={d.email} value={d.email}>{d.name} ({d.email})</option>
                 ))}
               </select>
@@ -3178,7 +3179,7 @@ export default function JobsList({ jobs, drivers, role, isEasyMode = false, onSt
                 if (navigator.canShare && navigator.canShare({ files: [pdfReadyToShare.file] })) {
                   navigator.share({ files: [pdfReadyToShare.file] })
                     .then(() => {
-                      if (!isIOSDevice()) setPdfReadyToShare(null);
+                      if (!getPlatformConfig().share.keepModalOpenAfterPdfShare) setPdfReadyToShare(null);
                     })
                     .catch(e => {
                       if (e.name !== 'AbortError') {

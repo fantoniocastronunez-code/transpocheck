@@ -6,7 +6,8 @@ import {
   Settings, Sliders, Hash, RotateCcw, Building2, Briefcase, Phone, Globe, FileText, Check, Download, Smartphone,
   FlaskConical, Filter, Loader2, FileSpreadsheet, Trash2
 } from 'lucide-react';
-import { formatMoney, copyTextToClipboard, isIOSDevice } from '../../utils/helpers';
+import { formatMoney, copyTextToClipboard, getAssignableDrivers } from '../../utils/helpers';
+import { getPlatformConfig } from '../../utils/platformConfig';
 
 // Helper para limpiar y procesar montos numéricos desde CSV (soporta $, puntos de miles, comas, etc.)
 const cleanAmount = (val) => {
@@ -1907,7 +1908,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         const pdfBlob = await html2pdf().from(htmlContent).set(opt).output('blob');
         const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
-        if (isIOSDevice()) {
+        if (getPlatformConfig().share.alwaysUseTwoStepPdfModal) {
           showAlert(null);
           setQuoteModalCopied(copiedOk);
           setQuotePdfReadyToShare({ file, fileName, text, htmlContent, opt, html2pdf });
@@ -4218,8 +4219,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl p-3 pl-10 text-sm font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-emerald-500 bg-white dark:bg-slate-900"
                   >
                     <option value="">Sin asignar (Dejar como Pendiente)</option>
-                    {drivers && drivers
-                      .filter(driver => !driver.isHidden && driver.role !== 'quoter' && !driver.email?.toLowerCase().includes('facturacionycobranzas'))
+                    {getAssignableDrivers(drivers)
                       .map((driver, idx) => (
                         <option key={idx} value={driver.name || driver.email}>
                           {driver.name || driver.email}
@@ -4299,7 +4299,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
                     files: [quotePdfReadyToShare.file]
                   })
                     .then(() => {
-                      if (!isIOSDevice()) setQuotePdfReadyToShare(null);
+                      if (!getPlatformConfig().share.keepModalOpenAfterPdfShare) setQuotePdfReadyToShare(null);
                     })
                     .catch(async (err) => {
                       if (err?.name !== 'AbortError') {

@@ -3,7 +3,7 @@ import {
   CheckCircle, AlertTriangle, Clock, FileText, Calendar, 
   UserX, Trophy, ShieldAlert, Navigation, Car, AlertCircle
 } from 'lucide-react';
-import { calculateDriverChecklistScore } from '../../utils/helpers';
+import { calculateDriverChecklistScore, isQuoterProfile, getAssignableDrivers } from '../../utils/helpers';
 
 export default function ChecklistAnalyticsView({ jobs, drivers, currentUserEmail, activeRole }) {
   const analytics = useMemo(() => {
@@ -17,6 +17,9 @@ export default function ChecklistAnalyticsView({ jobs, drivers, currentUserEmail
     completedJobs.forEach(job => {
       const driverEmail = job.acceptedByEmail;
       if (!driverEmail) return;
+      const normalizedEmail = driverEmail.toLowerCase().trim();
+      const driverRecord = drivers?.find(d => (d.email || '').toLowerCase().trim() === normalizedEmail);
+      if (isQuoterProfile(driverRecord || { email: normalizedEmail }, drivers)) return;
       
       if (!driverStats[driverEmail]) {
         const driverName = drivers?.find(d => d.email === driverEmail)?.name || driverEmail;
@@ -149,7 +152,7 @@ export default function ChecklistAnalyticsView({ jobs, drivers, currentUserEmail
   }, [jobs, drivers]);
   
   const allDriversNotes = useMemo(() => {
-     return drivers.filter(d => !d.isHidden).map(d => {
+     return getAssignableDrivers(drivers).map(d => {
         const result = calculateDriverChecklistScore(jobs, d.email, drivers);
         return {
            name: d.name || d.email,

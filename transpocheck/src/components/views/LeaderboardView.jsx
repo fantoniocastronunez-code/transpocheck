@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Trophy, Eye, X, MapPin, Navigation, EyeOff, Archive, RefreshCw, Calendar, CheckCircle } from 'lucide-react';
 import { updateDoc, doc, onSnapshot } from 'firebase/firestore';
 import { getMonthKey, syncMonthJobs } from '../../utils/statsSync';
+import { getAssignableDrivers } from '../../utils/helpers';
 
 const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
@@ -80,11 +81,7 @@ export default function LeaderboardView({ jobs = [], drivers = [], isAdminView, 
     return Array.from(mergedMap.values());
   }, [jobs, monthlyStatsData, firstOfCurrentMonth]);
 
-  const uniqueDrivers = useMemo(() => {
-    return Array.from(
-      new Map((drivers || []).filter(d => !d.isHidden).map(d => [d.email?.toLowerCase().trim(), d])).values()
-    );
-  }, [drivers]);
+  const uniqueDrivers = useMemo(() => getAssignableDrivers(drivers), [drivers]);
 
   // 4. CÁLCULO DEL RANKING MENSUAL POR CONDUCTOR
   const ranking = useMemo(() => {

@@ -5,7 +5,7 @@ import {
   CheckCircle, Star, Navigation, TrendingUp, Shield, 
   AlertTriangle, MapPin, Zap, Award, Route, Fuel, User
 } from 'lucide-react';
-import { formatMoney } from '../../utils/helpers';
+import { formatMoney, getAssignableDrivers } from '../../utils/helpers';
 import LicensePlateBadge from '../ui/LicensePlateBadge';
 import { getMonthKey } from '../../utils/statsSync';
 
@@ -131,7 +131,7 @@ export default function DriverDashboardView({ myDriver, jobs = [], expenses = []
       monthlyKm: Math.round(monthlyKm),
       totalKm: Math.round(totalKm),
       rankPosition: 0,
-      totalDrivers: (drivers || []).length,
+      totalDrivers: getAssignableDrivers(drivers).length,
       myScore: monthlyCompleted.length,
       breakdown: { traslados, prt, servicios, viajes },
       recentJobs,

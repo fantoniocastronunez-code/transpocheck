@@ -1,4 +1,5 @@
 // src/utils/helpers.js
+import { detectPlatform } from './platformConfig';
 
 export const DEFAULT_CLIENTES = ["Grandleasing Las Torres", "Grandleasing Umaña", "Kovacs", "Salfa", "Enex", "CIPP", "Simumak", "Mutual Capacitación"];
 
@@ -329,12 +330,7 @@ export const generateWhatsAppText = (job, dateShort, identifier) => {
 };
 
 /** Detecta si el navegador actual corre en iPhone, iPad o iPod (incluye iPadOS). */
-export const isIOSDevice = () => {
-  if (typeof navigator === 'undefined') return false;
-  const ua = navigator.userAgent || '';
-  if (/iPad|iPhone|iPod/.test(ua)) return true;
-  return navigator.platform === 'MacIntel' && (navigator.maxTouchPoints || 0) > 1;
-};
+export const isIOSDevice = () => detectPlatform() === 'ios';
 
 /** Normaliza saltos de línea a LF (\n) y espacios no separables para portapapeles iOS/Android. */
 export const normalizeClipboardText = (rawText) => {
@@ -619,4 +615,61 @@ export const safeStorageSetJson = (key, value, buildMinimalFallback = null) => {
     }
   }
   return false;
+};
+
+const ASSIGNABLE_ROLE_PRIORITY = {
+  super_admin: 6,
+  admin: 5,
+  quoter: 4,
+  driver_regions: 3,
+  part_time: 2,
+  driver: 1
+};
+
+/**
+ * Determina si un perfil pertenece a Cotizador/Ventas (incluyendo duplicados del mismo correo).
+ */
+export const isQuoterProfile = (driver, allDrivers = []) => {
+  if (!driver) return false;
+  const email = (driver.email || '').toLowerCase().trim();
+  const directRole = driver.role || '';
+  if (directRole === 'quoter' || email.includes('facturacionycobranzas')) {
+    return true;
+  }
+  if (email && Array.isArray(allDrivers) && allDrivers.length > 0) {
+    const docsForEmail = allDrivers.filter(d => (d?.email || '').toLowerCase().trim() === email);
+    if (docsForEmail.some(d => d.role === 'admin' || d.role === 'super_admin')) {
+      return false;
+    }
+    if (docsForEmail.some(d => d.role === 'quoter')) {
+      return true;
+    }
+  }
+  return false;
+};
+
+/**
+ * Retorna los perfiles válidos para rankings y selectores de conductores,
+ * excluyendo perfiles ocultos, cuentas cotizador/ventas y correos duplicados.
+ */
+export const getAssignableDrivers = (drivers = []) => {
+  if (!Array.isArray(drivers) || drivers.length === 0) return [];
+  const visible = drivers.filter(d => d && !d.isHidden && !isQuoterProfile(d, drivers));
+  const byKey = new Map();
+  visible.forEach(d => {
+    const email = (d.email || '').toLowerCase().trim();
+    const key = email || d.id;
+    if (!key) return;
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, d);
+      return;
+    }
+    const existingPrio = ASSIGNABLE_ROLE_PRIORITY[existing.role || 'driver'] || 0;
+    const nextPrio = ASSIGNABLE_ROLE_PRIORITY[d.role || 'driver'] || 0;
+    if (nextPrio > existingPrio) {
+      byKey.set(key, d);
+    }
+  });
+  return Array.from(byKey.values());
 };

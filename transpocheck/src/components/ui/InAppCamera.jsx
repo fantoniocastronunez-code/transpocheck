@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Camera, X, CheckCircle, RefreshCw, RefreshCcw, Edit3, AlertCircle, AlertTriangle } from 'lucide-react';
-import { safeStorageSet, isIOSDevice } from '../../utils/helpers';
+import { safeStorageSet } from '../../utils/helpers';
+import { getPlatformConfig, classifyCamerasForPlatform, acquireCameraStreamForPlatform } from '../../utils/platformConfig';
 
 export default function InAppCamera({ isOpen, onClose, onCapture, title, enableAnnotation = false }) {
+  const platformConfig = getPlatformConfig();
   const [stream, setStream] = useState(null);
   const [devices, setDevices] = useState([]);
   const [currentDeviceId, setCurrentDeviceId] = useState(null);
@@ -57,149 +59,12 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
     }
   };
 
-  // Clasifica los dispositivos de cámara disponibles
-  const classifyCameras = (deviceList, activeDeviceId) => {
-    const isIOS = isIOSDevice();
-    const isFront = (label) => {
-      const l = (label || '').toLowerCase();
-      return l.includes('front') || l.includes('delantera') || l.includes('frontal') || l.includes('user') || l.includes('selfie') || (isIOS && l.includes('truedepth'));
-    };
-    const isSensorAux = (label) => {
-      const l = (label || '').toLowerCase();
-      return l.includes('lidar') || l.includes('depth') || l.includes('profundidad') || l.includes('tof') || l.includes('infrared');
-    };
+  // Clasifica los dispositivos de cámara disponibles según la configuración de la plataforma detectada
+  const classifyCameras = (deviceList, activeDeviceId) =>
+    classifyCamerasForPlatform(platformConfig, deviceList, activeDeviceId);
 
-    const backCams = deviceList.filter(d => d.kind === 'videoinput' && !isFront(d.label) && (!isIOS || !isSensorAux(d.label)));
-    const cameras = backCams.length > 0 ? backCams : deviceList.filter(d => d.kind === 'videoinput' && !isFront(d.label));
-    const usableCameras = cameras.length > 0 ? cameras : deviceList.filter(d => d.kind === 'videoinput');
-
-    const ultraKeywords = ['ultra', 'gran angular', 'wide-angle', '0.5', '0,5'];
-    const tele3xKeywords = ['3x', '3.0x', 'periscope', 'periscopio', 'telephoto', 'teleobjetivo', 'tele'];
-    const teleFallbackKeywords = ['zoom', '2x'];
-    const teleKeywords = [...tele3xKeywords, ...teleFallbackKeywords];
-
-    // 1. Cámara Ultra Gran Angular (0.5x)
-    let ultra = usableCameras.find(d => ultraKeywords.some(k => d.label.toLowerCase().includes(k)));
-
-    // 2. Cámara Teleobjetivo (prioriza 3x óptico / telefoto dedicado sobre 2x) - Solo si tiene palabras clave explícitas para no abrir sensores macro o ToF de profundidad
-    let tele =
-      usableCameras.find(d => {
-        const l = d.label.toLowerCase();
-        return l.includes('3x') || l.includes('3.0x');
-      }) ||
-      usableCameras.find(d => tele3xKeywords.some(k => d.label.toLowerCase().includes(k))) ||
-      usableCameras.find(d => teleFallbackKeywords.some(k => d.label.toLowerCase().includes(k)));
-
-    // 3. Cámara Principal (1x)
-    let main = null;
-    if (isIOS) {
-      // En iOS evitar que "Back Dual Wide Camera" o "Back Triple Camera" desplace al lente 1x estándar o al dispositivo activo por defecto
-      const mainExplicitKeywords = ['main', 'principal', 'standard', 'estandar', '1x'];
-      main = usableCameras.find(d => {
-        const l = d.label.toLowerCase();
-        return !ultraKeywords.some(k => l.includes(k)) &&
-          !teleKeywords.some(k => l.includes(k)) &&
-          mainExplicitKeywords.some(k => l.includes(k));
-      });
-      if (!main && activeDeviceId) {
-        main = usableCameras.find(d =>
-          d.deviceId === activeDeviceId &&
-          d.deviceId !== ultra?.deviceId &&
-          d.deviceId !== tele?.deviceId
-        );
-      }
-      if (!main) {
-        main = usableCameras.find(d => {
-          const l = d.label.toLowerCase();
-          return !ultraKeywords.some(k => l.includes(k)) &&
-            !teleKeywords.some(k => l.includes(k)) &&
-            !l.includes('dual') &&
-            !l.includes('triple') &&
-            (l.includes('wide') || l === 'back camera' || l === 'cámara trasera');
-        });
-      }
-    } else {
-      // Comportamiento original probado para Android/otros
-      const mainKeywords = ['main', 'principal', 'standard', 'estandar', '1x', 'wide'];
-      main = usableCameras.find(d =>
-        !ultraKeywords.some(k => d.label.toLowerCase().includes(k)) &&
-        !teleKeywords.some(k => d.label.toLowerCase().includes(k)) &&
-        mainKeywords.some(k => d.label.toLowerCase().includes(k))
-      );
-      if (!main && activeDeviceId) {
-        main = usableCameras.find(d => d.deviceId === activeDeviceId);
-      }
-    }
-
-    // Si aún no se detecta ultra gran angular pero hay múltiples cámaras traseras con nombres genéricos
-    // (común en Android: camera2 0 = principal, camera2 2 = ultra gran angular):
-    if (!ultra && usableCameras.length > 1) {
-      ultra = usableCameras.find(d => d.deviceId !== main?.deviceId && (!tele || d.deviceId !== tele.deviceId));
-    }
-
-    // Fallbacks si falta alguna
-    if (!main && usableCameras.length > 0) {
-      main = usableCameras.find(d => d.deviceId !== ultra?.deviceId) || usableCameras[0];
-    }
-
-    return { main, ultra, tele, cameras: usableCameras };
-  };
-
-  const safeGetUserMedia = async (targetDeviceId) => {
-    const isIOS = isIOSDevice();
-    if (!isIOS) {
-      // Flujo original probado para Android: evita modo crop 16:9 (3840x2160) y no sobreescribe focusMode en Camera2 HAL
-      const baseConstraints = { width: { ideal: 4096 }, height: { ideal: 2160 } };
-      if (!targetDeviceId) {
-        return await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment', ...baseConstraints }
-        });
-      }
-
-      try {
-        return await navigator.mediaDevices.getUserMedia({
-          video: { deviceId: { exact: targetDeviceId }, ...baseConstraints }
-        });
-      } catch (exactErr) {
-        console.warn("[ERR-CAM-EXACT] Fallback a ideal deviceId:", exactErr);
-        try {
-          return await navigator.mediaDevices.getUserMedia({
-            video: { deviceId: targetDeviceId, ...baseConstraints }
-          });
-        } catch (idealErr) {
-          console.warn("[ERR-CAM-IDEAL] Fallback a environment estándar:", idealErr);
-          return await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'environment', ...baseConstraints }
-          });
-        }
-      }
-    }
-
-    // En iOS usar 3840x2160 (UHD 16:9) para evitar caídas a 640x480 en Safari WebKit
-    const highResConstraints = { width: { ideal: 3840 }, height: { ideal: 2160 } };
-    const hdResConstraints = { width: { ideal: 1920 }, height: { ideal: 1080 } };
-
-    if (!targetDeviceId) {
-      try {
-        return await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', ...highResConstraints } });
-      } catch (hiErr) {
-        console.warn("[ERR-CAM-HIRES] Fallback a 1080p en environment:", hiErr);
-        return await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', ...hdResConstraints } });
-      }
-    }
-
-    try {
-      return await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: targetDeviceId }, ...highResConstraints } });
-    } catch (exactErr) {
-      console.warn("[ERR-CAM-EXACT] Fallback a ideal deviceId:", exactErr);
-      try {
-        return await navigator.mediaDevices.getUserMedia({ video: { deviceId: targetDeviceId, ...hdResConstraints } });
-      } catch (idealErr) {
-        console.warn("[ERR-CAM-IDEAL] Fallback a environment estándar:", idealErr);
-        return await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', ...hdResConstraints } });
-      }
-    }
-  };
+  const safeGetUserMedia = (targetDeviceId) =>
+    acquireCameraStreamForPlatform(platformConfig, targetDeviceId);
 
   const startCamera = async (isFirst = false) => {
     setCameraError(null);
@@ -384,13 +249,8 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
       // CASO 3x (Teleobjetivo Óptico / Zoom 3x)
       // ==========================================
       if (level === 3) {
-        const isIOS = isIOSDevice();
-
-        // Intento 1 (Android/otros): Si existe cámara física teleobjetivo dedicada (3x / telephoto), conmutar directo al lente óptico.
-        // IMPORTANTE iOS: En iPhone, abrir el lente físico "Back Telephoto Camera" por deviceId en Safari WebRTC bloquea el enfoque en tomas
-        // cercanas/medias (distancia focal mínima larga ~50-100cm y sin control focusMode en WebKit), mostrando la cámara desenfocada.
-        // En iOS mantenemos el lente Principal 1x (con autoenfoque continuo nítido) y aplicamos zoom nativo si existe o zoom digital UHD.
-        const teleCam = !isIOS ? teleCameraRef.current : null;
+        // Según configuración de plataforma: Android usa teleobjetivo óptico si existe; iOS mantiene lente 1x con AF continuo
+        const teleCam = platformConfig.camera.useOpticalTelephotoIn3x ? teleCameraRef.current : null;
         if (teleCam && teleCam.deviceId) {
           try {
             let teleStream = activeStream;
@@ -456,7 +316,7 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
               console.warn("[ERR-CAM-ZOOM-3X-FB] Fallback environment falló:", fbErr);
             }
           }
-        } else if (isIOS && !mainCam?.deviceId && currentDeviceIdRef.current === ultraCameraRef.current?.deviceId) {
+        } else if (platformConfig.camera.allowFallbackToEnvWhenNoMainIn3x && !mainCam?.deviceId && currentDeviceIdRef.current === ultraCameraRef.current?.deviceId) {
           stopActiveTracks();
           await new Promise(r => setTimeout(r, 60));
           try {
@@ -586,8 +446,10 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
+    if (platformConfig.camera.highQualityCanvasSmoothing) {
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+    }
 
     const needsRotation = (landscapeAngle !== 0) && (video.videoHeight > video.videoWidth);
     const applyRotationNow = needsRotation && !enableAnnotation;
@@ -875,13 +737,7 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
           playsInline
           autoPlay
           className="w-full h-full object-cover transition-transform duration-150"
-          style={isIOSDevice()
-            ? {
-                transform: `scale(${digitalZoom}) translateZ(0)`,
-                transformOrigin: 'center center',
-                willChange: 'transform'
-              }
-            : { transform: `scale(${digitalZoom})` }}
+          style={platformConfig.camera.getVideoTransformStyle(digitalZoom)}
         />
 
         {/* Notificación Toast Nativa */}

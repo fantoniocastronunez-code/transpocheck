@@ -4,7 +4,7 @@ import {
   Wallet, ArrowUpCircle, ArrowDownCircle, CheckCircle, 
   Clock, X, Edit2, Trash2, Camera, Receipt, ClipboardList 
 } from 'lucide-react';
-import { formatMoney, resizeImage } from '../../utils/helpers';
+import { formatMoney, resizeImage, isQuoterProfile } from '../../utils/helpers';
 import InAppCamera from '../ui/InAppCamera';
 
 const TransactionIcon = ({ type }) => {
@@ -414,7 +414,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
         
         <div className="space-y-4 mb-8">
           <h3 className="text-sm font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-2 mb-4">Directorio de Conductores</h3>
-          {drivers.map(d => (
+          {drivers.filter(d => !isQuoterProfile(d, drivers) && (!d.isHidden || Number(d.balance || 0) !== 0)).map(d => (
             <div key={d.id} className={`bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-xl border transition-all ${selectedDriverId === d.id ? 'border-blue-500 shadow-md ring-4 ring-blue-50' : 'border-slate-200 dark:border-slate-700 shadow-sm hover:border-blue-300 dark:border-blue-700/50'}`}>
               
               <div className="flex justify-between items-center cursor-pointer" onClick={() => {setSelectedDriverId(d.id === selectedDriverId ? null : d.id); setAdminTxType('assignment'); setSelectedJobId('');}}>

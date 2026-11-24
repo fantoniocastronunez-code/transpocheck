@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { updateDoc, doc, addDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { X, User, CheckCircle, Plus, AlertCircle, FileText, Loader2, Camera, Star } from 'lucide-react';
 import CustomClientSelector from '../ui/CustomClientSelector';
-import { safeStorageSetJson } from '../../utils/helpers';
+import { safeStorageSetJson, getAssignableDrivers } from '../../utils/helpers';
 import Tesseract from 'tesseract.js';
 import * as pdfjsLib from 'pdfjs-dist';
 import InAppCamera from '../ui/InAppCamera';
@@ -107,7 +107,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
   const [revA_frenos, setRevA_frenos] = useState(jobToEdit?.rtData?.frenos ?? (draft?.revA_frenos || false));
   const [revB_tipo, setRevB_tipo] = useState(jobToEdit?.rtData?.tipoB || (draft?.revB_tipo || 'completa'));
   const [revB_motivo, setRevB_motivo] = useState(jobToEdit?.rtData?.motivoInspeccion || (draft?.revB_motivo || ''));
-  const [selectedDriversUI, setSelectedDriversUI] = useState(() => jobToEdit?.assignedEmails ? drivers.filter(d => !d.isHidden && d.role !== 'quoter' && !d.email?.toLowerCase().includes('facturacionycobranzas') && jobToEdit.assignedEmails.includes(d.email)).map(d => d.id) : (draft?.selectedDriversUI || []));
+  const [selectedDriversUI, setSelectedDriversUI] = useState(() => jobToEdit?.assignedEmails ? getAssignableDrivers(drivers).filter(d => jobToEdit.assignedEmails.includes(d.email)).map(d => d.id) : (draft?.selectedDriversUI || []));
   const [spotDriverEmail, setSpotDriverEmail] = useState(jobToEdit?.spotDriverEmail || (draft?.spotDriverEmail || '')); // NUEVO: Correo conductor externo
   
   // --- ESTADOS PARA TRABAJOS SIMPLES ---
@@ -1136,7 +1136,7 @@ export default function NewJobForm({ jobToEdit, onCancelEdit, allClientsList, ve
                 <div className="flex-1">
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-6">
                      {drivers.length === 0 ? <p className="text-sm text-slate-400 font-semibold col-span-full">No hay conductores.</p> : (() => {
-                        const visibleDrivers = drivers.filter(d => !d.isHidden && d.role !== 'quoter' && !d.email?.toLowerCase().includes('facturacionycobranzas') && !(d.role === 'driver_regions' && tripType !== 'viaje'));
+                        const visibleDrivers = getAssignableDrivers(drivers).filter(d => !(d.role === 'driver_regions' && tripType !== 'viaje'));
                         return visibleDrivers.map(d => {
                            const isSelected = selectedDriversUI.includes(d.id);
                            return (
