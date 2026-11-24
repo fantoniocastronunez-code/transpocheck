@@ -1,0 +1,64 @@
+﻿WINDOW MANAGER DISPLAY CONTENTS (dumpsys window displays)
+  Display: mDisplayId=0
+    init=1920x1080 320dpi cur=1920x1080 app=1920x1080 rng=1080x1080-1920x1920
+    deferred=false mLayoutNeeded=false mTouchExcludeRegion=SkRegion((0,0,1920,1080))
+
+  mLayoutSeq=117
+
+  Application tokens in top down Z order:
+    mStackId=0
+    mDeferRemoval=false
+    mBounds=[0,0][1920,1080]
+      taskId=522
+        mBounds=[0,0][1920,1080]
+        mdr=false
+        appTokens=[AppWindowToken{9b52680 token=Token{dc75703 ActivityRecord{427bbb2 u0 com.amazon.tv.launcher/.ui.HomeActivity_vNext t522}}}]
+        mTempInsetBounds=[0,0][0,0]
+          Activity #0 AppWindowToken{9b52680 token=Token{dc75703 ActivityRecord{427bbb2 u0 com.amazon.tv.launcher/.ui.HomeActivity_vNext t522}}}
+            windows=[Window{e61f14b u0 com.amazon.tv.launcher/com.amazon.tv.launcher.ui.HomeActivity_vNext}]
+            windowType=2 hidden=false hasVisible=true
+            app=true mVoiceInteraction=false
+            task={taskId=522 appTokens=[AppWindowToken{9b52680 token=Token{dc75703 ActivityRecord{427bbb2 u0 com.amazon.tv.launcher/.ui.HomeActivity_vNext t522}}}] mdr=false}
+             mFillsParent=true mOrientation=0
+            hiddenRequested=false mClientHidden=false reportedDrawn=true reportedVisible=true
+            mNumInterestingWindows=1 mNumDrawnWindows=1 inPendingTransaction=false allDrawn=true lastAllDrawn=true)
+            startingData=null removed=false firstWindowDrawn=true mIsExiting=false
+            controller=AppWindowContainerController{ token=Token{dc75703 ActivityRecord{427bbb2 u0 com.amazon.tv.launcher/.ui.HomeActivity_vNext t522}} mContainer=AppWindowToken{9b52680 token=Token{dc75703 ActivityRecord{427bbb2 u0 com.amazon.tv.launcher/.ui.HomeActivity_vNext t522}}} mListener=ActivityRecord{427bbb2 u0 com.amazon.tv.launcher/.ui.HomeActivity_vNext t522}}
+
+
+  homeStack=Stack=0
+
+  DockedStackDividerController
+    mLastVisibility=false
+    mMinimizedDock=false
+    mAdjustedForIme=false
+    mAdjustedForDivider=false
+
+  PinnedStackController
+    defaultBounds=[1367,54][1808,302]
+    movementBounds=[112,54][1808,1026]
+    mIsImeShowing=false
+    mImeHeight=0
+    mIsShelfShowing=false
+    mShelfHeight=0
+    mReentrySnapFraction=-1.0
+    mIsMinimized=false
+    mActions=[]
+   mDisplayInfo=DisplayInfo{"Pantalla integrada", uniqueId "local:0", app 1920 x 1080, real 1920 x 1080, largest app 1920 x 1920, smallest app 1080 x 1080, mode 1, defaultMode 1, modes [{id=1, width=1920, height=1080, fps=60.000004}, {id=2, width=1920, height=1080, fps=59.94}, {id=3, width=1280, height=720, fps=59.94}, {id=4, width=1920, height=1080, fps=50.0}, {id=5, width=1280, height=720, fps=50.0}, {id=6, width=1280, height=720, fps=60.000004}, {id=7, width=720, height=576, fps=50.0}, {id=8, width=720, height=480, fps=60.000004}], colorMode 0, supportedColorModes [0], hdrCapabilities android.view.Display$HdrCapabilities@40f16308, rotation 0, density 320 (72.788 x 97.971) dpi, layerStack 0, appVsyncOff 1000000, presDeadline 16666666, type BUILT_IN, state ON, FLAG_SECURE, FLAG_SUPPORTS_PROTECTED_BUFFERS, removeMode 0}
+
+  DisplayFrames w=1920 h=1080 r=0
+    mStable=[0,0][1920,1080]
+    mStableFullscreen=[0,0][1920,1080]
+    mDock=[0,0][1920,1080]
+    mCurrent=[0,0][1920,1080]
+    mSystem=[0,0][1920,1080]
+    mContent=[0,0][1920,1080]
+    mVoiceContent=[0,0][1920,1080]
+    mOverscan=[0,0][1920,1080]
+    mRestrictedOverscan=[0,0][1920,1080]
+    mRestricted=[0,0][1920,1080]
+    mUnrestricted=[0,0][1920,1080]
+    mDisplayInfoOverscan=[0,0][0,0]
+    mRotatedDisplayInfoOverscan=[0,0][0,0]
+    mDisplayCutout=com.android.server.wm.utils.WmDisplayCutout@3c1
+
