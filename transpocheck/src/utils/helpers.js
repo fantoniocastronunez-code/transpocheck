@@ -317,15 +317,87 @@ export const generateWhatsAppText = (job, dateShort, identifier) => {
     : `${dateShort}\n${job.client || 'Sin Cliente'}\n${carInfo}\n${identifier}\n${getRouteStr(job)}${getExtraWappTxt(job)}`;
 
   if (job.status === 'failed') {
-    text = `❌ TRASLADO FALLIDO\nMotivo: ${job.failedReason || 'No especificada'}\n ${text}`;
+    text = `❌ TRASLADO FALLIDO\nMotivo: ${job.failedReason || 'No especificada'}\n${text}`;
   } else if (job.tripType === 'revision') {
     if (job.checklist?.rtStatus === 'aprobado') {
-      text = `✅ APROBADO (LEGAL)\n ${text}`;
+      text = `✅ APROBADO (LEGAL)\n${text}`;
     } else if (job.checklist?.rtStatus === 'aprobado_ayuda') {
-      text = `🤝 APROBADO (CON AYUDA)\n ${text}`;
+      text = `🤝 APROBADO (CON AYUDA)\n${text}`;
     }
   }
-  return text;
+  return normalizeClipboardText(text);
+};
+
+/** Detecta si el navegador actual corre en iPhone, iPad o iPod (incluye iPadOS). */
+export const isIOSDevice = () => {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  if (/iPad|iPhone|iPod/.test(ua)) return true;
+  return navigator.platform === 'MacIntel' && (navigator.maxTouchPoints || 0) > 1;
+};
+
+/** Normaliza saltos de línea a LF (\n) y espacios no separables para portapapeles iOS/Android. */
+export const normalizeClipboardText = (rawText) => {
+  return String(rawText || '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .replace(/\u00A0/g, ' ');
+};
+
+/** Fallback síncrono de copiado compatible con iOS Safari y WebViews. */
+export const legacyCopyText = (cleanText) => {
+  const previousFocus = document.activeElement;
+  const textArea = document.createElement('textarea');
+  textArea.value = cleanText;
+  textArea.setAttribute('aria-hidden', 'true');
+  textArea.tabIndex = -1;
+  textArea.inputMode = 'none';
+  textArea.readOnly = false;
+  textArea.style.position = 'fixed';
+  textArea.style.top = '0';
+  textArea.style.left = '0';
+  textArea.style.width = '2em';
+  textArea.style.height = '2em';
+  textArea.style.padding = '0';
+  textArea.style.border = 'none';
+  textArea.style.outline = 'none';
+  textArea.style.boxShadow = 'none';
+  textArea.style.background = 'transparent';
+  textArea.style.opacity = '0';
+  textArea.style.fontSize = '16px';
+  textArea.style.whiteSpace = 'pre-wrap';
+
+  document.body.appendChild(textArea);
+  try {
+    textArea.focus({ preventScroll: true });
+    textArea.select();
+    textArea.setSelectionRange(0, cleanText.length);
+    return document.execCommand('copy');
+  } catch {
+    return false;
+  } finally {
+    textArea.remove();
+    if (previousFocus && typeof previousFocus.focus === 'function') {
+      try { previousFocus.focus({ preventScroll: true }); } catch { /* ignore */ }
+    }
+  }
+};
+
+/** Copia texto al portapapeles conservando saltos de línea LF en iOS, Android y Desktop. */
+export const copyTextToClipboard = async (rawText) => {
+  const cleanText = normalizeClipboardText(rawText);
+  if (!cleanText) return false;
+
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function' && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(cleanText);
+      return true;
+    } catch {
+      // Fallback síncrono si la API async falla o fue bloqueada en WebView/iOS
+    }
+  }
+
+  return legacyCopyText(cleanText);
 };
 
 export const calculateDriverChecklistScore = (jobs, driverEmail, drivers = []) => {

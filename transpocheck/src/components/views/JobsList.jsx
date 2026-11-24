@@ -24,7 +24,7 @@ import HistoryModal from './JobsList/HistoryModal';
 import JobExpenseModal from './JobsList/JobExpenseModal';
 import ArrivalModal from './JobsList/ArrivalModal';
 import PickupModal from './JobsList/PickupModal';
-import { formatDateDisplay, analyzeJobStatus, generateStandardFileName, generateWhatsAppText, getRouteStr, resizeImage, resizeAndWatermarkImage, isTrailerVehicle, getRtFinalDestination, safeStorageSetJson } from '../../utils/helpers';
+import { formatDateDisplay, analyzeJobStatus, generateStandardFileName, generateWhatsAppText, getRouteStr, resizeImage, resizeAndWatermarkImage, isTrailerVehicle, getRtFinalDestination, safeStorageSetJson, copyTextToClipboard, isIOSDevice } from '../../utils/helpers';
 import { purgeOrphanStoragePhotos, formatBytes } from '../../utils/storageMetrics';
 import { saveJobToMonthlyStatsBeforeDelete, getMonthKey, extractLightweightJob, calculateStatsFromLightweightJobs } from '../../utils/statsSync';
 
@@ -78,6 +78,7 @@ export default function JobsList({ jobs, drivers, role, isEasyMode = false, onSt
   const [processingId, setProcessingId] = useState(null);
 
   const [pdfReadyToShare, setPdfReadyToShare] = useState(null); // <-- NUEVO: Para resolver bloqueo de Safari en iOS
+  const [modalCopied, setModalCopied] = useState(false);
 
   const [isCalculatingKm, setIsCalculatingKm] = useState(false); // NUEVO: Estado para recálculo de KM
   const [calcProgress, setCalcProgress] = useState(''); // NUEVO: Progreso del recálculo
@@ -1248,42 +1249,6 @@ export default function JobsList({ jobs, drivers, role, isEasyMode = false, onSt
 
   const getDStr = j => j.scheduledDate ? formatDateDisplay(j.scheduledDate) : formatDateDisplay(new Date().toISOString().split('T')[0]);
 
-  const copyTextToClipboard = async (rawText) => {
-    // Normalizar a saltos de línea Unix estándar (\n).
-    // IMPORTANTE: NUNCA usar \r\n (CRLF). En iOS Safari y WhatsApp para iPhone,
-    // el carácter \r es interpretado por UIKit como espacio en blanco, lo que provocaba
-    // que todo el mensaje se pegara en una sola línea continua desordenada.
-    const cleanText = String(rawText || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-
-    try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(cleanText);
-        return true;
-      }
-      throw new Error("fallback");
-    } catch (err) {
-      const textArea = document.createElement("textarea");
-      textArea.value = cleanText;
-      textArea.style.position = "fixed";
-      textArea.style.top = "0";
-      textArea.style.left = "-9999px";
-      textArea.style.opacity = "0";
-      textArea.setAttribute('readonly', '');
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      textArea.setSelectionRange(0, 999999);
-      let success = false;
-      try {
-        success = document.execCommand('copy');
-      } catch (e) {
-        success = false;
-      }
-      document.body.removeChild(textArea);
-      return success;
-    }
-  };
-
   const handleCopyWhatsApp = async (job) => {
     updateDoc(doc(db, 'transport_jobs', job.id), { sharedCount: (job.sharedCount || 0) + 1 }).catch(e => console.log(e));
 
@@ -1334,15 +1299,23 @@ export default function JobsList({ jobs, drivers, role, isEasyMode = false, onSt
       const textToShare = generateWhatsAppText(job, dateShort, cleanPlate);
 
       // Copiamos el texto al portapapeles con saltos de línea Unix (\n) limpios compatibles con iPhone y Android
-      await copyTextToClipboard(textToShare);
+      const copiedOk = await copyTextToClipboard(textToShare);
 
       const docPDF = await buildPDFDoc(job);
       const pdfBlob = docPDF.output('blob');
       const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      if (isIOSDevice()) {
+        // En iOS/Safari, mostrar el panel de envío garantiza interacción síncrona para navigator.share
+        // y ofrece envío directo de texto por WhatsApp (evitando que el comentario de Share Sheet quite saltos de línea).
+        showAlert(null);
+        setModalCopied(copiedOk);
+        setPdfReadyToShare({ file, fileName, textToShare, docPDF, copiedOk });
+      } else if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
-          showAlert("Abriendo WhatsApp... Recuerda que el texto ya está copiado, solo debes pegarlo.");
+          showAlert(copiedOk
+            ? "Abriendo WhatsApp... Recuerda que el texto ya está copiado, solo debes pegarlo."
+            : "Abriendo WhatsApp... (Si no se copió el texto, podrás copiarlo desde el resumen).");
           await navigator.share({
             files: [file]
           });
@@ -1350,7 +1323,8 @@ export default function JobsList({ jobs, drivers, role, isEasyMode = false, onSt
           if (shareError.name !== 'AbortError') {
             // Es muy probable que Safari lo haya bloqueado por falta de interacción síncrona.
             showAlert(null);
-            setPdfReadyToShare({ file, fileName, textToShare, docPDF });
+            setModalCopied(copiedOk);
+            setPdfReadyToShare({ file, fileName, textToShare, docPDF, copiedOk });
           }
         }
       } else {
@@ -3158,24 +3132,57 @@ export default function JobsList({ jobs, drivers, role, isEasyMode = false, onSt
         }}
       />
 
-      {/* NUEVO: Modal de Confirmación para iOS/Safari al Compartir PDF */}
+      {/* Modal de Confirmación para iOS/Safari al Compartir PDF y Texto */}
       {pdfReadyToShare && (
         <div className="fixed inset-0 bg-slate-900/90 z-[9999] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 p-6 rounded-xl w-full max-w-sm flex flex-col items-center text-center border border-slate-200 dark:border-slate-800 animate-in zoom-in-95">
-            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-4 shadow-inner">
-              <FileText className="w-8 h-8" />
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-xl w-full max-w-sm flex flex-col items-center text-center border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 max-h-[92dvh] overflow-y-auto">
+            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-3 shadow-inner shrink-0">
+              <FileText className="w-6 h-6" />
             </div>
-            <h3 className="font-black text-xl mb-2 text-slate-800 dark:text-slate-200">¡Documento Listo!</h3>
-            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-6">Por seguridad de tu dispositivo, debes hacer clic para abrir WhatsApp manualmente con el archivo adjunto.</p>
+            <h3 className="font-black text-lg mb-1 text-slate-800 dark:text-slate-200">¡Documento Listo!</h3>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-3 leading-relaxed">
+              En iPhone, el recuadro de comentario al adjuntar PDF en WhatsApp puede quitar los saltos de línea. Usa <span className="font-bold text-slate-700 dark:text-slate-200">Enviar Texto a WhatsApp</span> o pégalo directo en el chat.
+            </p>
+
+            <div className="w-full mb-3 text-left bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg p-2.5">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Resumen con formato</span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const ok = await copyTextToClipboard(pdfReadyToShare.textToShare);
+                    if (ok) {
+                      setModalCopied(true);
+                      setTimeout(() => setModalCopied(false), 2000);
+                    } else {
+                      showAlert("❌ [ERR-CLIP-04] Tu navegador bloqueó el copiado automático. Mantén presionado el texto para copiarlo.");
+                    }
+                  }}
+                  className="text-[11px] font-bold px-2 py-1 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 flex items-center gap-1 cursor-pointer"
+                >
+                  {modalCopied ? <><CheckCircle className="w-3 h-3 text-emerald-500" /> Copiado</> : <><Copy className="w-3 h-3" /> Copiar Texto</>}
+                </button>
+              </div>
+              <textarea
+                readOnly
+                rows={4}
+                value={pdfReadyToShare.textToShare}
+                onFocus={(e) => e.target.select()}
+                className="w-full bg-transparent text-xs font-mono text-slate-700 dark:text-slate-200 resize-none outline-none leading-snug whitespace-pre-wrap"
+              />
+            </div>
 
             <button
+              type="button"
               onClick={() => {
                 if (navigator.canShare && navigator.canShare({ files: [pdfReadyToShare.file] })) {
                   navigator.share({ files: [pdfReadyToShare.file] })
-                    .then(() => setPdfReadyToShare(null))
+                    .then(() => {
+                      if (!isIOSDevice()) setPdfReadyToShare(null);
+                    })
                     .catch(e => {
                       if (e.name !== 'AbortError') {
-                        showAlert("Tu dispositivo rechazó definitivamente compartir el archivo. Lo descargaremos en su lugar.");
+                        showAlert("⚠️ [ERR-SHARE-PDF-01] Tu dispositivo rechazó compartir el archivo directamente. Lo descargaremos en su lugar.");
                         pdfReadyToShare.docPDF.save(pdfReadyToShare.fileName);
                         setPdfReadyToShare(null);
                       }
@@ -3185,19 +3192,34 @@ export default function JobsList({ jobs, drivers, role, isEasyMode = false, onSt
                   setPdfReadyToShare(null);
                 }
               }}
-              className="w-full bg-[#25D366] text-white font-bold py-4 rounded-xl flex justify-center items-center gap-2 mb-3 hover:bg-[#128C7E] transition-colors shadow-md"
+              className="w-full bg-[#25D366] text-white font-bold py-3.5 rounded-xl flex justify-center items-center gap-2 mb-2 hover:bg-[#128C7E] transition-colors shadow-md text-sm cursor-pointer"
             >
-              Compartir en WhatsApp
-            </button>
-            <button onClick={() => {
-              pdfReadyToShare.docPDF.save(pdfReadyToShare.fileName);
-              setPdfReadyToShare(null);
-            }} className="w-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold py-4 rounded-xl flex justify-center items-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-              Descargar al Dispositivo
+              <Share2 className="w-4 h-4" /> Compartir PDF (Archivo)
             </button>
 
-            <button onClick={() => setPdfReadyToShare(null)} className="w-full text-slate-400 dark:text-slate-500 text-xs font-bold py-4 mt-2 uppercase tracking-widest hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
-              Cancelar
+            <button
+              type="button"
+              onClick={() => {
+                window.open(`https://wa.me/?text=${encodeURIComponent(pdfReadyToShare.textToShare)}`, '_blank');
+              }}
+              className="w-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 font-bold py-3 rounded-xl flex justify-center items-center gap-2 mb-2 hover:bg-emerald-100 dark:hover:bg-emerald-950/60 transition-colors text-xs cursor-pointer"
+            >
+              Enviar Texto Formateado a WhatsApp
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                pdfReadyToShare.docPDF.save(pdfReadyToShare.fileName);
+                setPdfReadyToShare(null);
+              }}
+              className="w-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold py-3 rounded-xl flex justify-center items-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-xs cursor-pointer"
+            >
+              <FileDown className="w-4 h-4" /> Descargar al Dispositivo
+            </button>
+
+            <button type="button" onClick={() => setPdfReadyToShare(null)} className="w-full text-slate-400 dark:text-slate-500 text-xs font-bold py-3 mt-1 uppercase tracking-widest hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer">
+              Cerrar
             </button>
           </div>
         </div>

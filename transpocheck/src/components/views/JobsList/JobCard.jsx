@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CloudUpload, Receipt, MessageSquare, Phone, Camera, User } from 'lucide-react';
+import { copyTextToClipboard } from '../../../utils/helpers';
 
 const renderVehicle = (vType, wheelClass, wheelFill, isChassisCab) => {
   const type = (vType || '').toLowerCase();
@@ -724,28 +725,11 @@ export default function JobCard({ j, ...props }) {
                   <button onClick={async () => {
                     const url = `${window.location.origin}/?client=${encodeURIComponent(j.client || 'Sin Cliente')}`;
                     const textToShare = `📍 Sigue en tiempo real todos los traslados de ${j.client || 'tu empresa'} aquí:\n${url}`;
-                    try {
-                      if (navigator.clipboard && window.isSecureContext) {
-                        await navigator.clipboard.writeText(textToShare);
-                      } else {
-                        throw new Error("fallback");
-                      }
+                    const copied = await copyTextToClipboard(textToShare);
+                    if (copied) {
                       showAlert("✅ Portal de Cliente copiado. ¡Pégalo en WhatsApp!");
-                    } catch (e) {
-                      const textArea = document.createElement("textarea");
-                      textArea.value = textToShare;
-                      textArea.style.position = "fixed";
-                      textArea.style.left = "-9999px";
-                      textArea.setAttribute('readonly', '');
-                      document.body.appendChild(textArea);
-                      textArea.focus();
-                      textArea.select();
-                      textArea.setSelectionRange(0, 999999);
-                      try {
-                        document.execCommand('copy');
-                        showAlert("✅ Portal de Cliente copiado. ¡Pégalo en WhatsApp!");
-                      } catch (err) { }
-                      document.body.removeChild(textArea);
+                    } else {
+                      showAlert("❌ [ERR-CLIP-02] Tu navegador bloqueó el copiado automático.");
                     }
                     setMenuOpenId(null);
                   }} className="w-full text-left px-3 py-2.5 font-semibold flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-blue-600 dark:text-blue-400"><Navigation className="w-4 h-4" /> Portal Cliente</button>

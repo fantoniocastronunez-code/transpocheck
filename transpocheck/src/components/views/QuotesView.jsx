@@ -6,7 +6,7 @@ import {
   Settings, Sliders, Hash, RotateCcw, Building2, Briefcase, Phone, Globe, FileText, Check, Download, Smartphone,
   FlaskConical, Filter, Loader2, FileSpreadsheet, Trash2
 } from 'lucide-react';
-import { formatMoney } from '../../utils/helpers';
+import { formatMoney, copyTextToClipboard, isIOSDevice } from '../../utils/helpers';
 
 // Helper para limpiar y procesar montos numéricos desde CSV (soporta $, puntos de miles, comas, etc.)
 const cleanAmount = (val) => {
@@ -382,6 +382,8 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
   const [isSavingStatus, setIsSavingStatus] = useState(null); // 'pendiente' | 'aceptada' | null
   const [downloadingQuoteId, setDownloadingQuoteId] = useState(null); // ID de cotización o 'modal'
   const [sharingMethod, setSharingMethod] = useState(null); // 'whatsapp' | 'email' | null
+  const [quotePdfReadyToShare, setQuotePdfReadyToShare] = useState(null);
+  const [quoteModalCopied, setQuoteModalCopied] = useState(false);
   const [isApprovingQuote, setIsApprovingQuote] = useState(false);
   const [isSavingConfig, setIsSavingConfig] = useState(false);
 
@@ -1878,14 +1880,7 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
       if (method === 'whatsapp') {
         showAlert("⏳ Preparando documento PDF para WhatsApp...");
 
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        textArea.style.position = "fixed";
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        try { document.execCommand('copy'); } catch (err) { }
-        document.body.removeChild(textArea);
+        const copiedOk = await copyTextToClipboard(text);
 
         const [html2pdf, logoDataUrl] = await Promise.all([
           loadHtml2Pdf(),
@@ -1912,12 +1907,26 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
         const pdfBlob = await html2pdf().from(htmlContent).set(opt).output('blob');
         const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
 
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            title: fileName,
-            files: [file]
-          });
-          showAlert("✅ PDF adjunto listo. Pega el texto en el chat.");
+        if (isIOSDevice()) {
+          showAlert(null);
+          setQuoteModalCopied(copiedOk);
+          setQuotePdfReadyToShare({ file, fileName, text, htmlContent, opt, html2pdf });
+        } else if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              title: fileName,
+              files: [file]
+            });
+            showAlert(copiedOk
+              ? "✅ PDF adjunto listo. Pega el texto en el chat."
+              : "✅ PDF adjunto listo.");
+          } catch (shareError) {
+            if (shareError?.name !== 'AbortError') {
+              showAlert(null);
+              setQuoteModalCopied(copiedOk);
+              setQuotePdfReadyToShare({ file, fileName, text, htmlContent, opt, html2pdf });
+            }
+          }
         } else {
           showAlert("Abriendo WhatsApp Web... Pega el texto que ya fue copiado.");
           await html2pdf().from(htmlContent).set(opt).save();
@@ -4238,6 +4247,102 @@ export default function QuotesView({ db, customClients = [], vehicles = [], dire
               )}
             </button>
           </form>
+        </div>
+      )}
+
+      {/* MODAL: COMPARTIR COTIZACIÓN PDF EN IPHONE / SAFARI */}
+      {quotePdfReadyToShare && (
+        <div className="fixed inset-0 bg-slate-900/90 z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl w-full max-w-sm flex flex-col items-center text-center border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 max-h-[92dvh] overflow-y-auto">
+            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-3 shrink-0">
+              <FileText className="w-6 h-6" />
+            </div>
+            <h3 className="font-black text-lg mb-1 text-slate-800 dark:text-slate-200">¡Cotización Lista!</h3>
+            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-3 leading-relaxed">
+              En iPhone, WhatsApp puede quitar saltos de línea al pegar en el comentario del PDF. Puedes usar <span className="font-bold text-slate-700 dark:text-slate-200">Enviar Texto a WhatsApp</span> por separado.
+            </p>
+
+            <div className="w-full mb-3 text-left bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2.5">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Resumen</span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const ok = await copyTextToClipboard(quotePdfReadyToShare.text);
+                    if (ok) {
+                      setQuoteModalCopied(true);
+                      setTimeout(() => setQuoteModalCopied(false), 2000);
+                    } else {
+                      showAlert("❌ [ERR-CLIP-05] Tu navegador bloqueó el copiado automático.");
+                    }
+                  }}
+                  className="text-[11px] font-bold px-2 py-1 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 flex items-center gap-1 cursor-pointer"
+                >
+                  {quoteModalCopied ? <><CheckCircle className="w-3 h-3 text-emerald-500" /> Copiado</> : 'Copiar Texto'}
+                </button>
+              </div>
+              <textarea
+                readOnly
+                rows={4}
+                value={quotePdfReadyToShare.text}
+                onFocus={(e) => e.target.select()}
+                className="w-full bg-transparent text-xs font-mono text-slate-700 dark:text-slate-200 resize-none outline-none leading-snug whitespace-pre-wrap"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (navigator.canShare && navigator.canShare({ files: [quotePdfReadyToShare.file] })) {
+                  navigator.share({
+                    title: quotePdfReadyToShare.fileName,
+                    files: [quotePdfReadyToShare.file]
+                  })
+                    .then(() => {
+                      if (!isIOSDevice()) setQuotePdfReadyToShare(null);
+                    })
+                    .catch(async (err) => {
+                      if (err?.name !== 'AbortError') {
+                        showAlert("⚠️ [ERR-QUOTE-SHARE-01] Tu dispositivo bloqueó compartir el archivo. Lo descargaremos en su lugar.");
+                        await quotePdfReadyToShare.html2pdf().from(quotePdfReadyToShare.htmlContent).set(quotePdfReadyToShare.opt).save();
+                        setQuotePdfReadyToShare(null);
+                      }
+                    });
+                } else {
+                  quotePdfReadyToShare.html2pdf().from(quotePdfReadyToShare.htmlContent).set(quotePdfReadyToShare.opt).save();
+                  setQuotePdfReadyToShare(null);
+                }
+              }}
+              className="w-full bg-[#25D366] text-white font-bold py-3.5 rounded-xl flex justify-center items-center gap-2 mb-2 hover:bg-[#128C7E] transition-colors shadow-md text-sm cursor-pointer"
+            >
+              <MessageCircle className="w-4 h-4" /> Compartir PDF (Archivo)
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                window.open(`https://wa.me/?text=${encodeURIComponent(quotePdfReadyToShare.text)}`, '_blank');
+              }}
+              className="w-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 font-bold py-3 rounded-xl flex justify-center items-center gap-2 mb-2 hover:bg-emerald-100 dark:hover:bg-emerald-950/60 transition-colors text-xs cursor-pointer"
+            >
+              Enviar Texto Formateado a WhatsApp
+            </button>
+
+            <button
+              type="button"
+              onClick={async () => {
+                await quotePdfReadyToShare.html2pdf().from(quotePdfReadyToShare.htmlContent).set(quotePdfReadyToShare.opt).save();
+                setQuotePdfReadyToShare(null);
+              }}
+              className="w-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold py-3 rounded-xl flex justify-center items-center gap-2 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-xs cursor-pointer"
+            >
+              <Download className="w-4 h-4" /> Descargar al Dispositivo
+            </button>
+
+            <button type="button" onClick={() => setQuotePdfReadyToShare(null)} className="w-full text-slate-400 dark:text-slate-500 text-xs font-bold py-3 mt-1 uppercase tracking-widest hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer">
+              Cerrar
+            </button>
+          </div>
         </div>
       )}
 

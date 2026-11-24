@@ -3,13 +3,14 @@ import { Share2, FileSignature, CheckCircle } from 'lucide-react';
 import { useChecklist } from '../ChecklistContext';
 import SignaturePad from '../../../ui/SignaturePad';
 import QRCode from 'react-qr-code';
+import { copyTextToClipboard } from '../../../../utils/helpers';
 
 export const StepSignature = () => {
   const { job, formData, setF, showAlert } = useChecklist();
 
   const handleShare = async () => {
+    const url = `https://kovacs-logistica.web.app/sign/${job.id}`;
     try {
-      const url = `https://kovacs-logistica.web.app/sign/${job.id}`;
       if (navigator.share) {
         await navigator.share({
           title: `Firma Acta - ${formData.plateOrVin}`,
@@ -17,12 +18,22 @@ export const StepSignature = () => {
           url: url
         });
       } else {
-        await navigator.clipboard.writeText(url);
-        showAlert("✅ Enlace copiado al portapapeles.");
+        const copied = await copyTextToClipboard(url);
+        if (copied) {
+          showAlert("✅ Enlace copiado al portapapeles.");
+        } else {
+          showAlert("❌ [ERR-CLIP-03] Tu navegador bloqueó el copiado automático.");
+        }
       }
     } catch (e) {
-      console.error(e);
-      showAlert("❌ Error al compartir.");
+      if (e?.name === 'AbortError') return;
+      console.error('[ERR-SHARE-SIGN-01]', e);
+      const copied = await copyTextToClipboard(url);
+      if (copied) {
+        showAlert("✅ Enlace copiado al portapapeles.");
+      } else {
+        showAlert("❌ [ERR-SHARE-SIGN-01] Error al compartir.");
+      }
     }
   };
 
