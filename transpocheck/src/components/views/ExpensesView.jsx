@@ -7,7 +7,14 @@ import {
 import { formatMoney, resizeImage, isQuoterProfile } from '../../utils/helpers';
 import InAppCamera from '../ui/InAppCamera';
 
-const TransactionIcon = ({ type }) => {
+const isHistoryOnlyExpense = (exp) => (
+  exp?.affectsWallet === false ||
+  exp?.source === 'job_card' ||
+  (exp?.type === 'expense' && Number(exp?.deductedAmount) === 0)
+);
+
+const TransactionIcon = ({ type, historyOnly = false }) => {
+  if (historyOnly) return <Receipt className="w-5 h-5 text-slate-500 dark:text-slate-400 shrink-0"/>;
   if (type === 'assignment') return <ArrowUpCircle className="w-5 h-5 text-green-500 shrink-0"/>;
   if (type === 'pending_return') return <Clock className="w-5 h-5 text-amber-500 shrink-0"/>;
   if (type === 'expense') return <ArrowDownCircle className="w-5 h-5 text-red-500 shrink-0"/>;
@@ -17,16 +24,17 @@ const TransactionIcon = ({ type }) => {
 const EditExpenseModal = ({ expense, onClose, isAdminView, drivers, db, showAlert }) => {
   const handleUpdateSubmit = async (e) => {
     e.preventDefault();
-    if (!isAdminView && expense.type === 'assignment') { showAlert("No puedes modificar una asignación."); return onClose(); }
+    if (!isAdminView && expense.type === 'assignment') { showAlert("[ERR-EXP-EDIT-01] No puedes modificar una asignación."); return onClose(); }
     const newAmount = Number(e.target.amount.value);
     const newDetail = e.target.detail.value;
+    const historyOnly = isHistoryOnlyExpense(expense);
 
     try {
-      let newlyDeducted = newAmount;
+      let newlyDeducted = historyOnly ? 0 : newAmount;
       const driverSnapshot = drivers.find(d => d.id === expense.driverId);
       let currentDriverBalance = driverSnapshot ? (driverSnapshot.balance || 0) : 0;
       
-      if (driverSnapshot) {
+      if (driverSnapshot && !historyOnly) {
         if (expense.type === 'assignment') {
            const amountDiff = newAmount - expense.amount;
            currentDriverBalance += amountDiff;
@@ -41,7 +49,7 @@ const EditExpenseModal = ({ expense, onClose, isAdminView, drivers, db, showAler
       }
       await updateDoc(doc(db, 'expenses', expense.id), { amount: newAmount, detail: newDetail, deductedAmount: newlyDeducted });
       
-      if (driverSnapshot && driverSnapshot.notifications && driverSnapshot.notifications.modificacion) {
+      if (!historyOnly && driverSnapshot && driverSnapshot.notifications && driverSnapshot.notifications.modificacion) {
          fetch('/api/notify-finance', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -287,15 +295,21 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
 
           const delExp = (exp) => {
             if (!isAdminView && exp.type === 'assignment') return showAlert("[ERR-EXP-DEL-01] No posees permisos para eliminar asignaciones.");
-            showConfirm("¿Eliminar registro financiero? El saldo se recalculará.", async () => {
+            const historyOnly = isHistoryOnlyExpense(exp);
+            const confirmMsg = historyOnly
+              ? "¿Eliminar este registro del historial? No afectará el saldo de la billetera."
+              : "¿Eliminar registro financiero? El saldo se recalculará.";
+            showConfirm(confirmMsg, async () => {
               try {
-                const d = drivers.find(x => x.id === exp.driverId);
-                if (d) {
-                   let amountToRestore = exp.type === 'assignment' ? -exp.amount : (exp.deductedAmount !== undefined ? exp.deductedAmount : exp.amount);
-                   await updateDoc(doc(db, 'drivers', d.id), { balance: (d.balance||0) + amountToRestore });
+                if (!historyOnly) {
+                  const d = drivers.find(x => x.id === exp.driverId);
+                  if (d) {
+                    let amountToRestore = exp.type === 'assignment' ? -exp.amount : (exp.deductedAmount !== undefined ? exp.deductedAmount : exp.amount);
+                    await updateDoc(doc(db, 'drivers', d.id), { balance: (d.balance || 0) + amountToRestore });
+                  }
                 }
                 await deleteDoc(doc(db, 'expenses', exp.id));
-                showAlert("✅ Registro eliminado y saldo recalculado.");
+                showAlert(historyOnly ? "✅ Registro eliminado del historial." : "✅ Registro eliminado y saldo recalculado.");
               } catch(e){
                 console.error("Error eliminando registro:", e);
                 showAlert("❌ Error al eliminar el registro financiero [ERR-EXP-DEL-02].");
@@ -334,7 +348,11 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
            expenses.forEach(exp => {
               const d = new Date(exp.createdAt);
               const dateStr = isNaN(d.getTime()) ? 'Fecha inválida' : d.toLocaleString();
-              const typeStr = exp.type === 'assignment' ? 'Fondo Asignado' : (exp.type === 'expense' ? 'Gasto' : (exp.type === 'return' ? 'Rendición Aprobada' : 'Rendición Pendiente'));
+              const typeStr = exp.type === 'assignment'
+                ? 'Fondo Asignado'
+                : (isHistoryOnlyExpense(exp)
+                  ? 'Gasto en Traslado (Solo historial)'
+                  : (exp.type === 'expense' ? 'Gasto' : (exp.type === 'return' ? 'Rendición Aprobada' : 'Rendición Pendiente')));
               const safeDetail = `"${(exp.detail || '').replace(/"/g, '""')}"`;
               csvContent += `"${exp.driverName || 'Desconocido'}","${exp.driverEmail || ''}","${typeStr}",${exp.amount},${safeDetail},"${dateStr}"\n`;
            });
@@ -376,7 +394,68 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
       const d = new Date(timestamp);
       if (isNaN(d.getTime())) return 'Fecha inválida';
       return d.toLocaleDateString();
-    } catch(e) { return 'Fecha inválida'; }
+    } catch { return 'Fecha inválida'; }
+  };
+
+  /** Renderiza una fila del historial distinguiendo gastos informativos de movimientos de billetera. */
+  const renderExpenseRow = (exp, { stopPropagation = false, photoLabel = 'Ver comprobante', isAdminList = false } = {}) => {
+    const historyOnly = isHistoryOnlyExpense(exp);
+    const amountColorClass = historyOnly
+      ? 'text-slate-700 dark:text-slate-200'
+      : (exp.type === 'expense' ? 'text-red-500' : 'text-green-600 dark:text-green-400');
+    const amountPrefix = historyOnly ? '' : (exp.type === 'expense' ? '-' : '+');
+    const canEditOrDelete = isAdminList
+      ? exp.type !== 'pending_return'
+      : (exp.type !== 'assignment' && exp.type !== 'pending_return');
+
+    return (
+      <div
+        key={exp.id}
+        className={isAdminList
+          ? "bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex gap-3 items-start text-xs font-bold w-full overflow-hidden"
+          : "flex items-start gap-4 p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800"}
+      >
+        <div className="mt-1"><TransactionIcon type={exp.type} historyOnly={historyOnly} /></div>
+        <div className="flex-1 min-w-0">
+          <p className={isAdminList ? "text-slate-800 dark:text-slate-200 break-words" : "text-sm font-extrabold text-slate-800 dark:text-slate-200 break-words"}>{exp.detail}</p>
+          <p className={isAdminList ? "text-[10px] text-slate-400 truncate" : "text-[10px] font-bold text-slate-400"}>{safeDateRender(exp.createdAt)}</p>
+          {historyOnly && (
+            <span className="inline-block mt-1 px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[9px] font-black uppercase tracking-wider">
+              Solo historial · Sin desc. billetera
+            </span>
+          )}
+          {exp.receiptImage && (
+            <button
+              type="button"
+              onClick={(e) => { if (stopPropagation) e.stopPropagation(); setViewingReceipt(exp.receiptImage); }}
+              className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 bg-blue-100 dark:bg-blue-900/40/50 px-2 py-1 rounded-md transition-colors w-fit"
+            >
+              <Camera className="w-3.5 h-3.5" /> {photoLabel}
+            </button>
+          )}
+        </div>
+        <div className={isAdminList ? "flex items-center gap-1.5 shrink-0 ml-1" : "flex items-center gap-2 shrink-0"}>
+          <span className={`font-extrabold ${isAdminList ? 'text-sm ' : ''}${amountColorClass}`}>{amountPrefix}{formatMoney(exp.amount)}</span>
+          {isAdminList && exp.type === 'pending_return' && (
+            <button type="button" onClick={(e) => { e.stopPropagation(); approveReturn(exp); }} className="ml-1 text-xs font-bold bg-green-600 text-white hover:bg-green-700 px-3 py-1.5 rounded-lg transition-colors">
+              Aprobar
+            </button>
+          )}
+          {canEditOrDelete ? (
+            <div className={`flex gap-1 border-l ${isAdminList ? 'border-slate-300 dark:border-slate-600' : 'border-slate-200 dark:border-slate-700'} pl-2 ml-1`}>
+              <button type="button" onClick={(e) => { if (stopPropagation) e.stopPropagation(); setEditingExpense(exp); }} className="p-1.5 text-blue-500 hover:bg-blue-100 dark:bg-blue-900/40 rounded-lg transition-colors" title="Editar"><Edit2 className="w-3.5 h-3.5" /></button>
+              <button type="button" onClick={(e) => { if (stopPropagation) e.stopPropagation(); delExp(exp); }} className="p-1.5 text-red-500 hover:bg-red-100 dark:bg-red-900/40 rounded-lg transition-colors" title="Eliminar"><Trash2 className="w-3.5 h-3.5" /></button>
+            </div>
+          ) : (
+            !isAdminList && (
+              <div className="pl-2 ml-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase">{exp.type === 'assignment' ? 'Fondo' : 'Espera'}</span>
+              </div>
+            )
+          )}
+        </div>
+      </div>
+    );
   };
 
   // Muestra el Carga Fantasma mientras inicia la vista
@@ -504,26 +583,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
                   <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
                     {expenses.filter(e => e.driverId === d.id).length === 0 ? (
                        <p className="text-slate-400 font-bold text-xs text-center py-4 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl">Sin movimientos registrados.</p>
-                    ) : expenses.filter(e => e.driverId === d.id).map(exp => (
-                      <div key={exp.id} className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex gap-3 items-start text-xs font-bold w-full overflow-hidden">
-                        <div className="mt-1"><TransactionIcon type={exp.type}/></div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-slate-800 dark:text-slate-200 break-words">{exp.detail}</p>
-                          <p className="text-[10px] text-slate-400 truncate">{safeDateRender(exp.createdAt)}</p>
-                          {exp.receiptImage && <button type="button" onClick={(e) => { e.stopPropagation(); setViewingReceipt(exp.receiptImage); }} className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40/50 px-2 py-1 rounded-md transition-colors w-fit"><Camera className="w-3.5 h-3.5"/> Ver comprobante</button>}
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0 ml-1">
-                          <span className={`font-extrabold text-sm ${exp.type === 'expense' ? 'text-red-500' : 'text-green-600 dark:text-green-400'}`}>{exp.type === 'expense' ? '-' : '+'}{formatMoney(exp.amount)}</span>
-                          {exp.type === 'pending_return' && <button type="button" onClick={(e) => { e.stopPropagation(); approveReturn(exp); }} className="ml-1 text-xs font-bold bg-green-600 text-white hover:bg-green-700 px-3 py-1.5 rounded-lg transition-colors">Aprobar</button>}
-                          {exp.type !== 'pending_return' && (
-                            <div className="flex gap-1 border-l border-slate-300 dark:border-slate-600 pl-2 ml-1">
-                              <button type="button" onClick={(e) => { e.stopPropagation(); setEditingExpense(exp); }} className="p-1.5 text-blue-500 hover:bg-blue-100 dark:bg-blue-900/40 rounded-lg transition-colors" title="Editar"><Edit2 className="w-3.5 h-3.5"/></button>
-                              <button type="button" onClick={(e) => { e.stopPropagation(); delExp(exp); }} className="p-1.5 text-red-500 hover:bg-red-100 dark:bg-red-900/40 rounded-lg transition-colors" title="Eliminar"><Trash2 className="w-3.5 h-3.5"/></button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                    ) : expenses.filter(e => e.driverId === d.id).map(exp => renderExpenseRow(exp, { stopPropagation: true, photoLabel: 'Ver comprobante', isAdminList: true }))}
                   </div>
                   
                 </div>
@@ -746,25 +806,7 @@ export default function ExpensesView({ role, drivers: rawDrivers, jobs, expenses
       <div className="bg-white dark:bg-slate-900 p-5 rounded-xl shadow-sm border border-slate-100 dark:border-slate-800">
         <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-200 mb-4">Mis Movimientos</h3>
         <div className="space-y-3">
-          {expenses.filter(e => e.driverId === myDriver.id).map(exp => (
-            <div key={exp.id} className="flex items-start gap-4 p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
-              <div className="mt-1"><TransactionIcon type={exp.type}/></div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-extrabold text-slate-800 dark:text-slate-200 break-words">{exp.detail}</p>
-                <p className="text-[10px] font-bold text-slate-400">{safeDateRender(exp.createdAt)}</p>
-                {exp.receiptImage && <button onClick={() => setViewingReceipt(exp.receiptImage)} className="mt-1.5 flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40/50 px-2 py-1 rounded-md transition-colors w-fit"><Camera className="w-3.5 h-3.5"/> Ver foto</button>}
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <span className={`font-extrabold ${exp.type === 'expense' ? 'text-red-500' : 'text-green-600 dark:text-green-400'}`}>{exp.type === 'expense' ? '-' : '+'}{formatMoney(exp.amount)}</span>
-                {exp.type !== 'assignment' && exp.type !== 'pending_return' ? (
-                  <div className="flex gap-1 border-l border-slate-200 dark:border-slate-700 pl-2 ml-1">
-                    <button onClick={() => setEditingExpense(exp)} className="p-1.5 text-blue-500 hover:bg-blue-100 dark:bg-blue-900/40 rounded-lg transition-colors"><Edit2 className="w-3.5 h-3.5"/></button>
-                    <button onClick={() => delExp(exp)} className="p-1.5 text-red-500 hover:bg-red-100 dark:bg-red-900/40 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5"/></button>
-                  </div>
-                ) : <div className="pl-2 ml-1"><span className="text-[10px] font-bold text-slate-400 uppercase">{exp.type === 'assignment' ? 'Fondo' : 'Espera'}</span></div>}
-              </div>
-            </div>
-          ))}
+          {expenses.filter(e => e.driverId === myDriver.id).map(exp => renderExpenseRow(exp, { stopPropagation: false, photoLabel: 'Ver foto', isAdminList: false }))}
           {expenses.filter(e => e.driverId === myDriver.id).length === 0 && <p className="text-slate-400 font-bold text-sm text-center py-4">No has registrado movimientos.</p>}
         </div>
       </div>

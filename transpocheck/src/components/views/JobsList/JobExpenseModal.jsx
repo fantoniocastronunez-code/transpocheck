@@ -205,7 +205,7 @@ export default function JobExpenseModal({
           ? `Carga de Combustible (Patente: ${jobIdent})`
           : `${item.motivo} (Patente: ${jobIdent})`;
 
-        // 3. Crear registro en colección global 'expenses' para finanzas y rendiciones
+        // 3. Crear registro en colección global 'expenses' para historial y auditoría (sin descontar billetera)
         await addDoc(collection(db, 'expenses'), {
           driverId: currentDriver?.id || '',
           driverEmail: currentDriver?.email || currentUserEmail,
@@ -216,7 +216,9 @@ export default function JobExpenseModal({
           detail: detailText,
           jobId: job.id,
           plate: jobIdent,
-          deductedAmount: item.amount,
+          deductedAmount: 0,
+          affectsWallet: false,
+          source: 'job_card',
           receiptImage: receiptUrl,
           fuelGaugeImage: fuelGaugeUrl || null,
           createdAt: itemTimestamp
@@ -237,13 +239,7 @@ export default function JobExpenseModal({
         });
       }
 
-      // 5. Descontar total del saldo del conductor
-      if (currentDriver?.id) {
-        const curBal = Number(currentDriver.balance) || 0;
-        await updateDoc(doc(db, 'drivers', currentDriver.id), {
-          balance: curBal - totalBatchAmount
-        });
-      }
+      // 5. No descontar del saldo de la billetera: los gastos desde tarjeta solo quedan en historial y ficha técnica.
 
       // 6. Guardar en el documento de traslado transport_jobs
       const existingExpenses = Array.isArray(job.expenses) ? job.expenses : [];
@@ -251,7 +247,7 @@ export default function JobExpenseModal({
         expenses: [...existingExpenses, ...newJobExpenses]
       });
 
-      showAlert(`✅ [OK-EXP-BATCH-01] ${newJobExpenses.length} gasto${newJobExpenses.length > 1 ? 's' : ''} registrado${newJobExpenses.length > 1 ? 's' : ''} con éxito ($${totalBatchAmount.toLocaleString('es-CL')}) e integrado${newJobExpenses.length > 1 ? 's' : ''} a la Ficha Técnica.`);
+      showAlert(`✅ [OK-EXP-BATCH-01] ${newJobExpenses.length} gasto${newJobExpenses.length > 1 ? 's' : ''} guardado${newJobExpenses.length > 1 ? 's' : ''} en el historial ($${totalBatchAmount.toLocaleString('es-CL')}) sin descontar de la billetera.`);
       setPendingExpenses([]);
       onClose();
     } catch (err) {
@@ -303,6 +299,10 @@ export default function JobExpenseModal({
 
         {/* Contenido scrolleable */}
         <div className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1">
+
+          <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-md px-3 py-2 text-[11px] font-medium text-slate-600 dark:text-slate-300">
+            Solo historial: estos gastos quedan en el traslado y en tu historial sin descontar saldo de tu billetera.
+          </div>
 
           {/* LISTA DE GASTOS LISTOS PARA GUARDAR EN LOTE */}
           {pendingExpenses.length > 0 && (
