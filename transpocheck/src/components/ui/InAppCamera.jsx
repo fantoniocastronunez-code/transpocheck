@@ -59,16 +59,17 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
 
   // Clasifica los dispositivos de cámara disponibles
   const classifyCameras = (deviceList, activeDeviceId) => {
+    const isIOS = isIOSDevice();
     const isFront = (label) => {
       const l = (label || '').toLowerCase();
-      return l.includes('front') || l.includes('delantera') || l.includes('frontal') || l.includes('user') || l.includes('selfie') || l.includes('truedepth');
+      return l.includes('front') || l.includes('delantera') || l.includes('frontal') || l.includes('user') || l.includes('selfie') || (isIOS && l.includes('truedepth'));
     };
     const isSensorAux = (label) => {
       const l = (label || '').toLowerCase();
       return l.includes('lidar') || l.includes('depth') || l.includes('profundidad') || l.includes('tof') || l.includes('infrared');
     };
 
-    const backCams = deviceList.filter(d => d.kind === 'videoinput' && !isFront(d.label) && !isSensorAux(d.label));
+    const backCams = deviceList.filter(d => d.kind === 'videoinput' && !isFront(d.label) && (!isIOS || !isSensorAux(d.label)));
     const cameras = backCams.length > 0 ? backCams : deviceList.filter(d => d.kind === 'videoinput' && !isFront(d.label));
     const usableCameras = cameras.length > 0 ? cameras : deviceList.filter(d => d.kind === 'videoinput');
 
@@ -76,7 +77,6 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
     const tele3xKeywords = ['3x', '3.0x', 'periscope', 'periscopio', 'telephoto', 'teleobjetivo', 'tele'];
     const teleFallbackKeywords = ['zoom', '2x'];
     const teleKeywords = [...tele3xKeywords, ...teleFallbackKeywords];
-    const mainExplicitKeywords = ['main', 'principal', 'standard', 'estandar', '1x'];
 
     // 1. Cámara Ultra Gran Angular (0.5x)
     let ultra = usableCameras.find(d => ultraKeywords.some(k => d.label.toLowerCase().includes(k)));
@@ -91,31 +91,44 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
       usableCameras.find(d => teleFallbackKeywords.some(k => d.label.toLowerCase().includes(k)));
 
     // 3. Cámara Principal (1x)
-    // En iOS evitar que "Back Dual Wide Camera" o "Back Triple Camera" desplace al lente 1x estándar o al dispositivo activo por defecto
-    let main = usableCameras.find(d => {
-      const l = d.label.toLowerCase();
-      return !ultraKeywords.some(k => l.includes(k)) &&
-        !teleKeywords.some(k => l.includes(k)) &&
-        mainExplicitKeywords.some(k => l.includes(k));
-    });
-
-    if (!main && activeDeviceId) {
-      main = usableCameras.find(d =>
-        d.deviceId === activeDeviceId &&
-        d.deviceId !== ultra?.deviceId &&
-        d.deviceId !== tele?.deviceId
-      );
-    }
-
-    if (!main) {
+    let main = null;
+    if (isIOS) {
+      // En iOS evitar que "Back Dual Wide Camera" o "Back Triple Camera" desplace al lente 1x estándar o al dispositivo activo por defecto
+      const mainExplicitKeywords = ['main', 'principal', 'standard', 'estandar', '1x'];
       main = usableCameras.find(d => {
         const l = d.label.toLowerCase();
         return !ultraKeywords.some(k => l.includes(k)) &&
           !teleKeywords.some(k => l.includes(k)) &&
-          !l.includes('dual') &&
-          !l.includes('triple') &&
-          (l.includes('wide') || l === 'back camera' || l === 'cámara trasera');
+          mainExplicitKeywords.some(k => l.includes(k));
       });
+      if (!main && activeDeviceId) {
+        main = usableCameras.find(d =>
+          d.deviceId === activeDeviceId &&
+          d.deviceId !== ultra?.deviceId &&
+          d.deviceId !== tele?.deviceId
+        );
+      }
+      if (!main) {
+        main = usableCameras.find(d => {
+          const l = d.label.toLowerCase();
+          return !ultraKeywords.some(k => l.includes(k)) &&
+            !teleKeywords.some(k => l.includes(k)) &&
+            !l.includes('dual') &&
+            !l.includes('triple') &&
+            (l.includes('wide') || l === 'back camera' || l === 'cámara trasera');
+        });
+      }
+    } else {
+      // Comportamiento original probado para Android/otros
+      const mainKeywords = ['main', 'principal', 'standard', 'estandar', '1x', 'wide'];
+      main = usableCameras.find(d =>
+        !ultraKeywords.some(k => d.label.toLowerCase().includes(k)) &&
+        !teleKeywords.some(k => d.label.toLowerCase().includes(k)) &&
+        mainKeywords.some(k => d.label.toLowerCase().includes(k))
+      );
+      if (!main && activeDeviceId) {
+        main = usableCameras.find(d => d.deviceId === activeDeviceId);
+      }
     }
 
     // Si aún no se detecta ultra gran angular pero hay múltiples cámaras traseras con nombres genéricos
@@ -126,54 +139,64 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
 
     // Fallbacks si falta alguna
     if (!main && usableCameras.length > 0) {
-      main = usableCameras.find(d => d.deviceId !== ultra?.deviceId && d.deviceId !== tele?.deviceId) || usableCameras[0];
+      main = usableCameras.find(d => d.deviceId !== ultra?.deviceId) || usableCameras[0];
     }
 
     return { main, ultra, tele, cameras: usableCameras };
   };
 
-  const applyOptimalFocusConstraints = async (track) => {
-    if (!track || typeof track.getCapabilities !== 'function') return;
-    try {
-      const caps = track.getCapabilities() || {};
-      if (Array.isArray(caps.focusMode) && caps.focusMode.includes('continuous')) {
-        await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
-      }
-    } catch {
-      // Ignorar si el navegador/dispositivo no soporta restricciones de enfoque (ej. iOS Safari)
-    }
-  };
-
   const safeGetUserMedia = async (targetDeviceId) => {
-    // Usar 3840x2160 (UHD 16:9) como ideal en lugar de 4096x2160 para evitar caídas a 640x480 en iOS Safari
+    const isIOS = isIOSDevice();
+    if (!isIOS) {
+      // Flujo original probado para Android: evita modo crop 16:9 (3840x2160) y no sobreescribe focusMode en Camera2 HAL
+      const baseConstraints = { width: { ideal: 4096 }, height: { ideal: 2160 } };
+      if (!targetDeviceId) {
+        return await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', ...baseConstraints }
+        });
+      }
+
+      try {
+        return await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: { exact: targetDeviceId }, ...baseConstraints }
+        });
+      } catch (exactErr) {
+        console.warn("[ERR-CAM-EXACT] Fallback a ideal deviceId:", exactErr);
+        try {
+          return await navigator.mediaDevices.getUserMedia({
+            video: { deviceId: targetDeviceId, ...baseConstraints }
+          });
+        } catch (idealErr) {
+          console.warn("[ERR-CAM-IDEAL] Fallback a environment estándar:", idealErr);
+          return await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment', ...baseConstraints }
+          });
+        }
+      }
+    }
+
+    // En iOS usar 3840x2160 (UHD 16:9) para evitar caídas a 640x480 en Safari WebKit
     const highResConstraints = { width: { ideal: 3840 }, height: { ideal: 2160 } };
     const hdResConstraints = { width: { ideal: 1920 }, height: { ideal: 1080 } };
 
-    const acquireAndConfigure = async (videoConstraints) => {
-      const s = await navigator.mediaDevices.getUserMedia({ video: videoConstraints });
-      const t = s.getVideoTracks()[0];
-      await applyOptimalFocusConstraints(t);
-      return s;
-    };
-
     if (!targetDeviceId) {
       try {
-        return await acquireAndConfigure({ facingMode: 'environment', ...highResConstraints });
+        return await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', ...highResConstraints } });
       } catch (hiErr) {
         console.warn("[ERR-CAM-HIRES] Fallback a 1080p en environment:", hiErr);
-        return await acquireAndConfigure({ facingMode: 'environment', ...hdResConstraints });
+        return await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', ...hdResConstraints } });
       }
     }
 
     try {
-      return await acquireAndConfigure({ deviceId: { exact: targetDeviceId }, ...highResConstraints });
+      return await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: targetDeviceId }, ...highResConstraints } });
     } catch (exactErr) {
       console.warn("[ERR-CAM-EXACT] Fallback a ideal deviceId:", exactErr);
       try {
-        return await acquireAndConfigure({ deviceId: targetDeviceId, ...hdResConstraints });
+        return await navigator.mediaDevices.getUserMedia({ video: { deviceId: targetDeviceId, ...hdResConstraints } });
       } catch (idealErr) {
         console.warn("[ERR-CAM-IDEAL] Fallback a environment estándar:", idealErr);
-        return await acquireAndConfigure({ facingMode: 'environment', ...hdResConstraints });
+        return await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', ...hdResConstraints } });
       }
     }
   };
@@ -852,11 +875,13 @@ export default function InAppCamera({ isOpen, onClose, onCapture, title, enableA
           playsInline
           autoPlay
           className="w-full h-full object-cover transition-transform duration-150"
-          style={{
-            transform: `scale(${digitalZoom}) translateZ(0)`,
-            transformOrigin: 'center center',
-            willChange: 'transform'
-          }}
+          style={isIOSDevice()
+            ? {
+                transform: `scale(${digitalZoom}) translateZ(0)`,
+                transformOrigin: 'center center',
+                willChange: 'transform'
+              }
+            : { transform: `scale(${digitalZoom})` }}
         />
 
         {/* Notificación Toast Nativa */}

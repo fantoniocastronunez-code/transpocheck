@@ -91,17 +91,35 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
 
   // Variables de identidad derivadas
   const actualUserEmail = user?.email?.trim().toLowerCase();
-  
-  // MAGIA: Buscamos el perfil del usuario logueado en la base de datos en tiempo real
-  const currentUserProfile = drivers.find(d => d.email?.trim().toLowerCase() === actualUserEmail);
+
+  // MAGIA: Buscamos TODOS los perfiles del usuario logueado y priorizamos el rol de mayor jerarquía
+  // (evita que registros duplicados con rol 'driver' oculten permisos 'admin' o 'super_admin')
+  const rolePriority = {
+    super_admin: 6,
+    admin: 5,
+    quoter: 4,
+    driver_regions: 3,
+    part_time: 2,
+    driver: 1
+  };
+  const matchingUserProfiles = actualUserEmail
+    ? drivers.filter(d => d.email?.trim().toLowerCase() === actualUserEmail)
+    : [];
+  const currentUserProfile = matchingUserProfiles
+    .slice()
+    .sort((a, b) => {
+      const hiddenDiff = Number(Boolean(a.isHidden)) - Number(Boolean(b.isHidden));
+      if (hiddenDiff !== 0) return hiddenDiff;
+      return (rolePriority[b.role] || 1) - (rolePriority[a.role] || 1);
+    })[0] || null;
 
   // Super Admin estricto (Felipe Castro o rol explícito de super_admin en base de datos)
-  const isSuperAdmin = actualUserEmail === 'fcastro@logisticats.cl' || currentUserProfile?.role === 'super_admin';
+  const isSuperAdmin = actualUserEmail === 'fcastro@logisticats.cl' || matchingUserProfiles.some(p => p.role === 'super_admin');
 
-  // Asignación de permisos 100% dinámicos
-  const isRealAdmin = isSuperAdmin || ['hcastro@logisticats.cl'].includes(actualUserEmail) || 
-                      currentUserProfile?.role === 'admin';
-                      
+  // Asignación de permisos 100% dinámicos (incluye correos admin permanentes aunque exista duplicado)
+  const isRealAdmin = isSuperAdmin || ['hcastro@logisticats.cl', 'gcastronu@gmail.com'].includes(actualUserEmail) ||
+                      matchingUserProfiles.some(p => p.role === 'admin');
+
   // Permisos granulares
   const defaultPermissions = {
     create_jobs: true,
@@ -115,19 +133,21 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
     manage_stats: true,
     manage_history: true
   };
-  
-  const adminPermissions = isSuperAdmin 
-    ? defaultPermissions 
+
+  const adminPermissions = isSuperAdmin
+    ? defaultPermissions
     : (currentUserProfile?.permissions || defaultPermissions);
-  
-  const isQuoter = currentUserProfile?.role === 'quoter' || actualUserEmail?.includes('facturacionycobranzas');
+
+  const isQuoter = !isRealAdmin && (matchingUserProfiles.some(p => p.role === 'quoter') || actualUserEmail?.includes('facturacionycobranzas'));
   const isPartTime = currentUserProfile?.role === 'part_time';
-  
+
   const currentUserEmail = (activeRole === 'driver' && simulatedDriverEmail) ? simulatedDriverEmail : actualUserEmail;
 
   const isFirstLoad = useRef(true);
   const driversRef = useRef([]);
+  const driversSyncedRef = useRef(false);
   const registeringRef = useRef(false);
+  const attemptedAutoRegEmailsRef = useRef(new Set());
   const notifiedJobs = useRef(new Set()); // <-- Memoria anti-spam
 
   // Funciones de Notificación
@@ -170,7 +190,8 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
           });
           
           if (token) {
-            const driverSnap = driversRef.current.find(d => d.email === user.email);
+            const safeEmail = user.email?.trim().toLowerCase();
+            const driverSnap = driversRef.current.find(d => d.email?.trim().toLowerCase() === safeEmail);
             if (driverSnap) {
               await updateDoc(doc(db, 'drivers', driverSnap.id), { fcmToken: token });
               setNotificationsEnabled(true);
@@ -211,33 +232,43 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
     return () => unsub();
   }, []);
 
-  // Efecto 3: Auto-registro Blindado Optimizado
+  // Efecto 3: Auto-registro Blindado Optimizado (con verificación en Firestore para evitar duplicados)
   useEffect(() => {
-    if (!user || !dataLoaded || activeRole !== 'driver' || !navigator.onLine || registeringRef.current) return;
-    
+    if (!user || !dataLoaded || !driversSyncedRef.current || activeRole !== 'driver' || !navigator.onLine || registeringRef.current) return;
+
     // Todo en minúsculas y sin espacios para evitar duplicados fantasma
-    const safeEmail = currentUserEmail?.trim().toLowerCase() || '';
+    const safeEmail = actualUserEmail || '';
+    if (!safeEmail || attemptedAutoRegEmailsRef.current.has(safeEmail)) return;
+
     const myDriver = drivers.find(d => d.email?.trim().toLowerCase() === safeEmail);
     const isClientAccount = customClients.some(c => c.email && c.email.toLowerCase().includes(safeEmail));
-    
+
     // Agregamos !isQuoter para que a tu equipo de ventas no les pida licencia ni los anote como choferes
     if (!myDriver && !isClientAccount && !isRealAdmin && !isQuoter) {
       registeringRef.current = true;
+      attemptedAutoRegEmailsRef.current.add(safeEmail);
       (async () => {
         try {
+          // Doble validación directa contra Firestore antes de crear para impedir duplicados por caché o carrera
+          const liveSnap = await getDocs(collection(db, 'drivers'));
+          const alreadyExists = liveSnap.docs.some(d => (d.data()?.email || '').trim().toLowerCase() === safeEmail);
+          if (alreadyExists) {
+            return;
+          }
           await addDoc(collection(db, 'drivers'), {
             name: user.displayName || 'Usuario Nuevo',
             email: safeEmail, balance: 0, licenses: [], licenseExpiry: '', createdAt: Date.now(), role: 'driver'
           });
           console.log("✅ Auto-registro exitoso para:", safeEmail);
-        } catch(e) { 
-          console.error("[ERR-DRIVER-AUTOREG-01] Error auto-registro:", e); 
-        } finally { 
-          registeringRef.current = false; 
+        } catch(e) {
+          attemptedAutoRegEmailsRef.current.delete(safeEmail);
+          console.error("[ERR-DRIVER-AUTOREG-01] Error auto-registro:", e);
+        } finally {
+          registeringRef.current = false;
         }
       })();
     }
-  }, [user, activeRole, dataLoaded, currentUserEmail, customClients, isRealAdmin, drivers]);
+  }, [user, activeRole, dataLoaded, actualUserEmail, customClients, isRealAdmin, isQuoter, drivers]);
 
   // Asegurar que usuarios del equipo de cotización/ventas (ej: facturación y cobranzas) tengan rol 'quoter'
   useEffect(() => {
@@ -365,6 +396,7 @@ export function useFirebase(activeRole, simulatedDriverEmail, jobLimit, showAler
 
     const unsubDrivers = onSnapshot(collection(db, 'drivers'), snap => {
       const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      driversSyncedRef.current = true;
       setDrivers(docs);
       try {
         localStorage.setItem('app_cache_drivers', JSON.stringify(docs));

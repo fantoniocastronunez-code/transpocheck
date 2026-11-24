@@ -115,7 +115,7 @@ function LogisticApp() {
   const signTrackId = rawSign ? rawSign.replace(/[^a-zA-Z0-9_-]/g, '') : null;
   const rawRelay = searchParams.get('relay');
   const relayJobId = rawRelay ? rawRelay.replace(/[^a-zA-Z0-9_-]/g, '') : null;
-  const APP_VERSION = "v1.3.24"; // IMPORTANT: Update this version string when making changes.
+  const APP_VERSION = "v1.3.25"; // IMPORTANT: Update this version string when making changes.
 
   // VARIABLES MÁGICAS: Atrapan lo que Android nos comparte desde CamScanner o Adobe Scan
   const sharedText = searchParams.get('shared_text');
@@ -403,7 +403,12 @@ function LogisticApp() {
   const matchingDrivers = user
     ? drivers.filter(d => (d.email || '').trim().toLowerCase() === normalizedCurrentEmail)
     : [];
-  const myDriver = user ? (matchingDrivers.find(d => d.photo) || matchingDrivers[0] || null) : null;
+  const myDriver = user ? (
+    matchingDrivers.find(d => !d.isHidden && (d.role === 'super_admin' || d.role === 'admin' || d.role === 'part_time')) ||
+    matchingDrivers.find(d => d.photo) ||
+    matchingDrivers[0] ||
+    null
+  ) : null;
   const isEasyModeDriver = Boolean(matchingDrivers.some(d => d.easyMode));
   const isEasyMode = activeRole === 'driver' && isEasyModeDriver;
   const loggedClientRecord = user ? customClients.find(c => c.email && c.email.toLowerCase().split(',').map(e => e.trim()).includes(currentUserEmail)) : null;
@@ -801,14 +806,20 @@ function LogisticApp() {
           {isRealAdmin && (
             <div className="relative">
               <button
+                type="button"
+                aria-label={activeRole === 'admin' ? 'Modo: Admin' : activeRole === 'driver' ? 'Modo: Conductor' : 'Modo: Cliente'}
+                title={activeRole === 'admin' ? 'Modo: Admin' : activeRole === 'driver' ? 'Modo: Conductor' : 'Modo: Cliente'}
                 onClick={() => {
                   setRoleMenuOpen(!roleMenuOpen);
                   setSettingsOpen(false);
                 }}
-                className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-3 py-1.5 rounded-md transition-colors border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200"
+                className="flex items-center gap-1.5 sm:gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 px-2.5 sm:px-3 py-1.5 rounded-md transition-colors border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 shrink-0"
               >
-                <Eye className="w-4 h-4 text-slate-600 dark:text-slate-300" />
-                <span className="hidden md:inline">
+                <Eye className="w-4 h-4 text-slate-600 dark:text-slate-300 shrink-0" />
+                <span className="sm:hidden text-[11px] leading-none">
+                  {activeRole === 'admin' ? 'Admin' : activeRole === 'driver' ? 'Cond.' : 'Cliente'}
+                </span>
+                <span className="hidden sm:inline">
                   {activeRole === 'admin' ? 'Modo: Admin' : activeRole === 'driver' ? (
                     simulatedDriverEmail
                       ? `Asistiendo a: ${drivers.find(dr => dr.email === simulatedDriverEmail)?.name?.split(' ')[0]}`

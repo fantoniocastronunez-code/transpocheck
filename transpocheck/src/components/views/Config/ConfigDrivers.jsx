@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { collection, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, deleteDoc, getDocs } from 'firebase/firestore';
 import { Camera, Eye, EyeOff, User, Edit2, Trash2, Clock, CheckCircle } from 'lucide-react';
 import { LICENCIAS, resizeImage } from '../../../utils/helpers';
 
@@ -65,10 +65,16 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
       <form key={editingDriver ? editingDriver.id : 'new'} onSubmit={async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
+        const normalizedEmail = String(fd.get('driverEmail') || '').trim().toLowerCase();
+        if (!normalizedEmail) {
+          showAlert("⚠️ Debes ingresar un correo electrónico válido [ERR-DRIVER-VAL-01].");
+          return;
+        }
+
         const enableNotifications = Object.values(driverNotifs).some(v => v);
         const data = {
-          name: fd.get('driverName'),
-          email: fd.get('driverEmail').toLowerCase(),
+          name: String(fd.get('driverName') || '').trim(),
+          email: normalizedEmail,
           role: fd.get('role'),
           licenses: fd.getAll('licenses'),
           licenseExpiry: fd.get('licenseExpiry'),
@@ -80,14 +86,42 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
         };
         try {
           if (editingDriver) {
+            const duplicateOtherLocal = drivers.some(d =>
+              d.id !== editingDriver.id && (d.email || '').trim().toLowerCase() === normalizedEmail
+            );
+            if (duplicateOtherLocal) {
+              showAlert(`⚠️ El correo "${normalizedEmail}" ya pertenece a otro usuario registrado [ERR-DRIVER-DUP-03].`);
+              return;
+            }
+            const liveSnap = await getDocs(collection(db, 'drivers'));
+            const duplicateOtherDb = liveSnap.docs.some(docSnap =>
+              docSnap.id !== editingDriver.id && (docSnap.data()?.email || '').trim().toLowerCase() === normalizedEmail
+            );
+            if (duplicateOtherDb) {
+              showAlert(`⚠️ El correo "${normalizedEmail}" ya pertenece a otro usuario en la base de datos [ERR-DRIVER-DUP-03].`);
+              return;
+            }
             await updateDoc(doc(db, 'drivers', editingDriver.id), data);
             setEditingDriver(null);
             setDriverDocs({ photo: null, idFront: null, idBack: null, licenseFront: null, licenseBack: null });
             setDriverNotifs(defaultDriverNotifs);
             setDriverPermissions(defaultPermissions);
             setEasyMode(false);
-            showAlert("Perfil actualizado exitosamente.");
+            showAlert("✅ Perfil actualizado exitosamente.");
           } else {
+            // Condición estricta: si el correo ya está creado, no se crea de nuevo
+            const existsLocally = drivers.some(d => (d.email || '').trim().toLowerCase() === normalizedEmail);
+            if (existsLocally) {
+              showAlert(`⚠️ El correo "${normalizedEmail}" ya está creado. No se creará duplicado [ERR-DRIVER-DUP-01].`);
+              return;
+            }
+            const liveSnap = await getDocs(collection(db, 'drivers'));
+            const existsInDb = liveSnap.docs.some(docSnap => (docSnap.data()?.email || '').trim().toLowerCase() === normalizedEmail);
+            if (existsInDb) {
+              showAlert(`⚠️ El correo "${normalizedEmail}" ya está creado en la base de datos. No se creará duplicado [ERR-DRIVER-DUP-02].`);
+              return;
+            }
+
             data.balance = 0;
             data.createdAt = Date.now();
             await addDoc(collection(db, 'drivers'), data);
@@ -95,7 +129,7 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
             setDriverNotifs(defaultDriverNotifs);
             setDriverPermissions(defaultPermissions);
             setEasyMode(false);
-            showAlert("Usuario creado exitosamente.");
+            showAlert("✅ Usuario creado exitosamente.");
           }
           e.target.reset();
         } catch (err) {
@@ -307,6 +341,9 @@ export default function ConfigDrivers({ currentUserEmail, drivers, db, showAlert
                      <p className={`text-base sm:text-lg font-extrabold leading-tight break-words ${d.isHidden ? 'text-slate-500 dark:text-slate-400 line-through decoration-slate-400' : 'text-slate-800 dark:text-slate-200'}`}>{d.name}</p>
                      {d.isHidden && <span className="bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-600 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest shrink-0">Oculto</span>}
                      {d.easyMode && <span className="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest shrink-0">Modo Fácil</span>}
+                     {drivers.filter(other => (other.email || '').trim().toLowerCase() === (d.email || '').trim().toLowerCase()).length > 1 && (
+                       <span className="bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest shrink-0">Duplicado</span>
+                     )}
                   </div>
                   <p className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 break-all leading-tight mb-1.5">{d.email}</p>
                   
